@@ -3259,3 +3259,29 @@ italic rows under the table).
 - Verified: 896 unit tests (+8), lint clean, live browser pass — Coin Values renders its
   Coin / Value-in-GP header + 5 rows in the popup; Travel Pace's two-row header renders with
   the correct colspan; the "Table" filter and category appear in the glossary.
+
+## 42. Project migration: FlyBy repo, Firebase Hosting, in-repo source material (DDL-0037)
+
+Infrastructure/context housekeeping, not a feature change — recorded so future sessions don't
+re-derive it. See [DDL-0037](CLAUDE.md).
+
+- **New repository.** The project moved to a fresh repo under its own name,
+  **`github.com/PinkJoao/FlyBy`** (git remote `origin`), replacing the earlier one. Nothing is
+  known broken by the migration; if the rename ever turns out to have broken paths/CI/deploy, it
+  gets fixed when it surfaces.
+- **Hosting is now Firebase Hosting** (project **`flyby-hub`**), replacing the previous
+  **Cloudflare Pages** (`*.pages.dev`) deploy. Committed config: `firebase.json` (serves `dist/`,
+  SPA rewrite `**` → `/index.html`) and `.firebaserc` (default project `flyby-hub`). Deploy =
+  `npm run build` + `firebase deploy`, run by the **user** (like pushes/pulls). No Cloudflare/
+  wrangler config remains.
+- **Reference source material moved inside the repo.** `DnD Source Material/` (5e.tools / Foundry
+  dnd5e system / Plutonium / real actor exports) now sits at the project root instead of being a
+  sibling folder, and is **git-ignored** — never committed or redistributed (consistent with
+  DDL-0003: ship code only). CLAUDE.md §3 updated; the old two-machine sibling note retired.
+- **CLAUDE.md and `.claude/` are now tracked** (removed from `.gitignore`) so the shared working
+  agreement and project config travel with the repo. Still ignored: `.claude/settings.local.json`
+  (machine-local permission cache), `.agents/`, `skills-lock.json`.
+- **Commit authorship.** The no-`Co-Authored-By` rule (working agreement §2 rule 3) is permanent.
+  A **single, already-spent one-time exception** applied to the commit that un-ignored `CLAUDE.md`
+  and `.claude` (bundled with these context updates), which was allowed to carry Claude's
+  co-authorship trailer; every later commit drops it again.

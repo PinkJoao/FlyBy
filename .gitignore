@@ -26,9 +26,12 @@ pdf-preview/
 # Actors de teste emitidos sob demanda pelo sweep (--emit-actors)
 testing/actors/
 
+# Local reference source material (5e.tools / Foundry / Plutonium) — never committed or redistributed
+DnD Source Material/
+
 # Claude / AI agents
-.claude/
+# CLAUDE.md and .claude are tracked (shared working agreement + project config — see DDL-0037).
+# Only machine-local settings and the skills lockfile stay ignored.
+.claude/settings.local.json
 .agents/
-CLAUDE.md
-claude.md
 skills-lock.json

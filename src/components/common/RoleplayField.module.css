@@ -1,0 +1,119 @@
+/* RoleplayField - traços como lista de entradas + randomizador (dado na caixa). */
+.rpField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.75;
+}
+
+.rpRow {
+  display: flex;
+  /* Botões ancorados no TOPO: a caixa de texto cresce p/ baixo, eles ficam. */
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Caixa da entrada: textarea + dado sobreposto no canto inferior direito. */
+.rpInputWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.rpInput {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  /* espaço à direita/embaixo p/ o dado não cobrir o texto */
+  padding: 10px 40px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 1.5;
+  font-family: inherit;
+  /* Altura controlada pelo auto-ajuste (JS): sem resize manual, mas com um piso
+     que iguala a altura dos DOIS botões empilhados ao lado (36px + 6px de gap +
+     36px = 78px), para que a caixa e o par de botões comecem alinhados nas
+     mesmas bordas superior/inferior. */
+  resize: none;
+  overflow: hidden;
+  min-height: 78px;
+}
+
+.rpInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Dado dentro da caixa (acima do canto de resize). */
+.rpDie {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.rpDie:hover {
+  opacity: 1;
+  background: var(--bg-soft);
+}
+
+.rpRowBtns {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Quadrados de tamanho FIXO: não esticam com a caixa de texto (que cresce). */
+.rpIconBtn {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rpIconBtn:hover {
+  border-color: var(--accent-border);
+}
+
+/* Adicionar nova entrada: destaque de acento (como no mock). */
+.rpAddBtn {
+  font-size: 26px;
+}
+
+.rpAddBtn:hover {
+  border-color: var(--accent-border);
+}

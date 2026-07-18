@@ -1,0 +1,634 @@
+/* Estilos compartilhados das telas de passo do wizard. Cada tela é enxuta - o
+ * shell (Wizard) já dá título/ajuda/rodapé; aqui fica só o corpo. */
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+/* Telas informativas (intro / transição): bloco centrado, sem input. */
+.introBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px 8px;
+}
+
+.introEmoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.introText {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.introText strong {
+  color: var(--text-h);
+}
+
+/* Callout de guia (ex: o texto do PHB na tela de classe). */
+.callout {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--bg-soft);
+}
+
+/* Um campo rotulado (ex: seletor de linhagem, bloco de escolhas). */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.75;
+}
+
+/* Inputs de texto do wizard (nome, URL, campos curtos). */
+.textInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: 15px;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.textArea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Retrato: caixa clicável + controles (upload / remover / URL). */
+.portraitRow {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.portraitBox {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portraitBox:hover {
+  border-color: var(--accent-border);
+}
+
+.portraitBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portraitPlaceholder {
+  font-size: 34px;
+  opacity: 0.5;
+}
+
+.portraitControls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.smallBtn {
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.smallBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.urlRow {
+  display: flex;
+  gap: 8px;
+}
+
+.urlRow .textInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.urlRow .smallBtn {
+  flex: none;
+}
+
+/* Card de descrição de uma feature (passo de features): nome + texto. */
+.featureDesc {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  padding: 12px 14px;
+}
+
+.featureDescName {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+/* --- Magias (telas de Cantrips / nível 1) ---------------------------------- */
+/* Uma seção por classe conjuradora (no nível 1 costuma ser só uma). */
+.spellOrigin {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spellOriginName {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+/* Seletor: contador + lista das escolhidas + botão de adicionar. */
+.spellPick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spellHead {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.spellCount {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.spellList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spellRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.spellName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.spellMeta {
+  font-size: 12.5px;
+  color: var(--text);
+  opacity: 0.7;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spellRemove {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.spellRemove:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.spellAdd {
+  align-self: flex-start;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.spellAdd:hover {
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+.spellDone {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* --- Alinhamento (cards grandes, estilo Divine Order) ---------------------- */
+.alignOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alignOption {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.alignOption:hover {
+  border-color: var(--accent-border);
+}
+
+.alignOptionSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.alignName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.alignCode {
+  color: var(--accent); /* neutros (LN/N/CN) */
+  letter-spacing: 0.04em;
+}
+
+/* Eixo Good↔Evil, como no card da ficha: bons azuis, maus vermelhos. */
+.alignCodeGood {
+  color: #5a96ff;
+}
+
+.alignCodeEvil {
+  color: #e05050;
+}
+
+.alignDash {
+  opacity: 0.5;
+}
+
+.alignDesc {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* (RoleplayField migrou para components/common/RoleplayField - estilos lá.) */
+
+/* Preview da entidade escolhida (mesmo DetailView do seletor). */
+.preview {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  padding: 16px;
+}
+
+/* Lista explicativa das seis habilidades (callout do passo de scores). */
+.abilityList {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.abilityList strong {
+  color: var(--text-h);
+}
+
+/* --- Abilities: método segmentado + grade + boosts ------------------------- */
+.methods {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.methodBtn {
+  flex: 1 1 auto;
+  min-width: 96px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.methodBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.methodActive {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+.methodHelp {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.methodHelp strong {
+  color: var(--text-h);
+  opacity: 1;
+}
+
+.pointsOver strong {
+  color: #dc2626;
+}
+
+.abilityGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.abilityRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.abilityName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Linha de RESULTADO do passo de boosts: nome · base · badge · total · mod. */
+.resultRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.boostBase {
+  min-width: 2ch;
+  text-align: right;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.boostBadge {
+  min-width: 2.5ch;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.boostBadgeEmpty {
+  min-width: 2.5ch;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.35;
+}
+
+/* Largura fixa e centralizada: o stepper (via style width:100%) e o select do
+ * standard array preenchem a MESMA caixa, ficando do mesmo tamanho. */
+.abilityControl {
+  width: 96px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Select do standard array casado ao stepper: mesma altura/borda/raio/fundo. */
+.arraySelect {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  text-align-last: center;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.abilityTotal {
+  min-width: 2ch;
+  text-align: right;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.abilityMod {
+  min-width: 3ch;
+  text-align: right;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.boostRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boostRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.boostAmount {
+  min-width: 2.5ch;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* --- Equipment: cartões de opção A/B/C ------------------------------------- */
+.kitList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kitCard {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kitCard:hover {
+  border-color: var(--accent-border);
+}
+
+.kitCardActive {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.kitHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.kitKey {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.kitChosen {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kitItems {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.kitGold {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.kitGold strong {
+  color: var(--text-h);
+}

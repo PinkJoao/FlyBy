@@ -1,0 +1,27 @@
+/* Botão-ícone compacto: mesma altura dos demais controles do topo, área de
+ * toque confortável no mobile (36px), sem rótulo. */
+.back {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

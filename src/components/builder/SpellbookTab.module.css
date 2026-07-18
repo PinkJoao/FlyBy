@@ -1,0 +1,680 @@
+/* Espelha o InventoryTab.module.css: mesmos tokens, mesmas pills, mesmos
+ * painéis colapsáveis e o mesmo overlay de detalhe. */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Sub-abas por origem (pill, como o ClassTab/InventoryTab) --------------- */
+
+.subTabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.subTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.subTab {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 1 0 auto;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.subTab:hover {
+  color: var(--text-h);
+}
+
+.subTabActive {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.subTabIcon {
+  font-size: 13px;
+  line-height: 1;
+  filter: grayscale(0.35);
+}
+
+/* --- Cards do cabeçalho: slots, DC/ataque, contadores ----------------------- */
+
+.header {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Os cards CRESCEM para ocupar a linha inteira no desktop (antes sobrava um
+ * vazio à direita) e, no mobile, viram faixas compactas. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cardLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.55;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.slot {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.slotPact,
+.slotArcanum {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+/* Arcanum destravado mas ainda sem magia escolhida: presente, porém apagado. */
+.slotEmpty {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.slotLevel {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.slotCount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotPact .slotCount,
+.slotPact .slotLevel,
+.slotArcanum .slotCount,
+.slotArcanum .slotLevel {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* Números lado a lado, distribuídos pela largura do card (desktop) e ainda
+ * compactos no mobile - cada célula carrega o seu divisor à esquerda. */
+.stats {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 4px;
+}
+
+.statCell {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 7px; /* rótulos longos (PREPARED/ARCANUM) não se encostam */
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Acima do limite (ex: perdeu níveis depois de preparar) - mesmo vermelho da
+ * sobrecarga de peso/attunement do inventário. */
+.statOver {
+  color: #e05050;
+}
+
+.statLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+.statDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+@media (max-width: 700px) {
+  .header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .header > * {
+    flex: none;
+  }
+  /* Faixas mais rasas: rótulo menor e menos respiro vertical. */
+  .card {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+  .statValue {
+    font-size: 15px;
+  }
+}
+
+/* --- Categorias por círculo -------------------------------------------------
+ * MESMO estilo das sub-abas de tipo do Inventário (pill retangular, raio 10px):
+ * a linguagem visual do app é uma só, categorias são categorias em toda aba. */
+
+.categories {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.categories::-webkit-scrollbar {
+  display: none;
+}
+
+.category {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 1 0 auto;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.category:hover {
+  color: var(--text-h);
+}
+
+.categoryActive {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --- Busca + Group/Sort ----------------------------------------------------- */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 14px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+/* Botão "Prepare spell": mesmo padrão do Shop (fundo neutro + borda accent). */
+.prepareBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+  flex: none;
+  white-space: nowrap;
+}
+
+.prepareBtn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* No limite (R11): não some, fica claramente indisponível. */
+.prepareBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--border);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  box-sizing: border-box;
+  gap: 6px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  flex: none;
+}
+
+.selectLabel {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.select select {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 4px;
+  align-self: stretch;
+  border: none;
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.select select option {
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.select select:focus {
+  outline: none;
+}
+
+.select:focus-within {
+  border-color: var(--accent-border);
+}
+
+@media (max-width: 640px) {
+  .filters .select {
+    flex: 1;
+    min-width: 0;
+  }
+  .filters .select select {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* --- Painéis de seção ------------------------------------------------------- */
+
+.empty {
+  font-size: 14px;
+  opacity: 0.6;
+  padding: 20px 0;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.panelHead {
+  appearance: none;
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.panelHead:hover {
+  filter: brightness(1.15);
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panelCount {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 7px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.panelChevron {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.panelChevronClosed {
+  transform: rotate(-90deg);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px;
+}
+
+.list .row + .row,
+.panelHead + .list .row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+/* Concedida (sempre preparada): mesma faixa lateral do item equipado. */
+.rowGranted {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.rowHit {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 150px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rowHit:hover .rowName {
+  color: var(--accent);
+}
+
+.thumb,
+.thumbGlyph {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  object-fit: cover;
+}
+
+.thumbGlyph {
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  filter: grayscale(0.35);
+  opacity: 0.8;
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowName {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.rowSub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+}
+
+.rowSub:empty {
+  display: none;
+}
+
+.rowMetaLine {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.metaDot {
+  opacity: 0.7;
+}
+
+.chip,
+.chipAccent {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.chipAccent {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.rowSide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-left: auto;
+}
+
+.rowLevel {
+  font-size: 12px;
+  opacity: 0.6;
+  min-width: 46px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Overlay de detalhe da magia (mesmo padrão do item) --------------------- */
+
+.infoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 110;
+}
+
+.infoPanel {
+  width: 100%;
+  max-width: 560px;
+  height: min(85svh, 700px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.infoHead {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.infoClose {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.infoClose:hover {
+  background: var(--bg-soft);
+}
+
+.infoScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.infoFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.grantedChip {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.infoNote {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.removeBtn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: auto;
+  flex: none;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: #e05050;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.removeBtn:hover {
+  border-color: #e05050;
+}
+
+@media (max-width: 760px) {
+  .infoOverlay {
+    padding: 0;
+  }
+  .infoPanel {
+    max-width: none;
+    height: 100svh;
+    border-radius: 0;
+    border: none;
+  }
+}

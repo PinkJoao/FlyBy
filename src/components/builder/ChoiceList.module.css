@@ -1,0 +1,287 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Título tappável (abre o popup da feature no glossário): mesmo texto do
+ * .label + a affordance dos links de regra inline (sublinhado pontilhado). */
+.labelLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 2px;
+}
+
+.labelLink:hover,
+.labelLink:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+  outline: none;
+}
+
+.counter {
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.chipActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 600;
+}
+
+.chipDisabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chipDisabled:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* tag list (any tool/language) */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  border-radius: 9px;
+  padding: 6px 6px 6px 12px;
+  font-size: 13px;
+  color: var(--text-h);
+  text-transform: capitalize;
+}
+
+/* Texto do chip como botão: abre a descrição do que foi escolhido. Parece
+   texto normal do chip, com um leve sublinhado pontilhado ao passar o mouse. */
+.tagLabel {
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-transform: inherit;
+}
+
+.tagLabel:hover,
+.tagLabel:focus-visible {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  outline: none;
+}
+
+.tagRemove {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.tagRemove:hover {
+  color: #d9534f;
+  background: var(--bg);
+}
+
+.addBtn {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.addBtn:hover {
+  border-color: var(--accent-border);
+}
+
+/* ability choice (ASI embutido em talento) */
+.abilityChoice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modeRow {
+  display: flex;
+  gap: 8px;
+}
+
+/* Pills de lista curta (tipos de dano): como modeRow, mas com quebra de linha
+   (até 9 opções no Boon of Energy Resistance). */
+.pillsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modeBtn {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.modeBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.modeActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 600;
+}
+
+.abilityRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.abilityRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.abilityAmount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 24px;
+  text-align: center;
+}
+
+/* option cards (Divine/Primal Order - escolher sub-feature) */
+.optionCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionCard {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.optionCard:hover {
+  border-color: var(--accent-border);
+}
+
+.optionCardSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.optionName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.optionDesc {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* feat slots + recursive nesting */
+.featSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nested {
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

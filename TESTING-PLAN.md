@@ -1,0 +1,343 @@
+# TESTING-PLAN.md — Phase T: systematic testing & curation campaign
+
+> **Read this file (plus `CLAUDE.md`) at the start of every testing session.**
+> It is the working context for the test/curation campaign that runs BEFORE play
+> mode (Phase C). It defines the strategy, the tooling, the session protocol and
+> the current status. Update the [Status](#7-status--session-hand-off) section at
+> the end of every session — the next session (often a different chat) resumes
+> from what is written here and in the tracker files.
+
+---
+
+## 1. Goal & scope
+
+Certify that the app is **usable and correct for every species, class and
+subclass in the game** — selectors, inputs, previews, derivations and everything
+each of them needs — and that the **Foundry export** is right for all of them.
+Then repeat the process for feats, spells and items.
+
+**Campaign order (fixed with the user, 2026-07-15):**
+
+- **T1 — Species / classes / subclasses, builder usability.** Every species
+  (incl. every lineage/`_versions` and every species sub-choice), every class,
+  every subclass, all their features: the UI must offer every required selector/
+  input/preview, and the derivation must be right. **← current focus.**
+- **T2 — Foundry export for those same units.** Only after T1 is green.
+- **T3 — Feats, spells, items** (same machinery, new units). **Explicitly out of
+  scope for now** — do not drift into it beyond fixing what T1 trips over.
+
+Testing "everything at all 20 levels" by hand is impossible. The strategy below
+splits the work into three tiers so that **scripts prove what scripts can prove,
+and human/Claude eyes go only where judgment is needed.**
+
+---
+
+## 2. The three tiers
+
+| Tier | Who | What it proves | Coverage |
+|---|---|---|---|
+| **0 — Automated sweep** | scripts (`npm run sweep`) | derivation never crashes; every choice is fillable; no dead references; export is structurally valid and round-trips | **exhaustive**: every class × subclass × level 1–20, every species × lineage |
+| **1 — UI verification** | Claude, in the browser preview | the interface actually renders/offers each choice well: selectors, previews, chips, popups, layout | **sampled**: decision levels only, per unit |
+| **2 — Human curation** | the user | feel, copy quality, table usability, real Foundry imports | milestone spot-checks + everything Tier 1 flags `needs-user-eyes` |
+
+Rule of thumb: **a bug a script can catch must be caught by the script** —
+Tier 1 time is the scarce resource; don't spend it clicking through what the
+sweep already proves.
+
+---
+
+## 3. Tier 0 — the automated sweep harness (build this FIRST — stage T0)
+
+New scripts under `scripts/`, run with `vite-node` and loading the compendium
+from the **local sibling snapshot** exactly like `scripts/render-pdf-preview.jsx`
+does (`../DnD Source Material/5etools Source Code/data` + `buildManifest()` —
+reuse that `loadDb()`; extract it to `scripts/lib/loadDb.js`). No browser, no
+IndexedDB, pure Node — fast enough to run the whole matrix on every session.
+
+### 3.1 Matrix enumeration (`scripts/lib/matrix.js`)
+
+Data-driven, never hardcoded:
+
+- **Classes & subclasses:** from the loaded db's class files (same source
+  `deriveFromDb` uses), reprint-deduped via `latestOnly()`.
+- **Species:** the species catalog, `latestOnly()`-deduped, **expanded per
+  lineage** (`_versions`) — each lineage is its own matrix row; plus one row for
+  the base race when it is pickable without a lineage.
+- **Decision levels per class** (drives Tier 1 sampling, §4.2): the levels where
+  a new choice descriptor appears — level 1, the subclass level, every level
+  where `buildClassChoices` yields a new entry or grows a pick count (ASI/feat
+  levels, Weapon Mastery growth, invocations…), and spell-tier bumps. Emitted
+  into the coverage tracker so a UI session knows exactly which levels to visit.
+
+### 3.2 Auto-builder (`scripts/lib/autoBuild.js`)
+
+`autoBuild(db, { classId, subclassId, level, speciesId, lineage, seed })` →
+a complete character, built the way a player would:
+
+1. `createCharacter()` + class/subclass/level/species set directly on the schema.
+2. Loop: `deriveFromDb` → collect every unfilled choice (the SAME deep
+   completeness the app uses: `buildClassChoices` + `parseChoices` recursion into
+   feat sub-bags + species choices + origin feat — i.e. the DDL-0018/DDL-0022
+   machinery, `guidancePendencies`-style) → fill each with a **seeded-random
+   legal option** (seed in the report so failures reproduce) → repeat.
+3. Stop when pendencies hit zero, or **no progress** between iterations —
+   "stuck" is itself a finding: a choice with no options, or a selector the
+   engine expects but can't be satisfied. That is exactly the DDL-0002
+   "Problem 1" class of bug, caught mechanically.
+
+Abilities: Standard Array via the class's recommended spread (what the guided
+flow does). Origin: a fixed default custom origin per run.
+
+### 3.3 Invariants asserted per matrix row
+
+**Builder-side (T1's automated floor):**
+- `deriveFromDb` never throws, at every level 1–20 (level loop per class row).
+- Auto-fill converges to **zero pendencies** (else: missing/impossible selector).
+- Every choice descriptor offers ≥ 1 option, and every option resolves to an
+  entity with a name and renderable entries (no dead `Name|Source` refs).
+- Every granted feature/trait resolves to text (no empty previews).
+- Sanity: HP > 0 and monotonic with level, proficiency bonus right, spell
+  limits/slots consistent with caster progression, no `NaN`/`undefined`
+  anywhere in the derived object (deep scan).
+
+**Export-side (T2's automated floor — built into the same sweep from day one,
+even though T2 curation comes later):**
+- `assembleFoundryActor` never throws; the JSON deep-scans clean (no
+  `undefined`/`NaN`/empty-`_id`); items carry the required per-type `system`
+  fields; `advancement` is the `_id`-keyed object shape (DDL-0001).
+- **Round-trip oracle:** `foundryToCharacter(assembleFoundryActor(c))` → diff
+  the decisions against the original. Must be empty except for the **waiver
+  list** (`scripts/lib/waivers.js` — known, documented one-way losses, e.g. the
+  species size pick not back-filled per DDL-0017). A new diff = a bug in export
+  or import; the round-trip is our cheapest correctness oracle.
+
+### 3.4 Outputs (committed, in `testing/`)
+
+- `testing/report.json` — full machine-readable result of the last sweep
+  (per-row pass/fail + reasons + seed).
+- `testing/COVERAGE.md` — **the tracker**, regenerated by the sweep but
+  preserving the hand-maintained columns. One row per matrix unit:
+  `auto` (ok/fail), `ui` (todo/ok/issues), `export` (todo/ok/issues), `notes`.
+  This file is the single source of truth for "what is done".
+- `testing/ISSUES.md` — the findings ledger. One numbered entry per finding
+  (`TC-0001`, `TC-0002`…): unit, severity (`blocker/bug/polish`), description,
+  status (`open/fixed@commit/wontfix+why`). Sessions append here; nothing is
+  ever silently deleted.
+
+`npm run sweep` runs the whole thing; `npm run sweep -- --class=wizard` (or
+`--species=…`) reruns one slice while fixing.
+
+### 3.5 T0 exit criterion
+
+The harness exists, the full sweep runs, and every failure it finds is either
+**fixed** or **logged in ISSUES.md with a decision**. Expect the first sweep to
+produce a real bug backlog — that's the point; burn it down before UI sessions
+start (fixes are cheapest at this tier).
+
+---
+
+## 4. Tier 1 — Claude UI sessions (stage T1, after T0 is green)
+
+### 4.1 Session protocol (the ritual)
+
+1. **Start:** read `CLAUDE.md` + this file + `testing/COVERAGE.md`. Run
+   `npm run sweep` — it must be green (regressions first). Pick the next
+   unclaimed batch from the coverage file and announce the scope in chat.
+2. **Work the batch** (checklist in §4.3) in the browser preview.
+3. **Fix small, log big:** cosmetic/one-file fixes are made in-session (with a
+   test when the engine is touched); anything structural becomes a `TC-` issue
+   and moves on — the session's job is COVERAGE, not rabbit holes.
+4. **End:** update `COVERAGE.md` rows + `ISSUES.md`, add a CHANGELOG line under
+   the campaign's section, update §7 below, run `npm run test` + `npm run lint`,
+   commit.
+
+### 4.2 Batch sizes & sampling
+
+- **One class + all its subclasses** per session (or two small classes). Visit
+  only the **decision levels** the sweep emitted for that class (§3.1) — level
+  up through them with the Class tab stepper and check each unlocked choice.
+  The other levels are already covered by Tier 0.
+- **Species in batches of ~10–12** (they are shallower: pick, lineage,
+  sub-choices, traits preview, size choice).
+- Each batch: one guided pass (creation guide) for ONE representative build +
+  manual-tab passes for the rest — the guide is per-step slower, so it gets
+  sampled, not repeated per subclass.
+
+### 4.3 Per-unit checklist (what "ui-ok" means)
+
+**Class/subclass (at each decision level):**
+- [ ] Every unlocked choice shows a selector (compare against the sweep's
+      descriptor list for that level — nothing missing, nothing extra).
+- [ ] Selector previews (DetailView) show real text/art; options filter sanely.
+- [ ] Picked chips render, are clickable (detail popup, DDL-0021), removable.
+- [ ] Rule links inside feature text resolve (DDL-0020); no raw `{@tag}` leaks.
+- [ ] Derived numbers move as expected (HP, profs, slots, prepare limits).
+- [ ] Level-up overlay (✦/stepper) surfaces exactly the new decisions.
+- [ ] Spellbook tab correct for casters (origins, limits, granted spells).
+- [ ] No layout breakage — check **mobile width too** (mobile-first principle).
+- [ ] Feature text quality: prose renders structured, no ugly fallbacks —
+      anything needing taste goes to `needs-user-eyes`.
+
+**Species (per lineage):**
+- [ ] All sub-choices render (size, skills, spells, lineage extras) and persist.
+- [ ] Traits preview complete; granted spells reach the Spellbook race origin
+      with honest frequencies (DDL-0011).
+- [ ] Species tab + creation-guide SpeciesStep both complete (DDL-0018 flags).
+
+### 4.4 T1 exit criterion
+
+Every matrix row has `ui: ok` or `ui: issues` with all its `TC-` entries either
+fixed or explicitly accepted. Then T2 curation starts.
+
+---
+
+## 5. Tier 2 — user curation & real Foundry validation
+
+- Tier 1 flags anything subjective as `needs-user-eyes` in the coverage notes;
+  the user sweeps those in batches at their own pace.
+- **Milestone Foundry imports:** at the end of each class's T2 pass (and for a
+  sample of species), the user imports a sweep-generated actor into the real
+  Foundry (dnd5e 5.3.3+) and checks: class/level register, features present,
+  tap-to-roll activities work, AC/HP derive. The structural sweep can't see
+  Foundry's runtime behavior — only a real import can. Export a batch of test
+  actors with a small script (`npm run sweep -- --emit-actors`) so this is one
+  drag-and-drop session, not twenty.
+
+---
+
+## 6. Stage plan (ordered)
+
+| Stage | What | Exit |
+|---|---|---|
+| **T0** | Build the harness (loadDb lib, matrix, autoBuild, invariants, round-trip, trackers, `npm run sweep`); first full sweep; burn down the backlog | sweep green or every failure logged |
+| **T1a** | UI sessions: all classes + subclasses | all class rows `ui: ok` |
+| **T1b** | UI sessions: all species + lineages | all species rows `ui: ok` |
+| **T2** | Export curation + real-Foundry milestone imports | all rows `export: ok` |
+| **T3** | Feats → spells → items, same machinery (new matrix units, same trackers) | later; re-plan then |
+
+Notes for T0 implementation: build it as ordinary code with unit tests where the
+lib logic is non-trivial (matrix enumeration, waiver diffing); the sweep itself
+stays OUT of `npm run test` (it needs the local data snapshot, which only exists
+on the user's machines).
+
+---
+
+## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-17 (3)** - **T1a session 2: BARBARIAN + all 10 subclasses done** (all rows
+  `ui: ok`). Sweep was green before starting (274/274 strict). Full guided create
+  (Human/Tough/Skilled → Barbarian, Wild Heart as the representative build), overlay
+  level-ups 1→4, jump to 19 (badge + fixup guide: Aspect/Power, 3 ASIs incl. "+1 to two"
+  and Sentinel's restricted list, mastery growth, Epic Boon), subclass swaps @19 for the
+  other nine, Spellbook checks (Wild Heart rituals, Giant cantrip via spellSet, Ancestral
+  Guardian 1/Rest), chip popups, title links, mobile, zero console errors. Tough's HP
+  bonus (DDL-0029) validated on a d12 chassis (233 @19).
+  Findings - fixed in-session: **TC-0019** (Storm Aura environment choice had NO selector -
+  one `CHOOSE_ONE_FEATURES` line), **TC-0020** (✦ badge counted steps, not decisions -
+  "1 choice left" with 7 open), **TC-0021** (mastery pool ignored Barbarian's melee-only
+  restriction - curated `MASTERY_FILTERS` + `weaponFilter` on kind `weapon`; **Rogue's
+  Finesse/Light variant deferred to its session**, needs conditional filter semantics),
+  plus cosmetics (SpeciesTab/ClassTab picker labels showed lowercase ids; `{@table}`
+  display segment; double Ritual chip; t1-choices helper hid off-level choices).
+  **Open: TC-0022** (`needs-user-eyes`): feat ability increases don't enforce the score
+  cap 20 (GWM+Sentinel → Str 22) - product decision pending.
+  869 tests, lint, sweep 274/274 `--strict`.
+  **Next action: T1a session 3 - BARD + its 10 subclasses** (remember TC-0022 when a
+  user pass happens; extend MASTERY_FILTERS in the Rogue session).
+
+- **2026-07-17 (2)** - **DDL-0029's out-of-scope leftovers closed (DDL-0030), matrix grew to
+  274.** Subraces (5etools `subrace`) merge as LINEAGES (`raceLineages` everywhere: tabs,
+  guide, completeness, import, matrix) → **18 new species rows** (Genasi MPMM, Human
+  (Innistrad) incl. Stensia, Merfolk/Goblin/Vampire PSZ, Aven PSA, Kaladesh/Zendikar elves,
+  Shifter EFA, Half-Elf/Half-Orc PHB variants), all `--strict`-green; race fixed weapon/armor
+  profs now derive. Per-weapon proficiency = new `weaponProf` kind (Kensei melee+ranged@3,
+  +1@6/11/17, `weaponFilter` RAW-faithful, native dnd5e weaponProf ids on export). Grants
+  inside featureoption OPTIONS verified UNREACHABLE (Totem Warrior is reprint-hidden) -
+  documented, not built. Known deferred backlog now lives in CLAUDE.md §4 (UUIDs, E5 polish,
+  sidekicks/UA, overlay adoption, high-level create, legacy toggle). 842 tests, lint, sweep
+  274/274 `--strict`, live pass (Genasi Air + Kensei pickers).
+  **Next action: T1a session 2 - BARBARIAN + its 10 subclasses** (then Bard).
+
+- **2026-07-17** - **TC-0011…TC-0018 ALL FIXED (no open TC issues)** - the whole
+  T1a-session-1 backlog closed in one batch (DDL-0029, CHANGELOG §33): spell
+  chooses in `additionalSpells` are real choices end-to-end (spellSet list
+  selector + spell pickers, engine `grantedSpells` emits+consumes, TC-0011);
+  fixed subclass proficiency grants derive via the curated
+  `engine/subclassGrants.js` incl. live "if you already have…" conditionals
+  (TC-0012, also closing DDL-0002's old deferred list - Monk artisan-OR-
+  instrument, expertise pool with auto-granted skills, save conditionals);
+  structured `resist`/`immune`/`vulnerable` chooses render as pills and derive
+  into the card + `traits.dr/di/dv` via `engine/damageTraits.js` (TC-0014);
+  guided kit auto-equips armor/weapons (TC-0015); featureoption collapses to
+  the chosen option (TC-0017); and curated HP-max bonuses (Tough, Boon of
+  Fortitude, Dwarven Toughness, Draconic Resilience) derive + export natively
+  (`engine/hpBonuses.js`, TC-0018 - found in this batch's live pass). Verified
+  live on a full guided Artificer→Armorer 1-19 run (desktop + mobile, zero
+  console errors); 831 tests, lint clean, sweep 256/256 `--strict`.
+  **Next action: T1a session 2 - BARBARIAN + its 10 subclasses** (then Bard).
+
+- **2026-07-16 (2)** - **T1a session 1: ARTIFICER + all 6 subclasses done** (order:
+  alphabetical, fixed with the user). Sweep was green before starting (256/256
+  strict). Full guided create pass (Armorer), interactive level-ups 1→4 (overlay:
+  spells@2, subclass+Armor Model+spells@3, feat+spells@4), jump to 19 (badge +
+  fixup guide + Epic Boon picker), subclass swap checks for the other five at 19
+  (features + granted-spell tables all render), Spellbook checked at 1/2/3/19,
+  chip popups, choice-title links, mobile width, zero console errors.
+  **New helper: `npx vite-node scripts/t1-choices.js <classId>`** dumps the
+  per-level choice descriptors the session must see (promoted from this session).
+  Findings: **TC-0011** (additionalSpells `{choose}` has no selector anywhere -
+  Magic Initiate grants nothing, structural), **TC-0012** (fixed subclass
+  proficiency grants don't derive - Armorer Heavy/Smith's, Battle Smith Martial),
+  **TC-0013** (picked feat with unfilled sub-bag escapes the ✦ badge and fixup
+  guide - shallow `filled` in fixupSteps.js), **TC-0014** (structured `resist`
+  chooses unparsed - Boon of Energy Resistance), **TC-0015** (guided kit lands
+  unequipped, AC reads unarmored - needs-user-eyes), **TC-0017** (featureoption
+  chip prints all options' text - needs-user-eyes). Fixed in-session: **TC-0016**
+  (guide pickers showed lowercase raw ids).
+  **Next action: T1a session 2 - BARBARIAN + its 10 subclasses** (then Bard).
+  **TC-0013 was fixed same day** (deep `choiceComplete` shared by creation guide,
+  fixup guide, FeaturesStep and the ✦ badge - see ISSUES.md); TC-0011/0012/0014
+  remain the open engine gaps to schedule.
+
+- **2026-07-16** - **T0 backlog BURNED DOWN: TC-0001…TC-0010 all fixed** (see
+  `testing/ISSUES.md` + DDL-0028 for the architecture - native Foundry encodings
+  where a slot exists, `flags.builder5e.choices` on the owning Item where none
+  does). The full sweep is now **256/256 with ZERO round-trip diffs in
+  `--strict` mode**; `KNOWN_ISSUES`/`WAIVERS` are empty; the oracle also checks
+  base-score reconstruction (`scores` in the decision summary) and the sweep
+  gained the `--strict` flag (ignores the baseline - the burn-down measuring
+  stick). 793 unit tests + lint clean.
+  **Next action: start T1a UI sessions (§4)** - pick the first class batch from
+  `testing/COVERAGE.md`.
+
+- **2026-07-15 (2)** — **Stage T0 DONE.** Harness built (`scripts/sweep.js` +
+  `scripts/lib/{loadDb,matrix,autoBuild,invariants,roundtrip,rng}.js`, 13 unit
+  tests) and the first full sweep ran: **256 rows (135 class×subclass, 121
+  species×lineage), all green** — 0 build failures (every choice on every unit is
+  fillable to zero pendencies), 0 derivation crashes across levels 1–20, 0 export
+  shape issues. All findings are EXPORT/IMPORT round-trip gaps, triaged as
+  **TC-0001…TC-0010 in `testing/ISSUES.md`** and baselined in `KNOWN_ISSUES`
+  (`scripts/lib/roundtrip.js`) so new regressions still fail the sweep.
+  **Next action: burn down the TC backlog** — biggest first: TC-0007 (featureoption
+  picks don't export as "<Feature>: <Option>" Items, 54 diffs; fixing the export
+  makes the existing import work), then TC-0004/0005 (import reconstruction),
+  TC-0008 (parenthesized race names), TC-0009 (species spellAbility). After the
+  backlog: start T1a UI sessions (§4).
+- **2026-07-15 (1)** — Plan created (this file); campaign fixed as DDL-0024.
+
+---
+
+## 8. Quick reference
+
+- Engine entry points: `deriveFromDb` (`src/engine/resolve.js`), choices via
+  `buildClassChoices`/`parseChoices` (`src/engine/`), pendencies:
+  `components/wizard/guidancePendencies.js` (+ `createGuideContext`).
+- Export: `assembleFoundryActor` (`src/engine/foundryActor.js`); import:
+  `foundryToCharacter` (`src/engine/foundryImport.js`).
+- Schema factories: `createCharacter`/`createClassEntry` (`src/schema/character.js`).
+- Local compendium loader precedent: `scripts/render-pdf-preview.jsx`.
+- Commands: `npm run sweep` (whole matrix) · `-- --class=X` / `--species=Y`
+  (slice) · `-- --emit-actors` (Foundry test actors) · `npm run test` ·
+  `npm run lint` · `npm run dev`.
+- Trackers: `testing/COVERAGE.md` (state) · `testing/ISSUES.md` (findings) ·
+  `testing/report.json` (last sweep, machine-readable).

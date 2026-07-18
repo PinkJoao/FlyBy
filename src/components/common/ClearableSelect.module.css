@@ -1,0 +1,50 @@
+.wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 15px;
+  /* Seta custom com folga da borda (a nativa fica colada). */
+  padding: 9px 34px 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.clearX {
+  flex: none;
+  width: 40px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.clearX:hover {
+  border-color: #d9534f;
+  color: #d9534f;
+}

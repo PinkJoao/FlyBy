@@ -1,0 +1,240 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Título de seção tappável (abre a regra no popup do glossário): herda a cara
+ * do .sectionTitle + a affordance dos links de regra inline (sublinhado
+ * pontilhado), como o .labelLink do ChoiceList. */
+.titleLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 3px;
+}
+
+.titleLink:hover,
+.titleLink:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+  outline: none;
+}
+
+.sectionHint {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+/* --- Ability boosts --------------------------------------------------------- */
+.modeRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modeBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.modeBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.modeActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.boostRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boostRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.boostAmount {
+  flex: none;
+  width: 38px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  border-radius: 8px;
+  padding: 8px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sub-escolhas do talento de origem (Skilled/Crafter/Magic Initiate). */
+.featChoices {
+  margin-top: 4px;
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--src-origin);
+}
+
+/* --- Tag list (languages, tools): chips removíveis + botão add -------------- */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  border-radius: 9px;
+  padding: 6px 6px 6px 12px;
+  font-size: 13px;
+  color: var(--text-h);
+  text-transform: capitalize;
+}
+
+.tagRemove {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.tagRemove:hover {
+  color: #d9534f;
+  background: var(--bg);
+}
+
+.addBtn {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.addBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.emptyTag {
+  font-size: 13px;
+  opacity: 0.5;
+}
+
+/* --- Skill / proficiency chips --------------------------------------------- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.chipActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 600;
+}
+
+.chipDisabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chipDisabled:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Texto livre da história do personagem (a origem contada em prosa). */
+.story {
+  font: inherit;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.story:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.story::placeholder {
+  opacity: 0.45;
+}

@@ -1,0 +1,15 @@
+/* Shell de altura fixa: o `.main` é o ÚNICO scroller da área de conteúdo. Assim
+ * a Home preenche a tela exatamente (rolando só a lista), enquanto o Builder,
+ * mais alto, rola dentro do `.main`. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}

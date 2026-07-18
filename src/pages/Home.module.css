@@ -1,0 +1,352 @@
+/* Preenche a área de conteúdo (o `.main` do App tem altura definida) e NÃO rola
+ * - só a lista de personagens (`.listScroll`) rola por dentro. */
+.page {
+  height: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Barra de topo: marca (FlyBy) à esquerda, menu sanduíche à direita. */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+}
+
+/* Marca: logo + nome, lado a lado. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+/* Tamanho do logo na Home: ajuste o height abaixo (a largura acompanha,
+ * o SVG é quadrado). O gap entre logo e nome é o `gap` de .brand acima. */
+.brandLogo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+.hamburger {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+.hamburger:hover {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+/* Conteúdo do roster no espaço restante. Título/controles/botão têm altura
+ * fixa; a LISTA (`.listScroll`) flexiona e rola por dentro. */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 20px 0 0;
+}
+
+/* Título "Characters": menor e centralizado, logo acima da busca. */
+.rosterTitle {
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-h);
+}
+
+/* Busca + Sort (mesmo espírito das abas de Inventário/Magias). */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.search {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 14px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.search:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  box-sizing: border-box;
+  gap: 6px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  flex: none;
+}
+.selectLabel {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+.select select {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 4px;
+  align-self: stretch;
+  border: none;
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.select select option {
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.select:focus-within {
+  border-color: var(--accent-border);
+}
+
+/* Botão "New Character": centralizado, abaixo da linha de busca/sort. */
+.newRow {
+  display: flex;
+  justify-content: center;
+  flex: none;
+}
+.newBtn {
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 22px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.newBtn:hover {
+  filter: brightness(1.08);
+  border-color: var(--accent-border);
+}
+
+/* A ÚNICA área que rola. */
+.listScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* padding lateral p/ a barra de rolagem não colar nos cards */
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+/* Botão da ação principal (só o empty state). */
+.primary {
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.muted {
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* Estado vazio: centralizado no espaço restante. */
+.empty {
+  margin: auto 0;
+  text-align: center;
+  padding: 48px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+.empty p {
+  margin: 0 0 16px;
+  opacity: 0.7;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+.card:hover {
+  border-color: var(--accent-border);
+}
+
+.cardMain {
+  appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* Retrato no roster: qualquer proporção, SEM distorcer nem cortar - a imagem
+   se ajusta dentro dos tetos de largura/altura. */
+.avatarImg {
+  flex: none;
+  max-width: 64px;
+  max-height: 44px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sub {
+  font-size: 13px;
+  opacity: 0.7;
+  text-transform: capitalize;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.cardActions button {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 15px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cardActions button:hover {
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+/* Gatilho do menu ⋮ (substituiu os três botões soltos). */
+.menuTrigger {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Atribuição discreta no rodapé da Home (fonte de dados + licença SRD). */
+.attribution {
+  flex: none;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.45;
+  opacity: 0.55;
+  color: var(--text);
+}
+.attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+.attribution a:hover {
+  color: var(--accent);
+}

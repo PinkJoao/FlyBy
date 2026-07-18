@@ -1,0 +1,115 @@
+.content {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.content p {
+  margin: 0 0 8px;
+}
+
+.section {
+  margin: 0 0 10px;
+}
+
+.entryName {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Opções de um bloco `options` → cards distintos (um por opção). */
+.optionCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.optionCard {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-border);
+  background: var(--bg-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.optionCard > p:last-child {
+  margin-bottom: 0;
+}
+
+.optionCardName {
+  display: block;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.content ul {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+.content li {
+  margin: 2px 0;
+}
+
+.inset {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-border);
+  background: var(--bg-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0 0 10px;
+}
+
+.quote {
+  border-left: 3px solid var(--border);
+  padding-left: 12px;
+  margin: 0 0 10px;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+/* Tabelas agora usam o padrão global `.data-table` dentro do TableViewer
+   (scroll horizontal natural + tela cheia) - sem compressão forçada. */
+
+/* Notas de rodapé de tabela (footnotes): menores, discretas, largura total. */
+.footnote {
+  font-size: 0.85em;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.ref {
+  color: var(--text-h);
+}
+
+/* Menção de regra tappável (glossário): mantém a base .ref e adiciona a
+ * affordance de link - sublinhado pontilhado + cursor. */
+.refLink {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 2px;
+}
+
+.refLink:hover,
+.refLink:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+  outline: none;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  margin: 0 0 12px;
+  border: 1px solid var(--border);
+}
+
+.credit {
+  font-size: 11px;
+  opacity: 0.5;
+  margin: -8px 0 12px;
+}

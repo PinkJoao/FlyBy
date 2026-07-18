@@ -1,0 +1,444 @@
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.topActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Stepper de nível dentro do bloco de identidade.
+ *  - Desktop: `margin-left: auto` o empurra para a direita do perfil.
+ *  - Mobile (identity vira coluna): stacka abaixo do nome, centralizado. */
+.levelSlot {
+  margin-left: auto;
+  display: flex;
+}
+
+/* Menu sanduíche do topo (substituiu o botão Export). */
+.menuBtn {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.menuBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Botão de reabrir o guia. Tema normal quando não há pendência. */
+.guideBtn {
+  position: relative;
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 28px;
+  line-height: 1; /* caixa justa ao glyph → centralização exata */
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.guideBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Com pendência: tema accent, chamando atenção. */
+.guideBtnAlert {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* Contador de pendências no canto do botão. */
+.guideBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* --- Identity: portrait + name --------------------------------------------- */
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.portraitWrap {
+  position: relative;
+  flex: none;
+  max-width: 100%;
+}
+
+.portrait {
+  width: 88px;
+  height: 88px;
+  flex: none;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.portrait:hover {
+  border-color: var(--accent-border);
+}
+
+/* Com imagem: o botão assume a PROPORÇÃO natural da foto (sem corte), limitado
+   por uma altura máxima p/ não dominar a tela. */
+.portraitFilled {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+
+.portraitFilled img {
+  display: block;
+  max-height: 180px;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Visualizador do retrato em tela cheia (trocar / baixar / remover). */
+.viewerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px;
+}
+
+.viewerImg {
+  max-width: 100%;
+  max-height: calc(100svh - 140px); /* deixa espaço p/ os botões */
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.viewerActions {
+  display: flex;
+  gap: 10px;
+}
+
+.viewerBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.viewerBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.viewerDanger:hover {
+  border-color: #d9534f;
+  color: #d9534f;
+}
+
+.viewerClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.viewerClose:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Escolhedor de FONTE do retrato: upload de arquivo ou URL de imagem da web. */
+.sourceOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.sourcePanel {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sourceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sourceHead h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.sourceHead .viewerClose {
+  position: static;
+}
+
+.sourceUploadBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.sourceUploadBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.sourceDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.sourceDivider::before,
+.sourceDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.sourceUrlRow {
+  display: flex;
+  gap: 8px;
+}
+
+.sourceUrlInput {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.sourceUrlInput:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.sourceUrlBtn {
+  flex: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.sourceUrlBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.sourceUrlBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nameWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 2px 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  outline: none;
+}
+
+.sub {
+  margin: 2px 0 0;
+  opacity: 0.7;
+  font-size: 15px;
+}
+
+@media (max-width: 560px) {
+  .identity {
+    flex-direction: column;
+    text-align: center;
+  }
+  .name {
+    text-align: center;
+  }
+  .levelSlot {
+    margin: 0 auto;
+    align-self: center;
+  }
+}
+
+/* --- Tabs ------------------------------------------------------------------- */
+.tabBar {
+  display: flex;
+  gap: 4px;
+  margin-top: 24px;
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text-h);
+}
+
+.tabActive {
+  color: var(--accent);
+  border-bottom: 3px solid var(--accent);
+}
+
+/* --- Tab content ----------------------------------------------------------- */
+.panel {
+  margin-top: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.hint {
+  margin-top: 16px;
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+.placeholder {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}

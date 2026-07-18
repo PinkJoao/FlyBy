@@ -1,0 +1,9850 @@
+{
+  "generatedAt": "2026-07-17T21:33:10.353Z",
+  "baseSeed": 1,
+  "results": [
+    {
+      "id": "class:artificer/Alchemist",
+      "kind": "class",
+      "seed": 1689891692,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 122
+    },
+    {
+      "id": "class:artificer/Armorer",
+      "kind": "class",
+      "seed": 197025392,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 79
+    },
+    {
+      "id": "class:artificer/Artillerist",
+      "kind": "class",
+      "seed": 3781268085,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 77
+    },
+    {
+      "id": "class:artificer/Battle Smith",
+      "kind": "class",
+      "seed": 1466181909,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 75
+    },
+    {
+      "id": "class:artificer/Cartographer",
+      "kind": "class",
+      "seed": 3807729374,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 97
+    },
+    {
+      "id": "class:artificer/Reanimator",
+      "kind": "class",
+      "seed": 2141240692,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 70
+    },
+    {
+      "id": "class:barbarian/Battlerager",
+      "kind": "class",
+      "seed": 4126777304,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 34
+    },
+    {
+      "id": "class:barbarian/Ancestral Guardian",
+      "kind": "class",
+      "seed": 1643156531,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 32
+    },
+    {
+      "id": "class:barbarian/Storm Herald",
+      "kind": "class",
+      "seed": 3106284540,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 30
+    },
+    {
+      "id": "class:barbarian/Beast",
+      "kind": "class",
+      "seed": 794394632,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 31
+    },
+    {
+      "id": "class:barbarian/Wild Magic",
+      "kind": "class",
+      "seed": 1436338934,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 31
+    },
+    {
+      "id": "class:barbarian/Giant",
+      "kind": "class",
+      "seed": 2266524322,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 28
+    },
+    {
+      "id": "class:barbarian/Berserker",
+      "kind": "class",
+      "seed": 602173618,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 24
+    },
+    {
+      "id": "class:barbarian/Wild Heart",
+      "kind": "class",
+      "seed": 3550255553,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 49
+    },
+    {
+      "id": "class:barbarian/World Tree",
+      "kind": "class",
+      "seed": 1512420925,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 24
+    },
+    {
+      "id": "class:barbarian/Zealot",
+      "kind": "class",
+      "seed": 3844285954,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 29
+    },
+    {
+      "id": "class:bard/Swords",
+      "kind": "class",
+      "seed": 3151250024,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 61
+    },
+    {
+      "id": "class:bard/Whispers",
+      "kind": "class",
+      "seed": 473836593,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 61
+    },
+    {
+      "id": "class:bard/Creation",
+      "kind": "class",
+      "seed": 317919167,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 52
+    },
+    {
+      "id": "class:bard/Eloquence",
+      "kind": "class",
+      "seed": 1328862673,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 65
+    },
+    {
+      "id": "class:bard/Dance",
+      "kind": "class",
+      "seed": 3076304721,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 61
+    },
+    {
+      "id": "class:bard/Glamour",
+      "kind": "class",
+      "seed": 2214137939,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 61
+    },
+    {
+      "id": "class:bard/Lore",
+      "kind": "class",
+      "seed": 1297166266,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 62
+    },
+    {
+      "id": "class:bard/Valor",
+      "kind": "class",
+      "seed": 3431245316,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:bard/Moon",
+      "kind": "class",
+      "seed": 1896806523,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 71
+    },
+    {
+      "id": "class:bard/Spirits",
+      "kind": "class",
+      "seed": 2048084244,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 92
+    },
+    {
+      "id": "class:cleric/Nature",
+      "kind": "class",
+      "seed": 3139650244,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 100
+    },
+    {
+      "id": "class:cleric/Tempest",
+      "kind": "class",
+      "seed": 3984885451,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 82
+    },
+    {
+      "id": "class:cleric/Death",
+      "kind": "class",
+      "seed": 2673045883,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 92
+    },
+    {
+      "id": "class:cleric/Arcana",
+      "kind": "class",
+      "seed": 1376262777,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 91
+    },
+    {
+      "id": "class:cleric/Ambition (PSA)",
+      "kind": "class",
+      "seed": 1260567517,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 86
+    },
+    {
+      "id": "class:cleric/Knowledge (PSA)",
+      "kind": "class",
+      "seed": 2854683410,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 99
+    },
+    {
+      "id": "class:cleric/Solidarity (PSA)",
+      "kind": "class",
+      "seed": 2237232992,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 86
+    },
+    {
+      "id": "class:cleric/Strength (PSA)",
+      "kind": "class",
+      "seed": 530095457,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 89
+    },
+    {
+      "id": "class:cleric/Zeal (PSA)",
+      "kind": "class",
+      "seed": 1272260212,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 85
+    },
+    {
+      "id": "class:cleric/Forge",
+      "kind": "class",
+      "seed": 3239561294,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 97
+    },
+    {
+      "id": "class:cleric/Order",
+      "kind": "class",
+      "seed": 3428293897,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 98
+    },
+    {
+      "id": "class:cleric/Peace",
+      "kind": "class",
+      "seed": 4186761999,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 98
+    },
+    {
+      "id": "class:cleric/Twilight",
+      "kind": "class",
+      "seed": 39587619,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 78
+    },
+    {
+      "id": "class:cleric/Life",
+      "kind": "class",
+      "seed": 2604117805,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 91
+    },
+    {
+      "id": "class:cleric/Light",
+      "kind": "class",
+      "seed": 567301041,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 92
+    },
+    {
+      "id": "class:cleric/Trickery",
+      "kind": "class",
+      "seed": 2080348256,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 80
+    },
+    {
+      "id": "class:cleric/War",
+      "kind": "class",
+      "seed": 927405875,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 78
+    },
+    {
+      "id": "class:cleric/Knowledge",
+      "kind": "class",
+      "seed": 4226466517,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 86
+    },
+    {
+      "id": "class:cleric/Grave",
+      "kind": "class",
+      "seed": 3567438308,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 80
+    },
+    {
+      "id": "class:druid/Dreams",
+      "kind": "class",
+      "seed": 3257331175,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:druid/Shepherd",
+      "kind": "class",
+      "seed": 1250216196,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 58
+    },
+    {
+      "id": "class:druid/Spores",
+      "kind": "class",
+      "seed": 409445525,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:druid/Wildfire",
+      "kind": "class",
+      "seed": 564234495,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 62
+    },
+    {
+      "id": "class:druid/Land",
+      "kind": "class",
+      "seed": 4066135082,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 70
+    },
+    {
+      "id": "class:druid/Moon",
+      "kind": "class",
+      "seed": 1839039342,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 73
+    },
+    {
+      "id": "class:druid/Sea",
+      "kind": "class",
+      "seed": 2637411870,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 74
+    },
+    {
+      "id": "class:druid/Stars",
+      "kind": "class",
+      "seed": 2540092472,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 61
+    },
+    {
+      "id": "class:fighter/Arcane Archer",
+      "kind": "class",
+      "seed": 662682185,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 36
+    },
+    {
+      "id": "class:fighter/Cavalier",
+      "kind": "class",
+      "seed": 442214577,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 32
+    },
+    {
+      "id": "class:fighter/Samurai",
+      "kind": "class",
+      "seed": 3880879414,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 31
+    },
+    {
+      "id": "class:fighter/Echo Knight",
+      "kind": "class",
+      "seed": 2875881082,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 32
+    },
+    {
+      "id": "class:fighter/Rune Knight",
+      "kind": "class",
+      "seed": 3621801857,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 25
+    },
+    {
+      "id": "class:fighter/Battle Master",
+      "kind": "class",
+      "seed": 1358245008,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 37
+    },
+    {
+      "id": "class:fighter/Champion",
+      "kind": "class",
+      "seed": 894467979,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          7,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 30
+    },
+    {
+      "id": "class:fighter/Eldritch Knight",
+      "kind": "class",
+      "seed": 2780962298,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          7,
+          8,
+          10,
+          11,
+          12,
+          13,
+          14,
+          16,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 47
+    },
+    {
+      "id": "class:fighter/Psi Warrior",
+      "kind": "class",
+      "seed": 2693843014,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 30
+    },
+    {
+      "id": "class:fighter/Banneret",
+      "kind": "class",
+      "seed": 3195912083,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          12,
+          14,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 30
+    },
+    {
+      "id": "class:monk/Long Death",
+      "kind": "class",
+      "seed": 4010210694,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 24
+    },
+    {
+      "id": "class:monk/Drunken Master",
+      "kind": "class",
+      "seed": 474392935,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 21
+    },
+    {
+      "id": "class:monk/Kensei",
+      "kind": "class",
+      "seed": 3568587747,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          11,
+          12,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 30
+    },
+    {
+      "id": "class:monk/Sun Soul",
+      "kind": "class",
+      "seed": 1494787775,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 26
+    },
+    {
+      "id": "class:monk/Astral Self",
+      "kind": "class",
+      "seed": 1654376421,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 31
+    },
+    {
+      "id": "class:monk/Ascendant Dragon",
+      "kind": "class",
+      "seed": 2154585400,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 30
+    },
+    {
+      "id": "class:monk/Mercy",
+      "kind": "class",
+      "seed": 1084953962,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 21
+    },
+    {
+      "id": "class:monk/Shadow",
+      "kind": "class",
+      "seed": 1819899290,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 36
+    },
+    {
+      "id": "class:monk/Elements",
+      "kind": "class",
+      "seed": 2863793323,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 31
+    },
+    {
+      "id": "class:monk/Open Hand",
+      "kind": "class",
+      "seed": 2851861027,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          8,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 25
+    },
+    {
+      "id": "class:paladin/Oathbreaker",
+      "kind": "class",
+      "seed": 261975022,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 51
+    },
+    {
+      "id": "class:paladin/Crown",
+      "kind": "class",
+      "seed": 991437389,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 52
+    },
+    {
+      "id": "class:paladin/Conquest",
+      "kind": "class",
+      "seed": 2466714704,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 59
+    },
+    {
+      "id": "class:paladin/Redemption",
+      "kind": "class",
+      "seed": 3259320139,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:paladin/Watchers",
+      "kind": "class",
+      "seed": 529816187,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 63
+    },
+    {
+      "id": "class:paladin/Devotion",
+      "kind": "class",
+      "seed": 2733312996,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 63
+    },
+    {
+      "id": "class:paladin/Glory",
+      "kind": "class",
+      "seed": 3700466403,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 53
+    },
+    {
+      "id": "class:paladin/Ancients",
+      "kind": "class",
+      "seed": 1169332455,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 53
+    },
+    {
+      "id": "class:paladin/Vengeance",
+      "kind": "class",
+      "seed": 49247816,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 57
+    },
+    {
+      "id": "class:paladin/Noble Genies",
+      "kind": "class",
+      "seed": 2194798331,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 69
+    },
+    {
+      "id": "class:ranger/Horizon Walker",
+      "kind": "class",
+      "seed": 2121723835,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 54
+    },
+    {
+      "id": "class:ranger/Monster Slayer",
+      "kind": "class",
+      "seed": 3782928372,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 56
+    },
+    {
+      "id": "class:ranger/Swarmkeeper",
+      "kind": "class",
+      "seed": 2004304630,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 49
+    },
+    {
+      "id": "class:ranger/Drakewarden",
+      "kind": "class",
+      "seed": 1991555928,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 48
+    },
+    {
+      "id": "class:ranger/Beast Master",
+      "kind": "class",
+      "seed": 1639751651,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 52
+    },
+    {
+      "id": "class:ranger/Fey Wanderer",
+      "kind": "class",
+      "seed": 3656891430,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 51
+    },
+    {
+      "id": "class:ranger/Gloom Stalker",
+      "kind": "class",
+      "seed": 2479119308,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 56
+    },
+    {
+      "id": "class:ranger/Hunter",
+      "kind": "class",
+      "seed": 3508909446,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 45
+    },
+    {
+      "id": "class:ranger/Winter Walker",
+      "kind": "class",
+      "seed": 1186541497,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 49
+    },
+    {
+      "id": "class:ranger/Hollow Warden",
+      "kind": "class",
+      "seed": 2201693208,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8,
+          9,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 53
+    },
+    {
+      "id": "class:rogue/Inquisitive",
+      "kind": "class",
+      "seed": 402824005,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 38
+    },
+    {
+      "id": "class:rogue/Mastermind",
+      "kind": "class",
+      "seed": 1359381799,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 31
+    },
+    {
+      "id": "class:rogue/Scout",
+      "kind": "class",
+      "seed": 1351701257,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 32
+    },
+    {
+      "id": "class:rogue/Swashbuckler",
+      "kind": "class",
+      "seed": 507313,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 29
+    },
+    {
+      "id": "class:rogue/Arcane Trickster",
+      "kind": "class",
+      "seed": 2297925956,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          7,
+          8,
+          10,
+          11,
+          12,
+          13,
+          14,
+          16,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 57
+    },
+    {
+      "id": "class:rogue/Assassin",
+      "kind": "class",
+      "seed": 909058800,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 33
+    },
+    {
+      "id": "class:rogue/Soulknife",
+      "kind": "class",
+      "seed": 2256844003,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 38
+    },
+    {
+      "id": "class:rogue/Thief",
+      "kind": "class",
+      "seed": 1990381031,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 32
+    },
+    {
+      "id": "class:rogue/Scion of the Three",
+      "kind": "class",
+      "seed": 914894659,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 28
+    },
+    {
+      "id": "class:rogue/Phantom",
+      "kind": "class",
+      "seed": 1664988398,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          3,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 36
+    },
+    {
+      "id": "class:sorcerer/Pyromancer (PSK)",
+      "kind": "class",
+      "seed": 3383709607,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 64
+    },
+    {
+      "id": "class:sorcerer/Divine Soul",
+      "kind": "class",
+      "seed": 515685430,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 69
+    },
+    {
+      "id": "class:sorcerer/Storm",
+      "kind": "class",
+      "seed": 3991607185,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 58
+    },
+    {
+      "id": "class:sorcerer/Lunar",
+      "kind": "class",
+      "seed": 2090789496,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 58
+    },
+    {
+      "id": "class:sorcerer/Aberrant",
+      "kind": "class",
+      "seed": 2076486519,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 70
+    },
+    {
+      "id": "class:sorcerer/Clockwork",
+      "kind": "class",
+      "seed": 737292147,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 68
+    },
+    {
+      "id": "class:sorcerer/Draconic",
+      "kind": "class",
+      "seed": 1581852635,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 66
+    },
+    {
+      "id": "class:sorcerer/Wild Magic",
+      "kind": "class",
+      "seed": 104387423,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 58
+    },
+    {
+      "id": "class:sorcerer/Spellfire",
+      "kind": "class",
+      "seed": 2886059238,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 68
+    },
+    {
+      "id": "class:sorcerer/Shadow",
+      "kind": "class",
+      "seed": 763749980,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 68
+    },
+    {
+      "id": "class:wizard/Conjuration",
+      "kind": "class",
+      "seed": 2164841676,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 66
+    },
+    {
+      "id": "class:wizard/Enchantment",
+      "kind": "class",
+      "seed": 3059396363,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:wizard/Necromancy",
+      "kind": "class",
+      "seed": 3854415373,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 67
+    },
+    {
+      "id": "class:wizard/Transmutation",
+      "kind": "class",
+      "seed": 3276528751,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 58
+    },
+    {
+      "id": "class:wizard/War",
+      "kind": "class",
+      "seed": 2326251180,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 65
+    },
+    {
+      "id": "class:wizard/Chronurgy",
+      "kind": "class",
+      "seed": 3243944283,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 52
+    },
+    {
+      "id": "class:wizard/Graviturgy",
+      "kind": "class",
+      "seed": 198643206,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 54
+    },
+    {
+      "id": "class:wizard/Scribes",
+      "kind": "class",
+      "seed": 998382181,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 61
+    },
+    {
+      "id": "class:wizard/Abjurer",
+      "kind": "class",
+      "seed": 2932242745,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 73
+    },
+    {
+      "id": "class:wizard/Diviner",
+      "kind": "class",
+      "seed": 440180213,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 70
+    },
+    {
+      "id": "class:wizard/Evoker",
+      "kind": "class",
+      "seed": 60086700,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 62
+    },
+    {
+      "id": "class:wizard/Illusionist",
+      "kind": "class",
+      "seed": 3194406303,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 86
+    },
+    {
+      "id": "class:wizard/Bladesinger",
+      "kind": "class",
+      "seed": 1898260652,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 56
+    },
+    {
+      "id": "class:warlock/Undying",
+      "kind": "class",
+      "seed": 2890426308,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 51
+    },
+    {
+      "id": "class:warlock/Hexblade",
+      "kind": "class",
+      "seed": 3530456841,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 53
+    },
+    {
+      "id": "class:warlock/Fathomless",
+      "kind": "class",
+      "seed": 1866129940,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 52
+    },
+    {
+      "id": "class:warlock/Genie",
+      "kind": "class",
+      "seed": 1202797700,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 54
+    },
+    {
+      "id": "class:warlock/Archfey",
+      "kind": "class",
+      "seed": 2480419964,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:warlock/Celestial",
+      "kind": "class",
+      "seed": 3367676862,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 60
+    },
+    {
+      "id": "class:warlock/Fiend",
+      "kind": "class",
+      "seed": 2063257142,
+      "build": {
+        "ok": true,
+        "iterations": 3,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 68
+    },
+    {
+      "id": "class:warlock/Great Old One",
+      "kind": "class",
+      "seed": 3273474004,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 59
+    },
+    {
+      "id": "class:warlock/Undead",
+      "kind": "class",
+      "seed": 2340833589,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "levels": {
+        "issues": [],
+        "decisionLevels": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          15,
+          16,
+          17,
+          19
+        ]
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 69
+    },
+    {
+      "id": "species:Aarakocra|MPMM",
+      "kind": "species",
+      "seed": 363496202,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 9
+    },
+    {
+      "id": "species:Aasimar|XPHB",
+      "kind": "species",
+      "seed": 3308186788,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Aetherborn|PSK/Variant; Gifted Aetherborn",
+      "kind": "species",
+      "seed": 3539064716,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Astral Elf|AAG",
+      "kind": "species",
+      "seed": 4069933705,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Autognome|AAG",
+      "kind": "species",
+      "seed": 3952308514,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Aven|PSA/Aven (Hawk-Headed)",
+      "kind": "species",
+      "seed": 599774439,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Aven|PSA/Aven (Ibis-Headed)",
+      "kind": "species",
+      "seed": 4012835961,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Aven|PSD",
+      "kind": "species",
+      "seed": 3896700075,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Boggart|LFL",
+      "kind": "species",
+      "seed": 3737299228,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Bugbear|MPMM",
+      "kind": "species",
+      "seed": 970089691,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Centaur|MPMM",
+      "kind": "species",
+      "seed": 1042710773,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Changeling|EFA",
+      "kind": "species",
+      "seed": 3808228942,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Custom Lineage|TCE/Custom Lineage; Darkvision",
+      "kind": "species",
+      "seed": 68165278,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Custom Lineage|TCE/Custom Lineage; Skill Proficiency",
+      "kind": "species",
+      "seed": 1655064266,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Deep Gnome|MPMM",
+      "kind": "species",
+      "seed": 3199254545,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Dhampir|RHW",
+      "kind": "species",
+      "seed": 3806538934,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Black)",
+      "kind": "species",
+      "seed": 1553608345,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 15
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Blue)",
+      "kind": "species",
+      "seed": 359346874,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 12
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Brass)",
+      "kind": "species",
+      "seed": 4022716823,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 12
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Bronze)",
+      "kind": "species",
+      "seed": 1159009718,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 11
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Copper)",
+      "kind": "species",
+      "seed": 2490137165,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 14
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Gold)",
+      "kind": "species",
+      "seed": 758537864,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 13
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Green)",
+      "kind": "species",
+      "seed": 1507079249,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 13
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Red)",
+      "kind": "species",
+      "seed": 1464289937,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 15
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (Silver)",
+      "kind": "species",
+      "seed": 3690724961,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 14
+    },
+    {
+      "id": "species:Dragonborn|XPHB/Dragonborn (White)",
+      "kind": "species",
+      "seed": 888043423,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 13
+    },
+    {
+      "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Amethyst)",
+      "kind": "species",
+      "seed": 3143048515,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 9
+    },
+    {
+      "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Crystal)",
+      "kind": "species",
+      "seed": 2069055726,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 9
+    },
+    {
+      "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Emerald)",
+      "kind": "species",
+      "seed": 1445350896,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Sapphire)",
+      "kind": "species",
+      "seed": 2396781492,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Topaz)",
+      "kind": "species",
+      "seed": 918759212,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Duergar|MPMM",
+      "kind": "species",
+      "seed": 3198889057,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Dwarf|XPHB",
+      "kind": "species",
+      "seed": 3550877642,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Dwarf (Kaladesh)|PSK",
+      "kind": "species",
+      "seed": 4047810652,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Eladrin|MPMM",
+      "kind": "species",
+      "seed": 2581017196,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Elf|LFL/Elf; Lorwyn Lineage",
+      "kind": "species",
+      "seed": 2351707882,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Elf|LFL/Elf; Shadowmoor Lineage",
+      "kind": "species",
+      "seed": 3678989238,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Elf|XPHB/Elf; Drow Lineage",
+      "kind": "species",
+      "seed": 3935845753,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Elf|XPHB/Elf; High Elf Lineage",
+      "kind": "species",
+      "seed": 3239136492,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Elf|XPHB/Elf; Wood Elf Lineage",
+      "kind": "species",
+      "seed": 3555615665,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Bishatar and Tirahar)",
+      "kind": "species",
+      "seed": 1574119328,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Vahadar)",
+      "kind": "species",
+      "seed": 2068687241,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Elf (Zendikar)|PSZ/Elf (Zendikar; Joraga Nation)",
+      "kind": "species",
+      "seed": 315434076,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Elf (Zendikar)|PSZ/Elf (Zendikar; Mul Daya Nation)",
+      "kind": "species",
+      "seed": 3342132625,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Elf (Zendikar)|PSZ/Elf (Zendikar; Tajuru Nation)",
+      "kind": "species",
+      "seed": 3569109513,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Faerie|LFL/Faerie; Lorwyn",
+      "kind": "species",
+      "seed": 2547492245,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Faerie|LFL/Faerie; Shadowmoor",
+      "kind": "species",
+      "seed": 131894145,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Fairy|MPMM",
+      "kind": "species",
+      "seed": 3213449004,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Firbolg|MPMM",
+      "kind": "species",
+      "seed": 3083083634,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Flamekin|LFL",
+      "kind": "species",
+      "seed": 274488605,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Genasi|MPMM/Genasi (Air)",
+      "kind": "species",
+      "seed": 2950953959,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Genasi|MPMM/Genasi (Earth)",
+      "kind": "species",
+      "seed": 203573431,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Genasi|MPMM/Genasi (Fire)",
+      "kind": "species",
+      "seed": 404645143,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Genasi|MPMM/Genasi (Water)",
+      "kind": "species",
+      "seed": 3461701682,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Giff|AAG",
+      "kind": "species",
+      "seed": 3063670807,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Githyanki|MPMM",
+      "kind": "species",
+      "seed": 3822927003,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Githzerai|MPMM",
+      "kind": "species",
+      "seed": 3289492854,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Gnome|XPHB/Gnome; Forest Gnome Lineage",
+      "kind": "species",
+      "seed": 1205701498,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Gnome|XPHB/Gnome; Rock Gnome Lineage",
+      "kind": "species",
+      "seed": 3314213490,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Goblin|MPMM",
+      "kind": "species",
+      "seed": 173856426,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Goblin|PSZ/Goblin (Ixalan)",
+      "kind": "species",
+      "seed": 4184379794,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Goblin|PSZ/Goblin (Zendikar; Grotag Tribe)",
+      "kind": "species",
+      "seed": 56516788,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Goblin|PSZ/Goblin (Zendikar; Lavastep Tribe)",
+      "kind": "species",
+      "seed": 1910601066,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Goblin|PSZ/Goblin (Zendikar; Tuktuk Tribe)",
+      "kind": "species",
+      "seed": 4164834522,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Goliath|XPHB/Goliath; Cloud Giant Ancestry",
+      "kind": "species",
+      "seed": 233907027,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Goliath|XPHB/Goliath; Fire Giant Ancestry",
+      "kind": "species",
+      "seed": 991821508,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Goliath|XPHB/Goliath; Frost Giant Ancestry",
+      "kind": "species",
+      "seed": 3505411786,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Goliath|XPHB/Goliath; Hill Giant Ancestry",
+      "kind": "species",
+      "seed": 1898055845,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Goliath|XPHB/Goliath; Stone Giant Ancestry",
+      "kind": "species",
+      "seed": 2064159051,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Goliath|XPHB/Goliath; Storm Giant Ancestry",
+      "kind": "species",
+      "seed": 2666962063,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Grung|OGA",
+      "kind": "species",
+      "seed": 2184993970,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Hadozee|AAG",
+      "kind": "species",
+      "seed": 130216405,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 3
+    },
+    {
+      "id": "species:Half-Orc|PHB",
+      "kind": "species",
+      "seed": 1134021868,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Halfling|XPHB",
+      "kind": "species",
+      "seed": 2376735877,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Harengon|MPMM",
+      "kind": "species",
+      "seed": 1136396975,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Hexblood|RHW",
+      "kind": "species",
+      "seed": 888726772,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Hobgoblin|MPMM",
+      "kind": "species",
+      "seed": 1858067141,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Human|XPHB",
+      "kind": "species",
+      "seed": 3886047125,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Gavony)",
+      "kind": "species",
+      "seed": 1246907208,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Kessig)",
+      "kind": "species",
+      "seed": 3742849196,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Nephalia)",
+      "kind": "species",
+      "seed": 138238296,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Stensia)",
+      "kind": "species",
+      "seed": 1089916901,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Human (Ixalan)|PSX",
+      "kind": "species",
+      "seed": 1522847266,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Human (Kaladesh)|PSK",
+      "kind": "species",
+      "seed": 771577571,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Human (Zendikar)|PSZ",
+      "kind": "species",
+      "seed": 3706680789,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Kalashtar|EFA",
+      "kind": "species",
+      "seed": 4081451825,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Kender|DSotDQ",
+      "kind": "species",
+      "seed": 3832786486,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Kenku|MPMM",
+      "kind": "species",
+      "seed": 3860243965,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Khenra|PSA",
+      "kind": "species",
+      "seed": 2076398809,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Khoravar|EFA",
+      "kind": "species",
+      "seed": 3140743704,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Kithkin|LFL/Kithkin; Lorwyn",
+      "kind": "species",
+      "seed": 293193639,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Kithkin|LFL/Kithkin; Shadowmoor",
+      "kind": "species",
+      "seed": 3632694427,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Kobold|MPMM/Kobold; Craftiness",
+      "kind": "species",
+      "seed": 183161725,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Kobold|MPMM/Kobold; Defiance",
+      "kind": "species",
+      "seed": 1291416062,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Kobold|MPMM/Kobold; Draconic Sorcery",
+      "kind": "species",
+      "seed": 876871701,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Kor|PSZ",
+      "kind": "species",
+      "seed": 819160557,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Leonin|MOT",
+      "kind": "species",
+      "seed": 403086181,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Lizardfolk|MPMM",
+      "kind": "species",
+      "seed": 3714633681,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Locathah|LR",
+      "kind": "species",
+      "seed": 2589160886,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Lorwyn Changeling|LFL",
+      "kind": "species",
+      "seed": 1559326289,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Loxodon|GGR",
+      "kind": "species",
+      "seed": 2696555061,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Lupin|RHW",
+      "kind": "species",
+      "seed": 742062093,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Merfolk|PSZ/Merfolk (Ixalan; Blue)",
+      "kind": "species",
+      "seed": 1987434057,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Merfolk|PSZ/Merfolk (Ixalan; Green)",
+      "kind": "species",
+      "seed": 3843885660,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Merfolk|PSZ/Merfolk (Zendikar; Cosi Creed)",
+      "kind": "species",
+      "seed": 2166863161,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Merfolk|PSZ/Merfolk (Zendikar; Emeria Creed)",
+      "kind": "species",
+      "seed": 3061979710,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Merfolk|PSZ/Merfolk (Zendikar; Ula Creed)",
+      "kind": "species",
+      "seed": 93220489,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Minotaur|MPMM",
+      "kind": "species",
+      "seed": 96757300,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Minotaur (Amonkhet)|PSA",
+      "kind": "species",
+      "seed": 3721414923,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Naga|PSA",
+      "kind": "species",
+      "seed": 1579806129,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Orc|XPHB",
+      "kind": "species",
+      "seed": 1505701004,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Orc (Ixalan)|PSX",
+      "kind": "species",
+      "seed": 2106756727,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Owlin|SCC",
+      "kind": "species",
+      "seed": 3482655186,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Plasmoid|AAG",
+      "kind": "species",
+      "seed": 1249708922,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Reborn|RHW",
+      "kind": "species",
+      "seed": 3716374661,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Rimekin|LFL",
+      "kind": "species",
+      "seed": 1748343433,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Satyr|MPMM",
+      "kind": "species",
+      "seed": 996021410,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Sea Elf|MPMM",
+      "kind": "species",
+      "seed": 3327750629,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Shadar-Kai|MPMM",
+      "kind": "species",
+      "seed": 1004048926,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Shifter|EFA/Shifter; Beasthide",
+      "kind": "species",
+      "seed": 259113913,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Shifter|EFA/Shifter; Longtooth",
+      "kind": "species",
+      "seed": 1237967782,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Shifter|EFA/Shifter; Swiftstride",
+      "kind": "species",
+      "seed": 4112535236,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Shifter|EFA/Shifter; Wildhunt",
+      "kind": "species",
+      "seed": 1177527391,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Simic Hybrid|GGR",
+      "kind": "species",
+      "seed": 4147524455,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Siren|PSX",
+      "kind": "species",
+      "seed": 246770586,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Tabaxi|MPMM",
+      "kind": "species",
+      "seed": 3821084492,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Thri-kreen|AAG",
+      "kind": "species",
+      "seed": 2490119400,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "species:Tiefling|XPHB/Tiefling; Abyssal Legacy",
+      "kind": "species",
+      "seed": 2234480616,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Tiefling|XPHB/Tiefling; Chthonic Legacy",
+      "kind": "species",
+      "seed": 3827793365,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Tiefling|XPHB/Tiefling; Infernal Legacy",
+      "kind": "species",
+      "seed": 2002158594,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "species:Tortle|MPMM",
+      "kind": "species",
+      "seed": 1614516343,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Triton|MPMM",
+      "kind": "species",
+      "seed": 3214222481,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Vampire|PSZ/Vampire (Ixalan)",
+      "kind": "species",
+      "seed": 121137192,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    },
+    {
+      "id": "species:Vampire|PSZ/Vampire (Zendikar)",
+      "kind": "species",
+      "seed": 3187266937,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Vedalken|GGR",
+      "kind": "species",
+      "seed": 2508413928,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Vedalken|PSK",
+      "kind": "species",
+      "seed": 3844172594,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Verdan|AI",
+      "kind": "species",
+      "seed": 994799002,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "species:Warforged|EFA",
+      "kind": "species",
+      "seed": 3193880409,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 8
+    },
+    {
+      "id": "species:Yuan-Ti|MPMM",
+      "kind": "species",
+      "seed": 2826216002,
+      "build": {
+        "ok": true,
+        "iterations": 2,
+        "pendencies": {
+          "basic": 0,
+          "fixup": 0,
+          "total": 0
+        },
+        "problems": []
+      },
+      "export": {
+        "ok": true,
+        "shape": [],
+        "roundtrip": {
+          "ok": true,
+          "diffs": [],
+          "known": [],
+          "waived": 0
+        }
+      },
+      "ms": 5
+    }
+  ]
+}

@@ -1,0 +1,265 @@
+/* Mesma altura (40px) da barra de busca ao lado - sempre na mesma linha.
+ * Mesmo padrão de cor do botão "Select" do SelectorPanel. */
+.shopBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: #fff;
+  cursor: pointer;
+  flex: none;
+  white-space: nowrap;
+}
+
+.shopBtn:hover {
+  filter: brightness(1.08);
+}
+
+/* --- Rodapé de compra do preview: quantidade + total + Comprar -------------- */
+.buyBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.buyTotal {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  margin-left: auto;
+  text-align: right;
+}
+
+.buyTotalLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+.buyTotalValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.buyBtn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: #fff;
+  cursor: pointer;
+}
+
+.buyBtn:hover {
+  filter: brightness(1.1);
+}
+
+/* --- Ações no card: SÓ o stepper (default 0 → carrinho), centralizado ------- */
+.cardBuy {
+  display: flex;
+  justify-content: center;
+}
+
+
+/* --- Carrinho: barra inferior + gaveta ------------------------------------- */
+/* Vive dentro do .panel do SelectorPanel (position: relative, overflow: hidden).
+ * A barra é um flex-child no fluxo (fica no rodapé); a gaveta é absoluta e sobe. */
+/* z-index 4 fica acima do corpo/resultados, mas ABAIXO da tela de detalhe do
+ * mobile (.detailScreen z-index 5) - quando o detalhe abre, ele cobre o carrinho. */
+.cartWrap {
+  position: relative;
+  flex: none;
+  z-index: 4;
+}
+
+.cartBar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+  font: inherit;
+}
+
+.cartBar:hover {
+  background: var(--bg);
+}
+
+.cartBarIcon {
+  font-size: 18px;
+}
+
+.cartBarCount {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cartBarTotal {
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.cartBarCta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.cartChevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  transform: rotate(180deg);
+}
+
+.cartChevronUp {
+  transform: rotate(0deg);
+}
+
+/* Fundo que fecha a gaveta ao tocar fora (cobre o corpo do painel). */
+.cartBackdrop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 3000px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.cartSheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  max-height: min(60vh, 460px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.cartSheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cartSheetTitle {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-h);
+}
+
+.cartClear {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  color: #e05050;
+  cursor: pointer;
+}
+
+.cartClear:hover {
+  border-color: #e05050;
+}
+
+.cartList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cartRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+}
+
+.cartRow + .cartRow {
+  border-top: 1px solid var(--border);
+}
+
+.cartRowInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cartRowName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cartRowInfo:hover .cartRowName {
+  color: var(--accent);
+}
+
+.cartRowPrice {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.cartRowLine {
+  min-width: 64px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.cartSheetFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+}

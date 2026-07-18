@@ -1,0 +1,790 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Cabeçalho: moedas + card de carga/attunement -------------------------- */
+
+.header {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.statusCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  flex: none;
+}
+
+/* Em telas estreitas o header empilha (moedas em cima, carga/attunement
+ * embaixo) - lado a lado as moedas ficam sem espaço e quebram 1 por linha. */
+@media (max-width: 700px) {
+  .header {
+    flex-direction: column;
+  }
+  /* Em coluna, flex:1 do card de moedas agiria no eixo VERTICAL (esticaria
+   * o card); cada card fica com a altura natural. */
+  .header > * {
+    flex: none;
+  }
+  .statusCard {
+    justify-content: space-between;
+  }
+}
+
+.carried {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 96px;
+}
+
+.carriedText {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.carriedOver .carriedText {
+  color: #e05050;
+}
+
+.carriedBar {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.carriedFill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.75;
+  transition: width 0.25s ease;
+}
+
+.carriedFillOver {
+  background: #e05050;
+  opacity: 1;
+}
+
+.statusDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+.attuned {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.attunedOver {
+  color: #e05050;
+}
+
+/* --- Controles: busca + loja (1 linha fixa); sort/group abaixo das abas ----- */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 14px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  box-sizing: border-box;
+  gap: 6px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  flex: none;
+}
+
+.selectLabel {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.select select {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 4px;
+  align-self: stretch;
+  border: none;
+  /* Fundo/cor explícitos: com `transparent` o Chrome no Windows desenha o
+   * controle nativo com fundo branco e texto claro → ilegível. */
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+/* As opções da lista suspensa herdam do sistema (branco): força tema escuro. */
+.select select option {
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.select select:focus {
+  outline: none;
+}
+
+.select:focus-within {
+  border-color: var(--accent-border);
+}
+
+/* Mobile: Sort e Group dividem a largura toda (metade cada), como os controles
+ * acima - em vez de ficarem encolhidos à esquerda. */
+@media (max-width: 640px) {
+  .filters .select {
+    flex: 1;
+    min-width: 0;
+  }
+  .filters .select select {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* --- Sub-abas de grupo - mesmo estilo pill do ClassTab. --------------------- */
+
+.subTabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.subTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.subTab {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  /* Cresce pra preencher a largura toda quando as abas cabem (mesma largura
+   * dos controles acima); quando não cabem, mantêm o tamanho e a barra rola. */
+  flex: 1 0 auto;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.subTab:hover {
+  color: var(--text-h);
+}
+
+.subTabActive {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.subTabIcon {
+  font-size: 13px;
+  line-height: 1;
+  filter: grayscale(0.35);
+}
+
+/* --- Painéis de seção (estilo dnd5e items-section) --------------------------- */
+
+.empty {
+  font-size: 14px;
+  opacity: 0.6;
+  padding: 20px 0;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+/* Header do painel: nome + contagem + chevron; clicável = colapsa/expande. */
+.panelHead {
+  appearance: none;
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.panelHead:hover {
+  filter: brightness(1.15);
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panelCount {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 7px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.panelChevron {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.panelChevronClosed {
+  transform: rotate(-90deg);
+}
+
+/* Reset do <ul>: sem a margem vertical (~16px) nem o padding-left (~40px)
+ * padrão do browser - eram a "margem grande à esquerda" e o espaço morto
+ * acima/abaixo das listas. */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Linhas flat dentro do painel, separadas por divisor - compactas. */
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px;
+}
+
+.list .row + .row,
+.panelHead + .list .row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.rowActive {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Área clicável (thumb + textos) → detalhes do item. */
+.rowHit {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 150px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rowHit:disabled {
+  cursor: default;
+}
+
+.rowHit:not(:disabled):hover .rowName {
+  color: var(--accent);
+}
+
+.thumb,
+.thumbGlyph {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  object-fit: cover;
+}
+
+.thumbGlyph {
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  filter: grayscale(0.35);
+  opacity: 0.8;
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowName {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+/* Sublinha única: tipo/propriedades + badges de raridade/attuned. */
+.rowSub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+}
+
+.rowSub:empty {
+  display: none;
+}
+
+.rowMetaLine {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.metaDot {
+  opacity: 0.7;
+}
+
+.rowRarity {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.rowAttunedChip {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.rowUnknown {
+  font-size: 11px;
+  color: #e05050;
+}
+
+/* Lado direito: peso, quantidade, equipar, menu ⋯. */
+.rowSide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-left: auto;
+}
+
+.rowWeight {
+  font-size: 12px;
+  opacity: 0.6;
+  min-width: 42px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toggle "radio" de equipar: SÓ o círculo (sem legenda nem borda). Área de
+ * toque de 28px, o dote em si é 16px. Preenchido = equipado. */
+.equipRadio {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.equipRadio:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.equipDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  box-sizing: border-box;
+}
+
+.equipRadioOn {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.equipRadioOn .equipDot {
+  background:
+    radial-gradient(circle at center, var(--accent) 0 4.5px, transparent 4.5px);
+  border-color: var(--accent);
+}
+
+/* Overlay de detalhe do item - mesmo padrão visual do ⓘ do PickerField.
+ * Concentra as ações do item (equipar / atunar / remover) num rodapé fixo. */
+.infoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 110;
+}
+
+.infoPanel {
+  width: 100%;
+  max-width: 560px;
+  height: min(85svh, 700px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.infoHead {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.infoClose {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.infoClose:hover {
+  background: var(--bg-soft);
+}
+
+.infoScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.infoUnresolved {
+  font-size: 14px;
+  color: #e05050;
+}
+
+/* Detalhe de um item CUSTOM (importado, sem entrada no catálogo). */
+.customDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.customName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.customMeta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted, #9aa0a6);
+}
+.customDesc {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.customDesc :is(p, ul, ol) {
+  margin: 0 0 8px;
+}
+
+/* Rodapé de ações do overlay. */
+/* Rodapé do overlay como o preview da loja: contador à esquerda, valor +
+ * equipar/atunar empurrados p/ a direita. */
+.infoActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.infoRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.infoValue {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: right;
+}
+
+.infoValueLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+.infoValueAmount {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.infoBtn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  flex: none;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.infoBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.infoBtnActive {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* --- Modal de escolha da imagem do item (upload / URL / remover) ------------ */
+.imgModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 120;
+}
+
+.imgModalPanel {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.imgModalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.imgModalHead h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.imgModalUpload {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.imgModalUpload:hover {
+  filter: brightness(1.1);
+}
+
+.imgModalDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.imgModalDivider::before,
+.imgModalDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.imgModalUrlRow {
+  display: flex;
+  gap: 8px;
+}
+
+.imgModalUrlInput {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.imgModalUrlInput:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.imgModalUrlBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.imgModalUrlBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.imgModalRemove {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: none;
+  color: #e05050;
+  cursor: pointer;
+}
+
+.imgModalRemove:hover {
+  border-color: #e05050;
+}
+
+@media (max-width: 760px) {
+  .infoOverlay {
+    padding: 0;
+  }
+  .infoPanel {
+    max-width: none;
+    height: 100svh;
+    border-radius: 0;
+    border: none;
+  }
+}

@@ -1,0 +1,214 @@
+import { describe, it, expect } from 'vitest';
+import {
+  translateOverlayEffects,
+  overlayFeatEffects,
+  overlayOptionalFeatureEffects,
+  overlayClassFeatureEffects,
+  overlaySubclassFeatureEffects,
+  overlayRaceEffects,
+} from './foundryOverlay';
+import { buildFeatureItem, buildFeatItem, buildSpeciesItem } from './foundryItems';
+
+// db sintético com fatias REAIS do overlay (shapes copiados dos arquivos).
+const db = {
+  'foundry-feats': {
+    feat: [
+      { name: 'Alert', source: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.initiativeAlert', mode: 'OVERRIDE', value: true }] }] },
+      { name: 'Tough', source: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'system.attributes.hp.bonuses.level', mode: 'ADD', value: 2 }] }] },
+    ],
+  },
+  'foundry-optionalfeatures': {
+    optionalfeature: [
+      { name: 'Gift of the Depths', source: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'system.attributes.movement.swim', mode: 'ADD', value: 30 }] }] },
+    ],
+  },
+  'foundry-class': {
+    classFeature: [
+      {
+        name: 'Rage', className: 'Barbarian', classSource: 'XPHB', source: 'XPHB', level: 1,
+        effects: [{ disabled: true, transfer: true, duration: { rounds: 10, seconds: 600 }, changes: [
+          { key: 'system.traits.dr.value', mode: 'ADD', value: 'slashing' },
+          { key: 'system.bonuses.mwak.damage', mode: 'ADD', value: '+@scale.barbarian.rage-damage' },
+        ] }],
+      },
+      // Duas edições da mesma feature - o lookup NUNCA cruza fonte.
+      {
+        name: 'Jack of All Trades', className: 'Bard', source: 'PHB', level: 2,
+        effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.jackOfAllTrades', mode: 'OVERRIDE', value: true }] }],
+      },
+      // Homônimas em níveis diferentes - nível exato vence, senão o mais baixo.
+      { name: 'Expertise', className: 'Bard', source: 'XPHB', level: 2, effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.test', mode: 'OVERRIDE', value: 'lvl2' }] }] },
+      { name: 'Expertise', className: 'Bard', source: 'XPHB', level: 9, effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.test', mode: 'OVERRIDE', value: 'lvl9' }] }] },
+    ],
+    subclassFeature: [
+      {
+        name: 'Draconic Resilience', className: 'Sorcerer', subclassShortName: 'Draconic', subclassSource: 'XPHB', source: 'XPHB', level: 3,
+        effects: [
+          { name: 'Draconic Resilience: Armor', transfer: true, changes: [{ key: 'system.attributes.ac.calc', mode: 'OVERRIDE', value: 'unarmoredBard' }] },
+          { name: 'Draconic Resilience: HP', transfer: true, changes: [{ key: 'system.attributes.hp.bonuses.overall', mode: 'ADD', value: '@classes.sorcerer.levels' }] },
+        ],
+      },
+    ],
+  },
+  'foundry-races': {
+    raceFeature: [
+      { name: 'Luck', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.halflingLucky', mode: 'OVERRIDE', value: true }] }] },
+      { name: 'Brave', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.test', mode: 'OVERRIDE', value: true }] }] },
+      { name: 'Dwarven Toughness', source: 'XPHB', raceName: 'Dwarf', raceSource: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'system.attributes.hp.bonuses.level', mode: 'ADD', value: 1 }] }] },
+    ],
+  },
+};
+
+describe('translateOverlayEffects', () => {
+  it('traduz mode string → numérico e value não-string → string', () => {
+    const [eff] = translateOverlayEffects(
+      { effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.x', mode: 'OVERRIDE', value: true }, { key: 'system.attributes.ac.bonus', mode: 'ADD', value: 2 }] }] },
+      'X',
+    );
+    expect(eff.changes).toEqual([
+      { key: 'flags.dnd5e.x', mode: 5, value: 'true', priority: null },
+      { key: 'system.attributes.ac.bonus', mode: 2, value: '2', priority: null },
+    ]);
+    expect(eff.name).toBe('X'); // fallback quando o efeito não tem nome
+    expect(eff._id).toMatch(/^[A-Za-z0-9]{16}$/);
+  });
+
+  it('transfer ausente = false (efeito on-use), disabled/duration preservados', () => {
+    const [eff] = translateOverlayEffects(
+      { effects: [{ disabled: true, duration: { seconds: 600 }, changes: [{ key: 'system.traits.dr.value', mode: 'ADD', value: 'fire' }] }] },
+      'X',
+    );
+    expect(eff.transfer).toBe(false);
+    expect(eff.disabled).toBe(true);
+    expect(eff.duration).toEqual({ seconds: 600 });
+  });
+
+  it('mantém efeitos só-de-status (alvo), com statuses', () => {
+    const [eff] = translateOverlayEffects(
+      { effects: [{ name: 'Turned', statuses: ['frightened', 'incapacitated'], duration: { seconds: 60 } }] },
+      'Turn Undead',
+    );
+    expect(eff.statuses).toEqual(['frightened', 'incapacitated']);
+    expect(eff.transfer).toBe(false);
+  });
+
+  it('pula encantamentos, chaves fora de system./flags. e changes de HP bônus', () => {
+    const out = translateOverlayEffects(
+      {
+        effects: [
+          { type: 'enchantment', changes: [{ key: 'system.attributes.ac.bonus', mode: 'ADD', value: 1 }] },
+          { transfer: true, changes: [{ key: 'activities[enchant].consumption.targets', mode: 'OVERRIDE', value: {} }] },
+          { transfer: true, changes: [{ key: 'system.attributes.hp.bonuses.overall', mode: 'ADD', value: 40 }] },
+        ],
+      },
+      'X',
+    );
+    expect(out).toEqual([]); // todos filtrados (efeito vazio some)
+  });
+
+  it('serializa value objeto como JSON', () => {
+    const [eff] = translateOverlayEffects(
+      { effects: [{ transfer: true, changes: [{ key: 'system.damage.parts', mode: 'OVERRIDE', value: [['2d6', 'fire']] }] }] },
+      'X',
+    );
+    expect(eff.changes[0].value).toBe('[["2d6","fire"]]');
+  });
+});
+
+describe('lookups do overlay', () => {
+  it('feat: nome+fonte exatos; fonte errada não cruza edição', () => {
+    expect(overlayFeatEffects(db, 'Alert', 'XPHB')).toHaveLength(1);
+    expect(overlayFeatEffects(db, 'Alert', 'PHB')).toEqual([]);
+    expect(overlayFeatEffects(null, 'Alert', 'XPHB')).toEqual([]); // sem db
+  });
+
+  it('feat Tough fica vazio (HP bônus é export nativo, não AE)', () => {
+    expect(overlayFeatEffects(db, 'Tough', 'XPHB')).toEqual([]);
+  });
+
+  it('optional feature: nome+fonte', () => {
+    const [eff] = overlayOptionalFeatureEffects(db, 'Gift of the Depths', 'XPHB');
+    expect(eff.changes[0]).toMatchObject({ key: 'system.attributes.movement.swim', mode: 2, value: '30' });
+  });
+
+  it('classFeature: classe+fonte, nível exato primeiro senão o mais baixo', () => {
+    const rage = overlayClassFeatureEffects(db, { name: 'Rage', classId: 'barbarian', source: 'XPHB', level: 1 });
+    expect(rage).toHaveLength(1);
+    expect(rage[0].disabled).toBe(true);
+    expect(rage[0].changes.map((c) => c.key)).toEqual(['system.traits.dr.value', 'system.bonuses.mwak.damage']);
+    expect(overlayClassFeatureEffects(db, { name: 'Jack of All Trades', classId: 'bard', source: 'XPHB', level: 2 })).toEqual([]);
+    const l9 = overlayClassFeatureEffects(db, { name: 'Expertise', classId: 'bard', source: 'XPHB', level: 9 });
+    expect(l9[0].changes[0].value).toBe('lvl9');
+    const noLevel = overlayClassFeatureEffects(db, { name: 'Expertise', classId: 'bard', source: 'XPHB', level: 4 });
+    expect(noLevel[0].changes[0].value).toBe('lvl2'); // sem nível exato → mais baixo
+  });
+
+  it('subclassFeature: só a metade CA do Draconic Resilience sobrevive (HP é nativo)', () => {
+    const out = overlaySubclassFeatureEffects(db, { name: 'Draconic Resilience', classId: 'sorcerer', shortName: 'Draconic', source: 'XPHB', level: 3 });
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe('Draconic Resilience: Armor');
+    expect(out[0].changes[0]).toMatchObject({ key: 'system.attributes.ac.calc', mode: 5 });
+  });
+
+  it('raça: só traços presentes nas entries da raça resolvida', () => {
+    const halfling = { name: 'Halfling', source: 'XPHB', entries: [{ name: 'Luck', entries: [] }, 'texto solto'] };
+    const out = overlayRaceEffects(db, halfling); // Brave NÃO está nas entries
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe('Luck');
+    expect(overlayRaceEffects(db, { name: 'Dwarf', source: 'XPHB', entries: [{ name: 'Dwarven Toughness' }] })).toEqual([]); // HP filtrado
+    expect(overlayRaceEffects(db, null)).toEqual([]);
+  });
+
+  it('raça de _versions: cai no _baseName quando o nome mesclado não indexa', () => {
+    const lineage = { name: 'Halfling; Lightfoot', _baseName: 'Halfling', source: 'XPHB', entries: [{ name: 'Luck' }] };
+    expect(overlayRaceEffects(db, lineage)).toHaveLength(1);
+  });
+});
+
+describe('integração com foundryItems (precedência curado > overlay)', () => {
+  it('feature SEM entrada curada ganha os effects do overlay', () => {
+    const item = buildFeatureItem({ name: 'Rage', level: 1, source: 'XPHB', entries: ['...'], classId: 'barbarian' }, db);
+    expect(item.effects).toHaveLength(1);
+    expect(item.effects[0].transfer).toBe(true);
+  });
+
+  it('feature COM entrada curada ignora o overlay (tudo-ou-nada)', () => {
+    // Fast Movement tem entrada curada; um overlay homônimo não pode duplicar.
+    const withOverlay = {
+      ...db,
+      'foundry-class': { classFeature: [{ name: 'Fast Movement', className: 'Barbarian', source: 'XPHB', level: 5, effects: [{ transfer: true, changes: [{ key: 'system.attributes.movement.walk', mode: 'ADD', value: 10 }] }] }] },
+    };
+    const item = buildFeatureItem({ name: 'Fast Movement', level: 5, source: 'XPHB', entries: ['...'], classId: 'barbarian' }, withOverlay);
+    expect(item.effects).toHaveLength(1); // só o curado
+    expect(item.effects[0].changes[0]).toMatchObject({ key: 'system.attributes.movement.walk', mode: 2, value: '10' });
+  });
+
+  it('feature de subclasse roteia pelo índice de subclasse', () => {
+    const item = buildFeatureItem(
+      { name: 'Draconic Resilience', level: 3, source: 'XPHB', entries: ['...'], classId: 'sorcerer', subclass: { shortName: 'Draconic' } },
+      db,
+    );
+    expect(item.effects.map((e) => e.name)).toEqual(['Draconic Resilience: Armor']);
+  });
+
+  it('overlayName redireciona o lookup (opção de featureoption)', () => {
+    const item = buildFeatureItem(
+      { name: 'Alguma Feature: Rage', level: 1, source: 'XPHB', entries: [], classId: 'barbarian', overlayName: 'Rage' },
+      db,
+    );
+    expect(item.effects).toHaveLength(1);
+  });
+
+  it('talento sem entrada curada ganha o effect do overlay (Alert)', () => {
+    const item = buildFeatItem({ name: 'Alert', source: 'XPHB', entries: ['...'] }, { level: 4, db });
+    expect(item.effects).toHaveLength(1);
+    expect(item.effects[0].changes[0]).toMatchObject({ key: 'flags.dnd5e.initiativeAlert', mode: 5, value: 'true' });
+  });
+
+  it('item de raça carrega os effects dos traços', () => {
+    const halfling = { name: 'Halfling', source: 'XPHB', size: ['S'], speed: 30, entries: [{ name: 'Luck', entries: [] }] };
+    const item = buildSpeciesItem(null, halfling, db);
+    expect(item.effects).toHaveLength(1);
+    expect(item.effects[0].transfer).toBe(true);
+  });
+});

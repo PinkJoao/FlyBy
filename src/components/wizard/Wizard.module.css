@@ -1,0 +1,257 @@
+/* O wizard preenche a área de conteúdo (o `.main` do App). Cabeçalho e rodapé
+ * fixos; só o corpo rola. */
+.wizard {
+  height: 100%;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- Cabeçalho: back + progresso + sair ------------------------------------ */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.progressWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.progressBar {
+  width: 100%;
+  height: 5px;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+.progressText {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  opacity: 0.55;
+}
+
+.exit {
+  appearance: none;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+.exit:hover {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+/* --- Corpo: rola --------------------------------------------------------- */
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stepKicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+.stepTitle {
+  margin: 0;
+  font-size: 26px;
+  color: var(--text-h);
+}
+.stepHelp {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+.stepBody {
+  margin-top: 16px;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 32px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  opacity: 0.85;
+}
+
+/* --- Selo de estado ------------------------------------------------------- */
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.complete {
+  color: #3fa14b;
+  border-color: rgba(63, 161, 75, 0.5);
+  background: rgba(63, 161, 75, 0.1);
+}
+.incomplete {
+  color: #e0a02e;
+  border-color: rgba(224, 160, 46, 0.5);
+  background: rgba(224, 160, 46, 0.1);
+}
+.optional {
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* --- Rodapé: Back · Next · Skip (estilo similar; Next em destaque) --------- */
+.foot {
+  display: flex;
+  gap: 10px;
+  flex: none;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.navBtn {
+  appearance: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  flex: none;
+}
+.navBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+/* Next/Finish: mesma forma, com preenchimento e borda accent (o principal). */
+.primaryBtn {
+  flex: 1;
+  border-color: var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.primaryBtn:hover {
+  filter: brightness(1.08);
+}
+
+/* Bloqueado (passo obrigatório vazio): visivelmente desabilitado. */
+.navBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  border-color: var(--border);
+  color: var(--text);
+  filter: none;
+}
+.navBtn:disabled:hover {
+  border-color: var(--border);
+  color: var(--text);
+  filter: none;
+}
+
+.footNote {
+  flex: none;
+  margin: 8px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: #e0a02e;
+}
+
+/* --- Revisão -------------------------------------------------------------- */
+.reviewList {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reviewRow {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  overflow: hidden; /* o hover do botão respeita os cantos arredondados */
+}
+.reviewJump {
+  appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.reviewJump:hover {
+  background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+}
+.reviewJump:hover .reviewName {
+  color: var(--accent);
+}
+.reviewText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.reviewName {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 15px;
+}
+.reviewSub {
+  font-size: 12px;
+  opacity: 0.6;
+}

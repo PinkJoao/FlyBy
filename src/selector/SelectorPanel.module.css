@@ -1,0 +1,632 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  /* Acima do overlay do guia (120), pois é aberto de DENTRO dele; abaixo dos
+     diálogos (DialogHost 1000, ex: confirmar magia fora da lista). */
+  z-index: 150;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  height: min(90svh, 800px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+/* Tela de DETALHE (mobile: tocar num card abre isto antes de selecionar). */
+.detailScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.detailHead {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.detailScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.headerText {
+  min-width: 0;
+}
+/* Linha de dica opcional sob o título (glossário). */
+.hint {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text);
+  opacity: 0.8;
+}
+.close {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+.close:hover {
+  background: var(--bg-soft);
+}
+
+.searchBar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.search {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.search:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+.filterToggle {
+  display: none; /* só no mobile */
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr 260px;
+  min-height: 0;
+}
+/* Sem preview (glossário): só filtros + resultados. */
+.bodyNoPreview {
+  grid-template-columns: 220px 1fr;
+}
+
+/* ---- Filtros ---- */
+.filters {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Puxador da gaveta: só existe no mobile (ver media query). */
+.grabber {
+  display: none;
+}
+
+/* Cabeçalho dos filtros GRUDADO no topo: legenda + Clear/Apply continuam
+ * alcançáveis com a lista longa rolada. O fundo evita que os chips passem
+ * por baixo. */
+.filtersHead {
+  position: sticky;
+  top: -16px; /* compensa o padding do container */
+  z-index: 2;
+  margin: -16px -16px 12px;
+  padding: 16px 16px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.filtersHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Busca DENTRO dos filtros: oculta atrás da lupa no desktop. */
+.filterSearchBtn {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  /* QUADRADO cujo lado = altura do "Clear": linha (1lh) + padding vertical (10)
+     + borda (2). A line-height do app é um comprimento HERDADO (font: 18px/145%
+     → 26.1px); `line-height: inherit` traz esse MESMO valor que o "Clear" usa
+     (via `font: inherit`), então `1lh` é idêntico aos dois e a lupa acompanha a
+     altura do "Clear" mesmo quando ele está oculto. Sem o inherit, o UA do
+     <button> resetaria para `normal` e a lupa saía mais baixa.
+     (aspect-ratio + align-self:stretch NÃO servem: o aspect-ratio é ignorado
+     num flex item com altura esticada, e a lupa saía retangular.) */
+  line-height: inherit;
+  width: calc(1lh + 12px);
+  height: calc(1lh + 12px);
+  padding: 0;
+  font-size: 17px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  transform: scaleX(-1); /* lupa apontando p/ a esquerda, como no resto do app */
+}
+.filterSearchBtn:hover {
+  color: var(--accent);
+  filter: brightness(1.1);
+}
+.filterSearchBtnOn {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.filterSearch {
+  margin-top: 10px;
+}
+.filterSearchHidden {
+  display: none;
+}
+.filterSearchInput {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.filterSearchInput:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.noFilters {
+  font-size: 13px;
+  opacity: 0.6;
+}
+/* Legenda em DUAS linhas (include / exclude): não disputa largura com os botões
+ * quando o "Clear" aparece. */
+.legend {
+  font-size: 11px;
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.legendRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.dotInc,
+.dotExc {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.dotInc {
+  background: var(--accent);
+}
+.dotExc {
+  background: #e05050;
+}
+.filtersActions {
+  display: inline-flex;
+  /* Ambos têm a MESMA altura (1lh + 12px), então centralizar basta; a lupa
+     dimensiona-se sozinha (ver .filterSearchBtn), não depende de stretch. */
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.clear {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+}
+.clear:hover {
+  color: #e05050;
+  filter: brightness(1.1);
+}
+.applyFilters {
+  display: none; /* só no mobile (gaveta) */
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--accent);
+  cursor: pointer;
+}
+.applyFilters:hover {
+  filter: brightness(1.1);
+}
+.filterGroup {
+  margin-bottom: 18px;
+}
+.filterGroup h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  appearance: none;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.chip:hover {
+  filter: brightness(1.1);
+  border-color: var(--accent-border);
+}
+.inc {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.inc:hover {
+  border-color: var(--accent);
+}
+.exc {
+  background: rgba(224, 80, 80, 0.12);
+  border-color: #e05050;
+  color: #e05050;
+  text-decoration: line-through;
+}
+.exc:hover {
+  border-color: #e05050;
+}
+
+/* ---- Resultados ---- */
+.results {
+  overflow-y: auto;
+  padding: 16px;
+}
+.count {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+/* Sentinel do carregamento em levas: ocupa a linha toda, altura mínima. */
+.sentinel {
+  grid-column: 1 / -1;
+  height: 1px;
+}
+.card {
+  width: 100%;
+  appearance: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: inherit;
+  transition: border-color 0.12s ease;
+}
+.card:hover {
+  border-color: var(--accent-border);
+}
+.cardPinned {
+  border-color: var(--accent-border);
+}
+.cardSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.cardTitle {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 15px;
+}
+.cardSub {
+  font-size: 12px;
+  opacity: 0.6;
+  font-family: var(--mono);
+}
+
+.cardMeta {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* Card COM ações (loja): a caixa é um <div>; dentro, o botão de info (info do
+ * item, clicável → preview) + o stepper. `justify-content: space-between` empurra
+ * o stepper para a base do card. */
+.cardBox {
+  justify-content: space-between;
+  cursor: default;
+  padding: 10px;
+}
+.cardInfo {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Faixa de ações DENTRO do card (loja: stepper de quantidade, centralizado). */
+.cardActions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.badge {
+  font-style: normal;
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* Badge de RARIDADE (loja): pequeno e bordado (mesmo padrão da aba de Inventário
+ * e das tags de tipo de classe/raça); a cor vem inline por raridade. */
+.rarityBadge {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* Tons de badge: neutro (cinza) / caster azul / half accent / martial vermelho. */
+.toneNeutral {
+  background: rgba(160, 200, 230, 0.14);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.toneBlue {
+  background: rgba(90, 150, 255, 0.14);
+  color: #7fb0ff;
+}
+.toneAccent {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.toneRed {
+  background: rgba(224, 80, 80, 0.14);
+  color: #ff8a8a;
+}
+
+/* Pré-requisitos no card (coloridos pelo status contra o personagem). */
+.prereq {
+  font-style: normal;
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.preOk {
+  border-color: rgba(80, 200, 120, 0.55);
+  background: rgba(80, 200, 120, 0.1);
+}
+.preBad {
+  border-color: rgba(224, 80, 80, 0.6);
+  background: rgba(224, 80, 80, 0.1);
+}
+.preUnknown {
+  border-color: rgba(230, 180, 60, 0.55);
+  background: rgba(230, 180, 60, 0.1);
+}
+
+/* ---- Preview ---- */
+.preview {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.previewScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+}
+.previewFoot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+.selectBtn {
+  appearance: none;
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: #fff;
+  cursor: pointer;
+}
+.selectBtn:hover {
+  filter: brightness(1.08);
+}
+.muted {
+  opacity: 0.5;
+  padding: 18px;
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 760px) {
+  .overlay {
+    padding: 0;
+  }
+  .panel {
+    height: 100svh;
+    max-width: none;
+    border-radius: 0;
+    border: none;
+  }
+  .filterToggle {
+    display: block;
+  }
+  .applyFilters {
+    display: inline-block;
+  }
+  .body {
+    grid-template-columns: 1fr; /* só resultados */
+  }
+  .preview {
+    display: none; /* preview vira o próprio toque no card */
+  }
+  .filters {
+    position: absolute;
+    inset: 0;
+    top: auto;
+    height: 70svh;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    z-index: 10;
+    padding-top: 0;
+  }
+  .filtersOpen {
+    transform: translateY(0);
+  }
+
+  /* A busca principal some enquanto a gaveta está aberta (não filtra os chips e
+   * rouba a altura útil da lista). */
+  .searchBarHidden {
+    display: none;
+  }
+
+  /* Puxador: só o "pill" no topo da gaveta, sobre o fundo do próprio drawer.
+   * Fundo TRANSPARENTE e SEM sticky de propósito: antes ele era uma faixa opaca
+   * fixada no mesmo `top: 0` do cabeçalho, e as duas se sobrepunham (a faixa
+   * colidia com o conteúdo acima). Agora rola junto e o `.filtersHead` opaco é o
+   * único elemento fixo. */
+  .grabber {
+    display: block;
+    padding: 10px 0 6px;
+    background: transparent;
+    cursor: grab;
+    touch-action: none; /* o gesto é nosso, não do scroll */
+  }
+  .grabber:active {
+    cursor: grabbing;
+  }
+  .grabberBar {
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--border);
+  }
+
+  .filtersHead {
+    top: 0;
+    margin-top: 0;
+    padding-top: 6px;
+  }
+
+  /* Com a busca principal escondida, sobra espaço: a busca dos filtros fica
+   * SEMPRE visível (é onde ela mais ajuda, em tela pequena). */
+  .filterSearchHidden {
+    display: block;
+  }
+  .filterSearchBtn {
+    display: none;
+  }
+
+  /* No mobile a legenda volta a ser HORIZONTAL (só no desktop ela empilha para
+   * não brigar com o "Clear" - aqui a gaveta é larga e ganha-se altura). */
+  .legend {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+}

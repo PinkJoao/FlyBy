@@ -1,0 +1,56 @@
+.menu {
+  position: fixed;
+  min-width: 190px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 200;
+}
+
+.item {
+  appearance: none;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: inherit;
+  color: var(--text-h);
+}
+
+.item:hover:not(:disabled) {
+  background: var(--accent-bg);
+}
+
+.item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.itemSub {
+  font-size: 12px;
+  color: var(--text);
+}
+
+/* Ação destrutiva (Delete): vermelha, e o hover não usa o accent. */
+.itemDanger .itemTitle {
+  color: #e05050;
+}
+
+.itemDanger:hover:not(:disabled) {
+  background: rgba(224, 80, 80, 0.12);
+}

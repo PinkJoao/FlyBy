@@ -1,0 +1,73 @@
+/* Mesma identidade visual do `Stepper` (pílula, − e + em accent, número no
+ * meio) - mas um componente à parte, porque aqui o "valor" é derivado das
+ * classes e o clique pode abrir um diálogo. Os tokens espelham os defaults do
+ * Stepper.module.css de propósito: se um mudar lá, mude aqui também. */
+.group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  flex: none;
+}
+
+.btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 0; /* centra o glifo pela CAIXA, como no Stepper */
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-bg);
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* O número (grande) com "LVL" abaixo - o Stepper só tem o número, mas aqui a
+ * unidade importa: este controle vive fora de um card rotulado. */
+.level {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 40px;
+  padding: 2px 4px;
+}
+
+.levelValue {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.levelLabel {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  opacity: 0.5;
+  line-height: 1;
+}
+

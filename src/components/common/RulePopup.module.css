@@ -1,0 +1,37 @@
+/* Corpo do popup de regra. O .message do DialogHost usa white-space: pre-line
+ * (para \n de textos simples) - aqui o conteúdo é EntryContent com parágrafos
+ * próprios, então voltamos ao normal para não abrir buracos no texto. */
+.body {
+  white-space: normal;
+  text-align: left;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 10px;
+}
+
+.badge,
+.source {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.source {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* O último parágrafo do EntryContent não precisa da margem inferior. */
+.body :last-child > p:last-child {
+  margin-bottom: 0;
+}

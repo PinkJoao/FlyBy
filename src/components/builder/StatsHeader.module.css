@@ -1,0 +1,428 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Tiles: Level / Hit Points / Armor Class / Alignment ------------------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+/* Telas estreitas: 2×2 em vez de 4 apertados numa linha. Reordena para manter
+ * Hit Points e Armor Class SEMPRE lado a lado (linha de baixo): topo Level +
+ * Alignment, base Hit Points + Armor Class. Ordem no DOM: Level(1) HP(2) AC(3)
+ * Alignment(4) - só o `order` muda, o desktop (4 numa linha) fica intacto. */
+@media (max-width: 620px) {
+  .tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tiles > :nth-child(2) { order: 3; } /* Hit Points → base-esquerda */
+  .tiles > :nth-child(3) { order: 4; } /* Armor Class → base-direita */
+  .tiles > :nth-child(4) { order: 2; } /* Alignment → topo-direita */
+}
+
+.tile {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tileHead {
+  width: 100%;
+  /* Altura fixa = altura padrão (colapsada) do card de atributo, para os 3
+     tiles ficarem idênticos mesmo quando o alinhamento quebra em 2 linhas. */
+  height: 88px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  position: relative;
+  cursor: pointer;
+}
+
+button.tileHead:hover {
+  background: var(--accent-bg);
+}
+
+/* Fontes FLUIDAS (clamp+vw): os tiles têm ~1/3 da largura da tela, então em
+   telas muito estreitas os textos e mini botões encolhem junto em vez de
+   estourar/quebrar. O teto é o tamanho de sempre (≥ ~380px nada muda). */
+.tile .value {
+  font-size: clamp(19px, 6.9vw, 26px);
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.1;
+}
+
+.tile .value.small {
+  font-size: clamp(11px, 3.7vw, 14px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.tile .label {
+  font-size: clamp(9px, 2.9vw, 11px);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  opacity: 0.6;
+}
+
+.tileChevron {
+  position: absolute;
+  top: 11px;
+  right: 12px;
+  font-size: 10px;
+  opacity: 0.45;
+  transition: transform 0.15s;
+}
+
+.tile.open .tileChevron {
+  transform: rotate(180deg);
+}
+
+.tileBody {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  padding: 4px 0;
+}
+
+.breakRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: clamp(3px, 1.2vw, 6px);
+  padding: 7px clamp(6px, 2.6vw, 10px);
+  font-size: clamp(10px, 3.2vw, 12px);
+}
+
+.breakRow + .breakRow {
+  border-top: 1px solid var(--border);
+}
+
+/* Divisória entre a seção de bônus (Constituição etc.) e os dados de vida. */
+.detailRow + .breakRow {
+  border-top: 1px solid var(--border);
+}
+
+.breakRow .bName {
+  color: var(--text-h);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.breakRow .bSub {
+  font-size: clamp(9px, 2.9vw, 11px);
+  font-style: normal;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.breakRow .bVal {
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.die {
+  font-size: clamp(10px, 3.2vw, 12px);
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.emptyNote {
+  padding: 10px 14px;
+  font-size: clamp(10px, 3.2vw, 12px);
+  opacity: 0.55;
+}
+
+/* Botões Roll / Reset do card de HP. */
+.hpButtons {
+  display: flex;
+  gap: clamp(4px, 1.5vw, 6px);
+  padding: clamp(5px, 2vw, 8px);
+  border-top: 1px solid var(--border);
+}
+
+/* Primeira linha de botões (± do HP) fica logo após a borda do corpo do tile -
+   sem borda-topo própria p/ não duplicar a linha. */
+.tileBody > .hpButtons:first-child {
+  border-top: none;
+  border-bottom: 1px solid var(--border); /* Adicione esta linha */
+}
+
+.hpBtn {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: clamp(10px, 3.2vw, 12px);
+  font-weight: 600;
+  padding: 7px 0px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  place-items: center; 
+}
+
+.hpBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.hpBtnActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* --- Alignment picker (9 options) ------------------------------------------ */
+.alignGrid {
+  display: grid;
+  /* minmax(0,1fr): sem piso de min-content - as células podem encolher de
+     verdade em telas estreitas (senão o grid estoura o card por uns px). */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  /* Fluido: em telas estreitas o grid perde padding/gap e os botões (1fr +
+     aspect-ratio) encolhem junto, sempre centralizados no mini card. */
+  gap: clamp(3px, 1.2vw, 5px);
+  padding: clamp(4px, 1.6vw, 8px) clamp(3px, 1.2vw, 8px);
+  /*Transforma este elemento em um ponto de referência de tamanho */
+  container-type: inline-size;
+}
+
+.alignBtn {
+  /* Quadrados: largura da célula (capada) e altura = largura (aspect-ratio). */
+  width: 100%;
+  min-width: 0;
+  max-width: 52px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: clamp(8px, 2.8vw, 11px);
+  font-weight: 600;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Código (LG…) por padrão; o nome por extenso fica escondido até haver espaço
+   (ver breakpoint desktop abaixo). */
+.alignFull {
+  display: none;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.alignBtn:hover {
+  color: var(--text-h);
+  filter: brightness(1.15);
+}
+
+/* Tinta leve por eixo moral: bons azuis, neutros roxos (accent), maus vermelhos. */
+.alignGood {
+  border-color: rgba(90, 150, 255, 0.35);
+  background: rgba(90, 150, 255, 0.1);
+}
+
+.alignNeutral {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.alignEvil {
+  border-color: rgba(224, 80, 80, 0.35);
+  background: rgba(224, 80, 80, 0.1);
+}
+
+/* Selecionado: cor plena do eixo. */
+.alignGood.alignSel {
+  border-color: #5a96ff;
+  color: #9dbfff;
+  background: rgba(90, 150, 255, 0.22);
+}
+
+.alignNeutral.alignSel {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.alignEvil.alignSel {
+  border-color: #e05050;
+  color: #ff9a9a;
+  background: rgba(224, 80, 80, 0.22);
+}
+
+/* --- Abilities grid -------------------------------------------------------- */
+.abilities {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+@media (max-width: 620px) {
+  .abilities {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .tile .value {
+    font-size: 22px;
+  }
+}
+
+/* Ajuste de breakpoint: O texto completo agora aparece mais cedo (550px funcionava antes do novo card de ac) */
+/* Quando O GRID tiver pelo menos 150px de largura, aplique essas regras */
+@container (min-width: 140px) {
+  .alignBtn {
+    aspect-ratio: auto;
+    max-width: none;
+    min-height: 44px;
+    padding: 4px 2px;
+  }
+  .alignCode {
+    display: none;
+  }
+  
+  .alignFull {
+    display: flex;
+    /* Usa 'cqw' para escalar o texto com base no tamanho do card, não da tela! */
+    font-size: clamp(9px, 6cqw, 11px);
+    text-align: center;
+    line-height: 1.1;
+    gap: 2px;
+  }
+}
+
+.ability {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.abilityHead {
+  padding: 10px 6px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+  position: relative;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.abilityHead:hover {
+  background: var(--accent-bg);
+}
+
+.ability.open {
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow);
+}
+
+.ability .name {
+  font-size: clamp(8px, 2.7vw, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  font-weight: 600;
+  opacity: 0.65;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.ability .total {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.05;
+}
+
+.ability .mod {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.chevron {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  font-size: 9px;
+  opacity: 0.45;
+  transition: transform 0.15s;
+}
+
+.ability.open .chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Ability expanded: base stepper / bonus / modifier --------------------- */
+.detail {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.stepperBlock {
+  display: flex;
+  flex-direction: column;
+  /* stretch (default): o Stepper (width:100%) preenche o bloco inteiro. */
+  gap: 4px;
+  /* Topo enxuto (a legenda "Base" colava alto demais antes); laterais alinham a
+     pílula com os textos das linhas de baixo. */
+  padding: 5px 10px 8px;
+}
+
+.stepLabel {
+  font-size: clamp(10px, 3.2vw, 12px);
+  opacity: 0.7;
+  text-align: center;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px clamp(6px, 2.6vw, 10px);
+  font-size: clamp(10px, 3.2vw, 12px);
+  border-top: 1px solid var(--border);
+}
+
+.detailRow .rowLabel {
+  opacity: 0.7;
+}
+
+.detailRow .rowValue {
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}

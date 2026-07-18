@@ -3274,13 +3274,17 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   SPA rewrite `**` → `/index.html`) and `.firebaserc` (default project `flyby-hub`). Deploy =
   `npm run build` + `firebase deploy`, run by the **user** (like pushes/pulls). No Cloudflare/
   wrangler config remains.
-- **Reference source material moved inside the repo.** `DnD Source Material/` (5e.tools / Foundry
-  dnd5e system / Plutonium / real actor exports) now sits at the project root instead of being a
-  sibling folder, and is **git-ignored** — never committed or redistributed (consistent with
-  DDL-0003: ship code only). CLAUDE.md §3 updated; the old two-machine sibling note retired.
-- **CLAUDE.md and `.claude/` are now tracked** (removed from `.gitignore`) so the shared working
-  agreement and project config travel with the repo. Still ignored: `.claude/settings.local.json`
-  (machine-local permission cache), `.agents/`, `skills-lock.json`.
+- **Reference source material moved inside the repo, permanently.** `DnD Source Material/`
+  (5e.tools / Foundry dnd5e system / Plutonium / real actor exports) now sits at the project root
+  instead of being a sibling folder, and is **git-ignored** — never committed or redistributed
+  (consistent with DDL-0003: ship code only). It stays in this **same in-repo location on every
+  machine**, so it resolves as `./DnD Source Material`. CLAUDE.md §3 updated; the old two-machine
+  sibling note retired.
+- **CLAUDE.md and `.claude/` config are now tracked** (removed from `.gitignore`) so the shared
+  working agreement and project config travel with the repo — `.claude/settings.json` and
+  `launch.json` are committed. `.claude/settings.local.json` is left **untracked and not
+  force-ignored** (matching the previous project, which never listed it in `.gitignore`) and its
+  stale old-project paths were cleaned. Still ignored: `.agents/`, `skills-lock.json`.
 - **Commit authorship.** The no-`Co-Authored-By` rule (working agreement §2 rule 3) is permanent.
   A **single, already-spent one-time exception** applied to the commit that un-ignored `CLAUDE.md`
   and `.claude` (bundled with these context updates), which was allowed to carry Claude's

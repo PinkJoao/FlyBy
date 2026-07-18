@@ -30,8 +30,8 @@ testing/actors/
 DnD Source Material/
 
 # Claude / AI agents
-# CLAUDE.md and .claude are tracked (shared working agreement + project config — see DDL-0037).
-# Only machine-local settings and the skills lockfile stay ignored.
-.claude/settings.local.json
+# CLAUDE.md and .claude config are tracked (shared working agreement + project config — see DDL-0037).
+# .claude/settings.local.json is a machine-local permission cache: NOT force-ignored (matching the
+# previous project's .gitignore, which never listed it) and left untracked/uncommitted, as before.
 .agents/
 skills-lock.json

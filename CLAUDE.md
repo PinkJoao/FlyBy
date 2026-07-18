@@ -65,10 +65,13 @@ These are firm user preferences — follow them unless told otherwise:
 Some may still be downloading — verify a path exists before relying on it.
 
 **The reference source material now lives INSIDE the project**, at `DnD Source Material/`
-(project root). It is **git-ignored** (never committed or redistributed — see DDL-0037 and the
-DDL-0003 licensing decision) and is used as a private, read-only reference only. It was previously
-kept as a *sibling* of the project directory across two machines (`../DnD Source Material`); that
-arrangement is **retired** — resolve it as `./DnD Source Material` relative to the project root.
+(project root), and **always will, on every machine** — the user keeps it in that same in-repo
+location wherever they work, even though it is git-ignored. So resolve it as
+`./DnD Source Material` relative to the project root; you can rely on it being there (no more
+sibling-folder / two-machine path guessing). It is **git-ignored** (never committed or
+redistributed — see DDL-0037 and the DDL-0003 licensing decision) and is used as a private,
+read-only reference only. It was previously kept as a *sibling* of the project directory across
+two machines (`../DnD Source Material`); that arrangement is **retired**.
 **`DnD Source Material/README.md` documents all four subfolders** (contents, licences, and what
 each is good for); read it before digging into them. The bullets below use the old
 `C:\Sync\Projects\DnD Source Material\…` form for brevity — substitute the in-repo
@@ -322,11 +325,15 @@ must not re-derive.
   wrangler config remains in the repo.
 - **Reference material moved in-repo and git-ignored.** `DnD Source Material/` now sits at the
   project root (was a sibling across two machines — see §3) and is added to `.gitignore`, so it is
-  never committed or redistributed (consistent with DDL-0003: ship code only). Resolve it as
-  `./DnD Source Material`.
-- **CLAUDE.md and `.claude/` are now TRACKED** (removed from `.gitignore`) so the shared working
-  agreement and project config travel with the repo. Kept ignored: `.claude/settings.local.json`
-  (machine-local permission cache with stale absolute paths), `.agents/`, `skills-lock.json`.
+  never committed or redistributed (consistent with DDL-0003: ship code only). The user keeps it in
+  this **same in-repo location on every machine**, so resolve it as `./DnD Source Material` and rely
+  on it being there.
+- **CLAUDE.md and `.claude/` config are now TRACKED** (removed from `.gitignore`) so the shared
+  working agreement and project config travel with the repo — `.claude/settings.json` and
+  `.claude/launch.json` are committed. **`.claude/settings.local.json` is deliberately NOT
+  force-ignored** (matching the previous project's `.gitignore`, which never listed it) and is left
+  **untracked/uncommitted** — it is a machine-local permission cache. Kept ignored: `.agents/`,
+  `skills-lock.json`.
 - **Commit-authorship: §2 rule 3 stands unchanged** (Claude adds **no** `Co-Authored-By` / AI
   trailer). **One-time exception, already spent:** the single commit that removed `CLAUDE.md` and
   `.claude` from `.gitignore` (bundled with these context updates) was allowed to carry Claude's

@@ -7,8 +7,8 @@
 // Em seguida converta em PNGs com  python scripts/pdf_to_png.py <arquivo>
 // para inspecionar o layout visualmente sem precisar abrir o app.
 //
-// O compêndio vem da pasta-irmã `../DnD Source Material/5etools Source Code/
-// data` (mesmos arquivos que o app baixa do mirror), lida direto do disco.
+// O compêndio vem do snapshot in-repo `./DnD Source Material/5etools Source
+// Code/data` (DDL-0037; mesmos arquivos que o app baixa do mirror), lido do disco.
 // -----------------------------------------------------------------------------
 
 import { mkdirSync } from 'node:fs';

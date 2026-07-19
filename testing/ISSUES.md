@@ -295,3 +295,74 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   export's capped final scores round-trip via a new lossless `flags.builder5e.scores` on the
   actor (subtraction stayed as the flag-less fallback). Verified live: the T1a Barbarian's
   Boon of Irresistible Offense now lifts Str past the regular-feat cap. See CHANGELOG §38.
+
+---
+
+> **2026-07-18 (T1a session 3 - Bard)**: session started with a migration repair (DDL-0037
+> fallout: loadDb sibling path, vitest/eslint descending into the in-repo snapshot) and
+> TC-0023 found on the guided create's origin-feat step, fixed in-session.
+
+## TC-0023 - Countable proficiency tokens ({anyMusicalInstrument: 3}) never became choices
+
+- **Found:** 2026-07-18, T1a Bard session (guided create: Musician origin feat offered no
+  instrument picker and the step read complete). **Severity:** bug (structural).
+  **Status:** fixed@2026-07-18.
+- `parseProfField` only understood `{choose}` and `{any: N}`; token-keyed counts fell into
+  the "fixed grant" bucket and were DISCARDED - no selector, no deep-completeness gate, no
+  derivation. Reachable: feats Musician XPHB + Harper Agent FRHoF (both ORIGIN feats,
+  `anyMusicalInstrument: 3`), Artificer Initiate TCE + Quicksmithing PSK
+  (`anyArtisansTool: 1`); species Satyr MPMM (instrument), Dwarf (Kaladesh) PSK (2 artisan's
+  tools), and every `{anyStandard: N}` language race (Custom Lineage TCE, Aetherborn PSK,
+  Human (Ixalan) PSX, Human (Innistrad) PSI + lineages, Merfolk Ixalan subrace merges...).
+  The sweep could never catch it: an unparsed choice produces no pendency.
+- **Fix:** `PROF_COUNT_TOKENS` in `engine/choices.js` - token entries emit a Choice with the
+  same category-restricted pool the class tool choices use (`{type:'any', of, category}`,
+  AT/INS/GS), so ChoiceList, autoBuild, deep completeness and the DDL-0028 export flags all
+  work with zero extra wiring. Along the way the multi-entry semantics were corrected:
+  entries in one proficiency field are ALTERNATIVES (5etools joins them with "or" in
+  `_summariseProfs`), so only the first entry that yields a choice emits one - Human
+  (Ixalan)'s double `{anyStandard:1}` is ONE language, not two (the sweep's 3 new round-trip
+  diffs confirmed and then cleared). 4 unit tests; sweep 274/274 `--strict`.
+
+## TC-0024 - Kit entries `{equipmentType}` silently dropped (Bard's instrument)
+
+- **Found:** 2026-07-18, T1a Bard session (guided create: Option A listed no instrument).
+  **Severity:** bug. **Status:** fixed@2026-07-18.
+- `parseStartingEquipment` only understood `item`/`value`/`special`; the Bard XPHB kit's
+  `{equipmentType: "instrumentMusical"}` ("Musical Instrument of your choice") vanished
+  from the kit card and the inventory. Only reachable case today (current class versions);
+  legacy PHB kits use the shape heavily, so the mapping covers all 8 known types.
+- **Fix:** kit options now carry `chooses[]`; the card lists them, the guided
+  EquipmentStep renders a per-choose item picker (SelectorPanel over the item entity,
+  category-matched via `kitChooseAllows` - INS/weapon category/SCF subtype), picks live in
+  `meta.startingKitPicks` and join the inventory (`startingKitInventory` 3rd arg, weapons/
+  armor auto-equip). Deep completeness: `kitStepComplete` (createGuideContext) gates the
+  equipment step via the ctx flag pattern. 5 new engine tests; verified live (Lute).
+
+## TC-0025 - Sibling spell chooses accept the SAME spell twice (Magical Discoveries)
+
+- **Found:** 2026-07-18, T1a Bard session (Lore @6: both "Cleric/Druid/Wizard" chooses
+  took Air Bubble; the Spellbook dedup then collapses them into ONE row - a grant lost).
+  **Severity:** bug. **Status:** fixed@2026-07-18.
+- Each `SpellChoice` excluded only its OWN picks; the sibling `spell`-kind entries in the
+  same bag were fair game. RAW: "you learn two spells" - distinct.
+- **Fix:** ChoiceList computes `siblingSpellPicks` (all other `spell` entries in the bag)
+  per spell choose and SpellChoice excludes them in the selector AND the add guard.
+  Verified live (Air Bubble absent from the second picker). autoBuild keeps per-choice
+  dedup only (random collisions are astronomically rare and round-trip-consistent) -
+  accepted.
+
+## TC-0026 - Prose-granted spell missing from `additionalSpells` (Spirits' Guidance)
+
+- **Found:** 2026-07-18, T1a Bard session (College of Spirits RHW: Channeler says "You
+  know the Guidance cantrip" but the Spellbook showed nothing at L3). **Severity:** bug
+  (upstream data gap). **Status:** fixed@2026-07-18.
+- The RHW entry only encodes Spirit Guardians @6 (`prepared.6.daily.1e`); the legacy VRGR
+  version had `known: {3: [guidance#c]}` and the reprint dropped it. Nothing our sweep
+  could catch - no structural signal.
+- **Fix:** curated `MISSING_ADDITIONAL_SPELLS` registry (`engine/grantedSpellUses.js`,
+  beside the DDL-0011 frequency overlay): entries the prose grants but the data omits,
+  MERGED into the first `additionalSpells` group (never appended - a new group would read
+  as an alternative and spawn a false `spellSet` choice, TC-0011 semantics).
+  `resolveGranted` applies it for class/subclass/race/feat alike. 3 unit tests; verified
+  live (Guidance Always Prepared in the Bard origin @19).

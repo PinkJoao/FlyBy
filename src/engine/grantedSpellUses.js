@@ -118,6 +118,45 @@ function overlayKey(entity) {
   return entity?.name && entity?.source ? `${entity.name}|${entity.source}` : null;
 }
 
+// -----------------------------------------------------------------------------
+// Concessões que a PROSA declara mas o `additionalSpells` do 5etools OMITE
+// (TC-0026). Caso raro - o normal é o dado codificar tudo; cada entrada cita a
+// prosa. O valor é UM grupo no formato de `additionalSpells`, FUNDIDO no
+// primeiro grupo do dado (nunca anexado como grupo novo: grupos múltiplos são
+// ALTERNATIVAS e virariam um choice `spellSet` falso - ver TC-0011).
+// -----------------------------------------------------------------------------
+
+/** @type {Record<string, object>} */
+export const MISSING_ADDITIONAL_SPELLS = {
+  // Channeler (L3): "You know the Guidance cantrip. It has a range of 60 feet
+  // when you cast it." O dado RHW só codifica o Spirit Guardians de L6; a versão
+  // VRGR (legacy) trazia `known: {3: [guidance#c]}` - restaurado aqui na grafia
+  // 2024.
+  'College of Spirits|RHW': { known: { 3: ['guidance|xphb#c'] } },
+};
+
+/**
+ * `additionalSpells` da entidade + as concessões curadas que o dado omite,
+ * fundidas no primeiro grupo (bucket a bucket, nível a nível). Sem entrada no
+ * registro, devolve o campo original intacto; nunca muta o dado.
+ * @param {{name?: string, source?: string, additionalSpells?: Array}|null} entity
+ * @returns {Array<object>|undefined}
+ */
+export function curatedAdditionalSpells(entity) {
+  const extra = MISSING_ADDITIONAL_SPELLS[overlayKey(entity)];
+  if (!extra) return entity?.additionalSpells;
+  const groups = entity?.additionalSpells ?? [];
+  const first = { ...(groups[0] ?? {}) };
+  for (const [bucket, byLevel] of Object.entries(extra)) {
+    const merged = { ...(first[bucket] ?? {}) };
+    for (const [lvl, spells] of Object.entries(byLevel)) {
+      merged[lvl] = [...(merged[lvl] ?? []), ...spells];
+    }
+    first[bucket] = merged;
+  }
+  return [first, ...groups.slice(1)];
+}
+
 /**
  * Aplica o overlay às magias concedidas por uma entidade. Só toca nas entradas
  * cuja frequência o DADO não declara (`castType === 'innate'`); tudo que o

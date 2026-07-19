@@ -26,7 +26,7 @@ import { deriveDamageTraits } from './damageTraits';
 import { deriveHpBonus } from './hpBonuses';
 import { resolveSpellObj, classDisplayName } from './spells';
 import { grantedSpells, castTypeLabel, resolveGrantedUses } from './grantedSpells';
-import { applyUsesOverlay } from './grantedSpellUses';
+import { applyUsesOverlay, curatedAdditionalSpells } from './grantedSpellUses';
 import {
   casterInfo,
   leveledCasterLevel,
@@ -197,7 +197,10 @@ function resolveSpellRefs(refs, db) {
  * `opts` ({bag, idPrefix}) liga as ESCOLHAS de magia (TC-0011): os picks do
  * choice-bag do dono entram como concedidas, com o modo/frequência da folha. */
 function resolveGranted(additionalSpells, level, db, ctx, entity, opts = {}) {
-  const { spells, ability, abilityChoices, pendingChoices } = grantedSpells(additionalSpells, level, opts);
+  // Concessões que a prosa declara mas o dado omite (TC-0026): o registro
+  // curado funde a magia faltante no primeiro grupo antes da leitura.
+  const withCurated = curatedAdditionalSpells({ name: entity?.name, source: entity?.source, additionalSpells });
+  const { spells, ability, abilityChoices, pendingChoices } = grantedSpells(withCurated, level, opts);
   const resolved = applyUsesOverlay(spells, entity)
     .map((s) => ({ ...s, ...resolveGrantedUses(s, ctx), id: s.name, granted: true, raw: resolveSpellObj(db, s.name, s.source) }))
     .filter((s) => s.raw);

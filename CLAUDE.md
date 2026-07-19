@@ -305,6 +305,52 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0038 — T1a Bard session: proficiency tokens, kit equipmentType chooses, sibling-spell dedup, curated missing spell grants
+**Date:** 2026-07-19
+**Builds on:** DDL-0024 (Phase T), DDL-0029 (choice-kind completeness), DDL-0011 (curated
+spell overlays), DDL-0037 (repairs its migration fallout).
+
+**Context.** T1a session 3 (Bard + 10 subclasses, TESTING-PLAN §7 2026-07-18/19). The session
+found four real bugs (TC-0023…TC-0026 in `testing/ISSUES.md`), all fixed in-session, plus the
+first-run breakage left by the DDL-0037 migration.
+
+**Decisions.**
+- **Migration fallout (DDL-0037) is repaired**: `scripts/lib/loadDb.js` resolves the in-repo
+  `./DnD Source Material` (not the retired sibling path); vitest excludes `DnD Source
+  Material/**` (`vite.config.js` — the snapshot ships its own jest tests) and eslint
+  global-ignores the folder (it ships its own flat config with unresolvable deps). Anyone
+  adding tooling that walks the repo tree must remember the snapshot is a foreign codebase.
+- **Countable proficiency tokens are choices** (TC-0023): `PROF_COUNT_TOKENS` in
+  `engine/choices.js` turns `{anyMusicalInstrument: 3}` / `{anyStandard: 1}`-style entries
+  into Choices with the SAME category-restricted pool shape the class tool choices use
+  (`{type:'any', of, category}`), so ChoiceList/autoBuild/completeness/export all work with
+  zero extra wiring. **Multi-entry proficiency fields are ALTERNATIVES** (5etools renders
+  them joined by "or" — `_summariseProfs`): only the first entry that yields a choice emits
+  one. The sweep can never catch this class of bug (an unparsed choice produces no pendency)
+  — it is exactly what T1 sessions are for.
+- **Kit `{equipmentType}` entries are kit CHOOSES** (TC-0024): `parseStartingEquipment`
+  emits `chooses[]`; the guided EquipmentStep renders a per-choose item picker
+  (`kitChooseAllows` matches INS / weapon category / SCF subtype), picks live in
+  `meta.startingKitPicks` (additive meta field, no schema bump) and feed
+  `startingKitInventory`; `kitStepComplete` gates the step via the createGuideContext ctx
+  pattern. Bard XPHB is the only reachable case today; the type map covers the legacy kits.
+- **Sibling spell chooses dedup** (TC-0025): ChoiceList passes each SpellChoice the other
+  `spell`-kind picks of the same bag; selector + add guard exclude them (Magical
+  Discoveries ×2 must be distinct). autoBuild deliberately keeps per-choice dedup only.
+- **Missing prose grants are a curated registry** (TC-0026): `MISSING_ADDITIONAL_SPELLS`
+  (`engine/grantedSpellUses.js`) holds spells the prose grants but `additionalSpells`
+  omits (College of Spirits RHW → Guidance; the VRGR original had it, the reprint dropped
+  it). `curatedAdditionalSpells` MERGES the entry into the FIRST group — never appends a
+  group, because multiple groups are alternatives and would spawn a false `spellSet`
+  choice (TC-0011 semantics). Applied in `resolveGranted`, so class/subclass/race/feat and
+  the Foundry export all see it.
+
+**Consequences.**
+- A future feat/race with a token-counted proficiency, a kit with an equipment-type entry,
+  or a reprint that drops a prose-granted spell each have a one-line home now.
+- Verified: 920 tests (+12 since the Barbarian session), lint, sweep 274/274 `--strict`,
+  full live pass (CHANGELOG §43). Coverage: all 10 `class:bard/*` rows `ui: ok`.
+
 ### DDL-0037 — Project migration: "FlyBy" repo, Firebase Hosting, in-repo (git-ignored) source material, tracked CLAUDE.md/.claude
 **Date:** 2026-07-18
 **Touches:** the §3 reference-material section (moved in-repo) and the §2 rule-3 commit-authorship

@@ -45,11 +45,61 @@ function coinsFromCopper(cp) {
   return { gp, sp: Math.floor(rem / 10), cp: rem % 10 };
 }
 
+/** Código de tipo cru ("INS", "M", "SCF"…) de um item resolvido. */
+const typeCode = (raw) => String(raw?.type ?? '').split('|')[0];
+
+// Entradas `{equipmentType: "..."}` do kit: um item A ESCOLHER de uma categoria
+// (Bard XPHB: "Musical Instrument of your choice" - TC-0024; antes a entrada era
+// descartada e o instrumento sumia do kit). Só instrumentMusical é alcançável
+// hoje (kits correntes); os demais tipos cobrem os kits legacy/futuros.
+const KIT_EQUIPMENT_TYPES = {
+  instrumentMusical: { label: 'Musical Instrument', match: (raw) => typeCode(raw) === 'INS' },
+  weaponSimple: { label: 'Simple weapon', match: (raw) => raw?.weaponCategory === 'simple' },
+  weaponSimpleMelee: {
+    label: 'Simple melee weapon',
+    match: (raw) => raw?.weaponCategory === 'simple' && typeCode(raw) === 'M',
+  },
+  weaponMartial: { label: 'Martial weapon', match: (raw) => raw?.weaponCategory === 'martial' },
+  weaponMartialMelee: {
+    label: 'Martial melee weapon',
+    match: (raw) => raw?.weaponCategory === 'martial' && typeCode(raw) === 'M',
+  },
+  focusSpellcastingArcane: {
+    label: 'Arcane focus',
+    match: (raw) => typeCode(raw) === 'SCF' && raw?.scfType === 'arcane',
+  },
+  focusSpellcastingHoly: {
+    label: 'Holy symbol',
+    match: (raw) => typeCode(raw) === 'SCF' && raw?.scfType === 'holy',
+  },
+  focusSpellcastingDruidic: {
+    label: 'Druidic focus',
+    match: (raw) => typeCode(raw) === 'SCF' && raw?.scfType === 'druid',
+  },
+};
+
+/** Rótulo de exibição de um choose do kit ("Musical Instrument of your choice"). */
+export function kitChooseLabel(choose) {
+  const base = KIT_EQUIPMENT_TYPES[choose.type]?.label ?? titleCase(choose.type);
+  return choose.quantity > 1 ? `${base} of your choice ×${choose.quantity}` : `${base} of your choice`;
+}
+
+/** O item cru satisfaz a categoria do choose? (filtro do seletor do kit.) */
+export function kitChooseAllows(choose, raw) {
+  return KIT_EQUIPMENT_TYPES[choose.type]?.match(raw) ?? true;
+}
+
+/** Todos os chooses da opção têm picks completos? picks = meta.startingKitPicks
+ * ({ [índice do choose]: ["Nome|Fonte", ...] }). Opção sem chooses → true. */
+export function kitChoosesComplete(option, picks) {
+  return (option?.chooses ?? []).every((ch, i) => (picks?.[i]?.length ?? 0) >= ch.quantity);
+}
+
 /**
  * As opções de equipamento inicial da classe, legíveis.
  * @param {object} db
  * @param {object|null} classObj  objeto cru da classe (5etools)
- * @returns {Array<{ key:string, items:Array<{name,source,quantity}>, valueCp:number, special:string[] }>}
+ * @returns {Array<{ key:string, items:Array<{name,source,quantity}>, valueCp:number, special:string[], chooses:Array<{type,quantity}> }>}
  */
 export function parseStartingEquipment(db, classObj) {
   const data = classObj?.startingEquipment?.defaultData?.[0];
@@ -58,6 +108,7 @@ export function parseStartingEquipment(db, classObj) {
     const items = [];
     let valueCp = 0;
     const special = [];
+    const chooses = [];
     for (const e of Array.isArray(entries) ? entries : []) {
       if (e?.item) {
         const { name, source } = resolveRef(db, e.item);
@@ -66,15 +117,18 @@ export function parseStartingEquipment(db, classObj) {
         valueCp += e.value;
       } else if (e?.special) {
         special.push(String(e.special));
+      } else if (e?.equipmentType) {
+        // Item a escolher de uma categoria (TC-0024) - vira um choose do kit.
+        chooses.push({ type: String(e.equipmentType), quantity: e.quantity ?? 1 });
       }
     }
-    return { key, items, valueCp, special };
+    return { key, items, valueCp, special, chooses };
   });
 }
 
 /** Só ouro? (opção sem itens nem specials - ex.: Fighter C = 155 GP). */
 export function isGoldOnlyOption(option) {
-  return option.items.length === 0 && option.special.length === 0 && option.valueCp > 0;
+  return option.items.length === 0 && option.special.length === 0 && (option.chooses?.length ?? 0) === 0 && option.valueCp > 0;
 }
 
 /** Ouro da opção em GP (para exibição). */
@@ -93,13 +147,24 @@ function autoEquips(db, it) {
 }
 
 /** Inventário resultante de escolher uma opção (itens + specials como itens
- * soltos). Com `db`, armadura/escudo/armas do kit já vêm equipados (TC-0015). */
-export function startingKitInventory(option, db = null) {
+ * soltos). Com `db`, armadura/escudo/armas do kit já vêm equipados (TC-0015).
+ * `picks` = meta.startingKitPicks: os itens escolhidos dos chooses do kit
+ * (TC-0024), como "Nome|Fonte" por índice de choose. */
+export function startingKitInventory(option, db = null, picks = null) {
   const items = option.items.map((it) => ({
     ...createInventoryItem(it.name, it.source),
     quantity: it.quantity,
     equipped: db ? autoEquips(db, it) : false,
   }));
+  for (const [i] of (option.chooses ?? []).entries()) {
+    for (const id of picks?.[i] ?? []) {
+      const [name = '', source = ''] = String(id).split('|');
+      items.push({
+        ...createInventoryItem(name, source),
+        equipped: db ? autoEquips(db, { name, source }) : false,
+      });
+    }
+  }
   // `special` entra minimamente como um item solto (não resolvido) com o texto.
   for (const sp of option.special) items.push(createInventoryItem(sp, ''));
   return items;

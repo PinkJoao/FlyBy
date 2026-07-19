@@ -53,25 +53,63 @@ function toOption(kind, raw) {
   return { value: String(raw), label: titleCase(raw) };
 }
 
-/** Lê um bloco de proficiências (skill/tool/language) e empurra os Choices. */
+// Tokens CONTÁVEIS de proficiência ({anyMusicalInstrument: 3} no Musician XPHB,
+// {anyStandard: 1} no Custom Lineage) → substantivo + categoria de ferramenta
+// (AT/INS/GS restringe o seletor; mesmo vocabulário do TOOL_CHOICE_TOKEN de
+// classFeatureChoices). Sem entrada aqui, o token era descartado e o choice
+// nunca aparecia (TC-0023).
+const PROF_COUNT_TOKENS = {
+  anyArtisansTool: { noun: "Artisan's Tool", category: 'AT' },
+  anyMusicalInstrument: { noun: 'Musical Instrument', category: 'INS' },
+  anyGamingSet: { noun: 'Gaming Set', category: 'GS' },
+  anyTool: { noun: 'tool', category: null },
+  anyToolProficiency: { noun: 'tool', category: null },
+  anySkill: { noun: 'skill', category: null },
+  anyStandard: { noun: 'language', category: null },
+  anyStandardLanguage: { noun: 'language', category: null },
+  anyExoticLanguage: { noun: 'language', category: null },
+  anyRareLanguage: { noun: 'language', category: null },
+};
+
+/**
+ * Lê um bloco de proficiências (skill/tool/language) e empurra os Choices.
+ * ENTRIES MÚLTIPLAS no mesmo campo são ALTERNATIVAS (o 5etools as renderiza
+ * unidas por "or" - ver render.js _summariseProfs), não cumulativas: a primeira
+ * que render um choice vence (Human (Ixalan): 2× {anyStandard:1} = 1 idioma).
+ */
 function parseProfField(field, kind, push) {
+  let done = false;
+  const pushOnce = (c) => { done = true; push(c); };
   for (const entry of field ?? []) {
+    if (done) break;
     if (!entry || typeof entry !== 'object') continue;
     if (entry.choose) {
       const count = entry.choose.count ?? 1;
-      push({
+      pushOnce({
         kind,
         count,
         label: count > 1 ? `Choose ${count} ${noun(kind, count)}` : `Choose a ${noun(kind, 1)}`,
         pool: { type: 'list', options: (entry.choose.from ?? []).map((v) => toOption(kind, v)) },
       });
     } else if (entry.any != null) {
-      push({
+      pushOnce({
         kind,
         count: entry.any,
         label: entry.any > 1 ? `Choose ${entry.any} ${noun(kind, entry.any)}` : `Choose any ${noun(kind, 1)}`,
         pool: { type: 'any', of: kind },
       });
+    } else {
+      for (const [key, val] of Object.entries(entry)) {
+        const token = PROF_COUNT_TOKENS[key];
+        if (!token || typeof val !== 'number' || val < 1) continue;
+        const word = val > 1 ? `${token.noun}s` : token.noun;
+        pushOnce({
+          kind,
+          count: val,
+          label: val > 1 ? `Choose ${val} ${word}` : `Choose a ${word}`,
+          pool: { type: 'any', of: kind, category: token.category },
+        });
+      }
     }
     // entrada fixa { x: true } é um GRANT (não escolha) - ignorada aqui.
   }

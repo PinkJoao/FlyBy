@@ -152,7 +152,10 @@ const CREATE_CATALOG = [
     title: 'Gear up',
     subtitle: 'Starting equipment',
     when: () => true,
-    status: (c) => (c?.meta?.startingKit ? 'complete' : 'incomplete'),
+    // Kit escolhido E com os chooses dele preenchidos (Bard XPHB: o instrumento
+    // do kit A - TC-0024). A flag profunda vem do ctx (precisa do db); sem ctx,
+    // o check raso de antes.
+    status: (c, d, ctx) => (c?.meta?.startingKit && (ctx?.kitComplete ?? true) ? 'complete' : 'incomplete'),
   },
   {
     id: 'story',

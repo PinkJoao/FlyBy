@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyUsesOverlay, INNATE_USES } from './grantedSpellUses';
+import { applyUsesOverlay, INNATE_USES, curatedAdditionalSpells } from './grantedSpellUses';
 import { grantedSpells, castTypeLabel } from './grantedSpells';
 
 /** Atalho: parseia um `additionalSpells` real e aplica o overlay da entidade. */
@@ -94,5 +94,34 @@ describe('INNATE_USES - sanidade da tabela', () => {
         expect(allowed.has(override.castType)).toBe(true);
       }
     }
+  });
+});
+
+describe('curatedAdditionalSpells - concessões que o dado omite (TC-0026)', () => {
+  // Forma real do College of Spirits RHW: só o Spirit Guardians de L6 no dado.
+  const spiritsRhw = {
+    name: 'College of Spirits',
+    source: 'RHW',
+    additionalSpells: [{ prepared: { 6: { daily: { '1e': ['spirit guardians|xphb'] } } } }],
+  };
+
+  it('funde o Guidance curado no PRIMEIRO grupo (nunca cria grupo novo)', () => {
+    const out = curatedAdditionalSpells(spiritsRhw);
+    expect(out).toHaveLength(1); // grupo novo = alternativa = spellSet falso
+    expect(out[0].known[3]).toEqual(['guidance|xphb#c']);
+    expect(out[0].prepared[6]).toEqual(spiritsRhw.additionalSpells[0].prepared[6]);
+    // Nunca muta o dado original.
+    expect(spiritsRhw.additionalSpells[0].known).toBeUndefined();
+  });
+
+  it('a fusão chega às magias concedidas no nível certo', () => {
+    const spells = grantedSpells(curatedAdditionalSpells(spiritsRhw), 3).spells;
+    expect(spells.map((s) => s.name)).toEqual(['guidance']);
+  });
+
+  it('entidade fora do registro devolve o campo original intacto', () => {
+    const other = { name: 'College of Lore', source: 'XPHB', additionalSpells: [{ known: { 1: ['x'] } }] };
+    expect(curatedAdditionalSpells(other)).toBe(other.additionalSpells);
+    expect(curatedAdditionalSpells(null)).toBeUndefined();
   });
 });

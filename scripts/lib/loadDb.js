@@ -1,9 +1,10 @@
 // =============================================================================
 // loadDb - compêndio 5etools lido do snapshot local (fora do browser)
 // =============================================================================
-// Mesmo manifest que o app baixa do mirror (buildManifest), lido direto da
-// pasta-irmã `../DnD Source Material/5etools Source Code/data`. Extraído do
-// render-pdf-preview para ser compartilhado com o sweep (TESTING-PLAN.md §3).
+// Mesmo manifest que o app baixa do mirror (buildManifest), lido direto do
+// snapshot in-repo `./DnD Source Material/5etools Source Code/data` (DDL-0037;
+// git-ignored, presente em toda máquina). Extraído do render-pdf-preview para
+// ser compartilhado com o sweep (TESTING-PLAN.md §3).
 // Arquivos ausentes do snapshot são tolerados (o engine degrada com elegância).
 // -----------------------------------------------------------------------------
 
@@ -14,16 +15,16 @@ import { buildManifest } from '../../src/data/config';
 /** Raiz do projeto (scripts/lib/ → dois níveis acima). */
 const ROOT = join(import.meta.dirname, '..', '..');
 
-/** Pasta `data` do snapshot local do 5etools (sibling do projeto), ou null. */
+/** Pasta `data` do snapshot local do 5etools (in-repo, DDL-0037), ou null. */
 export function dataDir() {
-  const p = join(ROOT, '..', 'DnD Source Material', '5etools Source Code', 'data');
+  const p = join(ROOT, 'DnD Source Material', '5etools Source Code', 'data');
   return existsSync(p) ? p : null;
 }
 
 /** Carrega o compêndio inteiro no formato do db do app (chave → JSON). */
 export function loadDb() {
   const dir = dataDir();
-  if (!dir) throw new Error('Pasta local do 5etools não encontrada (../DnD Source Material).');
+  if (!dir) throw new Error('Pasta local do 5etools não encontrada (./DnD Source Material).');
   const db = {};
   for (const { key, path } of buildManifest()) {
     try {

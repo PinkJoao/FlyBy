@@ -6,8 +6,13 @@
 // `meta.startingKit`. É equipamento OU ouro - a carteira vira 50 GP (background) +
 // o ouro da opção. Reusa o parser puro `engine/startingEquipment` (guard-rail
 // DDL-0013: sem regras novas na UI).
+//
+// Kits com entradas `{equipmentType}` (Bard XPHB: "Musical Instrument of your
+// choice" - TC-0024) ganham um seletor de item por choose; os picks vivem em
+// `meta.startingKitPicks` e entram no inventário junto com o kit.
 // -----------------------------------------------------------------------------
 
+import { useState } from 'react';
 import { resolveClassObj } from '../../../engine/resolve';
 import {
   parseStartingEquipment,
@@ -15,24 +20,89 @@ import {
   optionGoldGp,
   startingKitInventory,
   startingKitCurrency,
+  kitChooseLabel,
+  kitChooseAllows,
 } from '../../../engine/startingEquipment';
+import SelectorPanel from '../../../selector/SelectorPanel';
+import itemEntity from '../../../selector/entities/item';
+import choiceStyles from '../../builder/ChoiceList.module.css';
 import styles from './steps.module.css';
 
 /** "Chain Mail", "Javelin ×8"… */
 const itemLabel = (it) => (it.quantity > 1 ? `${it.name} ×${it.quantity}` : it.name);
+
+/** Um choose do kit (ex.: instrumento do Bard): chips + "+ Add" via SelectorPanel. */
+function KitChoose({ choose, index, picks, db, onPicks }) {
+  const [open, setOpen] = useState(false);
+  const mine = picks?.[index] ?? [];
+
+  const add = (raw) => {
+    const id = `${raw.name}|${raw.source}`;
+    const next = { ...picks, [index]: [...mine, id] };
+    onPicks(next);
+    if (mine.length + 1 >= choose.quantity) setOpen(false);
+  };
+  const remove = (id) => onPicks({ ...picks, [index]: mine.filter((x) => x !== id) });
+
+  return (
+    <div className={choiceStyles.choice}>
+      <div className={choiceStyles.head}>
+        <span className={choiceStyles.label}>{kitChooseLabel(choose)}</span>
+        <span className={choiceStyles.counter}>
+          {mine.length}/{choose.quantity}
+        </span>
+      </div>
+      <div className={choiceStyles.tags}>
+        {mine.map((id) => (
+          <span key={id} className={choiceStyles.tagChip}>
+            <span className={choiceStyles.tagLabel}>{id.split('|')[0]}</span>
+            <button type="button" className={choiceStyles.tagRemove} aria-label={`Remove ${id.split('|')[0]}`} onClick={() => remove(id)}>
+              ×
+            </button>
+          </span>
+        ))}
+        {mine.length < choose.quantity && (
+          <button type="button" className={choiceStyles.addBtn} onClick={() => setOpen(true)}>
+            + Add item
+          </button>
+        )}
+      </div>
+      {open && (
+        <SelectorPanel
+          entity={itemEntity}
+          db={db}
+          currentId={null}
+          exclude={(raw) => !kitChooseAllows(choose, raw) || mine.includes(`${raw.name}|${raw.source}`)}
+          onSelect={add}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function EquipmentStep({ character, db, onChange }) {
   const cls = character.classes?.[0] ?? null;
   const classObj = cls?.classId ? resolveClassObj(db, cls.classId, cls.source) : null;
   const options = classObj ? parseStartingEquipment(db, classObj) : [];
   const selected = character.meta?.startingKit ?? null;
+  const selectedOpt = options.find((o) => o.key === selected) ?? null;
+  const kitPicks = character.meta?.startingKitPicks ?? {};
 
   const selectKit = (opt) =>
     onChange({
       ...character,
       inventory: startingKitInventory(opt, db),
       currency: startingKitCurrency(opt),
-      meta: { ...character.meta, startingKit: opt.key },
+      // Trocar de kit descarta os picks do kit anterior.
+      meta: { ...character.meta, startingKit: opt.key, startingKitPicks: {} },
+    });
+
+  const setPicks = (picks) =>
+    onChange({
+      ...character,
+      inventory: startingKitInventory(selectedOpt, db, picks),
+      meta: { ...character.meta, startingKitPicks: picks },
     });
 
   return (
@@ -71,6 +141,9 @@ export default function EquipmentStep({ character, db, onChange }) {
                     {opt.items.map((it, i) => (
                       <li key={i}>{itemLabel(it)}</li>
                     ))}
+                    {(opt.chooses ?? []).map((ch, i) => (
+                      <li key={`c${i}`}>{kitChooseLabel(ch)}</li>
+                    ))}
                     {opt.special.map((sp, i) => (
                       <li key={`s${i}`}>{sp}</li>
                     ))}
@@ -82,6 +155,14 @@ export default function EquipmentStep({ character, db, onChange }) {
           );
         })}
       </div>
+
+      {selectedOpt && (selectedOpt.chooses?.length ?? 0) > 0 && (
+        <div>
+          {selectedOpt.chooses.map((ch, i) => (
+            <KitChoose key={i} choose={ch} index={i} picks={kitPicks} db={db} onPicks={setPicks} />
+          ))}
+        </div>
+      )}
 
       {selected && (
         <p className={styles.note}>

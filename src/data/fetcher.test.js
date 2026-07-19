@@ -23,7 +23,7 @@ import { syncCompendium } from './fetcher';
 // `rawHits` registra quais arquivos foram baixados do raw.
 function installFetch({ commit = 'c1', shas = { races: 'R1', 'class-fighter': 'F1' }, apiFails = false } = {}) {
   const rawHits = [];
-  global.fetch = vi.fn(async (url) => {
+  globalThis.fetch = vi.fn(async (url) => {
     const u = String(url);
     if (u.includes('api.github.com')) {
       if (apiFails) return { ok: false, status: 403, json: async () => ({}) };

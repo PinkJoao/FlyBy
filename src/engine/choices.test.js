@@ -42,6 +42,41 @@ describe('parseChoices', () => {
     expect(c.pool.options[0]).toEqual({ value: "smith's tools", label: "Smith's Tools" });
   });
 
+  it('Musician: token contável {anyMusicalInstrument: 3} vira choice com categoria INS (TC-0023)', () => {
+    const musician = { toolProficiencies: [{ anyMusicalInstrument: 3 }] };
+    const [c] = parseChoices(musician);
+    expect(c.kind).toBe('tool');
+    expect(c.count).toBe(3);
+    expect(c.label).toBe('Choose 3 Musical Instruments');
+    expect(c.pool).toEqual({ type: 'any', of: 'tool', category: 'INS' });
+  });
+
+  it('Custom Lineage: {anyStandard: 1} vira escolha de idioma (TC-0023)', () => {
+    const lineage = { languageProficiencies: [{ anyStandard: 1 }] };
+    const [c] = parseChoices(lineage);
+    expect(c.kind).toBe('language');
+    expect(c.count).toBe(1);
+    expect(c.pool).toEqual({ type: 'any', of: 'language', category: null });
+  });
+
+  it('entries múltiplas são ALTERNATIVAS: só a primeira vira choice (Human (Ixalan))', () => {
+    const ixalan = {
+      languageProficiencies: [
+        { common: true, anyStandard: 1 },
+        { common: true, other: true, anyStandard: 1 },
+      ],
+    };
+    const out = parseChoices(ixalan);
+    expect(out).toHaveLength(1);
+    expect(out[0].kind).toBe('language');
+    expect(out[0].count).toBe(1);
+  });
+
+  it('entrada fixa {x: true} segue sendo grant, não choice', () => {
+    const fixed = { toolProficiencies: [{ "smith's tools": true }] };
+    expect(parseChoices(fixed)).toEqual([]);
+  });
+
   it('Skilled: pool MISTO de skill+tool via skillToolLanguageProficiencies', () => {
     const skilled = {
       skillToolLanguageProficiencies: [{ choose: [{ from: ['anySkill', 'anyTool'], count: 3 }] }],

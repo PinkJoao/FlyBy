@@ -102,6 +102,18 @@ export default function ChoiceList({ choices, bag, onChange, db, owned, characte
     onChange(next);
   };
 
+  // Magias já escolhidas nos OUTROS chooses de magia do mesmo bag: um par de
+  // chooses irmãos (Lore, Magical Discoveries: 2× "Cleric/Druid/Wizard") não
+  // pode escolher a MESMA magia duas vezes (TC-0025).
+  const spellPicksElsewhere = (id) => {
+    const out = new Set();
+    for (const [k, e] of Object.entries(bag ?? {})) {
+      if (k === id || e?.kind !== 'spell') continue;
+      for (const p of e.picks ?? []) out.add(p);
+    }
+    return out;
+  };
+
   return (
     <div className={styles.list}>
       {choices.map((c) => (
@@ -114,13 +126,14 @@ export default function ChoiceList({ choices, bag, onChange, db, owned, characte
           owned={owned}
           character={character}
           guided={guided}
+          siblingSpellPicks={c.pool?.type === 'spell' ? spellPicksElsewhere(c.id) : null}
         />
       ))}
     </div>
   );
 }
 
-function ChoiceRow({ choice, entry, onChange, db, owned, character, guided }) {
+function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, siblingSpellPicks }) {
   const picks = entry?.picks ?? [];
 
   // Título → link do glossário: a feature que concede a escolha (ruleEntry,
@@ -166,7 +179,7 @@ function ChoiceRow({ choice, entry, onChange, db, owned, character, guided }) {
       ) : choice.pool.type === 'spellAbility' || choice.pool.type === 'size' || choice.pool.type === 'spellSet' ? (
         <SelectChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'spell' ? (
-        <SpellChoice choice={choice} picks={picks} onChange={onChange} db={db} />
+        <SpellChoice choice={choice} picks={picks} onChange={onChange} db={db} siblingPicks={siblingSpellPicks} />
       ) : PILL_KINDS.has(choice.kind) ? (
         <PillsChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'any' && Array.isArray(choice.pool.of) ? (
@@ -513,7 +526,7 @@ function PillsChoice({ choice, picks, onChange }) {
  * restrito ao filtro da folha `{choose}` (nível/classe/escola/ritual/ataque
  * ou lista fechada `{from}`). Picks = "Nome|Fonte".
  */
-function SpellChoice({ choice, picks, onChange, db }) {
+function SpellChoice({ choice, picks, onChange, db, siblingPicks }) {
   const [open, setOpen] = useState(false);
   // makeSpellEntity constrói o índice magia→classes (varre spell-sources);
   // memoizado por db para não recomputar a cada render.
@@ -523,7 +536,7 @@ function SpellChoice({ choice, picks, onChange, db }) {
   const nameOf = (id) => id.split('|')[0];
   const add = (raw) => {
     const id = `${raw.name}|${raw.source}`;
-    if (!picks.includes(id) && picks.length < choice.count) {
+    if (!picks.includes(id) && !siblingPicks?.has(id) && picks.length < choice.count) {
       onChange({ kind: 'spell', picks: [...picks, id] });
     }
     setOpen(false);
@@ -558,7 +571,12 @@ function SpellChoice({ choice, picks, onChange, db }) {
           entity={entity}
           db={db}
           currentId={null}
-          exclude={(raw) => !eligible(raw) || picks.includes(`${raw.name}|${raw.source}`)}
+          exclude={(raw) =>
+            !eligible(raw) ||
+            picks.includes(`${raw.name}|${raw.source}`) ||
+            // Já escolhida num choose de magia IRMÃO (Magical Discoveries ×2 - TC-0025).
+            (siblingPicks?.has(`${raw.name}|${raw.source}`) ?? false)
+          }
           onSelect={add}
           onClose={() => setOpen(false)}
         />

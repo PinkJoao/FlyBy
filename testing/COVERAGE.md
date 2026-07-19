@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-17T21:33:10.355Z · base seed 1 · 274 rows
+Last sweep: 2026-07-19T03:29:12.452Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -27,16 +27,16 @@ Last sweep: 2026-07-17T21:33:10.355Z · base seed 1 · 274 rows
 | `class:barbarian/Wild Heart` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | guided create + levels 1-4 & 19; featureoptions 3/6/14 + ritual spells verified |
 | `class:barbarian/World Tree` | ok | 1 3 4 8 12 16 19 | ok | todo | features verified live @19 |
 | `class:barbarian/Zealot` | ok | 1 3 4 8 12 16 19 | ok | todo | features verified live @19; TC-0022 (ability cap) logged here |
-| `class:bard/Swords` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Whispers` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Creation` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Eloquence` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Dance` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Glamour` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Lore` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Valor` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Moon` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:bard/Spirits` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
+| `class:bard/Swords` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | subclass swap @19; FS picker = Dueling/TWF only; Medium Armor + Scimitar grants on card |
+| `class:bard/Whispers` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | features verified live @19 |
+| `class:bard/Creation` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | features verified live @19 |
+| `class:bard/Eloquence` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | features verified live @19 |
+| `class:bard/Dance` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | features verified live @19 |
+| `class:bard/Glamour` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Charm Person/Mirror Image Always Prepared + Command 1/Long Rest verified @19 |
+| `class:bard/Lore` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | guided create + levels 1-4 & 19; Bonus Prof 3 skills; Magical Discoveries (TC-0025 fixed); TC-0023/0024 found here |
+| `class:bard/Valor` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Medium Armor/Shields/Martial Weapons grants on card; features @19 |
+| `class:bard/Moon` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Primal Lore skill (list minus owned) + spell via guide @19 |
+| `class:bard/Spirits` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0026 fixed: Guidance curated; Spirit Guardians 1/Day; RHW feature names |
 | `class:cleric/Nature` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
 | `class:cleric/Tempest` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
 | `class:cleric/Death` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |

@@ -5,6 +5,9 @@ import {
   optionGoldGp,
   startingKitInventory,
   startingKitCurrency,
+  kitChooseLabel,
+  kitChooseAllows,
+  kitChoosesComplete,
 } from './startingEquipment';
 
 // db mínimo: uns poucos itens base p/ resolver refs case-insensitive.
@@ -105,5 +108,56 @@ describe('aplicar uma opção', () => {
   it('carteira: 50 GP do background + o ouro da opção', () => {
     expect(startingKitCurrency(options[0])).toEqual({ pp: 0, gp: 54, ep: 0, sp: 0, cp: 0 }); // 400cp = 4gp
     expect(startingKitCurrency(options[1])).toEqual({ pp: 0, gp: 205, ep: 0, sp: 0, cp: 0 }); // 15500cp = 155gp
+  });
+});
+
+describe('chooses do kit ({equipmentType} - TC-0024)', () => {
+  // Recorte do Bard XPHB: o kit A tem um instrumento musical A ESCOLHER.
+  const bard = {
+    startingEquipment: {
+      defaultData: [
+        {
+          A: [{ item: 'chain mail|xphb' }, { equipmentType: 'instrumentMusical' }, { value: 1900 }],
+          B: [{ value: 9000 }],
+        },
+      ],
+    },
+  };
+  const dbWithLute = {
+    ...db,
+    items: { item: [...db.items.item, { name: 'Lute', source: 'XPHB', type: 'INS|XPHB' }] },
+  };
+  const [a, b] = parseStartingEquipment(dbWithLute, bard);
+
+  it('a entrada vira um choose com rótulo e não some do kit', () => {
+    expect(a.chooses).toEqual([{ type: 'instrumentMusical', quantity: 1 }]);
+    expect(kitChooseLabel(a.chooses[0])).toBe('Musical Instrument of your choice');
+  });
+
+  it('B continua só-ouro; A não completa sem o pick', () => {
+    expect(isGoldOnlyOption(b)).toBe(true);
+    expect(kitChoosesComplete(a, {})).toBe(false);
+    expect(kitChoosesComplete(a, { 0: ['Lute|XPHB'] })).toBe(true);
+    expect(kitChoosesComplete(b, {})).toBe(true);
+  });
+
+  it('o filtro do seletor aceita só a categoria do choose', () => {
+    expect(kitChooseAllows(a.chooses[0], { name: 'Lute', type: 'INS|XPHB' })).toBe(true);
+    expect(kitChooseAllows(a.chooses[0], { name: 'Greatsword', type: 'M|XPHB', weaponCategory: 'martial' })).toBe(false);
+  });
+
+  it('o pick entra no inventário (sem equipar instrumento)', () => {
+    const inv = startingKitInventory(a, dbWithLute, { 0: ['Lute|XPHB'] });
+    expect(inv.map((i) => [i.itemId, i.equipped])).toEqual([
+      ['Chain Mail', true],
+      ['Lute', false],
+    ]);
+  });
+
+  it('quantity > 1 exige todos os picks (Artificer TCE: 2 armas simples)', () => {
+    const ch = { type: 'weaponSimple', quantity: 2 };
+    expect(kitChooseLabel(ch)).toBe('Simple weapon of your choice ×2');
+    expect(kitChoosesComplete({ chooses: [ch] }, { 0: ['Club|XPHB'] })).toBe(false);
+    expect(kitChoosesComplete({ chooses: [ch] }, { 0: ['Club|XPHB', 'Dagger|XPHB'] })).toBe(true);
   });
 });

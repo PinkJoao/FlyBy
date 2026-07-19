@@ -3289,3 +3289,43 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   A **single, already-spent one-time exception** applied to the commit that un-ignored `CLAUDE.md`
   and `.claude` (bundled with these context updates), which was allowed to carry Claude's
   co-authorship trailer; every later commit drops it again.
+
+## 43. Phase T - T1a session 3: Bard + all 10 subclasses (TC-0023…TC-0026)
+
+- **Migration repair (DDL-0037 fallout), found by the session's pre-flight sweep:**
+  `scripts/lib/loadDb.js` still looked for the source material as a SIBLING folder -
+  now resolves the in-repo `./DnD Source Material` (render-pdf-preview comment updated
+  too); vitest collected the 5etools snapshot's own jest tests (excluded via
+  `vite.config.js` `test.exclude`); eslint descended into the snapshot's
+  `eslint.config.mjs` (folder added to `globalIgnores`); `fetcher.test.js` used the
+  node-only `global` (→ `globalThis`, the one real lint error the exclusion exposed).
+- **TC-0023 - countable proficiency tokens never became choices.** `parseChoices` now
+  reads `{anyMusicalInstrument: 3}`-style token entries (`PROF_COUNT_TOKENS` in
+  `engine/choices.js`) into category-restricted pool choices - Musician XPHB / Harper
+  Agent FRHoF (origin feats!), Artificer Initiate, Satyr, Dwarf (Kaladesh), and every
+  `{anyStandard: N}` language race (Custom Lineage…). Multi-entry proficiency fields are
+  now correctly ALTERNATIVES (5etools joins them with "or"): only the first entry that
+  yields a choice emits one - Human (Ixalan)'s double `{anyStandard:1}` is ONE language.
+- **TC-0024 - kit `{equipmentType}` entries dropped.** The Bard kit's "Musical
+  Instrument of your choice" is now a kit CHOOSE: listed on the option card, picked via
+  an item selector in the guided EquipmentStep (category-matched), stored in
+  `meta.startingKitPicks`, added to the inventory, and gated by deep completeness
+  (`kitStepComplete` ctx flag).
+- **TC-0025 - sibling spell chooses could pick the same spell twice** (Lore's Magical
+  Discoveries). ChoiceList now feeds each SpellChoice the sibling `spell` picks of the
+  same bag; the selector and the add guard exclude them.
+- **TC-0026 - prose-granted spell missing from the data** (College of Spirits RHW's
+  Guidance). New curated `MISSING_ADDITIONAL_SPELLS` registry in
+  `engine/grantedSpellUses.js`, merged into the first `additionalSpells` group by
+  `resolveGranted` (never appended - a new group would be an alternative and spawn a
+  false spellSet choice).
+- **Session pass (all rows `ui: ok`):** full guided create (High Elf / Musician / Lore),
+  overlay level-ups 1→4 (Expertise, subclass + Bonus Proficiencies, ASI + deep
+  sub-choice gating), jump to 19 (badge 8 → fixup guide: 2× Magical Discoveries, 3 ASIs,
+  Expertise@9, Epic Boon - the TC-0022 cap saturating Cha at 20 and the boon lifting it
+  to 21), subclass swaps @19 for the other nine (features, fixed proficiency grants,
+  granted spells incl. Glamour's Always Prepared pair and Spirits' Spirit Guardians
+  1/Day, Swords' restricted FS pool via badge), chip popups, title links, race origin
+  timeline (choose-a-Wizard-cantrip @1, Detect Magic @3, Misty Step @5), mobile width on
+  sheet/Spellbook/Inventory, zero console errors.
+- Verified: 920 tests (+12), lint clean, sweep 274/274 `--strict`.

@@ -224,6 +224,29 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-18/19** - **T1a session 3: BARD + all 10 subclasses done** (all rows
+  `ui: ok`). Session opened with a DDL-0037 migration repair: loadDb still pointed at
+  the sibling source-material path, and vitest/eslint were descending into the in-repo
+  snapshot (its jest tests / its own eslint config) - all fixed before the sweep, which
+  then ran green (274/274 strict). Full guided create (High Elf / Musician / College of
+  Lore), overlay level-ups 1→4, jump to 19 (badge 8 → fixup guide with 2× Magical
+  Discoveries, 3 ASIs, Expertise@9, Epic Boon; the TC-0022 cap saturated Cha at 20 and
+  the boon lifted it to 21), subclass swaps @19 for the other nine (fixed grants on the
+  card - Valor's Medium/Shields/Martial, Swords' Medium+Scimitar; Glamour/Spirits
+  granted spells; Swords' FS picker restricted to Dueling/TWF), race-origin spell
+  timeline (@1/@3/@5), chip popups, title links, mobile, zero console errors.
+  Findings - ALL fixed in-session: **TC-0023** (countable proficiency tokens
+  `{anyMusicalInstrument: 3}` never became choices - Musician's 3 instruments were
+  silently skippable; multi-entry fields also corrected to ALTERNATIVES semantics),
+  **TC-0024** (kit `{equipmentType}` entries dropped - the Bard kit's "Musical
+  Instrument of your choice" now has a picker + deep completeness), **TC-0025**
+  (sibling spell chooses accepted the same spell twice - Magical Discoveries),
+  **TC-0026** (College of Spirits RHW's Guidance granted in prose but absent from
+  `additionalSpells` - new curated `MISSING_ADDITIONAL_SPELLS` registry).
+  920 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §43 + DDL-0038.
+  **Next action: T1a session 4 - CLERIC + its 19 subclasses** (largest batch; consider
+  splitting XPHB vs. legacy/PSA across two sittings).
+
 - **2026-07-17 (3)** - **T1a session 2: BARBARIAN + all 10 subclasses done** (all rows
   `ui: ok`). Sweep was green before starting (274/274 strict). Full guided create
   (Human/Tough/Skilled → Barbarian, Wild Heart as the representative build), overlay

@@ -15,9 +15,10 @@
 // -----------------------------------------------------------------------------
 
 import { parseChoices, LEGACY_ABILITY_CHOICE } from '../../engine/choices';
-import { resolveFeat, resolveRaceObj } from '../../engine/resolve';
+import { resolveFeat, resolveRaceObj, resolveClassObj } from '../../engine/resolve';
 import { totalLevel } from '../../schema/character';
 import { raceLineages, speciesSizeChoice } from '../../engine/speciesData';
+import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
 import { buildClassChoices, isProficiencyChoice, isFeatureChoice } from '../builder/classChoices';
 import { ORIGIN_CHOICES } from '../builder/originChoices';
 import { hasFreeLegacyBonus } from '../../selector/entities/feat';
@@ -98,6 +99,20 @@ export function speciesStepComplete(db, character) {
   return choicesComplete(choices, sp.choices, db, level);
 }
 
+/** O KIT inicial está completo? Kit escolhido + os chooses dele (o instrumento
+ *  do Bard XPHB - TC-0024) preenchidos. Sem kit escolhido → false (o passo já
+ *  era obrigatório); kit sem chooses → true direto. */
+export function kitStepComplete(db, character) {
+  const kitKey = character?.meta?.startingKit;
+  if (!kitKey) return false;
+  const cls = character?.classes?.[0];
+  const classObj = cls?.classId ? resolveClassObj(db, cls.classId, cls.source) : null;
+  const option = classObj
+    ? parseStartingEquipment(db, classObj).find((o) => o.key === kitKey)
+    : null;
+  return kitChoosesComplete(option, character?.meta?.startingKitPicks);
+}
+
 /** O TALENTO DE ORIGEM está completo? Feat escolhido + sub-escolhas dele. */
 export function originFeatStepComplete(db, character) {
   const of = character?.origin?.originFeat;
@@ -116,6 +131,7 @@ export function originFeatStepComplete(db, character) {
  *   featuresComplete: boolean,
  *   speciesComplete: boolean,
  *   originFeatComplete: boolean,
+ *   kitComplete: boolean,
  * }}
  */
 export function createGuideContext(db, character) {
@@ -133,5 +149,6 @@ export function createGuideContext(db, character) {
     featuresComplete: choicesComplete(featChoices, cls?.choices, db, level),
     speciesComplete: speciesStepComplete(db, character),
     originFeatComplete: originFeatStepComplete(db, character),
+    kitComplete: kitStepComplete(db, character),
   };
 }

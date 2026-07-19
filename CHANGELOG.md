@@ -3329,3 +3329,29 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   timeline (choose-a-Wizard-cantrip @1, Detect Magic @3, Misty Step @5), mobile width on
   sheet/Spellbook/Inventory, zero console errors.
 - Verified: 920 tests (+12), lint clean, sweep 274/274 `--strict`.
+
+## 44. Glossary shows only current versions (duplicate entries removed)
+
+- **Species listed twice.** Searching "Aarakocra" in the browsable glossary returned two
+  species (DMG and MPMM) plus the language. The glossary's entity lists come from
+  `entityLinks`' `SIMPLE_TAGS`, whose race list is deliberately PERMISSIVE - legacy prose
+  cites `{@race Aarakocra|DMG}` and a link must never die - but `latestOnly` alone does not
+  hide those DMG entries: they are "NPC Species" and carry no `reprintedAs`. `SIMPLE_TAGS`
+  gained an optional **`glossaryList`** (used by `glossaryIndex` in place of `list`), and
+  the race config points it at the SPECIES SELECTOR's own list
+  (`latestOnly ∘ resolveCopies` + no `NPC Race`) - the glossary now shows exactly what the
+  rest of the app offers. Fixes Aarakocra, Goblin, Hobgoblin, Kenku, Kobold and Lizardfolk.
+- **Weapon properties listed twice.** `buildGlossary` indexes an `itemProperty` under its
+  ABBREVIATION and under its NAME (both appear in prose tags), pointing at the SAME entry
+  object; `glossaryEntries` walked the map values and emitted it once per key. It now
+  dedups by object identity - "Ammunition", "Finesse", "Heavy", "Light", "Loading",
+  "Reach", "Thrown", "Two-Handed", "Versatile", "Reload", "Burst Fire" and "Vestige of
+  Divergence" each appear once.
+- Same-name entries that are genuinely DIFFERENT things stay (both are offered everywhere
+  else in the app too): the XPHB vs. XDMG "Ammunition" properties (regular vs. firearm),
+  the XPHB/XDMG "Creature Size and Space" tables (squares vs. hexes), setting variants
+  (Aven PSA/PSD, Elf LFL/XPHB, Goblin MPMM/PSZ, Vedalken GGR/PSK) and the XGE/XDMG item
+  pairs the dataset never marked as reprints.
+- Verified: 922 tests (+2), lint clean, live glossary ("aarakocra" → 1 species + 1
+  language; "ammunition" → 1 XPHB property + 1 XDMG property + the SRD table), no console
+  errors.

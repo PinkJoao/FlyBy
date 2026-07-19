@@ -27,12 +27,25 @@ const db = {
   'spells-xphb': {
     spell: [{ name: 'Fireball', source: 'XPHB', level: 3, school: 'V', entries: ['A bright streak…'] }],
   },
-  'items-base': { baseitem: [{ name: 'Longsword', source: 'XPHB', type: 'M|XPHB', weaponCategory: 'martial', entries: [] }] },
+  'items-base': {
+    baseitem: [{ name: 'Longsword', source: 'XPHB', type: 'M|XPHB', weaponCategory: 'martial', entries: [] }],
+    // Indexada por abreviação E por nome (ver buildGlossary) - não pode listar duas vezes.
+    itemProperty: [{ abbreviation: 'A', source: 'XPHB', entries: [{ name: 'Ammunition', entries: ['You can use…'] }] }],
+  },
   items: { item: [] },
   magicvariants: { magicvariant: [] },
   feats: { feat: [{ name: 'Alert', source: 'XPHB', category: 'O', entries: ['You gain…'] }] },
   optionalfeatures: { optionalfeature: [] },
-  races: { race: [{ name: 'Gnome', source: 'XPHB', size: ['S'], speed: 30, entries: ['…'] }] },
+  races: {
+    race: [
+      { name: 'Gnome', source: 'XPHB', size: ['S'], speed: 30, entries: ['…'] },
+      // Só a MPMM deve aparecer: a DMG é uma "NPC Species" (sem reprintedAs, então
+      // o latestOnly sozinho a deixava passar) e a EEPC foi republicada.
+      { name: 'Aarakocra', source: 'MPMM', size: ['M'], speed: 30, entries: ['…'] },
+      { name: 'Aarakocra', source: 'DMG', size: ['M'], speed: 20, traitTags: ['NPC Race'], entries: ['…'] },
+      { name: 'Aarakocra', source: 'EEPC', size: ['M'], speed: 20, reprintedAs: ['Aarakocra|MPMM'], entries: ['…'] },
+    ],
+  },
   languages: { language: [{ name: 'Common', source: 'XPHB', type: 'standard', entries: ['…'] }] },
   backgrounds: { background: [{ name: 'Acolyte', source: 'XPHB', entries: ['You devoted…'] }] },
   'class-fighter': {
@@ -77,6 +90,16 @@ describe('glossaryIndexFor', () => {
     expect(byName('Common')[0]).toMatchObject({ kind: 'entity', categoryLabel: 'Language' });
     expect(byName('Second Wind')[0]).toMatchObject({ kind: 'rule', categoryLabel: 'Class Feature' });
     expect(byName('Improved Critical')[0]).toMatchObject({ kind: 'rule', categoryLabel: 'Subclass Feature' });
+  });
+
+  it('espécie aparece uma única vez: só a versão atual e jogável', () => {
+    const aara = byName('Aarakocra');
+    expect(aara).toHaveLength(1);
+    expect(aara[0].source).toBe('MPMM');
+  });
+
+  it('propriedade de arma indexada por abreviação E nome aparece uma única vez', () => {
+    expect(byName('Ammunition')).toHaveLength(1);
   });
 
   it('background abre no popup de regra (sem entity de seletor)', () => {

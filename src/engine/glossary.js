@@ -186,15 +186,22 @@ export function ruleFilterCategories(entry) {
  * Object" → XPHB "Utilize") mostraria as duas versões sem este filtro. O
  * ÍNDICE (lookupRule) segue completo - prosa legada que cita a fonte antiga
  * continua resolvendo.
+ * Uma MESMA entrada pode estar sob várias chaves (itemProperty é indexada pela
+ * abreviação E pelo nome - "A" e "Ammunition" apontam para o mesmo objeto), o
+ * que a listaria duas vezes: dedupamos por IDENTIDADE do objeto.
  */
 export function glossaryEntries(db) {
   const g = glossaryFor(db);
   if (!g) return [];
   const out = [];
+  const seen = new Set();
   for (const arr of g.values()) {
     const current = arr.filter((e) => !e.reprintedAs);
     if (!current.length) continue; // tudo republicado → a entrada nova tem outra chave
-    out.push(pickBySource(current) ?? current[0]);
+    const entry = pickBySource(current) ?? current[0];
+    if (seen.has(entry)) continue;
+    seen.add(entry);
+    out.push(entry);
   }
   return out;
 }

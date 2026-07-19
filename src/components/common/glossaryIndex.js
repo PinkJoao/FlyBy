@@ -100,7 +100,9 @@ function tableEntries(db) {
 function entityEntries(db) {
   const out = [];
   for (const cfg of Object.values(SIMPLE_TAGS)) {
-    for (const raw of cfg.list(db)) {
+    // `glossaryList` quando o índice de LINKS é mais permissivo que o catálogo
+    // do app (ver SIMPLE_TAGS): o glossário lista só as versões atuais.
+    for (const raw of (cfg.glossaryList ?? cfg.list)(db)) {
       if (!raw?.name) continue;
       out.push({
         id: `${cfg.label}:${norm(raw.name)}|${norm(raw.source)}`,

@@ -52,7 +52,12 @@ function groupAsItem(g) {
  * `rule` → popup de regra (tipos sem entity de seletor própria); `label` é o
  * rótulo de categoria (usado pelo glossário navegável - glossaryIndex.js). Para
  * os LINKS o catálogo de itens não filtra `age` (a prosa pode citar armas de
- * fogo). Os itemGroups entram por ÚLTIMO: um item real de mesmo nome vence. */
+ * fogo). Os itemGroups entram por ÚLTIMO: um item real de mesmo nome vence.
+ *
+ * `glossaryList` (opcional) é a lista que o glossário NAVEGÁVEL usa no lugar de
+ * `list`: o índice de LINKS é deliberadamente permissivo (prosa legada cita
+ * `{@race Aarakocra|DMG}` e o link não pode morrer), mas o glossário deve
+ * mostrar exatamente o que o resto do app oferece - só as versões atuais. */
 export const SIMPLE_TAGS = {
   spell: { label: 'Spell', list: (db) => allSpells(db), entity: spellEntity },
   item: {
@@ -74,6 +79,11 @@ export const SIMPLE_TAGS = {
   race: {
     label: 'Species',
     list: (db) => latestOnly(resolveCopies(db?.races?.race ?? [])),
+    // No glossário, a MESMA lista do seletor de espécies: fora as "NPC Species"
+    // (as versões DMG de Aarakocra/Goblin/Kenku/Kobold/Lizardfolk… não trazem
+    // `reprintedAs`, então o latestOnly sozinho as deixava passar e a espécie
+    // aparecia duas vezes).
+    glossaryList: (db) => raceEntity.list(db),
     entity: raceEntity,
   },
   class: {

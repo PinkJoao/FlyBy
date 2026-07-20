@@ -305,6 +305,49 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0042 — O ChoiceList DERIVA o que precisa; prop "encanada" só quando há um dono claro
+**Date:** 2026-07-20
+**Resolve:** TC-0034 (o único pendente aberto da sessão T1a Druid, DDL-0041). **Builds
+on:** DDL-0040 (o fluxo "Already Prepared"), DDL-0032 (o precedente: o ChoiceList é o
+choke point ÚNICO, e um recurso novo entra nele em vez de em cada tab/step).
+
+**Context.** O fluxo DDL-0040 (filtro pré-marcado + badge + confirmação citando a
+origem) valia na SpellbookTab e no SpellPicker do guia — ambos já recebiam `derived` —
+mas não nos chooses de magia dos sub-bags de FEAT (Magic Initiate num slot de talento).
+O TC-0034 foi registrado como "estrutural" por supor que a correção exigia passar
+`origins` pelos SETE call sites do ChoiceList (ClassTab, SpeciesTab, BackgroundTab,
+FeaturesStep, OriginFeatStep, ProficienciesStep, SpeciesStep).
+
+**Decisions.**
+- **O ChoiceList deriva o mapa ELE MESMO**, num `useMemo` sobre `(character, db)` que ele
+  já recebe — zero mudanças nos call sites. O resultado desce como prop `spellsOwned`
+  para o `SpellChoice` (entity com badge + `initialFilterState {owned: exclude}` +
+  confirmação) e para a lista ANINHADA do sub-bag de talento, que por isso **nunca
+  re-deriva**: uma derivação por tela, não uma por slot de feat.
+- **O memo é PORTEIRADO pelo conteúdo da lista:** só deriva se houver um pool `spell`
+  nesta lista ou um pool `feat` (cujo sub-bag pode conter um). As listas comuns de
+  proficiência/feature não pagam nada. `feat` é o único pool que aninha ChoiceList hoje —
+  se outro passar a aninhar, o porteiro precisa incluí-lo.
+- **Nenhuma origem é excluída aqui** (ao contrário dos outros dois call sites, que
+  excluem a origem sendo editada): os picks da própria escolha e os dos chooses irmãos já
+  saem do seletor por `exclude` (TC-0025), e um grant FIXO da mesma entidade — o
+  Prestidigitation do High Elf ao lado do cantrip choose dele — é justamente a
+  redundância que o aviso deve pegar.
+- **Regra geral:** quando um componente-choke-point já tem os INSUMOS (`character` + `db`)
+  para derivar o que precisa, ele deriva (memoizado e porteirado) em vez de exigir que
+  todo chamador saiba do recurso. Encanar por prop fica para quando há um dono claro do
+  dado — como a lista aninhada aqui, que recebe pronto para não duplicar trabalho.
+
+**Consequences.**
+- Todo host de ChoiceList (tabs, wizard, overlay de level-up) ganhou o fluxo de graça,
+  como aconteceu com os links de título no DDL-0032.
+- Um novo picker dentro do ChoiceList que precise de estado derivado segue o mesmo
+  caminho; não crie uma sétima prop nos call sites.
+- Verificado ao vivo (Druid 1 + Magic Initiate (Druid): Speak with Animals escondido por
+  padrão → badge ao desmarcar → confirmação "You already have Speak with Animals from
+  Druid" → Cancel mantém 0/1, Add anyway grava), 940 testes, lint, sweep 274/274
+  `--strict`. Ver CHANGELOG §50.
+
 ### DDL-0041 — T1a Druid session: idioma em prosa de subclasse é grant curado; item de kit que referencia ITEM GROUP vira choose de pool fechado
 **Date:** 2026-07-20
 **Builds on:** DDL-0029 (registro `SUBCLASS_GRANTS`), DDL-0038 (TC-0024, a máquina de kit
@@ -332,10 +375,10 @@ reais corrigidos em sessão (TC-0032/0033) e um aberto (TC-0034) — ver `testin
   slot (badge conta 1); trocar para fora a des-colapsa e o contador fica over-limit em
   VERMELHO sem nag (a liberdade DDL-0026). Sessões futuras não devem reportar isso como
   bug.
-- **Aberto (TC-0034, polish):** os pickers de magia dos sub-bags de FEAT (SpellChoice do
-  ChoiceList, TC-0011) não recebem o fluxo DDL-0040 (filtro/badge/confirm de Already
-  Prepared) — exige encanar as origins derivadas no ChoiceList em todos os call sites;
-  adiado por ser estrutural.
+- **~~Aberto~~ (TC-0034, polish) — RESOLVIDO em 2026-07-20 (DDL-0042):** os pickers de
+  magia dos sub-bags de FEAT (SpellChoice do ChoiceList, TC-0011) não recebiam o fluxo
+  DDL-0040. Supunha-se exigir encanar as origins por todos os call sites; a solução foi
+  o ChoiceList DERIVAR o mapa nele mesmo, sem tocar em nenhum call site.
 
 **Consequences.**
 - Um novo grant de idioma/perícia/etc. em prosa continua sendo uma linha de registro; um

@@ -5,16 +5,16 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-20T15:08:26.229Z · base seed 1 · 274 rows
+Last sweep: 2026-07-20T16:06:03.345Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
 | `class:artificer/Alchemist` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | ok | todo | features + granted spells verified live @19 |
-| `class:artificer/Armorer` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | issues (TC-0012, TC-0017) | todo | guided create pass + levels 1-4 & 19; Heavy armor/Smith's Tools grant missing |
+| `class:artificer/Armorer` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | ok | todo | guided create pass + levels 1-4 & 19; TC-0012 (Heavy armor/Smith's Tools grant) + TC-0017 (featureoption collapse) fixed 2026-07-17 |
 | `class:artificer/Artillerist` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | ok | todo | features verified live @19 |
-| `class:artificer/Battle Smith` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | issues (TC-0012) | todo | Battle Ready martial-weapons grant missing |
+| `class:artificer/Battle Smith` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | ok | todo | TC-0012 fixed 2026-07-17: Battle Ready martial-weapons grant derives |
 | `class:artificer/Cartographer` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | ok | todo | features + spell table verified live @19 |
 | `class:artificer/Reanimator` | ok | 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16 17 19 | ok | todo | features + spell table verified live @19 (RHW) |
 | `class:barbarian/Battlerager` | ok | 1 3 4 8 12 16 19 | ok | todo | features verified live @19 (Armor/Reckless Abandon/Charge/Spiked Retribution) |

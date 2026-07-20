@@ -3533,3 +3533,42 @@ Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultado
   Order), Spellbook cards (DC 19 / +11 / slots 4-3-3-3-3-2-1-1-1 @19), mobile width
   (Class/Spellbook/Inventory, no horizontal scroll), zero console errors.
 - Verified: 940 tests (+10), lint clean, sweep 274/274 `--strict`.
+
+## 50. TC-0034: o fluxo "Already Prepared" chega aos pickers de magia dos talentos
+
+**Fecha o único pendente aberto da sessão T1a Druid (DDL-0041); arquitetura em DDL-0042.**
+
+- **O problema.** O DDL-0040 deu aos pickers de magia o recorte "liberdade com aviso" —
+  filtro **Already Prepared** pré-marcado como exclude (desmarcável), badge no card e
+  confirmação citando a origem. Ele valia na SpellbookTab e no SpellPicker do guia, mas
+  **não** nos chooses de magia dos sub-bags de TALENTO (`SpellChoice` do ChoiceList,
+  TC-0011): um Druid 1 com Magic Initiate (Druid) escolhia Speak with Animals — que ele
+  já tem sempre preparada via Druidic — sem filtro, sem badge e sem aviso.
+- **A correção (mais barata que o previsto).** O TC-0034 supunha encanar `origins` pelos
+  **sete** call sites do ChoiceList. Em vez disso o **ChoiceList deriva o mapa ele
+  mesmo** (`preparedElsewhere(deriveFromDb(character, db).spellcasting.origins)` num
+  `useMemo`) e o passa adiante como `spellsOwned` — para o `SpellChoice` e para a lista
+  **aninhada** do sub-bag, que por isso nunca re-deriva. **Nenhum call site mudou.**
+- **Porteiro:** o memo só roda quando um picker de magia é de fato alcançável — um pool
+  `spell` na lista, ou um pool `feat` (cujo sub-bag pode ter um). Listas comuns de
+  proficiência/feature não pagam nada, e há **uma** derivação por tela, não uma por slot
+  de talento.
+- **Nenhuma origem excluída** aqui, ao contrário dos outros dois call sites: os picks da
+  própria escolha e os dos irmãos já saem do seletor por `exclude` (TC-0025), e um grant
+  FIXO da mesma entidade (o Prestidigitation do High Elf ao lado do cantrip choose dele)
+  é exatamente a redundância que o aviso deve pegar.
+- **Verificado ao vivo** (Druid 1 + Magic Initiate (Druid), picker de magia de nível 1):
+  Speak with Animals escondido por padrão → desmarcar o filtro revela o card com o badge
+  "Already Prepared" → selecionar abre "You already have Speak with Animals from Druid.
+  Add it anyway?" → **Cancel** mantém 0/1 (e deixa o painel aberto, como no SpellPicker),
+  **Add anyway** grava o pick. Zero erros de console.
+- **Limpeza dos trackers na mesma passada.** Auditoria do `testing/ISSUES.md`: o único
+  item **aberto** que resta é **a metade Rogue do TC-0021** (o pool de Weapon Mastery
+  precisa de semântica condicional — "Simple, ou Martial com Finesse/Light" — que o
+  `weaponFilterAllows` ainda não expressa), agendada para a sessão T1a do Rogue; o
+  cabeçalho do TC-0021 passou a dizer PARTIAL em vez de esconder isso no texto. Marcações
+  vencidas corrigidas: as linhas Armorer/Battle Smith do `COVERAGE.md` ainda diziam
+  `issues (TC-0012, TC-0017)` embora ambos tenham sido resolvidos em 2026-07-17 → agora
+  `ok`; a entrada de 2026-07-17 (3) do TESTING-PLAN ainda chamava o TC-0022 de aberto
+  embora o DDL-0034 o tenha resolvido no mesmo dia → corrigida.
+- Verificado: 940 testes, lint clean, sweep 274/274 `--strict`.

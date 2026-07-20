@@ -224,6 +224,23 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-20 (2)** - **TC-0034 FIXED + ledger/tracker cleanup.** The feat sub-bag spell
+  pickers now get the full DDL-0040 "Already Prepared" flow: `ChoiceList` derives the
+  owned-spell map itself at its single choke point (a gated `useMemo`, only when a spell
+  picker is reachable) and passes it down as `spellsOwned` to `SpellChoice` and to the
+  NESTED list of a feat sub-bag - so the seven call sites needed no changes at all, which
+  is what had made the issue look structural. Verified live (Druid 1 + Magic Initiate:
+  Speak with Animals hidden → badge → confirm naming Druid → Cancel/Add anyway both
+  correct); 940 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §50 + DDL-0042.
+  **Ledger audit done in the same pass:** the only OPEN item in `testing/ISSUES.md` is
+  now **the Rogue half of TC-0021** (its Weapon Mastery pool needs conditional filter
+  semantics: "Simple, or Martial with Finesse/Light" - `weaponFilterAllows` can't express
+  it yet). Stale markers cleared: `COVERAGE.md`'s Armorer/Battle Smith rows still read
+  `issues (TC-0012, TC-0017)` though both were fixed 2026-07-17 → now `ok`; the
+  2026-07-17 (3) entry below still called TC-0022 open though DDL-0034 resolved it the
+  same day → corrected.
+  **Next action: T1a session 6 - FIGHTER + its 10 subclasses** (unchanged).
+
 - **2026-07-20** - **T1a session 5: DRUID + all 8 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). Full guided create (Goliath Stone Giant /
   Magic Initiate (Druid) / Circle of the Land as the rep build - the feat + class pickers
@@ -239,9 +256,9 @@ on the user's machines).
   Findings: **TC-0032** (Shepherd's Speech of the Woods never granted Sylvan - one
   `SUBCLASS_GRANTS` line, fixed), **TC-0033** (kit items referencing an ITEM GROUP landed
   as "unresolved" junk - Druid/Cleric/Paladin XPHB focus/holy symbol; now a closed-pool
-  kit choose on the TC-0024 machinery, fixed), **TC-0034** (open, polish: feat sub-bag
-  spell pickers skip the DDL-0040 Already Prepared flow - needs origins plumbed into
-  ChoiceList).
+  kit choose on the TC-0024 machinery, fixed), **TC-0034** (polish: feat sub-bag spell
+  pickers skipped the DDL-0040 Already Prepared flow - **fixed 2026-07-20 (2)**, see the
+  entry above).
   940 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §49 + DDL-0041.
   **Next action: T1a session 6 - FIGHTER + its 10 subclasses** (remember DDL-0033: its
   mastery pool is deliberately filter-less; Eldritch Knight is a third-caster - check its
@@ -315,11 +332,11 @@ on the user's machines).
   Finesse/Light variant deferred to its session**, needs conditional filter semantics),
   plus cosmetics (SpeciesTab/ClassTab picker labels showed lowercase ids; `{@table}`
   display segment; double Ritual chip; t1-choices helper hid off-level choices).
-  **Open: TC-0022** (`needs-user-eyes`): feat ability increases don't enforce the score
-  cap 20 (GWM+Sentinel → Str 22) - product decision pending.
+  **TC-0022 was RESOLVED same day** (DDL-0034): feat ability increases now enforce the
+  RAW score cap, data-driven from `ability[].max` (regular 20, Epic Boons 30).
   869 tests, lint, sweep 274/274 `--strict`.
-  **Next action: T1a session 3 - BARD + its 10 subclasses** (remember TC-0022 when a
-  user pass happens; extend MASTERY_FILTERS in the Rogue session).
+  **Next action: T1a session 3 - BARD + its 10 subclasses** (extend MASTERY_FILTERS in
+  the Rogue session).
 
 - **2026-07-17 (2)** - **DDL-0029's out-of-scope leftovers closed (DDL-0030), matrix grew to
   274.** Subraces (5etools `subrace`) merge as LINEAGES (`raceLineages` everywhere: tabs,

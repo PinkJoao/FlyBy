@@ -19,7 +19,8 @@
 
 import { useMemo, useState } from 'react';
 import { parseChoices, LEGACY_ABILITY_CHOICE, weaponFilterAllows } from '../../engine/choices';
-import { resolveFeat } from '../../engine/resolve';
+import { resolveFeat, deriveFromDb } from '../../engine/resolve';
+import { preparedElsewhere } from '../../engine/spellcasting';
 import { skillCode } from '../../engine/classData';
 import { spellChoosePredicate } from '../../engine/spells';
 import { totalLevel } from '../../schema/character';
@@ -83,7 +84,31 @@ function isOwned(owned, kind, value) {
 // `guided`: renderizado dentro do guia de personagem (wizard/level-up). Ativa o
 // filtro "Prerequisites: Met" por padrão nos seletores de talento - as telas do
 // guia são para novatos, então escondem de saída o que não é elegível.
-export default function ChoiceList({ choices, bag, onChange, db, owned, character, guided = false }) {
+export default function ChoiceList({ choices, bag, onChange, db, owned, character, guided = false, spellsOwned }) {
+  // TC-0034: magias que a ficha JÁ tem (qualquer origem) → nome minúsculo →
+  // rótulo da origem, para o filtro "Already Prepared" pré-marcado, o badge e a
+  // confirmação dos pickers de magia (o mesmo fluxo DDL-0040 da SpellbookTab e
+  // do SpellPicker do guia). Deriva aqui, no ÚNICO choke point, em vez de
+  // encanar `origins` por todos os call sites - e só quando há de fato um
+  // picker de magia por perto: um pool `spell` nesta lista, ou um pool `feat`,
+  // cujo sub-bag pode conter chooses de magia (Magic Initiate). A lista
+  // ANINHADA recebe o mapa pronto por prop, então deriva uma vez por tela.
+  //
+  // Não excluímos nenhuma origem: os picks desta própria escolha (e os dos
+  // chooses irmãos) já saem do seletor por `exclude`, e um grant FIXO da mesma
+  // entidade (o Prestidigitation do High Elf ao lado do seu cantrip choose) é
+  // exatamente o caso que o aviso deve pegar.
+  const needsSpellsOwned =
+    !spellsOwned &&
+    !!character &&
+    !!db &&
+    (choices ?? []).some((c) => c.pool?.type === 'spell' || c.pool?.type === 'feat');
+  const derivedSpellsOwned = useMemo(
+    () => (needsSpellsOwned ? preparedElsewhere(deriveFromDb(character, db)?.spellcasting?.origins) : null),
+    [needsSpellsOwned, character, db],
+  );
+  const owns = spellsOwned ?? derivedSpellsOwned;
+
   if (!choices?.length) return null;
 
   const setEntry = (id, entry) => {
@@ -127,13 +152,14 @@ export default function ChoiceList({ choices, bag, onChange, db, owned, characte
           character={character}
           guided={guided}
           siblingSpellPicks={c.pool?.type === 'spell' ? spellPicksElsewhere(c.id) : null}
+          spellsOwned={owns}
         />
       ))}
     </div>
   );
 }
 
-function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, siblingSpellPicks }) {
+function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, siblingSpellPicks, spellsOwned }) {
   const picks = entry?.picks ?? [];
 
   // Título → link do glossário: a feature que concede a escolha (ruleEntry,
@@ -169,7 +195,7 @@ function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, sibl
         {counter && <span className={styles.counter}>{counter}</span>}
       </div>
       {choice.pool.type === 'feat' ? (
-        <FeatChoice choice={choice} entry={entry} picks={picks} onChange={onChange} db={db} owned={owned} character={character} guided={guided} />
+        <FeatChoice choice={choice} entry={entry} picks={picks} onChange={onChange} db={db} owned={owned} character={character} guided={guided} spellsOwned={spellsOwned} />
       ) : choice.pool.type === 'optionalfeature' ? (
         <OptionalFeatureChoice choice={choice} picks={picks} onChange={onChange} db={db} character={character} />
       ) : choice.pool.type === 'featureoption' ? (
@@ -179,7 +205,7 @@ function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, sibl
       ) : choice.pool.type === 'spellAbility' || choice.pool.type === 'size' || choice.pool.type === 'spellSet' ? (
         <SelectChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'spell' ? (
-        <SpellChoice choice={choice} picks={picks} onChange={onChange} db={db} siblingPicks={siblingSpellPicks} />
+        <SpellChoice choice={choice} picks={picks} onChange={onChange} db={db} siblingPicks={siblingSpellPicks} spellsOwned={spellsOwned} />
       ) : PILL_KINDS.has(choice.kind) ? (
         <PillsChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'any' && Array.isArray(choice.pool.of) ? (
@@ -525,18 +551,32 @@ function PillsChoice({ choice, picks, onChange }) {
  * Elf, Pact of the Tome…): chips + "+ Add" abrindo o seletor de magias
  * restrito ao filtro da folha `{choose}` (nível/classe/escola/ritual/ataque
  * ou lista fechada `{from}`). Picks = "Nome|Fonte".
+ *
+ * `spellsOwned` (TC-0034): mapa nome→origem das magias que a ficha já tem, para
+ * o mesmo fluxo DDL-0040 dos outros pickers - filtro "Already Prepared"
+ * pré-marcado como exclude (desmarcável), badge no card e confirmação citando a
+ * origem. Escolher em dobro é LEGAL, só redundante: aviso, nunca bloqueio.
  */
-function SpellChoice({ choice, picks, onChange, db, siblingPicks }) {
+function SpellChoice({ choice, picks, onChange, db, siblingPicks, spellsOwned }) {
   const [open, setOpen] = useState(false);
   // makeSpellEntity constrói o índice magia→classes (varre spell-sources);
   // memoizado por db para não recomputar a cada render.
-  const entity = useMemo(() => makeSpellEntity(db), [db]);
+  const entity = useMemo(() => makeSpellEntity(db, { preparedElsewhere: spellsOwned }), [db, spellsOwned]);
   const eligible = useMemo(() => spellChoosePredicate(choice.pool, db), [choice.pool, db]);
 
   const nameOf = (id) => id.split('|')[0];
-  const add = (raw) => {
+  const add = async (raw) => {
     const id = `${raw.name}|${raw.source}`;
     if (!picks.includes(id) && !siblingPicks?.has(id) && picks.length < choice.count) {
+      const from = spellsOwned?.get(raw.name.toLowerCase());
+      if (from) {
+        const ok = await confirm({
+          title: 'Add this spell?',
+          message: `You already have ${raw.name} from ${from}. Add it anyway?`,
+          confirmLabel: 'Add anyway',
+        });
+        if (!ok) return;
+      }
       onChange({ kind: 'spell', picks: [...picks, id] });
     }
     setOpen(false);
@@ -577,6 +617,9 @@ function SpellChoice({ choice, picks, onChange, db, siblingPicks }) {
             // Já escolhida num choose de magia IRMÃO (Magical Discoveries ×2 - TC-0025).
             (siblingPicks?.has(`${raw.name}|${raw.source}`) ?? false)
           }
+          // TC-0034: o que a ficha já tem sai da vista por padrão - filtro
+          // comum, desmarcável (o pick duplo é legal, só redundante).
+          initialFilterState={(spellsOwned?.size ?? 0) > 0 ? { owned: { yes: 'exclude' } } : undefined}
           onSelect={add}
           onClose={() => setOpen(false)}
         />
@@ -648,7 +691,7 @@ function MixedChoice({ choice, picks, onChange, db, owned }) {
 /** Escolha de talento: PickerField por slot (entity da CATEGORIA do pool -
  * O/G/FS/EB, ciente do personagem p/ colorir pré-requisitos); cada talento
  * escolhido RECURSA (sub-escolhas, incl. ASI; legacy ganha +1 livre). */
-function FeatChoice({ choice, entry, picks, onChange, db, owned, character, guided }) {
+function FeatChoice({ choice, entry, picks, onChange, db, owned, character, guided, spellsOwned }) {
   const cats = choice.pool.category ?? ['O'];
   // TC-0029: `extraCategories` (ASI: O/EB; Epic Boon: G/O) entram na LISTA, mas
   // a categoria padrão vem pré-marcada como filtro removível - mesmo padrão dos
@@ -731,6 +774,9 @@ function FeatChoice({ choice, entry, picks, onChange, db, owned, character, guid
                   owned={owned}
                   character={character}
                   guided={guided}
+                  // Mapa já derivado no nível de cima (TC-0034): a lista
+                  // aninhada nunca re-deriva o personagem.
+                  spellsOwned={spellsOwned}
                   onChange={(subBag) => setSub(featId, subBag)}
                 />
               </div>

@@ -268,7 +268,8 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0021 - Weapon Mastery pool ignored per-class restrictions (Barbarian melee-only)
 
 - **Found:** 2026-07-17, T1a Barbarian session (a Barbarian mastered a Blowgun).
-  **Severity:** bug. **Status:** fixed@2026-07-17 for Barbarian; Rogue variant deferred.
+  **Severity:** bug. **Status:** PARTIAL - fixed@2026-07-17 for Barbarian; **the Rogue
+  variant is the one OPEN item in this ledger** (scheduled for the Rogue T1a session).
 - XPHB Weapon Mastery texts restrict the eligible kinds per class: Barbarian "Simple or
   Martial MELEE weapons"; Rogue "Simple weapons and Martial weapons that have the Finesse
   or Light property"; Fighter/Paladin/Ranger unrestricted. The `weaponMastery` choice
@@ -504,10 +505,31 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - **Found:** 2026-07-20, T1a Druid session (Magic Initiate's level-1 spell picker
   accepted Speak with Animals - always prepared via Druidic - with no badge, no
   pre-marked exclude filter and no confirm). **Severity:** polish (consistency with
-  DDL-0040; the pick is legal, just silently redundant). **Status:** open.
+  DDL-0040; the pick is legal, just silently redundant). **Status:** fixed@2026-07-20.
 - TC-0031's fix wired `preparedElsewhere` into the SpellbookTab prepare flow and the
   guide's SpellPicker, but the feat sub-bag spell chooses (TC-0011's SpellChoice in
-  ChoiceList) build their selector without the character's derived origins, so the
-  whole flow (filter + badge + confirm) is absent there. Needs the origins plumbed into
-  ChoiceList's spell choice rendering across its call sites (tabs + wizard steps) - a
-  structural change, deferred per "fix small, log big".
+  ChoiceList) built their selector without the character's derived origins, so the
+  whole flow (filter + badge + confirm) was absent there.
+- **Fix:** ChoiceList derives the map ITSELF at its single choke point, instead of
+  plumbing `origins` through all seven call sites (the structural change the entry
+  feared). It calls `preparedElsewhere(deriveFromDb(character, db).spellcasting.origins)`
+  in a `useMemo` and passes the result down as `spellsOwned` - to `SpellChoice` (entity
+  badge + pre-marked `owned: exclude` filter + confirm naming the source) and to the
+  NESTED ChoiceList of a feat sub-bag, which therefore never re-derives. The memo only
+  runs when a spell picker can actually be reached (a `spell` pool in this list, or a
+  `feat` pool whose sub-bag may hold one), so the ordinary proficiency/feature lists pay
+  nothing. **No origin is excluded** (unlike the other two call sites, which exclude the
+  origin being edited): this choice's own picks and its siblings already leave the
+  selector via `exclude`, and a FIXED grant of the same entity (High Elf's
+  Prestidigitation beside its own cantrip choose) is exactly the redundancy worth
+  warning about. Verified live on a Druid 1 + Magic Initiate (Druid): Speak with Animals
+  (always prepared via Druidic) hidden by default → unmarking the filter shows it with
+  the "Already Prepared" badge → selecting it confirms "You already have Speak with
+  Animals from Druid. Add it anyway?"; Cancel leaves 0/1, Add anyway lands the pick.
+
+---
+
+> **2026-07-20 (post-session)** - TC-0034 fixed; **the only open item in this ledger is
+> the Rogue half of TC-0021** (conditional weapon-filter semantics for its Weapon
+> Mastery pool), deliberately scheduled for the Rogue T1a session. Everything else is
+> `fixed@<date>`.

@@ -3488,3 +3488,48 @@ derivado - slots `{1:4, 2:2}` compartilhados, `maxPrepareLevel` 1 nas duas orige
 lint, sweep 274/274 `--strict`. Ao vivo, no Cleric 2 / Druid 1 real: card de slots
 "1st ×4 / 2nd ×2" e o picker abrindo com Cantrip + 1st Level + Cleric marcados e **2nd
 Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultados.
+
+## 49. Phase T - T1a session 5: Druid + all 8 subclasses (TC-0032…TC-0034)
+
+- **Scope (TESTING-PLAN §4, 2026-07-20):** `class:druid/*` - Dreams, Shepherd (XGE),
+  Spores, Wildfire (TCE), Land, Moon, Sea, Stars (XPHB). All 8 rows now `ui: ok` in
+  `testing/COVERAGE.md`. Sweep was green before starting (274/274 `--strict`).
+- **Representative build:** full guided create - Goliath (Stone Giant Ancestry) /
+  Magic Initiate (Druid) / Circle of the Land. The feat exercised the TC-0011
+  spellSet + spell chooses (Wis + Druid list → 2 cantrips + level-1 spell) and the
+  DDL-0040 "Already Prepared" flow end-to-end in the CLASS pickers: guided cantrips
+  step hid Guidance/Starry Wisp behind the pre-marked exclude filter, unmarking showed
+  the badge, and adding confirmed with "You already have Guidance from Magic Initiate.
+  Add it anyway?". TC-0028's Magician cantrip bump reached the guide (3 cantrips @1,
+  5/5 @19). Kit auto-equip (TC-0015) gave AC 14 at level 1.
+- **Overlay level-ups 1→4:** spells @2 (prepared 4→5); subclass @3 with the step list
+  REBUILDING live (Land pick → its terrain spellSet appeared as the next step;
+  Temperate chosen; Misty Step auto-excluded from the spell picker the moment it became
+  granted); feat @4 (ASI +2 Wis → 19) + 4th cantrip + spells.
+- **Fixup @19 (badge ✦ 6):** Elemental Fury (Potent Spellcasting), ASI @8 (+2 Wis
+  SATURATED at 20 - DDL-0034 cap, the extra point wasted per RAW), Tough @12 (HP
+  174 = 136 + 2×19 via hpBonuses), War Caster @16 (+1 Int → 14; picker pre-marked
+  General - searching "tough" gave 0 results until the category filter was unmarked,
+  then Tough appeared with its Origin badge, per DDL-0040), Boon of Fortitude @19
+  (HP 214 = +40; +1 Wis LIFTED past the cap to 21, boon max 30). Badge reached zero.
+- **Subclass swaps @19 (the other 7):** every feature list renders and every
+  `additionalSpells` grant derives Always Prepared - the TC-0027 `_copy` resolution
+  verified on the druid stubs: Spores (Chill Touch + 9 circle spells), Wildfire (10),
+  Dreams/Shepherd (correctly none); Moon (6 incl. Fount of Moonlight @15), Sea (11
+  incl. Ray of Frost), Stars (Guidance + Guiding Bolt). Prepared-collapse accounting
+  verified across swaps: Moon freed a slot for the manually-prepared Moonbeam
+  (20/21 + badge 1 → refilled), Dreams showed 22/21 in red (intended over-limit
+  freedom, DDL-0026) as picks de-collapsed.
+- **Bugs - fixed in-session:** **TC-0032** (Shepherd's Speech of the Woods never
+  granted Sylvan - one curated `SUBCLASS_GRANTS` line + test), **TC-0033** (kit items
+  referencing an ITEM GROUP landed as "unresolved" junk - `druidic focus|xphb`; also
+  Cleric/Paladin XPHB `holy symbol|xphb`. `parseStartingEquipment` now emits a
+  closed-pool kit choose riding the whole TC-0024 machinery; verified live with the
+  3-member Druidic Focus picker and a resolved Wooden Staff in Inventory; 3+1 tests).
+- **Open:** **TC-0034** (polish) - the feat sub-bag spell pickers (SpellChoice in
+  ChoiceList) don't get the DDL-0040 Already Prepared flow (no filter/badge/confirm);
+  needs derived origins plumbed into ChoiceList across call sites, deferred.
+- Checks: chip popups (skill chip → DetailView overlay), choice-title links (Primal
+  Order), Spellbook cards (DC 19 / +11 / slots 4-3-3-3-3-2-1-1-1 @19), mobile width
+  (Class/Spellbook/Inventory, no horizontal scroll), zero console errors.
+- Verified: 940 tests (+10), lint clean, sweep 274/274 `--strict`.

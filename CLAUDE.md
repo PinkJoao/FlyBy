@@ -305,6 +305,44 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0041 — T1a Druid session: idioma em prosa de subclasse é grant curado; item de kit que referencia ITEM GROUP vira choose de pool fechado
+**Date:** 2026-07-20
+**Builds on:** DDL-0029 (registro `SUBCLASS_GRANTS`), DDL-0038 (TC-0024, a máquina de kit
+chooses que o fix reusa), DDL-0039 (TC-0027, cuja resolução de `_copy` esta sessão validou
+nos stubs do druid), DDL-0040 (cujo fluxo "Already Prepared" foi verificado de ponta a
+ponta — e cujo único buraco restante virou o TC-0034).
+
+**Context.** T1a sessão 5 (Druid + 8 subclasses, TESTING-PLAN §7 2026-07-20). Dois bugs
+reais corrigidos em sessão (TC-0032/0033) e um aberto (TC-0034) — ver `testing/ISSUES.md`.
+
+**Decisions.**
+- **Grant de IDIOMA em prosa de subclasse é uma linha do registro DDL-0029** (TC-0032):
+  Speech of the Woods (Shepherd XGE) → `languages: ['Sylvan']` em `SUBCLASS_GRANTS`. A
+  varredura curada de 2026-07-16 procurou fraseado de proficiência e não pegou idiomas —
+  futuras sessões devem conferir o card de LANGUAGES por subclasse, não só armas/armadura.
+- **Item de kit que referencia um ITEM GROUP é um kit CHOOSE de pool fechado** (TC-0033):
+  `parseStartingEquipment` detecta o uid de grupo (`druidic focus|xphb`, `holy
+  symbol|xphb` — só Druid/Cleric/Paladin XPHB no dataset) e emite `{type:'itemGroup',
+  label, allow:[uids dos membros]}`, montado sobre a máquina inteira do TC-0024
+  (EquipmentStep, completeness, `startingKitPicks`) sem nenhuma mudança nos consumidores.
+  Antes, o inventário ganhava um item "unresolved" morto — inclusive na rep build da
+  sessão Cleric, onde passou despercebido.
+- **A contabilidade do prepared-collapse entre swaps de subclasse está CORRETA e é
+  intencional**: trocar para uma subclasse que concede uma magia já preparada libera o
+  slot (badge conta 1); trocar para fora a des-colapsa e o contador fica over-limit em
+  VERMELHO sem nag (a liberdade DDL-0026). Sessões futuras não devem reportar isso como
+  bug.
+- **Aberto (TC-0034, polish):** os pickers de magia dos sub-bags de FEAT (SpellChoice do
+  ChoiceList, TC-0011) não recebem o fluxo DDL-0040 (filtro/badge/confirm de Already
+  Prepared) — exige encanar as origins derivadas no ChoiceList em todos os call sites;
+  adiado por ser estrutural.
+
+**Consequences.**
+- Um novo grant de idioma/perícia/etc. em prosa continua sendo uma linha de registro; um
+  novo kit com referência de grupo Just Works (o choose emerge do dado).
+- Verificado: 940 testes (+10), lint, sweep 274/274 `--strict`, passada live completa
+  (CHANGELOG §49). Cobertura: as 8 linhas `class:druid/*` com `ui: ok`.
+
 ### DDL-0040 — Liberdade com aviso é o padrão dos pickers: categorias de feat e magias repetidas viram filtros pré-marcados
 **Date:** 2026-07-19
 **Resolves:** TC-0029 e TC-0031 (abertos na sessão T1a Cleric, DDL-0039). **Builds on:**

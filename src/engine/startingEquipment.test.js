@@ -161,3 +161,46 @@ describe('chooses do kit ({equipmentType} - TC-0024)', () => {
     expect(kitChoosesComplete({ chooses: [ch] }, { 0: ['Club|XPHB', 'Dagger|XPHB'] })).toBe(true);
   });
 });
+
+describe('chooses de item group (Druidic Focus / Holy Symbol - sessão T1a Druid)', () => {
+  // Recorte do Druid XPHB: "druidic focus|xphb" é um ITEM GROUP, não um item.
+  const druid = {
+    startingEquipment: {
+      defaultData: [{ A: [{ item: 'chain mail|xphb' }, { item: 'druidic focus|xphb' }, { value: 900 }] }],
+    },
+  };
+  const dbWithGroup = {
+    ...db,
+    items: {
+      item: [
+        ...db.items.item,
+        { name: 'Wooden Staff', source: 'XPHB', type: 'SCF|XPHB', scfType: 'druid' },
+        { name: 'Yew Wand', source: 'XPHB', type: 'SCF|XPHB', scfType: 'druid' },
+      ],
+      itemGroup: [
+        { name: 'Druidic Focus', source: 'XPHB', items: ['wooden staff|XPHB', 'yew wand|XPHB'] },
+      ],
+    },
+  };
+  const [a] = parseStartingEquipment(dbWithGroup, druid);
+
+  it('o grupo vira um choose de pool fechado, não um item "unresolved"', () => {
+    expect(a.items.map((i) => i.name)).toEqual(['Chain Mail']);
+    expect(a.chooses).toHaveLength(1);
+    expect(a.chooses[0].type).toBe('itemGroup');
+    expect(kitChooseLabel(a.chooses[0])).toBe('Druidic Focus of your choice');
+  });
+
+  it('o filtro aceita só membros do grupo', () => {
+    const ch = a.chooses[0];
+    expect(kitChooseAllows(ch, { name: 'Wooden Staff', source: 'XPHB' })).toBe(true);
+    expect(kitChooseAllows(ch, { name: 'Greatsword', source: 'XPHB' })).toBe(false);
+  });
+
+  it('o kit não completa sem o pick; o pick entra no inventário', () => {
+    expect(kitChoosesComplete(a, {})).toBe(false);
+    expect(kitChoosesComplete(a, { 0: ['Wooden Staff|XPHB'] })).toBe(true);
+    const inv = startingKitInventory(a, dbWithGroup, { 0: ['Wooden Staff|XPHB'] });
+    expect(inv.map((i) => i.itemId)).toEqual(['Chain Mail', 'Wooden Staff']);
+  });
+});

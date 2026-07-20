@@ -15,6 +15,10 @@ const db = {
     class: [{ name: 'Monk', source: 'XPHB', proficiency: ['str', 'dex'], startingProficiencies: {} }],
     subclass: [{ name: 'Warrior of Mercy', shortName: 'Mercy', source: 'XPHB', subclassFeatures: [] }],
   },
+  'class-druid': {
+    class: [{ name: 'Druid', source: 'XPHB', proficiency: ['int', 'wis'], startingProficiencies: {} }],
+    subclass: [{ name: 'Circle of the Shepherd', shortName: 'Shepherd', source: 'XGE', subclassFeatures: [] }],
+  },
   races: { race: [] },
   feats: { feat: [] },
 };
@@ -47,6 +51,10 @@ describe('deriveSubclassGrants (TC-0012)', () => {
     const out = deriveSubclassGrants(mk('monk', 'Mercy', 3), db);
     expect(out.grantedSkills).toEqual(['ins', 'med']);
     expect(out.grantedTools).toEqual(['Herbalism Kit']);
+  });
+
+  it('Shepherd: Sylvan (Speech of the Woods) no nível 3+', () => {
+    expect(deriveSubclassGrants(mk('druid', 'Shepherd', 3), db).languages).toEqual(['Sylvan']);
   });
 
   it('filtro por fonte: grupos EFA não se aplicam à subclasse TCE', () => {

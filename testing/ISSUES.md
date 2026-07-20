@@ -467,3 +467,47 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   dialog with the source: "You already have Guidance from Magic Initiate. Prepare it
   anyway?". Verified live on the Cleric 19 + Magic Initiate (hidden by default → badge
   after unmarking → confirm names the feat). 2 unit tests (preparedElsewhere).
+
+## TC-0032 - Shepherd's Speech of the Woods never granted Sylvan
+
+- **Found:** 2026-07-20, T1a Druid session (Shepherd @19: LANGUAGES card showed only
+  Common + Elvish). **Severity:** bug. **Status:** fixed@2026-07-20.
+- Speech of the Woods (XGE, level 2) grants Sylvan in PROSE ("You learn to speak, read,
+  and write Sylvan") - exactly the TC-0012 class of gap: the curated `SUBCLASS_GRANTS`
+  registry (engine/subclassGrants.js) had no `druid|shepherd` entry (the 2026-07-16
+  dataset sweep missed this one; it looked for proficiency phrasing, this is a language).
+- **Fix:** one registry line (`{ level: 2, feature: 'Speech of the Woods', languages:
+  ['Sylvan'] }`; level 2 matches the XGE feature - on the XPHB chassis the subclass only
+  exists from 3, so the `level <= cls.level` gate can never fire early). 1 unit test.
+  Verified live (Common · Sylvan · Elvish on the card @19).
+
+## TC-0033 - Kit items that reference an ITEM GROUP landed as "unresolved" junk
+
+- **Found:** 2026-07-20, T1a Druid session (Inventory showed "Druidic Focus ·
+  unresolved · 0 lb" under Other after the guided kit). **Severity:** bug.
+  **Status:** fixed@2026-07-20.
+- `druidic focus|xphb` in the Druid kit's `defaultData` is an **itemGroup** ("one of:
+  Sprig of Mistletoe / Wooden Staff / Yew Wand"), not a concrete item; `resolveRef` fell
+  through to the title-case fallback and the inventory got a dead item. Dataset scan:
+  exactly 3 kits affected - Druid + Cleric + Paladin XPHB (`holy symbol|xphb`), so the
+  Cleric session's rep build had the same silent junk item.
+- **Fix:** `parseStartingEquipment` detects the group and emits a kit CHOOSE with a
+  CLOSED pool (`{type:'itemGroup', label, allow:[member uids]}`), riding the whole
+  TC-0024 machinery unchanged (EquipmentStep picker, `kitChoosesComplete` gating, deep
+  completeness, `startingKitPicks`). `kitChooseAllows` honors the closed pool;
+  `kitChooseLabel` uses the group name. 3 unit tests. Verified live: kit card lists
+  "Druidic Focus of your choice", picker shows exactly the 3 members, pick lands in
+  Inventory as a resolved Spellcasting Focus (4 lb).
+
+## TC-0034 - Feat sub-choice spell pickers skip the DDL-0040 "Already Prepared" flow
+
+- **Found:** 2026-07-20, T1a Druid session (Magic Initiate's level-1 spell picker
+  accepted Speak with Animals - always prepared via Druidic - with no badge, no
+  pre-marked exclude filter and no confirm). **Severity:** polish (consistency with
+  DDL-0040; the pick is legal, just silently redundant). **Status:** open.
+- TC-0031's fix wired `preparedElsewhere` into the SpellbookTab prepare flow and the
+  guide's SpellPicker, but the feat sub-bag spell chooses (TC-0011's SpellChoice in
+  ChoiceList) build their selector without the character's derived origins, so the
+  whole flow (filter + badge + confirm) is absent there. Needs the origins plumbed into
+  ChoiceList's spell choice rendering across its call sites (tabs + wizard steps) - a
+  structural change, deferred per "fix small, log big".

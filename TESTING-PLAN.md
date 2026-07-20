@@ -224,6 +224,30 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-20** - **T1a session 5: DRUID + all 8 subclasses done** (all rows `ui: ok`).
+  Sweep green before starting (274/274 strict). Full guided create (Goliath Stone Giant /
+  Magic Initiate (Druid) / Circle of the Land as the rep build - the feat + class pickers
+  exercised the whole DDL-0040 "Already Prepared" flow: pre-marked exclude, badge, confirm
+  naming the source), overlay level-ups 1→4 (Land @3 rebuilt the step list live with the
+  terrain spellSet - Temperate), fixup @19 (badge 6: Elemental Fury, 3 ASIs with the
+  DDL-0034 cap saturating Wis at 20, Tough +38 HP, War Caster, Boon of Fortitude +40 HP
+  and Wis 20→21; HP 214), subclass swaps @19 for the other 7 - **TC-0027's `_copy`
+  resolution verified on the druid stubs** (Spores 9 + Chill Touch, Wildfire 10 circle
+  spells Always Prepared; Moon/Sea/Stars grants all derive; Dreams/Shepherd correctly
+  none), prepared-collapse accounting across swaps (freed slot on Moon; 22/21 red
+  over-limit on Dreams - intended), chip popups, mobile, zero console errors.
+  Findings: **TC-0032** (Shepherd's Speech of the Woods never granted Sylvan - one
+  `SUBCLASS_GRANTS` line, fixed), **TC-0033** (kit items referencing an ITEM GROUP landed
+  as "unresolved" junk - Druid/Cleric/Paladin XPHB focus/holy symbol; now a closed-pool
+  kit choose on the TC-0024 machinery, fixed), **TC-0034** (open, polish: feat sub-bag
+  spell pickers skip the DDL-0040 Already Prepared flow - needs origins plumbed into
+  ChoiceList).
+  940 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §49 + DDL-0041.
+  **Next action: T1a session 6 - FIGHTER + its 10 subclasses** (remember DDL-0033: its
+  mastery pool is deliberately filter-less; Eldritch Knight is a third-caster - check its
+  spell steps @3/7 carefully; TC-0033's fix also touches no Fighter kit, all concrete
+  items).
+
 - **2026-07-19** - **T1a session 4: CLERIC + all 19 subclasses done** (all rows `ui: ok`;
   largest batch, done in one sitting). Sweep green before starting (274/274 strict). Full
   guided create (Dwarf XPHB / Magic Initiate (Cleric) / Nature PHB as the rep build - the

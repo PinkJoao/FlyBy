@@ -87,6 +87,12 @@ export const SUBCLASS_GRANTS = {
   'cleric|knowledge': [
     { level: 6, source: 'FRHoF', feature: 'Unfettered Mind', saves: ['int'], conditionalSaveAlt: [] },
   ],
+  'druid|shepherd': [
+    // "You learn to speak, read, and write Sylvan" (Speech of the Woods, XGE).
+    // Nível 2 na subclasse original; no chassi XPHB a subclasse só entra no 3,
+    // então o gate `level <= cls.level` nunca dispara cedo demais.
+    { level: 2, feature: 'Speech of the Woods', languages: ['Sylvan'] },
+  ],
   'fighter|purple dragon knight (banneret)': [
     { level: 7, feature: 'Royal Envoy', skills: ['per'], expertiseSkills: ['per'], conditionalSkillAlt: ['ani', 'ins', 'itm', 'prf'] },
   ],

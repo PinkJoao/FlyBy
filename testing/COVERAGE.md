@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-20T13:34:45.450Z · base seed 1 · 274 rows
+Last sweep: 2026-07-20T15:08:26.229Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -56,14 +56,14 @@ Last sweep: 2026-07-20T13:34:45.450Z · base seed 1 · 274 rows
 | `class:cleric/War` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | XPHB reprint; 10 domain spells; features @19 (no armor grants - Divine Order covers) |
 | `class:cleric/Knowledge` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | FRHoF: tool + 2 skills WITH expertise (TC-0030); 15 granted spells; Divine Foreknowledge @17 |
 | `class:cleric/Grave` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | RHW: 10 domain spells + Spare the Dying cantrip; features @19 |
-| `class:druid/Dreams` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Shepherd` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Spores` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Wildfire` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Land` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Moon` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Sea` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:druid/Stars` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
+| `class:druid/Dreams` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | features verified live @19 (Balm/Hearth/Hidden Paths/Walker); no granted spells (correct) |
+| `class:druid/Shepherd` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0032 fixed: Sylvan grant (Speech of the Woods); 5 features @19 |
+| `class:druid/Spores` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | _copy stub (TC-0027): Chill Touch + 9 circle spells Always Prepared @19; 5 features |
+| `class:druid/Wildfire` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | _copy stub (TC-0027): 10 circle spells Always Prepared @19; 4 features |
+| `class:druid/Land` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | rep build: guided create + overlay 1-4 + fixup @19; terrain spellSet (Temperate) all 4 tiers Always Prepared; TC-0033/0034 found here |
+| `class:druid/Moon` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 6 circle spells (3/7/15) Always Prepared @19; prepared-collapse freed slot verified |
+| `class:druid/Sea` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 11 granted (incl. Ray of Frost cantrip) Always Prepared @19 |
+| `class:druid/Stars` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Guidance + Guiding Bolt Always Prepared @19 (Star Map) |
 | `class:fighter/Arcane Archer` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
 | `class:fighter/Cavalier` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
 | `class:fighter/Samurai` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |

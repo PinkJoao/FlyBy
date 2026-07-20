@@ -80,13 +80,30 @@ const KIT_EQUIPMENT_TYPES = {
 
 /** Rótulo de exibição de um choose do kit ("Musical Instrument of your choice"). */
 export function kitChooseLabel(choose) {
-  const base = KIT_EQUIPMENT_TYPES[choose.type]?.label ?? titleCase(choose.type);
+  const base = choose.label ?? KIT_EQUIPMENT_TYPES[choose.type]?.label ?? titleCase(choose.type);
   return choose.quantity > 1 ? `${base} of your choice ×${choose.quantity}` : `${base} of your choice`;
 }
 
-/** O item cru satisfaz a categoria do choose? (filtro do seletor do kit.) */
+/** O item cru satisfaz a categoria do choose? (filtro do seletor do kit.)
+ * Chooses de ITEM GROUP (`allow`) têm pool FECHADO: só os membros do grupo. */
 export function kitChooseAllows(choose, raw) {
+  if (choose.allow) return choose.allow.includes(`${raw?.name ?? ''}|${raw?.source ?? ''}`.toLowerCase());
   return KIT_EQUIPMENT_TYPES[choose.type]?.match(raw) ?? true;
+}
+
+/** Se o uid do kit referencia um ITEM GROUP ("druidic focus|xphb", "holy
+ * symbol|xphb" - grupos são "um destes", não um item concreto), devolve o grupo
+ * cru; senão null. Sem isto o kit criava um item "unresolved" no inventário
+ * (Cleric/Druid/Paladin XPHB, achado da sessão T1a Druid). */
+function kitItemGroup(db, ref) {
+  const [rawName = '', rawSource = ''] = String(ref).split('|');
+  const name = rawName.trim().toLowerCase();
+  const source = rawSource.trim().toLowerCase();
+  return (
+    latestOnly(db?.items?.itemGroup ?? []).find(
+      (g) => g.name?.toLowerCase() === name && (!source || g.source?.toLowerCase() === source),
+    ) ?? null
+  );
 }
 
 /** Todos os chooses da opção têm picks completos? picks = meta.startingKitPicks
@@ -111,8 +128,23 @@ export function parseStartingEquipment(db, classObj) {
     const chooses = [];
     for (const e of Array.isArray(entries) ? entries : []) {
       if (e?.item) {
-        const { name, source } = resolveRef(db, e.item);
-        items.push({ name, source, quantity: e.quantity ?? 1 });
+        const group = kitItemGroup(db, e.item);
+        if (group) {
+          // Referência a um item group → um choose de pool fechado (os membros).
+          chooses.push({
+            type: 'itemGroup',
+            label: group.name,
+            allow: (group.items ?? []).map((uid) => {
+              const [n = '', s = ''] = String(uid).split('|');
+              const r = resolveRef(db, `${n}|${s}`);
+              return `${r.name}|${r.source}`.toLowerCase();
+            }),
+            quantity: e.quantity ?? 1,
+          });
+        } else {
+          const { name, source } = resolveRef(db, e.item);
+          items.push({ name, source, quantity: e.quantity ?? 1 });
+        }
       } else if (typeof e?.value === 'number') {
         valueCp += e.value;
       } else if (e?.special) {

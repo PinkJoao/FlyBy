@@ -366,3 +366,89 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   as an alternative and spawn a false `spellSet` choice, TC-0011 semantics).
   `resolveGranted` applies it for class/subclass/race/feat alike. 3 unit tests; verified
   live (Guidance Always Prepared in the Bard origin @19).
+
+> **2026-07-19 (T1a session 4 - Cleric)**: the biggest finding of the campaign so far -
+> every legacy subclass adopted onto a 2024 class is a `_copy` stub the resolver never
+> expanded, so 13 of the Cleric's 19 domains had ZERO domain spells. Found while checking
+> why Nature's druid-cantrip choose was absent.
+
+## TC-0027 - Legacy subclass `_copy` stubs unresolved: additionalSpells (domain spells) lost
+
+- **Found:** 2026-07-19, T1a Cleric session (Nature PHB @3: no druid-cantrip choose, and
+  `alwaysPrepared` EMPTY - no domain spells at all). **Severity:** bug (structural, wide).
+  **Status:** fixed@2026-07-19.
+- 5etools attaches every legacy subclass to the 2024 class via a `_copy` STUB carrying only
+  the re-pointed `subclassFeatures` (levels moved to the XPHB slots); everything else -
+  `additionalSpells` above all - is inherited from the original entry. `resolveSubclassObj`
+  read the raw list and its `findLast(has subclassFeatures)` preferred the stub whenever the
+  stub carried features (ALL 19 cleric stubs do), returning it UNRESOLVED: the domain spells
+  and their `{choose}` leaves (Nature/Strength druid cantrip, Arcana's 2 wizard cantrips +
+  Arcane Mastery 6th-9th picks, Death's necromancy cantrip) simply vanished. Bard/Barbarian
+  escaped by luck: their stubs carry no own features (same levels), so the ORIGINAL entry
+  won the findLast. 73 stubs across all classes were affected in principle; every class
+  whose subclass level differs from the legacy one (cleric 1-3) hits the bad path.
+  The sweep can never catch it: a grant that never derives produces no pendency and no
+  round-trip diff.
+- **Fix:** `resolveSubclassObj` now resolves `_copy` (memoized per db+class via WeakMap,
+  same `resolveCopies` + shortName|source|classSource id the selector already used). The
+  stub keeps its own re-pointed features; everything else inherits. 1 regression test;
+  verified live on all 13 legacy cleric domains (10-15 Always Prepared spells each).
+
+## TC-0028 - Divine Order: Thaumaturge's extra cantrip never raised the cantrip limit
+
+- **Found:** 2026-07-19, T1a Cleric session (guided create: cantrips step read 0/3 with
+  Thaumaturge chosen; DDL-0013 had cited exactly this case as the reason features precede
+  spells, but the bump was never implemented). **Severity:** bug. **Status:**
+  fixed@2026-07-19.
+- `cantripLimit` read only the class's `cantripProgression`; "you know one extra cantrip
+  from the X spell list" featureoptions (Cleric Thaumaturge, Druid Magician - Primal Order)
+  were inert. Grants of cantrips from OTHER lists (Acolyte of Nature, Arcane Initiate) are
+  a different mechanism (`additionalSpells` chooses, TC-0027) and were excluded on purpose.
+- **Fix:** curated `CANTRIP_BONUS_FEATURES` + `cantripLimitBonus(classEntry)` in
+  `engine/featureEffects.js`; `resolve.js` adds the bonus to the class origin's
+  `cantripLimit` (only when the base is > 0). Reaches the guide step, fixup overlay,
+  Spellbook and ✦ badge through the single derived field. 3 unit tests; verified live
+  (4/4 @1, 6/6 @19 on the Thaumaturge cleric).
+
+## TC-0029 - ASI / Epic Boon feat pickers exclude categories RAW allows (needs-user-eyes)
+
+- **Found:** 2026-07-19, T1a Cleric session (Tough absent from the level-12 feat picker).
+  **Severity:** product decision. **Status:** open (needs-user-eyes).
+- The ASI slot's pool is `category: ['G']` and the Epic Boon slot's `['EB']`
+  (engine/classFeatureChoices.js). XPHB RAW: both features say "or another feat of your
+  choice for which you qualify" - ORIGIN feats (Tough, Lucky, Alert, Skilled... - Tough is
+  Origin in 2024) have no prerequisite, so they qualify at any ASI slot, and General/Origin
+  feats qualify at the Epic Boon slot (D&D Beyond allows both). Pending call: widen the
+  pools (G+O at ASI; EB+G+O at boon), or keep the curated restriction as intended
+  simplicity. One line per pool if approved.
+
+## TC-0030 - Blessings of Knowledge: PSA granted nothing; chosen skills lacked expertise
+
+- **Found:** 2026-07-19, T1a Cleric session (Knowledge (PSA) @19: no language/skill
+  chooses at all; FRHoF's two chosen skills derived plain proficiency, no expertise).
+  **Severity:** bug. **Status:** fixed@2026-07-19.
+- Two gaps: (1) `SUBCLASS_FEATURE_GRANTS` is keyed `shortName|featureName`, but the PSA
+  domains inline their level-1 text in an umbrella feature named after the subclass
+  ("Knowledge Domain (PSA)") - the 'knowledge (psa)|blessings of knowledge' key could never
+  match. (2) Both Blessings versions (PHB/PSA "proficiency bonus is doubled", FRHoF "you
+  have Expertise") grant expertise ON the chosen skills, which no grant kind expressed.
+- **Fix:** umbrella-feature key ('knowledge (psa)|knowledge domain (psa)') + dedup by KEY
+  (not name@level - the umbrella exists in BOTH class attachments, PHB@1 and XPHB@3, and
+  would have emitted twice); new `expertise: true` flag on skill grants → the choice is
+  emitted as kind 'expertise' with `newProf` (pool = the grant's fixed list, NOT
+  intersected with proficient skills), so picks derive at level 2 through the existing
+  `collectSkillProficiencies` path and ride the DDL-0028 export flags unchanged. Applied to
+  PSA + both 'knowledge|blessings of knowledge' entries (FRHoF + PHB fallback). Verified
+  live: PSA Arcana/History +12 and FRHoF Nature/Religion +12 under EXPERTISE @19.
+
+## TC-0031 - Spell pickers offer spells already always-prepared from another origin
+
+- **Found:** 2026-07-19, T1a Cleric session (guided cantrips step offered Guidance/Sacred
+  Flame, both always-prepared via Magic Initiate; picking Guidance consumed 1 of the 3
+  class picks, then the Spellbook collapsed it into the granted copy - a silently wasted
+  pick). **Severity:** polish. **Status:** open (needs-user-eyes).
+- The guide's SpellPicker and the Spellbook prepare flow dedup only same-origin owned
+  spells; cross-origin grants (feat/race) stay selectable with no warning. RAW it's legal
+  (just wasteful), and DDL-0026 embraced over-preparing as freedom - but this case is a
+  NEW player picking a spell they already have without knowing. Pending call: exclude,
+  confirm (like off-list adds), or leave as is.

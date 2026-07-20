@@ -91,7 +91,13 @@ export function buildClassChoices(db, cls, character) {
   }));
   const resolvePool = (ch) => {
     if (ch.kind === 'expertise') {
-      const options = ch.from ? profSkillOptions.filter((o) => ch.from.includes(o.value)) : profSkillOptions;
+      // `newProf` (Blessings of Knowledge): a expertise vem JUNTO da proficiência
+      // nova - o pool é a lista fixa do grant, sem intersectar com as proficientes.
+      const options = ch.newProf
+        ? (ch.from ?? []).map((code) => ({ value: code, label: SKILL_LABEL[code] ?? code }))
+        : ch.from
+          ? profSkillOptions.filter((o) => ch.from.includes(o.value))
+          : profSkillOptions;
       return { ...ch, pool: { type: 'list', options } };
     }
     if (ch.kind === 'skill' && ch.from) {

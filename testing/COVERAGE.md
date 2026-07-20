@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-19T03:29:12.452Z · base seed 1 · 274 rows
+Last sweep: 2026-07-20T00:46:08.729Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -37,25 +37,25 @@ Last sweep: 2026-07-19T03:29:12.452Z · base seed 1 · 274 rows
 | `class:bard/Valor` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Medium Armor/Shields/Martial Weapons grants on card; features @19 |
 | `class:bard/Moon` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Primal Lore skill (list minus owned) + spell via guide @19 |
 | `class:bard/Spirits` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0026 fixed: Guidance curated; Spirit Guardians 1/Day; RHW feature names |
-| `class:cleric/Nature` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Tempest` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Death` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Arcana` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Ambition (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Knowledge (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Solidarity (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Strength (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Zeal (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Forge` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Order` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Peace` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Twilight` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Life` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Light` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Trickery` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/War` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Knowledge` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:cleric/Grave` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
+| `class:cleric/Nature` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | rep build: guided create + overlay 1-4 + fixup @19; druid cantrip + Acolyte skill (TC-0027); 10 domain spells |
+| `class:cleric/Tempest` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0027 fixed: 10 domain spells; Heavy+Martial grants on card; features @19 |
+| `class:cleric/Death` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0027: necromancy cantrip choose + 10 domain spells; features @19 |
+| `class:cleric/Arcana` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 2 wizard cantrips + Arcane Mastery 6th-9th chooses (TC-0027); 10 domain spells; features @19 |
+| `class:cleric/Ambition (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 10 domain spells; Bane collapse into granted; features @19 |
+| `class:cleric/Knowledge (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0030 fixed: umbrella-key grants (2 languages + 2 skills WITH expertise); 10 domain spells |
+| `class:cleric/Solidarity (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 10 domain spells (Oketra's Blessing @6); features @19 |
+| `class:cleric/Strength (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Acolyte skill + druid cantrip chooses; 10 domain spells; features @19 |
+| `class:cleric/Zeal (PSA)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 10 domain spells; features @19 |
+| `class:cleric/Forge` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 10 domain spells; Heavy Armor + Smith's Tools grants on card; features @19 |
+| `class:cleric/Order` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Bonus Proficiencies skill choose (Itm/Per); 10 domain spells; features @19 |
+| `class:cleric/Peace` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Implement of Peace skill choose; 10 domain spells; features @19 |
+| `class:cleric/Twilight` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 10 domain spells; features @19 |
+| `class:cleric/Life` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | XPHB reprint; 10 domain spells; features @19 |
+| `class:cleric/Light` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | XPHB reprint; 10 domain spells; features @19 |
+| `class:cleric/Trickery` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | XPHB reprint; 10 domain spells; features @19 |
+| `class:cleric/War` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | XPHB reprint; 10 domain spells; features @19 (no armor grants - Divine Order covers) |
+| `class:cleric/Knowledge` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | FRHoF: tool + 2 skills WITH expertise (TC-0030); 15 granted spells; Divine Foreknowledge @17 |
+| `class:cleric/Grave` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | RHW: 10 domain spells + Spare the Dying cantrip; features @19 |
 | `class:druid/Dreams` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
 | `class:druid/Shepherd` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
 | `class:druid/Spores` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |

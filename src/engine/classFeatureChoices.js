@@ -77,15 +77,24 @@ const SUBCLASS_FEATURE_GRANTS = {
   'champion|additional fighting style': [{ kind: 'feat', count: 1, category: ['FS'] }], // Fighter XPHB L7
   'knowledge|blessings of knowledge': [
     // Cleric PHB L1: 2 idiomas + 2 perícias da lista; FRHoF L3: 1 ferramenta de
-    // artesão + as mesmas 2 perícias.
+    // artesão + as mesmas 2 perícias. Nas DUAS versões as perícias escolhidas
+    // vêm COM expertise ("Your proficiency bonus is doubled…" / "You have
+    // Expertise in those two skills") - `expertise: true` no grant de skill.
     { source: 'FRHoF', grants: [
       { kind: 'tool', count: 1, category: 'AT' },
-      { kind: 'skill', count: 2, from: ['arc', 'his', 'nat', 'rel'] },
+      { kind: 'skill', count: 2, from: ['arc', 'his', 'nat', 'rel'], expertise: true },
     ] },
     { grants: [
       { kind: 'language', count: 2 },
-      { kind: 'skill', count: 2, from: ['arc', 'his', 'nat', 'rel'] },
+      { kind: 'skill', count: 2, from: ['arc', 'his', 'nat', 'rel'], expertise: true },
     ] },
+  ],
+  // Cleric PSA L1 (mesmo texto do PHB, MAS inline na feature guarda-chuva
+  // "Knowledge Domain (PSA)" - o PSA não tem uma feature própria "Blessings of
+  // Knowledge" no pool, então a chave casa o guarda-chuva).
+  'knowledge (psa)|knowledge domain (psa)': [
+    { kind: 'language', count: 2 },
+    { kind: 'skill', count: 2, from: ['arc', 'his', 'nat', 'rel'], expertise: true },
   ],
   'nature|acolyte of nature': [{ kind: 'skill', count: 1, from: ['ani', 'nat', 'sur'] }], // Cleric PHB
   'strength (psa)|acolyte of strength': [{ kind: 'skill', count: 1, from: ['ani', 'ath', 'nat', 'sur'] }],
@@ -151,7 +160,15 @@ function grantChoices(grants, { featureName, keyTag, classSkills, idPrefix = '',
     const base = { id, count, label, level: g.level ?? level, feature };
     if (g.kind === 'skill') {
       const from = resolveFrom(g.from, classSkills);
-      out.push({ ...base, kind: 'skill', from: from ?? undefined, pool: { type: 'any', of: 'skill' } });
+      // `expertise: true` = a perícia escolhida vem proficiente E com expertise
+      // (Blessings of Knowledge). Vira kind 'expertise' (o pick deriva nível 2
+      // em collectSkillProficiencies) com `newProf` - o pool NÃO intersecta com
+      // as perícias já proficientes (é proficiência nova, não upgrade).
+      if (g.expertise) {
+        out.push({ ...base, kind: 'expertise', newProf: true, from: from ?? undefined, pool: { type: 'expertise' } });
+      } else {
+        out.push({ ...base, kind: 'skill', from: from ?? undefined, pool: { type: 'any', of: 'skill' } });
+      }
     } else if (g.kind === 'expertise') {
       const from = resolveFrom(g.from, classSkills);
       out.push({ ...base, kind: 'expertise', from: from ?? undefined, pool: { type: 'expertise' } });
@@ -392,9 +409,12 @@ export function subclassFeatureChoices(db, classId, subclass, level, classSkills
       ? (spec.find((e) => e.source && e.source === f.source) ?? spec.find((e) => !e.source))?.grants
       : spec;
     if (!grants) continue;
+    // Dedup por CHAVE (não por nível): a mesma feature pode existir no pool nos
+    // DOIS anexos da classe (PHB@1 + XPHB@3 - ex: o guarda-chuva "Knowledge
+    // Domain (PSA)"); com dedup por nome@nível ela emitiria os grants duas vezes.
+    if (seen.has(key)) continue;
+    seen.add(key);
     const tag = `${key}@${f.level}`;
-    if (seen.has(tag)) continue;
-    seen.add(tag);
     // Grants com `level` próprio (Kensei 6/11/17) só entram quando alcançado.
     const active = grants.filter((g) => (g.level ?? f.level ?? 0) <= level);
     out.push(

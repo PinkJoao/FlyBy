@@ -321,3 +321,35 @@ describe('weaponProf (Kensei) - proficiência de arma individual', () => {
     expect(at17.map((c) => c.level)).toEqual([3, 3, 6, 11, 17]);
   });
 });
+
+describe('Blessings of Knowledge (TC-0030) - chave guarda-chuva + expertise nas escolhidas', () => {
+  // O PSA inlina o texto na feature guarda-chuva "Knowledge Domain (PSA)", que
+  // existe no pool nos DOIS anexos da classe (PHB@1 + XPHB@3) - o dedup por
+  // CHAVE evita emitir os grants duas vezes.
+  const psaDb = {
+    'class-cleric': {
+      subclassFeature: [
+        { name: 'Knowledge Domain (PSA)', source: 'PSA', className: 'Cleric', classSource: 'PHB', subclassShortName: 'Knowledge (PSA)', subclassSource: 'PSA', level: 1, entries: ['x'] },
+        { name: 'Knowledge Domain (PSA)', source: 'PSA', className: 'Cleric', classSource: 'XPHB', subclassShortName: 'Knowledge (PSA)', subclassSource: 'PSA', level: 3, entries: ['x'] },
+      ],
+    },
+  };
+  const psa = { shortName: 'Knowledge (PSA)', source: 'PSA', subclassFeatures: [] };
+
+  it('PSA: 2 idiomas + 2 perícias, emitidos UMA vez apesar do pool duplicado', () => {
+    const out = subclassFeatureChoices(psaDb, 'cleric', psa, 19);
+    expect(out.filter((c) => c.kind === 'language')).toHaveLength(1);
+    const exp = out.filter((c) => c.kind === 'expertise');
+    expect(exp).toHaveLength(1);
+    expect(exp[0].count).toBe(2);
+  });
+
+  it('grant skill com expertise:true vira kind expertise com newProf + from', () => {
+    const out = subclassFeatureChoices(psaDb, 'cleric', psa, 19);
+    const exp = out.find((c) => c.kind === 'expertise');
+    // newProf: proficiência NOVA com expertise (a UI não intersecta o pool com
+    // as perícias já proficientes); os picks derivam nível 2 direto.
+    expect(exp.newProf).toBe(true);
+    expect(exp.from).toEqual(['arc', 'his', 'nat', 'rel']);
+  });
+});

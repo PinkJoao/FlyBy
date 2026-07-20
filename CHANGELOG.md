@@ -3355,3 +3355,49 @@ re-derive it. See [DDL-0037](CLAUDE.md).
 - Verified: 922 tests (+2), lint clean, live glossary ("aarakocra" → 1 species + 1
   language; "ammunition" → 1 XPHB property + 1 XDMG property + the SRD table), no console
   errors.
+
+## 45. Phase T - T1a session 4: Cleric + all 19 subclasses (TC-0027…TC-0031)
+
+- **Session scope (TESTING-PLAN §4, 2026-07-19).** The campaign's largest batch, done in
+  one sitting: full guided create (Dwarf XPHB / Magic Initiate (Cleric) as the origin feat
+  / Nature Domain PHB as the representative build), overlay level-ups 1→4 (spells @2,
+  subclass + Acolyte skill + druid cantrip @3, ASI @4), jump to 19 with the fixup guide
+  (Blessed Strikes → Potent Spellcasting, 3 ASIs, War Caster, Durable, Epic Boon → Boon of
+  Fortitude; the DDL-0034 cap saturated Wis at 20 and the boon lifted it to 21; HP 214 with
+  Dwarven Toughness + Durable's Con bump + the boon's +40 all stacking), then subclass
+  swaps @19 for the other 18 domains (features, granted spell lists, fixed proficiency
+  grants and per-subclass chooses verified on each), Spellbook checks at 1/3/19,
+  proficiency cards, chip/title popups, mobile width, zero console errors. All 19
+  `class:cleric/*` rows now `ui: ok` in `testing/COVERAGE.md`.
+- **TC-0027 - legacy subclass `_copy` stubs unresolved (STRUCTURAL, fixed).** Every legacy
+  subclass adopted onto a 2024 class is a 5etools `_copy` STUB carrying only re-pointed
+  `subclassFeatures`; `resolveSubclassObj` returned it unexpanded, so every inherited field
+  - `additionalSpells` above all - vanished. 13 of the Cleric's 19 domains had ZERO domain
+  spells, and the spell chooses hiding in them (Nature/Strength druid cantrip, Arcana's two
+  wizard cantrips + Arcane Mastery's 6th-9th picks, Death's necromancy cantrip) never
+  emitted. Bard/Barbarian escaped by stub shape (no own features → the original won the
+  findLast). Fix in `engine/resolve.js`: the subclass list is now `resolveCopies`-expanded
+  (memoized per db via WeakMap, the selector's shortName|source|classSource id). The sweep
+  could never catch this class of bug - a grant that never derives makes no pendency and no
+  round-trip diff (exactly the T1-session justification).
+- **TC-0028 - Thaumaturge/Magician extra cantrip (fixed).** `CANTRIP_BONUS_FEATURES` +
+  `cantripLimitBonus` in `engine/featureEffects.js`, added to the class origin's
+  `cantripLimit` in resolve (base > 0 only). Guide step, fixup overlay, Spellbook and ✦
+  badge all read the derived field, so one fix reaches all four. Live: 3+1 @1, 5+1 @19.
+- **TC-0030 - Blessings of Knowledge (fixed).** Knowledge (PSA) granted nothing (the PSA
+  domains inline their level-1 text in an umbrella feature named after the subclass - new
+  registry key on the umbrella + dedup by KEY, since the umbrella exists in BOTH class
+  attachments PHB@1/XPHB@3 and emitted twice under name@level dedup). And the chosen
+  skills now carry EXPERTISE in both versions (PHB/PSA "proficiency bonus is doubled",
+  FRHoF "you have Expertise") via the new `expertise: true` flag on skill grants → emitted
+  as kind 'expertise' with `newProf` (pool = the grant's own list, not intersected with
+  proficient skills); picks derive at level 2 through the existing
+  `collectSkillProficiencies` path and ride the DDL-0028 export flags unchanged.
+- **Open, needs-user-eyes:** **TC-0029** (ASI feat picker is category-G-only and the Epic
+  Boon picker EB-only; XPHB RAW says "or another feat of your choice for which you
+  qualify", which admits Origin feats - Tough, Lucky, Alert… - at ASI slots and G/O feats
+  at the boon) and **TC-0031** (spell pickers offer spells already always-prepared from
+  another origin; the pick is legal but silently wasted after the Spellbook collapse).
+- Verified: 928 tests (+6: `_copy` regression, cantrip bonus ×3, Blessings ×2), lint
+  clean, sweep 274/274 `--strict`, full live pass. See DDL-0039 and
+  `testing/ISSUES.md` TC-0027…TC-0031.

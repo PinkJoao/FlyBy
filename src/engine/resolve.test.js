@@ -44,6 +44,48 @@ describe('resolveSubclassObj / resolveRaceObj', () => {
   it('acha a raça pelo nome em minúsculas', () => {
     expect(resolveRaceObj(db, 'elf', 'XPHB')?.name).toBe('Elf');
   });
+
+  // TC-0027: subclasse legada anexada à classe 2024 é um STUB `_copy` que traz
+  // só as subclassFeatures re-apontadas - todo o resto (additionalSpells das
+  // domain spells) herda da original e sumia sem resolver a cópia.
+  it('resolve o stub _copy herdando additionalSpells e mantendo as features do stub', () => {
+    const stubDb = {
+      'class-cleric': {
+        class: [],
+        subclass: [
+          {
+            name: 'Nature Domain',
+            shortName: 'Nature',
+            className: 'Cleric',
+            source: 'PHB',
+            classSource: 'PHB',
+            additionalSpells: [{ prepared: { 1: ['animal friendship'] } }],
+            subclassFeatures: ['Nature Domain|Cleric|PHB|Nature|PHB|1'],
+          },
+          {
+            name: 'Nature Domain',
+            shortName: 'Nature',
+            className: 'Cleric',
+            source: 'PHB',
+            classSource: 'XPHB',
+            subclassFeatures: ['Nature Domain|Cleric|XPHB|Nature|PHB|3'],
+            _copy: {
+              name: 'Nature Domain',
+              source: 'PHB',
+              shortName: 'Nature',
+              className: 'Cleric',
+              classSource: 'PHB',
+            },
+          },
+        ],
+      },
+    };
+    const sub = resolveSubclassObj(stubDb, 'cleric', 'Nature', 'PHB');
+    // Pega o anexo XPHB (último), mas com a herança resolvida:
+    expect(sub.classSource).toBe('XPHB');
+    expect(sub.subclassFeatures).toEqual(['Nature Domain|Cleric|XPHB|Nature|PHB|3']);
+    expect(sub.additionalSpells).toEqual([{ prepared: { 1: ['animal friendship'] } }]);
+  });
 });
 
 describe('buildClassDataById', () => {

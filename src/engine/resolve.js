@@ -11,12 +11,13 @@
 // -----------------------------------------------------------------------------
 
 import { buildContext } from './context';
+import { resolveCopies } from '../selector/copy';
 import { deriveCharacter } from './index';
 import { parseSpecies, raceLineages } from './speciesData';
 import { collectOwned, collectFeatIds } from './proficiency';
 import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';
-import { deriveFeatureGrants } from './featureEffects';
+import { deriveFeatureGrants, cantripLimitBonus } from './featureEffects';
 import { deriveSubclassGrants } from './subclassGrants';
 import { collectChoicePicks } from './choices';
 import { deriveInventory, carryingCapacity } from './items';
@@ -61,8 +62,31 @@ export function resolveClassObj(db, classId, source) {
   return list[list.length - 1];
 }
 
+// As subclasses legadas anexadas à classe 2024 são STUBS `_copy` (ex: "Nature
+// Domain PHB → classe XPHB"): trazem só as subclassFeatures re-apontadas e
+// herdam TODO o resto (additionalSpells das domain spells, sobretudo) da
+// original. Sem resolver o `_copy`, o stub "ganha" do original no findLast
+// abaixo e as magias concedidas somem (TC-0027). Mesmo id do seletor:
+// shortName|source|classSource (a cópia colide com a original em name|source).
+const subclassCopyId = (s) => `${s.shortName ?? s.name}|${s.source}|${s.classSource ?? ''}`;
+const subclassListCache = new WeakMap(); // db → Map(classId → lista resolvida)
+
+function resolvedSubclassList(db, classId) {
+  let per = subclassListCache.get(db);
+  if (!per) {
+    per = new Map();
+    subclassListCache.set(db, per);
+  }
+  if (!per.has(classId)) {
+    const raw = db[`class-${classId}`]?.subclass;
+    per.set(classId, Array.isArray(raw) ? resolveCopies(raw, subclassCopyId) : null);
+  }
+  return per.get(classId);
+}
+
 /**
- * Localiza o objeto de subclasse (dentro do mesmo arquivo da classe).
+ * Localiza o objeto de subclasse (dentro do mesmo arquivo da classe), com a
+ * herança `_copy` já resolvida.
  * @param {object} db
  * @param {string} classId
  * @param {string} subclassId      shortName da subclasse (ex: 'Champion')
@@ -71,8 +95,7 @@ export function resolveClassObj(db, classId, source) {
  */
 export function resolveSubclassObj(db, classId, subclassId, subclassSource) {
   if (!db || !classId || !subclassId) return null;
-  const file = db[`class-${classId}`];
-  const list = file?.subclass;
+  const list = resolvedSubclassList(db, classId);
   if (!Array.isArray(list)) return null;
   let matches = list.filter((s) => s.shortName === subclassId);
   if (matches.length === 0) return null;
@@ -412,7 +435,9 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       casterCode: info?.code ?? null,
       isPact,
       spellListClass: info ? spellListClassName(cls.classId, info) : classDisplayName(cls.classId),
-      cantripLimit: cantripLimit(info, cls.level),
+      // Base da progressão + extras de featureoption (Thaumaturge/Magician,
+      // TC-0028). O bônus só vale quando a classe já conjura cantrips.
+      cantripLimit: cantripLimit(info, cls.level) + (cantripLimit(info, cls.level) > 0 ? cantripLimitBonus(cls) : 0),
       prepareLimit: prepareLimit(info, cls.level),
       // Preparadas pelo jogador, separadas por cantrip (nv 0) vs. círculo.
       cantrips: resolved.filter((s) => s.raw?.level === 0),

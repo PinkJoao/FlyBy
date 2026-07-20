@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveFeatureGrants } from './featureEffects';
+import { deriveFeatureGrants, cantripLimitBonus } from './featureEffects';
 import { createCharacter } from '../schema/character';
 
 function clericWith(featureoptionPicks) {
@@ -45,5 +45,19 @@ describe('deriveFeatureGrants', () => {
 
   it('sem escolhas → tudo vazio', () => {
     expect(deriveFeatureGrants(createCharacter())).toEqual({ armor: [], weapons: [], grantedSkills: [], grantedTools: [] });
+  });
+});
+
+// TC-0028: "you know one extra cantrip" das featureoptions soma no limite.
+describe('cantripLimitBonus', () => {
+  it('Thaumaturge → +1', () => {
+    expect(cantripLimitBonus(clericWith(['Thaumaturge|XPHB']).classes[0])).toBe(1);
+  });
+  it('Magician (Primal Order) → +1', () => {
+    expect(cantripLimitBonus(clericWith(['Magician|XPHB']).classes[0])).toBe(1);
+  });
+  it('Protector → 0; sem bag → 0', () => {
+    expect(cantripLimitBonus(clericWith(['Protector|XPHB']).classes[0])).toBe(0);
+    expect(cantripLimitBonus(null)).toBe(0);
   });
 });

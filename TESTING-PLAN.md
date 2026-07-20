@@ -224,6 +224,33 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-19** - **T1a session 4: CLERIC + all 19 subclasses done** (all rows `ui: ok`;
+  largest batch, done in one sitting). Sweep green before starting (274/274 strict). Full
+  guided create (Dwarf XPHB / Magic Initiate (Cleric) / Nature PHB as the rep build - the
+  feat exercised the TC-0011 spellSet+spell chooses end-to-end), overlay level-ups 1→4
+  (subclass @3 rebuilt the step list live with the new Nature chooses), jump to 19 (fixup
+  guide: Blessed Strikes, 3 ASIs, War Caster/Durable, Epic Boon; DDL-0034 cap saturated Wis
+  at 20 and Boon of Fortitude lifted it to 21; HP 214 = base + Dwarven Toughness 19 +
+  Durable Con bump + Boon +40), subclass swaps @19 for the other 18 (features + granted
+  spell lists + fixed grants + per-subclass chooses all verified), Spellbook checks @1/3/19,
+  proficiency cards, mobile width, zero console errors.
+  Findings: **TC-0027** (STRUCTURAL, the campaign's biggest so far: legacy subclasses
+  adopted onto 2024 classes are `_copy` STUBS the resolver never expanded - 13 of the 19
+  cleric domains had ZERO domain spells and no additionalSpells chooses; fixed via memoized
+  `resolveCopies` in `resolveSubclassObj` - Bard/Barbarian had escaped by luck of stub
+  shape), **TC-0028** (Thaumaturge/Magician extra cantrip never raised the cantrip limit -
+  curated `CANTRIP_BONUS_FEATURES`, fixed), **TC-0030** (Knowledge (PSA) Blessings granted
+  nothing - umbrella-feature registry key + key-only dedup; AND both Blessings versions now
+  give the chosen skills expertise via the new `expertise: true` grant flag, fixed).
+  **Open (needs-user-eyes): TC-0029** (ASI picker is G-only / boon picker EB-only; RAW
+  allows Origin feats at ASI and G/O at the boon - Tough is unpickable at ASI slots) and
+  **TC-0031** (spell pickers offer spells already always-prepared from another origin;
+  picking one silently wastes the pick after the Spellbook collapse).
+  928 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §45 + DDL-0039.
+  **Next action: T1a session 5 - DRUID + its 8 subclasses** (Magician's +1 cantrip now
+  bumps via TC-0028's registry; legacy Land/Moon/etc. domain-spell derivation newly works
+  via TC-0027 - verify their circle spells and Land's terrain spellSet carefully).
+
 - **2026-07-18/19** - **T1a session 3: BARD + all 10 subclasses done** (all rows
   `ui: ok`). Session opened with a DDL-0037 migration repair: loadDb still pointed at
   the sibling source-material path, and vitest/eslint were descending into the in-repo

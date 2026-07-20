@@ -305,6 +305,54 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0039 — T1a Cleric session: `_copy` de subclasse resolvido, bônus de cantrip curado, expertise em perícias escolhidas
+**Date:** 2026-07-19
+**Builds on:** DDL-0024 (Phase T), DDL-0029 (registros curados de grants), DDL-0002/0013
+(o caso Thaumaturge citado e nunca implementado). **Corrige uma premissa silenciosa** de
+todo consumidor de `resolveSubclassObj` desde a Fase 6.
+
+**Context.** T1a sessão 4 (Cleric + 19 subclasses, TESTING-PLAN §7 2026-07-19). Quatro
+bugs reais (TC-0027/0028/0030 corrigidos em sessão; TC-0029/0031 abertos como decisão de
+produto) — ver `testing/ISSUES.md`.
+
+**Decisions.**
+- **`resolveSubclassObj` resolve `_copy` (TC-0027).** Toda subclasse legada anexada à
+  classe 2024 é um STUB `_copy` (só as `subclassFeatures` re-apontadas; o resto herda da
+  original). O resolver preferia o stub NÃO expandido sempre que ele trazia features
+  (todos os 19 domains do cleric) — as domain spells e os `{choose}` dentro de
+  `additionalSpells` sumiam por inteiro. Agora a lista de subclasses é expandida por
+  `resolveCopies` (memoizada por db via WeakMap, mesmo id shortName|source|classSource do
+  seletor). REGRA para futuros consumidores: nunca ler `db['class-X'].subclass` cru para
+  campos herdáveis — passe por `resolveSubclassObj`. O sweep NÃO detecta essa classe de
+  bug (grant que não deriva → sem pendência, sem diff de round-trip).
+- **"You know one extra cantrip" é registro curado** (TC-0028): `CANTRIP_BONUS_FEATURES`
+  em `engine/featureEffects.js` (Thaumaturge/Cleric, Magician/Druid → +1), somado ao
+  `cantripLimit` da origem da classe em resolve.js (só com base > 0). Cantrips de OUTRA
+  lista (Acolyte of Nature, Arcane Initiate) NÃO entram aqui — são chooses de
+  `additionalSpells` (mecanismo do TC-0027/TC-0011).
+- **Perícias escolhidas COM expertise têm um flag de grant** (TC-0030): `expertise: true`
+  num grant `skill` de `SUBCLASS_FEATURE_GRANTS` emite a escolha como kind `expertise`
+  com `newProf` (pool = a lista fixa do grant, sem intersectar com proficientes; picks
+  derivam nível 2 pelo caminho existente). Aplica às DUAS versões de Blessings of
+  Knowledge (PHB/PSA e FRHoF). Junto: os domains PSA inlinam o texto de nível 1 numa
+  feature GUARDA-CHUVA com o nome da subclasse — a chave do registro casa o guarda-chuva
+  ('knowledge (psa)|knowledge domain (psa)') e o dedup do gerador passou a ser por CHAVE
+  (o guarda-chuva existe nos dois anexos da classe, PHB@1 e XPHB@3, e emitia em dobro).
+- **Abertos (needs-user-eyes):** TC-0029 — o picker de ASI é só categoria G e o de Epic
+  Boon só EB; RAW ("or another feat of your choice for which you qualify") admite feats
+  de Origem no ASI (Tough/Lucky/Alert são Origin no XPHB 2024) e G/O no boon. TC-0031 —
+  pickers de magia oferecem magias já always-prepared de OUTRA origem (pick legal mas
+  silenciosamente desperdiçado após o collapse do Spellbook).
+
+**Consequences.**
+- Todos os 73 stubs legados do dataset agora herdam `additionalSpells` e qualquer outro
+  campo — as sessões T1a seguintes (Druid: Land/Moon…) devem ver as circle spells
+  derivando; conferir com atenção (o Land tem spellSet por terreno).
+- Um novo featureoption "+N cantrips" é uma linha em `CANTRIP_BONUS_FEATURES`; uma nova
+  feature "perícia escolhida com expertise" é `expertise: true` no grant.
+- Verificado: 928 testes (+6), lint, sweep 274/274 `--strict`, passada live completa
+  (CHANGELOG §45). Cobertura: as 19 linhas `class:cleric/*` com `ui: ok`.
+
 ### DDL-0038 — T1a Bard session: proficiency tokens, kit equipmentType chooses, sibling-spell dedup, curated missing spell grants
 **Date:** 2026-07-19
 **Builds on:** DDL-0024 (Phase T), DDL-0029 (choice-kind completeness), DDL-0011 (curated

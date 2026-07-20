@@ -23,9 +23,35 @@ export const FEATURE_EFFECTS = {
   // Divine Order (Cleric) - Primal Order (Druid): opção "marcial"
   protector: { weapons: ['Martial Weapons'], armor: ['Heavy Armor'] },
   warden: { weapons: ['Martial Weapons'], armor: ['Medium Armor'] },
-  // Thaumaturge / Magician concedem cantrip + bônus em checks (não são
-  // proficiências - entram nos efeitos de magia/checks depois).
+  // Thaumaturge / Magician: o cantrip extra entra em CANTRIP_BONUS_FEATURES;
+  // o bônus em checks (Arcana/Religion, Nature) segue só como texto.
 };
+
+/**
+ * Featureoptions que aumentam o LIMITE de cantrips da própria classe (prosa
+ * "you know one extra cantrip from the X spell list" - TC-0028). Curado: o
+ * 5etools não estrutura esse "+1". Grants de cantrip de OUTRA lista (Acolyte of
+ * Nature, Arcane Initiate…) NÃO entram aqui - são `additionalSpells` {choose}.
+ * @type {Record<string, number>}
+ */
+export const CANTRIP_BONUS_FEATURES = {
+  thaumaturge: 1, // Divine Order (Cleric XPHB)
+  magician: 1, // Primal Order (Druid XPHB)
+};
+
+/**
+ * Soma dos cantrips extras concedidos pelas featureoptions ESCOLHIDAS desta
+ * classe (os picks vivem no bag da própria classe).
+ * @param {import('../schema/character').ClassEntry} classEntry
+ * @returns {number}
+ */
+export function cantripLimitBonus(classEntry) {
+  let out = 0;
+  for (const id of collectChoicePicks(classEntry?.choices, 'featureoption')) {
+    out += CANTRIP_BONUS_FEATURES[String(id).split('|')[0].toLowerCase()] ?? 0;
+  }
+  return out;
+}
 
 const PROF_KEYS = ['armor', 'weapons', 'grantedSkills', 'grantedTools'];
 

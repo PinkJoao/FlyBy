@@ -529,7 +529,58 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 ---
 
-> **2026-07-20 (post-session)** - TC-0034 fixed; **the only open item in this ledger is
-> the Rogue half of TC-0021** (conditional weapon-filter semantics for its Weapon
-> Mastery pool), deliberately scheduled for the Rogue T1a session. Everything else is
-> `fixed@<date>`.
+## TC-0035 - Orphaned spell picks mislabeled "Mystic Arcanum" after a subclass swap removes casting
+
+- **Found:** 2026-07-20, T1a Fighter session (Eldritch Knight 19 swapped to Arcane
+  Archer: every leftover EK spell row showed a "Mystic Arcanum / 1/Long Rest" badge,
+  and the Cantrips/Prepared counter cards vanished entirely - no over-limit signal at
+  all, unlike the Druid session's red counters). **Severity:** bug (display).
+  **Status:** fixed@2026-07-20.
+- Two independent causes in `SpellbookTab.jsx`: (1) the row badge was computed as
+  `raw.level > origin.maxPrepareLevel` with no check that the origin HAS arcanum
+  circles - on a non-casting origin (maxPrepareLevel 0) every orphaned pick qualified;
+  (2) the Cantrips/Prepared counter cards only rendered when the LIMIT was > 0, so a
+  limit-0 origin with orphaned picks showed nothing.
+- **Fix:** badge now requires `origin.arcanumLevels.includes(raw.level)` (the engine's
+  own arcanum classification - resolve.js already returned [] for non-pact casters);
+  counters also render when the COUNT is > 0 (red "3/0" / "12/0" over-limit, the
+  DDL-0026 freedom signalled, never hidden). Note: when the swapped-to subclass grants
+  nothing at all (Champion), the class origin doesn't exist and the orphans stay
+  dormant/invisible until a casting subclass returns - intentional (DDL-0041 swap
+  semantics), recorded here so future sessions don't re-report it.
+
+## TC-0036 - Defense fighting style never reached the live sheet's AC
+
+- **Found:** 2026-07-20, T1a Fighter session (Champion 19 picked Defense as the
+  Additional Fighting Style: AC stayed 16 with Chain Mail; RAW is +1 while wearing
+  armor - the Foundry export already carried the Active Effect via
+  `foundryEffects.js`, only the LIVE derivation missed it). **Severity:** bug.
+  **Status:** fixed@2026-07-20.
+- **Fix:** new curated `AC_BONUS_FEATURES` registry + `acFeatureBonuses(character)` in
+  `engine/featureEffects.js` (the module's header always reserved space for AC
+  effects); `resolve.js` folds each bonus over `deriveArmorClass`'s result, honoring
+  `requiresArmor` vs. the derived `hasArmor`. Covers every slot a fighting style can
+  occupy (class feat@1, Champion's sub:feat, species/origin feats). 3 unit tests.
+  Verified live: Champion + Defense + Chain Mail = AC 17; removing armor drops the
+  bonus.
+
+## TC-0037 - Create-guide intro promised "which spells to prepare" to a non-caster
+
+- **Found:** 2026-07-20, T1a Fighter session (Fighter 1 with Magic Initiate: the
+  "Your character is ready" screen said the Fighter lets you choose "Fighting Style,
+  Weapon Mastery, and which spells to prepare" - but no spell step follows at level 1
+  with no subclass). **Severity:** polish (copy). **Status:** fixed@2026-07-20.
+- `FeaturesIntroStep.jsx` treated ANY spellcasting origin as "is a caster" - the
+  Magic Initiate FEAT origin counted. Now it requires the origin of the class itself
+  (`o.uid === cls.uid`) with a real cantrip/prepare limit.
+- Riding along (cosmetic, same session): the Cavalier/Samurai curated `mixed` choose
+  titled itself "Bonus Proficiency - mixed", leaking the internal kind name -
+  `classFeatureChoices.js` now renders the alternatives ("Bonus Proficiency - Skill
+  or Language"). 1 unit test.
+
+---
+
+> **2026-07-20 (2) (post-session)** - T1a Fighter session logged TC-0035/0036/0037, all
+> fixed in-session. **The only open item in this ledger remains the Rogue half of
+> TC-0021** (conditional weapon-filter semantics for its Weapon Mastery pool),
+> deliberately scheduled for the Rogue T1a session. Everything else is `fixed@<date>`.

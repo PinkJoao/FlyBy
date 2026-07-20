@@ -155,7 +155,12 @@ function grantChoices(grants, { featureName, keyTag, classSkills, idPrefix = '',
     // `g.tag` desambigua o id quando a MESMA feature tem vários grants do mesmo
     // kind; `g.level` destrava o grant num nível posterior ao da feature (as
     // armas kensei extras de 6/11/17 vivem na feature de nível 3).
-    const label = g.label ? `${featureName} - ${g.label}` : `${featureName} - ${KIND_LABEL[g.kind] ?? g.kind}`;
+    // 'mixed' descreve as alternativas ("Skill or Language") em vez de vazar o
+    // nome interno do kind no título do seletor (achado da sessão T1a Fighter).
+    const kindLabel = g.kind === 'mixed'
+      ? (g.of ?? ['skill', 'language']).map((k) => KIND_LABEL[k] ?? k).join(' or ')
+      : (KIND_LABEL[g.kind] ?? g.kind);
+    const label = g.label ? `${featureName} - ${g.label}` : `${featureName} - ${kindLabel}`;
     const id = `${idPrefix}${g.kind}@${keyTag}${g.tag ? `:${g.tag}` : ''}`;
     const base = { id, count, label, level: g.level ?? level, feature };
     if (g.kind === 'skill') {

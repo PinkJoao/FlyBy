@@ -151,6 +151,21 @@ describe('subclassFeatureChoices', () => {
     expect(subclassFeatureChoices(db, 'bard', bardLore, 2)).toHaveLength(0);
     expect(subclassFeatureChoices(null, 'bard', null, 3)).toEqual([]);
   });
+
+  it('Cavalier Bonus Proficiency (mixed) descreve as alternativas no rótulo', () => {
+    const dbCav = {
+      'class-fighter': {
+        subclassFeature: [
+          { name: 'Bonus Proficiency', source: 'XGE', className: 'Fighter', classSource: 'XPHB', subclassShortName: 'Cavalier', subclassSource: 'XGE', level: 3, entries: ['x'] },
+        ],
+      },
+    };
+    const cavalier = { shortName: 'Cavalier', source: 'XGE', subclassFeatures: ['Bonus Proficiency|Fighter|XPHB|Cavalier|XGE|3'] };
+    const out = subclassFeatureChoices(dbCav, 'fighter', cavalier, 3);
+    expect(out).toHaveLength(1);
+    expect(out[0].kind).toBe('mixed');
+    expect(out[0].label).toBe('Bonus Proficiency - Skill or Language');
+  });
 });
 
 describe('classToolChoices', () => {

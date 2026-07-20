@@ -53,6 +53,31 @@ export function cantripLimitBonus(classEntry) {
   return out;
 }
 
+/**
+ * Talentos/features escolhidos com bônus PLANO de CA em prosa (curado, como os
+ * demais registros deste módulo). `requiresArmor` espelha o RAW do Defense
+ * ("While you are wearing armor, you gain a +1 bonus to Armor Class").
+ * @type {Record<string, {value:number, requiresArmor?:boolean, label:string}>}
+ */
+export const AC_BONUS_FEATURES = {
+  defense: { value: 1, requiresArmor: true, label: 'Defense' },
+};
+
+/**
+ * Bônus de CA das features/talentos escolhidos (Defense fighting style…).
+ * O chamador decide se cada um se aplica (`requiresArmor` vs. `hasArmor`).
+ * @param {import('../schema/character').Character} character
+ * @returns {{value:number, requiresArmor?:boolean, label:string}[]}
+ */
+export function acFeatureBonuses(character) {
+  const out = [];
+  for (const id of chosenFeatureIds(character)) {
+    const eff = AC_BONUS_FEATURES[String(id).split('|')[0].toLowerCase()];
+    if (eff) out.push(eff);
+  }
+  return out;
+}
+
 const PROF_KEYS = ['armor', 'weapons', 'grantedSkills', 'grantedTools'];
 
 /** Ids ("Nome|Fonte") de todas as features ESCOLHIDAS que podem ter efeito. */

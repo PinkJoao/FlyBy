@@ -224,6 +224,37 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-20 (3)** - **T1a session 6: FIGHTER + all 10 subclasses done** (all rows
+  `ui: ok`). Sweep green before starting (274/274 strict). Rep build Eldritch Knight:
+  full guided create (Human XPHB / Magic Initiate (Wizard) - the DDL-0040 "Already
+  Prepared" flow verified end-to-end at the EK spell steps: Fire Bolt hidden by the
+  pre-marked exclude, badge on unmark, confirm naming Magic Initiate; Magic Missile
+  hidden in the level-1 picker), overlay level-ups 1→4 (subclass+2 cantrips+3 spells @3,
+  feat + mastery growth @4), jump to 19 (badge **"8 choices left"** counting decisions,
+  TC-0020), fixup guide filling 5 feats + Epic Boon + masteries to 6/6 + spells to 12/12
+  up to 4th circle (DDL-0034 caps: ASI saturates Str at 20, Boon of Fortitude lifts to
+  21; HP 234 = base 156 + Tough 38 + Boon 40; slots 4/3/3/1, DC 15). DDL-0040 feat
+  categories verified on both slot kinds (ASI pre-marks General with Origin/Epic Boon
+  listable - Tough picked via the Origin chip; boon slot pre-marks Epic Boon).
+  Subclass swaps @19 for the other nine: Arcane Archer (spellSet + Arcana/Nature skill +
+  8 Arcane Shots), Battle Master (AT tool + class-list skill + 23 maneuvers; chip popup),
+  Cavalier/Samurai (`mixed` chooses, XGE pools minus owned), Champion (Additional FS @7,
+  9 options, GWF excluded), Psi Warrior (Telekinesis 1/Day Uses card @18), Rune Knight
+  (6 runes, Giant language grant), Echo Knight (no choices - correct), Banneret
+  (Perf/Pers skill + Comprehend Languages Ritual). Mobile ok, zero console errors.
+  Findings - ALL fixed in-session: **TC-0035** (orphaned spell picks after a
+  casting-removing swap mislabeled "Mystic Arcanum" + counters hidden - badge now follows
+  the engine's `arcanumLevels`, counters render red when count > limit even at limit 0),
+  **TC-0036** (Defense fighting style never reached the LIVE AC - new curated
+  `AC_BONUS_FEATURES` + `acFeatureBonuses` folded in resolve.js; AC 17 verified),
+  **TC-0037** (create-guide intro said "which spells to prepare" on a non-caster - feat
+  origins no longer count; plus the "- mixed" label cosmetic).
+  944 tests (+4), lint, sweep 274/274 `--strict`. See CHANGELOG §51 + DDL-0043.
+  **Next action: T1a session 7 - MONK + its 10 subclasses** (Kensei's `weaponProf`
+  machinery is DDL-0030's - verify melee/ranged pickers @3 and the extra slots @6/11/17;
+  Elements has a decision level @17; remember several monk subclasses carry curated
+  SUBCLASS_GRANTS lines - check tool/language cards per subclass).
+
 - **2026-07-20 (2)** - **TC-0034 FIXED + ledger/tracker cleanup.** The feat sub-bag spell
   pickers now get the full DDL-0040 "Already Prepared" flow: `ChoiceList` derives the
   owned-spell map itself at its single choke point (a gated `useMemo`, only when a spell

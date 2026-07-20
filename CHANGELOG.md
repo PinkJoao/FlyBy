@@ -3572,3 +3572,49 @@ Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultado
   `ok`; a entrada de 2026-07-17 (3) do TESTING-PLAN ainda chamava o TC-0022 de aberto
   embora o DDL-0034 o tenha resolvido no mesmo dia → corrigida.
 - Verificado: 940 testes, lint clean, sweep 274/274 `--strict`.
+
+## 51. T1a sessão 6: Fighter + 10 subclasses (TC-0035..TC-0037, DDL-0043)
+
+**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-20 (3)); todas as 10 linhas
+`class:fighter/*` com `ui: ok` em `testing/COVERAGE.md`.**
+
+- **Rep build (Eldritch Knight):** guided create completo (Human XPHB / Magic Initiate
+  (Wizard) / kit A com Chain Mail auto-equipada, AC 16), level-ups interativos 1→4 pelo
+  overlay (subclasse + 2 cantrips + 3 preparadas @3 com o fluxo DDL-0040 verificado de
+  ponta a ponta — Fire Bolt oculto pelo exclude pré-marcado, badge ao desmarcar, confirm
+  "You already have Fire Bolt from Magic Initiate"; feat + mastery 3→4 @4), salto a 19
+  com o badge ✦ **"8 choices left"** (decisões, TC-0020) e o fixup guide preenchendo
+  5 feats + Epic Boon + 2 masteries + 1 cantrip + 8 magias até o 4º círculo. Caps
+  DDL-0034 exercitados: ASI +2 satura Str em 20, Boon of Fortitude eleva a 21; HP 234 =
+  156 base + 38 (Tough) + 40 (Boon). Spellbook @19: slots 4/3/3/1, DC 15, +7, 3/3 e
+  12/12. Categoria de feat DDL-0040 verificada nos dois slots (ASI lista G+O+EB com
+  General pré-marcado — Tough (Origin) escolhido ao incluir a categoria; Epic Boon
+  pré-marca EB).
+- **Swaps @19 das outras nove:** Arcane Archer (spellSet Prestidigitation/Druidcraft +
+  skill Arcana/Nature + 8 Arcane Shots), Battle Master (tool AT + skill da lista da
+  classe + 23 manobras; popup de chip ok), Cavalier/Samurai (choose `mixed`
+  skill-ou-language com pools XGE menos as possuídas), Champion (Additional FS @7 com
+  9 opções, GWF excluído), Psi Warrior (Telekinesis 1/Day no card Uses @18), Rune Knight
+  (6 runas, Hill/Storm gated 7+; idioma Giant no card), Echo Knight (features EGW, sem
+  choices — correto), Banneret (skill Perf/Pers + Comprehend Languages Ritual no Uses).
+  Mobile sem overflow; zero erros de console.
+- **TC-0035 (bug, corrigido):** picks órfãos de magia após um swap que remove o casting
+  (EK → Arcane Archer) apareciam com badge "Mystic Arcanum / 1/Long Rest" e SEM
+  contadores. O badge da linha agora exige `origin.arcanumLevels.includes(level)` (a
+  classificação do próprio engine, [] para não-pact) e os cards Cantrips/Prepared também
+  renderizam quando a CONTAGEM > 0 — "3/0"/"12/0" em vermelho (a liberdade DDL-0026
+  sinalizada). Sem grants na subclasse (Champion) a origem não existe e os órfãos ficam
+  dormentes — intencional (DDL-0041), registrado no ledger.
+- **TC-0036 (bug, corrigido):** o Defense fighting style nunca chegava à CA do sheet ao
+  vivo (o export já levava o Active Effect). Novo registro curado `AC_BONUS_FEATURES` +
+  `acFeatureBonuses(character)` em `engine/featureEffects.js` (o slot que o header do
+  módulo sempre reservou), dobrado sobre `deriveArmorClass` no resolve.js honrando
+  `requiresArmor`/`hasArmor`. Champion + Defense + Chain Mail = **AC 17** ao vivo.
+- **TC-0037 (polish, corrigido):** a tela "Your character is ready" do guia contava
+  QUALQUER origem de spellcasting como "caster" — um Fighter 1 com Magic Initiate lia
+  "and which spells to prepare" sem passo de magia à frente. Agora exige a origem da
+  própria classe com limite real. De carona: o choose `mixed` do Cavalier/Samurai
+  titulava "Bonus Proficiency - mixed" (nome interno do kind) → "Bonus Proficiency -
+  Skill or Language".
+- Verificado: **944 testes (+4)**, lint, sweep **274/274 `--strict`**, passada live
+  completa (fixes verificados no browser após reinício do dev server).

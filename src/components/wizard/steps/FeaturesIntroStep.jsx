@@ -26,7 +26,12 @@ function naturalList(items) {
 export default function FeaturesIntroStep({ character, derived, db }) {
   const cls = character.classes?.[0] ?? null;
   const className = cap(cls?.classId) || 'class';
-  const isCaster = (derived?.spellcasting?.origins ?? []).length > 0;
+  // "Caster" aqui = a CLASSE tem magias para preparar nos passos seguintes.
+  // Uma origem de talento/raça (Magic Initiate…) não conta - senão um Fighter 1
+  // com Magic Initiate leria "and which spells to prepare" sem passo de magia.
+  const isCaster = (derived?.spellcasting?.origins ?? []).some(
+    (o) => o.uid === cls?.uid && (o.cantripLimit > 0 || o.prepareLimit > 0),
+  );
 
   // Rótulos das escolhas REAIS de feature da classe (deduplicados), + magias.
   const featureLabels = cls?.classId

@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-20T16:06:03.345Z · base seed 1 · 274 rows
+Last sweep: 2026-07-20T19:32:09.083Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -64,16 +64,16 @@ Last sweep: 2026-07-20T16:06:03.345Z · base seed 1 · 274 rows
 | `class:druid/Moon` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 6 circle spells (3/7/15) Always Prepared @19; prepared-collapse freed slot verified |
 | `class:druid/Sea` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | 11 granted (incl. Ray of Frost cantrip) Always Prepared @19 |
 | `class:druid/Stars` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | Guidance + Guiding Bolt Always Prepared @19 (Star Map) |
-| `class:fighter/Arcane Archer` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Cavalier` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Samurai` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Echo Knight` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Rune Knight` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Battle Master` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Champion` | ok | 1 3 4 6 7 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Eldritch Knight` | ok | 1 3 4 6 7 8 10 11 12 13 14 16 19 20 | todo | todo |  |
-| `class:fighter/Psi Warrior` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
-| `class:fighter/Banneret` | ok | 1 3 4 6 8 12 14 16 19 | todo | todo |  |
+| `class:fighter/Arcane Archer` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | spellSet (Prestidigitation/Druidcraft) + Lore skill (Arcana/Nature) + 8 Arcane Shots @19; TC-0035 found here |
+| `class:fighter/Cavalier` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | mixed skill-or-language choose (XGE list minus owned); "- mixed" label fixed (TC-0037 rider) |
+| `class:fighter/Samurai` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | mixed choose pool = History/Performance/Persuasion (Insight owned excluded) |
+| `class:fighter/Echo Knight` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | features all render (Manifest Echo/Unleash/Legion of One/Shadow Martyr); no choices (correct) |
+| `class:fighter/Rune Knight` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | Runes 0/5 @19 (6 options, Hill/Storm gated 7+); Giant language + Smith's Tools grants on card |
+| `class:fighter/Battle Master` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | Student of War tool (16 AT minus owned) + skill (class list minus owned); 23 maneuvers; chip popup ok |
+| `class:fighter/Champion` | ok | 1 3 4 6 7 8 12 14 16 19 | ok | todo | Additional FS @7 (9 options, GWF excluded); Defense picked -> AC 17 (TC-0036 found+fixed here) |
+| `class:fighter/Eldritch Knight` | ok | 1 3 4 6 7 8 10 11 12 13 14 16 19 20 | ok | todo | REP BUILD: guided create + overlay 1-4 (subclass+spells@3, feat+mastery@4) + fixup @19 (badge 8; caps: ASI saturates Str 20, boon 21; HP 234 = Tough+Boon); slots 4/3/3/1, DC 15; DDL-0040 flow verified vs Magic Initiate |
+| `class:fighter/Psi Warrior` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | Telekinesis 1/Day Uses card @18 (5th-level category appears); features render |
+| `class:fighter/Banneret` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | Knightly Envoy skill (Perf/Pers, Insight excluded) + Comprehend Languages Ritual in Uses card |
 | `class:monk/Long Death` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
 | `class:monk/Drunken Master` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
 | `class:monk/Kensei` | ok | 1 3 4 6 8 11 12 16 17 19 | todo | todo |  |

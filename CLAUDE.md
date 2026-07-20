@@ -305,6 +305,45 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0043 — T1a Fighter session: badge de arcanum segue o engine, bônus de CA de feature é registro curado
+**Date:** 2026-07-20
+**Builds on:** DDL-0010 (semântica de Mystic Arcanum — o badge agora a respeita), DDL-0026/0041
+(over-limit sinalizado em vermelho, nunca escondido; picks sobrevivem a swaps), DDL-0029/0034
+(o padrão de registro curado que o bônus de CA reusa), DDL-0040 (fluxos verificados nesta sessão).
+
+**Context.** T1a sessão 6 (Fighter + 10 subclasses, TESTING-PLAN §7 2026-07-20 (3)). Três
+achados reais, todos corrigidos em sessão (TC-0035/0036/0037 em `testing/ISSUES.md`).
+
+**Decisions.**
+- **O badge "Mystic Arcanum" da SpellbookTab deriva do ENGINE, não de aritmética própria da
+  UI** (TC-0035): a linha só o mostra quando `origin.arcanumLevels` inclui o círculo da magia
+  (a mesma classificação do resolve.js — vazia para não-pact). Antes, `level >
+  maxPrepareLevel` marcava TODO pick órfão de um swap que removeu o casting (EK → Arcane
+  Archer). Junto: os contadores Cantrips/Prepared também renderizam quando a CONTAGEM > 0
+  mesmo com limite 0 — "12/0" vermelho, o over-limit DDL-0026 sinalizado. REGRA: componente
+  não re-deriva semântica que o engine já expõe.
+- **Picks órfãos com origem INEXISTENTE ficam dormentes — intencional.** Se a subclasse nova
+  não concede nada (Champion), a origem de classe nem existe (`!info && granted.length === 0`)
+  e os picks não aparecem em lugar nenhum até um swap de volta. É a semântica DDL-0041;
+  sessões futuras não devem reportar como bug.
+- **Bônus plano de CA de feature escolhida é registro curado** (TC-0036): `AC_BONUS_FEATURES`
+  + `acFeatureBonuses(character)` em `engine/featureEffects.js` (o módulo já reservava o slot
+  "bônus de CA" no header), dobrado sobre o resultado de `deriveArmorClass` no resolve.js com
+  `requiresArmor` vs. o `hasArmor` derivado. Defense (+1 armado) é a única entrada hoje; um
+  futuro feat de CA plano é uma linha. O export NÃO muda (o Active Effect do overlay/curado já
+  cobria — o gap era só o sheet ao vivo).
+- **"Caster" na tela de transição do guia = a CLASSE tem magias para preparar** (TC-0037):
+  `FeaturesIntroStep` exige a origem com `uid` da classe e limite real — origens de
+  talento/raça (Magic Initiate) não disparam mais "and which spells to prepare".
+- **Rótulo do choose `mixed` descreve as alternativas** ("Skill or Language"), nunca o nome
+  interno do kind (cosmético, Cavalier/Samurai).
+
+**Consequences.**
+- Cobertura: as 10 linhas `class:fighter/*` com `ui: ok`. Fluxos DDL-0040 (Already Prepared +
+  categorias de feat) e caps DDL-0034 verificados de ponta a ponta no chassi Fighter/EK.
+- Verificado: 944 testes (+4), lint, sweep 274/274 `--strict`, passada live completa
+  (CHANGELOG §51).
+
 ### DDL-0042 — O ChoiceList DERIVA o que precisa; prop "encanada" só quando há um dono claro
 **Date:** 2026-07-20
 **Resolve:** TC-0034 (o único pendente aberto da sessão T1a Druid, DDL-0041). **Builds

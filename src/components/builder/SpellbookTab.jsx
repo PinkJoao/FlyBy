@@ -300,7 +300,10 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
     stats.push({ key: 'dc', value: origin.saveDc, label: 'Save DC' });
     stats.push({ key: 'atk', value: signed(origin.attackBonus), label: 'Attack' });
   }
-  if (origin.cantripLimit > 0) {
+  // Limite 0 com picks órfãos (a classe deixou de conjurar, p.ex. trocando de
+  // Eldritch Knight para outra subclasse) ainda mostra o contador - em vermelho,
+  // como qualquer over-limit (a liberdade DDL-0026 sinalizada, nunca escondida).
+  if (origin.cantripLimit > 0 || cantripCount > 0) {
     stats.push({
       key: 'cantrips',
       value: `${cantripCount}/${origin.cantripLimit}`,
@@ -308,7 +311,7 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
       over: cantripCount > origin.cantripLimit,
     });
   }
-  if (origin.prepareLimit > 0) {
+  if (origin.prepareLimit > 0 || preparedCount > 0) {
     stats.push({
       key: 'prepared',
       value: `${preparedCount}/${origin.prepareLimit}`,
@@ -550,7 +553,7 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
                     <SpellRow
                       key={`${origin.key}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
                       entry={entry}
-                      arcanum={!entry.granted && entry.raw.level > origin.maxPrepareLevel}
+                      arcanum={!entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level)}
                       thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
                       onInfo={() => setInfoKey(entry.raw.name)}
                     />

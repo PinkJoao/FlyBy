@@ -17,7 +17,7 @@ import { parseSpecies, raceLineages } from './speciesData';
 import { collectOwned, collectFeatIds } from './proficiency';
 import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';
-import { deriveFeatureGrants, cantripLimitBonus } from './featureEffects';
+import { deriveFeatureGrants, cantripLimitBonus, acFeatureBonuses } from './featureEffects';
 import { deriveSubclassGrants } from './subclassGrants';
 import { collectChoicePicks } from './choices';
 import { deriveInventory, carryingCapacity } from './items';
@@ -596,6 +596,14 @@ export function deriveFromDb(character, db) {
   // bônus planos de saves de itens ativos (Ring/Cloak of Protection…). A CA leva
   // em conta a armadura natural da espécie (Tortle/Autognome/Warforged).
   const armorClass = deriveArmorClass(character, inv.entries, derived.modifiers, naturalArmorFor(raceObj));
+  // Bônus de CA de features escolhidas (Defense fighting style: +1 SÓ com
+  // armadura vestida - RAW). Curado em AC_BONUS_FEATURES; aplicado por cima da
+  // base como os bônus planos de item.
+  for (const b of acFeatureBonuses(character)) {
+    if (b.requiresArmor && !armorClass.hasArmor) continue;
+    armorClass.total += b.value;
+    armorClass.breakdown.push({ label: b.label, value: b.value, note: 'feature' });
+  }
   const itemSaveBonus = deriveSaveBonusFromItems(inv.entries);
   const saves = { ...derived.saves };
   if (itemSaveBonus.bonus) {

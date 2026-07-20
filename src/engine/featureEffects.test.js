@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveFeatureGrants, cantripLimitBonus } from './featureEffects';
+import { deriveFeatureGrants, cantripLimitBonus, acFeatureBonuses } from './featureEffects';
 import { createCharacter } from '../schema/character';
 
 function clericWith(featureoptionPicks) {
@@ -45,6 +45,39 @@ describe('deriveFeatureGrants', () => {
 
   it('sem escolhas → tudo vazio', () => {
     expect(deriveFeatureGrants(createCharacter())).toEqual({ armor: [], weapons: [], grantedSkills: [], grantedTools: [] });
+  });
+});
+
+// Defense fighting style (sessão T1a Fighter): +1 de CA com armadura vestida.
+describe('acFeatureBonuses', () => {
+  function fighterWithFeat(pick, choiceId = 'feat@1') {
+    const c = createCharacter({ name: 'T' });
+    c.classes = [
+      {
+        classId: 'fighter',
+        source: 'XPHB',
+        level: 1,
+        isOriginalClass: true,
+        hitPoints: {},
+        choices: { [choiceId]: { kind: 'feat', picks: [pick] } },
+      },
+    ];
+    return c;
+  }
+
+  it('Defense escolhido como Fighting Style → bônus +1 que exige armadura', () => {
+    expect(acFeatureBonuses(fighterWithFeat('Defense|XPHB'))).toEqual([
+      { value: 1, requiresArmor: true, label: 'Defense' },
+    ]);
+  });
+
+  it('também vale num slot sub: (Champion Additional Fighting Style)', () => {
+    const c = fighterWithFeat('Defense|XPHB', 'sub:feat@champion|additional fighting style@7');
+    expect(acFeatureBonuses(c)).toHaveLength(1);
+  });
+
+  it('outro fighting style → nenhum bônus', () => {
+    expect(acFeatureBonuses(fighterWithFeat('Dueling|XPHB'))).toEqual([]);
   });
 });
 

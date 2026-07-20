@@ -234,3 +234,28 @@ export function spellLimitsGrew(classObj, subclassObj, prevLevel, level) {
     prepareLimit(info, level) > prepareLimit(info, prevLevel)
   );
 }
+
+/**
+ * Magias já conhecidas/preparadas nas OUTRAS origens (TC-0031): nome (minúsculo)
+ * → rótulo da origem que a tem. Alimenta o filtro "Already Prepared" dos
+ * seletores e a confirmação ao adicionar mesmo assim - um multiclasse PODE
+ * querer a mesma magia nas duas classes (atributos diferentes), então é aviso,
+ * nunca bloqueio. A primeira origem encontrada dá o rótulo.
+ * @param {Array} origins   derived.spellcasting.origins
+ * @param {string} excludeKey  a origem sendo editada (fica de fora)
+ * @returns {Map<string, string>}
+ */
+export function preparedElsewhere(origins, excludeKey) {
+  const out = new Map();
+  for (const o of origins ?? []) {
+    if (o.key === excludeKey) continue;
+    const buckets = [o.cantrips, o.prepared, o.alwaysPrepared, o.arcanumSpells];
+    for (const bucket of buckets) {
+      for (const s of bucket ?? []) {
+        const name = String(s.raw?.name ?? s.name ?? '').toLowerCase();
+        if (name && !out.has(name)) out.set(name, o.label);
+      }
+    }
+  }
+  return out;
+}

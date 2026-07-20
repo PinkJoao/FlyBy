@@ -58,16 +58,18 @@ describe('classLevelChoices', () => {
     expect(barb.find((c) => c.id === 'weaponMastery').pool.weaponFilter).toEqual({ kind: 'melee' });
   });
 
-  it('adds ASI feat choice at level 4 (category G)', () => {
+  it('adds ASI feat choice at level 4 (category G, extras O/EB desmarcáveis - TC-0029)', () => {
     const out = classLevelChoices(fighterParsed, fighterObj, 4);
     const asi = out.find((c) => c.id === 'feat@4');
-    expect(asi.pool.category).toEqual(['G']);
+    expect(asi.pool.category).toEqual(['G']); // padrão (filtro pré-marcado + autoBuild)
+    expect(asi.pool.extraCategories).toEqual(['O', 'EB']); // na lista, atrás do filtro
   });
 
-  it('epic boon uses category EB', () => {
+  it('epic boon uses category EB (extras G/O desmarcáveis - TC-0029)', () => {
     const out = classLevelChoices(fighterParsed, fighterObj, 19);
     const boon = out.find((c) => c.id === 'feat@19');
     expect(boon.pool.category).toEqual(['EB']);
+    expect(boon.pool.extraCategories).toEqual(['G', 'O']);
   });
 
   it('expertise appears per level with count 2', () => {

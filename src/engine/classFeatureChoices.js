@@ -239,6 +239,12 @@ export function classLevelChoices(parsed, classObj, level) {
   for (const f of parsed?.features ?? []) {
     if (f.level > level) continue;
     switch (f.name) {
+      // RAW ("or another feat of your choice for which you qualify"): o slot de
+      // ASI admite feats de Origem e Epic Boons, e o de Epic Boon admite G/O
+      // (TC-0029). `category` segue sendo o PADRÃO (filtro pré-marcado no
+      // seletor, e o pool do autoBuild); `extraCategories` entram na lista mas
+      // só aparecem quando o jogador remove o filtro - os avisos de
+      // pré-requisito continuam valendo (um boon fora do nível 19 confirma).
       case 'Ability Score Improvement':
         out.push({
           id: `feat@${f.level}`,
@@ -247,7 +253,7 @@ export function classLevelChoices(parsed, classObj, level) {
           level: f.level,
           label: `Level ${f.level} - Feat`,
           feature: { name: f.name, level: f.level },
-          pool: { type: 'feat', category: ['G'] },
+          pool: { type: 'feat', category: ['G'], extraCategories: ['O', 'EB'] },
         });
         break;
       case 'Epic Boon':
@@ -258,7 +264,7 @@ export function classLevelChoices(parsed, classObj, level) {
           level: f.level,
           label: `Level ${f.level} - Epic Boon`,
           feature: { name: f.name, level: f.level },
-          pool: { type: 'feat', category: ['EB'] },
+          pool: { type: 'feat', category: ['EB'], extraCategories: ['G', 'O'] },
         });
         break;
       case 'Fighting Style': {

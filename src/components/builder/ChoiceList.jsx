@@ -650,12 +650,26 @@ function MixedChoice({ choice, picks, onChange, db, owned }) {
  * escolhido RECURSA (sub-escolhas, incl. ASI; legacy ganha +1 livre). */
 function FeatChoice({ choice, entry, picks, onChange, db, owned, character, guided }) {
   const cats = choice.pool.category ?? ['O'];
+  // TC-0029: `extraCategories` (ASI: O/EB; Epic Boon: G/O) entram na LISTA, mas
+  // a categoria padrão vem pré-marcada como filtro removível - mesmo padrão dos
+  // seletores de magia (DDL-0026). Os avisos de pré-requisito seguem valendo.
+  const extraCats = choice.pool.extraCategories ?? [];
   // Pools de Fighting Style CONCEDEM a feature homônima - pré-requisito atendido.
   const granted = cats.some((c) => c.startsWith('FS')) ? ['Fighting Style'] : [];
   const ctx = character ? prereqContext(character, { db, grantedFeatures: granted }) : null;
   // `only` (opcional) restringe a nomes específicos - ex: fighting style de subclasse
   // (College of Swords → Dueling / Two-Weapon Fighting).
-  const featEntity = makeFeatEntity(cats, FEAT_CATEGORY_TITLE[cats[0]] ?? 'Feat', ctx, choice.pool.only ?? null);
+  const featEntity = makeFeatEntity(
+    [...cats, ...extraCats],
+    FEAT_CATEGORY_TITLE[cats[0]] ?? 'Feat',
+    ctx,
+    choice.pool.only ?? null,
+    { categoryFilter: extraCats.length > 0 },
+  );
+  const initialFilters = {
+    ...(guided ? PREREQ_MET_FILTER : {}),
+    ...(extraCats.length > 0 ? { category: Object.fromEntries(cats.map((c) => [c, 'include'])) } : {}),
+  };
 
   const setPick = (index, featId) => {
     const oldId = picks[index];
@@ -698,7 +712,7 @@ function FeatChoice({ choice, entry, picks, onChange, db, owned, character, guid
               db={db}
               current={featId ? { label: name, source, id: featId } : null}
               placeholder="Choose feat…"
-              initialFilterState={guided ? PREREQ_MET_FILTER : undefined}
+              initialFilterState={Object.keys(initialFilters).length ? initialFilters : undefined}
               // Esconde talentos já tomados na ficha - exceto o deste slot e os repeatable.
               exclude={(raw) => {
                 const id = `${raw.name}|${raw.source}`;

@@ -36,6 +36,7 @@ import { confirm } from '../common/dialog';
 import { imgUrl } from '../common/media';
 import spellEntity, { makeSpellEntity } from '../../selector/entities/spell';
 import { castTypeLabel } from '../../engine/grantedSpells';
+import { preparedElsewhere } from '../../engine/spellcasting';
 import {
   classSpellList,
   schoolName,
@@ -170,7 +171,10 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
     () => (listClass ? classSpellList(db, listClass) : new Set()),
     [db, listClass],
   );
-  const pickerEntity = useMemo(() => makeSpellEntity(db), [db]);
+  // TC-0031: magias já conhecidas nas OUTRAS origens - viram badge + filtro
+  // "Already Prepared" (pré-marcado como exclude, desmarcável) e confirmação.
+  const elsewhere = useMemo(() => preparedElsewhere(derived.spellcasting?.origins, origin?.key), [derived, origin]);
+  const pickerEntity = useMemo(() => makeSpellEntity(db, { preparedElsewhere: elsewhere }), [db, elsewhere]);
 
   if (origins.length === 0) {
     return (
@@ -337,6 +341,12 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
     if (!inClassList(raw)) {
       warnings.push(`${raw.name} is not on the ${origin.spellListClass} spell list.`);
     }
+    // TC-0031: já tem a magia por outra origem - legal (multiclasse pode querer
+    // nas duas, por atributo), mas avisa de onde ela já vem.
+    const from = elsewhere.get(raw.name.toLowerCase());
+    if (from) {
+      warnings.push(`You already have ${raw.name} from ${from}.`);
+    }
     if (raw.level === 0) {
       if (cantripsFull) warnings.push(`You have no free cantrip slots (${cantripCount}/${origin.cantripLimit}).`);
     } else if (raw.level > origin.maxPrepareLevel) {
@@ -381,6 +391,8 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   const pickerFilterState = {
     class: { [origin.spellListClass]: 'include' },
     level: Object.fromEntries(pickerLevels.map((v) => [v, 'include'])),
+    // TC-0031: esconde por padrão o que já vem de outra origem (desmarcável).
+    ...(elsewhere.size > 0 ? { owned: { yes: 'exclude' } } : {}),
   };
 
   return (

@@ -37,6 +37,7 @@ export default function LevelUpSpellsStep({ character, db, derived, onChange }) 
                 <span className={styles.fieldLabel}>Cantrips</span>
                 <SpellPicker
                   origin={origin}
+                  origins={derived.spellcasting?.origins}
                   db={db}
                   level={0}
                   limit={origin.cantripLimit}
@@ -52,6 +53,7 @@ export default function LevelUpSpellsStep({ character, db, derived, onChange }) 
                 <span className={styles.fieldLabel}>Prepared spells (up to circle {origin.maxPrepareLevel})</span>
                 <SpellPicker
                   origin={origin}
+                  origins={derived.spellcasting?.origins}
                   db={db}
                   level={1}
                   maxLevel={origin.maxPrepareLevel}

@@ -305,6 +305,44 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0040 — Liberdade com aviso é o padrão dos pickers: categorias de feat e magias repetidas viram filtros pré-marcados
+**Date:** 2026-07-19
+**Resolves:** TC-0029 e TC-0031 (abertos na sessão T1a Cleric, DDL-0039). **Builds on:**
+DDL-0026 (o precedente: recorte padrão = filtro pré-marcado removível + confirmação, nunca
+esconder por regra dura).
+
+**Context.** Decisão do usuário para os dois pendentes da sessão Cleric: o picker de ASI só
+listava feats General (Tough/Lucky/Alert — Origem no XPHB 2024 — inescolhíveis, contra o RAW
+"or another feat of your choice for which you qualify") e o de Epic Boon só EB; e os pickers
+de magia oferecerem magias já sempre-preparadas de OUTRA origem sem aviso (mas esconder seria
+errado: um Warlock 1/Cleric 1 pode legitimamente preparar Toll the Dead nas duas classes pela
+diferença de atributo).
+
+**Decisions.**
+- **Slots de feat listam TODAS as categorias qualificáveis atrás de um filtro Category
+  pré-marcado no padrão do slot** (ASI: lista G+O+EB, marca General; Epic Boon: lista
+  EB+G+O, marca Epic Boon). `pool.extraCategories` no descriptor (engine), `opts.
+  categoryFilter` na `makeFeatEntity` (filtro + badge Origin/Epic Boon nos cards),
+  pré-marcação via `initialFilterState` no `FeatChoice`. Os avisos de pré-requisito são
+  INTOCADOS e continuam confirmando (boon fora do 19 avisa pelo próprio prereq). O
+  autoBuild segue sorteando só de `pool.category` — o sweep não muda com a decisão.
+- **Magias já conhecidas em outra origem são um filtro "Already Prepared" pré-marcado como
+  EXCLUDE + badge + confirmação citando a fonte** ("You already have Guidance from Magic
+  Initiate. Prepare it anyway?"). `preparedElsewhere(origins, excludeKey)` em
+  engine/spellcasting.js é a única fonte (nome→rótulo da origem); consumida pela
+  SpellbookTab e pelo SpellPicker do guia (create/level-up/fixup, via a nova prop
+  `origins`). Preparar em dobro segue permitido — é aviso, nunca bloqueio.
+- **Regra geral reafirmada para futuros seletores:** recorte de conveniência = filtro
+  pré-marcado removível; ato potencialmente indesejado = confirmação com o motivo;
+  esconder por regra dura só quando a regra é inambígua (dedup da própria origem).
+
+**Consequences.**
+- Um novo slot de feat com categoria própria só precisa declarar `category` (padrão) +
+  `extraCategories` (o resto qualificável); um novo picker de magia por origem passa
+  `origins` ao SpellPicker e ganha o fluxo inteiro.
+- Verificado ao vivo (Cleric 19 + Magic Initiate) + 930 testes + lint + sweep 274/274
+  `--strict` (CHANGELOG §46).
+
 ### DDL-0039 — T1a Cleric session: `_copy` de subclasse resolvido, bônus de cantrip curado, expertise em perícias escolhidas
 **Date:** 2026-07-19
 **Builds on:** DDL-0024 (Phase T), DDL-0029 (registros curados de grants), DDL-0002/0013

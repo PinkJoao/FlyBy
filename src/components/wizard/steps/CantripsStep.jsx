@@ -47,6 +47,7 @@ export default function CantripsStep({ character, db, derived, onChange }) {
             )}
             <SpellPicker
               origin={origin}
+              origins={derived.spellcasting?.origins}
               db={db}
               level={0}
               limit={origin.cantripLimit}

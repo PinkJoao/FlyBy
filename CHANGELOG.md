@@ -3401,3 +3401,32 @@ re-derive it. See [DDL-0037](CLAUDE.md).
 - Verified: 928 tests (+6: `_copy` regression, cantrip bonus ×3, Blessings ×2), lint
   clean, sweep 274/274 `--strict`, full live pass. See DDL-0039 and
   `testing/ISSUES.md` TC-0027…TC-0031.
+
+## 46. TC-0029/TC-0031: filtros pré-marcados nos pickers de feat (ASI/boon) e de magia
+
+- **Decisão do usuário (2026-07-19)**: nos dois casos, o mesmo padrão dos seletores de
+  magia (DDL-0026) - a lista NÃO esconde nada por regra dura; um filtro vem pré-marcado
+  no padrão e o jogador experiente (ou com permissão do mestre) o desmarca.
+- **TC-0029 - ASI e Epic Boon.** O slot de ASI agora lista feats General + Origin + Epic
+  Boon com o filtro **Category** pré-marcado em General; o slot de Epic Boon lista
+  EB + General + Origin pré-marcado em Epic Boon (RAW: "or another feat of your choice
+  for which you qualify" - Tough/Lucky/Alert são Origem no XPHB 2024 e qualificam).
+  Implementação: `pool.extraCategories` (engine/classFeatureChoices.js) entra na LISTA da
+  entity mas fica atrás do filtro; `makeFeatEntity` ganhou `opts.categoryFilter` (filtro +
+  badge Origin/Epic Boon nos cards); o `FeatChoice` (ChoiceList) pré-marca a categoria
+  padrão via `initialFilterState` (mesclando com o filtro de pré-requisito do modo
+  guiado). **Avisos de pré-requisito INALTERADOS** - Not Met/Unverifiable seguem
+  confirmando (um boon num ASI abaixo do 19 avisa pelo próprio prereq Level 19+). O
+  autoBuild/sweep continua sorteando só de `pool.category` (o padrão) - matriz estável.
+- **TC-0031 - magias de outra origem.** Um multiclasse PODE querer a mesma magia em duas
+  classes (Warlock 1 / Cleric 1 preparando Toll the Dead nas duas pela diferença de
+  atributo), então nada de esconder à força: `preparedElsewhere(origins, excludeKey)`
+  (engine/spellcasting.js) mapeia nome→rótulo da origem; `makeSpellEntity` ganhou o
+  filtro **"Already Prepared"** + badge nos cards; a SpellbookTab e o SpellPicker do guia
+  (create, level-up e fixup) o pré-marcam como EXCLUDE (desmarcável) e, ao adicionar
+  mesmo assim, o diálogo de confirmação existente cita a fonte: "You already have
+  Guidance from Magic Initiate. Prepare it anyway?".
+- Verificado ao vivo (Cleric 19 + Magic Initiate): ASI com General marcado esconde Tough;
+  marcar Origin o revela com badge; boon abre só com EB e General o expande; Guidance
+  some por padrão no preparar, aparece com badge ao desmarcar e confirma citando o feat.
+  930 testes (+2 preparedElsewhere, +2 pools), lint, sweep 274/274 `--strict`.

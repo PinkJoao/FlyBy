@@ -11,6 +11,7 @@ import {
   prepareLimit,
   isLeveledProgression,
   arcanumLevels,
+  preparedElsewhere,
 } from './spellcasting';
 
 describe('slotContribution (regra do Foundry: floor/ceil + override single-class)', () => {
@@ -167,5 +168,44 @@ describe('arcanumLevels - Mystic Arcanum (Warlock)', () => {
   it('só vale para conjuradores de pacto', () => {
     expect(arcanumLevels('full', 20)).toEqual([]);
     expect(arcanumLevels(null, 20)).toEqual([]);
+  });
+});
+
+describe('preparedElsewhere (TC-0031) - magias de OUTRAS origens', () => {
+  const origins = [
+    {
+      key: 'class:cleric',
+      label: 'Cleric',
+      cantrips: [{ raw: { name: 'Toll the Dead' } }],
+      prepared: [{ raw: { name: 'Bane' } }],
+      alwaysPrepared: [{ raw: { name: 'Bless' } }],
+    },
+    {
+      key: 'feat:magic-initiate',
+      label: 'Magic Initiate',
+      alwaysPrepared: [{ raw: { name: 'Guidance' } }, { raw: { name: 'Bless' } }],
+    },
+    {
+      key: 'class:warlock',
+      label: 'Warlock',
+      cantrips: [],
+      prepared: [],
+      arcanumSpells: [{ raw: { name: 'Foresight' } }],
+    },
+  ];
+
+  it('mapeia nome (minúsculo) → rótulo da origem, excluindo a origem editada', () => {
+    const map = preparedElsewhere(origins, 'class:warlock');
+    expect(map.get('toll the dead')).toBe('Cleric');
+    expect(map.get('guidance')).toBe('Magic Initiate');
+    expect(map.has('foresight')).toBe(false); // a própria origem fica de fora
+  });
+
+  it('primeira origem encontrada dá o rótulo; inclui arcanum; vazio sem origens', () => {
+    const map = preparedElsewhere(origins, 'feat:magic-initiate');
+    expect(map.get('bless')).toBe('Cleric'); // Cleric vem antes do feat
+    expect(map.get('foresight')).toBe('Warlock');
+    expect(preparedElsewhere([], 'x').size).toBe(0);
+    expect(preparedElsewhere(undefined, 'x').size).toBe(0);
   });
 });

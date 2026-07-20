@@ -52,6 +52,7 @@ export default function SpellsStep({ character, db, derived, onChange }) {
             {origin.prepareLimit > 0 ? (
               <SpellPicker
                 origin={origin}
+                origins={derived.spellcasting?.origins}
                 db={db}
                 level={1}
                 limit={origin.prepareLimit}

@@ -15,12 +15,17 @@ import { useMemo, useState } from 'react';
 import SelectorPanel from '../../../selector/SelectorPanel';
 import { makeSpellEntity } from '../../../selector/entities/spell';
 import { classSpellList, schoolName, castingTimeLabel, rangeLabel, spellLevelLabel } from '../../../engine/spells';
+import { preparedElsewhere } from '../../../engine/spellcasting';
 import { confirm } from '../../common/dialog';
 import styles from './steps.module.css';
 
 /**
  * @param {object} props
  * @param {object} props.origin       origem de classe (derived.spellcasting.origins)
+ * @param {Array}  [props.origins]    TODAS as origens (derived.spellcasting.origins) -
+ *   TC-0031: magias já conhecidas em OUTRA origem (talento/raça/outra classe)
+ *   ganham badge + filtro "Already Prepared" pré-marcado (desmarcável) e
+ *   confirmação ao adicionar mesmo assim.
  * @param {object} props.db
  * @param {number} props.level        piso do círculo (0 = cantrips, 1 = nível 1)
  * @param {number} [props.maxLevel]   teto do círculo (default = level). No level-up
@@ -30,9 +35,10 @@ import styles from './steps.module.css';
  * @param {object} props.classEntry   a entrada de classe (p/ ler/escrever .spells)
  * @param {(uid, spells) => void} props.onChangeSpells
  */
-export default function SpellPicker({ origin, db, level, maxLevel, limit, current, classEntry, onChangeSpells }) {
+export default function SpellPicker({ origin, origins, db, level, maxLevel, limit, current, classEntry, onChangeSpells }) {
   const [open, setOpen] = useState(false);
-  const pickerEntity = useMemo(() => makeSpellEntity(db), [db]);
+  const elsewhere = useMemo(() => preparedElsewhere(origins, origin.key), [origins, origin.key]);
+  const pickerEntity = useMemo(() => makeSpellEntity(db, { preparedElsewhere: elsewhere }), [db, elsewhere]);
   const listNames = useMemo(
     () => (origin.spellListClass ? classSpellList(db, origin.spellListClass) : new Set()),
     [db, origin.spellListClass],
@@ -57,6 +63,11 @@ export default function SpellPicker({ origin, db, level, maxLevel, limit, curren
           ? level === 0 ? 'cantrips' : `${spellLevelLabel(level).toLowerCase()} spells`
           : `spells of the ${spellLevelLabel(level).toLowerCase()} to ${spellLevelLabel(top).toLowerCase()}`;
       warnings.push(`This step picks ${range}; ${raw.name} is ${raw.level === 0 ? 'a cantrip' : `a ${spellLevelLabel(raw.level).toLowerCase()} spell`}.`);
+    }
+    // TC-0031: já vem de outra origem - legal, mas avisa de onde.
+    const from = elsewhere.get(raw.name.toLowerCase());
+    if (from) {
+      warnings.push(`You already have ${raw.name} from ${from}.`);
     }
     if (warnings.length > 0) {
       const ok = await confirm({
@@ -84,6 +95,8 @@ export default function SpellPicker({ origin, db, level, maxLevel, limit, curren
   const initialFilterState = {
     level: Object.fromEntries(levelValues.map((v) => [v, 'include'])),
     class: { [origin.spellListClass]: 'include' },
+    // TC-0031: esconde por padrão o que já vem de outra origem (desmarcável).
+    ...(elsewhere.size > 0 ? { owned: { yes: 'exclude' } } : {}),
   };
 
   return (

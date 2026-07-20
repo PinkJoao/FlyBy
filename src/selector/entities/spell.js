@@ -149,17 +149,41 @@ const spellEntity = {
  * aberta só decide qual vem pré-marcada (`initialFilterState` do SelectorPanel).
  * Memoize o resultado (`useMemo` sobre `db`): o índice varre o mapa inteiro.
  * @param {object} db
+ * @param {object} [opts]  { preparedElsewhere?: Map<nomeMinúsculo, rótulo> } -
+ *   TC-0031: magias já conhecidas em OUTRA origem ganham badge + o filtro
+ *   "Already Prepared" (o chamador o pré-marca como exclude; desmarcável, pois
+ *   um multiclasse pode querer a mesma magia nas duas classes).
  */
-export function makeSpellEntity(db) {
+export function makeSpellEntity(db, opts = {}) {
   const classIndex = spellClassIndex(db);
+  const elsewhere = opts.preparedElsewhere ?? null;
+  const hasElsewhere = (elsewhere?.size ?? 0) > 0;
   return {
     ...spellEntity,
-    precompute: (r) => precomputeSpell(r, classIndex),
+    precompute: (r) => {
+      const pre = precomputeSpell(r, classIndex);
+      if (hasElsewhere) {
+        pre.filterValues.owned = elsewhere.has(r.name.toLowerCase()) ? ['yes'] : [];
+      }
+      return pre;
+    },
+    ...(hasElsewhere
+      ? {
+          card: (r) => {
+            const c = spellEntity.card(r);
+            const from = elsewhere.get(r.name.toLowerCase());
+            return from ? { ...c, badges: [...c.badges, 'Already Prepared'] } : c;
+          },
+        }
+      : {}),
     // Class logo após Level: é o recorte mais usado ao preparar magias.
     filters: [
       spellEntity.filters[0],
       { id: 'class', header: 'Class', derive: true },
       ...spellEntity.filters.slice(1),
+      ...(hasElsewhere
+        ? [{ id: 'owned', header: 'Already Prepared', options: [{ value: 'yes', label: 'Prepared in another origin' }] }]
+        : []),
     ],
   };
 }

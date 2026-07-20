@@ -410,17 +410,25 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   Spellbook and ✦ badge through the single derived field. 3 unit tests; verified live
   (4/4 @1, 6/6 @19 on the Thaumaturge cleric).
 
-## TC-0029 - ASI / Epic Boon feat pickers exclude categories RAW allows (needs-user-eyes)
+## TC-0029 - ASI / Epic Boon feat pickers exclude categories RAW allows
 
 - **Found:** 2026-07-19, T1a Cleric session (Tough absent from the level-12 feat picker).
-  **Severity:** product decision. **Status:** open (needs-user-eyes).
-- The ASI slot's pool is `category: ['G']` and the Epic Boon slot's `['EB']`
+  **Severity:** product decision. **Status:** fixed@2026-07-19 (user decision same day).
+- The ASI slot's pool was `category: ['G']` and the Epic Boon slot's `['EB']`
   (engine/classFeatureChoices.js). XPHB RAW: both features say "or another feat of your
   choice for which you qualify" - ORIGIN feats (Tough, Lucky, Alert, Skilled... - Tough is
   Origin in 2024) have no prerequisite, so they qualify at any ASI slot, and General/Origin
-  feats qualify at the Epic Boon slot (D&D Beyond allows both). Pending call: widen the
-  pools (G+O at ASI; EB+G+O at boon), or keep the curated restriction as intended
-  simplicity. One line per pool if approved.
+  feats qualify at the Epic Boon slot (D&D Beyond allows both).
+- **User decision + fix:** same pattern as the spell pickers (DDL-0026) - the list WIDENS
+  (`pool.extraCategories`: ASI lists G+O+EB, boon lists EB+G+O) but a **Category filter
+  comes pre-marked on the slot's default** (General / Epic Boon), removable by the player
+  (DM permission cases). Origin/Epic Boon cards carry a category badge when the filter is
+  active. Prerequisite warnings are UNCHANGED and still confirm on Not Met/Unverifiable
+  (an Epic Boon at an ASI slot below 19 warns via its own Level 19+ prereq). The
+  autoBuild/sweep keeps picking from `pool.category` (the default), so seeded builds are
+  unchanged. Verified live: "tough" 0 results with General marked; marking Origin shows
+  Tough with an Origin badge; the boon picker opens EB-only and marking General reveals
+  the G feats.
 
 ## TC-0030 - Blessings of Knowledge: PSA granted nothing; chosen skills lacked expertise
 
@@ -445,10 +453,17 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 - **Found:** 2026-07-19, T1a Cleric session (guided cantrips step offered Guidance/Sacred
   Flame, both always-prepared via Magic Initiate; picking Guidance consumed 1 of the 3
-  class picks, then the Spellbook collapsed it into the granted copy - a silently wasted
-  pick). **Severity:** polish. **Status:** open (needs-user-eyes).
-- The guide's SpellPicker and the Spellbook prepare flow dedup only same-origin owned
-  spells; cross-origin grants (feat/race) stay selectable with no warning. RAW it's legal
-  (just wasteful), and DDL-0026 embraced over-preparing as freedom - but this case is a
-  NEW player picking a spell they already have without knowing. Pending call: exclude,
-  confirm (like off-list adds), or leave as is.
+  class picks with no warning). **Severity:** polish. **Status:** fixed@2026-07-19 (user
+  decision same day).
+- The guide's SpellPicker and the Spellbook prepare flow deduped only same-origin owned
+  spells; cross-origin grants (feat/race/other class) stayed selectable silently. RAW
+  it's legal and sometimes DESIRED - a Warlock 1/Cleric 1 may prepare Toll the Dead in
+  BOTH classes for the ability-score difference - so hard-hiding would be wrong.
+- **User decision + fix:** `preparedElsewhere(origins, excludeKey)`
+  (engine/spellcasting.js) maps every spell known in the OTHER origins to its source
+  label; `makeSpellEntity` gains an "Already Prepared" filter + card badge for those, and
+  both the Spellbook prepare flow and the guide's SpellPicker pre-mark it as EXCLUDE
+  (removable, like the Class/Level filters). Adding one anyway joins the existing confirm
+  dialog with the source: "You already have Guidance from Magic Initiate. Prepare it
+  anyway?". Verified live on the Cleric 19 + Magic Initiate (hidden by default → badge
+  after unmarking → confirm names the feat). 2 unit tests (preparedElsewhere).

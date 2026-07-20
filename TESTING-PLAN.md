@@ -242,11 +242,13 @@ on the user's machines).
   curated `CANTRIP_BONUS_FEATURES`, fixed), **TC-0030** (Knowledge (PSA) Blessings granted
   nothing - umbrella-feature registry key + key-only dedup; AND both Blessings versions now
   give the chosen skills expertise via the new `expertise: true` grant flag, fixed).
-  **Open (needs-user-eyes): TC-0029** (ASI picker is G-only / boon picker EB-only; RAW
-  allows Origin feats at ASI and G/O at the boon - Tough is unpickable at ASI slots) and
-  **TC-0031** (spell pickers offer spells already always-prepared from another origin;
-  picking one silently wastes the pick after the Spellbook collapse).
-  928 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §45 + DDL-0039.
+  **TC-0029 and TC-0031 were RESOLVED same day by user decision** (pre-marked removable
+  filters, DDL-0026 pattern): ASI/boon pickers list all qualifying categories behind a
+  pre-marked Category filter (prereq warnings unchanged), and spell pickers get an
+  "Already Prepared (other origin)" exclude filter + badge + a confirm naming the source
+  - a multiclass CAN prepare the same spell twice on purpose. See CHANGELOG §46 +
+  DDL-0040.
+  930 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §45 + DDL-0039.
   **Next action: T1a session 5 - DRUID + its 8 subclasses** (Magician's +1 cantrip now
   bumps via TC-0028's registry; legacy Land/Moon/etc. domain-spell derivation newly works
   via TC-0027 - verify their circle spells and Land's terrain spellSet carefully).

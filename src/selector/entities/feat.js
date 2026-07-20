@@ -68,14 +68,33 @@ function boostText(feat) {
   return parts.join(' or ') || null;
 }
 
+// Rótulos do filtro de Categoria (TC-0029). Legacy (sem categoria) conta como
+// General - mesma adaptação DMG 2024 de `inCategories`.
+const CATEGORY_FILTER_OPTIONS = [
+  { value: 'O', label: 'Origin' },
+  { value: 'G', label: 'General' },
+  { value: 'EB', label: 'Epic Boon' },
+];
+
+/** Categorias NORMALIZADAS de um feat (p/ o filtro): null → G, array achatado. */
+function filterCategories(feat) {
+  const c = feat.category;
+  if (c == null) return ['G'];
+  return Array.isArray(c) ? c : [c];
+}
+
 /**
  * @param {string[]} categories  categorias 5etools (ex: ['G'], ['FS','FS:P'])
  * @param {string} title         título do painel (ex: 'Feat', 'Fighting Style')
  * @param {object} [ctx]         prereqContext(character) - colore os pré-requisitos
  * @param {Set<string>} [only]   restringe a estes NOMES de feat (ex: College of
  *                               Swords → só Dueling / Two-Weapon Fighting)
+ * @param {object} [opts]        { categoryFilter: true } adiciona o filtro de
+ *                               Categoria (TC-0029: ASI/Epic Boon listam mais de
+ *                               uma categoria, com a padrão pré-marcada pelo
+ *                               chamador via initialFilterState)
  */
-export function makeFeatEntity(categories, title = 'Feat', ctx = null, only = null) {
+export function makeFeatEntity(categories, title = 'Feat', ctx = null, only = null, opts = {}) {
   const prereqOf = (f) => evalPrereq(f, ctx ?? { scores: {}, level: 0, raceId: null, classLevels: {}, grantedFeatures: [] });
 
   return {
@@ -97,11 +116,15 @@ export function makeFeatEntity(categories, title = 'Feat', ctx = null, only = nu
           source: [f.source].filter(Boolean),
           boost: boostableAbilities(f),
           prereq: [pre?.status ?? 'ok'], // sem pré-requisito conta como atendido
+          ...(opts.categoryFilter ? { category: filterCategories(f) } : {}),
         },
       };
     },
 
     filters: [
+      ...(opts.categoryFilter
+        ? [{ id: 'category', header: 'Category', options: CATEGORY_FILTER_OPTIONS }]
+        : []),
       { id: 'source', header: 'Source', derive: true },
       {
         id: 'boost',
@@ -135,10 +158,17 @@ export function makeFeatEntity(categories, title = 'Feat', ctx = null, only = nu
 
     card: (f) => {
       const pre = prereqOf(f);
+      // Com o filtro de categoria ativo, Origin/Epic Boon ganham badge - o
+      // jogador vê que está pegando fora da categoria padrão do slot.
+      const catBadges = opts.categoryFilter
+        ? filterCategories(f)
+            .map((c) => (c === 'O' ? 'Origin' : c === 'EB' ? 'Epic Boon' : null))
+            .filter(Boolean)
+        : [];
       return {
         title: f.name,
         subtitle: f.source,
-        badges: f.category == null ? ['Legacy'] : [],
+        badges: f.category == null ? ['Legacy'] : catBadges,
         prereqs: pre
           ? pre.entries.map((e) => ({ text: e.text, status: ctx ? e.status : 'unknown' }))
           : [],

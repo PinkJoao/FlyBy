@@ -183,6 +183,24 @@ const dbG = {
 };
 const ctxG = { ...derivedCtx, level: 5 };
 
+describe('deriveSpellcasting - teto de preparação é por classe INDIVIDUAL', () => {
+  const ch = createCharacter();
+  ch.classes = [
+    { ...createClassEntry(true), classId: 'cleric', source: 'XPHB', level: 2, spells: [] },
+    { ...createClassEntry(false), classId: 'wizard', source: 'XPHB', level: 1, spells: [] },
+  ];
+  const sc = deriveSpellcasting(ch, dbG, { ...derivedCtx, level: 3 });
+
+  it('os SLOTS são combinados (nível de conjurador 3 → 2º círculo)', () => {
+    expect(sc.casterLevel).toBe(3);
+    expect(sc.slots).toEqual({ 1: 4, 2: 2 });
+    for (const o of sc.origins) expect(o.slots).toEqual({ 1: 4, 2: 2 });
+  });
+  it('mas nenhuma das duas classes prepara magia de 2º círculo', () => {
+    expect(sc.origins.map((o) => o.maxPrepareLevel)).toEqual([1, 1]);
+  });
+});
+
 describe('deriveSpellcasting - magias concedidas pela subclasse (R2/R12)', () => {
   const ch = createCharacter();
   ch.classes = [{

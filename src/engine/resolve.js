@@ -33,6 +33,7 @@ import {
   leveledCasterLevel,
   spellSlots,
   pactSlots,
+  maxPrepareCircle,
   spellSaveDc,
   spellAttackBonus,
   cantripLimit,
@@ -434,6 +435,12 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       attackBonus: ability ? spellAttackBonus(profBonus, abilityMod) : null,
       casterCode: info?.code ?? null,
       isPact,
+      // Teto de preparação: SEMPRE pelo nível individual da classe (o pacto pelo
+      // seu próprio círculo de slot). Os slots compartilhados do multiclasse são
+      // atribuídos depois e deliberadamente NÃO influenciam este teto.
+      maxPrepareLevel: isPact
+        ? (pactSlots(cls.level)?.level ?? 0)
+        : maxPrepareCircle(info?.code ?? null, cls.level),
       spellListClass: info ? spellListClassName(cls.classId, info) : classDisplayName(cls.classId),
       // Base da progressão + extras de featureoption (Thaumaturge/Magician,
       // TC-0028). O bônus só vale quando a classe já conjura cantrips.
@@ -509,10 +516,6 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
     if (o.kind !== 'class') continue;
     o.slots = o.isPact ? {} : slots;
     o.pactSlots = o.isPact ? pact : null;
-    // Círculo máximo que esta origem prepara NORMALMENTE (acima disso só arcanum):
-    // o teto do slot de pacto, ou o maior círculo de slot leveled disponível.
-    const levels = Object.keys(o.slots).map(Number);
-    o.maxPrepareLevel = o.isPact ? (o.pactSlots?.level ?? 0) : (levels.length ? Math.max(...levels) : 0);
   }
 
   return { origins, casterLevel, slots, pactSlots: pact, warlockLevel };

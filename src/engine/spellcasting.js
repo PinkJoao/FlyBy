@@ -147,6 +147,27 @@ export function spellSlots(casterLevel) {
 }
 
 /**
+ * Círculo MÁXIMO que uma classe conjuradora prepara, pelo seu nível INDIVIDUAL.
+ *
+ * Multiclasse tem duas contas distintas (PHB "Multiclassing / Spellcasting"): os
+ * SLOTS são combinados (`leveledCasterLevel` + `spellSlots`), mas "you determine
+ * what spells you know and can prepare **using the levels of your individual
+ * classes**". Um Cleric 2 / Druid 1 tem slot de 2º círculo, e ainda assim nenhuma
+ * das duas classes prepara magia de 2º - o slot alto só serve para conjurar em
+ * círculo superior uma magia de círculo baixo.
+ *
+ * Por isso este teto vem da classe SOZINHA (`single: true`, a mesma regra de
+ * arredondamento que um personagem de classe única teria).
+ * @param {string|null} code   casterProgression da classe ('full'|'1/2'…)
+ * @param {number} classLevel  nível NA classe
+ * @returns {number}  0 quando a classe ainda não conjura magias de círculo
+ */
+export function maxPrepareCircle(code, classLevel) {
+  const levels = Object.keys(spellSlots(slotContribution(code, classLevel, { single: true }))).map(Number);
+  return levels.length ? Math.max(...levels) : 0;
+}
+
+/**
  * Slots de pacto do Warlock. Retorna { slots, level } (nível = círculo dos
  * slots) ou null se não for Warlock / nível 0.
  * @param {number} warlockLevel

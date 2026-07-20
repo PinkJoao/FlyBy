@@ -4,6 +4,7 @@ import {
   leveledCasterLevel,
   spellSlots,
   pactSlots,
+  maxPrepareCircle,
   spellSaveDc,
   spellAttackBonus,
   casterInfo,
@@ -82,6 +83,27 @@ describe('spellSlots (SPELL_SLOT_TABLE)', () => {
   });
   it('acima de 20 satura em 20', () => {
     expect(spellSlots(25)).toEqual(spellSlots(20));
+  });
+});
+
+describe('maxPrepareCircle (teto pelo nível INDIVIDUAL da classe)', () => {
+  it('full caster: o círculo da própria tabela', () => {
+    expect(maxPrepareCircle('full', 1)).toBe(1);
+    expect(maxPrepareCircle('full', 2)).toBe(1);
+    expect(maxPrepareCircle('full', 5)).toBe(3);
+    expect(maxPrepareCircle('full', 20)).toBe(9);
+  });
+  it('meio-caster arredonda p/ cima sozinho (Paladin/Ranger 1 já conjuram no XPHB)', () => {
+    expect(maxPrepareCircle('1/2', 1)).toBe(1);
+    expect(maxPrepareCircle('1/2', 5)).toBe(2);
+  });
+  it('1/3 (EK/AT) só a partir do nível 3', () => {
+    expect(maxPrepareCircle('1/3', 2)).toBe(0);
+    expect(maxPrepareCircle('1/3', 3)).toBe(1);
+  });
+  it('sem progressão / nível 0 → 0', () => {
+    expect(maxPrepareCircle(null, 5)).toBe(0);
+    expect(maxPrepareCircle('full', 0)).toBe(0);
   });
 });
 

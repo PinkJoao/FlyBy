@@ -3451,3 +3451,40 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   em 21px do topo (sem sobreposição); tocar no puxador continua fechando e o painel
   reabre; mesmo comportamento no glossário; em 1280px nada muda (o puxador segue
   `display: none` e o cabeçalho em `top: -16px`). 930 testes, lint, zero erros de console.
+
+## 48. Multiclasse: o teto de preparação de magias é o do NÍVEL INDIVIDUAL da classe
+
+**O bug.** Um Cleric 2 / Druid 1 via o filtro de Level do picker de magias vir
+pré-marcado até o **2º círculo**, nas duas origens. Errado: o multiclasse tem duas
+contas distintas (PHB, "Multiclassing / Spellcasting") - os **slots** são combinados
+(nível de conjurador 3 → slot de 2º), mas *"you determine what spells you know and can
+prepare using the levels of your **individual classes**"*. Um Cleric 2 prepara até o 1º
+círculo; um Druid 1 idem. O slot de 2º existe, mas só serve para conjurar em círculo
+superior uma magia de círculo baixo.
+
+**A causa.** `deriveSpellcasting` calculava `maxPrepareLevel` a partir dos slots JÁ
+combinados (`Math.max(...Object.keys(o.slots))`), que são compartilhados por todas as
+origens leveled - então toda origem herdava o teto do personagem, não o da sua classe.
+
+**A correção.**
+- Novo `maxPrepareCircle(code, classLevel)` em `engine/spellcasting.js`: o círculo
+  máximo pela tabela da classe SOZINHA (`slotContribution(..., { single: true })` - o
+  mesmo arredondamento que um personagem de classe única teria, então Paladin/Ranger 1
+  conjuram no XPHB e EK/AT só a partir do 3).
+- `resolve.js` passou a definir `maxPrepareLevel` **na criação da origem** (a partir do
+  `cls.level`), não no laço que distribui os slots compartilhados depois. O pacto segue
+  pelo seu próprio círculo de slot (`pactSlots(cls.level).level`), como já era.
+- Os **slots continuam combinados** e idênticos em cada origem - só o teto mudou.
+
+**Alcance.** Como tudo lê `origin.maxPrepareLevel`, a correção chega de graça aos
+círculos pré-marcados do picker da SpellbookTab, à confirmação ao adicionar fora do
+padrão ("You have no spell slots… of the 2nd level"), ao passo de magias do level-up
+guide (`LevelUpSpellsStep`) e à fronteira do Mystic Arcanum. Fiel à DDL-0026/DDL-0040:
+o recorte é **filtro pré-marcado desmarcável** - o jogador com permissão do mestre ainda
+prepara o que quiser, agora confirmando.
+
+**Verificado.** 936 testes (+6: `maxPrepareCircle` unitário e um Cleric 2 / Druid 1
+derivado - slots `{1:4, 2:2}` compartilhados, `maxPrepareLevel` 1 nas duas origens),
+lint, sweep 274/274 `--strict`. Ao vivo, no Cleric 2 / Druid 1 real: card de slots
+"1st ×4 / 2nd ×2" e o picker abrindo com Cantrip + 1st Level + Cleric marcados e **2nd
+Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultados.

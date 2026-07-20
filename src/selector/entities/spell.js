@@ -176,14 +176,16 @@ export function makeSpellEntity(db, opts = {}) {
           },
         }
       : {}),
-    // Class logo após Level: é o recorte mais usado ao preparar magias.
+    // Class logo após Level: é o recorte mais usado ao preparar magias. E, logo
+    // abaixo dela, "Already Prepared" - vem pré-marcado, então precisa estar à
+    // mão para o jogador desmarcar (no fim da lista ficava fora de vista).
     filters: [
       spellEntity.filters[0],
       { id: 'class', header: 'Class', derive: true },
-      ...spellEntity.filters.slice(1),
       ...(hasElsewhere
         ? [{ id: 'owned', header: 'Already Prepared', options: [{ value: 'yes', label: 'Prepared in another origin' }] }]
         : []),
+      ...spellEntity.filters.slice(1),
     ],
   };
 }

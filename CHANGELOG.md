@@ -3430,3 +3430,24 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   marcar Origin o revela com badge; boon abre só com EB e General o expande; Guidance
   some por padrão no preparar, aparece com badge ao desmarcar e confirma citando o feat.
   930 testes (+2 preparedElsewhere, +2 pools), lint, sweep 274/274 `--strict`.
+
+## 47. Ajustes de UX nos seletores: ordem do filtro "Already Prepared" e puxador fixo da gaveta
+
+- **"Already Prepared" logo abaixo de Class** (era o último dos 8 grupos de filtro).
+  Ele vem PRÉ-MARCADO (§46/TC-0031), então precisa estar à mão para ser desmarcado -
+  no fim da lista ficava fora de vista justamente para quem quer removê-lo.
+- **O puxador da gaveta de filtros agora é FIXO** (mobile), em TODOS os painéis de
+  seleção do app - inclusive o glossário, que reusa o mesmo `SelectorPanel`. Antes ele
+  rolava junto com os chips e sumia, deixando o gesto de fechar a gaveta inacessível
+  com a lista rolada (o Clear/Apply já eram fixos).
+  - O comentário do CSS registrava que uma tentativa anterior tinha sido revertida
+    porque puxador e cabeçalho disputavam o mesmo `top: 0` e as faixas se sobrepunham.
+    Agora eles **empilham**: o puxador gruda em `top: 0` (z-index 3) e o `.filtersHead`
+    em `top: var(--grab-h)` (z-index 2), com `--grab-h: 20px` declarado na gaveta -
+    a altura exata do puxador (10 + 4 da barra + 6 de padding).
+  - O puxador ganhou fundo opaco (`var(--bg)`) e largura cheia (margem negativa
+    anulando o padding lateral do container) para os chips passarem POR BAIXO dele.
+- Verificado ao vivo em 375px: com a gaveta rolada ao fim, puxador em 1px e cabeçalho
+  em 21px do topo (sem sobreposição); tocar no puxador continua fechando e o painel
+  reabre; mesmo comportamento no glossário; em 1280px nada muda (o puxador segue
+  `display: none` e o cabeçalho em `top: -16px`). 930 testes, lint, zero erros de console.

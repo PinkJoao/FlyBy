@@ -572,6 +572,8 @@
     transition: transform 0.25s ease;
     z-index: 10;
     padding-top: 0;
+    /* Altura do puxador: os dois elementos fixos empilham por ela (ver .grabber). */
+    --grab-h: 20px;
   }
   .filtersOpen {
     transform: translateY(0);
@@ -583,15 +585,21 @@
     display: none;
   }
 
-  /* Puxador: só o "pill" no topo da gaveta, sobre o fundo do próprio drawer.
-   * Fundo TRANSPARENTE e SEM sticky de propósito: antes ele era uma faixa opaca
-   * fixada no mesmo `top: 0` do cabeçalho, e as duas se sobrepunham (a faixa
-   * colidia com o conteúdo acima). Agora rola junto e o `.filtersHead` opaco é o
-   * único elemento fixo. */
+  /* Puxador: GRUDADO no topo, como o Clear/Apply - é o gesto de fechar a gaveta
+   * e precisa estar sempre alcançável, mesmo com os filtros rolados. Ele e o
+   * `.filtersHead` EMPILHAM (o head gruda em `--grab-h`, a altura exata deste)
+   * em vez de disputarem o mesmo `top: 0`, que foi o motivo de uma tentativa
+   * anterior ter sido revertida: as duas faixas fixas se sobrepunham. Fundo
+   * opaco + largura cheia (margem negativa anulando o padding lateral do
+   * container) para os chips sumirem POR BAIXO, não atrás. */
   .grabber {
     display: block;
-    padding: 10px 0 6px;
-    background: transparent;
+    position: sticky;
+    top: 0;
+    z-index: 3; /* acima do .filtersHead (2) */
+    margin: 0 -16px;
+    padding: 10px 16px 6px; /* 10 + 4 (barra) + 6 = --grab-h */
+    background: var(--bg);
     cursor: grab;
     touch-action: none; /* o gesto é nosso, não do scroll */
   }
@@ -608,7 +616,7 @@
   }
 
   .filtersHead {
-    top: 0;
+    top: var(--grab-h);
     margin-top: 0;
     padding-top: 6px;
   }

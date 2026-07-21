@@ -14,7 +14,9 @@ const accessory = (name, bonuses, state = {}) => ({
   group: 'ring', armorSlot: null, equipped: false, attuned: false, required: true,
   raw: { name, ...bonuses }, ...state,
 });
-const char = (...classIds) => ({ classes: classIds.map((classId) => ({ classId })) });
+const char = (...classIds) => ({ classes: classIds.map((classId) => ({ classId, level: 20 })) });
+// Personagem com subclasse/nível explícitos por classe.
+const charX = (...entries) => ({ classes: entries });
 
 describe('deriveArmorClass', () => {
   it('unarmored = 10 + Dex', () => {
@@ -62,6 +64,34 @@ describe('deriveArmorClass', () => {
   it('unequipped armor falls back to unarmored', () => {
     const notWorn = { ...armor('Plate', 'heavy', 18), equipped: false };
     expect(deriveArmorClass(char(), [notWorn], { dex: 1 }).total).toBe(11);
+  });
+
+  it('Monk/Barbarian: sem escudo escolhe Wis se render mais', () => {
+    // dex2: barb 10+2+con1=13; monk 10+2+wis4=16 → monk.
+    expect(deriveArmorClass(char('monk', 'barbarian'), [], { dex: 2, con: 1, wis: 4 }).total).toBe(16);
+  });
+
+  it('Monk/Barbarian: com escudo, Monk é inválido e Barbarian+escudo vence', () => {
+    // monk excluído (escudo); barb 10+2+1=13; +escudo 2 = 15.
+    const ac = deriveArmorClass(char('monk', 'barbarian'), [shield()], { dex: 2, con: 1, wis: 4 });
+    expect(ac.total).toBe(15);
+  });
+
+  it('Draconic Sorcerer: 10 + Dex + Cha sem armadura (nível 3+)', () => {
+    const c = charX({ classId: 'sorcerer', subclassId: 'Draconic', level: 3 });
+    expect(deriveArmorClass(c, [], { dex: 2, cha: 4 }).total).toBe(16);
+  });
+
+  it('Draconic Sorcerer: escudo soma por cima (permitido)', () => {
+    const c = charX({ classId: 'sorcerer', subclassId: 'Draconic', level: 3 });
+    expect(deriveArmorClass(c, [shield()], { dex: 2, cha: 4 }).total).toBe(18);
+  });
+
+  it('Draconic Resilience não vale abaixo do nível 3 nem sem a subclasse', () => {
+    const low = charX({ classId: 'sorcerer', subclassId: 'Draconic', level: 2 });
+    expect(deriveArmorClass(low, [], { dex: 2, cha: 4 }).total).toBe(12); // 10 + Dex
+    const noSub = charX({ classId: 'sorcerer', subclassId: null, level: 5 });
+    expect(deriveArmorClass(noSub, [], { dex: 2, cha: 4 }).total).toBe(12);
   });
 
   it('breakdown lists the parts', () => {

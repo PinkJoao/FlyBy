@@ -37,6 +37,14 @@ export const FEATURE_ACTIVE_EFFECTS = {
   // duas classes com efeitos diferentes → chave `nome|classId`.
   'unarmored defense|barbarian': [{ key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'unarmoredBarb' }],
   'unarmored defense|monk': [{ key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'unarmoredMonk' }],
+  // Sorcerer/Draconic - Draconic Resilience (XPHB nv3): 10 + Dex + Cha sem armadura.
+  // O calc `draconic` nativo do dnd5e é o 13 + Dex de 2014; a fórmula 2024 é custom.
+  // (Multiclasse com outra Defesa sem Armadura só pode ter UM ac.calc no Foundry -
+  //  limitação da engine, igual a barbarian+monk; o sheet ao vivo escolhe a maior.)
+  'draconic resilience': [
+    { key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'custom' },
+    { key: 'system.attributes.ac.formula', mode: AE_MODE.OVERRIDE, value: '10 + @abilities.dex.mod + @abilities.cha.mod' },
+  ],
 };
 
 /**

@@ -3610,6 +3610,35 @@ mudanças de código.**
 - Verificado: 944 testes, lint, sweep 274/274 `--strict` (sem alterações — nenhum código
   mudou). Ver DDL-0044.
 
+## 53. CA: Defesa sem Armadura generalizada (registro por-fórmula) + Draconic Sorcerer
+
+**Antes da retomada da campanha Phase T, o usuário pediu para verificar/melhorar a CA das
+features que definem a própria fórmula (Barbarian/Monk Unarmored Defense, armadura natural
+de espécie) e adiantar a Draconic Sorcerer. Ver DDL-0045.**
+
+- **Verificação (o que já estava certo):** Barbarian (10+Dex+Con, escudo OK), Monk
+  (10+Dex+Wis, escudo INVALIDA), Monk/Barbarian escolhendo a maior respeitando o escudo, e
+  a armadura natural (Tortle flat 17 / Autognome 13+Dex / Warforged +1) já competiam pela
+  MAIOR CA corretamente. As lacunas: (a) **nenhuma Defesa sem Armadura de subclasse** existia
+  e (b) a regra "escudo invalida" estava **hardcoded só no Monk** (`if (!shield)`), não como
+  propriedade da fórmula.
+- **Generalização (`engine/armorClass.js`):** as fórmulas de Defesa sem Armadura viram um
+  **registro curado** `UNARMORED_DEFENSE` (por classe E subclasse, com `minLevel` e
+  `allowsShield`). Cada candidato de CA-base agora carrega `allowsShield`; com escudo
+  equipado os candidatos que o proíbem (Monk) são **descartados ANTES do max**, então somar
+  o escudo por cima do melhor é sempre RAW. Comportamento idêntico nos casos existentes.
+- **Draconic Sorcerer (XPHB nv3):** Draconic Resilience = **10 + Dex + Cha** sem armadura,
+  escudo permitido, gated no nível 3 da subclasse. (A versão PHB 2014 era 13 + Dex, fora do
+  latestOnly do app.) Detectado pelo `subclassId`/`level` do `ClassEntry`, sem db.
+- **Export Foundry:** entrada curada `'draconic resilience'` em `foundryEffects.js`
+  (`ac.calc=custom` + `formula '10 + @abilities.dex.mod + @abilities.cha.mod'`) — o calc
+  `draconic` nativo do dnd5e é o 13+Dex de 2014. O curado vence o overlay (precedência
+  DDL-0031). Limitação de multiclasse (um só `ac.calc` no Foundry) é a mesma já existente
+  para barbarian+monk; o sheet ao vivo escolhe a maior.
+- Verificado: 950 testes (+8, incl. Draconic sozinho/escudo/gating e Monk+Barb+escudo), lint,
+  sweep 274/274 `--strict`, e uma passada AO VIVO no código servido (Draconic 3 = 16 / +escudo
+  18 / nv2 = 12; Monk/Barb = 16 sem escudo, 15 com). Ver DDL-0045.
+
 ## 51. T1a sessão 6: Fighter + 10 subclasses (TC-0035..TC-0037, DDL-0043)
 
 **Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-20 (3)); todas as 10 linhas

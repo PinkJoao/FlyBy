@@ -305,6 +305,51 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0045 — Defesa sem Armadura é um registro por-fórmula (classe/subclasse); Draconic Sorcerer entra; escudo é regra do candidato, não hardcode
+**Date:** 2026-07-21
+**Builds on:** DDL-0034 (armadura natural de espécie — flat/unarmored/bonus, que compartilham
+o mesmo `deriveArmorClass`), DDL-0031 (precedência curado > overlay, que o efeito de export do
+Draconic reusa). **Generaliza** o hardcode `if (!shield)` do Monk introduzido no primeiro slice
+de CA (CHANGELOG §3).
+
+**Context.** O usuário pediu, antes de retomar a Phase T, para verificar e melhorar a detecção
+das features que definem a PRÓPRIA fórmula de CA (Barbarian/Monk Unarmored Defense; armadura
+natural de espécie; e — explicitamente adiantado — a Draconic Sorcerer). Regra fixada por ele:
+essas fórmulas NÃO se combinam entre si; escolhe-se a MAIOR CA respeitando a condição de cada
+uma (o Monk perde a fórmula com escudo, o Barbarian não; idem por atributo). Verificação achou
+os casos existentes já corretos (Monk/Barb com/sem escudo, natural armor competindo pela maior);
+as lacunas eram a ausência de fórmulas de SUBCLASSE e o escudo estar hardcoded só no Monk.
+
+**Decisions.**
+- **Fórmulas de Defesa sem Armadura viram um registro curado** `UNARMORED_DEFENSE`
+  (`engine/armorClass.js`), keyed por `classId` (+ `subclassId`/`minLevel` opcionais), cada uma
+  com `abilities` (somadas a 10) e `allowsShield`. Barbarian `['dex','con']` shield OK; Monk
+  `['dex','wis']` shield NÃO; **Sorcerer/Draconic** `['dex','cha']` shield OK, `minLevel:3`.
+  Detecção é PURA (lê `ClassEntry.classId/subclassId/level`, sem db), como já era para
+  barbarian/monk.
+- **`allowsShield` é propriedade do CANDIDATO, não um `if` por classe.** Cada candidato de
+  CA-base (armadura de item, base 10+Dex, cada fórmula, armadura natural) carrega `allowsShield`;
+  com escudo equipado os candidatos que o proíbem são **filtrados ANTES do max**. Como a base
+  10+Dex sempre permite escudo, o pool nunca fica vazio, e somar o escudo por cima do melhor é
+  sempre RAW (todos os sobreviventes permitem escudo). Isso torna trivial qualquer fórmula futura
+  com restrição própria de escudo/armadura.
+- **Draconic Resilience é a versão XPHB 2024: `10 + Dex + Cha`** (a PHB 2014 era `13 + Dex`, fora
+  do latestOnly do app). Nível 3 da subclasse. Export: entrada curada `'draconic resilience'` em
+  `foundryEffects.js` = `ac.calc=custom` + `formula '10 + @abilities.dex.mod + @abilities.cha.mod'`
+  (o calc `draconic` nativo do dnd5e é o 13+Dex de 2014, errado para 2024). O curado vence o
+  overlay (DDL-0031) — um teste do overlay que usava Draconic Resilience como exemplo de
+  roteamento foi movido para uma feature de subclasse sem curado.
+- **Limitação de multiclasse no export é PRÉ-EXISTENTE e aceita:** o Foundry só tem UM `ac.calc`
+  por ator, então barbarian+monk+draconic no export só materializam um; o SHEET AO VIVO é a fonte
+  da verdade e escolhe a maior. Não é regressão desta mudança.
+
+**Consequences.**
+- **Próximo (adiantado pelo usuário para o mesmo padrão):** qualquer nova fórmula de CA de
+  classe/subclasse/espécie é uma linha em `UNARMORED_DEFENSE` (ou `NATURAL_ARMOR`, DDL-0034). O
+  usuário citou "algo similar para draconic sorcerer" — feito aqui; o mecanismo serve p/ outras.
+- Verificado: 950 testes (+8), lint, sweep 274/274 `--strict`, e passada ao vivo no código servido
+  (Draconic 3 =16 / +escudo 18 / nv2 =12; Monk/Barb =16 sem escudo, 15 com). Ver CHANGELOG §53.
+
 ### DDL-0044 — T1a Monk session: sessão limpa (zero achados); nota de harness sobre o badge ✦
 **Date:** 2026-07-21
 **Builds on:** DDL-0030 (a máquina `weaponProf`/`weaponFilter` do Kensei, aqui verificada ao

@@ -48,6 +48,12 @@ const db = {
           { name: 'Draconic Resilience: HP', transfer: true, changes: [{ key: 'system.attributes.hp.bonuses.overall', mode: 'ADD', value: '@classes.sorcerer.levels' }] },
         ],
       },
+      // Feature de subclasse SEM entrada curada - usada para checar só o roteamento
+      // pelo índice de subclasse (o Draconic Resilience agora é curado, ver abaixo).
+      {
+        name: 'Fixture Routing Feature', className: 'Sorcerer', subclassShortName: 'Draconic', subclassSource: 'XPHB', source: 'XPHB', level: 6,
+        effects: [{ name: 'Routing FX', transfer: true, changes: [{ key: 'flags.dnd5e.test', mode: 'OVERRIDE', value: true }] }],
+      },
     ],
   },
   'foundry-races': {
@@ -185,10 +191,22 @@ describe('integração com foundryItems (precedência curado > overlay)', () => 
 
   it('feature de subclasse roteia pelo índice de subclasse', () => {
     const item = buildFeatureItem(
+      { name: 'Fixture Routing Feature', level: 6, source: 'XPHB', entries: ['...'], classId: 'sorcerer', subclass: { shortName: 'Draconic' } },
+      db,
+    );
+    expect(item.effects.map((e) => e.name)).toEqual(['Routing FX']);
+  });
+
+  it('Draconic Resilience: o curado (ac.calc custom 2024) vence o overlay', () => {
+    const item = buildFeatureItem(
       { name: 'Draconic Resilience', level: 3, source: 'XPHB', entries: ['...'], classId: 'sorcerer', subclass: { shortName: 'Draconic' } },
       db,
     );
-    expect(item.effects.map((e) => e.name)).toEqual(['Draconic Resilience: Armor']);
+    // Entrada curada em foundryEffects: ac.calc=custom + formula 10+Dex+Cha.
+    expect(item.effects).toHaveLength(1);
+    const keys = item.effects[0].changes.map((c) => c.key);
+    expect(keys).toContain('system.attributes.ac.calc');
+    expect(keys).toContain('system.attributes.ac.formula');
   });
 
   it('overlayName redireciona o lookup (opção de featureoption)', () => {

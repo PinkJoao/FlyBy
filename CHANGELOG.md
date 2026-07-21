@@ -3573,6 +3573,43 @@ Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultado
   embora o DDL-0034 o tenha resolvido no mesmo dia → corrigida.
 - Verificado: 940 testes, lint clean, sweep 274/274 `--strict`.
 
+## 52. T1a sessão 7: Monk + 10 subclasses (sem achados, DDL-0044)
+
+**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-21); todas as 10 linhas
+`class:monk/*` com `ui: ok` em `testing/COVERAGE.md`. NENHUM bug encontrado — zero
+mudanças de código.**
+
+- **Rep build (Kensei):** guided create completo (Elf / linhagem Wood Elf / Tough),
+  exercitando o fluxo inteiro de criação incluindo o tool de classe MESCLADO
+  **"Artisan's Tools or Musical Instruments"** (42 opções — o caso artesão-OU-instrumento
+  do DDL-0002), as species choices do Wood Elf (linhagem + perícia Keen Senses + atributo
+  de conjuração + Druidcraft/Longstrider/Pass without Trace concedidos) e o popup de regra
+  "Skill" a partir do título da escolha (DDL-0032). **Derivações de nível 1: HP 11 (d8 8 +
+  Con 1 + Tough 2), CA 15 = Unarmored Defense (10 + Dex 3 + Wis 2)** — ambas derivam ao
+  vivo; features Martial Arts + Unarmored Defense renderizam.
+- **Máquina `weaponProf` do Kensei verificada ao vivo (DDL-0030):** picker corpo-a-corpo
+  @3 (21 opções, simples/marcial MELEE, sem Heavy/Special, zero à distância); picker à
+  distância @3 (9 opções, **Longbow presente pela exceção `allow`**, Heavy Crossbow/Net
+  ausentes, zero melee); tool @3 restrito a Calligrapher's/Painter's Supplies; picker @6
+  (32 opções, **qualquer tipo** — melee E ranged — sem Heavy/Special, Longbow). @11/@17
+  compartilham o filtro do @6.
+- **Swaps @19:** **Elements** (featureoption Elemental Epitome @17 renderiza 5 opções
+  Acid/Cold/Fire/Lightning/Thunder; cantrip Elementalism na origem Monk do Spellbook; CA
+  15 intacta) e **Mercy** (grants de Implements of Mercy — Insight, Medicine e Herbalism
+  Kit — todos renderizam no card de Proficiências). As outras 8 subclasses tiveram as
+  derivações verificadas pelo engine (Drunken Master Performance+Brewer's; Shadow Minor
+  Illusion+Darkness; Sun Soul Burning Hands; Long Death/Astral Self/Ascendant Dragon/Open
+  Hand corretamente sem grants). Mobile sem overflow; zero erros de console.
+- **Contagem do badge ✦ correta em toda a sessão** (10 no Kensei 19 = 4 ASI + Epic Boon +
+  tool do Kensei + 3 armas @6/11/17 + 1 `basic`, a sobreposição documentada
+  DDL-0033/TC-0020 para uma escolha de classe do tipo proficiência). **Nota de harness para
+  sessões futuras:** a contagem do badge vive no `title`/nome acessível ("N choices left"),
+  NÃO no `textContent` (que é só "⚛N") — consulte o nome acessível (read_page) ou `.title`,
+  e nunca confie numa leitura do badge feita durante o boot-load do compêndio ou logo após
+  uma mudança disparada por JS (ambos leem 0 transitoriamente).
+- Verificado: 944 testes, lint, sweep 274/274 `--strict` (sem alterações — nenhum código
+  mudou). Ver DDL-0044.
+
 ## 51. T1a sessão 6: Fighter + 10 subclasses (TC-0035..TC-0037, DDL-0043)
 
 **Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-20 (3)); todas as 10 linhas

@@ -305,6 +305,39 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0044 — T1a Monk session: sessão limpa (zero achados); nota de harness sobre o badge ✦
+**Date:** 2026-07-21
+**Builds on:** DDL-0030 (a máquina `weaponProf`/`weaponFilter` do Kensei, aqui verificada ao
+vivo), DDL-0002 (o tool mesclado artesão-OU-instrumento do Monk), DDL-0033/TC-0020 (a
+sobreposição `basic`/`fixup` na contagem do badge), DDL-0029 (SUBCLASS_GRANTS).
+
+**Context.** T1a sessão 7 (Monk + 10 subclasses, TESTING-PLAN §7 2026-07-21). Primeira sessão
+da campanha SEM nenhum bug — nada foi corrigido porque nada quebrou. Registro breve para
+continuidade + uma nota de harness que custou tempo desta sessão.
+
+**Findings (todos verdes, zero mudanças de código).**
+- **Kensei é o caso mais rico e está 100% correto ao vivo:** o `weaponFilter` do DDL-0030
+  produz exatamente o RAW — @3 melee (simples/marcial melee, sem Heavy/Special), @3 ranged
+  (Longbow liberado pela exceção `allow`, Heavy Crossbow/Net barrados), @6/11/17 qualquer tipo
+  sem Heavy/Special. O tool do Kensei fica restrito a Calligrapher's/Painter's.
+- **Grants e magias de subclasse derivam e renderizam:** Mercy (Insight/Medicine + Herbalism
+  Kit no card de Proficiências), Elements (featureoption Elemental Epitome @17 com 5 opções +
+  cantrip Elementalism no Spellbook), Shadow/Sun Soul (magias concedidas). O tool de classe do
+  Monk continua sendo UM seletor de categorias mescladas (DDL-0002).
+- **Nota de harness (não é decisão de produto, mas evita re-trabalho):** o número do badge ✦
+  está no `title`/nome acessível do botão ("N choices left"), NÃO no `textContent` (que é só
+  "⚛N"). Ler `textContent` por regex dá "vazio" e parece um bug de contagem — não é. Além
+  disso, uma leitura do badge durante o boot-load do compêndio (db ainda carregando →
+  `guidancePendencies` retorna 0) ou logo após uma mudança disparada por JS (sem re-render
+  síncrono) lê 0 transitoriamente. Confira sempre pelo nome acessível (read_page) e após um
+  reload estável. O badge em si está CORRETO (engine `fixupPendencyCount` = UI).
+
+**Consequences.**
+- Cobertura: as 10 linhas `class:monk/*` com `ui: ok`. Nenhum TC novo; o único item aberto do
+  ledger segue sendo a metade Rogue do TC-0021 (filtro condicional de Weapon Mastery).
+- Sem alterações de engine → o sweep permanece 274/274 `--strict` e a suíte 944 testes sem
+  tocar. Ver CHANGELOG §52.
+
 ### DDL-0043 — T1a Fighter session: badge de arcanum segue o engine, bônus de CA de feature é registro curado
 **Date:** 2026-07-20
 **Builds on:** DDL-0010 (semântica de Mystic Arcanum — o badge agora a respeita), DDL-0026/0041

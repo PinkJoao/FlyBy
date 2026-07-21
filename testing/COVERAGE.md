@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-20T19:32:09.083Z · base seed 1 · 274 rows
+Last sweep: 2026-07-21T13:39:25.926Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -74,16 +74,16 @@ Last sweep: 2026-07-20T19:32:09.083Z · base seed 1 · 274 rows
 | `class:fighter/Eldritch Knight` | ok | 1 3 4 6 7 8 10 11 12 13 14 16 19 20 | ok | todo | REP BUILD: guided create + overlay 1-4 (subclass+spells@3, feat+mastery@4) + fixup @19 (badge 8; caps: ASI saturates Str 20, boon 21; HP 234 = Tough+Boon); slots 4/3/3/1, DC 15; DDL-0040 flow verified vs Magic Initiate |
 | `class:fighter/Psi Warrior` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | Telekinesis 1/Day Uses card @18 (5th-level category appears); features render |
 | `class:fighter/Banneret` | ok | 1 3 4 6 8 12 14 16 19 | ok | todo | Knightly Envoy skill (Perf/Pers, Insight excluded) + Comprehend Languages Ritual in Uses card |
-| `class:monk/Long Death` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Drunken Master` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Kensei` | ok | 1 3 4 6 8 11 12 16 17 19 | todo | todo |  |
-| `class:monk/Sun Soul` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Astral Self` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Ascendant Dragon` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Mercy` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Shadow` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
-| `class:monk/Elements` | ok | 1 3 4 8 12 16 17 19 | todo | todo |  |
-| `class:monk/Open Hand` | ok | 1 3 4 8 12 16 19 | todo | todo |  |
+| `class:monk/Long Death` | ok | 1 3 4 8 12 16 19 | ok | todo | no grants/spells (correct); features render @19 |
+| `class:monk/Drunken Master` | ok | 1 3 4 8 12 16 19 | ok | todo | SUBCLASS_GRANTS: Performance + Brewer's Supplies derive (engine-verified) |
+| `class:monk/Kensei` | ok | 1 3 4 6 8 11 12 16 17 19 | ok | todo | REP BUILD: guided create (Wood Elf / Tough) + level 3 & 6; weaponProf pickers verified live - @3 melee (21, no Heavy/Special/ranged), @3 ranged (9, Longbow allowed, no Heavy Crossbow/Net), @6 any-type (32, no Heavy/Special); tool restricted to Calligrapher's/Painter's |
+| `class:monk/Sun Soul` | ok | 1 3 4 8 12 16 19 | ok | todo | Burning Hands granted @6 (engine-verified) |
+| `class:monk/Astral Self` | ok | 1 3 4 8 12 16 19 | ok | todo | no grants/spells (correct); features render |
+| `class:monk/Ascendant Dragon` | ok | 1 3 4 8 12 16 19 | ok | todo | no grants/spells (correct); features render |
+| `class:monk/Mercy` | ok | 1 3 4 8 12 16 19 | ok | todo | swap @19: Implements of Mercy grants (Insight, Medicine, Herbalism Kit) render on Proficiencies card |
+| `class:monk/Shadow` | ok | 1 3 4 8 12 16 19 | ok | todo | Minor Illusion + Darkness granted @3 (engine-verified) |
+| `class:monk/Elements` | ok | 1 3 4 8 12 16 17 19 | ok | todo | swap @19: Elemental Epitome @17 featureoption (5 options Acid/Cold/Fire/Lightning/Thunder) + Elementalism cantrip in Spellbook Monk origin; AC 15 intact |
+| `class:monk/Open Hand` | ok | 1 3 4 8 12 16 19 | ok | todo | no grants/spells (correct); features render |
 | `class:paladin/Oathbreaker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
 | `class:paladin/Crown` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
 | `class:paladin/Conquest` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |

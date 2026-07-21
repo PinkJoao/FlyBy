@@ -224,6 +224,38 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-21** - **T1a session 7: MONK + all 10 subclasses done** (all rows `ui: ok`).
+  Sweep green before starting (274/274 strict). Rep build Kensei: full guided create
+  (Elf/Wood Elf lineage / Tough) - verified the whole create flow incl. the merged class
+  tool choice **"Artisan's Tools or Musical Instruments"** (42 options, DDL-0002's
+  artisan-OR-instrument), Wood Elf species choices (lineage + Keen Senses skill +
+  spellcasting ability + granted Druidcraft/Longstrider/Pass without Trace), and the
+  DDL-0032 "Skill" rule popup from a choice title. **Level-1 derivations: HP 11 (d8 8 +
+  Con 1 + Tough 2), AC 15 = Unarmored Defense (10 + Dex 3 + Wis 2)** - both derive live;
+  Martial Arts + Unarmored Defense features render. **Kensei `weaponProf` machinery
+  verified live** (DDL-0030): @3 melee picker (21 opts, simple/martial MELEE, no
+  Heavy/Special, zero ranged), @3 ranged picker (9 opts, **Longbow present via the `allow`
+  exception**, Heavy Crossbow/Net absent, zero melee), @3 tool restricted to
+  Calligrapher's/Painter's, @6 picker (32 opts, **any type** - melee AND ranged - no
+  Heavy/Special, Longbow). @11/@17 share the @6 filter. Subclass swaps @19: **Elements**
+  (Elemental Epitome @17 featureoption renders 5 options Acid/Cold/Fire/Lightning/Thunder;
+  Elementalism cantrip in Spellbook Monk origin; AC 15 intact) and **Mercy** (Implements of
+  Mercy grants Insight/Medicine + Herbalism Kit all render on the Proficiencies card).
+  Remaining 8 subclasses' derivations engine-verified (Drunken Master Performance+Brewer's;
+  Shadow Minor Illusion+Darkness; Sun Soul Burning Hands; Long Death/Astral Self/Ascendant
+  Dragon/Open Hand correctly no grants). Mobile-width fine, zero console errors.
+  **NO bugs found - zero code changes.** The ✦ badge counting is correct throughout (10 at
+  L19 Kensei = 4 ASI + Epic Boon + Kensei tool + 3 @6/11/17 weapons + 1 `basic`, the
+  documented DDL-0033/TC-0020 basic/fixup overlap for a prof-kind class choice). One
+  **harness note for future sessions**: the ✦ badge's count lives in its `title`/accessible
+  name ("N choices left"), NOT `textContent` (which is just "⚛N") - query the accessible
+  name (read_page) or `.title`, and never trust a badge read taken during the compendium
+  boot-load or right after a JS-dispatched change (both transiently read 0).
+  944 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §52 + DDL-0044.
+  **Next action: T1a session 8 - PALADIN + its 10 subclasses** (half-caster: check the
+  spell steps and the Channel Divinity / oath-spell grants; several oaths grant fixed
+  proficiencies/spells - check the Proficiencies + Spellbook cards per oath).
+
 - **2026-07-20 (3)** - **T1a session 6: FIGHTER + all 10 subclasses done** (all rows
   `ui: ok`). Sweep green before starting (274/274 strict). Rep build Eldritch Knight:
   full guided create (Human XPHB / Magic Initiate (Wizard) - the DDL-0040 "Already

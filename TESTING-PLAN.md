@@ -224,6 +224,42 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-21 (3)** - **T1a session 9: RANGER + all 10 subclasses done** (all rows `ui: ok`).
+  Sweep green before starting (274/274 strict). Third half-caster of the campaign (after
+  Paladin). Rep build Gloom Stalker: full guided create (**Elf / Wood Elf lineage / Tough**) -
+  verified the Wood Elf species choices (lineage + Keen Senses skill + spellcasting ability
+  Wisdom + Druidcraft granted), the DDL-0032 "Skill" rule popup, **unrestricted Weapon Mastery**
+  (DDL-0033, 40 opts), and the half-caster's two spell steps (**no cantrips** - Ranger has none;
+  prepared only). **L1: HP 13 (d10 10 + Con 1 + Tough 2), AC 15 (Studded Leather 12 + Dex 3);
+  DC 12 / atk +4 / slots 1×2.** Overlay level-ups 1→3 (Deft Explorer Expertise + 2 languages,
+  Fighting Style, subclass @3), jump to 19 via the Class-tab Level field (**HP 175 = base 137 +
+  Tough 38; slots 4/3/3/3/2 up to circle 5; PB +6; Favored Enemy 6; Prepared 15**).
+  **Hunter's Mark (2024 class feature) + Disguise Self (Gloom Stalker @3) Always Prepared** (off
+  the counter); **Longstrider (Wood Elf @3) 1/Day Always Prepared**; "+ Prepare spell" → "Remove
+  a spell..." at the limit (R11).
+  **TC-0038 fix confirmed on Ranger:** the guide's "+ Choose a spell" picker excludes SAME-origin
+  always-prepared by hard exclude (searching "Hunter's Mark"/"Disguise Self" = 0 results) and
+  CROSS-origin ones (Longstrider via Wood Elf) via the pre-marked removable "Already Prepared"
+  filter (DDL-0040/TC-0031) - no duplicates, no key collision.
+  **Iron Mind (Gloom Stalker @7) engine-verified:** grants Wisdom save proficiency FLAT (base
+  ranger has only Str/Dex, so the conditional Int/Cha never fires) - `proficientSaves` = str/dex
+  @L1, **str/dex/wis from L7** (the `ranger|gloom stalker` line in `subclassGrants.js`).
+  All 10 subclasses' granted spells engine-verified @19 (legacy `_copy` stubs Horizon Walker/
+  Monster Slayer/Swarmkeeper/Drakewarden derive via TC-0027; Fey Wanderer/Gloom Stalker/Winter
+  Walker/Hollow Warden; Beast Master + Hunter correctly none). UI swaps @19: **Fey Wanderer**
+  (Otherworldly Glamour @3 skill choose renders), **Hunter** (3 featureoptions render with
+  selectable options), **Beast Master** (Primal Companion renders as PROSE - stat-block choice,
+  not modeled; no selector by design, no `{@tag}` leak). Mobile (375px) no horizontal overflow
+  (Class + Spellbook); zero console errors.
+  **NO bugs found - zero code changes.** One non-bug UX note: on the Species screen, setting the
+  lineage's *spellcasting ability* BEFORE picking the lineage itself resets the ability (it
+  belongs to the lineage, so it re-derives when the lineage changes); the natural order (lineage
+  first) never triggers it. 950 tests, lint, sweep 274/274 `--strict`. See CHANGELOG §55 + DDL-0047.
+  **Next action: T1a session 10 - ROGUE + its 10 subclasses** (the OPEN half of TC-0021 becomes
+  real work here: the Rogue's Weapon Mastery pool needs the conditional "Simple, or Martial with
+  Finesse/Light" semantics that `weaponFilterAllows` can't yet express - extend `MASTERY_FILTERS`;
+  Arcane Trickster is a third-caster - check its spell steps @3/7).
+
 - **2026-07-21 (2)** - **T1a session 8: PALADIN + all 10 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). Rep build Devotion: full guided create
   (**Aasimar** / Tough - verified the size choice, the **holy-symbol itemGroup kit choose**

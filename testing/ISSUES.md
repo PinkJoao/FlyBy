@@ -617,3 +617,14 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   caller change. Verified live (Oathbreaker @19: searching "Hellish Rebuke" now returns
   0 results in the guide picker; normal spells still list; no key-collision errors on a
   clean build). 950 tests, lint, sweep 274/274 `--strict`.
+
+---
+
+> **2026-07-21 (3) (T1a session 9 - Ranger)**: NO findings - zero code changes (like the Monk
+> session). Half-caster spell steps, TC-0038 exclusion of always-prepared spells (Hunter's Mark/
+> Disguise Self same-origin hard-excluded; Longstrider cross-origin via the DDL-0040 filter), the
+> Gloom Stalker Iron Mind Wis-save grant (flat, engine-verified L7 str/dex/wis), all 10 subclasses'
+> granted spells (incl. legacy `_copy` via TC-0027), Fey Wanderer's @3 skill choose, Hunter's 3
+> featureoptions, and Beast Master's Primal Companion (prose-by-design, no missing selector) all
+> verified. The only open item stays the Rogue half of TC-0021 (conditional weapon-filter
+> semantics for its Weapon Mastery pool), scheduled for the next session.

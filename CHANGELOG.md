@@ -3724,3 +3724,51 @@ de espécie) e adiantar a Draconic Sorcerer. Ver DDL-0045.**
   Skill or Language".
 - Verificado: **944 testes (+4)**, lint, sweep **274/274 `--strict`**, passada live
   completa (fixes verificados no browser após reinício do dev server).
+
+## 55. T1a sessão 9: Ranger + 10 subclasses (sem achados, DDL-0047)
+
+**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-21 (3)); todas as 10 linhas
+`class:ranger/*` com `ui: ok` em `testing/COVERAGE.md`. NENHUM bug encontrado — zero
+mudanças de código.** Terceiro half-caster da campanha, após o Paladin.
+
+- **Rep build (Gloom Stalker):** guided create completo (Elf / linhagem Wood Elf / Tough),
+  exercitando todo o fluxo — species choices do Wood Elf (linhagem + perícia Keen Senses +
+  atributo de conjuração Wisdom + Druidcraft concedido), o popup de regra "Skill" a partir
+  do título (DDL-0032), Weapon Mastery **irrestrito** (DDL-0033), e os dois passos de magia
+  do half-caster (sem cantrips — Ranger não tem; só prepared). **Nível 1: HP 13 (d10 10 +
+  Con 1 + Tough 2), AC 15 (Studded Leather 12 + Dex 3); DC 12 / atk +4 / slots 1×2.**
+  Overlay level-ups 1→3 (Deft Explorer Expertise + 2 idiomas, Fighting Style, subclasse @3);
+  jump a 19 pelo campo de Level da Class tab (**HP 175 = base 137 + Tough 38; slots
+  4/3/3/3/2 até o 5º círculo; PB +6; Favored Enemy 6; Prepared 15**).
+- **Hunter's Mark (feature de classe 2024) e Disguise Self (Gloom Stalker @3) renderizam
+  como ALWAYS PREPARED**, fora do contador de preparadas; **Longstrider/Pass without Trace
+  (Wood Elf @3/@5) como 1/Day Always Prepared**. O botão "+ Prepare spell" vira "Remove a
+  spell to prepare another one." ao atingir o limite (R11).
+- **TC-0038 (fix do Paladin) confirmado no Ranger:** o picker "+ Choose a spell" do guia
+  exclui as always-prepared da **mesma origem** por `exclude` duro (buscar "Hunter's Mark"
+  ou "Disguise Self" retorna 0 resultados), e as de **outra origem** (Longstrider via Wood
+  Elf) ficam ocultas pelo filtro "Already Prepared" pré-marcado e removível (fluxo
+  DDL-0040/TC-0031) — sem duplicatas nem colisão de key.
+- **Iron Mind (Gloom Stalker @7) verificado pelo engine:** concede proficiência em save de
+  **Wisdom** de forma PLANA (o Ranger base tem só Str/Dex, então a condicional Int/Cha não
+  dispara) — `proficientSaves` = str/dex no L1, **str/dex/wis a partir do L7**. É a linha
+  `ranger|gloom stalker` do `subclassGrants.js` (DDL-0029).
+- **Magias concedidas das 10 subclasses verificadas** (engine, @19): os `_copy` legados
+  derivam via TC-0027 — **Horizon Walker** (Prot from Evil/Misty Step/Haste/Banishment/
+  Teleportation Circle), **Monster Slayer** (Prot from Evil/Zone of Truth/Magic Circle/
+  Banishment/Hold Monster), **Swarmkeeper** (Mage Hand/Faerie Fire/Web/Gaseous Form/Arcane
+  Eye/Insect Plague), **Drakewarden** (Thaumaturgy) —; e os XPHB/novos **Fey Wanderer**,
+  **Gloom Stalker**, **Winter Walker** (FRHoF), **Hollow Warden** (RHW). **Beast Master** e
+  **Hunter** corretamente sem magias (só o Hunter's Mark de classe).
+- **Swaps @19 na UI:** **Fey Wanderer** (choose de perícia Otherworldly Glamour @3
+  renderiza), **Hunter** (os 3 featureoptions renderizam com opções selecionáveis — Hunter's
+  Prey: Colossus Slayer/Horde Breaker; Defensive Tactics; Superior Hunter's Defense),
+  **Beast Master** (Primal Companion renderiza como PROSA — "Choose Beast of the Land/Sea/
+  Sky", stat block de companheiro não modelado; sem selector por design, sem vazamento de
+  `{@tag}`). Mobile (375px) sem overflow horizontal na Class tab e no Spellbook; zero erros
+  de console.
+- **Nota (não é bug):** na tela de Species, definir o *atributo de conjuração* da linhagem
+  ANTES de escolher a própria linhagem reseta o atributo (ele pertence à linhagem, então
+  re-deriva quando ela muda). No fluxo normal (linhagem primeiro) não ocorre; auto-corrigível.
+- Verificado: 950 testes, lint, sweep 274/274 `--strict` (sem alterações — nenhum código
+  mudou). Ver DDL-0047.

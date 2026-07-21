@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-21T20:33:11.839Z · base seed 1 · 274 rows
+Last sweep: 2026-07-21T21:33:23.104Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -94,16 +94,16 @@ Last sweep: 2026-07-21T20:33:11.839Z · base seed 1 · 274 rows
 | `class:paladin/Ancients` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
 | `class:paladin/Vengeance` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
 | `class:paladin/Noble Genies` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: Genie's Splendor @3 skill choose renders; FRHoF oath spells (incl. Elementalism cantrip, Contact Other Plane Ritual) all Always Prepared |
-| `class:ranger/Horizon Walker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Monster Slayer` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Swarmkeeper` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Drakewarden` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Beast Master` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Fey Wanderer` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Gloom Stalker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Hunter` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Winter Walker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:ranger/Hollow Warden` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
+| `class:ranger/Horizon Walker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | _copy stub (TC-0027): 5 oath-style spells (Prot from Evil/Misty Step/Haste/Banishment/Teleportation Circle) Always Prepared @19 (engine-verified) |
+| `class:ranger/Monster Slayer` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | _copy stub: 5 granted spells (Prot from Evil/Zone of Truth/Magic Circle/Banishment/Hold Monster) Always Prepared @19 (engine-verified) |
+| `class:ranger/Swarmkeeper` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | _copy stub: 6 granted spells (Mage Hand/Faerie Fire/Web/Gaseous Form/Arcane Eye/Insect Plague) Always Prepared @19 (engine-verified) |
+| `class:ranger/Drakewarden` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | _copy stub: Thaumaturgy cantrip granted @19 (engine-verified) |
+| `class:ranger/Beast Master` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: Primal Companion renders as PROSE (Choose Beast of Land/Sea/Sky - companion stat block, not modeled; no selector by design, no tag leak); no granted spells (correct) |
+| `class:ranger/Fey Wanderer` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: Otherworldly Glamour @3 skill choose renders; 5 granted spells (Charm Person/Misty Step/Dimension Door/Summon Fey/Mislead) Always Prepared |
+| `class:ranger/Gloom Stalker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | REP BUILD: guided create (Wood Elf/Tough) + overlay 1-3 + jump to 19; half-caster verified (HP 175, slots 4/3/3/3/2, DC 12, atk +4); Hunter's Mark + Disguise Self Always Prepared; Iron Mind @7 grants Wis save (flat, base ranger lacks it - engine L7 str/dex/wis); TC-0038 verified (guide picker excludes always-prepared) |
+| `class:ranger/Hunter` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: featureoptions Hunter's Prey @3 (Colossus Slayer/Horde Breaker) + Defensive Tactics @7 + Superior Hunter's Defense @15 all render with selectable options; no granted spells (correct) |
+| `class:ranger/Winter Walker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | FRHoF: 5 granted spells (Ice Knife/Hold Person/Ice Storm/Cone of Cold/Remove Curse) Always Prepared @19 (engine-verified) |
+| `class:ranger/Hollow Warden` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | RHW: 5 granted spells (Alter Self/Phantom Steed/Dominate Beast/Steel Wind Strike/Wrathful Smite) Always Prepared @19 (engine-verified) |
 | `class:rogue/Inquisitive` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
 | `class:rogue/Mastermind` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
 | `class:rogue/Scout` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |

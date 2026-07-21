@@ -305,6 +305,47 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0047 — T1a Ranger session: sessão limpa (zero achados); o fix do TC-0038 cobre o half-caster Ranger
+**Date:** 2026-07-21
+**Builds on:** DDL-0046 (o fix do TC-0038, aqui reconfirmado no Ranger), DDL-0029 (a linha
+`ranger|gloom stalker` do `subclassGrants.js` — Iron Mind), DDL-0027 (a resolução de `_copy`
+das subclasses legadas), DDL-0033 (Weapon Mastery irrestrito), DDL-0034 (caps de atributo).
+
+**Context.** T1a sessão 9 (Ranger + 10 subclasses, TESTING-PLAN §7 2026-07-21 (3)). Terceiro
+half-caster da campanha (após Paladin). Como a sessão do Monk (DDL-0044), foi uma sessão SEM
+nenhum bug — nada foi corrigido. Registro breve para continuidade.
+
+**Findings (todos verdes, zero mudanças de código).**
+- **O TC-0038 (DDL-0046) cobre o Ranger de ponta a ponta.** Hunter's Mark (feature de classe
+  2024, sempre preparada) e Disguise Self (Gloom Stalker @3) são excluídas por `exclude` DURO
+  do picker "+ Choose a spell" do guia (mesma origem); Longstrider (Wood Elf @3, always-prepared
+  de OUTRA origem) fica oculta pelo filtro "Already Prepared" pré-marcado e removível (o caso
+  cruzado DDL-0040/TC-0031). Sem duplicatas nem colisão de key. O fix do Paladin não precisou de
+  nenhuma adaptação para o chassi Ranger.
+- **Iron Mind (Gloom Stalker @7) concede Wis save PLANO.** O Ranger base tem só Str/Dex, então
+  a alternativa condicional Int/Cha do grant nunca dispara — `proficientSaves` = str/dex no L1,
+  **str/dex/wis a partir do L7** (linha `ranger|gloom stalker` do `subclassGrants.js`, DDL-0029).
+- **Primal Companion (Beast Master) é PROSA por design, não um selector faltante.** O texto
+  "Choose Beast of the Land/Sea/Sky" é a escolha do stat block do COMPANHEIRO — uma criatura
+  separada, não modelada como parte da derivação do personagem (igual Find Steed/Wild Shape). Os
+  `{@creature}` renderizam como texto simples (inertes por DDL-0025). O autoBuild converge a zero
+  pendências (nenhuma escolha travada). Sessões futuras não devem reportar como bug.
+- **Subclasses `_copy` legadas derivam magias via TC-0027** (Horizon Walker/Monster Slayer/
+  Swarmkeeper/Drakewarden); Fey Wanderer (skill choose @3) e Hunter (3 featureoptions) renderizam
+  suas escolhas na UI; Beast Master/Hunter corretamente sem magias.
+- **Nota de UX (não é bug):** na tela de Species, setar o atributo de conjuração da LINHAGEM
+  antes de escolher a própria linhagem reseta o atributo — ele pertence à linhagem e re-deriva
+  quando ela muda. No fluxo natural (linhagem primeiro) não acontece; auto-corrigível.
+
+**Consequences.**
+- Cobertura: as 10 linhas `class:ranger/*` com `ui: ok`. Nenhum TC novo; o único item aberto do
+  ledger segue sendo a metade Rogue do TC-0021 (filtro condicional de Weapon Mastery).
+- Sem alterações de engine → sweep permanece 274/274 `--strict` e a suíte 950 testes sem tocar.
+  Ver CHANGELOG §55. **Próximo: T1a sessão 10 — ROGUE** (aqui a metade aberta do TC-0021 vira
+  trabalho real: o pool de Weapon Mastery do Rogue precisa da semântica condicional "Simple, ou
+  Martial com Finesse/Light" que o `weaponFilterAllows` ainda não expressa; Arcane Trickster é
+  third-caster — checar os passos de magia @3/7).
+
 ### DDL-0046 — T1a Paladin session: o SpellPicker do guia exclui o que a própria origem SEMPRE concede (paridade com a SpellbookTab)
 **Date:** 2026-07-21
 **Resolve:** TC-0038. **Builds on:** DDL-0040/TC-0031 (`preparedElsewhere` = magias de OUTRA

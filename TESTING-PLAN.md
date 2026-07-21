@@ -224,6 +224,33 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-21 (2)** - **T1a session 8: PALADIN + all 10 subclasses done** (all rows `ui: ok`).
+  Sweep green before starting (274/274 strict). Rep build Devotion: full guided create
+  (**Aasimar** / Tough - verified the size choice, the **holy-symbol itemGroup kit choose**
+  Amulet/Emblem/Reliquary TC-0033, the DDL-0037 caster-intro copy TC-0037 correctly naming
+  "Weapon Mastery and which spells to prepare" for the half-caster, and Weapon Mastery
+  unrestricted 40 opts DDL-0033), overlay level-ups 1->3 (Fighting Style **Defense -> AC 19**
+  live TC-0036; subclass @3 with oath spells Protection from Evil and Good/Shield of Faith
+  Always Prepared + Channel Divinity/Sacred Weapon rendering), jump to 19 via the Class-tab
+  Level field, fixup guide (badge **6** = 5 feat slots + spells; **DDL-0034 caps verified
+  live: 4 x +Str feats saturate Str at 20, Boon of Irresistible Offense lifts to 21**;
+  HP **175** = base 137 + Tough 38; slots **4/3/3/3/2 up to circle 5** half-caster).
+  Subclass swaps @19: **Oathbreaker** (DMG `_copy`: all oath spells Always Prepared) and
+  **Noble Genies** (FRHoF: Genie's Splendor @3 skill choose renders; oath spells incl. the
+  **Elementalism cantrip** + Contact Other Plane Ritual all Always Prepared). Remaining 7
+  oaths' spells engine-verified (Crown/Conquest/Redemption/Watchers legacy + Glory/Ancients/
+  Vengeance XPHB). Mobile fine, no console errors.
+  Finding - fixed in-session: **TC-0038** (the guide's "+ Choose a spell" picker offered the
+  origin's OWN always-prepared spells - oath/Paladin's Smite/Faithful Steed grants - and let
+  them be added as redundant chosen picks, producing duplicate "Aid" rows + a React key
+  collision; `SpellPicker.jsx` `ownedNames` now includes `origin.alwaysPrepared`, mirroring
+  the SpellbookTab prepare flow). 950 tests, lint, sweep 274/274 `--strict`.
+  See CHANGELOG §54 + DDL-0046.
+  **Next action: T1a session 9 - RANGER + its 10 subclasses** (half-caster like Paladin -
+  the TC-0038 fix now covers its Favored Enemy / conclave granted spells too; check the
+  Beast Master companion, Gloom Stalker's save-choice grant, and per-subclass Spellbook
+  grants; Fey Wanderer/Horizon Walker carry curated grants).
+
 - **2026-07-21** - **T1a session 7: MONK + all 10 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). Rep build Kensei: full guided create
   (Elf/Wood Elf lineage / Tough) - verified the whole create flow incl. the merged class

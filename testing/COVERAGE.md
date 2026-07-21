@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-21T16:42:31.371Z · base seed 1 · 274 rows
+Last sweep: 2026-07-21T20:33:11.839Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -84,16 +84,16 @@ Last sweep: 2026-07-21T16:42:31.371Z · base seed 1 · 274 rows
 | `class:monk/Shadow` | ok | 1 3 4 8 12 16 19 | ok | todo | Minor Illusion + Darkness granted @3 (engine-verified) |
 | `class:monk/Elements` | ok | 1 3 4 8 12 16 17 19 | ok | todo | swap @19: Elemental Epitome @17 featureoption (5 options Acid/Cold/Fire/Lightning/Thunder) + Elementalism cantrip in Spellbook Monk origin; AC 15 intact |
 | `class:monk/Open Hand` | ok | 1 3 4 8 12 16 19 | ok | todo | no grants/spells (correct); features render |
-| `class:paladin/Oathbreaker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Crown` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Conquest` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Redemption` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Watchers` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Devotion` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Glory` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Ancients` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Vengeance` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:paladin/Noble Genies` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
+| `class:paladin/Oathbreaker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: DMG `_copy` oath spells all Always Prepared (Hellish Rebuke/Inflict Wounds..Contagion/Dominate Person) |
+| `class:paladin/Crown` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Conquest` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Redemption` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Watchers` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Devotion` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | REP BUILD: guided create (Aasimar / Tough) + overlay 1-3 (Fighting Style Defense -> AC 19 TC-0036; subclass @3) + fixup @19 (caps: Str saturates 20, boon 21; HP 175 = base+Tough 38; slots 4/3/3/3/2 up to circle 5); oath spells + Channel Divinity render; TC-0038 found here |
+| `class:paladin/Glory` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Ancients` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Vengeance` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | oath spells derive (engine-verified) |
+| `class:paladin/Noble Genies` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: Genie's Splendor @3 skill choose renders; FRHoF oath spells (incl. Elementalism cantrip, Contact Other Plane Ritual) all Always Prepared |
 | `class:ranger/Horizon Walker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
 | `class:ranger/Monster Slayer` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |
 | `class:ranger/Swarmkeeper` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | todo | todo |  |

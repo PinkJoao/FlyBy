@@ -584,3 +584,36 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > fixed in-session. **The only open item in this ledger remains the Rogue half of
 > TC-0021** (conditional weapon-filter semantics for its Weapon Mastery pool),
 > deliberately scheduled for the Rogue T1a session. Everything else is `fixed@<date>`.
+
+---
+
+> **2026-07-21 (T1a session 8 - Paladin)**: TC-0038 found & fixed in-session. Half-caster
+> spell steps, oath-spell grants (incl. legacy `_copy` DMG/SCAG/XGE/TCE/FRHoF), Channel
+> Divinity, the DDL-0034 ability caps and the DDL-0033 unrestricted Weapon Mastery all
+> verified. The only open item stays the Rogue half of TC-0021.
+
+## TC-0038 - Guide SpellPicker offers the origin's OWN always-prepared spells (duplicate picks)
+
+- **Found:** 2026-07-21, T1a Paladin session (fixup guide @19: the guide's "+ Choose a
+  spell" picker listed Aid/Divine Smite/Protection from Evil and Good/Shield of Faith -
+  all ALWAYS PREPARED via the Devotion oath / Paladin's Smite - and let them be added as
+  chosen prepared spells; Aid got added twice, surfacing as two "Aid" rows in the Spellbook
+  with a React "two children with the same key" console error, and a stray/orphan row after
+  swapping the oath). **Severity:** bug (data integrity / redundant prepared slot).
+  **Status:** fixed@2026-07-21.
+- Root cause: `components/wizard/steps/SpellPicker.jsx` computed its `exclude` set as
+  `ownedNames = picks.map(...)` - only the CHOSEN picks of this origin's level range, NOT
+  the origin's `alwaysPrepared`. The SpellbookTab prepare flow builds `ownedNames` from
+  `all` (prepared + arcanum + **alwaysPrepared**, `SpellbookTab.jsx` ~L96-100/333), so it
+  correctly hides them - the two flows disagreed. The duplicate arose because a spell that
+  is BOTH chosen and always-prepared collapses into the granted copy at derive time (B2.3),
+  so `current`/`picks` never reflected the just-added Aid, leaving it addable again.
+  `preparedElsewhere` doesn't cover it (it excludes the CURRENT origin's key by design -
+  that's the cross-origin case, DDL-0040/TC-0031).
+- **Fix:** `ownedNames` now also includes `origin.alwaysPrepared` names (mirroring the
+  SpellbookTab), so same-origin always-prepared spells are excluded from the guide picker.
+  All three callers (SpellsStep / CantripsStep / LevelUpSpellsStep) pass `origin` from
+  `derived.spellcasting.origins`, which carries `alwaysPrepared` - self-contained, no
+  caller change. Verified live (Oathbreaker @19: searching "Hellish Rebuke" now returns
+  0 results in the guide picker; normal spells still list; no key-collision errors on a
+  clean build). 950 tests, lint, sweep 274/274 `--strict`.

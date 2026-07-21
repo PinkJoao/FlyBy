@@ -3639,6 +3639,46 @@ de espécie) e adiantar a Draconic Sorcerer. Ver DDL-0045.**
   sweep 274/274 `--strict`, e uma passada AO VIVO no código servido (Draconic 3 = 16 / +escudo
   18 / nv2 = 12; Monk/Barb = 16 sem escudo, 15 com). Ver DDL-0045.
 
+## 54. T1a sessão 8: Paladin + 10 subclasses (TC-0038, DDL-0046)
+
+**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-21 (2)); todas as 10 linhas
+`class:paladin/*` com `ui: ok` em `testing/COVERAGE.md`. Um achado, corrigido em sessão.**
+
+- **Rep build (Devotion):** guided create completo (**Aasimar** / Tough) exercitando a
+  escolha de Size, o **kit choose de itemGroup do Holy Symbol** (Amulet/Emblem/Reliquary —
+  o caso Paladin do TC-0033), a cópia da tela de features do half-caster (TC-0037: nomeia
+  "Weapon Mastery and which spells to prepare" — Paladin conjura desde o nível 1 no 2024) e
+  o Weapon Mastery irrestrito (40 opções, DDL-0033). Level-ups 1→3 pelo overlay: **Fighting
+  Style Defense → CA 19 ao vivo** (TC-0036, Chain Mail 16 + escudo 2 + 1); subclasse @3 com
+  oath spells (Protection from Evil and Good / Shield of Faith) Always Prepared + Channel
+  Divinity (Divine Sense) / Sacred Weapon renderizando.
+- **Jump para 19** pelo campo Level da Class tab; **fixup guide** (badge **6** = 5 slots de
+  feat + spells). **Caps do DDL-0034 verificados AO VIVO:** GWM + Crusher(Str) + Slasher(Str)
+  + Piercer(Str) saturam Str em **20**; **Boon of Irresistible Offense (max 30) leva a 21**.
+  **HP 175** = base 137 + Tough 38 (chassi d10). **Slots 4/3/3/3/2 até o 5º círculo**
+  (half-caster), Prepared 15, Channel Divinity 3 na tabela. O picker de feat lista as
+  categorias atrás do filtro pré-marcado (DDL-0040/TC-0029); o de spell até o 5º círculo.
+- **Swaps @19:** **Oathbreaker** (DMG `_copy`: Hellish Rebuke/Inflict Wounds → Contagion/
+  Dominate Person, todas Always Prepared — TC-0027 confirmado no chassi Paladin) e **Noble
+  Genies** (FRHoF: o choose de skill **Genie's Splendor @3** renderiza; oath spells incl. o
+  **cantrip Elementalism** e Contact Other Plane com chip Ritual, todas Always Prepared). As
+  outras 7 (Crown/Conquest/Redemption/Watchers legacy + Glory/Ancients/Vengeance XPHB)
+  tiveram as oath spells verificadas pelo engine. Mobile ok, zero erros de console (após a
+  correção).
+- **Achado — corrigido em sessão: TC-0038.** O picker "+ Choose a spell" do GUIA oferecia as
+  magias que a PRÓPRIA origem já concede sempre (oath / Paladin's Smite → Divine Smite /
+  Faithful Steed → Find Steed) e deixava adicioná-las como prepared redundantes — Aid entrou
+  duas vezes, virando duas linhas "Aid" no Spellbook + erro de key do React, e linha órfã ao
+  trocar o oath. Causa: `SpellPicker.jsx` montava `exclude` só a partir de `picks` (as
+  escolhidas), não de `origin.alwaysPrepared` — enquanto a SpellbookTab monta o dele de `all`
+  (prepared + arcanum + **alwaysPrepared**). O duplo surgiu porque uma magia que é escolhida
+  E sempre-preparada COLAPSA na cópia concedida (B2.3), então `current` nunca refletia o Aid
+  recém-adicionado. **Fix:** `ownedNames` agora inclui `origin.alwaysPrepared` (espelha a
+  SpellbookTab); os três callers (SpellsStep/CantripsStep/LevelUpSpellsStep) já passam a
+  `origin` com `alwaysPrepared`, então nada mais mudou. Verificado ao vivo (Oathbreaker @19:
+  buscar "Hellish Rebuke" no picker do guia = 0 resultados; magias normais seguem listando).
+- Verificado: **950 testes**, lint, sweep **274/274 `--strict`**. Ver DDL-0046.
+
 ## 51. T1a sessão 6: Fighter + 10 subclasses (TC-0035..TC-0037, DDL-0043)
 
 **Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-20 (3)); todas as 10 linhas

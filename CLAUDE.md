@@ -305,6 +305,47 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0046 — T1a Paladin session: o SpellPicker do guia exclui o que a própria origem SEMPRE concede (paridade com a SpellbookTab)
+**Date:** 2026-07-21
+**Resolve:** TC-0038. **Builds on:** DDL-0040/TC-0031 (`preparedElsewhere` = magias de OUTRA
+origem; este fecha o lado da MESMA origem), DDL-0011/B2.3 (o colapso "preparada que também é
+concedida vira a cópia sempre-preparada", cuja interação criava o duplo).
+
+**Context.** Sessão T1a 8 (Paladin + 10 subclasses, TESTING-PLAN §7 2026-07-21 (2)). O half-caster
+foi verificado de ponta a ponta — steps de magia (prepared até o 5º círculo), oath spells
+concedidas (incl. as legacy `_copy` DMG/SCAG/XGE/TCE/FRHoF, TC-0027 reconfirmado; Noble Genies
+FRHoF traz até o cantrip Elementalism), Channel Divinity, os caps do DDL-0034 (4×+Str saturam em
+20, Boon of Irresistible Offense leva a 21) e o Weapon Mastery irrestrito do DDL-0033. Um único
+achado.
+
+**Decisions.**
+- **O `exclude` do `SpellPicker.jsx` (guia de criação/level-up/fixup) inclui agora
+  `origin.alwaysPrepared`**, além das `picks` da faixa. Antes, ele só escondia as ESCOLHIDAS,
+  então as magias que a própria origem SEMPRE concede (oath / Paladin's Smite → Divine Smite /
+  Faithful Steed → Find Steed) apareciam no picker e podiam ser adicionadas como prepared
+  redundantes. A **SpellbookTab** já montava o `ownedNames` dela de `all` (prepared + arcanum +
+  **alwaysPrepared**) — os dois fluxos divergiam; agora concordam.
+- **Por que virava DUPLICATA (não só redundância):** uma magia que é escolhida E sempre-preparada
+  COLAPSA na cópia concedida na derivação (B2.3), então `current`/`picks` nunca refletia a recém
+  adicionada → dava para adicioná-la de novo (duas linhas "Aid" + erro de key do React, e linha
+  órfã ao trocar o oath que a concedia). Excluir as `alwaysPrepared` na fonte quebra o ciclo.
+- **`preparedElsewhere` continua sendo o caso CRUZADO** (exclui a própria origem por design — um
+  Warlock 1/Cleric 1 PODE preparar a mesma magia nas duas por causa do atributo, DDL-0040). Este
+  fix é só a MESMA origem: não há por que preparar de novo o que ela já dá sempre.
+- **Correção auto-contida no componente:** os três callers (SpellsStep/CantripsStep/
+  LevelUpSpellsStep) já passam a `origin` de `derived.spellcasting.origins`, que carrega
+  `alwaysPrepared` — nenhum call site mudou. Regra p/ novos pickers de magia: derive o "já
+  possuído" de prepared + arcanum + always-prepared, como a SpellbookTab.
+
+**Consequences.**
+- Cobertura: as 10 linhas `class:paladin/*` com `ui: ok`. Rep build Devotion (guided create
+  Aasimar/Tough + overlay 1-3 + fixup 19); swaps Oathbreaker (DMG `_copy`) e Noble Genies (FRHoF,
+  skill choose @3 + cantrip concedido) verificados ao vivo; as outras 7 pelo engine.
+- Verificado ao vivo (Oathbreaker @19: "Hellish Rebuke" some do picker do guia; magias normais
+  seguem listando; sem key-collision num build limpo), 950 testes, lint, sweep 274/274 `--strict`.
+  Ver CHANGELOG §54. **Próximo: T1a sessão 9 — Ranger** (outro half-caster; o fix já cobre suas
+  magias de conclave/companion).
+
 ### DDL-0045 — Defesa sem Armadura é um registro por-fórmula (classe/subclasse); Draconic Sorcerer entra; escudo é regra do candidato, não hardcode
 **Date:** 2026-07-21
 **Builds on:** DDL-0034 (armadura natural de espécie — flat/unarmored/bonus, que compartilham

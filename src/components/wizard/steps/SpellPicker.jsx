@@ -85,8 +85,14 @@ export default function SpellPicker({ origin, origins, db, level, maxLevel, limi
     setSpells((classEntry.spells ?? []).filter((s) => String(s.id ?? s.name).toLowerCase() !== name));
   };
 
-  // Só esconde o já escolhido; lista/círculo são filtros pré-marcados abaixo.
-  const ownedNames = new Set(picks.map((s) => s.raw.name.toLowerCase()));
+  // Esconde o já escolhido E o que a origem SEMPRE concede (oath/feature -
+  // always prepared não se prepara de novo), como faz a SpellbookTab: preparar
+  // uma cópia redundante desperdiça um slot e vira linha órfã se a subclasse
+  // (que concedia a magia) mudar depois. lista/círculo são filtros abaixo.
+  const ownedNames = new Set([
+    ...picks.map((s) => s.raw.name.toLowerCase()),
+    ...(origin.alwaysPrepared ?? []).map((s) => s.raw?.name?.toLowerCase()).filter(Boolean),
+  ]);
   const exclude = (raw) => ownedNames.has(raw.name.toLowerCase());
 
   // Filtros pré-marcados: a classe do passo + TODA a faixa de círculos dele.

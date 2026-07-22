@@ -305,6 +305,50 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0054 — Alargar a lista de magias é um conceito próprio, derivado do bucket `expanded`
+**Date:** 2026-07-22
+**Resolve:** TC-0043 (o último item aberto do ledger). **Builds on:** DDL-0008/B2.3 (a decisão de
+que `expanded` NÃO concede — que continua valendo), DDL-0026 (liberdade com aviso), DDL-0040/TC-0031
+(o padrão de filtro derivado do personagem em `makeSpellEntity`, reusado aqui).
+
+**Context.** O conjunto "on-list" do seletor era só a lista da classe, então um Warlock do Genie
+recebia "Fireball is not on the Warlock spell list" para uma magia que a subclasse literalmente
+adiciona à lista dele. O usuário decidiu somar ao on-list e AMPLIOU o escopo: o mesmo vale para o
+Divine Soul (lista de clérigo) e para o Magical Secrets do Bardo @10.
+
+**Decisions.**
+- **CONCEDER e ALARGAR são coisas diferentes, e agora cada uma tem seu lado.** `grantedSpells`
+  segue ignorando `expanded` (uma magia alargada não é sempre-preparada: você prepara e gasta
+  espaço). O outro lado vive no novo módulo puro `engine/spellListWidening.js`, que produz o
+  conjunto "on-list" EXTRA da origem. A origem expõe `expandedSpells` (nomes) e `expandedFrom`
+  (nome → fonte).
+- **Tudo derivado do dado; NENHUM registro curado.** As três formas do bucket: nomes soltos com
+  chave `sN` (círculo de espaço — o Expanded Spell List dos 9 patronos legados) ou numérica (nível
+  de classe); `{all: "level=N|class=X"}` (Divine Soul); e `{all}` com LISTAS nos dois campos
+  (`level=1;2;3;4;5|class=Cleric;Druid;Wizard`, o Bardo). **REGRA: `parseAllSpec` nunca pode ler só
+  o primeiro valor de `level=`/`class=`** — foi exatamente esse atalho que quase me fez manter um
+  registro curado para o Bardo.
+- **Um alargador que PARECE prosa pode não ser.** O Magical Secrets usa `{@filter}` tags no texto e
+  eu cheguei a escrever um `PROSE_LIST_WIDENING` para ele; o dado tinha tudo, e o registro era menos
+  preciso (liberava círculos 6–9 cedo demais). Removido. Hoje **nenhum** alargador vive só em prosa;
+  o cabeçalho do módulo documenta onde pôr um, se aparecer. Antes de curar, confira o
+  `additionalSpells` da CLASSE, não só o da subclasse.
+- **Grupos múltiplos seguem a semântica de ALTERNATIVA do TC-0011:** sem a afinidade (Divine Soul)
+  ou o elemento (Genie) escolhido, nada alarga — igual ao lado da concessão.
+- **UI: a magia alargada passa a carregar a CLASSE da origem no filtro de Classe** (`filterValues.
+  class`), que é literalmente o que o RAW diz ("count as Bard spells for you"), mais um badge com a
+  fonte. Assim ela aparece na visão padrão do seletor em vez de exigir limpar o filtro — sem inventar
+  filtro novo. Mesmo padrão do `preparedElsewhere`.
+
+**Consequences.**
+- Um conteúdo novo com `expanded` funciona sozinho, sem curadoria. Um novo consumidor do "on-list"
+  deve unir `origin.expandedSpells` à lista da classe (hoje: SpellbookTab e o SpellPicker do guia).
+- O export não muda (alargamento não gera item nenhum) — sweep 274/274 `--strict` intacto.
+- Escopo real corrigido no ledger: `expanded` com nomes soltos existe em **9 subclasses, todas de
+  Warlock**; domínios/círculos legados CONCEDEM, não alargam.
+- Verificado: 979 testes (+7), lint, sweep 274/274 `--strict`, e ao vivo (Genie/Efreeti 19 e Divine
+  Soul 3). Ver CHANGELOG §62.
+
 ### DDL-0053 — T1a Wizard session (T1a CONCLUÍDA): nível errado no dado vira registro de RE-GRADE; feature inlinada herda o nível da umbrella
 **Date:** 2026-07-22
 **Builds on:** DDL-0038/TC-0026 (o registro irmão `MISSING_ADDITIONAL_SPELLS`, cuja semântica de

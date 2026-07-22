@@ -38,11 +38,22 @@ import styles from './steps.module.css';
 export default function SpellPicker({ origin, origins, db, level, maxLevel, limit, current, classEntry, onChangeSpells }) {
   const [open, setOpen] = useState(false);
   const elsewhere = useMemo(() => preparedElsewhere(origins, origin.key), [origins, origin.key]);
-  const pickerEntity = useMemo(() => makeSpellEntity(db, { preparedElsewhere: elsewhere }), [db, elsewhere]);
-  const listNames = useMemo(
-    () => (origin.spellListClass ? classSpellList(db, origin.spellListClass) : new Set()),
-    [db, origin.spellListClass],
+  const pickerEntity = useMemo(
+    () =>
+      makeSpellEntity(db, {
+        preparedElsewhere: elsewhere,
+        // TC-0043: as magias que uma feature acrescentou à lista desta origem.
+        addedToList: origin.expandedFrom ?? null,
+        addedListClass: origin.spellListClass ?? null,
+      }),
+    [db, elsewhere, origin.expandedFrom, origin.spellListClass],
   );
+  // A lista da classe + o que a subclasse/prosa ALARGA (TC-0043).
+  const listNames = useMemo(() => {
+    const base = origin.spellListClass ? classSpellList(db, origin.spellListClass) : new Set();
+    if (!origin.expandedSpells?.size) return base;
+    return new Set([...base, ...origin.expandedSpells]);
+  }, [db, origin.spellListClass, origin.expandedSpells]);
 
   const top = maxLevel ?? level; // teto da faixa (single-level quando ausente)
   const picks = current ?? [];

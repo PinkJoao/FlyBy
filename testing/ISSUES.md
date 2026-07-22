@@ -725,7 +725,7 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 - **Unidade:** `class:warlock/*` legadas (Hexblade/Genie/Fathomless/Undying) e, por tabela, toda
   subclasse pré-2024 com `expanded` (domínios/círculos legados). **Severidade:** polish.
-  **Encontrado:** T1a sessão 12 (Warlock), 2026-07-22. **Status:** open (needs-user-eyes).
+  **Encontrado:** T1a sessão 12 (Warlock), 2026-07-22. **Status:** fixed@2026-07-22 (DDL-0054).
 - Sintoma: um Warlock do Genie (Efreeti) que tenta preparar Fireball recebe a confirmação
   "Fireball is not on the Warlock spell list" - mas o RAW da subclasse legada justamente ADICIONA
   aquelas magias à lista dele. Não é bloqueio (DDL-0026 permite com aviso), só um aviso errado.
@@ -733,9 +733,33 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   isso está certo. O que falta é o outro lado: o conjunto "on-list" do picker (hoje
   `classSpellList(db, origin.spellListClass)`) poderia incluir os nomes de `expanded` da subclasse
   escolhida, e o filtro Class pré-marcado poderia deixá-las visíveis.
-- Decisão pendente do usuário: (a) somar `expanded` ao on-list (some o aviso, magias aparecem no
-  filtro padrão), (b) manter como está (o aviso é inofensivo e o jogador confirma), ou (c) badge
-  próprio ("Patron list"). Nenhuma correção feita nesta sessão.
+- **Decisão do usuário (2026-07-22): opção (a), somar ao on-list** - e o escopo foi AMPLIADO por
+  ele para todo mecanismo de "alargar a lista", não só os patronos: Divine Soul (lista de clérigo
+  inteira) e o Magical Secrets do Bardo @10 são a mesma ideia.
+- **Correção de escopo do registro original:** a frase "por tabela, toda subclasse pré-2024 com
+  `expanded` (domínios/círculos legados)" estava ERRADA. Varredura de todos os `class-*.json`: o
+  bucket `expanded` com nomes soltos existe em exatamente **9 subclasses, todas de Warlock**
+  (Archfey/Fiend/Great Old One PHB, Undying SCAG, Celestial/Hexblade XGE, Fathomless/Genie TCE,
+  Undead VRGR). Domínios de clérigo e círculos de druida concedem por `prepared` (sempre
+  preparadas), não alargam lista.
+- **Fix (fixed@2026-07-22, DDL-0054):** novo módulo puro `engine/spellListWidening.js`
+  (`expandedSpellNames` + `originExtraSpells`) lê o bucket `expanded` em suas três formas - nomes
+  soltos com chave `sN` (círculo de espaço) ou numérica (nível de classe), `{all: "level=N|class=X"}`
+  (Divine Soul) e `{all}` com LISTAS em ambos os campos (`level=1;2;3;4;5|class=Cleric;Druid;Wizard`,
+  o Magical Secrets do Bardo). Grupos múltiplos seguem a semântica de ALTERNATIVA do TC-0011 (sem a
+  afinidade/elemento escolhido, nada alarga). A derivação expõe `origin.expandedSpells` (nomes) e
+  `origin.expandedFrom` (nome → fonte); a SpellbookTab e o SpellPicker do guia unem isso ao
+  `listNames` (mata o aviso) e passam ao `makeSpellEntity`, que injeta a classe da origem no filtro
+  de Classe da magia (é o que o RAW diz: "count as Warlock/Bard spells for you") e põe um badge com
+  a fonte.
+- **Descoberta durante o fix:** o Magical Secrets do Bardo NÃO é prosa - está inteiro no
+  `additionalSpells` da classe. O registro curado que eu tinha criado para ele foi removido: era
+  redundante e menos preciso que o dado (liberava círculos 6-9 cedo demais). Hoje NENHUM alargador
+  vive só em prosa; o cabeçalho do módulo documenta isso e onde pôr um, se aparecer.
+- Verificado ao vivo: **Genie/Efreeti 19 prepara Fireball sem aviso**, com badge "The Genie" e
+  visível no filtro Warlock pré-marcado; **Divine Soul 3 prepara Guiding Bolt** (badge "Divine
+  Soul") - e, sem a afinidade escolhida, o alargamento corretamente não vale. 7 testes em
+  `spellListWidening.test.js`; 979 testes, lint, sweep 274/274 `--strict`.
 
 ## TC-0044 - Forest Gnome só concede Speak with Animals a partir do nível 3
 
@@ -790,3 +814,9 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > **T1a ESTÁ CONCLUÍDA** - todas as 135 linhas `class:*` estão `ui: ok`. O único item aberto do
 > ledger é o **TC-0043** (needs-user-eyes, listas `expanded` de subclasse legada no seletor de
 > magias), que aguarda decisão do usuário. Próximo estágio: **T1b - espécies e linhagens**.
+
+---
+
+> **2026-07-22 (3)** - **TC-0043 FECHADO (DDL-0054)**, por decisão do usuário e com o escopo
+> ampliado por ele para todo alargamento de lista (patronos + Divine Soul + Magical Secrets).
+> **O ledger não tem mais nenhum item aberto** e a T1a segue concluída. Próximo estágio: T1b.

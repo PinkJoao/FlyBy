@@ -224,6 +224,21 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-22 (4)** - **TC-0043 FIXED (DDL-0054) - the ledger has NO open items.** By user
+  decision, with the scope widened by them from "warlock patrons" to **every list-widening
+  mechanic**: a subclass/class feature that ADDS spells to your list (Genie/Hexblade/… Expanded
+  Spell List, Divine Soul's whole cleric list, the Bard's Magical Secrets @10) now counts as
+  "on-list" - no more wrong "not on the X spell list" warning, and the spells show under the
+  pre-marked Class filter with a badge naming the source. New pure module
+  `engine/spellListWidening.js`; the origin exposes `expandedSpells` + `expandedFrom`, consumed by
+  the SpellbookTab and the guide's SpellPicker. **All derived from the data - no curated registry**
+  (the Bard's Magical Secrets looked prose-only because of its `{@filter}` tags, but it is fully
+  encoded on the CLASS's `additionalSpells`; the registry I had written for it was removed as
+  redundant AND less accurate). Scope correction recorded in the ledger: `expanded` with loose
+  names exists in exactly **9 subclasses, all Warlock** - legacy cleric domains/druid circles
+  GRANT (`prepared`), they don't widen. 979 tests (+7), lint, sweep 274/274 `--strict`.
+  See CHANGELOG §62 + DDL-0054. **Next action: stage T1b - SPECIES + lineages** (unchanged).
+
 - **2026-07-22 (3)** - **T1a session 13: WIZARD + all 13 subclasses done** (all rows `ui: ok`).
   **T1a IS COMPLETE: every one of the 135 `class:*` rows is now `ui: ok`.** Sweep green before
   starting (274/274 strict). Rep build **Evoker**: guided create (**Gnome / Forest Gnome lineage /

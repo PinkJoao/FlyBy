@@ -3974,3 +3974,40 @@ TODA subclasse legada adotada num chassi 2024.
     restrito a Athletics/Performance/Persuasion (Acrobatics some por já ser proficiente).
   - Mobile 375px sem overflow; zero erros de console.
 - Verificado: 972 testes (+5), lint, sweep 274/274 `--strict`. Ver DDL-0053.
+
+## 62. Alargamento de lista de magias: `expanded` vira "on-list" (TC-0043, DDL-0054)
+
+Fecha o último item aberto do ledger de testes, com o escopo ampliado pelo usuário: não só os
+patronos de warlock, mas todo mecanismo que ACRESCENTA magias à sua lista sem concedê-las.
+
+- **O problema.** O conjunto "on-list" do seletor era só `classSpellList(db, origin.spellListClass)`.
+  Então um Warlock do Genie que preparasse Fireball - magia que a subclasse literalmente adiciona à
+  lista dele - recebia "Fireball is not on the Warlock spell list", e a magia ficava escondida atrás
+  do filtro Class pré-marcado. O aviso não bloqueia (DDL-0026), mas estava factualmente errado.
+- **Novo módulo puro `engine/spellListWidening.js`.** `expandedSpellNames` lê o bucket `expanded`
+  nas três formas que o dataset usa: **nomes soltos** com chave `sN` (= "quando você tiver espaços
+  do círculo N", o Expanded Spell List dos 9 patronos legados) ou numérica (nível de classe);
+  **`{all: "level=N|class=X"}`** (Divine Soul, a lista de clérigo um círculo por vez); e **`{all}`
+  com LISTAS nos dois campos** (`level=1;2;3;4;5|class=Cleric;Druid;Wizard` + `s6..s9` - o Magical
+  Secrets do Bardo @10). Grupos múltiplos mantêm a semântica de ALTERNATIVA do TC-0011: sem a
+  afinidade/elemento escolhido, nada alarga. `originExtraSpells` junta classe + subclasse e devolve
+  também de ONDE veio cada magia.
+- **Derivação + UI.** A origem de classe ganhou `expandedSpells` (Set de nomes) e `expandedFrom`
+  (nome → fonte). A SpellbookTab e o SpellPicker do guia unem isso ao `listNames` - o que mata o
+  aviso - e passam ao `makeSpellEntity`, que injeta a classe da origem em `filterValues.class`
+  dessas magias (é o que o RAW diz: "count as Warlock/Bard spells for you", então elas aparecem no
+  filtro padrão) e acrescenta um badge com a fonte ("The Genie", "Divine Soul", "Magical Secrets").
+  Mesmo padrão do `preparedElsewhere` (TC-0031).
+- **Escopo corrigido.** O registro original do TC-0043 dizia que o problema valia "por tabela" para
+  toda subclasse pré-2024. Errado: a varredura de todos os `class-*.json` mostra `expanded` com
+  nomes soltos em exatamente **9 subclasses, todas de Warlock**. Domínios de clérigo e círculos de
+  druida CONCEDEM (`prepared`), não alargam. E o Magical Secrets do Bardo, que parecia ser só prosa
+  (`{@filter}` tags), está inteiro no dado - o registro curado que eu tinha escrito para ele foi
+  REMOVIDO por ser redundante e menos preciso (liberava os círculos 6-9 cedo demais). Hoje nenhum
+  alargador vive só em prosa; o cabeçalho do módulo documenta isso.
+- **Não são alargamento** (verificados um a um): Lore/Magical Discoveries e Arcana/Arcane Initiate
+  são escolhas CONCEDIDAS; Psionic Spells e Clockwork Magic são regra de troca restrita às magias
+  daquela tabela; Lunar Boons é metamagia; Psychic Spells é tipo de dano.
+- Verificado ao vivo (Genie/Efreeti 19: Fireball sem aviso, badge "The Genie", visível no filtro
+  Warlock; Divine Soul 3: Guiding Bolt com badge "Divine Soul", e sem a afinidade escolhida o
+  alargamento corretamente não vale) + 7 testes novos; 979 testes, lint, sweep 274/274 `--strict`.

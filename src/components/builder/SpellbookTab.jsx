@@ -167,14 +167,29 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   // Ambos varrem o mapa reverso inteiro - memoiza (hooks antes de qualquer
   // return; sem origem, `spellListClass` é undefined).
   const listClass = origin?.spellListClass ?? null;
-  const listNames = useMemo(
-    () => (listClass ? classSpellList(db, listClass) : new Set()),
-    [db, listClass],
-  );
+  // TC-0043: a lista da classe + o que a subclasse/prosa ALARGA (Expanded Spell
+  // List dos patronos, Divine Soul, Magical Secrets @10). Tudo isso conta como
+  // "on-list": nem aviso de fora-da-lista, nem sumir do filtro de Classe.
+  const expandedSpells = origin?.expandedSpells ?? null;
+  const listNames = useMemo(() => {
+    const base = listClass ? classSpellList(db, listClass) : new Set();
+    if (!expandedSpells?.size) return base;
+    return new Set([...base, ...expandedSpells]);
+  }, [db, listClass, expandedSpells]);
   // TC-0031: magias já conhecidas nas OUTRAS origens - viram badge + filtro
   // "Already Prepared" (pré-marcado como exclude, desmarcável) e confirmação.
   const elsewhere = useMemo(() => preparedElsewhere(derived.spellcasting?.origins, origin?.key), [derived, origin]);
-  const pickerEntity = useMemo(() => makeSpellEntity(db, { preparedElsewhere: elsewhere }), [db, elsewhere]);
+  const pickerEntity = useMemo(
+    () =>
+      makeSpellEntity(db, {
+        preparedElsewhere: elsewhere,
+        // As alargadas passam a valer pelo filtro de Classe da origem (é o que o
+        // RAW diz: "count as Warlock/Bard spells for you"), com badge da fonte.
+        addedToList: origin?.expandedFrom ?? null,
+        addedListClass: listClass,
+      }),
+    [db, elsewhere, origin, listClass],
+  );
 
   if (origins.length === 0) {
     return (

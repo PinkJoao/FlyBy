@@ -28,6 +28,7 @@ import { deriveHpBonus } from './hpBonuses';
 import { resolveSpellObj, classDisplayName } from './spells';
 import { grantedSpells, castTypeLabel, resolveGrantedUses } from './grantedSpells';
 import { applyUsesOverlay, curatedAdditionalSpells } from './grantedSpellUses';
+import { originExtraSpells } from './spellListWidening';
 import {
   casterInfo,
   leveledCasterLevel,
@@ -482,6 +483,22 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
         ? (pactSlots(cls.level)?.level ?? 0)
         : maxPrepareCircle(info?.code ?? null, cls.level),
       spellListClass: info ? spellListClassName(cls.classId, info) : classDisplayName(cls.classId),
+      // Magias que CONTAM como da lista sem serem concedidas (TC-0043): o
+      // `expanded` do patrono/subclasse + os alargamentos em prosa curados.
+      // `expandedFrom` guarda a origem de cada uma, para o badge do seletor.
+      ...(() => {
+        const extra = originExtraSpells({
+          db,
+          classObj,
+          subclassObj,
+          classLevel: cls.level,
+          maxSlotLevel: isPact
+            ? (pactSlots(cls.level)?.level ?? 0)
+            : maxPrepareCircle(info?.code ?? null, cls.level),
+          activeGroup: cls.choices?.['sub:spellSet-0']?.picks?.[0] ?? null,
+        });
+        return { expandedSpells: extra.names, expandedFrom: extra.sources };
+      })(),
       // Base da progressão + extras de featureoption (Thaumaturge/Magician,
       // TC-0028). O bônus só vale quando a classe já conjura cantrips.
       cantripLimit: cantripLimit(info, cls.level) + (cantripLimit(info, cls.level) > 0 ? cantripLimitBonus(cls) : 0),

@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-22T13:55:47.328Z · base seed 1 · 274 rows
+Last sweep: 2026-07-22T17:40:58.941Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -208,7 +208,7 @@ Last sweep: 2026-07-22T13:55:47.328Z · base seed 1 · 274 rows
 | `species:Giff|AAG` | ok | - | todo | todo |  |
 | `species:Githyanki|MPMM` | ok | - | todo | todo |  |
 | `species:Githzerai|MPMM` | ok | - | todo | todo |  |
-| `species:Gnome|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo | TC-0044 achado aqui (Speak with Animals so no nivel 3, corrigido); linha completa fica para a T1b |
+| `species:Gnome|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo |  |
 | `species:Gnome|XPHB/Gnome; Rock Gnome Lineage` | ok | - | todo | todo |  |
 | `species:Goblin|MPMM` | ok | - | todo | todo |  |
 | `species:Goblin|PSZ/Goblin (Ixalan)` | ok | - | todo | todo |  |

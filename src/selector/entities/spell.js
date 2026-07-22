@@ -158,6 +158,13 @@ export function makeSpellEntity(db, opts = {}) {
   const classIndex = spellClassIndex(db);
   const elsewhere = opts.preparedElsewhere ?? null;
   const hasElsewhere = (elsewhere?.size ?? 0) > 0;
+  // TC-0043: magias que uma feature ACRESCENTOU à lista desta origem (nome →
+  // rótulo da fonte). Elas passam a carregar a classe da origem no filtro de
+  // Classe - é literalmente o que o RAW diz ("count as Bard spells for you") -
+  // e ganham um badge dizendo de onde vêm.
+  const added = opts.addedToList ?? null;
+  const addedClass = opts.addedListClass ?? null;
+  const hasAdded = (added?.size ?? 0) > 0 && !!addedClass;
   return {
     ...spellEntity,
     precompute: (r) => {
@@ -165,14 +172,20 @@ export function makeSpellEntity(db, opts = {}) {
       if (hasElsewhere) {
         pre.filterValues.owned = elsewhere.has(r.name.toLowerCase()) ? ['yes'] : [];
       }
+      if (hasAdded && added.has(r.name.toLowerCase()) && !pre.filterValues.class.includes(addedClass)) {
+        pre.filterValues.class = [...pre.filterValues.class, addedClass];
+      }
       return pre;
     },
-    ...(hasElsewhere
+    ...(hasElsewhere || hasAdded
       ? {
           card: (r) => {
             const c = spellEntity.card(r);
-            const from = elsewhere.get(r.name.toLowerCase());
-            return from ? { ...c, badges: [...c.badges, 'Already Prepared'] } : c;
+            const badges = [...c.badges];
+            const from = hasAdded ? added.get(r.name.toLowerCase()) : null;
+            if (from) badges.push(from);
+            if (hasElsewhere && elsewhere.get(r.name.toLowerCase())) badges.push('Already Prepared');
+            return badges.length === c.badges.length ? c : { ...c, badges };
           },
         }
       : {}),

@@ -224,11 +224,14 @@ export function weaponMasteryCount(classObj, level) {
 
 // Restrição RAW do pool do Weapon Mastery por classe (TC-0021): o texto de cada
 // classe limita os tipos elegíveis. Barbarian XPHB = "Simple or Martial MELEE
-// weapons". Fighter/Paladin/Ranger não restringem. Rogue ("Simple weapons and
-// Martial weapons that have the Finesse or Light property") precisa de uma
-// semântica condicional que weaponFilterAllows ainda não tem - fica documentado
-// no TC-0021 para a sessão T1 do Rogue.
-const MASTERY_FILTERS = { barbarian: { kind: 'melee' } };
+// weapons" (`kind: 'melee'`). Rogue XPHB = "Simple weapons and Martial weapons
+// that have the Finesse or Light property" - a semântica CONDICIONAL
+// `martialRequiresAnyProp` (simple: qualquer; martial: só F/L) de
+// weaponFilterAllows. Fighter/Paladin/Ranger não restringem (sem entrada).
+const MASTERY_FILTERS = {
+  barbarian: { kind: 'melee' },
+  rogue: { martialRequiresAnyProp: ['F', 'L'] },
+};
 
 /**
  * Gera os descritores de escolha por nível de uma classe.

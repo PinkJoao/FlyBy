@@ -3819,3 +3819,29 @@ Corrige o bug em que magias preparadas sobreviviam a um level-down (DDL-0049).
      ATUAL colapsam mas não contam nem são podadas; arcanum válido do Warlock é preservado.
 - Sem mudança de nível nem de subclasse, devolve o MESMO array (sem escrita).
 - Verificado: 961 testes (+7, `reconcileClassSpells.test.js`), lint. Ver DDL-0049.
+
+## 58. T1a sessão 10: Rogue + 10 subclasses (TC-0021 fechado, DDL-0050)
+
+Fecha o ÚNICO item aberto do ledger de testes: a semântica condicional do Weapon Mastery do
+Rogue (TC-0021), pendente desde a sessão do Barbarian.
+
+- **`weaponFilterAllows` (`engine/choices.js`) ganhou `martialRequiresAnyProp`**: armas SIMPLE
+  passam sem restrição; armas MARTIAL só passam se tiverem ao menos uma das propriedades listadas
+  (F = Finesse, L = Light). Expressa o RAW do Rogue XPHB ("Simple weapons and Martial weapons that
+  have the Finesse or Light property") - a condicional que o filtro plano (kind/noProps/allow) do
+  Kensei/Barbarian não conseguia.
+- **`MASTERY_FILTERS.rogue = { martialRequiresAnyProp: ['F', 'L'] }`** (`classFeatureChoices.js`).
+  Flui de graça pelos dois consumidores que já roteavam por `weaponFilterAllows` (ChoiceList kind
+  `weapon` + autoBuild do sweep). Barbarian permanece `{ kind: 'melee' }`; Fighter/Paladin/Ranger
+  sem entrada (irrestritos).
+- **Verificado ao vivo (Rogue):** o seletor de Weapon Mastery lista 21 armas - todas SIMPLE +
+  as MARTIAL com F/L (Rapier F, Scimitar F/L, Shortsword F/L, Hand Crossbow L, Whip F); "Longsword"
+  = 0 resultados (martial só Versatile, corretamente barrada). Rapier selecionável, chip renderiza.
+  Weapon Mastery mantém count 2 em todos os níveis (Rogue não escala). "Staff"/"Wooden Staff"
+  aparecem por serem armas SIMPLE (Versatile + Topple), não é regressão.
+- **Sessão T1a completa** (as 10 linhas `class:rogue/*` → `ui: ok`): Arcane Trickster (third-caster
+  INT verificado - slots 1st×2, DC 10, cantrips 0/2, prepared 0/3 @3; picker pré-filtrado à lista
+  Wizard, 60 resultados); Mastermind (grants curados Master of Intrigue - Tool restrito a 4 Gaming
+  Sets + 2 Languages); @19 todos os slots de Feat/Expertise/Epic Boon renderizam (Sneak Attack 10d6,
+  PB +6). Mobile 375px sem overflow horizontal; zero erros de console.
+- Verificado: 962 testes (+1, `choices.test.js`), lint, sweep 274/274 `--strict`. Ver DDL-0050.

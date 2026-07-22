@@ -284,12 +284,16 @@ function parseDamageField(field, kind, push) {
 }
 
 /**
- * Filtro de armas de uma escolha `weaponProf` (Kensei): a arma crua passa?
+ * Filtro de armas de uma escolha `weaponProf` (Kensei) ou de um pool de Weapon
+ * Mastery (Barbarian/Rogue, TC-0021): a arma crua passa?
  * `allow` são exceções por nome (Longbow, que é Heavy mas o texto permite);
  * `kind` restringe a melee/ranged; `noProps` veta códigos de propriedade
- * (H = Heavy, S = Special). Só armas mundanas simples/marciais entram
- * (weaponCategory presente).
- * @param {{ kind?: 'melee'|'ranged', noProps?: string[], allow?: string[] }|null} filter
+ * (H = Heavy, S = Special). `martialRequiresAnyProp` expressa a regra CONDICIONAL
+ * do Rogue ("Simple weapons and Martial weapons that have the Finesse or Light
+ * property"): armas SIMPLE passam sem restrição; MARTIAL só passam se tiverem ao
+ * menos uma das propriedades listadas (F = Finesse, L = Light). Só armas mundanas
+ * simples/marciais entram (weaponCategory presente).
+ * @param {{ kind?: 'melee'|'ranged', noProps?: string[], allow?: string[], martialRequiresAnyProp?: string[] }|null} filter
  * @param {object} raw  item cru do 5etools (items-base)
  * @returns {boolean}
  */
@@ -303,6 +307,11 @@ export function weaponFilterAllows(filter, raw) {
   if (filter.kind === 'ranged' && type !== 'R') return false;
   const props = (raw.property ?? []).map((p) => String(p?.uid ?? p).split('|')[0]);
   if (filter.noProps?.some((c) => props.includes(c))) return false;
+  // Rogue: armas MARTIAL exigem uma das propriedades (Finesse/Light); as SIMPLE
+  // não são afetadas por esta restrição.
+  if (filter.martialRequiresAnyProp
+    && String(raw.weaponCategory).toLowerCase() === 'martial'
+    && !filter.martialRequiresAnyProp.some((c) => props.includes(c))) return false;
   return true;
 }
 

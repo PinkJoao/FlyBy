@@ -224,6 +224,32 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-21 (4)** - **T1a session 10: ROGUE + all 10 subclasses done** (all rows `ui: ok`).
+  **T1a (all classes + subclasses) is now COMPLETE; the ISSUES.md ledger has NO open items.**
+  Sweep green before starting (274/274 strict). This session closed the last known real work in
+  the ledger - **TC-0021's Rogue half** (DDL-0050).
+  **The fix:** `weaponFilterAllows` (`engine/choices.js`) gained a CONDITIONAL field
+  `martialRequiresAnyProp` - simple weapons pass unrestricted, martial weapons require one of the
+  listed property codes. `MASTERY_FILTERS.rogue = { martialRequiresAnyProp: ['F', 'L'] }`
+  (Finesse/Light). It flows for free through the two consumers that already routed via
+  `weaponFilterAllows` (ChoiceList kind `weapon` + the sweep's autoBuild) - no other wiring.
+  **Verified live:** Rogue Weapon Mastery selector = 21 options (all simple + martial Rapier/
+  Scimitar/Shortsword/Hand Crossbow/Whip); "Longsword" = 0 results (martial, Versatile only,
+  correctly barred); "Staff"/"Wooden Staff" appear because they are SIMPLE weapons (Versatile +
+  Topple), not a regression. Rapier selectable, chip renders. Weapon Mastery count stays 2 at all
+  levels (Rogue never scales).
+  **Other checks:** Arcane Trickster (the only Rogue caster - third-caster INT: slots 1st×2, DC 10,
+  0/2 cantrips, 0/3 prepared @3; "+ Prepare spell" picker pre-filtered to the Wizard list, 60
+  results); Mastermind (curated Master of Intrigue grants - tool restricted to 4 Gaming Sets + 2
+  languages); all 10 subclasses listed in the selector; @19 all Feat/Expertise/Epic-Boon slots
+  render (Sneak Attack 10d6, PB +6). Mobile 375px no horizontal overflow; zero console errors. The
+  other 8 subclasses are engine/sweep-verified (standard feature grants; Scout's Survivalist
+  Expertise lives in subclassGrants).
+  962 tests (+1, `choices.test.js`), lint, sweep 274/274 `--strict`. See CHANGELOG §58 + DDL-0050.
+  **Next action: T1b - SPECIES + lineages** (§4.2: batches of ~10-12, per-lineage checklist §4.3 -
+  size/skills/spells sub-choices, traits preview, Spellbook race origin frequencies DDL-0011). Pick
+  the first species batch from `testing/COVERAGE.md`.
+
 - **2026-07-21 (3)** - **T1a session 9: RANGER + all 10 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). Third half-caster of the campaign (after
   Paladin). Rep build Gloom Stalker: full guided create (**Elf / Wood Elf lineage / Tough**) -

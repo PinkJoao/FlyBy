@@ -190,4 +190,23 @@ describe('weaponFilterAllows (Kensei)', () => {
   it('item sem weaponCategory (não-arma) nunca passa', () => {
     expect(weaponFilterAllows({ noProps: [] }, torch)).toBe(false);
   });
+
+  it('Rogue (martialRequiresAnyProp F/L): simples passam; marciais só com Finesse ou Light', () => {
+    const f = { martialRequiresAnyProp: ['F', 'L'] };
+    const dagger = { name: 'Dagger', type: 'M|XPHB', weaponCategory: 'simple', property: ['F|XPHB', 'L|XPHB', 'T|XPHB'] };
+    const club = { name: 'Club', type: 'M|XPHB', weaponCategory: 'simple', property: ['L|XPHB'] };
+    const rapier = { name: 'Rapier', type: 'M|XPHB', weaponCategory: 'martial', property: ['F|XPHB'] };
+    const scimitar = { name: 'Scimitar', type: 'M|XPHB', weaponCategory: 'martial', property: ['F|XPHB', 'L|XPHB'] };
+    const shortbow = { name: 'Shortbow', type: 'R|XPHB', weaponCategory: 'simple', property: ['A|XPHB', '2H|XPHB'] };
+    // simples sempre passam (mesmo sem F/L: Shortbow)
+    expect(weaponFilterAllows(f, dagger)).toBe(true);
+    expect(weaponFilterAllows(f, club)).toBe(true);
+    expect(weaponFilterAllows(f, shortbow)).toBe(true);
+    // marciais só com Finesse ou Light
+    expect(weaponFilterAllows(f, rapier)).toBe(true);
+    expect(weaponFilterAllows(f, scimitar)).toBe(true);
+    expect(weaponFilterAllows(f, longsword)).toBe(false); // martial, só Versatile
+    expect(weaponFilterAllows(f, greatsword)).toBe(false); // martial, Heavy/2H
+    expect(weaponFilterAllows(f, longbow)).toBe(false); // martial ranged, sem F/L
+  });
 });

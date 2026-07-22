@@ -305,6 +305,49 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0050 — T1a Rogue session: `martialRequiresAnyProp` fecha o Weapon Mastery condicional (TC-0021); T1a de CLASSES concluída
+**Resolve:** TC-0021 (a metade Rogue — o ÚNICO item aberto do ledger de testes). **Builds on:**
+DDL-0033/TC-0021 (o registro `MASTERY_FILTERS` + a máquina `weaponFilterAllows`, cuja lacuna
+condicional este entry preenche), DDL-0030 (o filtro plano de arma do Kensei que aquele registro
+reusa).
+**Date:** 2026-07-21
+
+**Context.** T1a sessão 10 (Rogue + 10 subclasses, TESTING-PLAN §7 2026-07-21 (4)). O Rogue trazia
+o único trabalho real conhecido pendente na campanha: seu Weapon Mastery restringe o pool com uma
+regra CONDICIONAL — "Simple weapons and Martial weapons that have the Finesse or Light property" —
+que o `weaponFilterAllows` (kind/noProps/allow, plano) não sabia expressar. Barbarian
+(`{kind:'melee'}`, plano) já estava resolvido desde a sessão dele; o Rogue ficou explicitamente
+adiado para esta sessão (TC-0021 PARTIAL).
+
+**Decisions.**
+- **`weaponFilterAllows` (`engine/choices.js`) ganhou `martialRequiresAnyProp`** (array de códigos
+  de propriedade): armas SIMPLE passam sem restrição; armas MARTIAL só passam se tiverem AO MENOS
+  UMA das propriedades listadas. Para o Rogue: `['F', 'L']` (F = Finesse, L = Light, códigos
+  confirmados no items-base). É uma condicional sobre `weaponCategory`, não uma restrição plana —
+  exatamente o que o campo `kind`/`noProps` não conseguia. Aplicado DEPOIS do `noProps`, então
+  compõe com os outros campos se um filtro futuro precisar dos dois.
+- **`MASTERY_FILTERS.rogue = { martialRequiresAnyProp: ['F', 'L'] }`** (`classFeatureChoices.js`).
+  Barbarian permanece `{kind:'melee'}`; Fighter/Paladin/Ranger continuam sem entrada (irrestritos,
+  DDL-0033). Como já era o padrão do registro, o filtro flui de graça pelos DOIS únicos consumidores
+  que roteavam por `weaponFilterAllows` — o ChoiceList (kind `weapon`) e o `autoBuild` do sweep — sem
+  nenhuma fiação nova. REGRA para uma classe futura com regra condicional de arma: estenda
+  `weaponFilterAllows` com o predicado e declare-o no `MASTERY_FILTERS`; nunca ramifique por classe
+  no ChoiceList.
+- **O count do Weapon Mastery do Rogue é fixo em 2** (sem coluna na tabela; `weaponMasteryCount`
+  devolve 2 em todos os níveis) — verificado ao vivo até 19.
+
+**Consequences.**
+- Cobertura: as 10 linhas `class:rogue/*` com `ui: ok`. Arcane Trickster (third-caster INT: slots
+  1st×2, DC 10, 0/2 cantrips, 0/3 prepared @3; picker pré-filtrado à lista Wizard) e Mastermind
+  (grants curados Master of Intrigue — tool restrito a 4 Gaming Sets + 2 languages) verificados ao
+  vivo; as outras 8 pelo engine/sweep. **O ledger `testing/ISSUES.md` não tem mais itens abertos** e
+  a etapa **T1a (todas as classes + subclasses) está CONCLUÍDA** — a próxima é **T1b (espécies +
+  linhagens)**.
+- Verificado ao vivo (Rogue: seletor de Weapon Mastery = 21 armas, todas simple + martial F/L; Rapier
+  selecionável; "Longsword" = 0 resultados; "Staff"/"Wooden Staff" aparecem por serem simple, não
+  regressão), 962 testes (+1 em `choices.test.js`), lint, sweep 274/274 `--strict`, mobile 375px sem
+  overflow, zero erros de console. Ver CHANGELOG §58.
+
 ### DDL-0049 — Level-down reconcilia as magias preparadas (remove concessões da subclasse + poda por prioridade)
 **Date:** 2026-07-21
 **Builds on:** DDL-0008 (o colapso "preparada que também é concedida vira a cópia sempre-preparada"

@@ -268,18 +268,23 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0021 - Weapon Mastery pool ignored per-class restrictions (Barbarian melee-only)
 
 - **Found:** 2026-07-17, T1a Barbarian session (a Barbarian mastered a Blowgun).
-  **Severity:** bug. **Status:** PARTIAL - fixed@2026-07-17 for Barbarian; **the Rogue
-  variant is the one OPEN item in this ledger** (scheduled for the Rogue T1a session).
+  **Severity:** bug. **Status:** fixed@2026-07-21 (Barbarian half fixed@2026-07-17; Rogue
+  half fixed@2026-07-21, T1a Rogue session - DDL-0050). **Ledger now has no open items.**
 - XPHB Weapon Mastery texts restrict the eligible kinds per class: Barbarian "Simple or
   Martial MELEE weapons"; Rogue "Simple weapons and Martial weapons that have the Finesse
   or Light property"; Fighter/Paladin/Ranger unrestricted. The `weaponMastery` choice
   always offered every simple/martial weapon.
-- **Fix:** curated `MASTERY_FILTERS` map in `engine/classFeatureChoices.js` attaches a
-  `weaponFilter` (the DDL-0030 Kensei machinery) to the mastery pool; enforced in
+- **Fix (Barbarian):** curated `MASTERY_FILTERS` map in `engine/classFeatureChoices.js`
+  attaches a `weaponFilter` (the DDL-0030 Kensei machinery) to the mastery pool; enforced in
   ChoiceList (kind `weapon` now, not just `weaponProf`) and autoBuild. Barbarian =
-  `{kind:'melee'}` (25 options live, 0 ranged). **Rogue needs a conditional semantics**
-  (simple: any; martial: only Finesse/Light) that `weaponFilterAllows` doesn't have -
-  add it in the Rogue T1a session and extend the map.
+  `{kind:'melee'}` (25 options live, 0 ranged).
+- **Fix (Rogue, 2026-07-21):** `weaponFilterAllows` gained the conditional field
+  `martialRequiresAnyProp` (simple weapons unrestricted; martial weapons require one of the
+  listed property codes) - the semantics the flat filter lacked. `MASTERY_FILTERS.rogue =
+  { martialRequiresAnyProp: ['F', 'L'] }`. Flows through the same two consumers (ChoiceList
+  kind `weapon` + autoBuild) with no other wiring. Verified live: 21 options (all simple +
+  martial Rapier/Scimitar/Shortsword/Hand Crossbow/Whip); Longsword = 0 results. 1 unit test
+  in `choices.test.js`; sweep 274/274 `--strict`.
 
 ## TC-0022 - Feat ability increases don't enforce the ability score cap (20)
 
@@ -628,3 +633,10 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > featureoptions, and Beast Master's Primal Companion (prose-by-design, no missing selector) all
 > verified. The only open item stays the Rogue half of TC-0021 (conditional weapon-filter
 > semantics for its Weapon Mastery pool), scheduled for the next session.
+
+> **2026-07-21 (4) (T1a session 10 - Rogue)**: TC-0021 CLOSED (its Rogue half - see the entry
+> above, fixed@2026-07-21 / DDL-0050). Arcane Trickster (third-caster INT, spell steps + Wizard-
+> filtered picker), Mastermind (curated Master of Intrigue tool/language grants), all 10 subclasses
+> listed, weapon-mastery count-stays-2, and the full @19 feat/expertise/epic-boon slots verified.
+> **THE LEDGER NOW HAS NO OPEN ITEMS** - every `TC-` is `fixed@<date>` or `wontfix`. T1a class
+> coverage is complete (all classes + subclasses `ui: ok`); next is T1b (species + lineages).

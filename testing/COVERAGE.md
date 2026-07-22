@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-21T21:33:23.104Z · base seed 1 · 274 rows
+Last sweep: 2026-07-22T01:26:52.695Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -104,16 +104,16 @@ Last sweep: 2026-07-21T21:33:23.104Z · base seed 1 · 274 rows
 | `class:ranger/Hunter` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | swap @19: featureoptions Hunter's Prey @3 (Colossus Slayer/Horde Breaker) + Defensive Tactics @7 + Superior Hunter's Defense @15 all render with selectable options; no granted spells (correct) |
 | `class:ranger/Winter Walker` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | FRHoF: 5 granted spells (Ice Knife/Hold Person/Ice Storm/Cone of Cold/Remove Curse) Always Prepared @19 (engine-verified) |
 | `class:ranger/Hollow Warden` | ok | 1 2 3 4 5 7 8 9 11 12 13 15 16 17 19 | ok | todo | RHW: 5 granted spells (Alter Self/Phantom Steed/Dominate Beast/Steel Wind Strike/Wrathful Smite) Always Prepared @19 (engine-verified) |
-| `class:rogue/Inquisitive` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Mastermind` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Scout` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Swashbuckler` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Arcane Trickster` | ok | 1 3 4 6 7 8 10 11 12 13 14 16 19 20 | todo | todo |  |
-| `class:rogue/Assassin` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Soulknife` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Thief` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Scion of the Three` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
-| `class:rogue/Phantom` | ok | 1 3 4 6 8 10 12 16 19 | todo | todo |  |
+| `class:rogue/Inquisitive` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo | TC-0021 fix verified live (Weapon Mastery pool = simple + martial Finesse/Light) |
+| `class:rogue/Mastermind` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo | Master of Intrigue grants verified live (tool restricted to 4 Gaming Sets + 2 languages) |
+| `class:rogue/Scout` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
+| `class:rogue/Swashbuckler` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
+| `class:rogue/Arcane Trickster` | ok | 1 3 4 6 7 8 10 11 12 13 14 16 19 20 | ok | todo | third-caster INT verified live (slots 1st×2, DC 10, 0/2 cantrips, 0/3 prepared @3; picker pre-filtered to Wizard list) |
+| `class:rogue/Assassin` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
+| `class:rogue/Soulknife` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
+| `class:rogue/Thief` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
+| `class:rogue/Scion of the Three` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
+| `class:rogue/Phantom` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
 | `class:sorcerer/Pyromancer (PSK)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
 | `class:sorcerer/Divine Soul` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
 | `class:sorcerer/Storm` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |

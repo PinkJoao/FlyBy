@@ -224,6 +224,37 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-22 (3)** - **T1a session 13: WIZARD + all 13 subclasses done** (all rows `ui: ok`).
+  **T1a IS COMPLETE: every one of the 135 `class:*` rows is now `ui: ok`.** Sweep green before
+  starting (274/274 strict). Rep build **Evoker**: guided create (**Gnome / Forest Gnome lineage /
+  Magic Initiate (Wizard)** / Standard Array pre-filled with the Wizard spread) -> L1 HP 8, AC 11,
+  slots 1st x2, DC 13, atk +5, 3/3 cantrips, 4/4 prepared; overlay level-ups 1->3 (Scholar
+  Expertise @2 with the pool correctly restricted to already-proficient skills, and the step list
+  REBUILT live after the pick; subclass @3 + the two Evocation Savant spell chooses, pool = the
+  data's own filter expression - Evocation, level <= 2); then 19 via the Class-tab stepper
+  (**HP 116, PB +6, slots 4/3/3/3/3/2/1/1/1, DC 19, atk +11, 5/5 cantrips, 24/24 prepared**, badge
+  **13** = 5 feat slots + 7 savant chooses + spells). **DDL-0034 caps live:** 4 ASIs saturate Int
+  at 20, the Epic Boon lifts it to **21**.
+  **All 13 subclasses swapped @19:** the 4 PHB schools, War XGE, Chronurgy/Graviturgy EGW, Scribes
+  TCE, Abjurer/Diviner/Evoker/Illusionist XPHB, Bladesinger FRHoF - zero `{@tag}` leaks. The four
+  XPHB ones emit their 9 spell chooses (2 @3 + one per new slot level) with the right pool per
+  level; Diviner renders **The Third Eye** @10 (3 options) and its See Invisibility 1/Rest in the
+  Uses card; Bladesinger carries the curated weapon grant + the skill choose restricted to
+  Athletics/Performance/Persuasion. Mobile 375px no overflow; zero console errors.
+  Findings - BOTH fixed in-session: **TC-0044** (Forest Gnome's Speak with Animals only granted at
+  level 3 - the XPHB prose has no level gate but `additionalSpells` says 3; new curated
+  `REGRADED_ADDITIONAL_SPELLS` registry that MOVES a grant between levels preserving its frequency
+  structure - dataset-verified as the only such case), **TC-0045** (TRANSVERSAL: a legacy
+  subclass's inlined sub-features rendered at their ORIGINAL level - Conjuration Savant/Minor
+  Conjuration under "LEVEL 2" on a chassis where the subclass starts at 3; `subclassFeatureList`
+  now propagates the umbrella's level to its direct refs. Display-only - the `level <= cls.level`
+  gate could never grant early).
+  972 tests (+5), lint, sweep 274/274 `--strict`. See CHANGELOG §61 + DDL-0053.
+  **Next action: stage T1b - SPECIES + lineages** (§4.2: batches of ~10-12 rows; per-lineage
+  checklist in §4.3). Start with the `species:` rows in `testing/COVERAGE.md`, all still `todo`;
+  the Gnome Forest lineage row already carries a TC-0044 note. The ledger's only open item stays
+  **TC-0043** (needs-user-eyes, legacy `expanded` subclass lists in the spell picker).
+
 - **2026-07-22 (2)** - **T1a session 12: WARLOCK + all 9 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). Rep build **Hexblade**: guided create (Tiefling /
   Infernal legacy / size Medium / Tough) → L1 HP 12, AC 13 (kit Leather auto-equipped), **Pact

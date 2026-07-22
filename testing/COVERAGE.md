@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-22T13:10:56.372Z · base seed 1 · 274 rows
+Last sweep: 2026-07-22T13:55:47.328Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -124,19 +124,19 @@ Last sweep: 2026-07-22T13:10:56.372Z · base seed 1 · 274 rows
 | `class:sorcerer/Wild Magic` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: tabela d100 do Wild Magic Surge renderiza; sem magias concedidas (correto) |
 | `class:sorcerer/Spellfire` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19 (FRHoF): 11 magias concedidas Always Prepared |
 | `class:sorcerer/Shadow` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19 (RHW): 11 magias concedidas + Summon Beast com badge "3 Charges" no card de Uses (DDL-0011) |
-| `class:wizard/Conjuration` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Enchantment` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Necromancy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Transmutation` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/War` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Chronurgy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Graviturgy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Scribes` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Abjurer` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Diviner` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Evoker` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Illusionist` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:wizard/Bladesinger` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
+| `class:wizard/Conjuration` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (PHB legacy): TC-0045 achado aqui - Savant/Minor Conjuration renderizavam em LEVEL 2; agora herdam o nivel 3 da umbrella |
+| `class:wizard/Enchantment` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (PHB legacy): features renderizam no nivel 3 (TC-0045) |
+| `class:wizard/Necromancy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (PHB legacy): features renderizam no nivel 3 (TC-0045) |
+| `class:wizard/Transmutation` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (PHB legacy): features renderizam no nivel 3 (TC-0045) |
+| `class:wizard/War` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (XGE): Arcane Deflection/Tactical Wit renderizam; sem magias concedidas (correto) |
+| `class:wizard/Chronurgy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (EGW): Chronal Shift/Temporal Awareness renderizam |
+| `class:wizard/Graviturgy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (EGW): features renderizam |
+| `class:wizard/Scribes` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (TCE): features renderizam; sem chooses proprios |
+| `class:wizard/Abjurer` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19: 9 spell chooses (2 @3 + 1 por nivel de slot novo, pool = Abjuracao ate o circulo do nivel) + Counterspell/Dispel Magic sempre preparadas @10 |
+| `class:wizard/Diviner` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19: 9 spell chooses (Adivinhacao) + featureoption The Third Eye @10 (3 opcoes) + See Invisibility 1/Rest no card de Uses |
+| `class:wizard/Evoker` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | REP BUILD: guided create (Gnome/Forest Gnome + Magic Initiate) 1->3 pelo overlay e jump a 19; 9 spell chooses (Evocacao), HP 116, slots 4/3/3/3/3/2/1/1/1, DC 19, 24/24 prepared |
+| `class:wizard/Illusionist` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19: 9 spell chooses (Ilusao) + Minor Illusion @3 e Summon Beast/Summon Fey @6 sempre preparadas |
+| `class:wizard/Bladesinger` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | ok | todo | swap @19 (FRHoF): grant curado Melee Martial (sem Two-Handed/Heavy) + choose de pericia Athletics/Performance/Persuasion (Acrobatics ja proficiente sai do pool) |
 | `class:warlock/Undying` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (SCAG): features renderizam; Contact Other Plane + Spare the Dying Always Prepared; lista expandida não concede (TC-0043) |
 | `class:warlock/Hexblade` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | REP BUILD: guided create (Tiefling Infernal / Tough) 1->19; grants curados Hex Warrior no card (Medium Armor/Shields/Martial); Pact (5th)×4 + arcanum 6/7/8/9 1/Long Rest; invocações 10/10 |
 | `class:warlock/Fathomless` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (TCE): Evard's Black Tentacles 1/Day no card de Uses (DDL-0011); features renderizam |
@@ -208,7 +208,7 @@ Last sweep: 2026-07-22T13:10:56.372Z · base seed 1 · 274 rows
 | `species:Giff|AAG` | ok | - | todo | todo |  |
 | `species:Githyanki|MPMM` | ok | - | todo | todo |  |
 | `species:Githzerai|MPMM` | ok | - | todo | todo |  |
-| `species:Gnome|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo |  |
+| `species:Gnome|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo | TC-0044 achado aqui (Speak with Animals so no nivel 3, corrigido); linha completa fica para a T1b |
 | `species:Gnome|XPHB/Gnome; Rock Gnome Lineage` | ok | - | todo | todo |  |
 | `species:Goblin|MPMM` | ok | - | todo | todo |  |
 | `species:Goblin|PSZ/Goblin (Ixalan)` | ok | - | todo | todo |  |

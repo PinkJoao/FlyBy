@@ -125,3 +125,42 @@ describe('curatedAdditionalSpells - concessões que o dado omite (TC-0026)', () 
     expect(curatedAdditionalSpells(null)).toBeUndefined();
   });
 });
+
+describe('curatedAdditionalSpells - correção de NÍVEL (TC-0044)', () => {
+  // Forma real do Gnome XPHB, lineage Forest: a prosa concede as duas magias sem
+  // nível nenhum, mas o dado põe o Speak with Animals no nível 3.
+  const forestGnome = {
+    name: 'Gnome; Forest Gnome Lineage',
+    source: 'XPHB',
+    additionalSpells: [
+      {
+        innate: { 3: { daily: { pb: ['speak with animals|xphb'] } } },
+        ability: { choose: ['int', 'wis', 'cha'] },
+        known: { 1: ['minor illusion|xphb#c'] },
+      },
+    ],
+  };
+
+  it('move a magia para o nível 1 preservando a estrutura de frequência', () => {
+    const out = curatedAdditionalSpells(forestGnome);
+    expect(out[0].innate[3]).toBeUndefined(); // nível vazio some
+    expect(out[0].innate[1]).toEqual({ daily: { pb: ['speak with animals|xphb'] } });
+    expect(out[0].known[1]).toEqual(['minor illusion|xphb#c']); // resto intacto
+    // Nunca muta o dado original.
+    expect(forestGnome.additionalSpells[0].innate[3]).toBeDefined();
+  });
+
+  it('a magia passa a ser concedida já no nível 1, com a frequência certa', () => {
+    const spells = grantedSpells(curatedAdditionalSpells(forestGnome), 1).spells;
+    const swa = spells.find((s) => s.name === 'speak with animals');
+    expect(swa).toBeDefined();
+    expect(swa.castType).toBe('daily');
+    expect(swa.scale).toBe('pb');
+  });
+
+  it('sem a correção, o dado cru só concede a partir do nível 3', () => {
+    const raw = forestGnome.additionalSpells;
+    expect(grantedSpells(raw, 1).spells.map((s) => s.name)).toEqual(['minor illusion']);
+    expect(grantedSpells(raw, 3).spells.map((s) => s.name)).toContain('speak with animals');
+  });
+});

@@ -94,9 +94,17 @@ export function subclassFeatureList(db, classId, subclass) {
   // bloco só (ex: College of Swords/Battle Master no nível 3). Assim as features
   // ficam separadas como nos níveis maiores; refs ANINHADOS (dentro de `options`)
   // continuam inlinados. Recursivo à prova de ciclo (via `seen`).
-  const emitFeature = (f) => {
+  // `atLevel` é o nível da UMBRELLA que inlinou esta feature (TC-0044/TC-0045):
+  // uma subclasse legada adotada num chassi 2024 é um stub `_copy` que reaponta a
+  // umbrella para o nível novo (School of Conjuration PHB 2 -> 3), mas os
+  // refSubclassFeature dentro dela seguem apontando para as sub-features no nível
+  // ANTIGO. Elas são ganhas junto com a umbrella - é assim que o 5etools as
+  // renderiza (aninhadas nela) -, então herdam o nível dela. Quando os níveis já
+  // coincidem (todo o conteúdo 2024) o override não muda nada.
+  const emitFeature = (f, atLevel) => {
     if (!f || seen.has(keyOf(f))) return;
     seen.add(keyOf(f));
+    const level = atLevel ?? f.level;
     const directRefs = [];
     const body = [];
     for (const e of f.entries ?? []) {
@@ -105,9 +113,9 @@ export function subclassFeatureList(db, classId, subclass) {
     }
     // A "umbrella" só entra como card se sobrar corpo próprio (prosa de intro etc.).
     if (body.length > 0) {
-      out.push({ name: f.name, level: f.level, entries: resolveOptionalRefs(expand(body), db) });
+      out.push({ name: f.name, level, entries: resolveOptionalRefs(expand(body), db) });
     }
-    for (const r of directRefs) emitFeature(find(parseRef(r.subclassFeature)));
+    for (const r of directRefs) emitFeature(find(parseRef(r.subclassFeature)), level);
   };
   for (const ref of subclass.subclassFeatures) emitFeature(find(parseRef(ref)));
   return out;

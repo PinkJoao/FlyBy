@@ -305,6 +305,49 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0053 — T1a Wizard session (T1a CONCLUÍDA): nível errado no dado vira registro de RE-GRADE; feature inlinada herda o nível da umbrella
+**Date:** 2026-07-22
+**Builds on:** DDL-0038/TC-0026 (o registro irmão `MISSING_ADDITIONAL_SPELLS`, cuja semântica de
+FUSÃO não servia aqui), DDL-0039/TC-0027 (a resolução de `_copy` das subclasses legadas, cujo lado
+de EXIBIÇÃO este entry completa), DDL-0034 (caps verificados ao vivo).
+
+**Context.** T1a sessão 13 (Wizard + 13 subclasses, TESTING-PLAN §7 2026-07-22 (3)) — **a última
+classe da campanha T1a**. Dois achados, ambos corrigidos em sessão.
+
+**Decisions.**
+- **Quando o dado põe uma concessão no NÍVEL errado, a correção é MOVER — registro próprio**
+  (TC-0044). O `MISSING_ADDITIONAL_SPELLS` só sabe FUNDIR um grupo (acrescentar), e acrescentar a
+  magia no nível 1 deixaria a cópia errada no 3. Novo `REGRADED_ADDITIONAL_SPELLS`
+  (`engine/grantedSpellUses.js`), `{bucket, spell, from, to}`, aplicado dentro do
+  `curatedAdditionalSpells` por `takeSpell`/`putSpell`: o par preserva o CAMINHO de chaves dentro
+  do nível, então a estrutura de frequência (`{daily: {pb: […]}}`) chega intacta no destino, e o
+  nível de origem é podado se esvaziar. Único caso do dataset: Gnome/Forest Gnome XPHB (a prosa
+  concede sem nível; o dado diz 3). REGRA para sessões futuras: a PROSA é a autoridade (DDL-0038);
+  escolha o registro pela operação — falta = fundir, nível errado = re-gradear.
+- **Uma feature inlinada por `refSubclassFeature` é ganha no nível da UMBRELLA que a inlinou**
+  (TC-0045). Uma subclasse pré-2024 adotada num chassi 2024 é um stub `_copy` que reaponta a
+  umbrella para o nível novo, mas o corpo dela vem por `_copy` da versão antiga, então os refs
+  internos seguem apontando as sub-features no nível ANTIGO. `subclassFeatureList`
+  (`engine/subclassPreview.js`) passou a propagar o nível (`emitFeature(f, atLevel)`,
+  recursivamente) — é como o 5etools renderiza (aninhadas na umbrella), e onde os níveis já
+  coincidem (todo o conteúdo 2024) o override é no-op. **É só EXIBIÇÃO**: o gate de concessão é
+  `level <= cls.level` e a subclasse não existe abaixo do nível dela, então nada era concedido
+  cedo. A prosa legada continua dizendo "at 2nd level" — texto da fonte, não se reescreve.
+
+**Consequences.**
+- Cobertura: as 13 linhas `class:wizard/*` com `ui: ok`. **A T1a está CONCLUÍDA — as 135 linhas
+  `class:*` estão `ui: ok`.** O TC-0045 vale para toda subclasse legada de toda classe já visitada
+  (domínios de clérigo 1→3 etc.), então o card de Features de várias sessões anteriores melhora
+  retroativamente.
+- Verificados sem achado: os 9 spell chooses das subclasses XPHB (pool por nível vindo da expressão
+  de filtro do dado), o featureoption The Third Eye do Diviner, os grants curados do Bladesinger, o
+  pool de Expertise do Scholar (só perícias já proficientes), a reconstrução ao vivo da lista de
+  passos do overlay, e os caps do DDL-0034.
+- Verificado: 972 testes (+5: 3 em `grantedSpellUses.test.js`, 2 em `subclassPreview.test.js`),
+  lint, sweep 274/274 `--strict`, mobile 375px sem overflow, zero erros de console. Ver CHANGELOG
+  §61. **Próximo: T1b — espécies e linhagens** (o único item aberto do ledger segue sendo o
+  TC-0043, needs-user-eyes).
+
 ### DDL-0052 — T1a Warlock session: pré-requisito de magia é texto portado do 5etools; salvaguarda de talento segue o atributo do próprio talento
 **Date:** 2026-07-22
 **Builds on:** DDL-0051/TC-0040 (cuja remoção do `capitalize` foi COMPLETADA aqui — faltavam os

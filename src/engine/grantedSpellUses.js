@@ -126,6 +126,27 @@ function overlayKey(entity) {
 // ALTERNATIVAS e virariam um choice `spellSet` falso - ver TC-0011).
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// Concessões cujo NÍVEL o `additionalSpells` do 5etools erra (TC-0044). Mesma
+// família do registro acima - a PROSA manda -, mas aqui a magia existe no dado e
+// só está no nível errado, então corrigir é MOVER, não acrescentar. Cada entrada
+// cita a prosa; `from`/`to` são as chaves de nível dentro do bucket.
+// -----------------------------------------------------------------------------
+
+/** @typedef {{ bucket: string, spell: string, from: number|string, to: number|string }} SpellRegrade */
+
+/** @type {Record<string, SpellRegrade[]>} */
+export const REGRADED_ADDITIONAL_SPELLS = {
+  // Gnomish Lineage (Forest Gnome): "You know the Minor Illusion cantrip. You
+  // also always have the Speak with Animals spell prepared." - SEM nível: as
+  // duas magias vêm no nível 1 (o cantrip já vem). O dado XPHB põe o Speak with
+  // Animals sob `innate: {3: …}`; nenhuma outra espécie XPHB tem essa divergência
+  // (as que gatilham por nível dizem "Starting at 3rd level" na prosa).
+  'Gnome; Forest Gnome Lineage|XPHB': [
+    { bucket: 'innate', spell: 'speak with animals|xphb', from: 3, to: 1 },
+  ],
+};
+
 /** @type {Record<string, object>} */
 export const MISSING_ADDITIONAL_SPELLS = {
   // Channeler (L3): "You know the Guidance cantrip. It has a range of 60 feet
@@ -135,17 +156,83 @@ export const MISSING_ADDITIONAL_SPELLS = {
   'College of Spirits|RHW': { known: { 3: ['guidance|xphb#c'] } },
 };
 
+/** Poda arrays/objetos que ficaram vazios depois de remover uma magia. */
+function pruneEmpty(node) {
+  if (Array.isArray(node)) return node.length ? node : null;
+  if (node && typeof node === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(node)) {
+      const p = pruneEmpty(v);
+      if (p !== null) out[k] = p;
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  return node;
+}
+
+/**
+ * Remove `spell` de dentro de um nó de nível (array de refs, ou o objeto
+ * `{daily: {pb: [...]}}` das entradas inatas), devolvendo o nó novo e o CAMINHO
+ * de chaves onde a magia estava - para reinseri-la igual no nível de destino.
+ * @returns {{node: object|Array|null, path: string[]}|null}
+ */
+function takeSpell(node, spell) {
+  if (Array.isArray(node)) {
+    const i = node.findIndex((s) => typeof s === 'string' && s.toLowerCase() === spell);
+    return i < 0 ? null : { node: node.filter((_, k) => k !== i), path: [] };
+  }
+  if (node && typeof node === 'object') {
+    for (const [k, v] of Object.entries(node)) {
+      const found = takeSpell(v, spell);
+      if (found) return { node: { ...node, [k]: found.node }, path: [k, ...found.path] };
+    }
+  }
+  return null;
+}
+
+/** Insere `spell` no nó de destino, no mesmo caminho de onde saiu. */
+function putSpell(node, path, spell) {
+  if (path.length === 0) return [...(Array.isArray(node) ? node : []), spell];
+  const [k, ...rest] = path;
+  const base = node && typeof node === 'object' && !Array.isArray(node) ? node : {};
+  return { ...base, [k]: putSpell(base[k], rest, spell) };
+}
+
+/** Aplica as correções de nível curadas (TC-0044) sobre os grupos. */
+function applyRegrades(groups, regrades) {
+  return groups.map((group) => {
+    let next = group;
+    for (const { bucket, spell, from, to } of regrades) {
+      const byLevel = next[bucket];
+      const taken = byLevel?.[from] ? takeSpell(byLevel[from], spell.toLowerCase()) : null;
+      if (!taken) continue;
+      const merged = { ...byLevel, [from]: taken.node };
+      const pruned = pruneEmpty(merged[from]);
+      if (pruned === null) delete merged[from];
+      else merged[from] = pruned;
+      merged[to] = putSpell(merged[to], taken.path, spell);
+      next = { ...next, [bucket]: merged };
+    }
+    return next;
+  });
+}
+
 /**
  * `additionalSpells` da entidade + as concessões curadas que o dado omite,
- * fundidas no primeiro grupo (bucket a bucket, nível a nível). Sem entrada no
- * registro, devolve o campo original intacto; nunca muta o dado.
+ * fundidas no primeiro grupo (bucket a bucket, nível a nível), + as correções de
+ * NÍVEL curadas. Sem entrada nos registros, devolve o campo original intacto;
+ * nunca muta o dado.
  * @param {{name?: string, source?: string, additionalSpells?: Array}|null} entity
  * @returns {Array<object>|undefined}
  */
 export function curatedAdditionalSpells(entity) {
-  const extra = MISSING_ADDITIONAL_SPELLS[overlayKey(entity)];
-  if (!extra) return entity?.additionalSpells;
-  const groups = entity?.additionalSpells ?? [];
+  const key = overlayKey(entity);
+  const extra = MISSING_ADDITIONAL_SPELLS[key];
+  const regrades = REGRADED_ADDITIONAL_SPELLS[key];
+  if (!extra && !regrades) return entity?.additionalSpells;
+  let groups = entity?.additionalSpells ?? [];
+  if (regrades) groups = applyRegrades(groups, regrades);
+  if (!extra) return groups;
   const first = { ...(groups[0] ?? {}) };
   for (const [bucket, byLevel] of Object.entries(extra)) {
     const merged = { ...(first[bucket] ?? {}) };

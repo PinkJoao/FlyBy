@@ -3927,3 +3927,50 @@ Pact Magic de ponta a ponta. Dois achados corrigidos em sessão e um aberto para
     `{@tag}` vazando. A reconciliação DDL-0049 retirou as magias do patrono anterior a cada troca.
   - Mobile 375px sem overflow (Class/Spellbook/Inventory/Background); zero erros de console.
 - Verificado: 967 testes (+4), lint, sweep 274/274 `--strict`. Ver DDL-0052.
+
+## 61. T1a sessão 13: Wizard + 13 subclasses (TC-0044/TC-0045, DDL-0053) - T1a CONCLUÍDA
+
+A última classe da T1a. Dois achados, ambos corrigidos em sessão - e o TC-0045 é transversal a
+TODA subclasse legada adotada num chassi 2024.
+
+- **TC-0044 - Forest Gnome só ganhava Speak with Animals no nível 3.** A prosa do XPHB concede as
+  duas magias da linhagem sem nível nenhum ("You know the Minor Illusion cantrip. You also always
+  have the Speak with Animals spell prepared"), mas o `additionalSpells` põe a segunda sob
+  `innate: {3: …}`. Mesma família do TC-0026 (a prosa manda), só que aqui a magia EXISTE no dado e
+  está no nível errado - corrigir é MOVER, não acrescentar. Novo registro curado
+  `REGRADED_ADDITIONAL_SPELLS` (`engine/grantedSpellUses.js`) com `{bucket, spell, from, to}`,
+  aplicado dentro do `curatedAdditionalSpells` por um par `takeSpell`/`putSpell` que preserva o
+  CAMINHO da estrutura de frequência (`{daily: {pb: […]}}` sai do nível 3 e entra igual no 1) e
+  poda o nível que ficou vazio. Varredura de `races.json` confirmou que é o ÚNICO caso do dataset:
+  as demais espécies com grant tardio dizem "Starting at 3rd level" na prosa (Flamekin/Rimekin LFL
+  via `_copy` do Genasi). Ao vivo: Gnome/Forest Gnome nível 1 → "Speak with Animals · ALWAYS
+  PREPARED · 2/DAY · RITUAL" na aba da linhagem.
+- **TC-0045 - features de subclasse legada apareciam um nível cedo demais.** Uma subclasse pré-2024
+  adotada numa classe 2024 é um stub `_copy` que reaponta a UMBRELLA para o nível novo (School of
+  Conjuration PHB 2 → 3), mas os `refSubclassFeature` dentro dela seguem apontando as sub-features
+  no nível ANTIGO - e o stub de nível 3 é ele mesmo um `_copy` do de nível 2, então herda os
+  mesmos refs. Resultado: Conjuration Savant e Minor Conjuration renderizavam sob **LEVEL 2**,
+  antes mesmo de a subclasse ser escolhível (nível 3). `subclassFeatureList`
+  (`engine/subclassPreview.js`) passou a propagar o nível da umbrella (`emitFeature(f, atLevel)`) -
+  é como o 5etools renderiza (aninhadas nela). Quando os níveis já coincidem (todo o conteúdo
+  2024) o override não muda nada. Alcança o card de Features, o preview do seletor e a progressão.
+  Só exibição: o gate `level <= cls.level` nunca podia conceder cedo, porque a subclasse não existe
+  abaixo do nível dela.
+- **Sessão T1a completa** (as 13 linhas `class:wizard/*` → `ui: ok`). Rep build **Evoker**: guided
+  create (Gnome / linhagem Forest / Magic Initiate (Wizard) / Standard Array com o spread do
+  Wizard) → L1 HP 8, AC 11, slots 1st×2, DC 13, atk +5, 3/3 cantrips, 4/4 prepared.
+  - **Overlay 1→3:** Scholar @2 com o pool de Expertise corretamente restrito às perícias em que já
+    há proficiência (Arcana/History); a lista de passos foi RECONSTRUÍDA ao vivo depois do pick.
+    @3 subclasse + as duas magias do Evocation Savant (pool = Evocação, nível ≤ 2, direto da
+    expressão de filtro do dado).
+  - **@19:** HP 116, PB +6, slots **4/3/3/3/3/2/1/1/1**, DC 19, atk +11, 5/5 cantrips, 24/24
+    prepared; badge **13** (5 slots de feat + 7 chooses do savant + magias). Caps do DDL-0034 ao
+    vivo: 4 ASIs saturam Int em 20 e o Epic Boon leva a **21**.
+  - **Todas as 13 subclasses** verificadas por swap @19: os 4 schools PHB, War XGE, Chronurgy/
+    Graviturgy EGW, Scribes TCE, Abjurer/Diviner/Evoker/Illusionist XPHB, Bladesinger FRHoF. Zero
+    `{@tag}` vazando. Os 4 XPHB emitem os 9 spell chooses (2 @3 + 1 por nível de slot novo) com o
+    pool certo por nível; Diviner mostra o featureoption **The Third Eye** @10 (3 opções);
+    Bladesinger traz o grant curado (Melee Martial sem Two-Handed/Heavy) + o choose de perícia
+    restrito a Athletics/Performance/Persuasion (Acrobatics some por já ser proficiente).
+  - Mobile 375px sem overflow; zero erros de console.
+- Verificado: 972 testes (+5), lint, sweep 274/274 `--strict`. Ver DDL-0053.

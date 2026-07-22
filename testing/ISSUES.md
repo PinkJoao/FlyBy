@@ -736,3 +736,57 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - Decisão pendente do usuário: (a) somar `expanded` ao on-list (some o aviso, magias aparecem no
   filtro padrão), (b) manter como está (o aviso é inofensivo e o jogador confirma), ou (c) badge
   próprio ("Patron list"). Nenhuma correção feita nesta sessão.
+
+## TC-0044 - Forest Gnome só concede Speak with Animals a partir do nível 3
+
+- **Unidade:** `species:Gnome|XPHB/Gnome; Forest Gnome Lineage` (achado com um Wizard 1).
+  **Severidade:** bug (derivação incompleta). **Encontrado:** T1a sessão 13 (Wizard), 2026-07-22.
+  **Status:** fixed@2026-07-22.
+- Sintoma: um Gnome/Forest Gnome de nível 1 mostrava só Minor Illusion na aba da linhagem; o Speak
+  with Animals ("always have prepared", PB×/dia) aparecia apenas no nível 3.
+- Raiz: divergência entre prosa e dado no 5etools. O traço diz "You know the Minor Illusion
+  cantrip. You also always have the Speak with Animals spell prepared…" - sem nível -, mas
+  `additionalSpells` codifica `innate: {3: {daily: {pb: [speak with animals|xphb]}}}`. Mesma
+  família do TC-0026 (a prosa é a autoridade), só que aqui a magia EXISTE no dado, no nível errado:
+  corrigir é MOVER, não acrescentar, e o `MISSING_ADDITIONAL_SPELLS` só sabe fundir.
+- Fix: novo registro `REGRADED_ADDITIONAL_SPELLS` (`engine/grantedSpellUses.js`) com
+  `{bucket, spell, from, to}`, aplicado no `curatedAdditionalSpells`. `takeSpell`/`putSpell`
+  preservam o CAMINHO dentro do nível (a estrutura `{daily:{pb:[…]}}` chega intacta no destino) e o
+  nível de origem é podado se ficar vazio; o dado nunca é mutado.
+- Escopo: varredura de `races.json` (todas as versões/linhagens) mostrou que é o ÚNICO caso -
+  Flamekin/Rimekin LFL também têm grants em 3/5, mas a prosa deles (herdada do Genasi MPMM via
+  `_copy`) diz "Starting at 3rd level", então o dado está certo.
+- Verificado ao vivo (nível 1: "Speak with Animals · ALWAYS PREPARED · 2/DAY · RITUAL") + 3 testes
+  em `grantedSpellUses.test.js` (o move preserva a estrutura, a magia é concedida no nível 1, e o
+  dado cru sem a correção só concede a partir do 3).
+
+## TC-0045 - features de subclasse legada renderizam um nível cedo demais
+
+- **Unidade:** transversal - toda subclasse pré-2024 adotada num chassi 2024 cujo nível de
+  subclasse mudou (os 4 schools PHB do wizard 2→3; por tabela também domínios de clérigo 1→3 etc.).
+  **Severidade:** polish (exibição; não concede nada cedo). **Encontrado:** T1a sessão 13 (Wizard),
+  2026-07-22. **Status:** fixed@2026-07-22.
+- Sintoma: com School of Conjuration (PHB) escolhida num Wizard 19, o card de Features mostrava
+  **Conjuration Savant** e **Minor Conjuration** sob "LEVEL 2" - um nível antes de a subclasse ser
+  sequer escolhível -, enquanto a umbrella "School of Conjuration" aparecia certa em LEVEL 3.
+- Raiz: o stub `_copy` do chassi XPHB reaponta a umbrella para o nível 3
+  (`School of Conjuration|Wizard|XPHB|Conjuration||3`), mas o corpo dela vem por `_copy` da versão
+  de nível 2, e os `refSubclassFeature` de dentro seguem apontando `…|Conjuration||2`. O
+  `subclassFeatureList` emite cada ref direto como feature própria (comportamento desejado desde a
+  Fase 6) usando o nível da FEATURE, não o da umbrella que a inlinou.
+- Fix: `emitFeature(f, atLevel)` (`engine/subclassPreview.js`) propaga o nível da umbrella para os
+  refs diretos, recursivamente. É como o 5etools renderiza (aninhadas na umbrella). Onde os níveis
+  já coincidem - todo o conteúdo 2024 - o override é no-op.
+- Nota: só exibição. O gate de concessão é `level <= cls.level` e a subclasse não existe abaixo do
+  nível dela, então nada era concedido cedo. A prosa legada segue dizendo "at 2nd level" no texto -
+  isso é o texto original da fonte, não corrigimos.
+- Verificado ao vivo (Conjuration Savant/Minor Conjuration sob LEVEL 3) + 2 testes em
+  `subclassPreview.test.js` (herda o nível da umbrella reapontada; a cadeia legada original mantém
+  os níveis próprios).
+
+---
+
+> **2026-07-22 (2) (T1a sessão 13 - Wizard)**: TC-0044 e TC-0045 achados e corrigidos em sessão.
+> **T1a ESTÁ CONCLUÍDA** - todas as 135 linhas `class:*` estão `ui: ok`. O único item aberto do
+> ledger é o **TC-0043** (needs-user-eyes, listas `expanded` de subclasse legada no seletor de
+> magias), que aguarda decisão do usuário. Próximo estágio: **T1b - espécies e linhagens**.

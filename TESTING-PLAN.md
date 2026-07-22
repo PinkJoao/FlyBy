@@ -224,6 +224,38 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-22 (2)** - **T1a session 12: WARLOCK + all 9 subclasses done** (all rows `ui: ok`).
+  Sweep green before starting (274/274 strict). Rep build **Hexblade**: guided create (Tiefling /
+  Infernal legacy / size Medium / Tough) → L1 HP 12, AC 13 (kit Leather auto-equipped), **Pact
+  (1st) ×1**, DC 13; then level 19 via the Class-tab Level field (HP 174 → **214** with the boon;
+  Cha 20 saturated by the ASIs → **21** with the Epic Boon).
+  **Pact Magic card:** `Pact (5th) ×4` plus **6th/7th/8th/9th "1/Long Rest"** rows, counters
+  `2/4 CANTRIPS`, `2/15 PREPARED` and **`0/4 ARCANUM`** (DDL-0010). Preparing Eyebite (6th) badges
+  the row **MYSTIC ARCANUM + 1/LONG REST** and counts against the arcanum, not the prepared limit.
+  **Invocations:** 1 @1 → **10 @18**; 58 options total, prerequisites printed on the cards, the
+  Met/Not Met/Unverifiable filter works, already-picked ones leave the pool.
+  **Hexblade's curated Hex Warrior grants** (Medium Armor / Shields / Martial Weapons) show on the
+  Proficiencies card; base saves Wis/Cha correct.
+  **Swaps @19:** Genie (spellSet Dao/Djinni/Efreeti/Marid), Fiend (Fiendish Resilience @10
+  featureoption, 12 damage options; 11 granted spells), Fathomless (**Evard's Black Tentacles
+  1/Day** in the Uses card), Archfey/Celestial/Great Old One/Undead/Undying - no `{@tag}` leaks;
+  DDL-0049 correctly dropped the previous patron's granted spells each time. Mobile 375px no
+  overflow; zero console errors.
+  Findings: **TC-0041** (spell prerequisites printed just "Spell" - new `spellText` in
+  `engine/prereq.js` ported from 5etools' `prereqSpellToFull`; fixed), **TC-0042** (Resilient never
+  granted its saving-throw proficiency - new `deriveFeatSaveProficiencies`, tied to the feat's own
+  ability pick per RAW; fixed), plus finishing **TC-0040** (the same stale `capitalize` rule lived
+  on the CHIP styles: "Pact Of The Blade"). **TC-0043 is OPEN (needs-user-eyes):** legacy subclass
+  EXPANDED spell lists don't count as "the class list" in the picker, so preparing Fireball on a
+  Genie warlock warns "not on the Warlock spell list" - harmless (DDL-0026 lets it through) but
+  wrong; three options recorded in the ledger.
+  967 tests (+4), lint, sweep 274/274 `--strict`. See CHANGELOG §60 + DDL-0052.
+  **Next action: T1a session 13 - WIZARD + its 14 subclasses, the LAST class batch** (largest
+  remaining; the spellbook chassis is "prepared from a spellbook" - check the prepare counters and
+  the level-up spell steps; Bladesinging TCE vs. Bladesinger FRHoF both carry curated
+  `SUBCLASS_GRANTS` lines; Scribes/Chronurgy/Graviturgy are `_copy` stubs - verify their grants via
+  TC-0027's resolution). After it, T1a is complete and T1b (species) begins.
+
 - **2026-07-22** - **T1a session 11: SORCERER + all 10 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). **First full caster of the campaign** (Artificer/
   Eldritch Knight/Arcane Trickster were partial). Rep build **Draconic**: full guided create

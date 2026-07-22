@@ -132,7 +132,7 @@
   padding: 6px 6px 6px 12px;
   font-size: 13px;
   color: var(--text-h);
-  text-transform: capitalize;
+  /* Sem capitalize (TC-0040) - ver a mesma regra em ChoiceList.module.css. */
 }
 
 .tagRemove {

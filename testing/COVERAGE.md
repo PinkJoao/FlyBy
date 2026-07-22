@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-22T12:30:51.426Z · base seed 1 · 274 rows
+Last sweep: 2026-07-22T13:10:56.372Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -137,15 +137,15 @@ Last sweep: 2026-07-22T12:30:51.426Z · base seed 1 · 274 rows
 | `class:wizard/Evoker` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
 | `class:wizard/Illusionist` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
 | `class:wizard/Bladesinger` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
-| `class:warlock/Undying` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Hexblade` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Fathomless` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Genie` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Archfey` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Celestial` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Fiend` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Great Old One` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
-| `class:warlock/Undead` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | todo | todo |  |
+| `class:warlock/Undying` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (SCAG): features renderizam; Contact Other Plane + Spare the Dying Always Prepared; lista expandida não concede (TC-0043) |
+| `class:warlock/Hexblade` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | REP BUILD: guided create (Tiefling Infernal / Tough) 1->19; grants curados Hex Warrior no card (Medium Armor/Shields/Martial); Pact (5th)×4 + arcanum 6/7/8/9 1/Long Rest; invocações 10/10 |
+| `class:warlock/Fathomless` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (TCE): Evard's Black Tentacles 1/Day no card de Uses (DDL-0011); features renderizam |
+| `class:warlock/Genie` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (TCE): spellSet Dao/Djinni/Efreeti/Marid renderiza; lista expandida não concede (TC-0043) |
+| `class:warlock/Archfey` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 12 magias concedidas incl. Misty Step 1/Day (dedup DDL-0011) |
+| `class:warlock/Celestial` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 13 magias concedidas Always Prepared (incl. cantrips Sacred Flame/Light) |
+| `class:warlock/Fiend` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): featureoption Fiendish Resilience @10 renderiza as 12 opções de dano; 11 magias concedidas |
+| `class:warlock/Great Old One` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 12 magias concedidas Always Prepared |
+| `class:warlock/Undead` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (RHW): 11 magias concedidas Always Prepared; 3 subclass features renderizam |
 
 ## Species × lineages (139)
 

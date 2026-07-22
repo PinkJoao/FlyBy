@@ -248,6 +248,24 @@ function pactText(req) {
   return `Pact of the ${titleCase(String(req))}`;
 }
 
+/** Pré-requisito de MAGIA (TC-0041) - só invocações de warlock no dataset.
+ * Duas formas, portadas de `Parser.prereqSpellToFull` + `_getHtml_spell`:
+ * string `nome[#sufixo]` (`#c` = cantrip, `#x` = o caso especial do Hex) e o
+ * objeto `{choose, entry, entrySummary}` das versões XPHB. Sem renderer próprio
+ * isto caía no `default` do otherText e imprimia só "Spell". */
+function spellText(req) {
+  return (req ?? [])
+    .map((sp) => {
+      if (sp && typeof sp === 'object') return String(sp.entrySummary ?? sp.entry ?? 'Spell');
+      const [name, suffix] = String(sp).split('#');
+      const label = titleCase(name.split('|')[0]);
+      if (suffix === 'c') return `${label} cantrip`;
+      if (suffix === 'x') return 'Hex spell or a warlock feature that curses';
+      return label;
+    })
+    .join(' or ');
+}
+
 /** Texto de um critério sem renderer dedicado (campanha, feat, proficiência…). */
 function otherText(key, value) {
   switch (key) {
@@ -305,6 +323,7 @@ const TEXTS = {
   race: raceText,
   optionalfeature: optionalfeatureText,
   pact: pactText,
+  spell: spellText,
 };
 const IGNORED_KEYS = new Set(['exclusiveFeatCategory', 'featCategory']); // metadados de picker, não requisito do jogador
 

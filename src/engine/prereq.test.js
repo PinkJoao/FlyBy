@@ -75,6 +75,21 @@ describe('prereqText / evalPrereq - exibição', () => {
     expect(prereqText({ prerequisite: [{ race: [{ name: 'halfling' }] }] }, ctxOf({}))).toBe('Halfling');
   });
 
+  it('pré-requisito de MAGIA nomeia a magia (TC-0041)', () => {
+    // string com sufixo #c (invocações PHB/XGE) e sem sufixo
+    expect(prereqText({ prerequisite: [{ spell: ['eldritch blast#c'] }] }, ctxOf({}))).toBe('Eldritch Blast cantrip');
+    expect(prereqText({ prerequisite: [{ spell: ['hex/curse#x'] }] }, ctxOf({}))).toBe(
+      'Hex spell or a warlock feature that curses',
+    );
+    // objeto {entry, entrySummary} das versões XPHB
+    expect(
+      prereqText(
+        { prerequisite: [{ spell: [{ choose: 'level=0|class=Warlock', entry: 'a Warlock Cantrip', entrySummary: 'Warlock Cantrip That Deals Damage' }] }] },
+        ctxOf({}),
+      ),
+    ).toBe('Warlock Cantrip That Deals Damage');
+  });
+
   it('expõe status por alternativa', () => {
     const r = evalPrereq(grappler, ctxOf({ level: 4, scores: { dex: 13 } }));
     expect(r.entries.map((e) => e.status)).toEqual(['bad', 'ok']);

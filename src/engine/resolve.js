@@ -167,6 +167,46 @@ export function deriveFeatAbilityBoosts(character, db) {
 }
 
 /**
+ * Proficiências de SALVAGUARDA concedidas pelos TALENTOS escolhidos (TC-0041).
+ * O único caso alcançável do dataset é o Resilient (PHB reprint-oculto + XPHB):
+ * `savingThrowProficiencies: [{ choose: { from: [...6] } }]`. O RAW amarra a
+ * salvaguarda ao MESMO atributo do +1 do talento ("Choose one ability in which
+ * you lack saving throw proficiency… You gain saving throw proficiency with the
+ * chosen ability"), então NÃO emitimos uma segunda escolha: lemos os picks de
+ * `ability` do sub-bag do próprio talento e concedemos os que estiverem na lista
+ * `from`. Entradas FIXAS (`[{ con: true }]`, forma que hoje ninguém usa) são
+ * concedidas direto. Um talento futuro cuja salvaguarda seja independente do
+ * atributo precisaria de uma escolha `save` própria - documente aqui.
+ * @param {import('../schema/character').Character} character
+ * @param {object} db
+ * @returns {string[]} códigos de atributo
+ */
+export function deriveFeatSaveProficiencies(character, db) {
+  const bags = featChoiceBags(character);
+  const out = [];
+  for (const [id, bag] of bags) {
+    const feat = resolveFeat(db, id);
+    const entries = feat?.savingThrowProficiencies;
+    if (!Array.isArray(entries) || entries.length === 0) continue;
+    for (const entry of entries) {
+      if (!entry || typeof entry !== 'object') continue;
+      const from = entry.choose?.from;
+      if (Array.isArray(from)) {
+        for (const choice of Object.values(bag ?? {})) {
+          if (choice?.kind !== 'ability') continue;
+          for (const pick of choice.picks ?? []) {
+            if (pick?.ability && from.includes(pick.ability)) out.push(pick.ability);
+          }
+        }
+      } else {
+        for (const [ability, on] of Object.entries(entry)) if (on === true) out.push(ability);
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * Monta o mapa classId → objeto de classe 5etools, que o buildContext consome.
  * @param {import('../schema/character').Character} character
  * @param {object} db
@@ -682,7 +722,9 @@ export function deriveFromDb(character, db) {
   // subclasse (Gloom Stalker → Wis) + picks das escolhas condicionais ("if you
   // already have…" → outro save à escolha, kind 'save').
   const savePicks = (character.classes ?? []).flatMap((c) => collectChoicePicks(c.choices, 'save'));
-  ctx.proficientSaves = [...new Set([...(ctx.proficientSaves ?? []), ...sub.saves, ...savePicks])];
+  // + as salvaguardas concedidas por TALENTO (Resilient - TC-0041).
+  const featSaves = deriveFeatSaveProficiencies(character, db);
+  ctx.proficientSaves = [...new Set([...(ctx.proficientSaves ?? []), ...sub.saves, ...savePicks, ...featSaves])];
 
   // Boosts de atributo FIXOS de talentos escolhidos (ex: GWM +1 Str) - derivados
   // do compêndio e injetados na derivação de scores/mods/saves/skills/HP.

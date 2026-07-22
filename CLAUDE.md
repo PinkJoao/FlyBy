@@ -305,6 +305,52 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0052 — T1a Warlock session: pré-requisito de magia é texto portado do 5etools; salvaguarda de talento segue o atributo do próprio talento
+**Date:** 2026-07-22
+**Builds on:** DDL-0051/TC-0040 (cuja remoção do `capitalize` foi COMPLETADA aqui — faltavam os
+chips), DDL-0010 (Mystic Arcanum, verificado ponta a ponta), DDL-0029 (o kind `save` e o registro
+de grants de subclasse, ao lado do qual a nova derivação entra), DDL-0026 (a liberdade com aviso
+que o TC-0043 aberto questiona).
+
+**Context.** T1a sessão 12 (Warlock + 9 subclasses, TESTING-PLAN §7 2026-07-22 (2)). Pact Magic,
+invocações e arcanum verificados ao vivo; dois achados corrigidos e um aberto.
+
+**Decisions.**
+- **Texto de pré-requisito é PORTADO da fonte, não inventado** (TC-0041). A chave `spell` não
+  tinha renderer e caía no `default` (`titleCase(key)` → "Spell"). O novo `spellText`
+  (`engine/prereq.js`) segue `Parser.prereqSpellToFull` + `Renderer…_getHtml_spell` do 5etools —
+  incluindo o caso especial `#x` ("Hex spell or a warlock feature that curses"), que é texto FIXO
+  na fonte, não derivável do dado. REGRA: ao encontrar uma chave de pré-requisito sem renderer,
+  porte a do 5etools em vez de improvisar um rótulo.
+- **Proficiência de salvaguarda vinda de TALENTO não vira uma segunda escolha** (TC-0042). O
+  Resilient é o único talento do dataset com `savingThrowProficiencies`, e o RAW amarra a
+  salvaguarda ao MESMO atributo do +1 ("Choose one ability in which you lack saving throw
+  proficiency… You gain saving throw proficiency with the chosen ability"). Então
+  `deriveFeatSaveProficiencies(character, db)` (`engine/resolve.js`) LÊ os picks `ability` do
+  sub-bag do próprio talento e concede os que estão na lista `from` — o jogador não pode
+  descasar as duas coisas, e nenhuma pendência nova aparece no badge. Entradas FIXAS
+  (`[{con:true}]`) seriam concedidas direto. Um talento futuro cuja salvaguarda seja INDEPENDENTE
+  do atributo precisa de uma escolha `save` própria — está documentado no header da função.
+- **A regra de `capitalize` também vivia nos CHIPS** (`ChoiceList.module.css`,
+  `BackgroundTab.module.css`): "Pact of the Blade" virava "Pact Of The Blade". Removida nos dois.
+  As regras de `ClassTab .subTab` e `Home .sub` PERMANECEM de propósito — ali o texto é um id
+  minúsculo (`classId`) e o capitalize é o que o deixa apresentável.
+- **Aberto (TC-0043, needs-user-eyes):** listas `expanded` de subclasse legada não entram no
+  conjunto "on-list" do seletor de magias, então preparar uma magia da lista do patrono avisa
+  "not on the Warlock spell list". O aviso é inofensivo (DDL-0026 deixa passar) mas é factualmente
+  errado; as três saídas possíveis estão no ledger. Não mexer sem decisão do usuário — mudaria o
+  comportamento de TODA subclasse pré-2024 (domínios, círculos, patronos).
+
+**Consequences.**
+- Cobertura: as 9 linhas `class:warlock/*` com `ui: ok`. Verificados sem achado: pact slots
+  (`Pact (5th) ×4`), os quatro arcanum (6/7/8/9 "1/Long Rest", badge MYSTIC ARCANUM, fora do
+  contador de preparadas), o crescimento das invocações (1 → 10) com pré-requisitos e dedup, os
+  grants curados do Hexblade, o spellSet do Genie, o featureoption do Fiend @10 e o "1/Day" do
+  Fathomless.
+- Verificado: 967 testes (+4: 1 em `prereq.test.js`, 3 em `resolve.test.js`), lint, sweep 274/274
+  `--strict`, mobile 375px sem overflow, zero erros de console. Ver CHANGELOG §60.
+  **Próximo: T1a sessão 13 — WIZARD (14 subclasses), a última da T1a.**
+
 ### DDL-0051 — T1a Sorcerer session: idioma em prosa vira linha de registro (TC-0039); nome próprio não se re-capitaliza (TC-0040)
 **Date:** 2026-07-22
 **Builds on:** DDL-0041/TC-0032 (o precedente EXATO — Sylvan do Shepherd, grant de idioma em prosa

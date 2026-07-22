@@ -6,6 +6,7 @@ import {
   resolveRaceObj,
   buildClassDataById,
   deriveFromDb,
+  deriveFeatSaveProficiencies,
 } from './resolve';
 import { fighterClassData, warlockClassData } from './fixtures/classData';
 import { elfSpecies } from './fixtures/speciesData';
@@ -128,5 +129,42 @@ describe('deriveFromDb - ponta a ponta com db ao vivo', () => {
     const d = deriveFromDb(c, {});
     expect(d.maxHp).toBeNull(); // sem hitDieMax → HP fica nulo
     expect(d.scores.str).toBe(10); // atributos seguem válidos
+  });
+});
+
+describe('deriveFeatSaveProficiencies (TC-0041)', () => {
+  // Resilient: a salvaguarda segue o atributo escolhido no PRÓPRIO talento.
+  const featDb = {
+    feats: {
+      feat: [
+        {
+          name: 'Resilient',
+          source: 'XPHB',
+          ability: [{ choose: { from: ['str', 'dex', 'con', 'int', 'wis', 'cha'], amount: 1 } }],
+          savingThrowProficiencies: [{ choose: { from: ['str', 'dex', 'con', 'int', 'wis', 'cha'] } }],
+        },
+        { name: 'Alert', source: 'XPHB' },
+      ],
+    },
+  };
+  const withOriginFeat = (id, choices) => {
+    const c = createCharacter({ name: 'T' });
+    c.origin.originFeat = { id, source: 'XPHB', choices };
+    return c;
+  };
+
+  it('concede a salvaguarda do atributo escolhido', () => {
+    const c = withOriginFeat('Resilient', { 'ability-0': { kind: 'ability', picks: [{ ability: 'dex', amount: 1 }] } });
+    expect(deriveFeatSaveProficiencies(c, featDb)).toEqual(['dex']);
+  });
+
+  it('sem pick de atributo, nada é concedido', () => {
+    const c = withOriginFeat('Resilient', {});
+    expect(deriveFeatSaveProficiencies(c, featDb)).toEqual([]);
+  });
+
+  it('talento sem savingThrowProficiencies não concede nada', () => {
+    const c = withOriginFeat('Alert', { 'ability-0': { kind: 'ability', picks: [{ ability: 'dex', amount: 1 }] } });
+    expect(deriveFeatSaveProficiencies(c, featDb)).toEqual([]);
   });
 });

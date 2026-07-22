@@ -3885,3 +3885,45 @@ em sessão.
   - Mobile 375px sem overflow (Class/Spellbook/Inventory); zero erros de console.
 - Verificado: 963 testes (+2 em `subclassGrants.test.js`), lint, sweep 274/274 `--strict`.
   Ver DDL-0051.
+
+## 60. T1a sessão 12: Warlock + 9 subclasses (TC-0041/TC-0042, TC-0043 aberto, DDL-0052)
+
+Pact Magic de ponta a ponta. Dois achados corrigidos em sessão e um aberto para decisão do usuário.
+
+- **TC-0041 - pré-requisito de MAGIA imprimia só "Spell".** `engine/prereq.js` não tinha renderer
+  para a chave `spell`, então o seletor de invocações mostrava "Spell" no lugar do requisito real.
+  Novo `spellText`, portado do `Parser.prereqSpellToFull` + `_getHtml_spell` do 5etools: string sem
+  sufixo → nome; `#c` → "<Magia> cantrip"; `#x` → "Hex spell or a warlock feature that curses";
+  objeto `{choose, entry, entrySummary}` (XPHB) → `entrySummary`. Ao vivo: "Grasp of Hadar …
+  Eldritch Blast cantrip", "Agonizing Blast … Warlock Cantrip That Deals Damage, Warlock level 2+".
+- **TC-0042 - Resilient não concedia a proficiência em salvaguarda.** O campo
+  `savingThrowProficiencies` dos talentos não era lido por ninguém (Resilient é o único caso do
+  dataset). Novo `deriveFeatSaveProficiencies(character, db)` (`engine/resolve.js`) dobrado em
+  `ctx.proficientSaves`. Sem segunda escolha: o RAW amarra a salvaguarda ao MESMO atributo do +1,
+  então lemos os picks `ability` do sub-bag do próprio talento (entradas fixas seriam concedidas
+  direto). Ao vivo: apontar o +1 do Resilient para Dex adiciona Dexterity ao card SAVING THROWS.
+- **TC-0040 completado.** A sessão anterior removeu o `text-transform: capitalize` do PickerField;
+  os CHIPS tinham a mesma regra (`ChoiceList.module.css` e `BackgroundTab.module.css`) e mostravam
+  "Pact Of The Blade". Removidas também - os rótulos já chegam com a grafia certa. As regras de
+  `ClassTab .subTab` e `Home .sub` FICAM (ali o texto é um id minúsculo e o capitalize ajuda).
+- **TC-0043 (aberto, needs-user-eyes):** as listas EXPANDIDAS de subclasse legada (Hexblade/Genie/
+  Fathomless/Undying, e por tabela todo domínio/círculo pré-2024) não contam como "lista da classe"
+  no seletor, então preparar Fireball num Genie avisa "not on the Warlock spell list". Não é
+  bloqueio (DDL-0026), mas o aviso está errado. Três saídas registradas no ledger.
+- **Sessão T1a completa** (as 9 linhas `class:warlock/*` → `ui: ok`). Rep build **Hexblade**:
+  guided create (Tiefling / linhagem Infernal / size Medium / Tough) → L1 HP 12, AC 13 (Leather do
+  kit), pact slot **Pact (1st) ×1**, DC 13; jump a 19 (HP 174 → 214 com o boon).
+  - **Pact Magic no card:** `Pact (5th) ×4` + linhas **6th/7th/8th/9th "1/Long Rest"**, contadores
+    `2/4 CANTRIPS`, `2/15 PREPARED` e **`0/4 ARCANUM`** (DDL-0010). Preparar Eyebite (6º) marca
+    **MYSTIC ARCANUM + 1/LONG REST** na linha e conta no arcanum, NÃO no prepared.
+  - **Invocações:** 1 @1 → **10 @18** (a coluna cresce certo); 58 opções no total com os
+    pré-requisitos escritos nos cards e o filtro Met/Not Met/Unverifiable; sem repetição (o
+    escolhido sai do pool). Pact of the Blade escolhido no nível 1 pelo guia.
+  - **Grants curados do Hexblade** (Hex Warrior) no card: Medium Armor, Shields, Martial Weapons;
+    saves base Wisdom/Charisma corretos.
+  - **Swaps @19:** Genie (spellSet Dao/Djinni/Efreeti/Marid), Fiend (featureoption Fiendish
+    Resilience @10 com as 12 opções de dano; 11 magias concedidas), Fathomless (**Evard's Black
+    Tentacles 1/Day** no card de Uses), Archfey/Celestial/Great Old One/Undead/Undying - todas sem
+    `{@tag}` vazando. A reconciliação DDL-0049 retirou as magias do patrono anterior a cada troca.
+  - Mobile 375px sem overflow (Class/Spellbook/Inventory/Background); zero erros de console.
+- Verificado: 967 testes (+4), lint, sweep 274/274 `--strict`. Ver DDL-0052.

@@ -108,7 +108,10 @@
   padding: 6px 6px 6px 12px;
   font-size: 13px;
   color: var(--text-h);
-  text-transform: capitalize;
+  /* Sem `text-transform: capitalize` (TC-0040): os rótulos já chegam com a
+     grafia certa (SKILL_LABEL, `titleCase` do engine, ou o nome real da
+     entidade), e capitalizar de novo quebrava as partículas minúsculas -
+     "Pact of the Blade" virava "Pact Of The Blade". */
 }
 
 /* Texto do chip como botão: abre a descrição do que foi escolhido. Parece

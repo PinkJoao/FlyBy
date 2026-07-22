@@ -686,3 +686,53 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > em 20, Epic Boon leva a 21), o spellSet do Divine Soul, as "3 Charges" do Summon Beast do Shadow
 > (DDL-0011), a tabela d100 do Wild Magic Surge e o fluxo "Already Prepared" cruzado do DDL-0040.
 > Nenhum item do ledger fica aberto. Restam **Warlock e Wizard (23 linhas)** para fechar a T1a.
+
+## TC-0041 - pré-requisito de MAGIA imprimia só "Spell"
+
+- **Unidade:** transversal (invocações de warlock são o único caso do dataset). **Severidade:**
+  polish (cosmético/informativo). **Encontrado:** T1a sessão 12 (Warlock), 2026-07-22.
+  **Status:** fixed@2026-07-22.
+- Sintoma: no seletor de invocações, Agonizing Blast/Eldritch Spear/Repelling Blast (XPHB) e
+  Grasp of Hadar/Lance of Lethargy/Maddening Hex (XGE) exibiam o pré-requisito como "Spell" -
+  o jogador não sabia QUE magia precisava.
+- Raiz: `engine/prereq.js` não tinha renderer para a chave `spell`, então caía no `default` do
+  `otherText` (`titleCase(key)`). Há 10 pré-requisitos `spell` no dataset, TODOS invocações.
+- Fix: `spellText`, portado de `Parser.prereqSpellToFull` + `Renderer…_getHtml_spell` do 5etools -
+  string sem sufixo → o nome; `#c` → "<Magia> cantrip"; `#x` → "Hex spell or a warlock feature
+  that curses"; objeto `{choose, entry, entrySummary}` (versões XPHB) → o `entrySummary`.
+- Verificado ao vivo ("Agonizing Blast … Warlock Cantrip That Deals Damage, Warlock level 2+";
+  "Grasp of Hadar … Eldritch Blast cantrip") + 1 teste em `prereq.test.js`.
+
+## TC-0042 - Resilient não concedia a proficiência em salvaguarda
+
+- **Unidade:** transversal (talento Resilient; achado com um Warlock 19). **Severidade:** bug
+  (derivação incompleta). **Encontrado:** T1a sessão 12 (Warlock), 2026-07-22.
+  **Status:** fixed@2026-07-22.
+- Sintoma: escolher Resilient e apontar o +1 para Dexterity deixava o card SAVING THROWS com
+  Wisdom/Charisma apenas - a proficiência em salvaguarda de Dex nunca aparecia.
+- Raiz: o campo `savingThrowProficiencies` dos talentos não era lido por ninguém. É o único
+  talento do dataset com o campo (PHB reprint-oculto + XPHB).
+- Fix: `deriveFeatSaveProficiencies(character, db)` (`engine/resolve.js`), dobrado em
+  `ctx.proficientSaves` ao lado dos grants de subclasse e dos picks `save`. Como o RAW amarra a
+  salvaguarda ao MESMO atributo do +1 ("Choose one ability in which you lack saving throw
+  proficiency… You gain saving throw proficiency with the chosen ability"), NÃO emitimos uma
+  segunda escolha: lemos os picks `ability` do sub-bag do próprio talento. Entradas fixas
+  (`[{con:true}]`, forma hoje inexistente) são concedidas direto.
+- Verificado ao vivo (Dexterity entra no card ao apontar o +1 do Resilient para Dex) + 3 testes
+  em `resolve.test.js`.
+
+## TC-0043 - listas EXPANDIDAS de subclasse não contam como "lista da classe" no seletor de magias
+
+- **Unidade:** `class:warlock/*` legadas (Hexblade/Genie/Fathomless/Undying) e, por tabela, toda
+  subclasse pré-2024 com `expanded` (domínios/círculos legados). **Severidade:** polish.
+  **Encontrado:** T1a sessão 12 (Warlock), 2026-07-22. **Status:** open (needs-user-eyes).
+- Sintoma: um Warlock do Genie (Efreeti) que tenta preparar Fireball recebe a confirmação
+  "Fireball is not on the Warlock spell list" - mas o RAW da subclasse legada justamente ADICIONA
+  aquelas magias à lista dele. Não é bloqueio (DDL-0026 permite com aviso), só um aviso errado.
+- Contexto: por decisão do B2.3/DDL-0008, `expanded` NÃO concede magia (não é always-prepared) -
+  isso está certo. O que falta é o outro lado: o conjunto "on-list" do picker (hoje
+  `classSpellList(db, origin.spellListClass)`) poderia incluir os nomes de `expanded` da subclasse
+  escolhida, e o filtro Class pré-marcado poderia deixá-las visíveis.
+- Decisão pendente do usuário: (a) somar `expanded` ao on-list (some o aviso, magias aparecem no
+  filtro padrão), (b) manter como está (o aviso é inofensivo e o jogador confirma), ou (c) badge
+  próprio ("Patron list"). Nenhuma correção feita nesta sessão.

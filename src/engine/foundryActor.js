@@ -18,6 +18,8 @@ import {
   buildClassFeatureItems,
   buildClassFutureGrants,
   buildSubclassFutureGrants,
+  buildClassChoiceTraits,
+  buildSubclassChoiceTraits,
   buildClassChosenFeats,
   buildClassTraitValues,
   buildFeatureOptionItems,
@@ -80,6 +82,7 @@ export function assembleFoundryActor(character, db) {
       traitValues: buildClassTraitValues(cls, db),
       fightingStyles,
       futureGrants: buildClassFutureGrants(cls, classObj, db),
+      choiceTraits: buildClassChoiceTraits(cls, classObj, db),
     });
     // Escolhas da classe SEM casa nativa (tool@start/expertise/grants curados/
     // optional features/grants de subclasse) viajam na flag do item de classe
@@ -100,6 +103,7 @@ export function assembleFoundryActor(character, db) {
       const subItem = buildSubclassItem(subObj, cls.classId, subFeatureItems, {
         description: subclassFluffHtml(db, cls.classId, subObj),
         futureGrants: buildSubclassFutureGrants(subObj, cls.classId, db, cls.level),
+        choiceTraits: buildSubclassChoiceTraits(subObj, cls.classId, cls, classObj, db),
       });
       items.push(subItem, ...subFeatureItems);
       // Liga o passo `Subclass` do advancement da classe à subclasse EMBUTIDA.

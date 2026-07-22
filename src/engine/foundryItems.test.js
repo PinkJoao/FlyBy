@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -353,6 +353,50 @@ describe('buildClassFeatureItems + ItemGrant', () => {
   });
 });
 
+// Traits de escolha NO NÍVEL DELAS: é assim que o Foundry sabe perguntar pela
+// perícia/expertise/ferramenta ao subir de nível. Gabarito = os premades.
+describe('buildChoiceTraits', () => {
+  const db = { 'items-base': { baseitem: [] } };
+
+  it('expertise: mode expertise, pool aberto, com os escolhidos aplicados', () => {
+    const desc = { id: 'expertise@1', kind: 'expertise', count: 2, level: 1, feature: { name: 'Expertise' } };
+    const [t] = buildChoiceTraits([desc], { 'expertise@1': { picks: ['ath', 'ste'] } }, db);
+    expect(t).toMatchObject({ type: 'Trait', level: 1, title: 'Expertise' });
+    expect(t.configuration.mode).toBe('expertise');
+    expect(t.configuration.choices).toEqual([{ count: 2, pool: ['skills:*'] }]);
+    expect(t.value).toEqual({ chosen: ['skills:ath', 'skills:ste'] });
+  });
+
+  it('perícia restrita: pool = a lista do grant, título = nome da feature', () => {
+    const desc = {
+      id: 'skill@primal knowledge@3', kind: 'skill', count: 1, level: 3,
+      feature: { name: 'Primal Knowledge' }, from: ['ani', 'ath', 'itm'],
+    };
+    const [t] = buildChoiceTraits([desc], {}, db);
+    expect(t.title).toBe('Primal Knowledge');
+    expect(t.level).toBe(3);
+    expect(t.configuration.choices[0].pool).toEqual(['skills:ani', 'skills:ath', 'skills:itm']);
+    expect(t.value).toEqual({}); // sem picks = pendente no Foundry
+  });
+
+  it('idioma e ferramenta usam as chaves de trait do Foundry', () => {
+    const lang = { id: 'language@x@2', kind: 'language', count: 2, level: 2, feature: { name: 'Deft Explorer' } };
+    const [t] = buildChoiceTraits([lang], { 'language@x@2': { picks: ['Elvish'] } }, db);
+    expect(t.configuration.choices[0].pool).toEqual(['languages:standard:*', 'languages:exotic:*']);
+    expect(t.value.chosen[0]).toMatch(/^languages:/);
+
+    const tool = { id: 'tool@y@1', kind: 'tool', count: 3, level: 1, pool: { type: 'any', of: 'tool', category: 'INS' }, feature: { name: 'Bard' } };
+    const [tt] = buildChoiceTraits([tool], {}, db);
+    expect(tt.configuration.choices[0].pool).toEqual(['tool:music:*']);
+  });
+
+  it('kinds sem Trait correspondente são ignorados', () => {
+    const feat = { id: 'feat@4', kind: 'feat', count: 1, level: 4, pool: { type: 'feat' } };
+    const optional = { id: 'inv@2', kind: 'optionalfeature', count: 1, level: 2, pool: {} };
+    expect(buildChoiceTraits([feat, optional], {}, db)).toEqual([]);
+  });
+});
+
 // A escada dos níveis FUTUROS é o que faz o level-up DENTRO do Foundry conceder
 // as features novas: sem ela, subir de 1 p/ 2 não concede nada. Gabarito = os
 // premades oficiais de nível 1 (a receita está inteira desde o começo).
@@ -414,6 +458,24 @@ describe('escada de níveis futuros (ItemGrant de compêndio)', () => {
       'Compendium.dnd5e.spells24.Item.phbsplAid0000000',
       'Compendium.dnd5e.spells24.Item.phbsplZoneofTrut',
     ]);
+  });
+
+  it('feature RE-LISTADA num nível maior usa o segundo item do dnd5e ("<Nome> (2)")', () => {
+    // Improved Brutal Strike do Barbarian: @13 e @17. Nós dedupamos por nome
+    // (um item por feature), mas o dnd5e publica o segundo como "(2)" - é o
+    // ÚNICO caso do dataset. Sem isso o nível 17 não concederia nada.
+    const obj = {
+      ...barbObj,
+      classFeatures: ['Rage|Barbarian||1', 'Improved Brutal Strike|Barbarian||13', 'Improved Brutal Strike|Barbarian||17'],
+    };
+    const db = { 'class-barbarian': { classFeature: [
+      { name: 'Rage', level: 1, source: 'XPHB', entries: ['x'] },
+      { name: 'Improved Brutal Strike', level: 13, source: 'XPHB', entries: ['x'] },
+      { name: 'Improved Brutal Strike', level: 17, source: 'XPHB', entries: ['x'] },
+    ] } };
+    const grants = buildClassFutureGrants({ level: 1 }, obj, db);
+    expect(grants.find((g) => g.level === 13).configuration.items[0].uuid).toBe('Compendium.dnd5e.classes24.Item.phbbrbImpBrutalS');
+    expect(grants.find((g) => g.level === 17).configuration.items[0].uuid).toBe('Compendium.dnd5e.classes24.Item.phbbrbImp2Brutal');
   });
 
   it('buildSubclassItem junta as duas escadas no advancement', () => {

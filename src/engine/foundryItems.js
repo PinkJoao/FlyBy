@@ -10,6 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import { parseClass, parseFeatureRef } from './classData';
+import { classLevelChoices, classToolChoices, subclassFeatureChoices } from './classFeatureChoices';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
 import { buildClassAdvancement } from './foundryAdvancement';
 import { effectChangesFor, targetEffectFor } from './foundryEffects';
@@ -28,7 +29,10 @@ import { effectiveSizeCodes, sizePick } from './speciesData';
 import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts } from './choices';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { itemValue } from './magicItemPrice';
-import { classFeatureUuid, subclassFeatureUuid, spellUuid } from './compendiumUuids';
+import {
+  classUuid, classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid,
+  originUuid, featUuid, equipmentUuid,
+} from './compendiumUuids';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
 
@@ -379,6 +383,9 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   // Receita dos níveis ainda não alcançados (uuids de compêndio) - é o que faz o
   // level-up DENTRO do Foundry conceder as features novas.
   advancement.push(...(opts.futureGrants ?? []));
+  // Escolhas de proficiência/expertise no nível DELAS (Primal Knowledge @3,
+  // Expertise @1/@6…) - é o que faz o Foundry perguntar ao subir de nível.
+  advancement.push(...(opts.choiceTraits ?? []));
 
   const faces = classObj.hd?.faces ?? parsed.hitDieMax ?? 8;
   const caster = parsed.spellcasting.casterProgression;
@@ -405,7 +412,7 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
     },
     effects: [],
     flags: {},
-    _stats: itemStats(),
+    _stats: itemStats(classUuid(parsed.id)),
   };
 }
 
@@ -535,7 +542,11 @@ export function buildFeatureItem(feature, db = null) {
     },
     effects,
     flags: { builder5e: { level: feature.level } },
-    _stats: itemStats(),
+    _stats: itemStats(
+      feature.subclass
+        ? subclassFeatureUuid(feature.classId, feature.subclass, feature.name)
+        : classFeatureUuid(feature.classId, feature.name),
+    ),
   };
 }
 
@@ -550,6 +561,134 @@ export function buildFeatureItem(feature, db = null) {
 export function buildClassFeatureItems(classEntry, classObj, db) {
   const classId = norm(classObj?.name);
   return resolveClassFeatures(db, classId, classObj, classEntry.level || 1).map((f) => buildFeatureItem(f, db));
+}
+
+// ---------------------------------------------------------------------------
+// Traits de ESCOLHA por nível (perícia / expertise / ferramenta / idioma)
+// ---------------------------------------------------------------------------
+// Uma feature que concede proficiência num nível > 1 (Primal Knowledge @3,
+// Expertise do Rogue @1 e @6, Deft Explorer @2, Bonus Proficiencies do Lore @3)
+// é um advancement Trait NO NÍVEL DELA nos premades - é assim que o Foundry sabe
+// perguntar ao subir de nível. Antes essas escolhas só viajavam em
+// `flags.builder5e.choices` (DDL-0028), que o Foundry ignora: o personagem subia
+// e nada era perguntado. A flag CONTINUA sendo a fonte da verdade do re-import
+// (ids exatos); estes Traits existem para o lado Foundry.
+
+/** Kinds de escolha que têm um Trait correspondente no dnd5e. */
+const TRAIT_CHOICE_KINDS = new Set(['skill', 'expertise', 'tool', 'language']);
+
+/** `configuration` (mode + pool) do Trait de um descritor de escolha. */
+function traitChoiceConfig(desc, db) {
+  switch (desc.kind) {
+    // `mode: 'expertise'` faz o Foundry oferecer as perícias em que você JÁ é
+    // proficiente - por isso o pool é aberto mesmo quando o nosso é restrito.
+    case 'expertise':
+      return { mode: 'expertise', pool: ['skills:*'] };
+    case 'skill':
+      return { mode: 'default', pool: desc.from?.length ? desc.from.map((c) => `skills:${c}`) : ['skills:*'] };
+    case 'language':
+      return { mode: 'default', pool: ['languages:standard:*', 'languages:exotic:*'] };
+    case 'tool': {
+      if (desc.pool?.type === 'list') {
+        return { mode: 'default', pool: (desc.pool.options ?? []).map((o) => toolTraitKey(db, o.value)) };
+      }
+      const cats = [desc.pool?.category].flat().filter(Boolean).map((c) => TOOL_TYPE_TO_TRAIT_CAT[c]).filter(Boolean);
+      return { mode: 'default', pool: cats.length ? cats.map((c) => `tool:${c}:*`) : ['tool:*'] };
+    }
+    default:
+      return null;
+  }
+}
+
+/** Picks do choice-bag → chaves de trait do Foundry, conforme o kind. */
+function traitChoiceValues(desc, picks, db) {
+  switch (desc.kind) {
+    case 'skill':
+    case 'expertise':
+      return picks.map((p) => `skills:${p}`);
+    case 'language':
+      return picks.map((p) => languageTraitKey(db, p));
+    case 'tool':
+      return picks.map((p) => toolTraitKey(db, p));
+    default:
+      return [];
+  }
+}
+
+/**
+ * Traits de escolha a partir de descritores + o choice-bag que os responde.
+ * O título é o NOME DA FEATURE (como nos premades: "Primal Knowledge", "Deft
+ * Explorer", "Bonus Proficiencies"). Um nível ainda não alcançado simplesmente
+ * não tem picks e sai sem `chosen` - o Foundry o trata como pendente e pergunta
+ * quando o jogador chegar lá.
+ * @param {import('./choices').Choice[]} descriptors
+ * @param {object} bag  choice-bag da classe (`ClassEntry.choices`)
+ * @param {object} db
+ * @returns {object[]} entradas de advancement Trait (já com `_id`)
+ */
+export function buildChoiceTraits(descriptors, bag, db) {
+  const out = [];
+  for (const desc of descriptors ?? []) {
+    if (!TRAIT_CHOICE_KINDS.has(desc.kind)) continue;
+    const cfg = traitChoiceConfig(desc, db);
+    if (!cfg?.pool?.length) continue;
+    const picks = bag?.[desc.id]?.picks ?? [];
+    const chosen = traitChoiceValues(desc, picks, db).filter(Boolean);
+    out.push({
+      _id: randomFoundryId(),
+      type: 'Trait',
+      level: desc.level ?? 1,
+      title: desc.foundryTitle ?? desc.feature?.name ?? desc.label ?? '',
+      configuration: {
+        mode: cfg.mode,
+        allowReplacements: false,
+        grants: [],
+        choices: [{ count: desc.count ?? 1, pool: cfg.pool }],
+      },
+      value: chosen.length ? { chosen } : {},
+    });
+  }
+  return out;
+}
+
+/**
+ * Traits de escolha da CLASSE em TODOS os níveis (1..20): Expertise, os grants
+ * curados de feature (Primal Knowledge, Deft Explorer, Scholar) e a escolha de
+ * ferramenta inicial. Ver buildChoiceTraits para o porquê.
+ * @param {import('../schema/character').ClassEntry} classEntry
+ * @param {object} classObj
+ * @param {object} db
+ * @returns {object[]}
+ */
+export function buildClassChoiceTraits(classEntry, classObj, db) {
+  const parsed = parseClass(classObj);
+  if (!parsed) return [];
+  const descriptors = classLevelChoices(parsed, classObj, MAX_LEVEL);
+  // Ferramenta inicial só existe na classe original (multiclasse não concede).
+  // Título fixo "Tool Proficiencies" (o dos premades) - o descritor não vem de
+  // uma feature, então o fallback seria o rótulo da UI ("Musical Instruments").
+  if (classEntry.isOriginalClass !== false) {
+    descriptors.push(...classToolChoices(classObj).map((d) => ({ ...d, foundryTitle: 'Tool Proficiencies' })));
+  }
+  return buildChoiceTraits(descriptors, classEntry.choices, db);
+}
+
+/**
+ * Traits de escolha de uma SUBCLASSE em todos os níveis (Bonus Proficiencies do
+ * College of Lore @3, Student of War do Battle Master…). Os picks moram no bag
+ * da CLASSE com o prefixo `sub:`, então o bag passado é o da classe.
+ * @param {object} subclass
+ * @param {string} classId
+ * @param {object} classEntry
+ * @param {object} classObj
+ * @param {object} db
+ * @returns {object[]}
+ */
+export function buildSubclassChoiceTraits(subclass, classId, classEntry, classObj, db) {
+  if (!subclass) return [];
+  const classSkills = parseClass(classObj)?.skillChoice?.from ?? [];
+  const descriptors = subclassFeatureChoices(db, classId, subclass, MAX_LEVEL, classSkills);
+  return buildChoiceTraits(descriptors, classEntry.choices, db);
 }
 
 /**
@@ -567,7 +706,31 @@ export function buildClassFutureGrants(classEntry, classObj, db) {
   const entries = resolveClassFeatures(db, classId, classObj, MAX_LEVEL)
     .filter((f) => f.level > level)
     .map((f) => ({ level: f.level, uuid: classFeatureUuid(classId, f.name) }));
+  entries.push(...relistedFeatureGrants(classId, classObj, level));
   return futureItemGrants(entries, 'Class Features');
+}
+
+/**
+ * O 5etools RE-LISTA uma feature nos níveis em que ela melhora, e nós dedupamos
+ * por nome (um item por feature - a progressão é ScaleValue/uses). Mas em um caso
+ * o dnd5e publica um SEGUNDO item para a melhoria, nomeado "<Nome> (2)": o
+ * Improved Brutal Strike do Barbarian @13 e @17. Varredura do dataset (2026-07-22):
+ * é o ÚNICO; toda outra re-listagem (ASI, Subclass Feature, Expertise, Metamagic,
+ * Mystic Arcanum) não tem item próprio e a consulta devolve null, então nada é
+ * emitido. Se um dia surgir outro, ele entra sozinho por esta mesma regra.
+ */
+function relistedFeatureGrants(classId, classObj, level) {
+  const out = [];
+  const seen = new Map();
+  for (const f of parseClass(classObj)?.features ?? []) {
+    const key = norm(f.name);
+    const nth = (seen.get(key) ?? 0) + 1;
+    seen.set(key, nth);
+    if (nth === 1 || f.level <= level) continue;
+    const uuid = classFeatureUuid(classId, `${f.name} (${nth})`);
+    if (uuid) out.push({ level: f.level, uuid });
+  }
+  return out;
 }
 
 /**
@@ -650,7 +813,7 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
     },
     effects,
     flags: { builder5e: { level, ...(bagHasContent(choices) ? { choices } : {}) } },
-    _stats: itemStats(),
+    _stats: itemStats(featUuid(featData.name) ?? originUuid(featData.name)),
   };
 }
 
@@ -988,7 +1151,7 @@ function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } = {}) {
 
 export function buildSubclassFeatureItems(subclass, classId, db, level) {
   return resolveSubclassFeatures(subclass, classId, db, { max: level }).map((f) => buildFeatureItem(
-    { ...f, classId, subclass: { shortName: subclass.shortName } },
+    { ...f, classId, subclass: { shortName: subclass.shortName, name: subclass.name } },
     db,
   ));
 }
@@ -1211,7 +1374,7 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = []) 
     // essa raça, senão o Autognome AAG (coberto pelo overlay) somaria em dobro.
     effects: speciesEffects(db, raceObj),
     flags: Object.keys(residual).length ? { builder5e: { choices: residual } } : {},
-    _stats: itemStats(),
+    _stats: itemStats(originUuid(raceObj?.name)),
   };
 }
 
@@ -1231,12 +1394,13 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
       advancement: keyById([
         ...itemGrantAdvancements(featureItems, 'Subclass Features'),
         ...(opts.futureGrants ?? []),
+        ...(opts.choiceTraits ?? []),
       ]),
       source: sourceBlock(subclass.source),
     },
     effects: [],
     flags: {},
-    _stats: itemStats(),
+    _stats: itemStats(subclassUuid(classId, subclass)),
   };
 }
 
@@ -1599,7 +1763,7 @@ export function buildInventoryItems(character, db) {
       folder: null,
       sort: 0,
       flags: {},
-      _stats: itemStats(),
+      _stats: itemStats(entry.customName ? null : equipmentUuid(name)),
     });
   }
   return out;

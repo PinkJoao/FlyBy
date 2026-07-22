@@ -4056,3 +4056,35 @@ material de referência foram o que fechou o diagnóstico.
     o Randal L5 (3 maestrias @1 + 1 @4) perdia três delas silenciosamente.
 - Verificado: 994 testes (+14), lint, **sweep 274/274 `--strict`**, paridade de uuid com o premade
   do Paladino, e re-importação dos premades reais Krusk L1/L5, Randal L5 e Akra L11.
+
+## 64. Level-up no Foundry, parte 2: Traits de nível futuro, procedência e o caso "(2)" (DDL-0056)
+
+Fecha o resto do que a §63 deixou aberto, comparando o nosso export com os premades de nível 1/5
+linha a linha. Três frentes, escolhidas pelo usuário.
+
+- **Traits de ESCOLHA no nível delas.** O premade emite um `Trait` no nível em que a feature concede
+  proficiência: `Primal Knowledge @3` (Barbarian), `Expertise @1 e @6` (Rogue), `Deft Explorer @2`
+  (Ranger, com um Trait de expertise e outro de idiomas), `Bonus Proficiencies @3` no item da
+  SUBCLASSE (College of Lore). Nós só mandávamos isso em `flags.builder5e.choices`, que o Foundry
+  ignora - então subir de nível não perguntava nada. Novo `buildChoiceTraits` (+
+  `buildClassChoiceTraits` / `buildSubclassChoiceTraits`) converte os MESMOS descritores que a UI usa
+  (`classLevelChoices`, `classToolChoices`, `subclassFeatureChoices`, agora até o nível 20) em Traits:
+  `mode: 'expertise'` para expertise (o Foundry oferece as perícias em que você já é proficiente),
+  pool restrito quando o grant restringe, `value.chosen` no que já foi escolhido e vazio no futuro
+  (pendente). A flag CONTINUA sendo a fonte da verdade do re-import - o import não mudou.
+- **`_stats.compendiumSource` em todo item que o dnd5e publica.** O gerador ganhou os pacotes de nome
+  plano (`origins24`, `feats24`, `equipment24`) e o id do documento de cada classe; a API ganhou
+  `classUuid`/`originUuid`/`featUuid`/`equipmentUuid`. Agora classe, subclasse, features, espécie,
+  talentos, magias e inventário saem com procedência - 14 de 16 itens num Rogue 5 típico, e os dois
+  que faltam estão certos (o background é custom por design e o talento não é SRD). A busca é por
+  nome EXATO: linhagem mesclada e variante mágica gerada não casam e ficam sem procedência, em vez de
+  apontar para o documento errado. Apóstrofo tipográfico é normalizado dos dois lados.
+- **Feature re-listada que vira um segundo item.** O 5etools re-lista uma feature nos níveis em que
+  ela melhora e nós dedupamos por nome, mas o dnd5e publica "Improved Brutal Strike (2)" para a
+  melhoria do Barbarian @17 - nosso nível 17 ficava vazio. `relistedFeatureGrants` procura
+  `"<Nome> (N)"` na N-ésima re-listagem. Varredura do dataset: é o **único** caso; toda outra
+  re-listagem (ASI, Subclass Feature, Expertise, Metamagic, Mystic Arcanum) não tem item próprio e a
+  consulta devolve null. Com isso a lista de níveis do nosso Barbarian 1 (`1,2,3,5,7,9,11,13,15,17,
+  18,20`) passou a ser **idêntica à do premade Merric**.
+- Verificado: 1001 testes (+7), lint, sweep 274/274 `--strict`, e conferência ao vivo dos Traits
+  gerados para Barbarian/Rogue/Ranger/Bard contra os premades correspondentes.

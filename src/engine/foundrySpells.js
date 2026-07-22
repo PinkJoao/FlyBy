@@ -26,6 +26,7 @@
 // -----------------------------------------------------------------------------
 
 import { randomFoundryId, itemStats, sourceBlock, slugify, entriesToHtml } from './foundryItems';
+import { spellUuid } from './compendiumUuids';
 
 /** Escola do 5etools (letra) → código do dnd5e. */
 export const FOUNDRY_SCHOOL = {
@@ -201,7 +202,7 @@ export function buildSpellItem(entry, origin, { isArcanum = false } = {}) {
     folder: null,
     sort: 0,
     flags: {},
-    _stats: itemStats(),
+    _stats: itemStats(spellUuid(raw.name)),
   };
 }
 

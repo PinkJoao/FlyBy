@@ -27,7 +27,8 @@ const ROOT = join(import.meta.dirname, '..');
 const PACKS = join(ROOT, 'DnD Source Material', 'DnD 5e System Source Code', 'packs', '_source');
 const OUT = join(ROOT, 'src', 'engine', 'compendiumUuidsData.js');
 
-const norm = (s) => (s ?? '').toString().trim().toLowerCase();
+// Apóstrofo tipográfico → reto (ver engine/compendiumUuids.js: mesma regra).
+const norm = (s) => (s ?? '').toString().trim().toLowerCase().replace(/’/g, "'");
 
 /** Todos os .yml de uma pasta (recursivo), ignorando os marcadores `_folder`. */
 function walk(dir, out = []) {
@@ -57,6 +58,7 @@ if (!existsSync(PACKS)) {
   process.exit(1);
 }
 
+const classes = {}; //        'classId'                    → _id
 const classFeatures = {}; // 'classId|feature'            → _id
 const subclasses = {}; //    'classId|subclasse'          → _id
 const subclassFeatures = {}; // 'classId|subclasse|feature' → _id
@@ -75,13 +77,15 @@ for (const classDir of readdirSync(CLASSES_DIR)) {
     classFeatures[`${classId}|${norm(name)}`] = id;
   }
 
-  // Subclasses do pack (arquivos soltos na raiz da pasta da classe).
+  // Documento da CLASSE e subclasses (arquivos soltos na raiz da pasta).
   const subs = [];
   for (const e of readdirSync(dir)) {
     const p = join(dir, e);
     if (!e.endsWith('.yml') || e === '_folder.yml' || statSync(p).isDirectory()) continue;
     const h = head(p);
-    if (h.type !== 'subclass' || !h.id || !h.name) continue;
+    if (!h.id || !h.name) continue;
+    if (h.type === 'class') classes[classId] = h.id;
+    if (h.type !== 'subclass') continue;
     subs.push(h);
     subclasses[`${classId}|${norm(h.name)}`] = h.id;
   }
@@ -108,6 +112,25 @@ for (const f of walk(join(PACKS, 'spells24'))) {
   spells[norm(name)] = id;
 }
 
+// Pacotes de nome plano (`nome` → _id), usados para o `_stats.compendiumSource`
+// dos itens embutidos. `origins24` guarda espécies E seus traços (que exportamos
+// como feat), então os dois convivem no mesmo mapa - a busca é por nome.
+const flat = { origins: {}, feats: {}, equipment: {} };
+const FLAT_PACKS = [
+  ['origins', 'origins24', new Set(['race', 'feat', 'background'])],
+  ['feats', 'feats24', new Set(['feat'])],
+  ['equipment', 'equipment24', new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'container'])],
+];
+for (const [key, dir, types] of FLAT_PACKS) {
+  for (const f of walk(join(PACKS, dir))) {
+    const { id, name, type } = head(f);
+    if (!id || !name || !types.has(type)) continue;
+    // Homônimos dentro do mesmo pacote: fica o PRIMEIRO (ordem alfabética de
+    // arquivo), determinístico entre regerações.
+    if (!flat[key][norm(name)]) flat[key][norm(name)] = id;
+  }
+}
+
 /** Literal de objeto ordenado por chave (diff estável entre regerações). */
 function literal(obj, indent = '  ') {
   const keys = Object.keys(obj).sort();
@@ -124,12 +147,19 @@ const out = `// ================================================================
 // os ItemGrant de níveis FUTUROS (ver o módulo irmão para o porquê).
 //
 // Cobertura: as 12 classes XPHB (${Object.keys(classFeatures).length} features), ${Object.keys(subclasses).length} subclasses SRD
-// (${Object.keys(subclassFeatures).length} features) e ${Object.keys(spells).length} magias.
+// (${Object.keys(subclassFeatures).length} features), ${Object.keys(spells).length} magias, ${Object.keys(flat.origins).length} origens,
+// ${Object.keys(flat.feats).length} talentos e ${Object.keys(flat.equipment).length} itens de equipamento.
 // -----------------------------------------------------------------------------
 
 /** Pacote de compêndio de cada mapa (prefixo do uuid). */
 export const PACK_CLASSES = 'Compendium.dnd5e.classes24.Item';
 export const PACK_SPELLS = 'Compendium.dnd5e.spells24.Item';
+export const PACK_ORIGINS = 'Compendium.dnd5e.origins24.Item';
+export const PACK_FEATS = 'Compendium.dnd5e.feats24.Item';
+export const PACK_EQUIPMENT = 'Compendium.dnd5e.equipment24.Item';
+
+/** \`classId\` → _id do documento da CLASSE (pacote classes24). */
+export const CLASS_IDS = ${literal(classes)};
 
 /** \`classId|nomeDaFeature\` → _id (pacote classes24). */
 export const CLASS_FEATURE_IDS = ${literal(classFeatures)};
@@ -142,11 +172,21 @@ export const SUBCLASS_FEATURE_IDS = ${literal(subclassFeatures)};
 
 /** \`nomeDaMagia\` → _id (pacote spells24). */
 export const SPELL_IDS = ${literal(spells)};
+
+/** \`nome\` → _id (pacote origins24: espécies, seus traços e backgrounds). */
+export const ORIGIN_IDS = ${literal(flat.origins)};
+
+/** \`nomeDoTalento\` → _id (pacote feats24). */
+export const FEAT_IDS = ${literal(flat.feats)};
+
+/** \`nomeDoItem\` → _id (pacote equipment24). */
+export const EQUIPMENT_IDS = ${literal(flat.equipment)};
 `;
 
 writeFileSync(OUT, out);
 console.log(
   `compendiumUuidsData.js gerado: ${Object.keys(classFeatures).length} features de classe, `
   + `${Object.keys(subclasses).length} subclasses, ${Object.keys(subclassFeatures).length} features de subclasse, `
-  + `${Object.keys(spells).length} magias.`,
+  + `${Object.keys(spells).length} magias, ${Object.keys(flat.origins).length} origens, `
+  + `${Object.keys(flat.feats).length} talentos, ${Object.keys(flat.equipment).length} equipamentos.`,
 );

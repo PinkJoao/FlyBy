@@ -235,8 +235,9 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    which has the full scope, the 22 candidates and the implementation strategy). The general
    edition toggle is **cancelled**: only subraces come back, hand-curated, attached as lineages
    of the CURRENT base species. Nothing is implemented yet; DDL-0058 is the starting context.
-   Blocking question to answer first: what to do with a legacy subrace's fixed `ability` (+2/+1)
-   under the 2024 background-boost model.
+   No open questions: the one that was blocking (a legacy subrace's fixed `ability` +2/+1) was
+   decided — **ignored**, because FlyBy targets the 2024 rules and ability boosts always come
+   from the origin. Nothing to implement for it; just don't reintroduce the field.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
@@ -369,12 +370,15 @@ custa nada). Cruzando "escondido E sem equivalente atual", e conferindo o que ca
    Isso evita mexer no `latestOnly` e em qualquer selector: a sub-raça entra como mais uma
    LINHAGEM da espécie atual, e todo o resto (tabs, guia, completude, import, matriz do sweep,
    export) já funciona sobre linhagens.
-3. **Decidir a questão de REGRA antes de codar**: uma sub-raça 2014 traz `ability` FIXO (+2/+1),
-   que o modelo 2024 moveu para o background. Nosso `collectAbilityBoosts` lê boosts da origem e
-   do choice-bag, e o campo `ability` fixo de uma raça NÃO é lido por ninguém hoje (existe só o
-   gancho `LEGACY_ABILITY_CHOICE` para o caso de escolha). Opções: ignorar o `ability` legado
-   (mais fiel ao 2024, e o merge de linhagem já sobrescreve com a base), ou aplicá-lo e aceitar o
-   empilhamento com os boosts de origem. **É decisão do usuário, não do implementador.**
+3. **A questão de REGRA já está DECIDIDA (usuário, 2026-07-22): o `ability` legado é IGNORADO.**
+   Uma sub-raça 2014 traz `ability` FIXO (+2/+1), que o modelo 2024 moveu para o background. O
+   FlyBy é um builder de **regras 2024**, então os aumentos de atributo vêm SEMPRE da origem —
+   uma linhagem legada entra pelo que ela tem de próprio (traços, sentidos, velocidade,
+   proficiências), nunca pelos boosts. Consequência prática: **não há nada a implementar aqui** —
+   `collectAbilityBoosts` já não lê o campo `ability` de raça (só a origem e o choice-bag, com o
+   gancho `LEGACY_ABILITY_CHOICE` para o caso de ESCOLHA). O comportamento correto é o atual;
+   o cuidado é apenas **não "consertar" isso** ao ver o campo `ability` presente no dado da
+   sub-raça, e não deixar o merge de linhagem (`subraceVersions`) reintroduzi-lo.
 4. **Verificação**: cada sub-raça curada vira uma linha nova na matriz do sweep automaticamente
    (o `matrix.js` deriva de `raceLineages`) — rodar `npm run sweep -- --strict` e conferir o
    crescimento das linhas `species:*`. Depois, passada de UI na aba Species.

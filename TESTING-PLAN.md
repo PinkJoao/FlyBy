@@ -224,6 +224,24 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-22 (5)** - **Foundry level-up + overlay: três levas fora da campanha, a pedido do
+  usuário** (DDL-0055/0056/0057, CHANGELOG §63-65). Relato dele: exportar um Barbarian 1, importar
+  no Foundry e subir pro 2 não concedia Reckless Attack/Danger Sense. Causa: o item de classe só
+  levava `ItemGrant` dos níveis JÁ alcançados (uuid relativo a itens embutidos), enquanto os
+  premades trazem a escada INTEIRA (1..20) com uuid de compêndio nos níveis futuros. Entregue:
+  registro de UUIDs **gerado** do source do dnd5e (`npm run gen:uuids`), escadas de classe e
+  subclasse (features + magias de subclasse), `compendiumSource` em todo item publicado, Traits de
+  escolha no nível delas (Expertise/Primal Knowledge/Deft Explorer/Bonus Proficiencies), Weapon
+  Mastery com `mode: 'mastery'` e crescimento por breakpoint, import de premade recuperando essas
+  escolhas, `classRestriction` primary/secondary vindo de `multiclassing`, e a **adoção completa do
+  overlay** (activities/system/advancement + itens de traço de espécie). 1017 testes, lint, sweep
+  274/274 `--strict`, 48 premades importados+re-exportados ok.
+  **Impacto na campanha:** as fichas premade de nível 1/5/11 que o usuário adicionou ao material de
+  referência são agora um gabarito muito melhor para a **T2** - compare o advancement gerado com o
+  do premade do mesmo nível antes de marcar uma linha como `ok`. **Backlog: "criar em nível alto" e
+  "sidekick/UA" foram CANCELADOS pelo usuário** (ver CLAUDE.md §4, "Explicitly OUT OF SCOPE") - não
+  são mais pendências. **Next action: stage T1b - SPECIES + lineages** (inalterado).
+
 - **2026-07-22 (4)** - **TC-0043 FIXED (DDL-0054) - the ledger has NO open items.** By user
   decision, with the scope widened by them from "warlock patrons" to **every list-widening
   mechanic**: a subclass/class feature that ADDS spells to your list (Genie/Hexblade/… Expanded

@@ -54,8 +54,27 @@ function featSubChoices(featData, level = Infinity, bag = null) {
   return [...parseChoices(featData, { level, bag }), ...(hasFreeLegacyBonus(featData) ? [LEGACY_ABILITY_CHOICE] : [])];
 }
 
+// Kinds em que a MESMA proficiência não pode vir de duas escolhas diferentes
+// (você não tem expertise duas vezes na mesma perícia). O `owned` do ctx é um
+// retrato do início da passada, então ele não enxerga o que uma escolha IRMÃ
+// acabou de escolher - por isso a exclusão explícita por bag (mesma ideia do
+// dedup entre spell chooses irmãos, TC-0025). `weapon` fica de fora: a maestria
+// deduplica só contra si mesma.
+const SIBLING_DEDUP_KINDS = new Set(['skill', 'expertise', 'tool', 'language']);
+
+/** Picks das OUTRAS escolhas do mesmo kind já respondidas neste bag. */
+function siblingPicks(ch, bag) {
+  if (!SIBLING_DEDUP_KINDS.has(ch.kind)) return [];
+  const out = [];
+  for (const [id, entry] of Object.entries(bag ?? {})) {
+    if (id === ch.id || entry?.kind !== ch.kind) continue;
+    out.push(...(entry.picks ?? []));
+  }
+  return out;
+}
+
 /** Valores candidatos para um kind "tag" (skill/tool/language/expertise/weapon). */
-function tagCandidates(ch, picks, ctx) {
+function tagCandidates(ch, picks, ctx, bag) {
   const kind = ch.kind;
   let values;
   if (ch.pool.type === 'list') {
@@ -91,8 +110,9 @@ function tagCandidates(ch, picks, ctx) {
   }
   // Dedup: nunca repetir um pick, nem escolher o que a ficha já tem (weapon
   // mastery e featureoption não deduplicam contra a ficha - só contra si).
+  const siblings = siblingPicks(ch, bag);
   return values.filter((v) => {
-    if (picks.includes(v)) return false;
+    if (picks.includes(v) || siblings.includes(v)) return false;
     if (kind === 'weapon' || kind === 'weaponProf') return true;
     return !isOwned(ctx.owned, kind, v);
   });
@@ -252,7 +272,7 @@ function fillChoice(ch, entry, bag, ctx) {
   }
 
   // --- tags (skill/tool/language/expertise/weapon; pools 'list'/'any') --------
-  const cands = tagCandidates(ch, picks, ctx);
+  const cands = tagCandidates(ch, picks, ctx, bag);
   if (cands === null) {
     ctx.problems.push(`${ctx.where}: unsupported pool "${ch.pool.type}" on "${ch.label}" (${ch.id})`);
     return null;

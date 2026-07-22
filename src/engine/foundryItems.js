@@ -15,11 +15,14 @@ import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOpt
 import { buildClassAdvancement } from './foundryAdvancement';
 import { effectChangesFor, targetEffectFor } from './foundryEffects';
 import {
-  overlayFeatEffects,
-  overlayOptionalFeatureEffects,
-  overlayClassFeatureEffects,
-  overlaySubclassFeatureEffects,
   overlayRaceEffects,
+  overlayRaceTraits,
+  overlaySubclassAdvancement,
+  overlayFeatEntry,
+  overlayOptionalFeatureEntry,
+  overlayClassFeatureEntry,
+  overlaySubclassFeatureEntry,
+  overlayMechanics,
 } from './foundryOverlay';
 import { featureUses } from './foundryFeatureUses';
 import { featureActivities } from './foundryActivities';
@@ -179,6 +182,17 @@ export function itemStats(compendiumSource = null) {
 /** Bloco `source` padronizado (livro + regras 2024). */
 export function sourceBlock(book) {
   return { book: book ?? '', rules: '2024', revision: 1 };
+}
+
+/**
+ * Campos do bloco `system` do overlay que NÃO têm casa própria no nosso item
+ * (`range`, `duration`…). `uses` sai daqui porque é tratado à parte, com a
+ * precedência do registro curado.
+ */
+function overlaySystemExtras(system) {
+  const rest = { ...(system ?? {}) };
+  delete rest.uses;
+  return rest;
 }
 
 /** Slug de identificador Foundry (ex: "Second Wind" → "second-wind"). */
@@ -351,7 +365,7 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   // pode aparecer em VÁRIOS níveis carregando o delta daquele nível (Weapon
   // Mastery 2@1 → +1@4 → +1@10), e cada passo leva só a sua fatia dos escolhidos.
   const traitUsed = {};
-  const advancement = buildClassAdvancement(classObj).map((a) => {
+  const advancement = buildClassAdvancement(classObj, opts.db).map((a) => {
     const entry = { _id: randomFoundryId(), value: {}, ...a };
     if (entry.type === 'HitPoints') entry.value = hitPointsValue(classEntry);
     if (entry.type === 'AbilityScoreImprovement' && asiByLevel[entry.level]) entry.value = asiByLevel[entry.level];
@@ -507,19 +521,26 @@ export function buildFeatureItem(feature, db = null) {
       flags: {},
     });
   }
-  if (!changes && !targetEffect && db) {
-    const ref = {
-      name: feature.overlayName ?? feature.name,
-      classId: feature.classId,
-      source: feature.source,
-      level: feature.level,
-    };
-    effects.push(
-      ...(feature.subclass
-        ? overlaySubclassFeatureEffects(db, { ...ref, shortName: feature.subclass.shortName })
-        : overlayClassFeatureEffects(db, ref)),
-    );
-  }
+  // Overlay (DDL-0031/0057): effects só quando NÃO há curado (regra
+  // tudo-ou-nada); `uses`/`activities` entram sempre que o curado não cobrir
+  // aquele campo - são blocos independentes, e um deles faltar não é motivo
+  // para descartar o outro.
+  const overlayRef = {
+    name: feature.overlayName ?? feature.name,
+    classId: feature.classId,
+    source: feature.source,
+    level: feature.level,
+  };
+  const overlayEntry = db
+    ? (feature.subclass
+      ? overlaySubclassFeatureEntry(db, { ...overlayRef, shortName: feature.subclass.shortName })
+      : overlayClassFeatureEntry(db, overlayRef))
+    : null;
+  const overlay = overlayMechanics(overlayEntry, feature.name);
+  if (!changes && !targetEffect && db) effects.push(...overlay.effects);
+
+  const curatedUses = featureUses(feature.name, feature.classId);
+  const curatedActivities = featureActivities(feature.name, feature.classId, { targetEffectId });
 
   return {
     _id: randomFoundryId(),
@@ -533,10 +554,11 @@ export function buildFeatureItem(feature, db = null) {
       source: sourceBlock(feature.source),
       requirements: '',
       properties: [],
-      uses: featureUses(feature.name, feature.classId) ?? { max: '', spent: 0, recovery: [] },
+      uses: curatedUses ?? overlay.system.uses ?? { max: '', spent: 0, recovery: [] },
       prerequisites: { level: null, repeatable: false, items: [] },
-      activities: featureActivities(feature.name, feature.classId, { targetEffectId }),
+      activities: Object.keys(curatedActivities).length ? curatedActivities : overlay.activities,
       advancement: {},
+      ...overlaySystemExtras(overlay.system),
       enchant: {},
       crewed: false,
     },
@@ -575,7 +597,14 @@ export function buildClassFeatureItems(classEntry, classObj, db) {
 // (ids exatos); estes Traits existem para o lado Foundry.
 
 /** Kinds de escolha que têm um Trait correspondente no dnd5e. */
-const TRAIT_CHOICE_KINDS = new Set(['skill', 'expertise', 'tool', 'language']);
+export const TRAIT_CHOICE_KINDS = new Set(['skill', 'expertise', 'tool', 'language']);
+
+/** Título do Trait de um descritor - o NOME DA FEATURE, como nos premades.
+ * Exportado porque o IMPORT casa o Trait de volta no descritor por este título
+ * (ver choiceTraitBag em foundryImport): uma fonte só para os dois lados. */
+export function choiceTraitTitle(desc) {
+  return desc.foundryTitle ?? desc.feature?.name ?? desc.label ?? '';
+}
 
 /** `configuration` (mode + pool) do Trait de um descritor de escolha. */
 function traitChoiceConfig(desc, db) {
@@ -638,7 +667,7 @@ export function buildChoiceTraits(descriptors, bag, db) {
       _id: randomFoundryId(),
       type: 'Trait',
       level: desc.level ?? 1,
-      title: desc.foundryTitle ?? desc.feature?.name ?? desc.label ?? '',
+      title: choiceTraitTitle(desc),
       configuration: {
         mode: cfg.mode,
         allowReplacements: false,
@@ -769,7 +798,9 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
         description: '',
         flags: {},
       }]
-    : overlayFeatEffects(db, featData.name, featData.source);
+    : [];
+  const featOverlay = overlayMechanics(db ? overlayFeatEntry(db, featData.name, featData.source) : null, featData.name);
+  if (!changes) effects.push(...featOverlay.effects);
 
   const advancement = [];
   const fixed = fixedAbilityBoosts(featData.ability);
@@ -804,10 +835,11 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
       source: sourceBlock(featData.source),
       requirements: '',
       properties: [],
-      uses: { max: '', spent: 0, recovery: [] },
+      uses: featOverlay.system.uses ?? { max: '', spent: 0, recovery: [] },
       prerequisites: { level: null, repeatable: !!featData.repeatable, items: [] },
-      activities: {},
+      activities: featOverlay.activities,
       advancement: keyById(advancement),
+      ...overlaySystemExtras(featOverlay.system),
       enchant: {},
       crewed: false,
     },
@@ -961,7 +993,11 @@ export function buildOptionalFeatureItems(classEntry, db) {
       });
       // Optional features têm índice próprio no overlay (foundry-optionalfeatures,
       // nome+fonte) - o lookup por classe do buildFeatureItem não as encontraria.
-      if (!item.effects.length) item.effects.push(...overlayOptionalFeatureEffects(db, raw.name, raw.source));
+      const ofOverlay = overlayMechanics(overlayOptionalFeatureEntry(db, raw.name, raw.source), raw.name);
+      if (!item.effects.length) item.effects.push(...ofOverlay.effects);
+      if (!Object.keys(item.system.activities).length) item.system.activities = ofOverlay.activities;
+      if (ofOverlay.system.uses && !item.system.uses.max) item.system.uses = ofOverlay.system.uses;
+      Object.assign(item.system, overlaySystemExtras(ofOverlay.system));
       const subtype = (raw.featureType ?? []).map((t) => OPTFEAT_SUBTYPE[t]).find(Boolean);
       if (subtype) item.system.type.subtype = subtype;
       item.flags.builder5e.choiceId = choiceId;
@@ -1221,6 +1257,50 @@ function movementBlock(speed) {
  * @param {object} db
  * @returns {object[]} itens Foundry (type 'feat')
  */
+/**
+ * Itens dos TRAÇOS de espécie que carregam uma AÇÃO ou um RECURSO (Breath
+ * Weapon, Draconic Flight, Healing Hands…). É o padrão dos premades: type
+ * 'feat' com `system.type.value: 'race'`, ligado ao item de raça por um
+ * ItemGrant. Traços que só têm Active Effect continuam sem item - o efeito
+ * transferido do item de raça já alcança o ator (DDL-0031).
+ * @param {object} raceObj  raça 5etools RESOLVIDA
+ * @param {object} db
+ * @returns {object[]} itens Foundry (type 'feat', subtype de raça)
+ */
+export function buildSpeciesTraitItems(raceObj, db) {
+  const out = [];
+  for (const trait of overlayRaceTraits(db, raceObj)) {
+    if (!trait.ownItem) continue;
+    const entry = (raceObj.entries ?? []).find((e) => norm(e?.name) === norm(trait.name));
+    out.push({
+      _id: randomFoundryId(),
+      name: trait.name,
+      type: 'feat',
+      img: 'icons/svg/item-bag.svg',
+      system: {
+        type: { value: 'race', subtype: '' },
+        identifier: slugify(trait.name),
+        description: { value: entriesToHtml(entry?.entries ?? []), chat: '' },
+        source: sourceBlock(raceObj.source),
+        requirements: '',
+        properties: [],
+        uses: trait.system.uses ?? { max: '', spent: 0, recovery: [] },
+        prerequisites: { level: null, repeatable: false, items: [] },
+        activities: trait.activities,
+        advancement: {},
+        enchant: {},
+        crewed: false,
+        ...overlaySystemExtras(trait.system),
+      },
+      effects: trait.effects,
+      // level 0 = o que os premades usam no ItemGrant do item de raça.
+      flags: { builder5e: { level: 0 } },
+      _stats: itemStats(originUuid(trait.name)),
+    });
+  }
+  return out;
+}
+
 export function buildSpeciesFeatItems(character, db) {
   // RASO de propósito: só entradas de topo do bag da espécie (um feat escolhido
   // dentro de outro feat pertence ao item do feat pai). O sub-bag de cada pick
@@ -1287,7 +1367,7 @@ function speciesEffects(db, raceObj) {
   return [natEffect, ...pruned];
 }
 
-export function buildSpeciesItem(character, raceObj, db = null, featItems = []) {
+export function buildSpeciesItem(character, raceObj, db = null, featItems = [], traitItems = []) {
   if (!raceObj) return null;
   // Tamanho EFETIVO: escolha do jogador (raças Small/Medium) e nível (Verdan).
   const level = (character?.classes ?? []).reduce((sum, c) => sum + (c.level || 0), 0) || 1;
@@ -1334,6 +1414,9 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = []) 
 
   // ItemGrant do(s) talento(s) escolhido(s) pela espécie (ex: Human "Versatile").
   if (featItems.length) advancement.push(...itemGrantAdvancements(featItems, 'Species Feat'));
+  // ItemGrant dos traços que viraram item próprio (Breath Weapon…) - o mesmo
+  // formato dos premades (nível 0, uuid relativo ao item embutido).
+  if (traitItems.length) advancement.push(...itemGrantAdvancements(traitItems, 'Species Traits'));
 
   // Escolhas da espécie SEM casa nativa no Foundry viajam na flag do item de
   // raça (DDL-0028): o atributo de conjuração racial escolhido (TC-0009), o
@@ -1395,6 +1478,11 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
         ...itemGrantAdvancements(featureItems, 'Subclass Features'),
         ...(opts.futureGrants ?? []),
         ...(opts.choiceTraits ?? []),
+        // ScaleValues próprios da subclasse (dados de superioridade do Battle
+        // Master, etc.) - só o overlay tem; a tabela da CLASSE não os traz.
+        ...overlaySubclassAdvancement(opts.db, {
+          className: classId, shortName: subclass.shortName, source: subclass.source,
+        }).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
       ]),
       source: sourceBlock(subclass.source),
     },

@@ -16,8 +16,9 @@
 // oficial) e o source MIT do sistema dnd5e.
 // -----------------------------------------------------------------------------
 
-import { parseClass } from './classData';
+import { parseClass, skillCode } from './classData';
 import { weaponMasteryCount } from './classFeatureChoices';
+import { overlayClassAdvancement } from './foundryOverlay';
 
 // startingProficiencies.weapons/armor (tokens) → códigos de trait do Foundry.
 const WEAPON_START_TO_FVTT = { simple: 'sim', martial: 'mar' };
@@ -30,6 +31,9 @@ const norm = (s) => (s ?? '').toString().trim().toLowerCase();
 
 // Escalas em PROSA (não estão como coluna na tabela da classe) - curadas p/ casar
 // com os premades. Chave = classId; cada entrada vira um advancement ScaleValue.
+// Estas DUAS classes ficam curadas por terem sido validadas contra os premades
+// reais (e a do clérigo é referenciada por uma activity); o resto das classes vem
+// do overlay `class/foundry.json`, que traz a mesma informação upstream (DDL-0057).
 const CURATED_SCALE_VALUES = {
   fighter: [
     { title: 'Action Surge', type: 'number', scale: { 2: { value: 1 }, 17: { value: 2 } } },
@@ -46,7 +50,12 @@ const CURATED_SCALE_VALUES = {
 };
 
 // Rótulos de coluna que NÃO são recursos escaláveis (magia/derivados) → ignorados.
-const SCALE_LABEL_DENY = new Set(['slot level', 'cantrips', 'prepared spells', 'spells known', 'spell slots']);
+// 'weapon mastery' entra aqui porque a contagem já é modelada pelos Traits de
+// `mode: 'mastery'` (um por breakpoint, como no SRD) - um ScaleValue homônimo
+// seria ruído que os premades não têm.
+const SCALE_LABEL_DENY = new Set([
+  'slot level', 'cantrips', 'prepared spells', 'spells known', 'spell slots', 'weapon mastery',
+]);
 
 /** Remove tags 5etools ({@filter Rótulo|...} → Rótulo) e espaços das pontas. */
 function cleanColLabel(label) {
@@ -90,7 +99,7 @@ function sameScale(a, b) {
  * @param {object} classObj  objeto de classe 5etools
  * @returns {object[]} entradas de advancement ScaleValue (sem `_id`)
  */
-export function scaleValueAdvancements(classObj) {
+export function scaleValueAdvancements(classObj, db = null) {
   const out = [];
   for (const group of classObj?.classTableGroups ?? []) {
     if (/spell slots/i.test(group.title ?? '')) continue; // grupo de slots de magia
@@ -125,20 +134,44 @@ export function scaleValueAdvancements(classObj) {
       });
     }
   }
-  for (const c of CURATED_SCALE_VALUES[norm(classObj?.name)] ?? []) {
+  const curated = CURATED_SCALE_VALUES[norm(classObj?.name)];
+  for (const c of curated ?? []) {
     out.push({ type: 'ScaleValue', title: c.title, configuration: { identifier: '', type: c.type, distance: { units: '' }, scale: c.scale } });
+  }
+  // Overlay: só onde não há curado para a classe (precedência do DDL-0031) e
+  // sem repetir um título que a TABELA já produziu (o overlay do Fighter lista
+  // Second Wind, que a coluna da tabela já cobre).
+  if (!curated && db) {
+    const seen = new Set(out.map((a) => norm(a.title)));
+    for (const a of overlayClassAdvancement(db, classObj?.name, classObj?.source)) {
+      if (!seen.has(norm(a.title))) out.push(a);
+    }
   }
   return out;
 }
 
-function traitAdvancement(title, { grants = [], choices = [], level = 1, mode = 'default' }) {
+/**
+ * Um advancement Trait. `classRestriction` segue os premades: só é preenchido
+ * quando entrar pela classe ORIGINAL e por MULTICLASSE dá coisas diferentes
+ * ('primary' na versão completa, 'secondary' na reduzida). Quando os dois
+ * conjuntos são iguais - ou quando não existe versão de multiclasse - o campo
+ * fica de fora e o Trait vale nos dois casos.
+ */
+function traitAdvancement(title, { grants = [], choices = [], level = 1, mode = 'default', classRestriction = null }) {
   return {
     type: 'Trait',
     level,
     title,
     configuration: { mode, allowReplacements: false, grants, choices },
-    classRestriction: 'primary',
+    ...(classRestriction ? { classRestriction } : {}),
   };
+}
+
+/** Duas listas de tokens de proficiência descrevem o mesmo conjunto? */
+function sameProfList(a, b) {
+  const A = [...new Set((a ?? []).map(norm))].sort();
+  const B = [...new Set((b ?? []).map(norm))].sort();
+  return A.length === B.length && A.every((x, i) => x === B[i]);
 }
 
 /**
@@ -146,7 +179,7 @@ function traitAdvancement(title, { grants = [], choices = [], level = 1, mode = 
  * @param {object} classObj  objeto de classe 5etools (db['class-fighter'].class[0])
  * @returns {object[]} entradas de advancement (sem `_id`; atribuídos ao serializar)
  */
-export function buildClassAdvancement(classObj) {
+export function buildClassAdvancement(classObj, db = null) {
   const parsed = parseClass(classObj);
   if (!parsed) return [];
   const out = [];
@@ -154,27 +187,53 @@ export function buildClassAdvancement(classObj) {
   // 1) HitPoints - o sistema concede HP por nível a partir do dado.
   out.push({ type: 'HitPoints', configuration: {}, title: '' });
 
-  // 2) Trait: saves proficientes (grant fixo).
+  // Proficiências ganhas ao entrar por MULTICLASSE (campo estruturado do
+  // 5etools). Onde elas diferem das iniciais, o premade emite DOIS Traits -
+  // 'primary' (completo) e 'secondary' (reduzido).
+  const mc = classObj?.multiclassing?.proficienciesGained ?? null;
+
+  // 2) Trait: saves proficientes (grant fixo). Multiclasse nunca concede saves,
+  // então este é sempre exclusivo da classe original.
   if (parsed.proficientSaves.length) {
     out.push(
       traitAdvancement('Saving Throw Proficiencies', {
         grants: parsed.proficientSaves.map((s) => `saves:${s}`),
+        classRestriction: 'primary',
       }),
     );
   }
 
   // 3) Trait: perícias iniciais (escolha). `any` (Bard) → pool com todas.
   const sc = parsed.skillChoice;
+  const mcSkill = mc?.skills?.[0]?.choose ?? null;
   if (sc.count > 0) {
     const pool = sc.any ? ['skills:*'] : sc.from.map((code) => `skills:${code}`);
-    out.push(traitAdvancement('Skill Proficiencies', { choices: [{ count: sc.count, pool }] }));
+    // SEMPRE 'primary': entrar por multiclasse nunca concede as perícias
+    // iniciais completas - no máximo a escolha reduzida do bloco `multiclassing`.
+    out.push(traitAdvancement('Skill Proficiencies', { choices: [{ count: sc.count, pool }], classRestriction: 'primary' }));
+  }
+  if (mcSkill?.count > 0) {
+    out.push(traitAdvancement('Skill Proficiencies', {
+      choices: [{ count: mcSkill.count, pool: (mcSkill.from ?? []).map((n) => `skills:${skillCode(n)}`) }],
+      classRestriction: 'secondary',
+    }));
   }
 
   // 4) Trait: armas e armaduras iniciais (grant fixo; texto especial é ignorado).
-  const weaponGrants = (parsed.weapons ?? []).map((w) => WEAPON_START_TO_FVTT[norm(w)]).filter(Boolean).map((c) => `weapon:${c}`);
-  if (weaponGrants.length) out.push(traitAdvancement('Weapon Proficiencies', { grants: weaponGrants }));
-  const armorGrants = (parsed.armor ?? []).map((a) => ARMOR_START_TO_FVTT[norm(a)]).filter(Boolean).map((c) => `armor:${c}`);
-  if (armorGrants.length) out.push(traitAdvancement('Armor Training', { grants: armorGrants }));
+  const toGrants = (list, map, prefix) => (list ?? []).map((x) => map[norm(x)]).filter(Boolean).map((c) => `${prefix}:${c}`);
+  for (const [title, startList, mcList, map, prefix] of [
+    ['Weapon Proficiencies', parsed.weapons, mc?.weapons, WEAPON_START_TO_FVTT, 'weapon'],
+    ['Armor Training', parsed.armor, mc?.armor, ARMOR_START_TO_FVTT, 'armor'],
+  ]) {
+    const grants = toGrants(startList, map, prefix);
+    if (!grants.length) continue;
+    // Conjuntos iguais = um Trait só, sem restrição (vale pelos dois caminhos).
+    const same = mcList != null && sameProfList(startList, mcList);
+    out.push(traitAdvancement(title, { grants, classRestriction: same ? null : 'primary' }));
+    if (same) continue;
+    const mcGrants = toGrants(mcList, map, prefix);
+    if (mcGrants.length) out.push(traitAdvancement(title, { grants: mcGrants, classRestriction: 'secondary' }));
+  }
 
   // 5) Trait: Weapon Mastery (escolha) - só se a classe tem a feature homônima.
   // `mode: 'mastery'` (e não 'default') é o que faz o Foundry registrar MAESTRIA
@@ -230,7 +289,7 @@ export function buildClassAdvancement(classObj) {
 
   // 8) ScaleValue - colunas de recurso da tabela (Second Wind, Rages, Sneak
   // Attack…) + escalas curadas em prosa (Action Surge/Indomitable).
-  out.push(...scaleValueAdvancements(classObj));
+  out.push(...scaleValueAdvancements(classObj, db));
 
   // 9) Subclass - no nível em que a subclasse entra.
   if (parsed.nativeSubclassLevel != null) {

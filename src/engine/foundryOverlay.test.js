@@ -6,8 +6,12 @@ import {
   overlayClassFeatureEffects,
   overlaySubclassFeatureEffects,
   overlayRaceEffects,
+  overlayMechanics,
+  overlayRaceTraits,
+  overlayClassAdvancement,
+  overlaySubclassAdvancement,
 } from './foundryOverlay';
-import { buildFeatureItem, buildFeatItem, buildSpeciesItem } from './foundryItems';
+import { buildFeatureItem, buildFeatItem, buildSpeciesItem, buildSpeciesTraitItems } from './foundryItems';
 
 // db sintético com fatias REAIS do overlay (shapes copiados dos arquivos).
 const db = {
@@ -228,5 +232,106 @@ describe('integração com foundryItems (precedência curado > overlay)', () => 
     const item = buildSpeciesItem(null, halfling, db);
     expect(item.effects).toHaveLength(1);
     expect(item.effects[0].transfer).toBe(true);
+  });
+});
+
+// --- Adoção COMPLETA do overlay (DDL-0057): system / activities / advancement -
+describe('overlayMechanics - system, activities e o link por foundryId', () => {
+  const entry = {
+    name: "Nature's Veil",
+    system: { 'uses.max': '@prof', 'uses.recovery': [{ period: 'lr', type: 'recoverAll' }], 'range.value': 30, 'range.units': 'ft' },
+    effects: [{ foundryId: 'naturesVeil', statuses: ['invisible'] }],
+    activities: [{
+      type: 'utility',
+      activation: { type: 'bonus', value: 1 },
+      consumption: { targets: [{ type: 'itemUses', value: '1' }] },
+      effects: [{ foundryId: 'naturesVeil' }],
+    }],
+  };
+
+  it('system vem em DOT-PATH e é expandido; uses ganha os campos que o dnd5e exige', () => {
+    const { system } = overlayMechanics(entry, "Nature's Veil");
+    expect(system.uses).toEqual({ max: '@prof', spent: 0, recovery: [{ period: 'lr', type: 'recoverAll' }] });
+    expect(system.range).toEqual({ value: 30, units: 'ft' });
+  });
+
+  it('activities: array → mapa por _id, e o foundryId vira o _id REAL do effect', () => {
+    const { effects, activities } = overlayMechanics(entry, "Nature's Veil");
+    const [act] = Object.values(activities);
+    expect(Object.keys(activities)).toEqual([act._id]);
+    expect(act.type).toBe('utility');
+    expect(act.foundryId).toBeUndefined(); // apelido interno, não é campo do dnd5e
+    expect(act.effects).toEqual([{ _id: effects[0]._id }]);
+  });
+
+  it('link órfão (foundryId sem effect correspondente) é descartado, não emitido quebrado', () => {
+    const { activities } = overlayMechanics(
+      { activities: [{ type: 'utility', effects: [{ foundryId: 'naoExiste' }] }] },
+      'X',
+    );
+    expect(Object.values(activities)[0].effects).toBeUndefined();
+  });
+
+  it('entrada nula devolve tudo vazio', () => {
+    expect(overlayMechanics(null, 'X')).toEqual({ effects: [], activities: {}, system: {} });
+  });
+});
+
+describe('advancement do overlay (ScaleValue)', () => {
+  const advDb = { 'foundry-class': {
+    class: [{ name: 'Fighter', source: 'XPHB', advancement: [
+      { type: 'ScaleValue', title: 'Action Surge', configuration: { type: 'number', scale: { 2: { value: 1 } } } },
+      { type: 'HitPoints', configuration: {} }, // tipos que não são escala são ignorados
+    ] }],
+    subclass: [{ name: 'Battle Master', shortName: 'Battle Master', className: 'Fighter', source: 'XPHB', advancement: [
+      { type: 'ScaleValue', title: 'Superiority Dice', configuration: { identifier: 'superiority', type: 'dice', scale: { 3: { number: 4, faces: 8 } } } },
+    ] }],
+  } };
+
+  it('classe: só ScaleValue, no nosso formato', () => {
+    const out = overlayClassAdvancement(advDb, 'Fighter', 'XPHB');
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ type: 'ScaleValue', title: 'Action Surge' });
+    expect(out[0].configuration.scale).toEqual({ 2: { value: 1 } });
+  });
+
+  it('subclasse: casa por classe+shortName+fonte e preserva o identifier', () => {
+    const [sv] = overlaySubclassAdvancement(advDb, { className: 'Fighter', shortName: 'Battle Master', source: 'XPHB' });
+    expect(sv.title).toBe('Superiority Dice');
+    expect(sv.configuration.identifier).toBe('superiority');
+    expect(overlaySubclassAdvancement(advDb, { className: 'Fighter', shortName: 'Champion', source: 'XPHB' })).toEqual([]);
+  });
+});
+
+describe('traços de espécie com mecânica própria', () => {
+  const raceDb = { 'foundry-races': { raceFeature: [
+    // Só Active Effect → fica no item de RAÇA (sem item próprio).
+    { name: 'Luck', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.halflingLucky', mode: 'OVERRIDE', value: true }] }] },
+    // Tem activity → precisa de item próprio (uma ação só existe num item).
+    { name: 'Second Chance', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', system: { 'uses.max': '1' }, activities: [{ type: 'utility' }] },
+  ] } };
+  const halfling = { name: 'Halfling', source: 'XPHB', entries: [{ name: 'Luck', entries: ['sorte'] }, { name: 'Second Chance', entries: ['de novo'] }] };
+
+  it('separa os traços que precisam de item dos que não precisam', () => {
+    const traits = overlayRaceTraits(raceDb, halfling);
+    expect(traits.map((t) => [t.name, t.ownItem])).toEqual([['Luck', false], ['Second Chance', true]]);
+  });
+
+  it('o item de raça NÃO leva o effect de um traço que virou item (não duplica)', () => {
+    expect(overlayRaceEffects(raceDb, halfling).map((e) => e.name)).toEqual(['Luck']);
+  });
+
+  it('buildSpeciesTraitItems monta o item no formato dos premades (feat/race)', () => {
+    const [item] = buildSpeciesTraitItems(halfling, raceDb);
+    expect(item.name).toBe('Second Chance');
+    expect(item.type).toBe('feat');
+    expect(item.system.type).toEqual({ value: 'race', subtype: '' });
+    expect(item.system.uses.max).toBe('1');
+    expect(Object.keys(item.system.activities)).toHaveLength(1);
+    expect(item.flags.builder5e.level).toBe(0);
+  });
+
+  it('raça sem entrada no overlay não gera item nenhum', () => {
+    expect(buildSpeciesTraitItems({ name: 'Nao Existe', source: 'XPHB', entries: [] }, raceDb)).toEqual([]);
   });
 });

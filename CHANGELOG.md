@@ -4088,3 +4088,54 @@ linha a linha. Três frentes, escolhidas pelo usuário.
   18,20`) passou a ser **idêntica à do premade Merric**.
 - Verificado: 1001 testes (+7), lint, sweep 274/274 `--strict`, e conferência ao vivo dos Traits
   gerados para Barbarian/Rogue/Ranger/Bard contra os premades correspondentes.
+
+## 65. Overlay foundry-*.json adotado por completo + os achados avulsos do level-up (DDL-0057)
+
+Fecha o item de backlog do overlay (que o DDL-0031 tinha deixado em "effects only") e os quatro
+problemas que a revisão de level-up havia listado sem corrigir.
+
+**Overlay completo.** Além dos Active Effects, agora entram:
+- **`activities`** (~500 entradas). O overlay guarda um ARRAY e o dnd5e quer um MAPA por `_id`;
+  além disso as activities referenciam seus efeitos por um apelido (`effects: [{foundryId:
+  'naturesVeil'}]`). `overlayMechanics` gera os `_id` dos effects primeiro e resolve os apelidos
+  contra eles - link órfão é descartado, nunca emitido quebrado.
+- **`system`** (uses/range/duration), que vem em DOT-PATH (`uses.max`) e é expandido; `uses` recebe
+  o `spent` que o dnd5e exige e o overlay omite.
+- **`advancement`**, que no overlay é só ScaleValue - exatamente o que `CURATED_SCALE_VALUES` fazia
+  à mão para duas classes. Fighter e Cleric seguem curados (premade-validados; a escala do Cleric é
+  referenciada por uma activity), as outras dez vêm do overlay sem repetir título que a tabela já
+  produziu, e as **subclasses ganham ScaleValue pela primeira vez** (Superiority Dice do Battle
+  Master, Dreadful Strike do Gloom Stalker…).
+- **Traços de espécie com ação/recurso viram ITEM próprio** (`feat` + `system.type.value: 'race'`,
+  ItemGrant de nível 0 no item de raça - o formato dos premades). É o que destrava as 66 activities
+  de `foundry-races`: um Active Effect transferido alcança o ator de qualquer item embutido, mas
+  uma AÇÃO só existe pendurada num item. Quem só tem effect continua sem item, e o item de raça
+  deixa de carregar o effect do traço que ganhou item (senão sairia em dobro). Dragonborn, Aasimar,
+  Dwarf e Goliath passam a exportar Draconic Flight / Celestial Revelation + Healing Hands /
+  Stonecunning / Large Form como itens usáveis.
+- Precedência: o curado continua vencendo, mas agora **por bloco** - effects seguem tudo-ou-nada,
+  `uses` e `activities` são independentes (uma feature pode ter effect curado e nenhuma activity).
+  O casamento segue edição-estrito: a mecânica de uma feature TCE não vai para a reimpressão XPHB.
+
+**Achados avulsos, corrigidos:**
+- **Import de premade recupera as escolhas de proficiência.** O importador só lia os Traits de
+  perícia inicial e maestria, então um Rogue premade vinha sem NENHUMA expertise. Agora casa os
+  Traits contra os mesmos descritores que o export usou, por (título, nível) + kind
+  (`choiceTraitTitle` é a fonte única dos dois lados). Verificado: Riswynn volta com
+  Sleight of Hand/Stealth, Beiro com Performance/Persuasion, Quillathe com o Deft Explorer,
+  Merric com o Primal Knowledge. Nos NOSSOS atores a flag continua chegando depois e vencendo.
+- **`classRestriction` segue o dado.** Era `'primary'` fixo em todo Trait; agora 'primary' só onde
+  a multiclasse dá coisa diferente, com o par 'secondary' gerado de `multiclassing.
+  proficienciesGained`, e NENHUMA restrição quando os conjuntos são iguais. A saída do Barbarian e
+  do Rogue ficou idêntica à dos premades Merric e Riswynn.
+- **ScaleValue "Weapon Mastery" removido**: a contagem já é modelada pelos Traits `mode: 'mastery'`
+  por breakpoint, e os premades não têm o ScaleValue homônimo.
+- **`autoBuild` deduplica entre escolhas irmãs** do mesmo kind: o `owned` do ctx é um retrato do
+  início da passada e não via o que a irmã acabou de escolher, então um Rogue gerado repetia a
+  perícia nas duas expertises - algo que a UI não permite.
+- Verificado: 1017 testes (+16), lint, sweep 274/274 `--strict`, e os **48 premades** importados e
+  re-exportados sem falha.
+
+**Escopo removido do backlog (decisão do usuário, não adiamento):** criar personagem direto em
+nível alto e conteúdo sidekick/UA **não serão features do FlyBy**. Ver a subseção
+"Explicitly OUT OF SCOPE" no CLAUDE.md §4.

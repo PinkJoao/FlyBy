@@ -28,6 +28,7 @@ import {
   buildSubclassFeatureItems,
   buildSpeciesItem,
   buildSpeciesFeatItems,
+  buildSpeciesTraitItems,
   buildBackgroundItem,
   buildOriginFeatItem,
   buildInventoryItems,
@@ -61,8 +62,11 @@ export function assembleFoundryActor(character, db) {
   // do talento de origem é ligado ao background por um ItemGrant; o(s) talento(s)
   // de sub-escolha da ESPÉCIE (ex: Human "Versatile") são ligados ao item de espécie.
   const speciesFeatItems = buildSpeciesFeatItems(character, db);
-  const speciesItem = raceObj ? buildSpeciesItem(character, raceObj, db, speciesFeatItems) : null;
-  if (speciesItem) items.push(speciesItem, ...speciesFeatItems);
+  // Traços com ação/recurso próprio (Breath Weapon…) viram itens, como nos
+  // premades; os que só têm Active Effect continuam no próprio item de raça.
+  const speciesTraitItems = raceObj ? buildSpeciesTraitItems(raceObj, db) : [];
+  const speciesItem = raceObj ? buildSpeciesItem(character, raceObj, db, speciesFeatItems, speciesTraitItems) : null;
+  if (speciesItem) items.push(speciesItem, ...speciesFeatItems, ...speciesTraitItems);
   const originFeatItem = buildOriginFeatItem(character, db);
   const bgItem = buildBackgroundItem(character, originFeatItem, db);
   if (bgItem) items.push(bgItem);
@@ -81,6 +85,7 @@ export function assembleFoundryActor(character, db) {
       description: classFluffHtml(db, cls.classId, cls.source),
       traitValues: buildClassTraitValues(cls, db),
       fightingStyles,
+      db,
       futureGrants: buildClassFutureGrants(cls, classObj, db),
       choiceTraits: buildClassChoiceTraits(cls, classObj, db),
     });
@@ -102,6 +107,7 @@ export function assembleFoundryActor(character, db) {
       const subFeatureItems = buildSubclassFeatureItems(subObj, cls.classId, db, cls.level);
       const subItem = buildSubclassItem(subObj, cls.classId, subFeatureItems, {
         description: subclassFluffHtml(db, cls.classId, subObj),
+        db,
         futureGrants: buildSubclassFutureGrants(subObj, cls.classId, db, cls.level),
         choiceTraits: buildSubclassChoiceTraits(subObj, cls.classId, cls, classObj, db),
       });

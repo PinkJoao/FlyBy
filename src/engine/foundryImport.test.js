@@ -227,6 +227,18 @@ describe('foundryToCharacter', () => {
     expect(picks).toEqual(['Greatsword', 'Halberd', 'Longsword', 'Maul']);
   });
 
+  it('atores SEM a nossa flag (premades) recuperam expertise/perícia pelos Traits', () => {
+    // O import só lia os Traits de perícia inicial e maestria; um Rogue premade
+    // vinha sem NENHUMA expertise. O casamento é contra os mesmos descritores
+    // que o export usou, por (título, nível) + kind.
+    const a = makeActor();
+    const adv = a.items.find((i) => i.type === 'class').system.advancement;
+    adv.tE = { _id: 'tE', type: 'Trait', level: 1, title: 'Expertise', configuration: { mode: 'expertise' }, value: { chosen: ['skills:acr', 'skills:prc'] } };
+    const c = foundryToCharacter(a, db).classes[0].choices;
+    // Fighter não tem Expertise: sem descritor casando, nada é inventado.
+    expect(c['expertise@1']).toBeUndefined();
+  });
+
   it('scores BASE = final − todos os boosts (origem + GWM fixo + ASI cru)', () => {
     // str: 19 − 2(origem) − 1(GWM) = 16; con: 15 − 1(origem) − 1(ASI) = 13; wis: 10 − 1(ASI) = 9
     expect(ch.scores).toMatchObject({ str: 16, con: 13, wis: 9, dex: 14, int: 8, cha: 12 });

@@ -227,20 +227,28 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    lineages) gets no uuid — by design, rather than pointing at a near-match document.
 2. **E5 PDF polish**: attack cantrips in the weapons table, overflow tuning for very long
    feature/equipment lists, portrait/appearance page niceties (see §4 Phase E).
-3. **Sidekick classes and UA content** (Mystic…): not curated in any registry
-   (subclassGrants, featureOptions, hpBonuses) and not covered by the sweep matrix.
-4. ~~**foundry-*.json overlay adoption** (DDL-0009)~~ — **DONE 2026-07-17 (DDL-0031,
-   CHANGELOG §35)**: the overlay now backs `engine/foundryEffects.js` at runtime
-   (`engine/foundryOverlay.js`), curated-first. Overlay `activities`/`system`/`advancement`
-   blocks remain unadopted (effects only — see DDL-0031's out-of-scope note).
-5. **High-level CREATE guide ordering** (DDL-0013 D2 note): creating a character directly at
-   level N reuses the level-1 step order; the extra ASIs/feats surface via the fixup guide
-   afterwards rather than as ordered wizard steps.
-6. **Legacy-content toggle**: reprint-hidden content (Hill Dwarf PHB and every subrace of a
+3. ~~**foundry-*.json overlay adoption** (DDL-0009)~~ — **FULLY DONE 2026-07-22 (DDL-0031 for the
+   effects, CHANGELOG §35; DDL-0057 for the rest, CHANGELOG §65).** Effects, `activities`,
+   `system` (uses/range/duration) and `advancement` (ScaleValue) are all adopted, curated-first.
+   Nothing of the overlay remains unused.
+4. **Legacy-content toggle**: reprint-hidden content (Hill Dwarf PHB and every subrace of a
    reprinted base, Bladesinging TCE's weapon choice, Totem Warrior's SCAG options, Hobgoblin
    VGM / Weapon Master PHB weapon chooses…) is invisible by the latestOnly policy. If a
    "show legacy" switch ever ships, featureoption-internal grants (Totem Tiger) become real
    work again (see DDL-0030).
+
+### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
+
+Two long-standing backlog items were **cancelled by the user**, not deferred. They are recorded
+here so a future session does not "discover the gap" and re-add them:
+
+- **Creating a character directly at a high level.** FlyBy will not have it. A character is built
+  at level 1 and levelled up through the app (or the Foundry side, DDL-0055/0056). The old
+  DDL-0013 D2 note about the high-level create guide reusing the level-1 step order is therefore
+  moot — there is no such flow to order.
+- **Sidekick classes and UA content** (Mystic…). Not supported. This is why they are absent from
+  every curated registry (subclassGrants, featureOptions, hpBonuses) and from the sweep matrix —
+  that absence is the decision, not an oversight.
 
 ---
 
@@ -307,6 +315,68 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0057 — Overlay adotado POR COMPLETO (activities/system/advancement) e o resto dos achados da sessão de level-up
+**Date:** 2026-07-22
+**Fecha:** o item de backlog "foundry-*.json overlay adoption" e os quatro achados que a revisão do
+level-up tinha listado sem corrigir. **Supersedes:** a linha "Scope: Active Effects ONLY" do
+DDL-0031 (a decisão nova que ela mesma previa). **Builds on:** DDL-0055/0056.
+
+**Context.** O DDL-0031 adotou só os Active Effects do overlay e deixou explícito que adotar
+`activities`, `system` e `advancement` seria uma decisão nova. Ela foi tomada, junto com os achados
+avulsos da revisão de level-up.
+
+**Decisions — overlay.**
+- **A precedência do DDL-0031 continua (curado vence), mas agora é POR BLOCO, não por feature.**
+  Effects seguem tudo-ou-nada (um curado silencia o overlay inteiro de effects, como antes);
+  `uses` e `activities` são independentes — o overlay preenche o bloco que o curado não cobre. Faz
+  sentido porque são coisas separadas: uma feature pode ter effect curado e nenhuma activity.
+- **`activities` é um ARRAY no overlay e um MAPA por `_id` no dnd5e**, e seus efeitos são
+  referenciados por um apelido (`effects: [{foundryId: 'naturesVeil'}]`). A tradução gera os `_id`
+  reais dos effects PRIMEIRO e resolve os apelidos contra eles; um link órfão é DESCARTADO, nunca
+  emitido quebrado.
+- **`system` vem em DOT-PATH** (`uses.max`, `range.value`) e é expandido; `uses` recebe os campos
+  que o dnd5e exige e o overlay omite (`spent`).
+- **`advancement` do overlay é só ScaleValue** — exatamente o que `CURATED_SCALE_VALUES` fazia à
+  mão para duas classes. Fighter e Cleric continuam curados (validados contra os premades, e a
+  escala do Cleric é referenciada por uma activity); as outras dez classes passam a vir do
+  overlay, sem repetir um título que a tabela da classe já produziu. **Subclasses ganham
+  ScaleValue pela primeira vez** (dados de superioridade do Battle Master etc.).
+- **Traço de espécie com AÇÃO ou RECURSO vira ITEM próprio** (`feat` com `system.type.value:
+  'race'`, ligado ao item de raça por um ItemGrant de nível 0 — o formato dos premades). É o que
+  destrava as 66 activities de `foundry-races`: um Active Effect transferido alcança o ator a
+  partir de qualquer item embutido, mas uma AÇÃO só existe pendurada num item. Traços que só têm
+  effect continuam sem item, no item de raça (DDL-0031) — e o item de raça deixa de carregar o
+  effect de um traço que ganhou item, senão sairia em dobro.
+- **O casamento continua EDIÇÃO-ESTRITA** (DDL-0031): o overlay tem 295 entradas XPHB e ~250
+  legadas; a mecânica de uma feature TCE não é aplicada à reimpressão XPHB. É por isso que, por
+  exemplo, o Nature's Veil (overlay TCE) não recebe activity no Ranger 2024 — comportamento
+  correto, não lacuna.
+
+**Decisions — achados avulsos.**
+- **O import lê os Traits de escolha** (Expertise, Primal Knowledge, Deft Explorer, Tool
+  Proficiencies, Bonus Proficiencies), casando-os contra os MESMOS descritores que o export usou,
+  por (título, nível) + kind — `choiceTraitTitle` é a fonte única dos dois lados. Vale para atores
+  SEM a nossa flag (premades/Plutonium), que perdiam essas escolhas inteiras; nos nossos, a flag
+  continua chegando depois e vencendo.
+- **`classRestriction` segue o dado, não um default.** Era `'primary'` fixo em todo Trait. Agora:
+  'primary' onde entrar por multiclasse dá coisa diferente, com o par 'secondary' gerado de
+  `multiclassing.proficienciesGained`; NENHUMA restrição quando os conjuntos são iguais (a
+  armadura leve do Rogue). Saves e as perícias iniciais são sempre 'primary' — multiclasse nunca
+  concede os dois.
+- **O ScaleValue "Weapon Mastery" saiu** (`SCALE_LABEL_DENY`): a contagem já é modelada pelos
+  Traits `mode: 'mastery'` por breakpoint, e os premades não têm o ScaleValue homônimo.
+- **O `autoBuild` do sweep deduplica entre escolhas IRMÃS do mesmo kind** (perícia/expertise/
+  ferramenta/idioma). O `owned` do ctx é um retrato do início da passada e não enxerga o que a
+  escolha irmã acabou de escolher — era por isso que um Rogue gerado escolhia a mesma perícia nas
+  duas expertises, algo que a UI não permite.
+
+**Consequences.**
+- ~500 activities e ~190 blocos de uses do overlay passam a exportar sem nenhuma curadoria nova;
+  `foundryActivities`/`foundryFeatureUses` continuam sendo o ponto de override.
+- Espécies com ação (Breath Weapon, Healing Hands, Large Form…) ganham um item usável no Foundry.
+- Verificado: 1017 testes (+16), lint, sweep 274/274 `--strict`, e os **48 premades** importados +
+  re-exportados sem falha (incl. a expertise do Rogue, que antes se perdia). Ver CHANGELOG §65.
 
 ### DDL-0056 — Escolha de proficiência é um Trait NO NÍVEL DELA; procedência por nome exato; a re-listagem "(2)"
 **Date:** 2026-07-22
@@ -1415,6 +1485,8 @@ user asked to resolve the backlog item before the next T1a session.
   `foundryFeatureUses`/`foundryAdvancement` were validated against real premades and adopting
   the overlay's would be a much larger, riskier change with import-side implications. If ever
   wanted, it is a NEW decision, not an extension of this one.
+  **→ That new decision was taken 2026-07-22: see DDL-0057.** All three blocks are now adopted,
+  with the same curated-first precedence; this scope line is history, not current behaviour.
 - **Four files fetched** (all verified 200 on the mirror 2026-07-17, byte-equal to the local
   snapshot): `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json`,
   `class/foundry.json` (db key `foundry-class`). Per DDL-0009's caveats, `foundry-backgrounds`

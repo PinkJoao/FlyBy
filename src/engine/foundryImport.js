@@ -21,7 +21,9 @@ import { latestOnly } from '../selector/reprints';
 import { specificVariants } from './magicVariants';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from './resolve';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
-import { optionalFeatureChoices } from './classFeatureChoices';
+import { optionalFeatureChoices, classLevelChoices, classToolChoices, subclassFeatureChoices } from './classFeatureChoices';
+import { parseClass } from './classData';
+import { TRAIT_CHOICE_KINDS, choiceTraitTitle } from './foundryItems';
 import { parseChoices, collectAbilityPicks } from './choices';
 import { deriveHpBonus } from './hpBonuses';
 
@@ -319,6 +321,58 @@ function featFixedBoosts(featItem) {
   return out;
 }
 
+/**
+ * Traits de ESCOLHA (Expertise, Primal Knowledge, Deft Explorer, Tool
+ * Proficiencies, Bonus Proficiencies de subclasse…) de volta no choice-bag.
+ * Necessário para atores SEM a nossa flag - premades e Plutonium -, que antes
+ * perdiam essas escolhas inteiras (um Rogue 5 premade importava sem nenhuma
+ * expertise). Nos NOSSOS atores a flag vence e chega depois, então isto é só a
+ * rede para os de fora.
+ *
+ * O casamento é contra os MESMOS descritores que o export usou, pelo par
+ * (título, nível) - `choiceTraitTitle` é a fonte única dos dois lados. O `kind`
+ * desempata os homônimos (Deft Explorer emite um Trait de expertise e outro de
+ * idioma no mesmo nível) e vem do `mode` + do prefixo das chaves escolhidas.
+ * @returns {object} bag parcial ({ [choiceId]: { kind, picks } })
+ */
+function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
+  const traits = advList(classItem).filter((a) => a.type === 'Trait' && (a.value?.chosen ?? []).length);
+  if (!traits.length || !classObj) return {};
+  const parsed = parseClass(classObj);
+  const descriptors = [
+    ...classLevelChoices(parsed, classObj, level),
+    ...classToolChoices(classObj),
+    ...subclassFeatureChoices(db, classId, subclassObj, level, parsed?.skillChoice?.from ?? []),
+  ].filter((d) => TRAIT_CHOICE_KINDS.has(d.kind));
+  if (!descriptors.length) return {};
+
+  const key = (title, lvl, kind) => `${norm(title)}|${lvl ?? 1}|${kind}`;
+  const byKey = new Map(descriptors.map((d) => [key(choiceTraitTitle(d), d.level, d.kind), d]));
+
+  const out = {};
+  for (const t of traits) {
+    const chosen = t.value.chosen;
+    // kind a partir do que a chave escolhida representa; `mode: 'expertise'`
+    // separa expertise de uma escolha comum de perícia (ambas são `skills:`).
+    const head = String(chosen[0]).split(':')[0];
+    const kind = head === 'skills'
+      ? (t.configuration?.mode === 'expertise' ? 'expertise' : 'skill')
+      : ({ tool: 'tool', languages: 'language' })[head];
+    if (!kind) continue; // saves/weapon/armor: não são escolhas do nosso bag
+    const desc = byKey.get(key(t.title, t.level, kind));
+    if (!desc) continue;
+    const picks = chosen
+      .map((c) => {
+        if (kind === 'tool') return toolKeyToName(c, db);
+        if (kind === 'language') return languageKeyToName(c, db);
+        return String(c).slice('skills:'.length);
+      })
+      .filter(Boolean);
+    if (picks.length) out[desc.id] = { kind, picks };
+  }
+  return out;
+}
+
 /** Item concedido por um ItemGrant (primeiro item da lista), resolvido pelo _id. */
 function grantedItems(adv, byId) {
   return Object.keys(adv?.value?.added ?? {}).map((id) => byId.get(id)).filter(Boolean);
@@ -479,6 +533,11 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
   const subclassObj = subShort ? resolveSubclassObj(db, classId, subShort, itemSource(subclassItem)) : null;
   const featItems = (actor.items ?? []).filter((i) => i.type === 'feat');
   Object.assign(choices, featureOptionChoiceBag(db, classId, classObj, subclassObj, level, featItems));
+
+  // Escolhas de proficiência/expertise que viajam como Trait no nível delas
+  // (nativo, DDL-0056). Só importa para atores SEM a nossa flag - a flag, logo
+  // abaixo, sobrescreve com os ids exatos.
+  Object.assign(choices, choiceTraitBag(classItem, classObj, subclassObj, db, classId, level));
 
   // Escolhas SEM casa nativa no Foundry (tool@start/expertise/grants curados/
   // optional features/grants `sub:` de subclasse) voltam da flag do item de

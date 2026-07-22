@@ -116,14 +116,24 @@ function translateChange(ch) {
  * @returns {object[]} Active Effects prontos p/ `item.effects`
  */
 export function translateOverlayEffects(entry, fallbackName) {
-  const out = [];
+  return overlayEffectsWithIds(entry, fallbackName).effects;
+}
+
+/** Como translateOverlayEffects, mas devolve também o mapa `foundryId` → `_id`
+ * gerado: as activities do overlay referenciam seus efeitos por esse apelido
+ * (`effects: [{ foundryId: 'naturesVeil' }]`), e sem o mapa o link se perde. */
+function overlayEffectsWithIds(entry, fallbackName) {
+  const effects = [];
+  const byFoundryId = new Map();
   for (const eff of entry?.effects ?? []) {
     if (eff?.type === 'enchantment' || eff?.enchantmentRiderParent) continue;
     const changes = (eff?.changes ?? []).map(translateChange).filter(Boolean);
     const statuses = eff?.statuses ?? [];
     if (!changes.length && !statuses.length) continue;
-    out.push({
-      _id: overlayId(),
+    const _id = overlayId();
+    if (eff.foundryId) byFoundryId.set(eff.foundryId, _id);
+    effects.push({
+      _id,
       name: eff.name ?? fallbackName,
       changes,
       disabled: !!eff.disabled,
@@ -136,7 +146,88 @@ export function translateOverlayEffects(entry, fallbackName) {
       flags: {},
     });
   }
+  return { effects, byFoundryId };
+}
+
+// ---------------------------------------------------------------------------
+// Blocos `system` e `activities` do overlay (DDL-0057)
+// ---------------------------------------------------------------------------
+
+/** Escreve `a.b.c` num objeto, criando os níveis intermediários. */
+function setPath(target, path, value) {
+  const parts = String(path).split('.');
+  let node = target;
+  for (const p of parts.slice(0, -1)) {
+    if (typeof node[p] !== 'object' || node[p] === null) node[p] = {};
+    node = node[p];
+  }
+  node[parts.at(-1)] = value;
+}
+
+/**
+ * Bloco `system` do overlay (chaves em DOT-PATH: `uses.max`, `uses.recovery`,
+ * `range.value`…) num objeto aninhado, pronto p/ mesclar no `system` do item.
+ * `uses` ganha os campos que o dnd5e exige e o overlay omite (`spent`).
+ */
+function translateOverlaySystem(entry) {
+  const out = {};
+  for (const [path, value] of Object.entries(entry?.system ?? {})) setPath(out, path, value);
+  if (out.uses) out.uses = { max: '', spent: 0, recovery: [], ...out.uses };
   return out;
+}
+
+/**
+ * `activities` do overlay (ARRAY) no mapa indexado por `_id` que o dnd5e usa.
+ * Cada activity recebe um `_id`; `effects[].foundryId` é resolvido no `_id` real
+ * do Active Effect correspondente (links órfãos são descartados, não emitidos
+ * quebrados).
+ */
+function translateOverlayActivities(entry, effectIds) {
+  const out = {};
+  for (const act of entry?.activities ?? []) {
+    if (!act?.type) continue;
+    const _id = overlayId();
+    const { effects, ...rest } = act;
+    delete rest.foundryId; // apelido interno do overlay, não é campo do dnd5e
+    const linked = (effects ?? [])
+      .map((e) => (e?.foundryId ? effectIds.get(e.foundryId) : e?._id))
+      .filter(Boolean)
+      .map((id) => ({ _id: id }));
+    out[_id] = { _id, ...rest, ...(linked.length ? { effects: linked } : {}) };
+  }
+  return out;
+}
+
+/**
+ * TODA a mecânica que uma entrada do overlay carrega, de uma vez.
+ * @param {object|null} entry  entrada do overlay
+ * @param {string} fallbackName
+ * @returns {{effects: object[], activities: object, system: object}}
+ */
+export function overlayMechanics(entry, fallbackName) {
+  if (!entry) return { effects: [], activities: {}, system: {} };
+  const { effects, byFoundryId } = overlayEffectsWithIds(entry, fallbackName);
+  return {
+    effects,
+    activities: translateOverlayActivities(entry, byFoundryId),
+    system: translateOverlaySystem(entry),
+  };
+}
+
+/** Advancements do overlay (só ScaleValue) no nosso formato. */
+function translateOverlayAdvancement(entry) {
+  return (entry?.advancement ?? [])
+    .filter((a) => a?.type === 'ScaleValue' && a.configuration?.scale)
+    .map((a) => ({
+      type: 'ScaleValue',
+      title: a.title ?? '',
+      configuration: {
+        identifier: a.configuration.identifier ?? '',
+        type: a.configuration.type ?? 'number',
+        distance: { units: a.configuration.type === 'distance' ? 'ft' : '' },
+        scale: a.configuration.scale,
+      },
+    }));
 }
 
 /** Entre entradas homônimas: mesma FONTE obrigatória (nunca cruzar edição
@@ -153,15 +244,61 @@ function pickEntry(entries, source, level) {
 // Lookups públicos (todos toleram db null → [])
 // ---------------------------------------------------------------------------
 
+/** Entrada crua do overlay p/ um TALENTO (nome+fonte exatos). */
+export function overlayFeatEntry(db, name, source) {
+  return indexFor(db)?.feat.get(`${norm(name)}|${norm(source)}`) ?? null;
+}
+
+/** Entrada crua do overlay p/ uma OPTIONAL FEATURE. */
+export function overlayOptionalFeatureEntry(db, name, source) {
+  return indexFor(db)?.optional.get(`${norm(name)}|${norm(source)}`) ?? null;
+}
+
+/** Entrada crua do overlay p/ uma FEATURE de classe. */
+export function overlayClassFeatureEntry(db, { name, classId, source, level }) {
+  return pickEntry(indexFor(db)?.classFeature.get(`${norm(name)}|${norm(classId)}`), source, level);
+}
+
+/** Entrada crua do overlay p/ uma feature de SUBCLASSE. */
+export function overlaySubclassFeatureEntry(db, { name, classId, shortName, source, level }) {
+  return pickEntry(
+    indexFor(db)?.subclassFeature.get(`${norm(name)}|${norm(classId)}|${norm(shortName)}`),
+    source,
+    level,
+  );
+}
+
+/**
+ * Advancements ScaleValue do overlay para o item de CLASSE - as escalas que a
+ * tabela da classe não traz como coluna (Action Surge, Indomitable…). É o dado
+ * upstream do que `CURATED_SCALE_VALUES` fazia à mão para duas classes.
+ */
+export function overlayClassAdvancement(db, className, source) {
+  const entry = (db?.['foundry-class']?.class ?? [])
+    .find((e) => norm(e.name) === norm(className) && norm(e.source) === norm(source));
+  return translateOverlayAdvancement(entry);
+}
+
+/** Advancements ScaleValue do overlay para o item de SUBCLASSE (dados de
+ * superioridade do Battle Master, etc.). */
+export function overlaySubclassAdvancement(db, { className, shortName, source }) {
+  const entry = (db?.['foundry-class']?.subclass ?? []).find(
+    (e) => norm(e.className) === norm(className)
+      && norm(e.shortName) === norm(shortName)
+      && norm(e.source) === norm(source),
+  );
+  return translateOverlayAdvancement(entry);
+}
+
 /** Active Effects do overlay p/ um TALENTO (nome+fonte exatos). */
 export function overlayFeatEffects(db, name, source) {
-  const entry = indexFor(db)?.feat.get(`${norm(name)}|${norm(source)}`);
+  const entry = overlayFeatEntry(db, name, source);
   return entry ? translateOverlayEffects(entry, name) : [];
 }
 
 /** Active Effects do overlay p/ uma OPTIONAL FEATURE (invocation, metamagic…). */
 export function overlayOptionalFeatureEffects(db, name, source) {
-  const entry = indexFor(db)?.optional.get(`${norm(name)}|${norm(source)}`);
+  const entry = overlayOptionalFeatureEntry(db, name, source);
   return entry ? translateOverlayEffects(entry, name) : [];
 }
 
@@ -170,10 +307,9 @@ export function overlayOptionalFeatureEffects(db, name, source) {
  * @param {object} db
  * @param {{name:string, classId:string, source:string, level?:number}} ref
  */
-export function overlayClassFeatureEffects(db, { name, classId, source, level }) {
-  const entries = indexFor(db)?.classFeature.get(`${norm(name)}|${norm(classId)}`);
-  const entry = pickEntry(entries, source, level);
-  return entry ? translateOverlayEffects(entry, name) : [];
+export function overlayClassFeatureEffects(db, ref) {
+  const entry = overlayClassFeatureEntry(db, ref);
+  return entry ? translateOverlayEffects(entry, ref.name) : [];
 }
 
 /**
@@ -181,10 +317,9 @@ export function overlayClassFeatureEffects(db, { name, classId, source, level })
  * @param {object} db
  * @param {{name:string, classId:string, shortName:string, source:string, level?:number}} ref
  */
-export function overlaySubclassFeatureEffects(db, { name, classId, shortName, source, level }) {
-  const entries = indexFor(db)?.subclassFeature.get(`${norm(name)}|${norm(classId)}|${norm(shortName)}`);
-  const entry = pickEntry(entries, source, level);
-  return entry ? translateOverlayEffects(entry, name) : [];
+export function overlaySubclassFeatureEffects(db, ref) {
+  const entry = overlaySubclassFeatureEntry(db, ref);
+  return entry ? translateOverlayEffects(entry, ref.name) : [];
 }
 
 /**
@@ -201,6 +336,26 @@ export function overlaySubclassFeatureEffects(db, { name, classId, shortName, so
  * @returns {object[]} Active Effects p/ `item.effects` do item de raça
  */
 export function overlayRaceEffects(db, raceObj) {
+  // Traços que ganham ITEM próprio levam a mecânica inteira com eles (effects
+  // inclusive) - senão o efeito sairia em dobro, no item de raça e no do traço.
+  return overlayRaceTraits(db, raceObj)
+    .filter((t) => !t.ownItem)
+    .flatMap((t) => t.effects);
+}
+
+/**
+ * Mecânica de cada TRAÇO da raça no overlay, já casada com os traços que a raça
+ * RESOLVIDA realmente tem (uma linhagem/subraça que substitui um traço não herda
+ * a mecânica dele). `ownItem` marca os traços que precisam de um item próprio:
+ * são os que têm `activities` ou `uses` - uma ação/recurso só existe no Foundry
+ * pendurada num item, ao contrário de um Active Effect transferido, que aplica
+ * ao ator a partir de qualquer item embutido (é o que os premades fazem: Breath
+ * Weapon e Draconic Flight são itens; Darkvision não).
+ * @param {object} db
+ * @param {object} raceObj  raça 5etools RESOLVIDA (linhagem inclusa)
+ * @returns {Array<{name, effects, activities, system, ownItem}>}
+ */
+export function overlayRaceTraits(db, raceObj) {
   if (!raceObj) return [];
   const idx = indexFor(db);
   const src = norm(raceObj.source);
@@ -214,7 +369,8 @@ export function overlayRaceEffects(db, raceObj) {
   const out = [];
   for (const entry of entries) {
     if (!traitNames.has(norm(entry.name))) continue;
-    out.push(...translateOverlayEffects(entry, entry.name));
+    const m = overlayMechanics(entry, entry.name);
+    out.push({ name: entry.name, ...m, ownItem: Object.keys(m.activities).length > 0 || !!m.system.uses });
   }
   return out;
 }

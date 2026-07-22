@@ -156,3 +156,44 @@ describe('buildClassAdvancement - casos gerais', () => {
     expect(buildClassAdvancement(null)).toEqual([]);
   });
 });
+
+// Proficiências reduzidas de quem entra por MULTICLASSE: os premades emitem
+// 'primary' na versão completa e 'secondary' na reduzida, e NENHUMA restrição
+// quando os dois conjuntos são iguais.
+describe('classRestriction (primary/secondary) - gabarito Riswynn/Merric', () => {
+  const rogueish = {
+    name: 'Rogue', source: 'XPHB', hd: { faces: 8 }, proficiency: ['dex', 'int'],
+    startingProficiencies: { armor: ['light'], weapons: ['simple'], skills: [{ choose: { from: ['acrobatics', 'stealth'], count: 4 } }] },
+    multiclassing: { proficienciesGained: { armor: ['light'], skills: [{ choose: { from: ['acrobatics', 'stealth'], count: 1 } }] } },
+    classFeatures: [],
+  };
+  const adv = buildClassAdvancement(rogueish);
+  const traits = adv.filter((a) => a.type === 'Trait');
+  const by = (title, restriction) => traits.find((t) => t.title === title && (t.classRestriction ?? null) === restriction);
+
+  it('armadura IGUAL na multiclasse → um Trait só, sem restrição', () => {
+    expect(traits.filter((t) => t.title === 'Armor Training')).toHaveLength(1);
+    expect(by('Armor Training', null)).toBeTruthy();
+  });
+
+  it('perícias: primary com a contagem cheia + secondary com a reduzida', () => {
+    expect(by('Skill Proficiencies', 'primary').configuration.choices[0].count).toBe(4);
+    expect(by('Skill Proficiencies', 'secondary').configuration.choices[0].count).toBe(1);
+  });
+
+  it('saves são sempre exclusivos da classe original', () => {
+    expect(by('Saving Throw Proficiencies', 'primary')).toBeTruthy();
+  });
+
+  it('categoria ausente na multiclasse → só primary, sem secondary', () => {
+    expect(by('Weapon Proficiencies', 'primary')).toBeTruthy();
+    expect(by('Weapon Proficiencies', 'secondary')).toBeUndefined();
+  });
+
+  it('classe sem bloco multiclassing: perícias seguem primary (multiclasse não dá nada)', () => {
+    const solo = buildClassAdvancement({ ...rogueish, multiclassing: undefined });
+    const sk = solo.filter((a) => a.type === 'Trait' && a.title === 'Skill Proficiencies');
+    expect(sk).toHaveLength(1);
+    expect(sk[0].classRestriction).toBe('primary');
+  });
+});

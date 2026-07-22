@@ -52,6 +52,38 @@
   background: var(--bg-soft);
 }
 
+/* Sugestão do guia (QoL): amber para diferenciar do callout accent. Não é erro
+ * nem bloqueio - só chama atenção a algo incomum (ex: magia obtida em dobro). */
+.suggestion {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--src-origin);
+  background: var(--bg-soft);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.suggestionHead {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.suggestionList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.suggestionList strong {
+  color: var(--text-h);
+}
+
 /* Um campo rotulado (ex: seletor de linhagem, bloco de escolhas). */
 .field {
   display: flex;

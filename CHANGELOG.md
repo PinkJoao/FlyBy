@@ -3772,3 +3772,29 @@ mudanças de código.** Terceiro half-caster da campanha, após o Paladin.
   re-deriva quando ela muda). No fluxo normal (linhagem primeiro) não ocorre; auto-corrigível.
 - Verificado: 950 testes, lint, sweep 274/274 `--strict` (sem alterações — nenhum código
   mudou). Ver DDL-0047.
+
+## 56. QoL: sugestão de magia obtida em duplicidade no guia + lock do preview do seletor
+
+Dois ajustes pequenos de qualidade de vida (DDL-0048).
+
+- **Sugestão de duplicidade de magia no guia (Task 1).** As telas de magia do guia (Cantrips,
+  Spells, e o level-up) agora exibem uma FAIXA de sugestão (âmbar, `.suggestion`) quando o
+  personagem tem uma magia SEMPRE-preparada por uma origem (subclasse/talento/raça) e TAMBÉM a
+  obtém por outra via — preparada à mão numa outra classe (multiclasse) ou concedida por outra
+  fonte (Magic Initiate). É só um AVISO (nunca bloqueia nem remove): preparar a mesma magia por
+  múltiplas vias é permitido e às vezes desejado, mas incomum, e o guia é para novatos. Novo
+  helper puro `redundantPreparations(origins)` em `engine/spellcasting.js` (só aponta quando ≥1
+  origem CONCEDE a magia e ela aparece em ≥2 origens distintas; magia meramente preparada à mão
+  em duas classes NÃO conta) + componente `SpellRedundancyNotice.jsx` (filtra por círculo:
+  cantrip / leveled / all). Complementa o fluxo "Already Prepared" (DDL-0040) e o `exclude` da
+  mesma origem (DDL-0046) — que atuam no momento de ADICIONAR; esta faixa chama atenção a uma
+  duplicidade JÁ existente.
+- **Lock do preview ao reabrir o seletor (Task 2).** No `SelectorPanel`, ao reabrir o painel
+  para SUBSTITUIR algo já escolhido (`currentId`), o preview agora se FIXA no item selecionado e
+  VOLTA a ele quando o mouse sai de um card — antes ficava preso no último item que passou pelo
+  hover (ou no 1º da lista). Novo `selectedRaw` (memo sobre `items` + `currentId`) inserido na
+  cadeia do preview: `hovered ?? detailItem ?? selectedRaw ?? lastHovered ?? results[0]`. Vale
+  para todo picker com valor único (espécie/linhagem/background/subclasse/feat via `PickerField`);
+  na 1ª escolha (`currentId` null) o comportamento antigo (último hover) segue igual.
+- Verificado: 954 testes (+4), lint, e passada ao vivo no seletor de espécie (preview trava no
+  selecionado ao abrir, segue o hover, e retorna ao selecionado ao sair). Ver DDL-0048.

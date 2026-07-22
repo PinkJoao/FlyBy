@@ -13,6 +13,7 @@ import {
   isLeveledProgression,
   arcanumLevels,
   preparedElsewhere,
+  redundantPreparations,
 } from './spellcasting';
 
 describe('slotContribution (regra do Foundry: floor/ceil + override single-class)', () => {
@@ -229,5 +230,50 @@ describe('preparedElsewhere (TC-0031) - magias de OUTRAS origens', () => {
     expect(map.get('foresight')).toBe('Warlock');
     expect(preparedElsewhere([], 'x').size).toBe(0);
     expect(preparedElsewhere(undefined, 'x').size).toBe(0);
+  });
+});
+
+describe('redundantPreparations - sugestão de magia obtida em duplicidade', () => {
+  it('aponta magia sempre-concedida por uma origem e preparada à mão noutra', () => {
+    const origins = [
+      { key: 'class:paladin', label: 'Paladin', alwaysPrepared: [{ raw: { name: 'Aid', level: 2 } }] },
+      { key: 'class:cleric', label: 'Cleric', prepared: [{ raw: { name: 'Aid', level: 2 } }] },
+    ];
+    const out = redundantPreparations(origins);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({
+      name: 'Aid',
+      level: 2,
+      grantedFrom: ['Paladin'],
+      alsoFrom: ['Cleric'],
+    });
+  });
+
+  it('aponta magia concedida por DUAS vias (subclasse + Magic Initiate)', () => {
+    const origins = [
+      { key: 'class:cleric', label: 'Cleric', alwaysPrepared: [{ raw: { name: 'Guidance', level: 0 } }] },
+      { key: 'feat:magic-initiate', label: 'Magic Initiate', alwaysPrepared: [{ raw: { name: 'Guidance', level: 0 } }] },
+    ];
+    const out = redundantPreparations(origins);
+    expect(out).toHaveLength(1);
+    expect(out[0].grantedFrom).toEqual(['Cleric', 'Magic Initiate']);
+    expect(out[0].alsoFrom).toEqual([]); // ambas concedem → nada a "trocar" listado
+  });
+
+  it('NÃO aponta magia meramente preparada à mão em duas classes (sem concessão)', () => {
+    const origins = [
+      { key: 'class:wizard', label: 'Wizard', prepared: [{ raw: { name: 'Shield', level: 1 } }] },
+      { key: 'class:sorcerer', label: 'Sorcerer', prepared: [{ raw: { name: 'Shield', level: 1 } }] },
+    ];
+    expect(redundantPreparations(origins)).toEqual([]);
+  });
+
+  it('NÃO aponta magia concedida numa única origem', () => {
+    const origins = [
+      { key: 'class:paladin', label: 'Paladin', alwaysPrepared: [{ raw: { name: 'Aid', level: 2 } }] },
+    ];
+    expect(redundantPreparations(origins)).toEqual([]);
+    expect(redundantPreparations([])).toEqual([]);
+    expect(redundantPreparations(undefined)).toEqual([]);
   });
 });

@@ -280,3 +280,59 @@ export function preparedElsewhere(origins, excludeKey) {
   }
   return out;
 }
+
+/**
+ * Redundâncias de preparação ENTRE origens, para o guia sugerir (QoL). Uma magia
+ * que uma origem SEMPRE concede (subclasse/talento/raça → `alwaysPrepared`) e que
+ * o personagem TAMBÉM tem por outra via - preparada à mão numa outra classe
+ * (multiclasse) ou concedida por outra fonte, como Magic Initiate - está sendo
+ * obtida em duplicidade. Preparar a mesma magia por múltiplas vias é permitido e
+ * às vezes desejado (atributos diferentes num multiclasse), então isto é só uma
+ * SUGESTÃO - nunca bloqueio nem remoção automática. Mas é incomum, e o guia é
+ * feito para novatos, então vale chamar atenção.
+ *
+ * Só conta quando ao menos uma origem concede a magia sempre-preparada (uma magia
+ * meramente preparada à mão em duas classes não é redundância - ambas custam um
+ * slot e podem ser intencionais). A cópia sugerível de trocar é a das origens em
+ * `alsoFrom` (onde ela não é sempre-concedida).
+ *
+ * @param {Array} origins  derived.spellcasting.origins
+ * @returns {Array<{name:string, level:number, grantedFrom:string[], alsoFrom:string[]}>}
+ */
+export function redundantPreparations(origins) {
+  // nome (minúsculo) → { display, level, granted:Set<label>, other:Set<label> }
+  const byName = new Map();
+  const touch = (s, always, label) => {
+    const display = String(s.raw?.name ?? s.name ?? '');
+    const key = display.toLowerCase();
+    if (!key) return;
+    let e = byName.get(key);
+    if (!e) {
+      e = { display, level: s.raw?.level ?? 0, granted: new Set(), other: new Set() };
+      byName.set(key, e);
+    }
+    e[always ? 'granted' : 'other'].add(label);
+  };
+  for (const o of origins ?? []) {
+    for (const s of o.alwaysPrepared ?? []) touch(s, true, o.label);
+    for (const bucket of [o.cantrips, o.prepared, o.arcanumSpells]) {
+      for (const s of bucket ?? []) touch(s, false, o.label);
+    }
+  }
+
+  const out = [];
+  for (const { display, level, granted, other } of byName.values()) {
+    const grantedFrom = [...granted];
+    // Uma origem que também prepara à mão o que concede já colapsa na derivação
+    // (a concessão vence), então `other` e `granted` não se sobrepõem; ainda
+    // assim filtramos por segurança.
+    const alsoFrom = [...other].filter((l) => !granted.has(l));
+    const distinct = new Set([...granted, ...other]).size;
+    // Redundante quando há ≥1 concessão e a magia aparece em ≥2 origens distintas
+    // (concedida em duas vias, ou concedida numa e preparada/obtida noutra).
+    if (grantedFrom.length >= 1 && distinct >= 2) {
+      out.push({ name: display, level, grantedFrom, alsoFrom });
+    }
+  }
+  return out;
+}

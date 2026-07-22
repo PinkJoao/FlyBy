@@ -8,6 +8,7 @@
 // -----------------------------------------------------------------------------
 
 import SpellPicker from './SpellPicker';
+import SpellRedundancyNotice from './SpellRedundancyNotice';
 import styles from './steps.module.css';
 
 export default function LevelUpSpellsStep({ character, db, derived, onChange }) {
@@ -22,6 +23,8 @@ export default function LevelUpSpellsStep({ character, db, derived, onChange }) 
         Leveling up widens your magic: you can prepare more spells, and sometimes reach a higher circle.
         Add what your new level grants below - anything already prepared stays.
       </p>
+
+      <SpellRedundancyNotice origins={derived.spellcasting?.origins} filter="all" />
 
       {origins.length === 0 && <p className={styles.note}>Nothing new to choose here.</p>}
 

@@ -12,6 +12,7 @@ import { resolveClassObj, resolveSubclassObj } from '../../../engine/resolve';
 import { spellcastingFeature, cantripEntries } from '../../../engine/spellcastingText';
 import FeatureText from '../../common/FeatureText';
 import SpellPicker from './SpellPicker';
+import SpellRedundancyNotice from './SpellRedundancyNotice';
 import styles from './steps.module.css';
 
 export default function CantripsStep({ character, db, derived, onChange }) {
@@ -26,6 +27,8 @@ export default function CantripsStep({ character, db, derived, onChange }) {
         <strong>Cantrips</strong> are the simplest magic your character knows. You can cast them as often as you
         like, no spell slots required, and they're always ready.
       </p>
+
+      <SpellRedundancyNotice origins={derived.spellcasting?.origins} filter="cantrip" />
 
       {origins.map((origin) => {
         const cls = character.classes.find((c) => c.uid === origin.uid);

@@ -227,8 +227,19 @@ export default function SelectorPanel({
 
   const clearFilters = () => setFilterState({});
 
-  // Atualizado: Hover atual > Item Fixado > Último Hover > Primeiro da lista
-  const preview = hovered ?? detailItem ?? lastHovered ?? results[0]?.raw ?? null;
+  // Item já selecionado na ficha (currentId): serve de LOCK do preview. Ao abrir
+  // o painel para SUBSTITUIR algo, o preview mostra o selecionado e VOLTA a ele
+  // quando o mouse sai de um card (como um item clicado/fixado) - em vez de ficar
+  // preso no último hover. Vem de `items` (lista completa), não de `results`, para
+  // aparecer mesmo se um filtro/exclude o escondesse. Sem seleção (1ª escolha),
+  // é null e o comportamento antigo (último hover) segue igual.
+  const selectedRaw = useMemo(
+    () => (currentId != null ? items.find((it) => it.id === currentId)?.raw ?? null : null),
+    [items, currentId],
+  );
+
+  // Hover atual > Item clicado/fixado > Selecionado na ficha > Último hover > 1º da lista
+  const preview = hovered ?? detailItem ?? selectedRaw ?? lastHovered ?? results[0]?.raw ?? null;
 
   // Portal p/ document.body: o painel é `position: fixed` e deve preencher a
   // viewport; renderizado dentro de `.page` (ou de um overlay), um ancestral com

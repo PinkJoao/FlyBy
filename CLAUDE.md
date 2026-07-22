@@ -305,6 +305,52 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0048 — QoL: guia sugere magia obtida em duplicidade; o preview do seletor trava no item já selecionado
+**Date:** 2026-07-21
+**Builds on:** DDL-0046 (o `exclude` da MESMA origem no picker do guia), DDL-0040/TC-0031 (o
+filtro "Already Prepared" da origem CRUZADA), DDL-0011/B2.3 (o colapso prepared→always-prepared).
+**Não altera** nenhuma decisão anterior — são dois acréscimos de qualidade de vida a pedido do
+usuário, entre sessões da Phase T.
+
+**Context.** Dois ajustes pequenos pedidos pelo usuário.
+1. As sessões de Paladin/Ranger consolidaram como o app trata redundância de magias no MOMENTO
+   de adicionar (esconde/avisa). Faltava a QoL inversa: quando o personagem JÁ tem uma magia
+   sempre-preparada por uma via (subclasse etc.) e a obteve ANTES por outra (outra classe num
+   multiclasse, ou um talento como Magic Initiate), o guia deveria CHAMAR ATENÇÃO — é incomum
+   precisar da mesma magia por várias vias, e o guia é para novatos. Explicitamente só sugestão.
+2. Nos seletores, ao reabrir o painel para substituir algo já escolhido, o item seguia marcado
+   como selecionado, mas o PREVIEW não travava nele: mostrava o último item que passou pelo
+   hover, em vez de voltar ao selecionado como acontece com um item clicado/fixado.
+
+**Decisions.**
+- **Sugestão de duplicidade = faixa informativa no guia, nunca bloqueio.** Novo helper puro
+  `redundantPreparations(origins)` (`engine/spellcasting.js`): varre as origens e aponta cada
+  magia que ≥1 origem CONCEDE (`alwaysPrepared`) e que aparece em ≥2 origens distintas — seja
+  concedida por outra via (Magic Initiate + subclasse) ou preparada à mão numa outra classe.
+  Retorna `{name, level, grantedFrom[], alsoFrom[]}`. Deliberadamente NÃO aponta magia meramente
+  preparada à mão em duas classes sem nenhuma concessão (ambas custam slot e podem ser
+  intencionais — atributos diferentes, DDL-0040). Componente `SpellRedundancyNotice.jsx` (faixa
+  âmbar `.suggestion`, distinta do callout accent) montado no topo das telas de magia do guia,
+  filtrando por círculo: CantripsStep = cantrip, SpellsStep = leveled, LevelUpSpellsStep = ambos.
+  Complementa (não substitui) o `exclude` da mesma origem (DDL-0046) e o filtro "Already
+  Prepared" da origem cruzada (DDL-0040), que agem ao ADICIONAR; a faixa fala de uma duplicidade
+  que JÁ existe.
+- **O item selecionado (`currentId`) trava o preview do seletor.** `SelectorPanel` ganhou
+  `selectedRaw` (memo sobre a lista COMPLETA `items` + `currentId`) inserido na cadeia do
+  preview: `hovered ?? detailItem ?? selectedRaw ?? lastHovered ?? results[0]`. Assim, reabrir o
+  painel para substituir algo mostra o selecionado e volta a ele quando o mouse sai de um card —
+  como um item clicado/fixado. Vem de `items` (não de `results`) para aparecer mesmo se um
+  filtro/`exclude` o escondesse. Na 1ª escolha (`currentId` null) `selectedRaw` é null e o
+  comportamento antigo (último hover) segue idêntico. Não toca em `detailItem` (a tela de detalhe
+  do mobile fica intacta). Vale de graça para todo `PickerField` de valor único.
+
+**Consequences.**
+- Um novo picker de valor único com `currentId` ganha o lock automaticamente; um novo tipo de
+  origem de magia entra na sugestão sem fiação extra (o helper varre `origins`).
+- Verificado: 954 testes (+4 em `spellcasting.test.js` cobrindo os quatro ramos de
+  `redundantPreparations`), lint, e passada ao vivo no seletor de espécie (preview trava no
+  selecionado ao abrir, segue o hover, retorna ao selecionado ao sair). Ver CHANGELOG §56.
+
 ### DDL-0047 — T1a Ranger session: sessão limpa (zero achados); o fix do TC-0038 cobre o half-caster Ranger
 **Date:** 2026-07-21
 **Builds on:** DDL-0046 (o fix do TC-0038, aqui reconfirmado no Ranger), DDL-0029 (a linha

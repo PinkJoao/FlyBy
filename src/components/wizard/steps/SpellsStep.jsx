@@ -12,6 +12,7 @@ import { resolveClassObj, resolveSubclassObj } from '../../../engine/resolve';
 import { spellcastingFeature, spellSlotEntries } from '../../../engine/spellcastingText';
 import FeatureText from '../../common/FeatureText';
 import SpellPicker from './SpellPicker';
+import SpellRedundancyNotice from './SpellRedundancyNotice';
 import styles from './steps.module.css';
 
 export default function SpellsStep({ character, db, derived, onChange }) {
@@ -26,6 +27,8 @@ export default function SpellsStep({ character, db, derived, onChange }) {
         Unlike cantrips, <strong>leveled spells</strong> have bigger effects. Casting one spends a{' '}
         <strong>spell slot</strong>, and you can only cast them if you have slots of the required level.
       </p>
+
+      <SpellRedundancyNotice origins={derived.spellcasting?.origins} filter="leveled" />
 
       {origins.length === 0 && (
         <p className={styles.note}>Your spells come from your species or a feat - nothing to choose here.</p>

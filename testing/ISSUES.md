@@ -641,3 +641,48 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > **THE LEDGER NOW HAS NO OPEN ITEMS** - every `TC-` is `fixed@<date>` or `wontfix`. NOTE: this is
 > NOT the same as T1a being complete - the Rogue rows are `ui: ok`, but by alphabetical order
 > **Sorcerer, Warlock and Wizard (32 rows) are still `todo`**. Next session: T1a Sorcerer.
+
+---
+
+## TC-0039 - Storm Sorcery não concede o idioma Primordial (Wind Speaker)
+
+- **Unidade:** `class:sorcerer/Storm` (XGE sobre o chassi XPHB). **Severidade:** bug (derivação
+  incompleta). **Encontrado:** T1a sessão 11 (Sorcerer), 2026-07-22. **Status:** fixed@2026-07-22.
+- Sintoma: um Sorcerer 19 / Storm Sorcery mostrava LANGUAGES = Common, Aarakocra no card de
+  Proficiências - sem **Primordial**, que a feature Wind Speaker concede em PROSA ("You can speak,
+  read, and write Primordial. Knowing this language allows you to understand… Aquan, Auran, Ignan,
+  Terran").
+- Raiz: idêntica ao TC-0032 (Speech of the Woods → Sylvan, Shepherd). O grant só existe no texto;
+  não há campo estruturado, e `SUBCLASS_GRANTS` (`engine/subclassGrants.js`) não tinha nenhuma
+  entrada para sorcerer. A varredura curada de 2026-07-16 procurou fraseado de PROFICIÊNCIA e
+  continua não pegando concessões de IDIOMA.
+- Fix: `'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages: ['Primordial'] }]`.
+  Nível 3 porque o `_copy` XPHB reaponta a umbrella "Storm Sorcery" para o nível 3 e a subclasse não
+  é escolhível antes disso. Varredura de `{@language}` em TODAS as subclasses de sorcerer das fontes
+  atuais confirmou que Storm é o ÚNICO caso alcançável (o Draconic Bloodline PHB, que concede
+  Draconic, é reprint-oculto pelo Draconic Sorcery XPHB, que não concede idioma).
+- Verificado ao vivo (LANGUAGES = Common, Primordial, Aarakocra) + 2 testes em
+  `subclassGrants.test.js` (nível 3 concede, nível 2 não).
+
+## TC-0040 - `text-transform: capitalize` do PickerField quebra nomes próprios
+
+- **Unidade:** transversal (todo `PickerField`). **Severidade:** polish (cosmético).
+  **Encontrado:** T1a sessão 11 (Sorcerer), 2026-07-22. **Status:** fixed@2026-07-22.
+- Sintoma: o chip do slot de Epic Boon mostrava "Boon **Of** Fortitude". O DOM continha o nome
+  correto ("Boon of Fortitude"); quem alterava era a regra `.name { text-transform: capitalize }`
+  em `components/common/PickerField.module.css`. Atingiria qualquer nome com partícula minúscula
+  ("Pass without Trace", "Circle of the Land", os 29 "Boon of …").
+- Raiz: a regra era uma muleta da época em que alguns callers passavam ids minúsculos. Desde o
+  TC-0016 (DDL-0033) todos passam o nome REAL da entidade ou um id já capitalizado
+  (`capitalize(classId)`), então ela só introduzia erro.
+- Fix: regra removida (com comentário explicando por quê). Verificado ao vivo: os rótulos de
+  classe/subclasse/espécie continuam corretos e o boon passa a ler "Boon of Fortitude".
+
+---
+
+> **2026-07-22 (T1a sessão 11 - Sorcerer)**: dois achados (TC-0039, TC-0040), ambos corrigidos em
+> sessão. Também verificados sem problema: Metamagic (10 opções, 2→4→6), a coluna Sorcery Points da
+> tabela, Draconic Resilience na CA ao vivo (DDL-0045), os caps de atributo (DDL-0034: ASIs saturam
+> em 20, Epic Boon leva a 21), o spellSet do Divine Soul, as "3 Charges" do Summon Beast do Shadow
+> (DDL-0011), a tabela d100 do Wild Magic Surge e o fluxo "Already Prepared" cruzado do DDL-0040.
+> Nenhum item do ledger fica aberto. Restam **Warlock e Wizard (23 linhas)** para fechar a T1a.

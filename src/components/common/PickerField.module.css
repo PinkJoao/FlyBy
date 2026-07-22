@@ -23,8 +23,11 @@
   cursor: pointer;
 }
 
+/* Sem `text-transform: capitalize` (TC-0040): todo caller passa o nome REAL da
+   entidade (ou um id já capitalizado - TC-0016), então capitalizar de novo só
+   quebra as partículas minúsculas dos nomes próprios ("Boon of Fortitude" virava
+   "Boon Of Fortitude", "Pass without Trace" → "Pass Without Trace"). */
 .name {
-  text-transform: capitalize;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

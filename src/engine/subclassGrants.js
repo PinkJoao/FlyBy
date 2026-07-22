@@ -111,6 +111,11 @@ export const SUBCLASS_GRANTS = {
   ],
   'rogue|mastermind': [{ level: 3, feature: 'Master of Intrigue', tools: ['Disguise Kit', 'Forgery Kit'] }],
   'rogue|scout': [{ level: 3, feature: 'Survivalist', skills: ['nat', 'sur'], expertiseSkills: ['nat', 'sur'] }],
+  // Wind Speaker é PROSA ("You can speak, read, and write Primordial") - o grant
+  // não está em nenhum campo estruturado (TC-0039, mesma família do Sylvan do
+  // Shepherd). Nível 3: no chassi 2024 a umbrella "Storm Sorcery" é reapontada
+  // para o nível 3, e a subclasse não é escolhível antes disso.
+  'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages: ['Primordial'] }],
   'warlock|hexblade': [{ level: 1, feature: 'Hex Warrior', armor: [MEDIUM, SHIELDS], weapons: [MARTIAL] }],
   'wizard|bladesinging': [
     { level: 2, feature: 'Training in War and Song', armor: [LIGHT], skills: ['prf'] },

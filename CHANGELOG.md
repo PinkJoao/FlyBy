@@ -3845,3 +3845,43 @@ Rogue (TC-0021), pendente desde a sessão do Barbarian.
   Sets + 2 Languages); @19 todos os slots de Feat/Expertise/Epic Boon renderizam (Sneak Attack 10d6,
   PB +6). Mobile 375px sem overflow horizontal; zero erros de console.
 - Verificado: 962 testes (+1, `choices.test.js`), lint, sweep 274/274 `--strict`. Ver DDL-0050.
+
+## 59. T1a sessão 11: Sorcerer + 10 subclasses (TC-0039/TC-0040, DDL-0051)
+
+Primeiro full caster da campanha (Artificer/EK/AT eram parciais). Dois achados, ambos corrigidos
+em sessão.
+
+- **TC-0039 - Storm Sorcery não concedia Primordial.** Wind Speaker (@3, prosa: "You can speak,
+  read, and write Primordial") não tem campo estruturado, e o registro curado não tinha linha para
+  sorcerer. `'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages: ['Primordial'] }]`
+  em `engine/subclassGrants.js` - mesma família do Sylvan do Shepherd (TC-0032/DDL-0041). Nível 3
+  porque no chassi 2024 a umbrella "Storm Sorcery" é reapontada para o nível 3 (o `_copy` XPHB) e a
+  subclasse não é escolhível antes disso. Verificado ao vivo: card LANGUAGES = Common, **Primordial**,
+  Aarakocra.
+- **TC-0040 - `text-transform: capitalize` do PickerField quebrava nomes próprios.** O DOM já
+  carregava o nome certo ("Boon of Fortitude"), mas a regra `.name` renderizava "Boon Of Fortitude"
+  (e quebraria "Pass without Trace", "Circle of the Land"…). Removida: desde o TC-0016 todo caller
+  passa o nome REAL da entidade ou um id já capitalizado, então a muleta de CSS só fazia mal.
+- **Sessão T1a completa** (as 10 linhas `class:sorcerer/*` → `ui: ok`). Rep build **Draconic**:
+  guided create completo (Dragonborn Red / Magic Initiate (Wizard) / Standard Array com o spread
+  recomendado do Sorcerer), overlay de level-up 1→3 e jump a 19 pelo campo Level da aba Class.
+  - **Derivações:** L1 HP 8 (d6 + Con 2), AC 11; L3 **AC 14 = Draconic Resilience** (10 + Dex 1 +
+    Cha 3, com o rótulo na quebra do card - DDL-0045) e HP 23 (inclui os +3/+1-por-nível da
+    Resilience); L19 HP 213 (135 base+Resilience, +38 Tough, +40 Boon of Fortitude), slots
+    **4/3/3/3/3/2/1/1/1**, DC 19, ataque +11, PB +6, prepared 21 / cantrips 6.
+  - **Caps DDL-0034 ao vivo:** dois ASIs +2 em Cha saturam em **20** e o Epic Boon leva a **21**.
+  - **Metamagic:** 10 opções XPHB no seletor, 2 @2 → 4 @10 → **6 @17** (chips + preview corretos);
+    coluna **Sorcery Points** da tabela de classe presente (ScaleValue).
+  - **DDL-0040 verificado no chassi Sorcerer:** o picker do guia esconde Prestidigitation/Fire Bolt/
+    Magic Missile (Magic Initiate, origem CRUZADA) pelo filtro "Already Prepared" pré-marcado; o
+    slot de ASI pré-marca General (Tough só aparece ao limpar o filtro, com badge Origin) e o slot
+    de Epic Boon pré-marca Epic Boon (29 boons).
+  - **Subclasses:** todas as 10 listadas; swaps @19 verificados - **Divine Soul** (spellSet
+    Good/Evil/Law/Chaos/Neutrality → Cure Wounds Always Prepared), **Shadow** (11 magias concedidas +
+    Summon Beast com badge "3 Charges" e entrada no card de Uses - frequência honesta, DDL-0011),
+    **Wild Magic** (tabela d100 do Surge renderiza), Draconic/Storm/Lunar/Aberrant/Clockwork/
+    Spellfire/Pyromancer sem `{@tag}` vazando. A reconciliação DDL-0049 removeu corretamente as
+    magias concedidas pela subclasse ANTERIOR a cada troca.
+  - Mobile 375px sem overflow (Class/Spellbook/Inventory); zero erros de console.
+- Verificado: 963 testes (+2 em `subclassGrants.test.js`), lint, sweep 274/274 `--strict`.
+  Ver DDL-0051.

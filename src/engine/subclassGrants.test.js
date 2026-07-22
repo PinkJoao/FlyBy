@@ -19,6 +19,10 @@ const db = {
     class: [{ name: 'Druid', source: 'XPHB', proficiency: ['int', 'wis'], startingProficiencies: {} }],
     subclass: [{ name: 'Circle of the Shepherd', shortName: 'Shepherd', source: 'XGE', subclassFeatures: [] }],
   },
+  'class-sorcerer': {
+    class: [{ name: 'Sorcerer', source: 'XPHB', proficiency: ['con', 'cha'], startingProficiencies: {} }],
+    subclass: [{ name: 'Storm Sorcery', shortName: 'Storm', source: 'XGE', subclassFeatures: [] }],
+  },
   races: { race: [] },
   feats: { feat: [] },
 };
@@ -55,6 +59,11 @@ describe('deriveSubclassGrants (TC-0012)', () => {
 
   it('Shepherd: Sylvan (Speech of the Woods) no nível 3+', () => {
     expect(deriveSubclassGrants(mk('druid', 'Shepherd', 3), db).languages).toEqual(['Sylvan']);
+  });
+
+  it('Storm Sorcery: Primordial (Wind Speaker) no nível 3+ (TC-0039)', () => {
+    expect(deriveSubclassGrants(mk('sorcerer', 'Storm', 3), db).languages).toEqual(['Primordial']);
+    expect(deriveSubclassGrants(mk('sorcerer', 'Storm', 2), db).languages).toEqual([]);
   });
 
   it('filtro por fonte: grupos EFA não se aplicam à subclasse TCE', () => {

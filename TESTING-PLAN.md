@@ -224,6 +224,37 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-22** - **T1a session 11: SORCERER + all 10 subclasses done** (all rows `ui: ok`).
+  Sweep green before starting (274/274 strict). **First full caster of the campaign** (Artificer/
+  Eldritch Knight/Arcane Trickster were partial). Rep build **Draconic**: full guided create
+  (Dragonborn **Red** lineage / Magic Initiate (Wizard) / Standard Array pre-filled with the
+  Sorcerer spread), overlay level-ups 1→3, jump to 19 via the Class-tab Level field, fixup guide.
+  **Derivations:** L1 HP 8 / AC 11; **L3 AC 14 = Draconic Resilience** (10 + Dex 1 + Cha 3, label
+  shown in the AC breakdown - DDL-0045) and HP 23 (its +3/+1-per-level included); L19 **HP 213**
+  (135 base+Resilience, +38 Tough, +40 Boon of Fortitude), slots **4/3/3/3/3/2/1/1/1**, DC 19,
+  attack +11, prepared 21 / cantrips 6. **DDL-0034 caps live:** two +2 ASIs saturate Cha at 20,
+  the Epic Boon lifts it to 21.
+  **Metamagic:** 10 XPHB options in the picker, **2 @2 → 4 @10 → 6 @17**, chips + previews fine;
+  the class table carries the **Sorcery Points** column (ScaleValue).
+  **DDL-0040 verified on this chassis:** the guide's spell picker hides Prestidigitation/Fire Bolt/
+  Magic Missile (Magic Initiate = CROSS origin) behind the pre-marked "Already Prepared" filter;
+  the ASI slot pre-marks General (Tough only appears after clearing the filter, badged Origin) and
+  the Epic Boon slot pre-marks Epic Boon (29 boons).
+  **Subclass swaps @19:** Divine Soul (spellSet Good/Evil/Law/Chaos/Neutrality → Cure Wounds Always
+  Prepared), Shadow (11 granted + Summon Beast badged "3 Charges" with a Uses-card entry, DDL-0011),
+  Wild Magic (d100 Surge table renders), plus Storm/Lunar/Aberrant/Clockwork/Spellfire/Pyromancer -
+  no `{@tag}` leaks. DDL-0049's reconciliation correctly dropped the previous subclass's granted
+  spells on each swap. Mobile 375px no overflow; zero console errors.
+  Findings - BOTH fixed in-session: **TC-0039** (Storm Sorcery never granted **Primordial** - Wind
+  Speaker is prose-only; one `SUBCLASS_GRANTS` line, same family as TC-0032's Sylvan), **TC-0040**
+  (the PickerField's `text-transform: capitalize` rendered "Boon **Of** Fortitude" - the DOM text
+  was right; the CSS crutch predates TC-0016 and is now removed).
+  963 tests (+2), lint, sweep 274/274 `--strict`. See CHANGELOG §59 + DDL-0051.
+  **Next action: T1a session 12 - WARLOCK + its 9 subclasses** (Pact Magic: pact slots + the
+  **Mystic Arcanum** semantics of DDL-0010 at 11/13/15/17, Eldritch Invocations as optional-feature
+  picks with prerequisites, and the curated `warlock|hexblade` grants; Archfey's double-granted
+  Misty Step is the DDL-0011 dedup case). Then WIZARD closes T1a.
+
 - **2026-07-21 (4)** - **T1a session 10: ROGUE + all 10 subclasses done** (all rows `ui: ok`).
   **The ISSUES.md ledger now has NO open items** (TC-0021 was the last). This is NOT the same as
   T1a being finished: by alphabetical order **SORCERER, WARLOCK and WIZARD (32 rows) are still

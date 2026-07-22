@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-22T01:26:52.695Z · base seed 1 · 274 rows
+Last sweep: 2026-07-22T12:30:51.426Z · base seed 1 · 274 rows
 
 ## Classes × subclasses (135)
 
@@ -114,16 +114,16 @@ Last sweep: 2026-07-22T01:26:52.695Z · base seed 1 · 274 rows
 | `class:rogue/Thief` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
 | `class:rogue/Scion of the Three` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
 | `class:rogue/Phantom` | ok | 1 3 4 6 8 10 12 16 19 | ok | todo |  |
-| `class:sorcerer/Pyromancer (PSK)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Divine Soul` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Storm` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Lunar` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Aberrant` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Clockwork` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Draconic` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Wild Magic` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Spellfire` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
-| `class:sorcerer/Shadow` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | todo | todo |  |
+| `class:sorcerer/Pyromancer (PSK)` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: 4 features (Heart of Fire/Fire in the Veins/Fury/Fiery Soul) renderizam; sem grants nem magias (correto) |
+| `class:sorcerer/Divine Soul` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: spellSet Good/Evil/Law/Chaos/Neutrality renderiza; "Good" concede Cure Wounds Always Prepared |
+| `class:sorcerer/Storm` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | TC-0039 encontrado+corrigido aqui: Wind Speaker concede Primordial (card LANGUAGES verificado ao vivo) |
+| `class:sorcerer/Lunar` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: 15 magias concedidas (fases lunares) derivam; features renderizam |
+| `class:sorcerer/Aberrant` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: 11 magias concedidas Always Prepared; Mind Sliver colapsa com o pick manual |
+| `class:sorcerer/Clockwork` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: 10 magias concedidas Always Prepared; features renderizam |
+| `class:sorcerer/Draconic` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | REP BUILD: guided create (Dragonborn Red / Magic Initiate) + overlay 1-3 + jump a 19; AC 14 = Draconic Resilience ao vivo (DDL-0045); HP 213 (Tough+Boon); caps DDL-0034 (ASIs saturam Cha 20, boon 21); Metamagic 2/4/6; slots 4/3/3/3/3/2/1/1/1 DC 19 |
+| `class:sorcerer/Wild Magic` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19: tabela d100 do Wild Magic Surge renderiza; sem magias concedidas (correto) |
+| `class:sorcerer/Spellfire` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19 (FRHoF): 11 magias concedidas Always Prepared |
+| `class:sorcerer/Shadow` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 | ok | todo | swap @19 (RHW): 11 magias concedidas + Summon Beast com badge "3 Charges" no card de Uses (DDL-0011) |
 | `class:wizard/Conjuration` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
 | `class:wizard/Enchantment` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |
 | `class:wizard/Necromancy` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 | todo | todo |  |

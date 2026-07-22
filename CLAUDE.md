@@ -305,6 +305,45 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0051 — T1a Sorcerer session: idioma em prosa vira linha de registro (TC-0039); nome próprio não se re-capitaliza (TC-0040)
+**Date:** 2026-07-22
+**Builds on:** DDL-0041/TC-0032 (o precedente EXATO — Sylvan do Shepherd, grant de idioma em prosa
+de subclasse), DDL-0033/TC-0016 (que tornou obsoleta a muleta de CSS removida aqui), DDL-0045
+(Draconic Resilience, verificada ao vivo nesta sessão), DDL-0034/0040/0049 (verificados).
+
+**Context.** T1a sessão 11 (Sorcerer + 10 subclasses, TESTING-PLAN §7 2026-07-22). Primeiro FULL
+caster da campanha — os anteriores eram parciais (Artificer, Eldritch Knight, Arcane Trickster) ou
+half-casters. Dois achados, ambos corrigidos em sessão.
+
+**Decisions.**
+- **Grant de IDIOMA em prosa continua sendo uma linha do registro curado** (TC-0039): Wind Speaker
+  (Storm Sorcery XGE) → `'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages:
+  ['Primordial'] }]` em `SUBCLASS_GRANTS`. **Nível 3, não 1**: no chassi 2024 o stub `_copy` XPHB
+  reaponta a umbrella "Storm Sorcery" para o nível 3, e a subclasse não é escolhível antes disso
+  (a feature interna declara nível 1 por herança do chassi 2014). REGRA reafirmada (2ª ocorrência
+  do mesmo tipo): a varredura curada de 2026-07-16 mirou fraseado de PROFICIÊNCIA, então cada
+  sessão T1a deve conferir o card **LANGUAGES** por subclasse, não só armas/armadura/ferramentas.
+  Varredura de `{@language}` nas subclasses de sorcerer das fontes atuais confirma que Storm é o
+  único caso alcançável (Draconic Bloodline PHB, que dá Draconic, é reprint-oculto).
+- **Nome próprio de entidade renderiza como o dado escreve — nada de `text-transform: capitalize`**
+  (TC-0040). A regra `.name` do `PickerField.module.css` era uma muleta da época em que alguns
+  callers passavam ids minúsculos; desde o TC-0016 todos passam o nome REAL ou um id já
+  capitalizado, então ela só corrompia partículas ("Boon **Of** Fortitude", e quebraria "Pass
+  without Trace", "Circle of the Land"). Removida. REGRA: se um label sair minúsculo, conserte o
+  CALLER (resolva a entidade), nunca reintroduza o transform.
+
+**Consequences.**
+- Cobertura: as 10 linhas `class:sorcerer/*` com `ui: ok`. Verificados sem achado: Metamagic
+  (10 opções, 2 @2 → 4 @10 → 6 @17), a coluna **Sorcery Points** da tabela (ScaleValue), a CA da
+  Draconic Resilience ao vivo (14 = 10+Dex+Cha, com rótulo na quebra — DDL-0045), os caps do
+  DDL-0034 (ASIs saturam Cha em 20, Epic Boon leva a 21), o spellSet do Divine Soul, as "3 Charges"
+  do Summon Beast do Shadow (DDL-0011), a tabela d100 do Wild Magic Surge, o fluxo cruzado
+  "Already Prepared" (DDL-0040) e a reconciliação de magias ao trocar de subclasse (DDL-0049).
+- Verificado: 963 testes (+2 em `subclassGrants.test.js`), lint, sweep 274/274 `--strict`, passada
+  ao vivo completa + mobile 375px sem overflow e zero erros de console. Ver CHANGELOG §59.
+  **Próximo: T1a sessão 12 — WARLOCK** (Pact Magic, Mystic Arcanum do DDL-0010, invocações), depois
+  **Wizard** para fechar a T1a.
+
 ### DDL-0050 — T1a Rogue session: `martialRequiresAnyProp` fecha o Weapon Mastery condicional (TC-0021)
 **Resolve:** TC-0021 (a metade Rogue — o ÚNICO item aberto do ledger de testes). **Builds on:**
 DDL-0033/TC-0021 (o registro `MASTERY_FILTERS` + a máquina `weaponFilterAllows`, cuja lacuna

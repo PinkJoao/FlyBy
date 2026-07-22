@@ -403,6 +403,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
   const level = classItem.system?.levels ?? 1;
   const choices = {};
   const hitPoints = {};
+  const masteryByLevel = [];
 
   for (const adv of advList(classItem)) {
     switch (adv.type) {
@@ -417,8 +418,11 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
           const picks = chosen.filter((c) => c.startsWith('skills:')).map((c) => c.slice('skills:'.length));
           if (picks.length) choices.skill = { kind: 'skill', picks };
         } else if (/weapon mastery/i.test(adv.title ?? '')) {
+          // A contagem de maestrias CRESCE, e o SRD modela isso com um Trait por
+          // breakpoint carregando só o delta daquele nível: ACUMULA todos (na
+          // ordem de nível), em vez de deixar o último sobrescrever os anteriores.
           const picks = chosen.map((k) => weaponKeyToPick(k, db)).filter(Boolean);
-          if (picks.length) choices.weaponMastery = { kind: 'weapon', picks };
+          if (picks.length) masteryByLevel.push({ level: adv.level ?? 1, picks });
         }
         break;
       }
@@ -461,6 +465,11 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
       default:
         break;
     }
+  }
+
+  if (masteryByLevel.length) {
+    const picks = masteryByLevel.sort((a, b) => a.level - b.level).flatMap((m) => m.picks);
+    choices.weaponMastery = { kind: 'weapon', picks };
   }
 
   // Escolhas de "uma das seguintes" (Divine Order, Blessed Strikes…) - não estão

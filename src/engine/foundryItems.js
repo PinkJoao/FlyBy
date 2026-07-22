@@ -28,6 +28,9 @@ import { effectiveSizeCodes, sizePick } from './speciesData';
 import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts } from './choices';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { itemValue } from './magicItemPrice';
+import { classFeatureUuid, subclassFeatureUuid, spellUuid } from './compendiumUuids';
+import { grantedSpells } from './grantedSpells';
+import { curatedAdditionalSpells } from './grantedSpellUses';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
@@ -241,7 +244,7 @@ export function subclassFluffHtml(db, classId, subclass) {
  * UUID RELATIVO `.${_id}` (o `.` = "neste documento"), tanto em `configuration.items`
  * quanto em `value.added` - o mesmo formato de um ator funcional exportado.
  * @param {object[]} featureItems  itens com flags.builder5e.level
- * @param {string} title           ex: 'Features' | 'Subclass Features'
+ * @param {string} title           ex: 'Class Features' | 'Subclass Features'
  */
 function itemGrantAdvancements(featureItems, title) {
   const byLevel = new Map();
@@ -259,6 +262,43 @@ function itemGrantAdvancements(featureItems, title) {
       title,
       configuration: { items: items.map((i) => ({ uuid: `.${i._id}`, optional: false })), optional: false, spell: null },
       value: { added: Object.fromEntries(items.map((i) => [i._id, `.${i._id}`])) },
+    }));
+}
+
+/** Nível máximo de personagem (a escada de advancement vai até aqui). */
+const MAX_LEVEL = 20;
+
+/**
+ * Advancements ItemGrant dos níveis FUTUROS - a "receita" que o Foundry desdobra
+ * quando o jogador sobe de nível DENTRO dele. Ao contrário dos níveis já
+ * alcançados (itens embutidos, uuid relativo), estes precisam apontar para o
+ * COMPÊNDIO: o item ainda não existe no ator. Formato copiado dos premades
+ * oficiais - `configuration.items` preenchido, `value` vazio.
+ *
+ * Níveis cujos uuids são todos desconhecidos (conteúdo fora do SRD que o dnd5e
+ * publica) simplesmente não geram passo: melhor não ter a escada do que ter um
+ * ItemGrant apontando para um documento inexistente.
+ * @param {Array<{level: number, uuid: string}>} entries
+ * @param {string} title
+ * @returns {object[]} entradas de advancement (já com `_id`)
+ */
+function futureItemGrants(entries, title) {
+  const byLevel = new Map();
+  for (const e of entries) {
+    if (!e.uuid) continue;
+    if (!byLevel.has(e.level)) byLevel.set(e.level, []);
+    const list = byLevel.get(e.level);
+    if (!list.includes(e.uuid)) list.push(e.uuid); // dedup (a mesma magia em 2 grupos)
+  }
+  return [...byLevel.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([level, uuids]) => ({
+      _id: randomFoundryId(),
+      type: 'ItemGrant',
+      level,
+      title,
+      configuration: { items: uuids.map((uuid) => ({ uuid, optional: false })), optional: false, spell: null },
+      value: {},
     }));
 }
 
@@ -287,9 +327,11 @@ export function hitPointsValue(classEntry) {
  * @param {Record<number, object>} [asiByLevel]  valor do advancement ASI por nível
  *   (talento escolhido ou ASI cru) - ver buildClassChosenFeats.
  * @param {{ description?: string, traitValues?: Record<string, string[]>,
- *           fightingStyles?: {itemId: string, level: number}[] }} [opts]
+ *           fightingStyles?: {itemId: string, level: number}[],
+ *           futureGrants?: object[] }} [opts]
  *   description: HTML de fluff da classe; traitValues: chosen[] por título de Trait
- *   (buildClassTraitValues); fightingStyles: picks p/ o ItemChoice (buildClassChosenFeats).
+ *   (buildClassTraitValues); fightingStyles: picks p/ o ItemChoice (buildClassChosenFeats);
+ *   futureGrants: escada dos níveis futuros (buildClassFutureGrants).
  * @returns {object} item Foundry (type 'class')
  */
 export function buildClassItem(classEntry, classObj, featureItems = [], asiByLevel = {}, opts = {}) {
@@ -301,14 +343,25 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   // Trait recebe `value.chosen` (o formato APLICADO dos premades - sem ele o Foundry
   // trata o advancement como pendente): grants fixos copiam os grants, escolhas
   // (perícias/mastery) vêm de opts.traitValues.
+  // Quantos picks de cada título de Trait já foram distribuídos: um mesmo título
+  // pode aparecer em VÁRIOS níveis carregando o delta daquele nível (Weapon
+  // Mastery 2@1 → +1@4 → +1@10), e cada passo leva só a sua fatia dos escolhidos.
+  const traitUsed = {};
   const advancement = buildClassAdvancement(classObj).map((a) => {
     const entry = { _id: randomFoundryId(), value: {}, ...a };
     if (entry.type === 'HitPoints') entry.value = hitPointsValue(classEntry);
     if (entry.type === 'AbilityScoreImprovement' && asiByLevel[entry.level]) entry.value = asiByLevel[entry.level];
     if (entry.type === 'Trait') {
       const cfg = entry.configuration ?? {};
+      const picks = opts.traitValues?.[entry.title];
       if (cfg.grants?.length && !(cfg.choices ?? []).length) entry.value = { chosen: [...cfg.grants] };
-      else if (opts.traitValues?.[entry.title]?.length) entry.value = { chosen: [...opts.traitValues[entry.title]] };
+      else if (picks?.length) {
+        const from = traitUsed[entry.title] ?? 0;
+        const count = (cfg.choices ?? []).reduce((n, c) => n + (c.count ?? 0), 0) || picks.length;
+        traitUsed[entry.title] = from + count;
+        const slice = picks.slice(from, from + count);
+        if (slice.length) entry.value = { chosen: slice };
+      }
     }
     // ItemChoice do Fighting Style (gerado no buildClassAdvancement): o value.added
     // aponta por nível pro item de feat EMBUTIDO escolhido (uuid relativo).
@@ -322,7 +375,10 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
     return entry;
   });
 
-  advancement.push(...itemGrantAdvancements(featureItems, 'Features'));
+  advancement.push(...itemGrantAdvancements(featureItems, 'Class Features'));
+  // Receita dos níveis ainda não alcançados (uuids de compêndio) - é o que faz o
+  // level-up DENTRO do Foundry conceder as features novas.
+  advancement.push(...(opts.futureGrants ?? []));
 
   const faces = classObj.hd?.faces ?? parsed.hitDieMax ?? 8;
   const caster = parsed.spellcasting.casterProgression;
@@ -494,6 +550,24 @@ export function buildFeatureItem(feature, db = null) {
 export function buildClassFeatureItems(classEntry, classObj, db) {
   const classId = norm(classObj?.name);
   return resolveClassFeatures(db, classId, classObj, classEntry.level || 1).map((f) => buildFeatureItem(f, db));
+}
+
+/**
+ * Escada de ItemGrant dos níveis ACIMA do nível atual da classe, apontando para
+ * o compêndio do dnd5e - sem ela, subir de nível dentro do Foundry não concede
+ * feature nenhuma (ver engine/compendiumUuids.js).
+ * @param {import('../schema/character').ClassEntry} classEntry
+ * @param {object} classObj
+ * @param {object} db
+ * @returns {object[]} entradas de advancement ItemGrant
+ */
+export function buildClassFutureGrants(classEntry, classObj, db) {
+  const classId = norm(classObj?.name);
+  const level = classEntry.level || 1;
+  const entries = resolveClassFeatures(db, classId, classObj, MAX_LEVEL)
+    .filter((f) => f.level > level)
+    .map((f) => ({ level: f.level, uuid: classFeatureUuid(classId, f.name) }));
+  return futureItemGrants(entries, 'Class Features');
 }
 
 /**
@@ -886,7 +960,9 @@ export function buildBackgroundItem(character, originFeatItem = null, db = null)
  * @param {number} level
  * @returns {object[]} itens Foundry (type 'feat')
  */
-export function buildSubclassFeatureItems(subclass, classId, db, level) {
+/** Features de subclasse do pool cru, em ordem, dentro de uma faixa de níveis.
+ * Compartilhado pelos itens (níveis alcançados) e pela escada futura. */
+function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } = {}) {
   if (!subclass) return [];
   const short = norm(subclass.shortName);
   const src = norm(subclass.source);
@@ -898,18 +974,62 @@ export function buildSubclassFeatureItems(subclass, classId, db, level) {
     // Filtra pela FONTE da subclasse - o pool cru mistura edições (PHB + XPHB),
     // o que geraria features duplicadas.
     if (src && norm(f.subclassSource ?? f.source) !== src) continue;
-    if ((f.level ?? 0) > level) continue;
+    const lvl = f.level ?? 0;
+    if (lvl < min || (max != null && lvl > max)) continue;
     const n = norm(f.name);
     if (umbrella.has(n) || NON_ITEM_FEATURES.has(n)) continue;
-    const key = `${n}|${f.level}`;
+    const key = `${n}|${lvl}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(buildFeatureItem(
-      { name: f.name, level: f.level, source: f.source ?? subclass.source, entries: f.entries ?? [], classId, subclass: { shortName: subclass.shortName } },
-      db,
-    ));
+    out.push({ name: f.name, level: lvl, source: f.source ?? subclass.source, entries: f.entries ?? [] });
   }
   return out;
+}
+
+export function buildSubclassFeatureItems(subclass, classId, db, level) {
+  return resolveSubclassFeatures(subclass, classId, db, { max: level }).map((f) => buildFeatureItem(
+    { ...f, classId, subclass: { shortName: subclass.shortName } },
+    db,
+  ));
+}
+
+/**
+ * Escada de ItemGrant dos níveis FUTUROS de uma SUBCLASSE: as features que ela
+ * ainda vai conceder E as magias sempre-preparadas que ela concede por nível
+ * (o premade do Paladino traz as duas escadas - "Subclass Features" e "<Juramento>
+ * Spells"). Só o conteúdo SRD publicado pelo dnd5e produz passos.
+ * @param {object} subclass  objeto de subclasse RESOLVIDO (`_copy`/`_versions`)
+ * @param {string} classId
+ * @param {object} db
+ * @param {number} level  nível ATUAL da classe
+ * @returns {object[]} entradas de advancement ItemGrant
+ */
+export function buildSubclassFutureGrants(subclass, classId, db, level) {
+  if (!subclass) return [];
+  const features = resolveSubclassFeatures(subclass, classId, db, { min: level + 1, max: MAX_LEVEL })
+    .map((f) => ({ level: f.level, uuid: subclassFeatureUuid(classId, subclass, f.name) }));
+
+  // Magias concedidas por nível: `grantedSpells` devolve o ACUMULADO até o nível,
+  // então o delta de cada nível é a diferença para o nível anterior. Passa pelo
+  // registro curado (TC-0026/TC-0044) para ver o mesmo que a derivação vê.
+  const additional = curatedAdditionalSpells(subclass);
+  const spells = [];
+  if (additional) {
+    const namesAt = (l) => new Set(grantedSpells(additional, l).spells.map((s) => s.name));
+    let prev = namesAt(level);
+    for (let l = level + 1; l <= MAX_LEVEL; l += 1) {
+      const now = namesAt(l);
+      for (const name of now) {
+        if (!prev.has(name)) spells.push({ level: l, uuid: spellUuid(name) });
+      }
+      prev = now;
+    }
+  }
+
+  return [
+    ...futureItemGrants(features, 'Subclass Features'),
+    ...futureItemGrants(spells, `${subclass.name} Spells`),
+  ];
 }
 
 /**
@@ -918,6 +1038,8 @@ export function buildSubclassFeatureItems(subclass, classId, db, level) {
  * @param {object} subclass  objeto de subclasse (shortName, name, source)
  * @param {string} classId   identifier da classe pai (ex: 'fighter')
  * @param {object[]} [featureItems]
+ * @param {{ description?: string, futureGrants?: object[] }} [opts]
+ *   futureGrants: escada dos níveis futuros (buildSubclassFutureGrants).
  * @returns {object|null}
  */
 /** Bloco `movement` do Foundry a partir do speed 5etools (número ou objeto). */
@@ -1106,7 +1228,10 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
       classIdentifier: classId,
       description: { value: opts.description ?? '', chat: '' },
       spellcasting: { progression: 'none', ability: '', preparation: { formula: '' } },
-      advancement: keyById(itemGrantAdvancements(featureItems, 'Subclass Features')),
+      advancement: keyById([
+        ...itemGrantAdvancements(featureItems, 'Subclass Features'),
+        ...(opts.futureGrants ?? []),
+      ]),
       source: sourceBlock(subclass.source),
     },
     effects: [],

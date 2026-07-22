@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildSubclassFeatureItems, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId } from './foundryItems';
+import { buildClassItem, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -166,6 +166,30 @@ describe('parity com o export nativo do Foundry (premades)', () => {
     expect(skills.value).toEqual({ chosen: ['skills:prc', 'skills:sur'] });
   });
 
+  // Coluna de Weapon Mastery que CRESCE: 3 até o nv3, 4 no nv4 (como a real).
+  const fighterGrowing = { ...fighterObj, classTableGroups: [{ colLabels: ['Weapon Mastery'], rows: [[3], [3], [3], [4]] }] };
+
+  it('Weapon Mastery: os escolhidos são FATIADOS entre os Traits de cada breakpoint', () => {
+    // Trait de count 3 no nv1 e de +1 no nv4: os 4 picks se dividem 3 + 1, na ordem.
+    const item = buildClassItem({ level: 4, hitPoints: {} }, fighterGrowing, [], {}, {
+      traitValues: { 'Weapon Mastery': ['weapon:mar:greatsword', 'weapon:sim:javelin', 'weapon:mar:longsword', 'weapon:mar:maul'] },
+    });
+    const masteries = advList(item).filter((a) => a.type === 'Trait' && a.title === 'Weapon Mastery');
+    expect(masteries.map((a) => [a.level, a.value.chosen])).toEqual([
+      [1, ['weapon:mar:greatsword', 'weapon:sim:javelin', 'weapon:mar:longsword']],
+      [4, ['weapon:mar:maul']],
+    ]);
+  });
+
+  it('Weapon Mastery: breakpoint acima do nível atual fica sem chosen (pendente no Foundry)', () => {
+    const item = buildClassItem({ level: 1, hitPoints: {} }, fighterGrowing, [], {}, {
+      traitValues: { 'Weapon Mastery': ['weapon:mar:greatsword', 'weapon:sim:javelin', 'weapon:mar:longsword'] },
+    });
+    const masteries = advList(item).filter((a) => a.type === 'Trait' && a.title === 'Weapon Mastery');
+    expect(masteries.find((a) => a.level === 1).value.chosen).toHaveLength(3);
+    expect(masteries.find((a) => a.level === 4).value).toEqual({});
+  });
+
   it('Fighting Style escolhido vira ItemChoice (não ASI) com value.added por nível', () => {
     const cls = { level: 2, choices: { 'feat@1': { kind: 'feat', picks: ['Great Weapon Fighting|XPHB'] } } };
     const { items, asiByLevel, fightingStyles } = buildClassChosenFeats(cls, db);
@@ -326,6 +350,80 @@ describe('buildClassFeatureItems + ItemGrant', () => {
     const l1 = grants.find((g) => g.level === 1);
     const secondWind = items.find((i) => i.name === 'Second Wind');
     expect(Object.keys(l1.value.added)).toContain(secondWind._id);
+  });
+});
+
+// A escada dos níveis FUTUROS é o que faz o level-up DENTRO do Foundry conceder
+// as features novas: sem ela, subir de 1 p/ 2 não concede nada. Gabarito = os
+// premades oficiais de nível 1 (a receita está inteira desde o começo).
+describe('escada de níveis futuros (ItemGrant de compêndio)', () => {
+  const barbObj = {
+    name: 'Barbarian', source: 'XPHB', hd: { faces: 12 }, proficiency: ['str', 'con'],
+    startingProficiencies: { armor: [], weapons: ['simple', 'martial'], skills: [{ choose: { from: ['athletics'], count: 2 } }] },
+    classFeatures: ['Rage|Barbarian||1', 'Danger Sense|Barbarian||2', 'Reckless Attack|Barbarian||2', 'Primal Knowledge|Barbarian||3'],
+  };
+  const barbDb = { 'class-barbarian': { classFeature: [
+    { name: 'Rage', level: 1, source: 'XPHB', entries: ['x'] },
+    { name: 'Danger Sense', level: 2, source: 'XPHB', entries: ['x'] },
+    { name: 'Reckless Attack', level: 2, source: 'XPHB', entries: ['x'] },
+    { name: 'Primal Knowledge', level: 3, source: 'XPHB', entries: ['x'] },
+  ] } };
+
+  it('classe: níveis acima do atual apontam para o compêndio, com value vazio', () => {
+    const grants = buildClassFutureGrants({ level: 1 }, barbObj, barbDb);
+    expect(grants.map((g) => g.level)).toEqual([2, 3]);
+    const l2 = grants.find((g) => g.level === 2);
+    expect(l2.configuration.items.map((i) => i.uuid)).toEqual([
+      'Compendium.dnd5e.classes24.Item.phbbrbDangerSens',
+      'Compendium.dnd5e.classes24.Item.phbbrbRecklessAt',
+    ]);
+    expect(l2.value).toEqual({}); // nível não alcançado - só a receita
+    expect(l2.title).toBe('Class Features');
+  });
+
+  it('classe: nada abaixo ou igual ao nível atual (esses já são itens embutidos)', () => {
+    expect(buildClassFutureGrants({ level: 3 }, barbObj, barbDb)).toEqual([]);
+    expect(buildClassFutureGrants({ level: 2 }, barbObj, barbDb).map((g) => g.level)).toEqual([3]);
+  });
+
+  it('classe fora do SRD publicado pelo dnd5e não gera escada (não inventa uuid)', () => {
+    const fake = { ...barbObj, name: 'Artificer' };
+    const fakeDb = { 'class-artificer': barbDb['class-barbarian'] };
+    expect(buildClassFutureGrants({ level: 1 }, fake, fakeDb)).toEqual([]);
+  });
+
+  it('subclasse: features futuras + as magias concedidas por nível', () => {
+    const sub = {
+      name: 'Oath of Devotion',
+      shortName: 'Devotion',
+      source: 'XPHB',
+      additionalSpells: [{ prepared: { 3: ['protection from evil and good', 'shield of faith'], 5: ['aid', 'zone of truth'] } }],
+    };
+    const db = { 'class-paladin': { subclassFeature: [
+      { name: 'Sacred Weapon', subclassShortName: 'Devotion', subclassSource: 'XPHB', source: 'XPHB', level: 3, entries: ['x'] },
+      { name: 'Aura of Devotion', subclassShortName: 'Devotion', subclassSource: 'XPHB', source: 'XPHB', level: 7, entries: ['x'] },
+    ] } };
+    const grants = buildSubclassFutureGrants(sub, 'paladin', db, 3);
+    const features = grants.filter((g) => g.title === 'Subclass Features');
+    expect(features.map((g) => g.level)).toEqual([7]);
+    expect(features[0].configuration.items[0].uuid).toBe('Compendium.dnd5e.classes24.Item.phbpdnDevotionAu');
+    // Magias: só o DELTA do nível 5 (as do 3 já são itens embutidos).
+    const spells = grants.filter((g) => g.title === 'Oath of Devotion Spells');
+    expect(spells.map((g) => g.level)).toEqual([5]);
+    expect(spells[0].configuration.items.map((i) => i.uuid).sort()).toEqual([
+      'Compendium.dnd5e.spells24.Item.phbsplAid0000000',
+      'Compendium.dnd5e.spells24.Item.phbsplZoneofTrut',
+    ]);
+  });
+
+  it('buildSubclassItem junta as duas escadas no advancement', () => {
+    const sub = { name: 'Oath of Devotion', shortName: 'Devotion', source: 'XPHB' };
+    const item = buildSubclassItem(sub, 'paladin', [], {
+      futureGrants: buildSubclassFutureGrants(sub, 'paladin', { 'class-paladin': { subclassFeature: [
+        { name: 'Aura of Devotion', subclassShortName: 'Devotion', subclassSource: 'XPHB', source: 'XPHB', level: 7, entries: ['x'] },
+      ] } }, 3),
+    });
+    expect(advList(item).map((a) => a.level)).toEqual([7]);
   });
 });
 

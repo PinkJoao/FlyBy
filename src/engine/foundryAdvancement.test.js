@@ -53,10 +53,22 @@ describe('buildClassAdvancement - Fighter (gabarito Randal/etienne/dnd5e)', () =
     expect(trait('Armor').configuration.grants).toEqual(['armor:lgt', 'armor:med', 'armor:hvy', 'armor:shl']);
   });
 
-  it('Trait de Weapon Mastery: count da coluna da tabela (3 no nv1)', () => {
-    const ch = trait('Weapon Mastery').configuration.choices[0];
-    expect(ch.count).toBe(3);
-    expect(ch.pool).toEqual(['weapon:sim:*', 'weapon:mar:*']);
+  it('Trait de Weapon Mastery: mode mastery, pool weapon:* e count da tabela (3 no nv1)', () => {
+    const t = trait('Weapon Mastery');
+    // `mastery` (e não `default`) é o que registra MAESTRIA no Foundry, e o pool
+    // aberto é o dos premades oficiais (a restrição RAW é do lado do builder).
+    expect(t.configuration.mode).toBe('mastery');
+    expect(t.level).toBe(1);
+    expect(t.configuration.choices[0].count).toBe(3);
+    expect(t.configuration.choices[0].pool).toEqual(['weapon:*']);
+  });
+
+  it('Weapon Mastery cresce: um Trait por breakpoint, com o DELTA do nível', () => {
+    // A tabela do recorte vai só até o nv4 (3,3,3,4): um Trait de count 3 no nv1
+    // e outro de +1 no nv4. Filtra por tipo - a coluna homônima também vira um
+    // ScaleValue.
+    const masteries = adv.filter((a) => a.type === 'Trait' && a.title === 'Weapon Mastery');
+    expect(masteries.map((a) => [a.level, a.configuration.choices[0].count])).toEqual([[1, 3], [4, 1]]);
   });
 
   it('AbilityScoreImprovement em cada nível de ASI + Epic Boon', () => {

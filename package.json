@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "pdf:preview": "vite-node scripts/render-pdf-preview.jsx && python scripts/pdf_to_png.py pdf-preview/sheet.pdf",
-    "sweep": "vite-node scripts/sweep.js"
+    "sweep": "vite-node scripts/sweep.js",
+    "gen:uuids": "vite-node scripts/gen-compendium-uuids.js"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",

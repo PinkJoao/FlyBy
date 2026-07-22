@@ -4011,3 +4011,48 @@ patronos de warlock, mas todo mecanismo que ACRESCENTA magias à sua lista sem c
 - Verificado ao vivo (Genie/Efreeti 19: Fireball sem aviso, badge "The Genie", visível no filtro
   Warlock; Divine Soul 3: Guiding Bolt com badge "Divine Soul", e sem a afinidade escolhida o
   alargamento corretamente não vale) + 7 testes novos; 979 testes, lint, sweep 274/274 `--strict`.
+
+## 63. Level-up DENTRO do Foundry: escada de ItemGrant com UUIDs de compêndio (DDL-0055)
+
+Relato do usuário: exportar um Barbarian 1, importar no Foundry e subir para o nível 2 **não
+concedia Reckless Attack nem Danger Sense**. As fichas premade de nível 1/5/11 que ele adicionou ao
+material de referência foram o que fechou o diagnóstico.
+
+- **Causa raiz.** No Foundry quem concede as features de um nível é o `advancement[]` do item de
+  CLASSE: um `ItemGrant` por nível cujo `configuration.items[].uuid` aponta para o compêndio. Nos
+  premades oficiais essa escada está presente **inteira (níveis 1..20) desde o nível 1** - os níveis
+  ainda não alcançados trazem a receita preenchida e o `value` vazio. Nós só emitíamos ItemGrant
+  para os níveis JÁ alcançados, e com uuid RELATIVO (`.${_id}`) para itens embutidos no ator. Um
+  Barbarian 1 exportado, portanto, não tinha receita nenhuma para o nível 2.
+- **Registro de UUIDs gerado (`npm run gen:uuids`).** `scripts/gen-compendium-uuids.js` lê o source
+  do sistema dnd5e (MIT + SRD/CC-BY, git-ignored) e emite `src/engine/compendiumUuidsData.js` com
+  APENAS identificadores - 159 features de classe, 12 subclasses SRD, 58 features de subclasse e 340
+  magias. Nenhum texto de regra é copiado. Os ids não são deriváveis por regra (`phbDivineOrderPr`,
+  `phbbrbImp2Brutal`, `phbdrdCirland000`), daí a tabela. A API de consulta é
+  `src/engine/compendiumUuids.js` (puro, case-insensitive, casa subclasse por nome completo ou
+  shortName).
+- **As escadas.** `buildClassFutureGrants` (features de classe acima do nível atual) e
+  `buildSubclassFutureGrants` (features de subclasse **e** as magias sempre-preparadas que ela
+  concede por nível - o delta entre `grantedSpells(nível)` e `grantedSpells(nível-1)`, passando pelo
+  registro curado do TC-0026/TC-0044) entram no advancement via a nova opção `futureGrants`. Saída
+  conferida contra o premade: um Paladin 3 nosso gera exatamente os mesmos uuids do Krusk L5 nos
+  níveis 7/15/20 (features) e 5/9/13/17 (magias do juramento).
+- **Níveis alcançados continuam com uuid relativo**, o que preserva o suporte a TODO o conteúdo
+  (inclusive não-SRD). A escada futura só existe onde o dnd5e publica: as 12 classes XPHB e uma
+  subclasse por classe. Fora disso (Artificer, subclasses não-SRD) nenhum passo é emitido - melhor
+  não ter escada do que apontar para um documento inexistente; ali o fluxo segue sendo subir de
+  nível no app e re-exportar. O título dos ItemGrant alcançados passou de `Features` para
+  `Class Features` (o dos premades).
+- **Dois bugs vizinhos de Weapon Mastery, achados na investigação e corrigidos junto:**
+  - `mode: 'default'` → **`mode: 'mastery'`** (era o que fazia o Foundry registrar proficiência de
+    arma em vez de maestria), com pool `weapon:*` como nos premades - a restrição RAW por classe
+    (DDL-0033/DDL-0050) é do lado do builder, o que vai no `chosen` já é válido.
+  - A contagem **não crescia**: era lida fixa no nível 1, então um Barbarian 10 exportava `count: 2`
+    com 4 maestrias escolhidas. Agora sai um Trait por breakpoint com o DELTA daquele nível (2@1,
+    +1@4, +1@10), e os escolhidos são FATIADOS entre eles na ordem; um breakpoint acima do nível
+    atual fica sem `chosen` (pendente no Foundry, como deve).
+  - No import, o efeito colateral: ele SOBRESCREVIA `weaponMastery` a cada Trait, ficando com o
+    último. Agora ACUMULA em ordem de nível. Isso conserta também a importação dos premades REAIS -
+    o Randal L5 (3 maestrias @1 + 1 @4) perdia três delas silenciosamente.
+- Verificado: 994 testes (+14), lint, **sweep 274/274 `--strict`**, paridade de uuid com o premade
+  do Paladino, e re-importação dos premades reais Krusk L1/L5, Randal L5 e Akra L11.

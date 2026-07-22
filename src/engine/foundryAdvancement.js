@@ -131,12 +131,12 @@ export function scaleValueAdvancements(classObj) {
   return out;
 }
 
-function traitAdvancement(title, { grants = [], choices = [] }) {
+function traitAdvancement(title, { grants = [], choices = [], level = 1, mode = 'default' }) {
   return {
     type: 'Trait',
-    level: 1,
+    level,
     title,
-    configuration: { mode: 'default', allowReplacements: false, grants, choices },
+    configuration: { mode, allowReplacements: false, grants, choices },
     classRestriction: 'primary',
   };
 }
@@ -177,9 +177,23 @@ export function buildClassAdvancement(classObj) {
   if (armorGrants.length) out.push(traitAdvancement('Armor Training', { grants: armorGrants }));
 
   // 5) Trait: Weapon Mastery (escolha) - só se a classe tem a feature homônima.
+  // `mode: 'mastery'` (e não 'default') é o que faz o Foundry registrar MAESTRIA
+  // em vez de proficiência de arma; o pool é `weapon:*` como nos premades (a
+  // restrição RAW por classe é do lado do builder - o que vai no `chosen` já é
+  // válido). A contagem CRESCE (Barbarian 2→3@4→4@10), e o SRD modela isso com um
+  // Trait por breakpoint carregando só o DELTA daquele nível.
   if (parsed.features.some((f) => norm(f.name) === 'weapon mastery')) {
-    const count = weaponMasteryCount(classObj, 1);
-    out.push(traitAdvancement('Weapon Mastery', { choices: [{ count, pool: ['weapon:sim:*', 'weapon:mar:*'] }] }));
+    let prev = 0;
+    for (let level = 1; level <= 20; level += 1) {
+      const count = weaponMasteryCount(classObj, level);
+      if (count <= prev) continue;
+      out.push(traitAdvancement('Weapon Mastery', {
+        level,
+        mode: 'mastery',
+        choices: [{ count: count - prev, pool: ['weapon:*'] }],
+      }));
+      prev = count;
+    }
   }
 
   // 6) ItemChoice: Fighting Style - classes com a feature homônima escolhem um

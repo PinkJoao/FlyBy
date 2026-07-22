@@ -6,6 +6,8 @@ const db = {
   'items-base': { baseitem: [
     { name: 'Halberd', source: 'XPHB', weaponCategory: 'martial' },
     { name: 'Greatsword', source: 'XPHB', weaponCategory: 'martial' },
+    { name: 'Longsword', source: 'XPHB', weaponCategory: 'martial' },
+    { name: 'Maul', source: 'XPHB', weaponCategory: 'martial' },
     { name: 'Dice Set', source: 'XPHB', type: 'GS' },
   ] },
   languages: { language: [{ name: 'Common', type: 'standard' }] },
@@ -211,6 +213,18 @@ describe('foundryToCharacter', () => {
     const sub = c['feat@6'].sub['Ability Score Improvement|XPHB']['ability-0'];
     expect(sub.alt).toBe(1);
     expect(sub.picks).toEqual([{ ability: 'con', amount: 1 }, { ability: 'wis', amount: 1 }]);
+  });
+
+  it('weapon mastery: ACUMULA os Traits de todos os breakpoints, em ordem de nível', () => {
+    // O SRD dá um Trait por nível em que a contagem cresce, cada um com o DELTA
+    // (Barbarian 2@1 → +1@4 → +1@10). Ler só um perderia as maestrias dos outros.
+    const a = makeActor();
+    const adv = a.items.find((i) => i.type === 'class').system.advancement;
+    adv.t2 = { ...adv.t2, level: 1, configuration: { mode: 'mastery' } };
+    adv.t2b = { _id: 't2b', type: 'Trait', level: 10, title: 'Weapon Mastery', configuration: { mode: 'mastery' }, value: { chosen: ['weapon:mar:maul'] } };
+    adv.t2a = { _id: 't2a', type: 'Trait', level: 4, title: 'Weapon Mastery', configuration: { mode: 'mastery' }, value: { chosen: ['weapon:mar:longsword'] } };
+    const picks = foundryToCharacter(a, db).classes[0].choices.weaponMastery.picks;
+    expect(picks).toEqual(['Greatsword', 'Halberd', 'Longsword', 'Maul']);
   });
 
   it('scores BASE = final − todos os boosts (origem + GWM fixo + ASI cru)', () => {

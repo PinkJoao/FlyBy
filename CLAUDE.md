@@ -221,7 +221,10 @@ not rediscover these; remove an item (and note where it was done) when it ships.
 
 1. **Real compendium UUIDs** (`compendiumSource` on exported Items — DDL-0001/0005). The
    export works without them; adding them would link imported Items to the dnd5e compendium
-   entries. Not planned near-term.
+   entries. Not planned near-term. **PARTIALLY DONE 2026-07-22 (DDL-0055, CHANGELOG §63):** the
+   `advancement[]` of the class/subclass items now carries real compendium UUIDs for the FUTURE
+   levels (that is what makes levelling up inside Foundry grant anything). What remains open is the
+   original scope — `compendiumSource` on the EMBEDDED items — which is cosmetic/linking only.
 2. **E5 PDF polish**: attack cantrips in the weapons table, overflow tuning for very long
    feature/equipment lists, portrait/appearance page niceties (see §4 Phase E).
 3. **Sidekick classes and UA content** (Mystic…): not curated in any registry
@@ -304,6 +307,60 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0055 — Subir de nível DENTRO do Foundry: escada de ItemGrant até o 20 com UUIDs de compêndio (registro GERADO)
+**Date:** 2026-07-22
+**Resolve parcialmente:** o item 1 do known-deferred-backlog ("real compendium UUIDs"), pelo motivo
+que o tornou urgente. **Builds on:** DDL-0001/0005 (modelo Foundry-Item), DDL-0003 (o dnd5e MIT +
+SRD é a referência licenciada — aqui ele vira também FONTE de identificadores), DDL-0033/0050 (as
+restrições de pool do Weapon Mastery, que este entry confirma serem do lado do builder).
+
+**Context.** Exportar um Barbarian 1, importar no Foundry e subir para o 2 não concedia Reckless
+Attack nem Danger Sense. As fichas premade de nível 1/5/11 adicionadas ao material de referência
+mostraram o porquê: **nos premades a escada de `ItemGrant` do item de classe está inteira (níveis
+1..20) desde o nível 1** — os níveis não alcançados trazem `configuration.items` preenchido e
+`value: {}`. Nós só emitíamos ItemGrant dos níveis alcançados, com uuid RELATIVO (`.${_id}`).
+
+**Decisions.**
+- **Dois regimes, por nível.** Nível JÁ alcançado = item EMBUTIDO + uuid relativo (funciona sem
+  compêndio nenhum e cobre TODO o conteúdo, inclusive não-SRD) — inalterado. Nível FUTURO = uuid de
+  COMPÊNDIO, porque o item ainda não existe no ator e pré-embutir o futuro o deixaria ativo desde já.
+- **O registro de UUIDs é GERADO e commitado, nunca curado à mão.** `npm run gen:uuids`
+  (`scripts/gen-compendium-uuids.js`) lê o `packs/_source` do sistema dnd5e (git-ignored, DDL-0037) e
+  emite `src/engine/compendiumUuidsData.js`: **só `_id` + `name`**, nenhum texto de regra — a saída é
+  uma tabela de identificadores de um sistema de terceiros, não conteúdo redistribuído (consistente
+  com DDL-0003). A consulta vive no módulo irmão `compendiumUuids.js` (puro). **Os ids NÃO são
+  deriváveis por regra** (parecem `phb` + abrev. + nome truncado, mas há exceções demais —
+  `phbDivineOrderPr`, `phbbrbImp2Brutal`, `phbdrdCirland000`); quem tentar substituir a tabela por
+  uma função de slug vai gerar uuids quebrados.
+- **Escopo = o que o dnd5e publica.** 12 classes XPHB (as 159 features casam 100% com as nossas), 12
+  subclasses SRD (uma por classe) e as magias. Um nível cujos uuids são todos desconhecidos
+  **não gera passo nenhum** — melhor não ter escada do que um ItemGrant apontando para documento
+  inexistente. Artificer e subclasses não-SRD seguem no fluxo antigo (subir no app e re-exportar).
+- **A subclasse tem DUAS escadas**, como no premade do Paladino: "Subclass Features" e
+  "<Subclasse> Spells" (as sempre-preparadas por nível, obtidas pelo DELTA entre
+  `grantedSpells(N)` e `grantedSpells(N-1)`, passando pelo registro curado do TC-0026/TC-0044).
+- **Weapon Mastery: `mode` é `mastery`, e a contagem CRESCE com um Trait por breakpoint.** O
+  `mode: 'default'` que usávamos registrava PROFICIÊNCIA de arma, não maestria; e a contagem era
+  lida fixa no nível 1 (Barbarian 10 exportava `count: 2` com 4 escolhidas). O SRD modela o
+  crescimento com um Trait por nível carregando o DELTA (2@1, +1@4, +1@10) — os escolhidos são
+  fatiados entre eles na ordem, e um breakpoint acima do nível atual fica sem `chosen` (pendente no
+  Foundry, que é o correto). O pool é `weapon:*` como nos premades: a restrição RAW por classe
+  (DDL-0033/0050) é do lado do BUILDER; o que chega no `chosen` já é válido.
+  **Consequência no import:** ele sobrescrevia `weaponMastery` a cada Trait e ficava com o último —
+  agora ACUMULA em ordem de nível. Isso era um bug REAL também com os premades (o Randal L5, com
+  3 maestrias @1 + 1 @4, perdia três silenciosamente).
+
+**Consequences.**
+- Regenerar o registro quando o sistema dnd5e atualizar é `npm run gen:uuids`; a saída é
+  determinística e ordenada, então o diff mostra exatamente o que mudou. Quem clona o repo sem o
+  `DnD Source Material` não consegue regerar, mas o arquivo commitado funciona.
+- Um `ItemGrant` futuro depende do compêndio SRD do dnd5e, que SEMPRE acompanha o sistema — não é
+  uma dependência de módulo de terceiros.
+- Limitação conhecida e aceita: ao chegar no nível da subclasse, um personagem exportado ANTES dela
+  só encontra as 12 subclasses SRD no prompt do Foundry.
+- Verificado: 994 testes (+14), lint, sweep 274/274 `--strict`, paridade de uuid com o premade do
+  Paladino (níveis 7/15/20 e magias 5/9/13/17) e re-importação dos premades reais. Ver CHANGELOG §63.
 
 ### DDL-0054 — Alargar a lista de magias é um conceito próprio, derivado do bucket `expanded`
 **Date:** 2026-07-22

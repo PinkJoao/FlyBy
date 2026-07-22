@@ -225,9 +225,10 @@ on the user's machines).
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
 - **2026-07-21 (4)** - **T1a session 10: ROGUE + all 10 subclasses done** (all rows `ui: ok`).
-  **T1a (all classes + subclasses) is now COMPLETE; the ISSUES.md ledger has NO open items.**
-  Sweep green before starting (274/274 strict). This session closed the last known real work in
-  the ledger - **TC-0021's Rogue half** (DDL-0050).
+  **The ISSUES.md ledger now has NO open items** (TC-0021 was the last). This is NOT the same as
+  T1a being finished: by alphabetical order **SORCERER, WARLOCK and WIZARD (32 rows) are still
+  `todo`**. Sweep green before starting (274/274 strict). This session closed the last known real
+  work in the ledger - **TC-0021's Rogue half** (DDL-0050).
   **The fix:** `weaponFilterAllows` (`engine/choices.js`) gained a CONDITIONAL field
   `martialRequiresAnyProp` - simple weapons pass unrestricted, martial weapons require one of the
   listed property codes. `MASTERY_FILTERS.rogue = { martialRequiresAnyProp: ['F', 'L'] }`
@@ -246,9 +247,10 @@ on the user's machines).
   other 8 subclasses are engine/sweep-verified (standard feature grants; Scout's Survivalist
   Expertise lives in subclassGrants).
   962 tests (+1, `choices.test.js`), lint, sweep 274/274 `--strict`. See CHANGELOG §58 + DDL-0050.
-  **Next action: T1b - SPECIES + lineages** (§4.2: batches of ~10-12, per-lineage checklist §4.3 -
-  size/skills/spells sub-choices, traits preview, Spellbook race origin frequencies DDL-0011). Pick
-  the first species batch from `testing/COVERAGE.md`.
+  **Next action: T1a session 11 - SORCERER + its 10 subclasses** (first full caster since the
+  Wizard/Warlock are still pending too - check Metamagic optional-feature picks, the Sorcery Points
+  resource, Draconic Resilience AC per DDL-0045, and per-subclass granted spells; then Warlock
+  (Pact Magic + invocations + Mystic Arcanum DDL-0010) and Wizard to finish T1a).
 
 - **2026-07-21 (3)** - **T1a session 9: RANGER + all 10 subclasses done** (all rows `ui: ok`).
   Sweep green before starting (274/274 strict). Third half-caster of the campaign (after

@@ -638,5 +638,6 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > above, fixed@2026-07-21 / DDL-0050). Arcane Trickster (third-caster INT, spell steps + Wizard-
 > filtered picker), Mastermind (curated Master of Intrigue tool/language grants), all 10 subclasses
 > listed, weapon-mastery count-stays-2, and the full @19 feat/expertise/epic-boon slots verified.
-> **THE LEDGER NOW HAS NO OPEN ITEMS** - every `TC-` is `fixed@<date>` or `wontfix`. T1a class
-> coverage is complete (all classes + subclasses `ui: ok`); next is T1b (species + lineages).
+> **THE LEDGER NOW HAS NO OPEN ITEMS** - every `TC-` is `fixed@<date>` or `wontfix`. NOTE: this is
+> NOT the same as T1a being complete - the Rogue rows are `ui: ok`, but by alphabetical order
+> **Sorcerer, Warlock and Wizard (32 rows) are still `todo`**. Next session: T1a Sorcerer.

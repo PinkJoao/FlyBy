@@ -305,7 +305,7 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
-### DDL-0050 — T1a Rogue session: `martialRequiresAnyProp` fecha o Weapon Mastery condicional (TC-0021); T1a de CLASSES concluída
+### DDL-0050 — T1a Rogue session: `martialRequiresAnyProp` fecha o Weapon Mastery condicional (TC-0021)
 **Resolve:** TC-0021 (a metade Rogue — o ÚNICO item aberto do ledger de testes). **Builds on:**
 DDL-0033/TC-0021 (o registro `MASTERY_FILTERS` + a máquina `weaponFilterAllows`, cuja lacuna
 condicional este entry preenche), DDL-0030 (o filtro plano de arma do Kensei que aquele registro
@@ -340,9 +340,9 @@ adiado para esta sessão (TC-0021 PARTIAL).
 - Cobertura: as 10 linhas `class:rogue/*` com `ui: ok`. Arcane Trickster (third-caster INT: slots
   1st×2, DC 10, 0/2 cantrips, 0/3 prepared @3; picker pré-filtrado à lista Wizard) e Mastermind
   (grants curados Master of Intrigue — tool restrito a 4 Gaming Sets + 2 languages) verificados ao
-  vivo; as outras 8 pelo engine/sweep. **O ledger `testing/ISSUES.md` não tem mais itens abertos** e
-  a etapa **T1a (todas as classes + subclasses) está CONCLUÍDA** — a próxima é **T1b (espécies +
-  linhagens)**.
+  vivo; as outras 8 pelo engine/sweep. **O ledger `testing/ISSUES.md` não tem mais itens abertos**
+  (o TC-0021 era o último). Isso NÃO significa T1a concluída: pela ordem alfabética ainda faltam
+  **Sorcerer, Warlock e Wizard** (32 linhas `todo`) — a próxima sessão é **T1a Sorcerer**.
 - Verificado ao vivo (Rogue: seletor de Weapon Mastery = 21 armas, todas simple + martial F/L; Rapier
   selecionável; "Longsword" = 0 resultados; "Staff"/"Wooden Staff" aparecem por serem simple, não
   regressão), 962 testes (+1 em `choices.test.js`), lint, sweep 274/274 `--strict`, mobile 375px sem

@@ -305,6 +305,53 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0049 — Level-down reconcilia as magias preparadas (remove concessões da subclasse + poda por prioridade)
+**Date:** 2026-07-21
+**Builds on:** DDL-0008 (o colapso "preparada que também é concedida vira a cópia sempre-preparada"
+— cuja interação criava a ressurgência), DDL-0026 (liberdade de over-prepare durante o jogo — que
+esta reconciliação só rompe num level-down, a pedido do usuário), o precedente de
+`cleanupClassEntry` (poda estrutural de escolhas/subclasse/mastery no level-down).
+
+**Context.** Relato do usuário: um Paladin 2 com "Protection from Evil and Good" preparada sobe
+pro 3, escolhe Devotion (que a concede sempre-preparada) e prepara outra magia no lugar do slot
+liberado. Ao dar LEVEL-DOWN, a magia concedida RESSURGIA junto com o substituto, e nada era podado
+quando os limites encolhiam. Raiz: `cls.spells` guarda a DECISÃO do jogador; a derivação apenas
+ESCONDE (colapsa, DDL-0008) uma preparada que também é concedida — ela continua no array. Ao perder
+a subclasse, deixa de ser escondida e volta a aparecer. E o level-down estrutural
+(`cleanupClassEntry`) nunca tocava em `spells`.
+
+**Decisions.**
+- **Nova função pura `reconcileClassSpells(oldCls, newCls, db)`** (`engine/resolve.js`), chamada no
+  `Builder.setClasses` para toda entrada de classe, DEPOIS do `cleanupClassEntry` (então `newCls`
+  já tem o nível/subclasse finais). Devolve o novo array `spells` (o MESMO por referência quando
+  nada muda, para o chamador pular a escrita).
+- **Regra 1 — subclasse trocada/removida derruba as concessões da ANTIGA.** Quando
+  `subclassId`/`subclassSource` mudam e havia subclasse, remove de `spells` toda magia que a
+  subclasse antiga concedia como sempre-preparada (resolvida pela MESMA via da derivação —
+  `resolveGranted`, incluindo as escolhas de magia do bag `sub:`). É o que quebra a ressurgência:
+  a cópia manual colapsada some junto com a concessão; o substituto permanece. Vale em QUALQUER
+  troca de subclasse (não só no level-down) — limpar/trocar a subclasse na aba Class também.
+- **Regra 2 — a ORDEM DE APRENDIZADO é a ordem do array `spells`.** As magias são adicionadas ao
+  FIM (SpellbookTab), então "mais recente" = fim do array; nenhum campo novo de schema é preciso.
+- **Regra 2 (level-down) — poda por PRIORIDADE até caber nos limites do novo nível:** (a) magias
+  cujo CÍRCULO o novo nível não alcança mais (Wizard 5→4 perde as de 3º), removidas
+  incondicionalmente; (b) depois, as PREPARADAS e cantrips MAIS RECENTES (do fim) até a contagem
+  não exceder o limite da origem. Concessões da classe/subclasse ATUAL colapsam mas NÃO contam nem
+  são podadas; um arcanum válido do Warlock (círculo destravado acima do teto de slot) é preservado
+  pela exceção da regra (a).
+- **A poda por contagem só roda no LEVEL-DOWN** (não numa troca de subclasse a mesmo nível nem no
+  jogo normal), preservando a liberdade de over-prepare do DDL-0026. Um EK/AT que perde a subclasse
+  mantém suas magias guardadas (mostradas over-limit em vermelho) — voltam se a subclasse retornar.
+- **Escopo:** wiring só no app (`Builder.setClasses`); o `sweep` continua usando `cleanupClassEntry`
+  cru e não reconcilia magias (não é preciso para os invariantes dele).
+
+**Consequences.**
+- Um novo tipo de origem de magia ou uma nova concessão de subclasse entra na reconciliação sem
+  fiação extra (a resolução reusa `resolveGranted`/`casterInfo`/limites já existentes).
+- Verificado: 961 testes (+7 em `reconcileClassSpells.test.js` cobrindo subclasse removida,
+  círculo alto demais, poda de preparadas/cantrips por recência, colapso da concessão atual, e o
+  no-op por referência), lint. Ver CHANGELOG §57.
+
 ### DDL-0048 — QoL: guia sugere magia obtida em duplicidade; o preview do seletor trava no item já selecionado
 **Date:** 2026-07-21
 **Builds on:** DDL-0046 (o `exclude` da MESMA origem no picker do guia), DDL-0040/TC-0031 (o

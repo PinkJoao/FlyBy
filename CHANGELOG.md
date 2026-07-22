@@ -3798,3 +3798,24 @@ Dois ajustes pequenos de qualidade de vida (DDL-0048).
   na 1ª escolha (`currentId` null) o comportamento antigo (último hover) segue igual.
 - Verificado: 954 testes (+4), lint, e passada ao vivo no seletor de espécie (preview trava no
   selecionado ao abrir, segue o hover, e retorna ao selecionado ao sair). Ver DDL-0048.
+
+## 57. Level-down reconcilia as magias preparadas (subclasse removida + poda por prioridade)
+
+Corrige o bug em que magias preparadas sobreviviam a um level-down (DDL-0049).
+
+- **Sintoma (relatado):** Paladin 2 com "Protection from Evil and Good" preparada → sobe pro 3
+  e pega Devotion (que a concede sempre-preparada), liberando um slot para outra magia →
+  level-down. A magia concedida RESSURGIA (a cópia manual que havia COLAPSADO na concessão,
+  DDL-0008), duplicando com o substituto, e nada era podado quando o limite encolhia.
+- **`reconcileClassSpells(oldCls, newCls, db)`** (novo, `engine/resolve.js`, puro) roda no
+  `Builder.setClasses` para toda entrada de classe, DEPOIS do `cleanupClassEntry`:
+  1. **Subclasse trocada/removida** → remove de `spells` toda magia que a subclasse ANTIGA
+     concedia como sempre-preparada (usa a mesma resolução da derivação, incluindo escolhas do
+     bag). Mata a ressurgência; o substituto permanece.
+  2. **Level-down** → poda por prioridade até caber nos limites do novo nível: (a) magias cujo
+     CÍRCULO o novo nível não alcança mais (Wizard 5→4 perde as de 3º), incondicionalmente;
+     (b) depois, as PREPARADAS/cantrips MAIS RECENTES (a ordem do array `spells` é a ordem de
+     aprendizado — adicionadas ao fim), até a contagem ≤ o limite. Concessões da classe/subclasse
+     ATUAL colapsam mas não contam nem são podadas; arcanum válido do Warlock é preservado.
+- Sem mudança de nível nem de subclasse, devolve o MESMO array (sem escrita).
+- Verificado: 961 testes (+7, `reconcileClassSpells.test.js`), lint. Ver DDL-0049.

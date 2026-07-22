@@ -25,7 +25,7 @@ import LevelControls from '../components/builder/LevelControls';
 import LevelUpWizard from '../components/wizard/LevelUpWizard';
 import { buildFixupSteps, firstClassWithFixup } from '../components/wizard/fixupSteps';
 import { guidancePendencies, guidanceActive } from '../components/wizard/guidancePendencies';
-import { deriveFromDb, resolveClassObj, resolveSubclassObj } from '../engine/resolve';
+import { deriveFromDb, resolveClassObj, resolveSubclassObj, reconcileClassSpells } from '../engine/resolve';
 import { cleanupClassEntry } from '../engine/classFeatureChoices';
 import StatsHeader from '../components/builder/StatsHeader';
 import ProficienciesCard from '../components/builder/ProficienciesCard';
@@ -154,10 +154,20 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     // subclasse se caiu - para nada persistir nem "voltar selecionado" ao subir.
     const cleaned = classes.map((nc) => {
       const oc = character.classes.find((c) => c.uid === nc.uid);
-      if (!oc || !nc.classId || nc.level >= oc.level) return nc;
-      const classObj = resolveClassObj(db, nc.classId, nc.source);
-      const subObj = nc.subclassId ? resolveSubclassObj(db, nc.classId, nc.subclassId, nc.subclassSource) : null;
-      return cleanupClassEntry(nc, { classObj, subclassObj: subObj, subclassLevel: subLevel });
+      if (!oc || !nc.classId) return nc;
+      let entry = nc;
+      // Level-down estrutural: poda escolhas/subclasse/mastery de níveis perdidos.
+      if (nc.level < oc.level) {
+        const classObj = resolveClassObj(db, nc.classId, nc.source);
+        const subObj = nc.subclassId ? resolveSubclassObj(db, nc.classId, nc.subclassId, nc.subclassSource) : null;
+        entry = cleanupClassEntry(nc, { classObj, subclassObj: subObj, subclassLevel: subLevel });
+      }
+      // Reconcilia as magias preparadas: remove as concessões da subclasse
+      // trocada/removida e poda por prioridade no level-down. Roda DEPOIS do
+      // cleanup (que já reverteu a subclasse se o nível caiu), então `entry` já
+      // tem o nível/subclasse finais.
+      const spells = reconcileClassSpells(oc, entry, db);
+      return spells === entry.spells ? entry : { ...entry, spells };
     });
     const next = { ...character, classes: cleaned };
     const currency = seedStartingGold(next, db);

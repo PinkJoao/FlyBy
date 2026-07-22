@@ -521,6 +521,119 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
   return { origins, casterLevel, slots, pactSlots: pact, warlockLevel };
 }
 
+/** Nome (minúsculo) de uma referência de magia preparada (`{ id|name }`). */
+function spellRefName(ref) {
+  return String(ref?.id ?? ref?.name ?? '').toLowerCase();
+}
+
+/** Conjunto de nomes (minúsculos) que um `additionalSpells` concede como sempre
+ * preparadas no nível dado. Usa a MESMA resolução da derivação (inclui as
+ * escolhas de magia do bag, TC-0011), para casar com o que colapsa na ficha. */
+function grantedNamesOf(additionalSpells, level, db, entity, opts) {
+  if (!additionalSpells) return new Set();
+  const { spells } = resolveGranted(additionalSpells, level, db, {}, entity, opts);
+  return new Set(spells.map((s) => s.raw.name.toLowerCase()));
+}
+
+/**
+ * Reconcilia as magias PREPARADAS de uma classe quando ela muda de uma forma que
+ * pode reduzir capacidade: troca/remoção de subclasse e/ou level-down. Puro;
+ * devolve o novo array `spells` (só decisões do jogador), preservando a ORDEM DE
+ * APRENDIZADO - a ordem do array é a ordem em que as magias foram preparadas
+ * (adicionadas ao fim; ver SpellbookTab), logo "mais recente" = fim do array.
+ *
+ * Regras (pedido do usuário):
+ *  1. Trocar/remover a subclasse remove de `spells` toda magia que a subclasse
+ *     ANTIGA concedia como sempre-preparada. Sem isso, a cópia manual que colapsou
+ *     na concessão (DDL-0008) RESSURGIRIA ao perder a subclasse, duplicando com o
+ *     substituto que o jogador preparou no lugar (o bug relatado no Paladin/Devotion).
+ *  2. No LEVEL-DOWN, poda por prioridade até caber nos limites do novo nível:
+ *     (a) magias cujo CÍRCULO o novo nível não alcança mais (Wizard 5→4 perde as
+ *         de 3º círculo) - removidas incondicionalmente;
+ *     (b) depois, as preparadas MAIS RECENTES (fim do array) até a contagem não
+ *         exceder o limite de preparadas; idem para cantrips.
+ *  Concessões (sempre-preparadas) da classe/subclasse ATUAL colapsam mas ficam em
+ *  `spells`; não contam nos limites nem são podadas.
+ *
+ * @param {object} oldCls  entrada de classe ANTES da mudança
+ * @param {object} newCls  entrada JÁ com nível/subclasse novos (pós-cleanupClassEntry)
+ * @param {object} db
+ * @returns {import('../schema/character').ContentRef[]}  o array `spells` (o mesmo
+ *   por referência quando nada muda, para o chamador poder pular a escrita)
+ */
+export function reconcileClassSpells(oldCls, newCls, db) {
+  const original = newCls.spells ?? [];
+  if (!newCls.classId || original.length === 0) return original;
+  let spells = original;
+
+  const classObj = resolveClassObj(db, newCls.classId, newCls.source);
+
+  // (1) Subclasse trocada/removida: derruba as sempre-preparadas da ANTIGA.
+  const subChanged =
+    oldCls.subclassId !== newCls.subclassId || oldCls.subclassSource !== newCls.subclassSource;
+  if (subChanged && oldCls.subclassId) {
+    const oldSub = resolveSubclassObj(db, oldCls.classId, oldCls.subclassId, oldCls.subclassSource);
+    const removed = grantedNamesOf(oldSub?.additionalSpells, oldCls.level, db, oldSub, {
+      bag: oldCls.choices,
+      idPrefix: 'sub:',
+    });
+    if (removed.size) spells = spells.filter((s) => !removed.has(spellRefName(s)));
+  }
+
+  // (2) Level-down: poda por prioridade até caber nos limites do novo nível.
+  if (newCls.level < oldCls.level) {
+    const subObj = newCls.subclassId
+      ? resolveSubclassObj(db, newCls.classId, newCls.subclassId, newCls.subclassSource)
+      : null;
+    const info = casterInfo(classObj, subObj);
+    const level = newCls.level;
+    const isPact = info?.code === 'pact';
+    const maxCircle = isPact ? (pactSlots(level)?.level ?? 0) : maxPrepareCircle(info?.code ?? null, level);
+    const arcana = arcanumLevels(info?.code, level);
+    const baseCantrip = cantripLimit(info, level);
+    const cantripMax = baseCantrip + (baseCantrip > 0 ? cantripLimitBonus(newCls) : 0);
+    const prepMax = prepareLimit(info, level);
+
+    // Concessões que colapsam agora (não contam, não são podadas).
+    const grantedNow = new Set([
+      ...grantedNamesOf(classObj?.additionalSpells, level, db, classObj, { bag: newCls.choices, idPrefix: 'class:' }),
+      ...grantedNamesOf(subObj?.additionalSpells, level, db, subObj, { bag: newCls.choices, idPrefix: 'sub:' }),
+    ]);
+
+    // Resolve o círculo de cada preparada, mantendo o índice (= ordem).
+    const resolved = spells.map((ref) => {
+      const raw = resolveSpellObj(db, ref.id ?? ref.name, ref.source);
+      return { ref, level: raw?.level ?? 0, granted: grantedNow.has(spellRefName(ref)) };
+    });
+    const drop = new Set(); // índices a remover
+
+    // (2a) Círculo alto demais - removida sempre (exceto concedidas / arcanum válido).
+    resolved.forEach((r, i) => {
+      if (r.granted || r.level === 0) return;
+      if (r.level > maxCircle && !arcana.includes(r.level)) drop.add(i);
+    });
+
+    // (2b) Contagens: remove as MAIS RECENTES (do fim) até caber no limite.
+    const isCantrip = (r) => !r.granted && r.level === 0;
+    const isPrepared = (r) => !r.granted && r.level > 0 && !arcana.includes(r.level);
+    const dropRecent = (pred, max) => {
+      let count = resolved.reduce((n, r, i) => n + (pred(r) && !drop.has(i) ? 1 : 0), 0);
+      for (let i = resolved.length - 1; i >= 0 && count > max; i--) {
+        if (pred(resolved[i]) && !drop.has(i)) {
+          drop.add(i);
+          count--;
+        }
+      }
+    };
+    dropRecent(isCantrip, cantripMax);
+    dropRecent(isPrepared, prepMax);
+
+    if (drop.size) spells = resolved.filter((_, i) => !drop.has(i)).map((r) => r.ref);
+  }
+
+  return spells;
+}
+
 /**
  * Deriva o estado computado do personagem usando o compêndio ao vivo.
  * Quando o `db` ainda não chegou (ou faltam dados de classe), o engine degrada

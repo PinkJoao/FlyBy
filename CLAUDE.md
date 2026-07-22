@@ -231,11 +231,12 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    effects, CHANGELOG §35; DDL-0057 for the rest, CHANGELOG §65).** Effects, `activities`,
    `system` (uses/range/duration) and `advancement` (ScaleValue) are all adopted, curated-first.
    Nothing of the overlay remains unused.
-4. **Legacy-content toggle**: reprint-hidden content (Hill Dwarf PHB and every subrace of a
-   reprinted base, Bladesinging TCE's weapon choice, Totem Warrior's SCAG options, Hobgoblin
-   VGM / Weapon Master PHB weapon chooses…) is invisible by the latestOnly policy. If a
-   "show legacy" switch ever ships, featureoption-internal grants (Totem Tiger) become real
-   work again (see DDL-0030).
+4. **Curated LEGACY SUBRACES** (replaces the old "legacy-content toggle" — see **DDL-0058**,
+   which has the full scope, the 22 candidates and the implementation strategy). The general
+   edition toggle is **cancelled**: only subraces come back, hand-curated, attached as lineages
+   of the CURRENT base species. Nothing is implemented yet; DDL-0058 is the starting context.
+   Blocking question to answer first: what to do with a legacy subrace's fixed `ability` (+2/+1)
+   under the 2024 background-boost model.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
@@ -315,6 +316,76 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0058 — O "toggle de conteúdo legado" foi RECORTADO: só sub-raças, e com curadoria manual
+**Date:** 2026-07-22
+**Substitui** o item de backlog "Legacy-content toggle" (§4) por um escopo muito menor.
+**Status: PLANEJADO — nada implementado.** Este entry é o contexto de partida da próxima sessão.
+
+**Context.** Levantamento do que a política `latestOnly` (`selector/reprints.js`, `reprintedAs` do
+5etools) esconde hoje. Os números BRUTOS enganam — 41% das magias, 32% das espécies, 21% das
+subclasses estão escondidas, mas quase tudo é reprint de mesmo nome (esconder o Fireball PHB não
+custa nada). Cruzando "escondido E sem equivalente atual", e conferindo o que cada reprint virou:
+- **Subclasses: ZERO perdas.** Os 4 casos são renomeações com a versão nova disponível (Purple
+  Dragon Knight→Banneret FRHoF, Shadow Magic→Shadow RHW, Bladesinging→Bladesinger FRHoF,
+  The Undead→Undead RHW).
+- **Espécies de topo: idem** (Half-Elf→Khoravar EFA, Gith→Githyanki/Githzerai MPMM, Yuan-ti
+  Pureblood→Yuan-Ti MPMM, Dragonborn Chromatic/Metallic→Dragonborn XPHB).
+- **Optional features**: das 20 "órfãs", a maioria só MUDOU DE CATEGORIA (Archery, Blind Fighting,
+  Blessed Warrior hoje são TALENTOS de Fighting Style no XPHB).
+- Perdas reais fora das sub-raças: 3 talentos (Mobile, Fey Touched, Shadow Touched), 3 magias
+  (Feeblemind, Branding Smite, Summon Draconic Spirit), ~17 invocações antigas, 8 itens base.
+
+**Decisions (do usuário).**
+- **O toggle GERAL de conteúdo legado está DESCARTADO.** Não haverá switch de edição. Talentos,
+  magias, itens, invocações e subclasses legadas seguem invisíveis pela política `latestOnly` —
+  isso deixa de ser pendência e vira decisão.
+- **O escopo é SÓ sub-raças**, e por um motivo específico: elas somem por COLATERAL, não por
+  terem sido reprintadas. Uma sub-raça sem `reprintedAs` cujo BASE foi reprintado fica
+  inalcançável porque `raceLineages` só roda sobre as bases listadas (`race.js` lista
+  `latestOnly(...)`). São **22 com nome próprio**, e nenhuma tem equivalente 2024.
+- **Não voltam todas: haverá CURADORIA MANUAL.** Critério do usuário: uma sub-raça é DESCARTÁVEL
+  quando existe uma versão moderna autônoma mais completa e atual. Exemplo dele: `Elf (Eladrin)`
+  PHB/DMG é dispensável porque **Eladrin|MPMM** já existe como espécie própria.
+
+**Escopo — as 22 candidatas** (triagem automática de 2026-07-22; ver a ressalva abaixo):
+- *Redundância CONFIRMADA:* Eladrin (Elf|PHB) → Eladrin|MPMM.
+- *Sem equivalente, candidatas fortes:* Pallid (Elf), Ghostwise e Lotusden (Halfling), Keldon
+  (Human), Draconblood (Dragonborn), e as **12 linhagens de Tiefling** (Asmodeus, Baalzebul,
+  Dispater, Fierna, Glasya, Levistus, Mammon, Mephistopheles, Zariel, Variant; Devil's Tongue,
+  Variant; Hellfire, Variant; Winged, Variant; Infernal Legacy).
+- *A CONFERIR à mão:* Ravenite (Dragonborn) e as 4 `Variant; … Descent` de Half-Elf. A heurística
+  de nome marcou-as como redundantes, mas por COINCIDÊNCIA DE SUBSTRING (Ravenite→"Aven|PSA";
+  Descent→"Elf|LFL"). **Não confie nessa saída — a curadoria é manual, olho a olho.**
+
+**Estratégia de implementação (para a próxima sessão, nesta ordem).**
+1. **Curadoria primeiro, código depois.** Produzir um registro curado (ex:
+   `engine/legacySubraces.js`) com a LISTA EXPLÍCITA de `raceName|raceSource|subraceName` que
+   voltam. Registro fechado, como `SUBCLASS_GRANTS`/`NATURAL_ARMOR` — nada de heurística.
+2. **O ponto de entrada é `raceLineages(db, race)`** (`engine/speciesData.js`), que hoje só
+   enxerga sub-raças de bases visíveis. A ideia é ele passar a incluir as sub-raças curadas,
+   ANEXADAS À BASE ATUAL (Tiefling XPHB recebe as linhagens do Tiefling PHB), reusando o merge
+   que já existe (`subraceVersions`, o port de `Renderer.race._getMergedSubrace` do DDL-0030).
+   Isso evita mexer no `latestOnly` e em qualquer selector: a sub-raça entra como mais uma
+   LINHAGEM da espécie atual, e todo o resto (tabs, guia, completude, import, matriz do sweep,
+   export) já funciona sobre linhagens.
+3. **Decidir a questão de REGRA antes de codar**: uma sub-raça 2014 traz `ability` FIXO (+2/+1),
+   que o modelo 2024 moveu para o background. Nosso `collectAbilityBoosts` lê boosts da origem e
+   do choice-bag, e o campo `ability` fixo de uma raça NÃO é lido por ninguém hoje (existe só o
+   gancho `LEGACY_ABILITY_CHOICE` para o caso de escolha). Opções: ignorar o `ability` legado
+   (mais fiel ao 2024, e o merge de linhagem já sobrescreve com a base), ou aplicá-lo e aceitar o
+   empilhamento com os boosts de origem. **É decisão do usuário, não do implementador.**
+4. **Verificação**: cada sub-raça curada vira uma linha nova na matriz do sweep automaticamente
+   (o `matrix.js` deriva de `raceLineages`) — rodar `npm run sweep -- --strict` e conferir o
+   crescimento das linhas `species:*`. Depois, passada de UI na aba Species.
+5. **Limitação aceita, documentar no entry final**: conteúdo legado não tem uuid de compêndio
+   (o registro do DDL-0055 é SRD 2024), então essas linhagens exportam sem procedência e sem
+   escada de level-up — degrada como o Artificer já degrada.
+
+**Consequences.**
+- O item 4 do known-deferred-backlog ("Legacy-content toggle") está CANCELADO e substituído por
+  este escopo; a nota do DDL-0030 sobre grants dentro de opções de featureoption (Totem Warrior)
+  **continua sem virar trabalho**, porque subclasses legadas seguem fora.
 
 ### DDL-0057 — Overlay adotado POR COMPLETO (activities/system/advancement) e o resto dos achados da sessão de level-up
 **Date:** 2026-07-22

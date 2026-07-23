@@ -4421,3 +4421,62 @@ escolha inteira para a flag do item de raça.
 mostra "Variable Trait / Choose variable trait…" com Size + Language + Feat (sem atributo, sem
 perícia); escolher "Skill Proficiency" faz a perícia aparecer; o seletor de talento lista só
 origens. Mobile 375px sem overflow, zero erros de console.
+
+---
+
+## 71. Halfling: a linhagem que a edição 2024 não escreveu (DDL-0063)
+
+**O problema, medido e não suposto.** Um censo das **98 sub-raças** do dataset (7 grupos fechados,
+registrado em `SPECIES-FAMILIES-PLAN.md`) foi atrás do que ainda está fora do alcance. O grupo que o
+DDL-0058 tinha deixado de fora POR DEFINIÇÃO — as **20 que o 5etools marca como reimpressas na
+PRÓPRIA base 2024** — nunca tinha sido conferido item a item. Conferido agora, o conteúdo mecânico
+realmente perdido no dataset INTEIRO são **dois traços**: *Dwarven Armor Training* (Mountain Dwarf) e
+*Stout Resilience* (Stout Halfling). Todo o resto é redundante de fato (Drow/High/Wood e Forest/Rock
+viraram as linhagens 2024; as 3 do Aasimar VGM viraram opções da Celestial Revelation; Shifter ERLW e
+Genasi EEPC já têm substituto no seletor). A família **Elf está 100% coberta**.
+
+**O achado que decidiu a estratégia — o PADRÃO DA ABSORÇÃO.** Cada base 2024 absorveu UMA de suas
+sub-raças 2014: `Halfling|XPHB` = Halfling 2014 + o **Naturally Stealthy do Lightfoot**;
+`Dwarf|XPHB` = Dwarf 2014 + o **Dwarven Toughness do Hill**; `Human|XPHB` = o **Variant Human
+inteiro** + Resourceful. Elf e Gnome são a exceção limpa (não absorveram nada — as sub-raças viraram
+as linhagens). É a prova de que pendurar o Stout no Halfling 2024 entregaria Lightfoot + Stout de uma
+vez, e por isso nenhuma das três formas anteriores servia (DDL-0059/0060/0061).
+
+**A quarta forma, `as: 'swap'`** (`engine/legacyHalflingLineages.js`): construir o guarda-chuva que
+faltou. O traço absorvido SAI da base e vira UMA das opções, de modo que cada linhagem **TROCA** em
+vez de somar:
+
+```
+Halfling Lineage  (ocupa o lugar de "Naturally Stealthy")
+  ├─ Lightfoot → Naturally Stealthy   ← reproduz a base 2024 EXATAMENTE
+  ├─ Stout     → Stout Resilience
+  ├─ Ghostwise → Silent Speech
+  └─ Lotusden  → Child of the Wood + Timberwalk + magias
+```
+
+Em 2014 essas quatro eram IRMÃS — nenhuma era "a base" — então é o livro 2014 portado para o chassi
+2024. Ninguém perde nada (o halfling puro de ontem **é** o Lightfoot), ninguém empilha, e a família
+caiu de 3 entradas do seletor de espécies para 1. **Ghostwise e Lotusden migraram** de espécie à
+parte (DDL-0060) para opções daqui: o `swap` resolve exatamente o motivo pelo qual aquele entry as
+tinha tirado de lá. O **Dwarf ficou de fora por decisão do usuário** — está na seção OUT OF SCOPE do
+CLAUDE.md, não é pendência.
+
+**Detalhes que custaram atenção.**
+1. **`withLineageUmbrella` tem de rodar ANTES do `buildVariant`.** O `replaceArr` das versões procura
+   o guarda-chuva; sobre a base crua ele não acha o alvo e `applyArrMods` ignora a op — o traço da
+   linhagem sumiria EM SILÊNCIO. Por isso `raceLineages` monta as versões do Halfling sobre a base já
+   com guarda-chuva, e `resolveRaceObj` o aplica à base. Idempotente, mesma referência quando não há
+   o que mudar.
+2. **O Lightfoot carrega o texto da BASE 2024, não o do `Lightfoot|PHB`** — ele tem de reproduzir a
+   base exatamente, e a redação mudou de edição ("take the Hide action" × "attempt to hide").
+3. **Migração DUPLA** no `migrate` do schema: espécie à parte → Halfling XPHB + linhagem (bag
+   zerado); Halfling XPHB SEM linhagem → **Lightfoot**, sem perda e PRESERVANDO o bag.
+4. **Nada é normalizado** (decisão do usuário): o Lotusden segue mais pesado que as irmãs e com o
+   atributo de conjuração FIXO em Sabedoria, como o dado 2014 diz — mesmo tratamento do Pallid.
+5. **Menos de duas opções montáveis ⇒ o módulo não faz nada.** Um seletor de uma opção só seria ruído.
+
+**Verificado:** 1086 testes (+15), lint, sweep **290/290 `--strict`** — as 4 linhas novas com build,
+export e round-trip limpos — e ao vivo: a base mostra "Halfling Lineage" com as quatro opções e sem
+Naturally Stealthy solto; o seletor diz "Choose halfling lineage…"; Stout deriva **DAMAGE
+RESISTANCES: Poison**; Lotusden deriva origem de magia própria (Wis, DC 10) com Druidcraft *Always
+Prepared*; Lightfoot reproduz a base. Mobile 375px sem overflow de página, zero erros de console.

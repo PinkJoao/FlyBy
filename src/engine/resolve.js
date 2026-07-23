@@ -15,6 +15,7 @@ import { resolveCopies } from '../selector/copy';
 import { deriveCharacter } from './index';
 import { parseSpecies, raceLineages, speciesCatalog } from './speciesData';
 import { normalizeLegacySpecies } from './legacySpeciesRules';
+import { withLineageUmbrella } from './legacyHalflingLineages';
 import { collectOwned, collectFeatIds } from './proficiency';
 import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';
@@ -136,8 +137,10 @@ export function resolveRaceObj(db, id, source, lineage = null) {
   }
   // Este é o ÚNICO ponto por onde o app pega um objeto de espécie para trabalhar
   // (aba, guia, derivação, sweep, import), então é aqui que as regras 2024 das
-  // espécies legadas se aplicam - ver engine/legacySpeciesRules.
-  return normalizeLegacySpecies(base);
+  // espécies legadas se aplicam - ver engine/legacySpeciesRules - e é aqui que a
+  // base ganha o guarda-chuva de linhagem que criamos (DDL-0063), para não exibir
+  // nem conceder, antes da escolha, o traço que pertence a UMA das opções.
+  return normalizeLegacySpecies(withLineageUmbrella(db, base));
 }
 
 /**

@@ -14,6 +14,7 @@
 // -----------------------------------------------------------------------------
 
 import { migrateLegacyTiefling } from '../engine/legacyFiendishLegacies';
+import { migrateHalflingSpecies } from '../engine/legacyHalflingLineages';
 
 /** Versão atual do schema. Incremente ao mudar a forma + adicione um migrate.
  * v2 (2026-07-09): `ClassEntry.spells` - magias preparadas pelo jogador por
@@ -340,11 +341,15 @@ export function migrate(raw) {
     scores: { ...base.scores, ...(raw.scores ?? {}) },
     scoreMethod: raw.scoreMethod ?? base.scoreMethod,
     rulesConfig: { ...base.rulesConfig, ...(raw.rulesConfig ?? {}) },
-    // DDL-0061: uma ficha salva enquanto as legacies do Tiefling eram ESPÉCIES à
-    // parte ("Tiefling (Zariel)") volta a ser Tiefling XPHB + linhagem, senão
-    // perderia a espécie ao recarregar (o nome antigo não existe em catálogo
-    // nenhum). Qualquer outra espécie passa intacta.
-    species: migrateLegacyTiefling(raw.species ?? null),
+    // Toda mudança de FORMA de uma espécie legada precisa de migração — o nome
+    // antigo deixa de existir em catálogo nenhum e a ficha perderia a espécie ao
+    // recarregar. Duas até agora, aplicadas em cadeia (cada uma é no-op fora do
+    // caso dela):
+    //  - DDL-0061: "Tiefling (Zariel)" → Tiefling XPHB + linhagem;
+    //  - DDL-0063: "Halfling (Ghostwise)" → Halfling XPHB + linhagem, e um
+    //    Halfling XPHB SEM linhagem → Lightfoot (que reproduz a base de então,
+    //    com o Naturally Stealthy intacto).
+    species: migrateHalflingSpecies(migrateLegacyTiefling(raw.species ?? null)),
     origin: { ...base.origin, ...(raw.origin ?? {}) },
     // v1→v2: cada classe ganha `spells: []` se não tiver (Fase B2).
     classes: Array.isArray(raw.classes)

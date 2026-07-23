@@ -103,11 +103,18 @@ export const LEGACY_SUBRACES = Object.freeze([
   // mas ocupa o mesmo lugar: é a linhagem élfica escolhida.
   { race: 'Elf|XPHB', subrace: 'Pallid|EGW', of: 'Elf|PHB', supersedes: ['Elven Lineage'] },
 
-  // --- Halfling: ESPÉCIES à parte -------------------------------------------
-  // O Halfling XPHB absorveu o Naturally Stealthy do Lightfoot, então estas duas
-  // não podem pendurar nele — vêm do chassi 2014, como espécies próprias.
-  { race: 'Halfling|XPHB', subrace: 'Ghostwise|SCAG', of: 'Halfling|PHB', as: 'species' },
-  { race: 'Halfling|XPHB', subrace: 'Lotusden|EGW', of: 'Halfling|PHB', as: 'species' },
+  // --- Halfling: NÃO estão aqui (DDL-0063) ----------------------------------
+  // Ghostwise e Lotusden foram espécies à parte entre 2026-07-22 e 2026-07-23,
+  // porque o Halfling XPHB absorveu o Naturally Stealthy do Lightfoot e pendurar
+  // uma irmã nele daria esse traço de graça. Hoje elas são LINHAGENS de uma nova
+  // forma, `swap`: o guarda-chuva "Halfling Lineage" tira o traço absorvido da
+  // base e o transforma em UMA das opções, de modo que cada linhagem TROCA em vez
+  // de somar — ver `engine/legacyHalflingLineages.js`.
+  //
+  // Isso NÃO afrouxa a regra do `as` acima: `'species'` continua sendo a resposta
+  // para uma fusão CRUA em que a base 2024 dá algo a mais. O `swap` é uma quarta
+  // forma, que só se aplica quando o "algo a mais" é um traço IDENTIFICÁVEL vindo
+  // de uma das sub-raças 2014 — e que exige devolvê-lo como opção.
 
   // --- Human: ESPÉCIE à parte -----------------------------------------------
   // Como linhagem, o Keldon somava os três traços próprios ao Resourceful +

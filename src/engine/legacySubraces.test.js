@@ -39,7 +39,14 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058/0059/0060)', () => {
     const lineages = LEGACY_SUBRACES.filter((e) => e.as !== 'species');
     expect(lineages.map((e) => e.subrace)).toEqual(['Pallid|EGW']);
     expect(lineages[0].supersedes).toEqual(['Elven Lineage']);
-    expect(LEGACY_SUBRACES.filter((e) => e.as === 'species')).toHaveLength(3);
+    // Só o Keldon: Ghostwise e Lotusden saíram daqui em 2026-07-23, para a forma
+    // `swap` (DDL-0063) — ver legacyHalflingLineages.js.
+    expect(LEGACY_SUBRACES.filter((e) => e.as === 'species').map((e) => e.subrace)).toEqual(['Keldon|PSD']);
+  });
+
+  it('as sub-raças do Halfling saíram daqui: elas viraram um `swap` (DDL-0063)', () => {
+    expect(LEGACY_SUBRACES.some((e) => e.of === 'Halfling|PHB')).toBe(false);
+    expect(legacySubracesFor({ name: 'Halfling', source: 'XPHB' })).toEqual([]);
   });
 
   it('as marcadas `as: species` saem do índice de LINHAGENS', () => {
@@ -48,7 +55,7 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058/0059/0060)', () => {
     }
     // …e cada uma aponta para a base LEGADA em que deve ser fundida
     const bases = new Set(legacyStandaloneRefs().map((r) => `${r.raceName}|${r.raceSource}`));
-    expect([...bases].sort()).toEqual(['Halfling|PHB', 'Human|PHB']);
+    expect([...bases].sort()).toEqual(['Human|PHB']);
   });
 
   it('legacySubracesFor indexa pela raça ATUAL', () => {
@@ -142,38 +149,41 @@ describe('sub-raça legada como LINHAGEM da base atual', () => {
 });
 
 describe('sub-raça legada como ESPÉCIE à parte', () => {
-  // Chassi 2014 (Lucky/Brave, 25 ft) + o traço próprio; nada de Naturally
-  // Stealthy, que no Halfling 2024 veio do Lightfoot.
+  // O caso que resta (DDL-0060): o Keldon. Chassi 2014 do humano + os traços
+  // próprios; nada do Resourceful/Skillful/Versatile do Human 2024, que somados
+  // fariam dele um upgrade puro sobre o humano comum.
   const db = {
     races: {
       race: [
-        { name: 'Halfling', source: 'PHB', speed: 25, ability: [{ dex: 2 }], reprintedAs: ['Halfling|XPHB'],
+        { name: 'Human', source: 'PHB', speed: 30, ability: [{ str: 1 }], reprintedAs: ['Human|XPHB'],
           entries: [
             { type: 'entries', name: 'Age', entries: ['prosa 2014'] },
-            { type: 'entries', name: 'Lucky', entries: ['a'] },
-            { type: 'entries', name: 'Brave', entries: ['b'] },
+            { type: 'entries', name: 'Languages', entries: ['prosa 2014'] },
           ] },
-        { name: 'Halfling', source: 'XPHB', speed: 30,
-          entries: [{ type: 'entries', name: 'Naturally Stealthy', entries: ['lightfoot'] }] },
+        { name: 'Human', source: 'XPHB', speed: 30,
+          entries: [{ type: 'entries', name: 'Versatile', entries: ['talento de origem'] }] },
       ],
       subrace: [
-        { name: 'Ghostwise', source: 'SCAG', raceName: 'Halfling', raceSource: 'PHB', ability: [{ wis: 1 }],
-          entries: [{ type: 'entries', name: 'Silent Speech', entries: ['c'] }] },
+        { name: 'Keldon', source: 'PSD', raceName: 'Human', raceSource: 'PHB', ability: [{ str: 2 }],
+          entries: [
+            { type: 'entries', name: 'Size', entries: ['prosa 2014'] },
+            { type: 'entries', name: 'Natural Athlete', entries: ['c'] },
+          ] },
       ],
     },
   };
 
   it('é montada sobre a base LEGADA, não a 2024', () => {
-    const [ghostwise] = legacyStandaloneSpecies(db);
-    expect(ghostwise.name).toBe('Halfling (Ghostwise)');
-    expect(ghostwise.entries.map((e) => e.name)).toEqual(['Lucky', 'Brave', 'Silent Speech']);
-    expect(ghostwise.speed).toBe(25); // o chassi 2014, não os 30 ft de 2024
-    expect(ghostwise.ability).toBeUndefined(); // o `ability` legado sai dos DOIS lados
-    expect(ghostwise.reprintedAs).toBeUndefined(); // senão o latestOnly a esconderia
+    const [keldon] = legacyStandaloneSpecies(db);
+    expect(keldon.name).toBe('Human (Keldon)');
+    // As seções de prosa 2014 caem dos DOIS lados; o Versatile de 2024 não entra.
+    expect(keldon.entries.map((e) => e.name)).toEqual(['Natural Athlete']);
+    expect(keldon.ability).toBeUndefined(); // o `ability` legado sai dos DOIS lados
+    expect(keldon.reprintedAs).toBeUndefined(); // senão o latestOnly a esconderia
   });
 
   it('entra no catálogo de espécies e NÃO nas linhagens da base 2024', () => {
-    expect(speciesCatalog(db).map((r) => `${r.name}|${r.source}`)).toContain('Halfling (Ghostwise)|SCAG');
+    expect(speciesCatalog(db).map((r) => `${r.name}|${r.source}`)).toContain('Human (Keldon)|PSD');
     const modern = db.races.race.find((r) => r.source === 'XPHB');
     expect(raceLineages(db, modern)).toEqual([]);
     expect(requiresLineage(db, modern)).toBe(false);

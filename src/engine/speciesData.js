@@ -14,6 +14,7 @@ import { skillCode } from './classData';
 import { parseChoices } from './choices';
 import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { legacyLegacyVersions } from './legacyFiendishLegacies';
+import { halflingLineageVersions, withLineageUmbrella, lineageUmbrellaName } from './legacyHalflingLineages';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
 function applyArrMods(arr, ops) {
@@ -286,14 +287,21 @@ export function subraceVersions(db, race) {
  *
  * As legadas reescritas entram por `legacyLegacyVersions`, que devolve
  * DESCRITORES no formato `_versions` — por isso passam pelo mesmo `buildVariant`
- * das nativas e nada a jusante precisa saber que elas são especiais.
+ * das nativas e nada a jusante precisa saber que elas são especiais. As do
+ * Halfling (DDL-0063) entram do mesmo jeito, com uma diferença: elas substituem
+ * um traço que só existe DEPOIS do guarda-chuva ser aplicado, então o
+ * `buildVariant` delas roda sobre `withLineageUmbrella(db, race)` — se rodasse
+ * sobre a base crua, o `replaceArr` não acharia o alvo e o traço da linhagem
+ * sumiria em silêncio.
  * @param {object} db
  * @param {object|null} race
  * @returns {object[]}
  */
 export function raceLineages(db, race) {
   const legacy = legacyLegacyVersions(db, race).map((v) => buildVariant(race, v));
-  return [...expandRaceVersions(race), ...legacy, ...subraceVersions(db, race)];
+  const halflingBase = withLineageUmbrella(db, race);
+  const halfling = halflingLineageVersions(db, race).map((v) => buildVariant(halflingBase, v));
+  return [...expandRaceVersions(race), ...legacy, ...halfling, ...subraceVersions(db, race)];
 }
 
 /**
@@ -335,6 +343,11 @@ function replacedTraitName(version) {
  * Rótulo do seletor de linhagem desta espécie, tirado do dado. Sem `_versions`
  * (espécies cujas linhagens são sub-raças fundidas: Genasi, Stensia…) ou sem um
  * traço substituído legível, cai no genérico "Lineage".
+ *
+ * Numa espécie cujo guarda-chuva é NOSSO (DDL-0063) o dado não tem o que ler, e
+ * o nome vem do módulo que o criou — continua fonte única, não uma string solta
+ * na UI. As `_versions` nativas têm precedência: uma espécie que já diz o próprio
+ * nome nunca é sobreposta.
  * @param {object|null} race  espécie BASE
  * @returns {string}
  */
@@ -343,7 +356,7 @@ export function lineageSelectorLabel(race) {
     const name = replacedTraitName(v) ?? replacedTraitName(v?._abstract);
     if (name) return name;
   }
-  return 'Lineage';
+  return lineageUmbrellaName(race) ?? 'Lineage';
 }
 
 // --- Escolhas que a LINHAGEM vai resolver ------------------------------------

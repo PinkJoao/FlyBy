@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T13:36:50.855Z · base seed 1 · 289 rows
+Last sweep: 2026-07-23T15:08:04.813Z · base seed 1 · 290 rows
 
 ## Classes × subclasses (135)
 
@@ -147,7 +147,7 @@ Last sweep: 2026-07-23T13:36:50.855Z · base seed 1 · 289 rows
 | `class:warlock/Great Old One` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 12 magias concedidas Always Prepared |
 | `class:warlock/Undead` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (RHW): 11 magias concedidas Always Prepared; 3 subclass features renderizam |
 
-## Species × lineages (154)
+## Species × lineages (155)
 
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
@@ -225,7 +225,10 @@ Last sweep: 2026-07-23T13:36:50.855Z · base seed 1 · 289 rows
 | `species:Grung\|OGA` | ok | - | todo | todo |  |
 | `species:Hadozee\|AAG` | ok | - | todo | todo |  |
 | `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
-| `species:Halfling\|XPHB` | ok | - | todo | todo |  |
+| `species:Halfling\|XPHB/Halfling; Lightfoot Lineage` | ok | - | ok | todo | reproduz a base 2024 exatamente (Naturally Stealthy, redacao XPHB) |
+| `species:Halfling\|XPHB/Halfling; Stout Lineage` | ok | - | ok | todo | Stout Resilience + DAMAGE RESISTANCES: Poison na ficha |
+| `species:Halfling\|XPHB/Halfling; Ghostwise Lineage` | ok | - | ok | todo | Silent Speech; a prosa 2014 ("Size") cai |
+| `species:Halfling\|XPHB/Halfling; Lotusden Lineage` | ok | - | ok | todo | 2 tracos + origem de magia propria (Wis, DC 10) com Druidcraft Always Prepared |
 | `species:Harengon\|MPMM` | ok | - | todo | todo |  |
 | `species:Hexblood\|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin\|MPMM` | ok | - | todo | todo |  |
@@ -302,6 +305,4 @@ Last sweep: 2026-07-23T13:36:50.855Z · base seed 1 · 289 rows
 | `species:Verdan\|AI` | ok | - | todo | todo |  |
 | `species:Warforged\|EFA` | ok | - | todo | todo |  |
 | `species:Yuan-Ti\|MPMM` | ok | - | todo | todo |  |
-| `species:Halfling (Ghostwise)\|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Halfling (Lotusden)\|EGW` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
 | `species:Human (Keldon)\|PSD` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |

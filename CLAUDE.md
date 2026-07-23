@@ -244,12 +244,12 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    9 were deliberately discarded. The general edition toggle stays **cancelled**. Adding another
    legacy subrace is one registry line, plus the `as` call spelled out in DDL-0060 — or a rewrite,
    per DDL-0061.
-5. **Sub-raças ABSORVIDAS pela base 2024 (`as: 'swap'`)** — NOVO 2026-07-23; levantamento feito,
-   estratégia DECIDIDA, **implementação pendente**. Ver **DDL-0063** + **`SPECIES-FAMILIES-PLAN.md`**
-   (leia o plano antes de codar; o censo das 98 sub-raças está lá e não deve ser refeito). Cria o
-   guarda-chuva de linhagem para **Dwarf** (Hill/Mountain) e **Halfling** (Lightfoot/Stout/
-   Ghostwise/Lotusden), no qual cada opção TROCA o traço que a base 2024 absorveu. Fecha o último
-   conteúdo de espécie realmente perdido do dataset — que são só dois traços.
+5. ~~**Sub-raças ABSORVIDAS pela base 2024 (`as: 'swap'`)**~~ — **DONE 2026-07-23 (DDL-0063,
+   CHANGELOG §71)**, no escopo que o usuário fixou: **só o Halfling**. O guarda-chuva "Halfling
+   Lineage" traz Lightfoot/Stout/Ghostwise/Lotusden, cada opção TROCANDO o traço que a base 2024
+   absorveu. O **Dwarf (Hill/Mountain) ficou de fora por decisão** — não é pendência; ver a §
+   "Explicitly OUT OF SCOPE". O censo das 98 sub-raças que sustenta tudo isso está em
+   **`SPECIES-FAMILIES-PLAN.md`** e **não deve ser refeito**.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
@@ -263,6 +263,12 @@ here so a future session does not "discover the gap" and re-add them:
 - **Sidekick classes and UA content** (Mystic…). Not supported. This is why they are absent from
   every curated registry (subclassGrants, featureOptions, hpBonuses) and from the sweep matrix —
   that absence is the decision, not an oversight.
+- **O `swap` do DWARF (Hill/Mountain)** — decidido 2026-07-23. O Dwarf tem o padrão de absorção
+  IDÊNTICO ao do Halfling (Dwarf XPHB = Dwarf 2014 + o Dwarven Toughness do *Hill*, e o *Mountain*
+  ficou fora com o Dwarven Armor Training), e a forma `as: 'swap'` do DDL-0063 resolveria os dois
+  do mesmo jeito. O usuário optou por **só o Halfling**: o objetivo era centralizar as opções mais
+  relevantes e confusas, não varrer o dataset. Uma sessão futura não deve reabrir isso como lacuna
+  — se voltar, volta por pedido, e é um segundo alvo em `engine/legacyHalflingLineages.js`.
 
 ---
 
@@ -330,25 +336,23 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
-### DDL-0063 — Sub-raça ABSORVIDA pela base 2024 volta como `swap`: a linhagem TROCA o traço absorvido (planejamento)
+### DDL-0063 — Sub-raça ABSORVIDA pela base 2024 volta como `swap`: a linhagem TROCA o traço absorvido
 **Date:** 2026-07-23
-**Status: PLANEJAMENTO.** O levantamento completo, o catálogo caso a caso e o passo a passo da
-implementação vivem em **`SPECIES-FAMILIES-PLAN.md`** (raiz do projeto) — leia-o antes de codar.
-Este entry registra só o escopo e as decisões, para não se perderem. **Acrescenta uma QUARTA forma**
-ao `as` do DDL-0059/0060 (não revoga nenhuma) e usa a brecha que o DDL-0061 abriu (empilhamento
-neutralizado na fonte ⇒ pode ser linhagem).
+**Status: IMPLEMENTADO (só o Halfling).** **Acrescenta uma QUARTA forma** ao `as` do DDL-0059/0060
+(não revoga nenhuma) e usa a brecha que o DDL-0061 abriu: empilhamento neutralizado na fonte ⇒ a
+sub-raça pode ser linhagem. O CENSO completo das 98 sub-raças e o catálogo caso a caso das 20 do
+grupo novo vivem em **`SPECIES-FAMILIES-PLAN.md`** (raiz) — não refazer o levantamento.
 
 **Context.** O DDL-0058 mirou as sub-raças que somem por COLATERAL (sem `reprintedAs` próprio).
-Ficaram de fora, por definição, **20 sub-raças que o 5etools marca como reimpressas na PRÓPRIA
-BASE 2024** ("Hill|PHB → Dwarf|XPHB"). A pergunta que faltava: *a base 2024 realmente contém o que
-elas tinham?* Censo item a item (2026-07-23) sobre as 98 sub-raças do dataset, que caem em 7 grupos
-fechados — 5 já resolvidos ou fora de escopo (marcas dracônicas de Eberron, órfã do dataset).
+Ficaram de fora, por definição, **20 que o 5etools marca como reimpressas na PRÓPRIA BASE 2024**
+("Hill|PHB → Dwarf|XPHB"). A pergunta que faltava: *a base 2024 realmente contém o que elas
+tinham?* Censo item a item (2026-07-23) sobre as 98 sub-raças do dataset, em 7 grupos fechados.
 
 **Findings.**
 - **O conteúdo mecânico realmente perdido no dataset INTEIRO são DOIS traços:** *Dwarven Armor
   Training* (Mountain Dwarf) e *Stout Resilience* (Stout Halfling). Todo o resto das 20 é
-  redundante por verificação item a item — Drow/High/Wood e Forest/Rock viraram as linhagens
-  2024; as 3 do Aasimar VGM viraram opções da Celestial Revelation (e melhor: escolhe a cada
+  redundante por verificação item a item — Drow/High/Wood e Forest/Rock viraram as linhagens 2024;
+  as 3 do Aasimar VGM viraram opções da Celestial Revelation (e melhor: escolhe a cada
   transformação); Shifter ERLW ×4 estão no `Shifter|EFA`; Genasi EEPC ×4 no `Genasi|MPMM`.
 - **A família ELF está 100% coberta** (Astral/Sea/Eladrin/Shadar-Kai/Kaladesh/Zendikar/LFL + as 4
   linhagens). A suspeita de "muitas de elfo faltando" não se confirma.
@@ -356,43 +360,62 @@ fechados — 5 já resolvidos ou fora de escopo (marcas dracônicas de Eberron, 
   (espécie não concede arma nem idioma), não lacuna. Não recuperar.
 - **O PADRÃO DA ABSORÇÃO (o achado que decide a estratégia): cada base 2024 absorveu UMA de suas
   sub-raças 2014.** Dwarf|XPHB = Dwarf 2014 + **Dwarven Toughness (do Hill)**; Halfling|XPHB =
-  Halfling 2014 + **Naturally Stealthy (do Lightfoot)** (já visto no DDL-0060, aqui confirmado
-  como sistemático); Human|XPHB = **o Variant Human inteiro** + Resourceful. **Elf e Gnome são a
-  exceção limpa** — não absorveram nada, as sub-raças viraram as linhagens, e é por isso que o
-  Pallid pôde ser linhagem sem discussão (DDL-0060). É a prova de que pendurar Stout no Halfling
-  XPHB entrega Lightfoot+Stout de uma vez.
+  Halfling 2014 + **Naturally Stealthy (do Lightfoot)** (já visto no DDL-0060, aqui confirmado como
+  sistemático); Human|XPHB = **o Variant Human inteiro** + Resourceful. **Elf e Gnome são a exceção
+  limpa** — não absorveram nada, as sub-raças viraram as linhagens, e é por isso que o Pallid pôde
+  ser linhagem sem discussão (DDL-0060). É a prova de que pendurar Stout no Halfling XPHB entrega
+  Lightfoot+Stout de uma vez.
 
-**Decisions (do usuário).**
-- **Nova forma `as: 'swap'`**: construir para Dwarf e Halfling o guarda-chuva de linhagem que a
-  edição 2024 não lhes deu, no qual cada opção **SUBSTITUI** o traço absorvido em vez de somar.
-  `Dwarf|XPHB` → "Dwarven Lineage" (ocupa Dwarven Toughness): **Hill** / **Mountain**.
-  `Halfling|XPHB` → "Halfling Lineage" (ocupa Naturally Stealthy): **Lightfoot** / **Stout** /
-  **Ghostwise** / **Lotusden**. Troca 1-por-1, sem empilhamento; em 2014 essas eram IRMÃS (nenhuma
-  era "a base"), então é o livro 2014 portado para o chassi 2024.
-- **REGRA obrigatória para uma entrada `'swap'`:** (1) identifique o traço da base 2024 que veio de
-  uma sub-raça 2014 (o método é o diff base-2024 × base-2014); (2) TODA opção deve `supersedes`
+**Decisions.**
+- **Nova forma `as: 'swap'`** (`engine/legacyHalflingLineages.js`): construir o guarda-chuva de
+  linhagem que a edição 2024 não deu à espécie. O traço absorvido SAI da base e vira UMA das
+  opções, então cada linhagem TROCA em vez de somar. `Halfling|XPHB` ganha **"Halfling Lineage"**
+  (ocupa "Naturally Stealthy") com **Lightfoot / Stout / Ghostwise / Lotusden**. Em 2014 essas
+  quatro eram IRMÃS — nenhuma era "a base" — então é o livro 2014 portado para o chassi 2024.
+- **REGRA obrigatória para uma entrada `'swap'` futura:** (1) identifique o traço da base 2024 que
+  veio de uma sub-raça 2014 (o método é o diff base-2024 × base-2014); (2) TODA opção substitui
   esse traço; (3) o conjunto DEVE incluir a opção que reproduz a base 2024 exatamente — sem ela a
   mudança TIRA algo de quem já tinha, e a pergunta "por que escolher a espécie pura?" volta;
   (4) sem traço absorvido identificável, **não é `'swap'`** — é `'lineage'` (Elf) ou `'species'`.
-- **Ghostwise e Lotusden MIGRAM** de espécie à parte (DDL-0060) para opções da Halfling Lineage: o
-  `swap` resolve justamente o motivo pelo qual aquele entry as tirou de lá.
-- **A assimetria do Lotusden é aceita** (cantrip + 2 magias contra um traço só) — o dado 2014 já
-  era assim e as linhagens do Elf 2024 têm esse formato. **NÃO reescrever**: texto vem do dado.
-- **Ficam como estão:** Human/Keldon (não há traço a trocar — o Variant foi absorvido INTEIRO e o
-  2024 ainda soma Resourceful), Aasimar, Elf, Gnome, e as 12 marcas dracônicas de Eberron.
+- **O DWARF ficou FORA, por decisão do usuário** (2026-07-23), embora tenha o padrão idêntico
+  (Hill/Mountain). Não é pendência: o objetivo era centralizar as opções mais relevantes e
+  confusas, e o Halfling era o caso. Adicioná-lo depois é um segundo alvo no mesmo módulo.
+- **Ghostwise e Lotusden MIGRARAM** de espécie à parte (DDL-0060) para opções da Halfling Lineage,
+  e saíram do `LEGACY_SUBRACES` — que segue sendo o registro das que voltam sem `swap` (hoje só
+  Pallid como linhagem e Keldon como espécie).
+- **A mecânica das opções NÃO é normalizada** (decisão do usuário): o Lotusden fica mais pesado que
+  as irmãs (cantrip + magia@3 + magia@5) e com o atributo de conjuração FIXO em Sabedoria, como o
+  dado 2014 diz. É o mesmo tratamento do Pallid no Elf; quem normaliza atributo e magias é a
+  REESCRITA (DDL-0061), que aqui não se aplica.
+- **Texto do dado, como sempre** (DDL-0003/0061): cada opção são os `entries` da própria sub-raça
+  2014 — e o do **Lightfoot é o `Naturally Stealthy` da BASE 2024**, não o do `Lightfoot|PHB`,
+  justamente porque ele tem de reproduzir a base (a redação 2024 diz "take the Hide action"; a de
+  2014 dizia "attempt to hide"). A ÚNICA string autoral é a frase de moldura do guarda-chuva.
+- **Human, Aasimar, Elf, Gnome e as 12 marcas dracônicas de Eberron ficam como estão.** No Human
+  não há traço a trocar: o Variant foi absorvido INTEIRO e o 2024 ainda soma Resourceful.
 
-**Consequences (a antecipar na implementação).**
-- **Migração DUPLA obrigatória** e é o maior risco: ficha `Halfling|XPHB`/`Dwarf|XPHB` sem linhagem
-  recebe *Lightfoot*/*Hill* (sem perda); ficha `Halfling (Ghostwise)|SCAG`/`(Lotusden)|EGW` volta a
-  `Halfling|XPHB` + linhagem — mesma migração que o DDL-0061 fez com os tieflings. **Toda mudança
-  de FORMA de uma espécie legada precisa dela.**
-- O idioma já existe no dado: o `Gnome; Forest Gnome Lineage` do XPHB faz `_mod.entries.replaceArr`
-  sobre "Gnomish Lineage" — o registro novo emite descritores `_versions`, que `raceLineages` passa
-  pelo MESMO `buildVariant`. Nada a jusante (seletor, completude, guia, sweep, export, import)
-  precisa saber que a linhagem é nossa.
-- `requiresLineage` (DDL-0059) passa a valer para Dwarf/Halfling; `lineageDeferredKinds` (DDL-0062)
-  provavelmente entra em jogo pelo `resist` do Stout — **verificar, não supor**.
-- Halfling cai de 3 entradas do seletor para 1; Dwarf recupera 2 sem criar entrada nenhuma.
+**Consequences.**
+- **`withLineageUmbrella` tem de rodar ANTES do `buildVariant`** — o `replaceArr` das versões
+  procura o guarda-chuva, e sobre a base crua ele não acha o alvo e o traço da linhagem some EM
+  SILÊNCIO (`applyArrMods` ignora um `replace` sem alvo). Por isso `raceLineages` monta as versões
+  do Halfling sobre `withLineageUmbrella(db, race)`, e `resolveRaceObj` aplica o guarda-chuva à
+  base. A função é idempotente e devolve a MESMA referência quando não há o que mudar.
+- **Migração DUPLA** (`migrateHalflingSpecies`, encadeada no `migrate` do schema): `Halfling
+  (Ghostwise)|SCAG`/`(Lotusden)|EGW` → Halfling XPHB + linhagem (bag zerado); `Halfling|XPHB` SEM
+  linhagem → **Lightfoot**, sem perda e PRESERVANDO o bag (nada nele dependia da linhagem). Toda
+  mudança de FORMA de uma espécie legada precisa disto.
+- **`lineageSelectorLabel` ganhou um fallback** para o guarda-chuva que é NOSSO (o dado não tem o
+  que ler); as `_versions` nativas continuam tendo precedência.
+- Com menos de DUAS opções montáveis o módulo não faz nada e a espécie fica como está — trocar o
+  traço por um seletor de uma opção só seria ruído.
+- `lineageDeferredKinds` (DDL-0062) fica VAZIO aqui, verificado: ele só age sobre campo que a BASE
+  tem, e o Halfling não tem `resist`/`additionalSpells`/perícia.
+- Halfling caiu de 3 entradas do seletor de espécies para 1.
+- Verificado: 1086 testes (+15), lint, sweep **290/290 `--strict`** (as 4 linhas novas com build,
+  export e round-trip limpos), e ao vivo — a base mostra "Halfling Lineage" com as 4 opções e sem
+  Naturally Stealthy solto; Stout deriva DAMAGE RESISTANCES: Poison; Lotusden deriva origem de
+  magia própria (Wis, DC 10, Druidcraft Always Prepared); Lightfoot reproduz a base. Mobile 375px
+  sem overflow de página, zero erros de console. Ver CHANGELOG §71.
 
 ### DDL-0062 — O seletor de linhagem tira o NOME do dado; benefício OU-EXCLUSIVO é adiado; espécie nunca dá atributo
 **Date:** 2026-07-23

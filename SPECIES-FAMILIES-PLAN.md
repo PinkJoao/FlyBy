@@ -4,8 +4,13 @@
 > catalogação e estratégia. Quando a implementação terminar, dobrar em CLAUDE.md (DDL) +
 > CHANGELOG e apagar este arquivo.
 >
-> **Status:** levantamento CONCLUÍDO e estratégia DECIDIDA (2026-07-23) — ver §6, todas as
-> perguntas respondidas pelo usuário. **Nada implementado ainda**; o próximo passo é o §5.4.
+> **Status (2026-07-23): CAMPANHA ENCERRADA.** O `swap` do **Halfling** foi implementado
+> (DDL-0063 + CHANGELOG §71). O **Dwarf ficou de fora por decisão do usuário** e está na seção
+> "Explicitly OUT OF SCOPE" do CLAUDE.md — **não é pendência**.
+>
+> Este arquivo continua no repositório por um motivo só: o **censo do §3** (as 98 sub-raças em 7
+> grupos + a análise item a item das 20 do grupo novo). Ele responde "o que ainda falta de
+> espécie?" com dado, e **não deve ser refeito**. As decisões e o desenho vivem no DDL-0063.
 
 ---
 
@@ -235,14 +240,22 @@ texto nenhum, só declarar que a linhagem **ocupa o lugar** do traço absorvido.
 
 ---
 
-## 7. Hand-off
+## 7. O que foi entregue (2026-07-23)
 
-- Levantamento fechado e reprodutível: os 7 grupos do §3.1 cobrem as 98 sub-raças; o §3.2 é
-  a análise item a item das 20 do grupo novo.
-- Decisões tomadas (§6). **Nada de código foi escrito** — o próximo passo é executar o §5.4
-  na ordem, começando pelo registro `engine/legacyLineageSwaps.js`.
-- Riscos já identificados, não redescobrir: a **migração dupla** (§5.4 item 4) é o ponto de maior
-  risco; `lineageDeferredKinds` (DDL-0062) provavelmente entra em jogo pelo `resist` do Stout —
-  **verificar, não supor**; e o `parseExistingCoverage` do sweep tem o cuidado do pipe escapado
-  (DDL-0061).
-- Ao implementar, este arquivo vira o DDL-0063 definitivo + entrada no CHANGELOG, e some.
+**Só o Halfling**, por decisão do usuário — o Dwarf foi descartado, não adiado. Ver DDL-0063
+(desenho + regras) e CHANGELOG §71 (log). O módulo é `engine/legacyHalflingLineages.js`.
+
+Ajustes que a implementação impôs sobre o esboço do §5.4, e que valem para um `swap` futuro:
+- **O guarda-chuva precisa existir ANTES do `buildVariant`.** O `replaceArr` da versão procura o
+  traço; sobre a base crua ele não acha o alvo e `applyArrMods` ignora a op — o traço da linhagem
+  sumiria em silêncio. Daí `withLineageUmbrella` ser aplicado dentro do `raceLineages` e do
+  `resolveRaceObj`, e ser idempotente.
+- **`lineageDeferredKinds` (DDL-0062) ficou VAZIO** — verificado, não suposto: a regra só age sobre
+  campo que a BASE tem, e o Halfling não tem `resist`/`additionalSpells`/perícia. O `resist` do
+  Stout chega pela variante e não dispara nada.
+- **O `parseExistingCoverage` do sweep já estava certo** (o pipe escapado do DDL-0061): as colunas
+  manuais das outras linhas sobreviveram à regeneração.
+- A migração dupla previu bem o risco e não teve surpresa.
+
+Sobra deste documento: o **censo do §3**, que continua sendo a resposta com dado à pergunta "o que
+ainda falta de espécie?" — e a resposta é: nada, fora o Mountain Dwarf, que está fora de escopo.

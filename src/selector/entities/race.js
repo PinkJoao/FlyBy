@@ -11,6 +11,7 @@ import { latestOnly } from '../reprints';
 import { resolveCopies } from '../copy';
 import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
+import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
@@ -152,12 +153,15 @@ const raceEntity = {
     badges: traitKeys(race).slice(0, 3).map((k) => TRAIT_LABEL[k]),
   }),
 
-  // Traços mecânicos. Idênticos aos do dado, EXCETO no Tiefling XPHB: a tabela
-  // "Fiendish Legacies" ganha as linhas das legacies legadas (DDL-0061), para o
-  // preview listar as mesmas opções que o seletor de linhagem oferece. Numa
-  // linhagem já resolvida a tabela não existe mais (o traço foi substituído), e
-  // a função devolve os entries originais.
-  entries: (race, db) => withLegacyTable(db, race),
+  // Traços mecânicos. Idênticos aos do dado, com duas exceções, ambas para o
+  // preview listar as MESMAS opções que o seletor de linhagem oferece:
+  //  - Tiefling XPHB: a tabela "Fiendish Legacies" ganha as linhas das legacies
+  //    legadas (DDL-0061);
+  //  - Halfling XPHB: o "Naturally Stealthy" dá lugar ao guarda-chuva "Halfling
+  //    Lineage", com as quatro opções (DDL-0063).
+  // Numa linhagem já resolvida nenhuma das duas se aplica (o traço já foi
+  // substituído) e os entries originais voltam intactos.
+  entries: (race, db) => withLegacyTable(db, withLineageUmbrella(db, race)),
 
   // Lore + imagens (fluff-races.json) p/ o DetailView. Para uma linhagem resolvida
   // (`_baseName`), cai na arte/lore da RAÇA BASE (ex: Elf; Drow Lineage → Elf).

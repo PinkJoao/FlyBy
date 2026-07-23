@@ -405,7 +405,14 @@ export default function SelectorPanel({
                 const body = (
                   <>
                     <span className={styles.cardTitle}>{card.title}</span>
-                    {card.subtitle && <span className={styles.cardSub}>{card.subtitle}</span>}
+                    {card.subtitle && (
+                      // `subtitleFull` (ex: nome por extenso da fonte) vira o
+                      // tooltip nativo; no card o clique seleciona, então só o
+                      // hover (o popup da fonte vive no DetailView/SourceTag).
+                      <span className={styles.cardSub} title={card.subtitleFull}>
+                        {card.subtitle}
+                      </span>
+                    )}
                     {card.meta && <span className={styles.cardMeta}>{card.meta}</span>}
                     {card.rarity && (
                       <span className={styles.badges}>

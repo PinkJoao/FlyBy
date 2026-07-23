@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import EntryContent from './EntryContent';
+import SourceTag from './SourceTag';
 import { imgUrl } from './media';
 import styles from './DetailView.module.css';
 
@@ -75,7 +76,11 @@ export default function DetailView({ entity, raw, db, capImage = false, customIm
       )}
 
       {!hideHeader && <h3 className={styles.name}>{raw.name}</h3>}
-      {!hideHeader && <p className={styles.src}>{raw.source}</p>}
+      {!hideHeader && raw.source && (
+        <p className={styles.src}>
+          <SourceTag source={raw.source} />
+        </p>
+      )}
 
       {meta.length > 0 && (
         <div className={styles.meta}>

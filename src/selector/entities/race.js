@@ -13,6 +13,7 @@ import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
 import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
 import { isRemovedSpecies, isSettingVariant, imageDonorFor } from '../../engine/settingSpecies';
+import { sourceName } from '../../engine/sourceNames';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
@@ -113,20 +114,47 @@ function fluffList(db) {
   return out;
 }
 
+const imgPath = (img) => img?.href?.path ?? null;
+
 /**
- * Arte herdada de uma espécie removida por redundância (engine/settingSpecies).
- * A imagem do doador entra na FRENTE, porque o DetailView mostra a primeira:
- * é ela que passa a representar a linhagem. Hoje só o Aven (Hawk-Headed), que
- * é a única das duas linhagens do Aven sem imagem própria no dado.
+ * A ARTE que REPRESENTA uma linhagem vem na FRENTE do array, porque o DetailView
+ * mostra a primeira imagem. Duas fontes de arte própria, nesta ordem:
+ *
+ *  1. A imagem que a PRÓPRIA linhagem acrescenta (`_copy._mod.images.appendArr`,
+ *     já resolvido em `found.images`). Ela fica no FIM do array, depois das
+ *     imagens genéricas herdadas da base, então a linhagem apareceria com a arte
+ *     genérica. Aqui as imagens que a linhagem NÃO herdou da base sobem à frente
+ *     (ex: Aven (Ibis-Headed), Elf (Pallid)).
+ *  2. Uma imagem DOADA por uma espécie removida por redundância
+ *     (engine/settingSpecies): a arte do `Aven|PSD` representa a linhagem
+ *     `Aven (Hawk-Headed)`, que não tem imagem própria no dado.
+ *
+ * Uma espécie base (sem `_baseName`) e sem doação passa intacta.
  */
-function withDonatedImages(found, race, list) {
+function withLineageImages(found, race, list, base) {
+  let images = found?.images ?? [];
+
+  // (1) arte própria da linhagem à frente das genéricas herdadas da base
+  if (race._baseName && images.length) {
+    const basePaths = new Set((base?.images ?? []).map(imgPath));
+    const own = images.filter((img) => img?.href && !basePaths.has(imgPath(img)));
+    if (own.length && own.length < images.length) {
+      const inherited = images.filter((img) => !own.includes(img));
+      images = [...own, ...inherited];
+    }
+  }
+
+  // (2) arte doada por uma espécie redundante removida
   const donorId = imageDonorFor(race);
-  if (!donorId) return found;
-  const i = donorId.lastIndexOf('|');
-  const donor = list.find((f) => f.name === donorId.slice(0, i) && f.source === donorId.slice(i + 1));
-  const donated = donor?.images?.filter((img) => img?.href) ?? [];
-  if (!donated.length) return found;
-  return { ...(found ?? { name: race.name, source: race.source }), images: [...donated, ...(found?.images ?? [])] };
+  if (donorId) {
+    const i = donorId.lastIndexOf('|');
+    const donor = list.find((f) => f.name === donorId.slice(0, i) && f.source === donorId.slice(i + 1));
+    const donated = donor?.images?.filter((img) => img?.href) ?? [];
+    if (donated.length) images = [...donated, ...images];
+  }
+
+  if (images === (found?.images ?? [])) return found;
+  return { ...(found ?? { name: race.name, source: race.source }), images };
 }
 
 const raceEntity = {
@@ -197,6 +225,7 @@ const raceEntity = {
   card: (race) => ({
     title: race.name,
     subtitle: race.source,
+    subtitleFull: sourceName(race.source), // nome por extenso no hover do card
     meta: `${sizeText(race.size)} · ${speedText(race.speed)} · ${creatureTypes(race).map(cap).join(', ')}`,
     badges: traitKeys(race).slice(0, 3).map((k) => TRAIT_LABEL[k]),
   }),
@@ -222,13 +251,19 @@ const raceEntity = {
   // `entries` nem `images`, e a linhagem aparecia SEM lore e SEM arte.
   fluff: (race, db) => {
     const list = fluffList(db);
-    const base = race._baseName ?? race.name;
+    const baseName = race._baseName ?? race.name;
     const found =
       list.find((f) => f.name === race.name && f.source === race.source) ??
-      list.find((f) => f.name === base && f.source === race.source) ??
-      list.find((f) => f.name === base) ??
+      list.find((f) => f.name === baseName && f.source === race.source) ??
+      list.find((f) => f.name === baseName) ??
       null;
-    return withDonatedImages(found, race, list);
+    // A base é o alvo da comparação de imagens (o que a linhagem herdou).
+    const base = race._baseName
+      ? (list.find((f) => f.name === baseName && f.source === race.source) ??
+        list.find((f) => f.name === baseName) ??
+        null)
+      : null;
+    return withLineageImages(found, race, list, base);
   },
 };
 

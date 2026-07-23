@@ -342,6 +342,46 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0065 — Exibicao das fontes: nome por extenso no hover e no popup, de um mapa GERADO
+**Date:** 2026-07-23
+**Status: IMPLEMENTADO (inicio; ligado so a especie).** Primeiro passo da estrategia de exibicao das
+fontes que o DDL-0064 deixou pendente. **Builds on:** DDL-0055/0037 (o padrao "gerar um mapa
+commitado a partir do material de referencia git-ignored"), DDL-0007 (a pilha de dialogos in-app),
+DDL-0025 (o SourceTag e um atomo no espirito dos entity links).
+
+**Context.** A abreviacao de fonte ("PSK", "AAG") aparece em todo card e em todo DetailView, mas nao
+diz nada a um jogador novo. O usuario pediu: nome por extenso no hover, e um popup ao clicar.
+
+**Decisions.**
+- **O mapa abreviacao -> nome por extenso e GERADO e commitado.** `Parser.SOURCE_JSON_TO_FULL` do
+  5etools e a fonte autoritativa (180 fontes; cobre o que `books.json` nao cobre, como DSotDQ/LR e as
+  aventuras). Extraido por `npm run gen:sources` (`scripts/gen-source-names.js`) para
+  `src/engine/sourceNamesData.js`. A extracao EXECUTA o `parser.js` num sandbox `node:vm` e le o
+  objeto pronto, em vez de parsear por regex: as atribuicoes usam constantes, template-literals e
+  prefixos (`${Parser.PS_PREFIX}Amonkhet`), entao regex seria fragil. So rotulos de fonte sao
+  copiados, nenhum conteudo de jogo (consistente com DDL-0003, como o gen:uuids). O modulo puro
+  `engine/sourceNames.js` resolve, com fallback para a propria abreviacao (nunca vazio).
+- **Dois pontos de exibicao, porque o clique tem contextos diferentes.** No CARD o clique SELECIONA a
+  especie, entao la so o hover: um campo opcional `card.subtitleFull` vira o `title` do subtitulo (o
+  SelectorPanel o renderiza generico; hoje so a especie o preenche). No DETAILVIEW a fonte aparece
+  como TEXTO (nao dentro de um botao de selecao), entao vira o componente `SourceTag` (botao discreto,
+  underline pontilhado), com o nome por extenso no `title` (hover) e um clique que abre
+  `showSourcePopup`. O popup empilha na fila de dialogos (DDL-0007), entao abre SOBRE o seletor e o
+  fecha deixa o seletor aberto por baixo.
+- **`SourceTag` e generico, ligado por ora so a especie.** Ele ja vale para toda entidade que passa
+  pelo DetailView (o header de fonte e universal, `raw.source`); estender aos cards de outras
+  entidades e so preencher `subtitleFull` no `card` delas. O usuario sinalizou que a estrategia
+  completa de fontes (glossario + o SelectorPanel inteiro, DDL-0064) vira depois; isto e o inicio.
+
+**Consequences.**
+- Regenerar o mapa quando o 5etools atualizar e `npm run gen:sources` (deterministico, ordenado por
+  chave). Quem clona sem o `DnD Source Material` nao regenera, mas o arquivo commitado funciona.
+- Uma fonte sem nome mapeado (improvavel; o mapa tem 180) cai no fallback: mostra a propria
+  abreviacao, sem popup util mas sem quebrar.
+- Verificado: 1110 testes (+4), lint, e ao vivo (hover no card, popup empilhado do preview). Ver
+  CHANGELOG §74. A arte propria da linhagem vindo primeiro no DetailView (Aven (Ibis-Headed)) tambem
+  entrou nesta leva, completando a parte de imagens do DDL-0064/§73.
+
 ### DDL-0064 — Espécie de CENÁRIO: a vazia é REMOVIDA, a variante fica atrás de um filtro pré-marcado
 **Date:** 2026-07-23
 **Status: IMPLEMENTADO.** **NÃO estende** o `as` do DDL-0059/0060/0063 — pelo contrário, este entry

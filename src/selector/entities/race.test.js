@@ -116,12 +116,17 @@ describe('raceEntity.fluff', () => {
     },
   };
 
-  it('resolve `_copy`: a linhagem herda lore e arte da base', () => {
+  it('resolve `_copy`: a linhagem herda lore da base', () => {
     const f = raceEntity.fluff({ name: 'Aven (Ibis-Headed)', source: 'PSA', _baseName: 'Aven' }, db);
     expect(f.entries).toEqual(['lore do PSA']); // antes vinha vazio
+  });
+
+  it('a arte PRÓPRIA da linhagem vem PRIMEIRO (Ibis-Headed representa a si mesma)', () => {
+    const f = raceEntity.fluff({ name: 'Aven (Ibis-Headed)', source: 'PSA', _baseName: 'Aven' }, db);
+    // própria à frente, genéricas herdadas da base atrás
     expect(f.images.map((i) => i.href.path)).toEqual([
-      'races/PSA/Aven.webp',
       'races/PSA/Aven (Ibis-Headed).webp',
+      'races/PSA/Aven.webp',
     ]);
   });
 

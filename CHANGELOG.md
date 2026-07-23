@@ -4578,3 +4578,38 @@ vivo: "Aven" 2 -> 1 (so o PSA, VISIVEL por padrao); Aetherborn/Siren/Naga aparec
 ativo; as variantes (Elf/Dwarf Kaladesh, Orc/Minotaur de cenario) seguem escondidas; a ordem dos
 filtros e Size/Speed/Type/Traits/Variant/Source; o preview do Aven carrega arte e lore (prova o
 `_copy` resolvido). Zero erros de console.
+
+---
+
+## 74. Inicio da exibicao das fontes + a arte propria da linhagem vem primeiro
+
+Duas adicoes pequenas a pedido do usuario.
+
+**1. Exibicao das fontes (inicio).** A abreviacao de fonte ("PSK", "AAG") nao diz nada a um jogador
+novo. Agora:
+- **hover** no card mostra o nome por extenso ("Plane Shift: Kaladesh") num tooltip nativo, via um
+  campo opcional `card.subtitleFull`;
+- **clique** na fonte, quando ela aparece como TEXTO no DetailView (painel de preview, tela de
+  detalhe mobile, popup de chip), abre um popup com o nome por extenso. E o novo componente
+  reutilizavel `SourceTag`, que no card so faz o hover (la o clique seleciona a especie).
+
+O nome por extenso vem de `Parser.SOURCE_JSON_TO_FULL` do 5etools, extraido para um arquivo commitado
+`src/engine/sourceNamesData.js` (180 fontes) por `npm run gen:sources`, no mesmo padrao do
+`gen:uuids` (so rotulos de fonte, nenhum conteudo de jogo; material de referencia git-ignored,
+DDL-0037). O modulo puro `engine/sourceNames.js` resolve, com fallback para a propria abreviacao. O
+popup (`showSourcePopup`) empilha na fila de dialogos in-app (DDL-0007), entao abre sobre o seletor
+sem fecha-lo. Por ora ligado so a especie; o `SourceTag` no DetailView ja vale para toda entidade
+que passa por ele.
+
+**2. A arte PROPRIA de uma linhagem vem primeiro no DetailView.** Completa o §73. Uma linhagem
+resolvida de `_copy` que acrescenta a propria imagem (`_mod.images.appendArr`) a punha no FIM do
+array, depois das imagens genericas herdadas da base, entao o DetailView (que mostra a primeira)
+exibia a arte generica. Agora a imagem que a linhagem NAO herdou da base sobe a frente. Conserta o
+**Aven (Ibis-Headed)** (que passa a se representar com a propria arte, pedido do usuario) e vale para
+qualquer linhagem com arte propria (Elf (Pallid) etc.). A doacao do §73 (Aven (Hawk-Headed) herda a
+arte do Aven|PSD removido) segue funcionando, agora na mesma funcao `withLineageImages`.
+
+**Verificado:** 1110 testes (+4), lint, sweep 285/285 `--strict` (inalterado; e UI/fluff), e ao vivo:
+hover no card mostra o nome completo; clique na fonte do preview abre o popup ("Astral Adventurer's
+Guide" / badge Source / AAG) que empilha sobre o seletor e fecha deixando o seletor aberto; a
+resolucao de `_copy` do fluff carrega arte e lore. Mobile 375px sem overflow, zero erros de console.

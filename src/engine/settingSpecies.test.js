@@ -2,10 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
   EMPTY_SPECIES,
   EMPTY_SUBRACES,
-  SETTING_SOURCES,
+  SETTING_VARIANTS,
+  REDUNDANT_SPECIES,
   isEmptySpecies,
   isEmptySubrace,
+  isRedundantSpecies,
+  isRemovedSpecies,
   isSettingVariant,
+  imageDonorFor,
 } from './settingSpecies';
 
 describe('isEmptySpecies', () => {
@@ -60,11 +64,60 @@ describe('isEmptySubrace', () => {
   });
 });
 
+describe('isRedundantSpecies / imageDonorFor', () => {
+  it('o Aven|PSD sai: o Aven|PSA cobre o mesmo e tem duas linhagens', () => {
+    expect(isRedundantSpecies({ name: 'Aven', source: 'PSD' })).toBe(true);
+    expect(isRedundantSpecies({ name: 'Aven', source: 'PSA' })).toBe(false);
+    expect(REDUNDANT_SPECIES).toHaveLength(1);
+  });
+
+  it('a arte do removido vai para a linhagem que ela retrata', () => {
+    expect(imageDonorFor({ name: 'Aven (Hawk-Headed)', source: 'PSA' })).toBe('Aven|PSD');
+    // A Ibis-Headed já tem imagem própria no dado: não recebe doação.
+    expect(imageDonorFor({ name: 'Aven (Ibis-Headed)', source: 'PSA' })).toBe(null);
+    expect(imageDonorFor({ name: 'Aven', source: 'PSA' })).toBe(null);
+    expect(imageDonorFor(null)).toBe(null);
+  });
+
+  it('isRemovedSpecies junta os dois motivos de remoção', () => {
+    expect(isRemovedSpecies({ name: 'Aven', source: 'PSD' })).toBe(true); // redundante
+    expect(isRemovedSpecies({ name: 'Human (Ixalan)', source: 'PSX' })).toBe(true); // vazia
+    expect(isRemovedSpecies({ name: 'Aven', source: 'PSA' })).toBe(false);
+  });
+});
+
 describe('isSettingVariant', () => {
-  it('marca as seis fontes Plane Shift', () => {
-    expect(SETTING_SOURCES.size).toBe(6);
-    for (const source of ['PSA', 'PSD', 'PSI', 'PSK', 'PSX', 'PSZ']) {
-      expect(isSettingVariant({ name: 'X', source })).toBe(true);
+  it('marca só as que COLIDEM de nome com outra espécie do catálogo', () => {
+    expect(SETTING_VARIANTS.size).toBe(9);
+    for (const id of [
+      'Dwarf (Kaladesh)|PSK',
+      'Elf (Kaladesh)|PSK',
+      'Elf (Zendikar)|PSZ',
+      'Goblin|PSZ',
+      'Human (Innistrad)|PSI',
+      'Human (Keldon)|PSD',
+      'Minotaur (Amonkhet)|PSA',
+      'Orc (Ixalan)|PSX',
+      'Vedalken|PSK',
+    ]) {
+      const i = id.lastIndexOf('|');
+      expect(isSettingVariant({ name: id.slice(0, i), source: id.slice(i + 1) })).toBe(true);
+    }
+  });
+
+  it('NÃO marca as espécies ÚNICAS de Plane Shift: elas não confundem ninguém', () => {
+    const unicas = [
+      ['Aetherborn', 'PSK'],
+      ['Aven', 'PSA'], // com o PSD removido, deixou de colidir
+      ['Khenra', 'PSA'],
+      ['Kor', 'PSZ'],
+      ['Merfolk', 'PSZ'],
+      ['Naga', 'PSA'],
+      ['Siren', 'PSX'],
+      ['Vampire', 'PSZ'],
+    ];
+    for (const [name, source] of unicas) {
+      expect(isSettingVariant({ name, source })).toBe(false);
     }
   });
 
@@ -76,6 +129,7 @@ describe('isSettingVariant', () => {
     expect(isSettingVariant({ name: 'Elf', source: 'XPHB' })).toBe(false);
     expect(isSettingVariant({ name: 'Astral Elf', source: 'AAG' })).toBe(false);
     expect(isSettingVariant({ name: 'Vedalken', source: 'GGR' })).toBe(false);
+    // Repete o nome do Dragonborn, mas é variante de LIVRO com 5 linhagens.
     expect(isSettingVariant({ name: 'Dragonborn (Gem)', source: 'FTD' })).toBe(false);
     expect(isSettingVariant(null)).toBe(false);
   });

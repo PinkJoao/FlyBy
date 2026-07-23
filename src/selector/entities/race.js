@@ -12,7 +12,7 @@ import { resolveCopies } from '../copy';
 import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
 import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
-import { isEmptySpecies, isSettingVariant } from '../../engine/settingSpecies';
+import { isRemovedSpecies, isSettingVariant, imageDonorFor } from '../../engine/settingSpecies';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
@@ -99,6 +99,36 @@ function options(labelMap) {
   return Object.entries(labelMap).map(([value, label]) => ({ value, label }));
 }
 
+// --- Fluff: lista com `_copy` resolvido, memoizada por db --------------------
+const fluffCache = new WeakMap();
+
+function fluffList(db) {
+  const raw = db?.['fluff-races']?.raceFluff;
+  if (!Array.isArray(raw)) return [];
+  let out = fluffCache.get(raw);
+  if (!out) {
+    out = resolveCopies(raw);
+    fluffCache.set(raw, out);
+  }
+  return out;
+}
+
+/**
+ * Arte herdada de uma espécie removida por redundância (engine/settingSpecies).
+ * A imagem do doador entra na FRENTE, porque o DetailView mostra a primeira:
+ * é ela que passa a representar a linhagem. Hoje só o Aven (Hawk-Headed), que
+ * é a única das duas linhagens do Aven sem imagem própria no dado.
+ */
+function withDonatedImages(found, race, list) {
+  const donorId = imageDonorFor(race);
+  if (!donorId) return found;
+  const i = donorId.lastIndexOf('|');
+  const donor = list.find((f) => f.name === donorId.slice(0, i) && f.source === donorId.slice(i + 1));
+  const donated = donor?.images?.filter((img) => img?.href) ?? [];
+  if (!donated.length) return found;
+  return { ...(found ?? { name: race.name, source: race.source }), images: [...donated, ...(found?.images ?? [])] };
+}
+
 const raceEntity = {
   type: 'race',
   title: 'Species',
@@ -108,12 +138,12 @@ const raceEntity = {
   // (`_versions`) NÃO entram aqui - são escolhidas num seletor separado (SpeciesTab),
   // preservando a arte da raça base. A exceção são as sub-raças legadas curadas
   // marcadas `as: 'species'` (DDL-0059): elas VÊM como espécie própria, porque a
-  // base 2024 não é o mesmo chassi que a base 2014 delas. Fora, também, as três
-  // espécies de cenário que sob as regras 2024 não entregam mecânica nenhuma
-  // (`isEmptySpecies`, engine/settingSpecies).
+  // base 2024 não é o mesmo chassi que a base 2014 delas. Fora, também, as
+  // espécies de cenário removidas por não entregarem mecânica nenhuma ou por
+  // serem redundantes (`isRemovedSpecies`, engine/settingSpecies).
   list: (db) =>
     [...latestOnly(resolveCopies(db?.races?.race ?? [])), ...legacyStandaloneSpecies(db)]
-      .filter((r) => !r.traitTags?.includes('NPC Race') && !isEmptySpecies(r)),
+      .filter((r) => !r.traitTags?.includes('NPC Race') && !isRemovedSpecies(r)),
 
   idOf: (race) => `${race.name}|${race.source}`,
 
@@ -133,19 +163,21 @@ const raceEntity = {
   },
 
   // Source por ÚLTIMO: é a lista mais longa (ocupa muito espaço) e a menos usada.
+  // Variant fica logo ACIMA de Source: os dois falam de procedência, não de
+  // mecânica, então ficam juntos no fim.
   filters: [
-    { id: 'variant', header: 'Variant', options: options(VARIANT_LABEL) },
     { id: 'size', header: 'Size', options: options(SIZE_LABEL) },
     { id: 'speed', header: 'Speed', options: options(SPEED_LABEL) },
     { id: 'type', header: 'Creature Type', derive: true },
     { id: 'trait', header: 'Traits', options: options(TRAIT_LABEL) },
+    { id: 'variant', header: 'Variant', options: options(VARIANT_LABEL) },
     { id: 'source', header: 'Source', derive: true },
   ],
 
-  // As variantes de CENÁRIO (Plane Shift) saem da visão PADRÃO do seletor: elas
-  // repetiam o nome de espécies que o app já tem e enchiam a busca ("Elf" dava
-  // seis linhas). É um recorte de conveniência no padrão do DDL-0026/0040 —
-  // filtro PRÉ-MARCADO e removível, nunca regra dura: um toque no chip "Setting
+  // As variantes de CENÁRIO saem da visão PADRÃO do seletor: elas repetiam o
+  // nome de espécies que o app já tem e enchiam a busca ("Elf" dava seis
+  // linhas). É um recorte de conveniência no padrão do DDL-0026/0040: filtro
+  // PRÉ-MARCADO e removível, nunca regra dura. Um toque no chip "Setting
   // Variant" (ou em Clear) traz todas de volta. Fica na ENTITY, e não em cada
   // chamador, para valer nos dois seletores de espécie (aba e guia) sem fiação.
   initialFilterState: { variant: { setting: 'exclude' } },
@@ -179,17 +211,24 @@ const raceEntity = {
   // substituído) e os entries originais voltam intactos.
   entries: (race, db) => withLegacyTable(db, withLineageUmbrella(db, race)),
 
-  // Lore + imagens (fluff-races.json) p/ o DetailView. Para uma linhagem resolvida
-  // (`_baseName`), cai na arte/lore da RAÇA BASE (ex: Elf; Drow Lineage → Elf).
+  // Lore + imagens (fluff-races.json) p/ o DetailView. Para uma linhagem
+  // resolvida (`_baseName`), cai na arte/lore da RAÇA BASE (ex: Elf; Drow
+  // Lineage -> Elf).
+  //
+  // `resolveCopies` é OBRIGATÓRIO aqui: 79 das 221 entradas de fluff são stubs
+  // `_copy` que herdam o corpo da raça base e só acrescentam um parágrafo ou uma
+  // imagem própria (toda linhagem com lore própria: Genasi (Air), Elf (Pallid),
+  // Aven (Ibis-Headed)...). Sem resolver, o `find` casava o stub, que não tem
+  // `entries` nem `images`, e a linhagem aparecia SEM lore e SEM arte.
   fluff: (race, db) => {
-    const list = db?.['fluff-races']?.raceFluff ?? [];
+    const list = fluffList(db);
     const base = race._baseName ?? race.name;
-    return (
+    const found =
       list.find((f) => f.name === race.name && f.source === race.source) ??
       list.find((f) => f.name === base && f.source === race.source) ??
       list.find((f) => f.name === base) ??
-      null
-    );
+      null;
+    return withDonatedImages(found, race, list);
   },
 };
 

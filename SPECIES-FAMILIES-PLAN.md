@@ -269,9 +269,11 @@ da queixa de "nome repetido", que ele não cobria porque são **espécies de TOP
 CENÁRIO — `Elf (Zendikar)`, `Human (Kaladesh)`, `Dwarf (Kaladesh)`… Censo próprio feito, decisões
 tomadas e implementadas no **DDL-0064** (+ CHANGELOG §72). Resumo, para não refazer:
 
-- **21 das 90 espécies visíveis são "Plane Shift"** (PSA/PSD/PSI/PSK/PSX/PSZ) — PDFs gratuitos do
-  crossover com Magic, 2016–2018, regras 2014. Ficam no app, **escondidas por padrão** atrás do
-  filtro "Setting Variant" (pré-marcado, removível).
+- **21 das 90 espécies visíveis são "Plane Shift"** (PSA/PSD/PSI/PSK/PSX/PSZ), PDFs gratuitos do
+  crossover com Magic, 2016-2018, regras 2014. Ficam no app; as que COLIDEM de nome com outra
+  espécie do catálogo ficam **escondidas por padrão** atrás do filtro "Setting Variant"
+  (pré-marcado, removível). As ÚNICAS (Aetherborn, Aven, Khenra, Kor, Merfolk, Naga, Siren,
+  Vampire) seguem visíveis - ver o refino no CHANGELOG §73.
 - **`LFL` NÃO é isso.** "Lorwyn: First Light" é de **2025-11-18**, livro oficial em **regras 2024**,
   formato moderno — o `Kithkin|LFL` inclusive faz o mesmo `swap` que o DDL-0063. Não tocar.
 - **Três espécies foram REMOVIDAS por derivarem ZERO** (`Human (Ixalan)|PSX`,

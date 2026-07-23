@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T17:11:26.897Z · base seed 1 · 286 rows
+Last sweep: 2026-07-23T17:45:24.611Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -147,7 +147,7 @@ Last sweep: 2026-07-23T17:11:26.897Z · base seed 1 · 286 rows
 | `class:warlock/Great Old One` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 12 magias concedidas Always Prepared |
 | `class:warlock/Undead` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (RHW): 11 magias concedidas Always Prepared; 3 subclass features renderizam |
 
-## Species × lineages (151)
+## Species × lineages (150)
 
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
@@ -158,7 +158,6 @@ Last sweep: 2026-07-23T17:11:26.897Z · base seed 1 · 286 rows
 | `species:Autognome\|AAG` | ok | - | todo | todo |  |
 | `species:Aven\|PSA/Aven (Hawk-Headed)` | ok | - | todo | todo |  |
 | `species:Aven\|PSA/Aven (Ibis-Headed)` | ok | - | todo | todo |  |
-| `species:Aven\|PSD` | ok | - | todo | todo |  |
 | `species:Boggart\|LFL` | ok | - | todo | todo |  |
 | `species:Bugbear\|MPMM` | ok | - | todo | todo |  |
 | `species:Centaur\|MPMM` | ok | - | todo | todo |  |

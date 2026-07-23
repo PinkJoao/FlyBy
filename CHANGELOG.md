@@ -4537,3 +4537,44 @@ fusão somaria Trance e a escolha de 3 perícias de graça — e sem traço abso
 linhagem removidas), e ao vivo: "Human" 6 → **1**, "Elf" 6 → **4** (LFL/AAG/MPMM ficam), "Dwarf"
 2 → **1**; um clique no chip devolve todas; com o filtro DESLIGADO "Human" dá 3 (XPHB, Innistrad,
 Keldon), provando que só as vazias saíram de vez. Mobile 375px sem overflow, zero erros de console.
+
+---
+
+## 73. Filtro de cenário so esconde o que COLIDE; Aven redundante removido; fluff resolve `_copy`
+
+Refina o §72 (mesma sessao) com tres ajustes pedidos pelo usuario.
+
+**1. O filtro "Setting Variant" agora esconde so as que COLIDEM de nome, nao a fonte inteira.**
+O §72 marcava as seis fontes Plane Shift por igual, o que escondia por padrao especies UNICAS que
+nao confundem ninguem e sao o que aqueles suplementos tem de melhor. O criterio passou a ser a
+colisao de nome: uma variante e escondida so quando o nome dela (sem o parentese de cenario) e o de
+outra especie visivel do catalogo. `SETTING_VARIANTS` e agora uma lista curada de 9 ids
+(Dwarf (Kaladesh), Elf (Kaladesh), Elf (Zendikar), Goblin|PSZ, Human (Innistrad), Human (Keldon),
+Minotaur (Amonkhet), Orc (Ixalan), Vedalken|PSK). Continuam VISIVEIS por padrao: Aetherborn, Aven,
+Khenra, Kor, Merfolk, Naga, Siren, Vampire.
+
+**2. O `Aven|PSD` foi REMOVIDO por redundancia, e a arte dele foi resgatada.** Existiam dois Aven,
+de dois planos: o `Aven|PSA` (Amonkhet) tem DUAS linhagens (Hawk-Headed, Ibis-Headed); o `Aven|PSD`
+(Dominaria) e base + Hawkeyed + Percepcao, ou seja exatamente o `Aven (Hawk-Headed)|PSA`, sem a
+outra linhagem. O PSA e a versao mais completa e fica. Novo conceito `REDUNDANT_SPECIES`, com um
+campo `imageFor` opcional: a especie sai da lista, mas a arte dela vai para a linhagem que ela
+retrata. A imagem do PSD (um aven de cabeca de aguia) passa a representar a `Aven (Hawk-Headed)`, a
+unica das duas linhagens SEM imagem propria no dado. Com o PSD fora, o `Aven|PSA` deixou de colidir
+e por isso NAO entrou em `SETTING_VARIANTS`.
+
+**3. Bug pre-existente corrigido: o fluff (lore + arte) nao resolvia `_copy`.** 79 das 221 entradas
+de `fluff-races.json` sao stubs `_copy` que herdam o corpo da raca base e so acrescentam um paragrafo
+ou uma imagem propria - TODA linhagem com lore propria (Genasi (Air), Elf (Pallid),
+Aven (Ibis-Headed)...). O `raceEntity.fluff` casava o stub cru, que nao tem `entries` nem `images`, e
+a linhagem aparecia SEM lore e SEM arte no DetailView. Agora passa a lista por `resolveCopies`
+(memoizada por db num WeakMap), como a lista de racas ja fazia. E o resgate de imagem do item 2 entra
+por aqui: a arte doada vai na FRENTE do array (o DetailView mostra a primeira).
+
+**4. O filtro "Variant" foi movido para logo ACIMA de "Source"** no painel de filtros: os dois falam
+de procedencia, nao de mecanica, entao ficam juntos no fim.
+
+**Verificado:** 1106 testes (+8), lint, sweep **285/285 `--strict`** (era 286; o Aven|PSD saiu), e ao
+vivo: "Aven" 2 -> 1 (so o PSA, VISIVEL por padrao); Aetherborn/Siren/Naga aparecem com o filtro
+ativo; as variantes (Elf/Dwarf Kaladesh, Orc/Minotaur de cenario) seguem escondidas; a ordem dos
+filtros e Size/Speed/Type/Traits/Variant/Source; o preview do Aven carrega arte e lore (prova o
+`_copy` resolvido). Zero erros de console.

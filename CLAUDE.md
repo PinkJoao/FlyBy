@@ -409,6 +409,28 @@ e não estava claro o que eram nem se valiam a pena. Censo direto sobre o dado (
   "Human" dá 3 (XPHB/Innistrad/Keldon), provando que só as vazias saíram de vez. Mobile 375px sem
   overflow, zero erros de console. Ver CHANGELOG §72.
 
+**Amendment (2026-07-23, CHANGELOG §73) - o filtro esconde so o que COLIDE; Aven redundante fora;
+fluff resolve `_copy`.** Tres ajustes pedidos pelo usuario, na mesma sessao:
+- **O criterio do filtro deixou de ser a FONTE e passou a ser a COLISAO DE NOME.** Marcar as seis
+  fontes Plane Shift por igual escondia especies UNICAS (Aetherborn, Khenra, Kor, Naga, Siren,
+  Vampire, Merfolk) que nao confundem ninguem. `SETTING_SOURCES` foi substituido por
+  `SETTING_VARIANTS`, uma lista curada de 9 ids cujo nome (sem o parentese de cenario) bate com o de
+  outra especie visivel. REGRA para acrescentar: so entra o que colide de nome com uma especie do
+  catalogo.
+- **Novo conceito `REDUNDANT_SPECIES` (remocao com resgate de arte).** O `Aven|PSD` saiu por ser o
+  mesmo que a linhagem Hawk-Headed do `Aven|PSA` (que ainda tem uma segunda linhagem). O campo
+  opcional `imageFor` doa a arte da removida para a linhagem que ela retrata: a imagem do PSD passa
+  a representar a `Aven (Hawk-Headed)|PSA`, unica das duas linhagens sem imagem propria no dado.
+  `isRemovedSpecies` = vazia OU redundante e o novo predicado da `raceEntity.list`. Com o PSD fora, o
+  `Aven|PSA` deixou de colidir e NAO entrou em `SETTING_VARIANTS`.
+- **Bug pre-existente: o fluff nao resolvia `_copy`.** 79 das 221 entradas de `fluff-races.json` sao
+  stubs `_copy` (toda linhagem com lore/arte propria); o `raceEntity.fluff` casava o stub cru e a
+  linhagem aparecia sem lore e sem arte. Agora passa por `resolveCopies` (memoizado por db), e a arte
+  doada entra na FRENTE do array (o DetailView mostra a primeira imagem).
+- **O filtro "Variant" foi movido para logo acima de "Source"** (ambos falam de procedencia).
+- Verificado: 1106 testes (+8), lint, sweep **285/285 `--strict`** (era 286; o Aven|PSD saiu), e ao
+  vivo. Ver CHANGELOG §73.
+
 ### DDL-0063 — Sub-raça ABSORVIDA pela base 2024 volta como `swap`: a linhagem TROCA o traço absorvido
 **Date:** 2026-07-23
 **Status: IMPLEMENTADO (só o Halfling).** **Acrescenta uma QUARTA forma** ao `as` do DDL-0059/0060

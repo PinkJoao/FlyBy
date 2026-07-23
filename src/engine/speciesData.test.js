@@ -228,6 +228,9 @@ describe('subraceVersions / raceLineages (sub-raças fundidas)', () => {
         { name: 'Stensia', source: 'PSI', raceName: 'Human (Innistrad)', raceSource: 'PSI', ability: [{ str: 1, con: 1 }], skillProficiencies: [{ intimidation: true }], entries: [{ type: 'entries', name: 'Vampiric Resistance', entries: ['z'] }] },
         { name: 'Reprinted One', source: 'ERLW', raceName: 'Genasi', raceSource: 'MPMM', reprintedAs: ['X|Y'] },
         { source: 'PHB', raceName: 'Genasi', raceSource: 'MPMM' }, // sem nome
+        // Gavony: no dado é SÓ o `ability` de +1 em tudo, que a regra 2024
+        // descarta - sobra uma linhagem idêntica à base (engine/settingSpecies).
+        { name: 'Gavony', source: 'PSI', raceName: 'Human (Innistrad)', raceSource: 'PSI', ability: [{ str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 }] },
       ],
     },
   };
@@ -248,9 +251,12 @@ describe('subraceVersions / raceLineages (sub-raças fundidas)', () => {
     expect(stensia.skillProficiencies).toEqual([{ intimidation: true }]);
   });
 
-  it('sub-raças reprintadas e sem nome ficam fora; cache não vaza entre raças', () => {
+  it('sub-raças reprintadas, sem nome e SEM MECÂNICA ficam fora; cache não vaza', () => {
     expect(subraceVersions(db, genasi)).toHaveLength(1);
-    expect(subraceVersions(db, innistrad)).toHaveLength(1);
+    // Innistrad tem Stensia e Gavony no db; só a Stensia é oferecida.
+    expect(subraceVersions(db, innistrad).map((v) => v.name)).toEqual([
+      'Human (Innistrad; Stensia)',
+    ]);
   });
 
   it('raceLineages junta _versions e sub-raças', () => {

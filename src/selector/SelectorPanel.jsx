@@ -59,6 +59,10 @@ export default function SelectorPanel({
   // `{ [filterId]: { [option]: 'include' | 'exclude' } }`). Ex: o Spellbook abre
   // o painel já marcado na classe da origem - mas o usuário pode desmarcá-la ou
   // marcar outra classe, porque é um filtro comum como qualquer outro.
+  // Sem esta prop vale o padrão da PRÓPRIA entity (`entity.initialFilterState`),
+  // para um recorte que não depende de quem abre o painel valer em todos os
+  // chamadores sem fiação nenhuma - é o caso das variantes de cenário da espécie
+  // (engine/settingSpecies.js). A prop, quando vem, tem precedência.
   initialFilterState,
   // Modo "lista navegável" (glossário): SEM coluna/tela de preview - tocar num
   // card chama `onSelect(raw)` direto (quem abre decide o que fazer, ex: popup).
@@ -69,7 +73,9 @@ export default function SelectorPanel({
   hint,
 }) {
   const [query, setQuery] = useState('');
-  const [filterState, setFilterState] = useState(initialFilterState ?? {});
+  const [filterState, setFilterState] = useState(
+    initialFilterState ?? entity?.initialFilterState ?? {},
+  );
   const [hovered, setHovered] = useState(null);
   const [lastHovered, setLastHovered] = useState(null);
   const [showFilters, setShowFilters] = useState(false);

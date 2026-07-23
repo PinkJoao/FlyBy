@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T15:08:04.813Z · base seed 1 · 290 rows
+Last sweep: 2026-07-23T17:11:26.897Z · base seed 1 · 286 rows
 
 ## Classes × subclasses (135)
 
@@ -147,7 +147,7 @@ Last sweep: 2026-07-23T15:08:04.813Z · base seed 1 · 290 rows
 | `class:warlock/Great Old One` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 12 magias concedidas Always Prepared |
 | `class:warlock/Undead` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (RHW): 11 magias concedidas Always Prepared; 3 subclass features renderizam |
 
-## Species × lineages (155)
+## Species × lineages (151)
 
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
@@ -233,13 +233,9 @@ Last sweep: 2026-07-23T15:08:04.813Z · base seed 1 · 290 rows
 | `species:Hexblood\|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin\|MPMM` | ok | - | todo | todo |  |
 | `species:Human\|XPHB` | ok | - | todo | todo |  |
-| `species:Human (Innistrad)\|PSI/Human (Innistrad; Gavony)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Stensia)` | ok | - | todo | todo |  |
-| `species:Human (Ixalan)\|PSX` | ok | - | todo | todo |  |
-| `species:Human (Kaladesh)\|PSK` | ok | - | todo | todo |  |
-| `species:Human (Zendikar)\|PSZ` | ok | - | todo | todo |  |
 | `species:Kalashtar\|EFA` | ok | - | todo | todo |  |
 | `species:Kender\|DSotDQ` | ok | - | todo | todo |  |
 | `species:Kenku\|MPMM` | ok | - | todo | todo |  |

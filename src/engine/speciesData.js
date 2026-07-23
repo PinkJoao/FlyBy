@@ -15,6 +15,7 @@ import { parseChoices } from './choices';
 import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { legacyLegacyVersions } from './legacyFiendishLegacies';
 import { halflingLineageVersions, withLineageUmbrella, lineageUmbrellaName } from './legacyHalflingLineages';
+import { isEmptySubrace } from './settingSpecies';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
 function applyArrMods(arr, ops) {
@@ -266,6 +267,7 @@ export function subraceVersions(db, race) {
   for (const s of db.races?.subrace ?? []) {
     if (!s?.name || s.raceName !== race.name || s.raceSource !== race.source) continue;
     if (s.reprintedAs?.length) continue;
+    if (isEmptySubrace(s)) continue; // linhagem sem mecânica nenhuma (settingSpecies.js)
     push(mergeSubrace(race, s));
   }
   // …e as legadas curadas, cuja base no dado é a raça REPRINTADA (DDL-0058).

@@ -12,11 +12,15 @@ import { resolveCopies } from '../copy';
 import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
 import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
+import { isEmptySpecies, isSettingVariant } from '../../engine/settingSpecies';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
 
 const SPEED_LABEL = { walk: 'Walk', fly: 'Fly', swim: 'Swim', climb: 'Climb' };
+
+// Variantes de CENÁRIO (os seis "Plane Shift"). Ver engine/settingSpecies.js.
+const VARIANT_LABEL = { setting: 'Setting Variant' };
 
 const TRAIT_LABEL = {
   darkvision: 'Darkvision',
@@ -104,10 +108,12 @@ const raceEntity = {
   // (`_versions`) NÃO entram aqui - são escolhidas num seletor separado (SpeciesTab),
   // preservando a arte da raça base. A exceção são as sub-raças legadas curadas
   // marcadas `as: 'species'` (DDL-0059): elas VÊM como espécie própria, porque a
-  // base 2024 não é o mesmo chassi que a base 2014 delas.
+  // base 2024 não é o mesmo chassi que a base 2014 delas. Fora, também, as três
+  // espécies de cenário que sob as regras 2024 não entregam mecânica nenhuma
+  // (`isEmptySpecies`, engine/settingSpecies).
   list: (db) =>
     [...latestOnly(resolveCopies(db?.races?.race ?? [])), ...legacyStandaloneSpecies(db)]
-      .filter((r) => !r.traitTags?.includes('NPC Race')),
+      .filter((r) => !r.traitTags?.includes('NPC Race') && !isEmptySpecies(r)),
 
   idOf: (race) => `${race.name}|${race.source}`,
 
@@ -121,18 +127,28 @@ const raceEntity = {
         speed: speedKeys(race.speed),
         type: creatureTypes(race).map(cap), // Humanoid / Fey / …
         trait: traitKeys(race),
+        variant: isSettingVariant(race) ? ['setting'] : [],
       },
     };
   },
 
   // Source por ÚLTIMO: é a lista mais longa (ocupa muito espaço) e a menos usada.
   filters: [
+    { id: 'variant', header: 'Variant', options: options(VARIANT_LABEL) },
     { id: 'size', header: 'Size', options: options(SIZE_LABEL) },
     { id: 'speed', header: 'Speed', options: options(SPEED_LABEL) },
     { id: 'type', header: 'Creature Type', derive: true },
     { id: 'trait', header: 'Traits', options: options(TRAIT_LABEL) },
     { id: 'source', header: 'Source', derive: true },
   ],
+
+  // As variantes de CENÁRIO (Plane Shift) saem da visão PADRÃO do seletor: elas
+  // repetiam o nome de espécies que o app já tem e enchiam a busca ("Elf" dava
+  // seis linhas). É um recorte de conveniência no padrão do DDL-0026/0040 —
+  // filtro PRÉ-MARCADO e removível, nunca regra dura: um toque no chip "Setting
+  // Variant" (ou em Clear) traz todas de volta. Fica na ENTITY, e não em cada
+  // chamador, para valer nos dois seletores de espécie (aba e guia) sem fiação.
+  initialFilterState: { variant: { setting: 'exclude' } },
 
   /** Size / Speed / Creature Type, com destaque para valores não-padrão. */
   meta: (race) => {

@@ -259,3 +259,24 @@ Ajustes que a implementação impôs sobre o esboço do §5.4, e que valem para 
 
 Sobra deste documento: o **censo do §3**, que continua sendo a resposta com dado à pergunta "o que
 ainda falta de espécie?" — e a resposta é: nada, fora o Mountain Dwarf, que está fora de escopo.
+
+---
+
+## 8. Adendo (2026-07-23) — as espécies de CENÁRIO, o outro eixo do "nome repetido"
+
+O censo do §3 é sobre **SUB-RAÇAS** e sobre o eixo **EDIÇÃO**. Depois dele apareceu a outra metade
+da queixa de "nome repetido", que ele não cobria porque são **espécies de TOPO**: as entradas de
+CENÁRIO — `Elf (Zendikar)`, `Human (Kaladesh)`, `Dwarf (Kaladesh)`… Censo próprio feito, decisões
+tomadas e implementadas no **DDL-0064** (+ CHANGELOG §72). Resumo, para não refazer:
+
+- **21 das 90 espécies visíveis são "Plane Shift"** (PSA/PSD/PSI/PSK/PSX/PSZ) — PDFs gratuitos do
+  crossover com Magic, 2016–2018, regras 2014. Ficam no app, **escondidas por padrão** atrás do
+  filtro "Setting Variant" (pré-marcado, removível).
+- **`LFL` NÃO é isso.** "Lorwyn: First Light" é de **2025-11-18**, livro oficial em **regras 2024**,
+  formato moderno — o `Kithkin|LFL` inclusive faz o mesmo `swap` que o DDL-0063. Não tocar.
+- **Três espécies foram REMOVIDAS por derivarem ZERO** (`Human (Ixalan)|PSX`,
+  `Human (Kaladesh)|PSK`, `Human (Zendikar)|PSZ`) + a linhagem `Gavony`: o conteúdo inteiro delas
+  era o `ability` que a regra 2024 descarta. São as **únicas** do catálogo nessa condição.
+- **O tratamento de linhagem (`lineage`/`species`/reescrita/`swap`) NÃO se aplica a cenário** — o
+  raciocínio completo está no DDL-0064 e não deve ser reaberto: o eixo é outro, e a regra do `as`
+  reprova mecanicamente de qualquer forma.

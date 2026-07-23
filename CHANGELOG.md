@@ -4480,3 +4480,60 @@ export e round-trip limpos — e ao vivo: a base mostra "Halfling Lineage" com a
 Naturally Stealthy solto; o seletor diz "Choose halfling lineage…"; Stout deriva **DAMAGE
 RESISTANCES: Poison**; Lotusden deriva origem de magia própria (Wis, DC 10) com Druidcraft *Always
 Prepared*; Lightfoot reproduz a base. Mobile 375px sem overflow de página, zero erros de console.
+
+---
+
+## 72. Espécies de CENÁRIO: as vazias saem, as variantes ficam atrás de um filtro (DDL-0064)
+
+**O problema.** Buscar "Elf" no seletor de espécies devolvia 6 linhas; "Human", 6; "Dwarf", 2. A
+maioria eram entradas de CENÁRIO com o nome repetido — `Elf (Zendikar)`, `Human (Kaladesh)`,
+`Dwarf (Kaladesh)` — e não estava claro o que elas eram nem se valia a pena mantê-las.
+
+**O censo (2026-07-23).** São **duas famílias diferentes**, e é isso que estava escondido:
+
+- **Plane Shift (PSA/PSD/PSI/PSK/PSX/PSZ) — 21 das 90 espécies visíveis.** PDFs gratuitos do
+  crossover com Magic: The Gathering, 2016–2018, regras 2014 (`ability` +2/+1 fixo, seções de prosa
+  Age/Alignment/Size/Languages, proficiência de arma).
+- **LFL = "Lorwyn: First Light" (2025-11-18) — 7 espécies.** Livro OFICIAL e ATUAL, regras 2024, já
+  no formato moderno. O `Elf|LFL` é traço a traço o `Elf|XPHB` com linhagens Lorwyn/Shadowmoor no
+  lugar de Drow/High/Wood, e o `Kithkin|LFL` é o Halfling XPHB + darkvision + um guarda-chuva
+  "Kithkin Lineage" — **o livro oficial faz o mesmo que o DDL-0063**. Não é o problema: é espécie
+  irmã como o Astral Elf, e não foi tocada.
+
+**Achados que decidiram o corte.**
+1. **Três espécies derivam ZERO** — `Human (Ixalan)|PSX`, `Human (Kaladesh)|PSK`,
+   `Human (Zendikar)|PSZ`. O conteúdo INTEIRO delas era o `ability` de +1 em todos os seis
+   atributos, que a regra do DDL-0058/0062 descarta. Sobram só seções de prosa. São as **únicas
+   três do catálogo inteiro** nessa condição.
+2. **A linhagem `Gavony` do `Human (Innistrad)` é o mesmo caso** — no dado é literalmente só o
+   `ability`, sem `entries`. As irmãs (Kessig, Nephalia, Stensia) têm conteúdo real, então a
+   espécie continua.
+3. **As colisões vão além do que se via:** `Aven|PSA × Aven|PSD`, `Goblin|MPMM × Goblin|PSZ`,
+   `Minotaur|MPMM × Minotaur (Amonkhet)|PSA`, `Vedalken|GGR × Vedalken|PSK`,
+   `Orc|XPHB × Orc (Ixalan)|PSX`.
+4. **Metade do Plane Shift é conteúdo ÚNICO sem colisão nenhuma** (Aetherborn, Khenra, Kor, Naga,
+   Siren, e as tribos de Merfolk/Vampire/Goblin) — um corte por fonte levaria isso junto.
+
+**O que foi feito** (`engine/settingSpecies.js`, registro curado fechado):
+- **REMOÇÃO** das 3 espécies vazias + a linhagem Gavony. Sai das LISTAS (seletor, glossário, matriz
+  do sweep); `speciesCatalog`/`resolveRaceObj` seguem resolvendo-as pelo nome, mesma semântica do
+  `latestOnly` (DDL-0059), para uma ficha salva não perder a espécie ao recarregar.
+- **FILTRO "Variant"** com a opção **"Setting Variant"**, marcando as seis fontes Plane Shift, e
+  **pré-marcado como exclude**. Padrão do DDL-0026/0040: recorte de conveniência é filtro removível,
+  nunca regra dura — um toque no chip (ou em Clear) traz todas de volta.
+- **O padrão vive na ENTITY, não nos chamadores.** `SelectorPanel` passou a cair em
+  `entity.initialFilterState` quando a prop não vem, então os dois seletores de espécie (aba e guia)
+  ganharam o recorte sem fiação nenhuma. A prop, quando vem, continua tendo precedência.
+
+**Tratamento de linhagem NÃO se aplica aqui** — e o motivo é estrutural, não de esforço. O
+DDL-0059…0063 resolveu um problema de EDIÇÃO (a mesma espécie do mesmo mundo em duas edições, que
+por isso cabe como opção de um guarda-chuva). Aqui o eixo é CENÁRIO: pendurar as nações de Zendikar
+na "Elven Lineage" ofereceria Joraga ao lado de Drow para quem constrói em Forgotten Realms. A regra
+do `as` (DDL-0060) também reprova — `Elf (Zendikar)` é subconjunto ESTRITO do `Elf|XPHB`, então a
+fusão somaria Trance e a escolha de 3 perícias de graça — e sem traço absorvido identificável o
+`swap` está barrado pela regra 4 do DDL-0063.
+
+**Verificado:** 1098 testes (+12), lint, sweep **286/286 `--strict`** (290 − 4: as 3 espécies e a
+linhagem removidas), e ao vivo: "Human" 6 → **1**, "Elf" 6 → **4** (LFL/AAG/MPMM ficam), "Dwarf"
+2 → **1**; um clique no chip devolve todas; com o filtro DESLIGADO "Human" dá 3 (XPHB, Innistrad,
+Keldon), provando que só as vazias saíram de vez. Mobile 375px sem overflow, zero erros de console.

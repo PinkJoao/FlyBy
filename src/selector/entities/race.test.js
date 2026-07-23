@@ -43,6 +43,46 @@ describe('species selector - end to end (precompute → filter)', () => {
   });
 });
 
+describe('variantes de CENÁRIO (engine/settingSpecies)', () => {
+  const zendikarElf = { name: 'Elf (Zendikar)', source: 'PSZ', size: ['M'], speed: 30 };
+  const lorwynElf = { name: 'Elf', source: 'LFL', size: ['M'], speed: 30 };
+  const raw = [elfSpecies, zendikarElf, lorwynElf];
+  const items = raw.map((r) => ({ id: raceEntity.idOf(r), raw: r, ...raceEntity.precompute(r) }));
+
+  it('só a Plane Shift é marcada como variante', () => {
+    expect(raceEntity.precompute(zendikarElf).filterValues.variant).toEqual(['setting']);
+    expect(raceEntity.precompute(lorwynElf).filterValues.variant).toEqual([]);
+    expect(raceEntity.precompute(elfSpecies).filterValues.variant).toEqual([]);
+  });
+
+  it('o padrão da entity esconde a variante e preserva o resto', () => {
+    const out = applyFilters(items, { filterState: raceEntity.initialFilterState });
+    expect(out.map((i) => i.id)).toEqual(['Elf|XPHB', 'Elf|LFL']);
+  });
+
+  it('sem o filtro (o usuário o removeu) todas voltam', () => {
+    expect(applyFilters(items, { filterState: {} })).toHaveLength(3);
+  });
+
+  it('a lista não oferece as espécies vazias', () => {
+    const db = {
+      races: {
+        race: [
+          { name: 'Human', source: 'XPHB' },
+          { name: 'Human (Ixalan)', source: 'PSX' },
+          { name: 'Human (Kaladesh)', source: 'PSK' },
+          { name: 'Human (Zendikar)', source: 'PSZ' },
+          { name: 'Human (Innistrad)', source: 'PSI' },
+        ],
+      },
+    };
+    expect(raceEntity.list(db).map(raceEntity.idOf)).toEqual([
+      'Human|XPHB',
+      'Human (Innistrad)|PSI', // vazia na base, mas tem linhagens com conteúdo
+    ]);
+  });
+});
+
 describe('raceEntity.card', () => {
   it('badges show human-readable labels, not keys', () => {
     const badges = raceEntity.card(elfSpecies).badges;

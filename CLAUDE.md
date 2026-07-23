@@ -336,6 +336,73 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0064 — Espécie de CENÁRIO: a vazia é REMOVIDA, a variante fica atrás de um filtro pré-marcado
+**Date:** 2026-07-23
+**Status: IMPLEMENTADO.** **NÃO estende** o `as` do DDL-0059/0060/0063 — pelo contrário, este entry
+registra por que aquele mecanismo **não se aplica** a este grupo. **Builds on:** DDL-0058/0062 (a
+regra que descarta o `ability` de espécie, e que é o que esvazia as três entradas removidas aqui),
+DDL-0026/0040 (o padrão "recorte de conveniência é filtro pré-marcado removível").
+
+**Context.** Buscar "Elf" no seletor de espécies devolvia 6 linhas; "Human", 6. A maioria eram
+entradas de CENÁRIO com nome repetido (`Elf (Zendikar)`, `Human (Kaladesh)`, `Dwarf (Kaladesh)`),
+e não estava claro o que eram nem se valiam a pena. Censo direto sobre o dado (2026-07-23).
+
+**Findings — são DUAS famílias, e tratá-las igual seria o erro.**
+- **Plane Shift (PSA/PSD/PSI/PSK/PSX/PSZ) — 21 das 90 espécies visíveis.** PDFs gratuitos do
+  crossover com Magic: The Gathering, 2016–2018, regras e formato 2014. O 5etools as agrupa por
+  prefixo de fonte (`Parser.SRC_PS_PREFIX = "PS"`), então o conjunto é uma família do DADO.
+- **`LFL` = "Lorwyn: First Light" (2025-11-18) — 7 espécies. Livro OFICIAL e ATUAL, regras 2024**,
+  já no formato moderno. O `Elf|LFL` é **traço a traço o `Elf|XPHB`** com linhagens Lorwyn/
+  Shadowmoor no lugar de Drow/High/Wood; o `Kithkin|LFL` é o Halfling XPHB + darkvision 120 + um
+  guarda-chuva "Kithkin Lineage" — **o livro oficial faz o mesmo que o DDL-0063**. É espécie irmã
+  como o Astral Elf. **REGRA: não confundir "cenário" com "legado" pela fonte parecer exótica —
+  confira a DATA da fonte e o FORMATO da espécie.**
+- **Três espécies derivam ZERO:** `Human (Ixalan)|PSX`, `Human (Kaladesh)|PSK`,
+  `Human (Zendikar)|PSZ`. O conteúdo INTEIRO era o `ability` de +1 em tudo, descartado pela regra
+  2024. São as **únicas três do catálogo** nessa condição. A linhagem `Gavony` do
+  `Human (Innistrad)` é o mesmo caso (no dado é só o `ability`, sem `entries`); as irmãs Kessig/
+  Nephalia/Stensia têm conteúdo, então a espécie fica.
+- **Metade do Plane Shift é conteúdo ÚNICO sem colisão** (Aetherborn, Khenra, Kor, Naga, Siren, as
+  tribos de Merfolk/Vampire/Goblin) — é por isso que um corte por FONTE foi descartado.
+
+**Decisions.**
+- **Registro curado fechado `engine/settingSpecies.js`**, com as três listas separadas
+  (`EMPTY_SPECIES`, `EMPTY_SUBRACES`, `SETTING_SOURCES`) porque as operações são diferentes.
+- **REMOÇÃO das vazias — só das LISTAS.** Saem do seletor, do glossário e da matriz do sweep;
+  `speciesCatalog`/`resolveRaceObj` continuam resolvendo-as pelo nome, **a mesma semântica do
+  `latestOnly`** (DDL-0059: o índice de lookup fica completo), para que uma ficha salva com uma
+  delas não perca a espécie ao recarregar. Os choke points são `raceEntity.list` (espécie) e
+  `subraceVersions` (linhagem, filtrada pela chave de 4 campos, não pelo nome fundido).
+- **FILTRO "Variant" / opção "Setting Variant", PRÉ-MARCADO como exclude** para as seis fontes
+  Plane Shift. Padrão do DDL-0026/0040: recorte de conveniência é filtro removível, nunca regra
+  dura. Inclui o `Human (Keldon)|PSD` (espécie legada curada no DDL-0060) — ele também é um humano
+  de um plano de Magic e é uma das linhas que poluíam a busca; segue construível a um clique.
+- **O padrão vive na ENTITY (`entity.initialFilterState`), não nos chamadores.** `SelectorPanel`
+  cai nele quando a prop `initialFilterState` não vem (a prop mantém precedência). Mesmo espírito
+  do DDL-0042: um recorte que não depende de quem abre o painel não deve exigir fiação em cada call
+  site — os dois seletores de espécie (aba e guia) o ganharam de graça.
+- **TRATAMENTO DE LINHAGEM NÃO SE APLICA — e o motivo é o EIXO, não o esforço.** O DDL-0059…0063
+  resolveu **EDIÇÃO**: a mesma espécie do mesmo mundo em duas edições, que por isso cabe como opção
+  de um guarda-chuva. Aqui o eixo é **CENÁRIO**: `Elf (Zendikar; Joraga Nation)` e `Elf; Drow
+  Lineage` são elfos de MUNDOS diferentes, e pendurar as nações de Zendikar na "Elven Lineage"
+  ofereceria Joraga ao lado de Drow para quem constrói em Forgotten Realms — mistura, não
+  simplifica. A regra do `as` (DDL-0060) reprova também mecanicamente: `Elf (Zendikar)` é
+  subconjunto **estrito** do `Elf|XPHB` (que ainda dá Trance e Keen Senses como escolha de 3
+  perícias), então a fusão somaria isso de graça — a mesma objeção que tirou o Ghostwise do
+  halfling. E sem traço absorvido identificável o `swap` está barrado pela regra 4 do DDL-0063.
+
+**Consequences.**
+- Uma fonte de cenário nova é UMA linha em `SETTING_SOURCES`; uma espécie que se revele vazia é uma
+  linha em `EMPTY_SPECIES`. Uma entity que queira um recorte padrão próprio agora declara
+  `initialFilterState` e pronto.
+- **PENDENTE, por decisão do usuário (2026-07-23):** a exibição das FONTES em si (hoje o card mostra
+  o código cru, "PSK") será revista numa estratégia à parte, **abrangendo o glossário e o
+  SelectorPanel inteiro**, não só espécies. Este entry deliberadamente NÃO mexeu nisso.
+- Verificado: 1098 testes (+12), lint, sweep **286/286 `--strict`** (290 − 4), e ao vivo: "Human"
+  6 → 1, "Elf" 6 → 4, "Dwarf" 2 → 1; um clique no chip devolve todas; com o filtro DESLIGADO
+  "Human" dá 3 (XPHB/Innistrad/Keldon), provando que só as vazias saíram de vez. Mobile 375px sem
+  overflow, zero erros de console. Ver CHANGELOG §72.
+
 ### DDL-0063 — Sub-raça ABSORVIDA pela base 2024 volta como `swap`: a linhagem TROCA o traço absorvido
 **Date:** 2026-07-23
 **Status: IMPLEMENTADO (só o Halfling).** **Acrescenta uma QUARTA forma** ao `as` do DDL-0059/0060

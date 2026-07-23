@@ -6,10 +6,14 @@
 // `reprintedAs` próprio, mas `raceLineages` só roda sobre as bases LISTADAS, e a
 // base legada não é listada. Nenhuma delas tem equivalente 2024.
 //
-// Este registro é a lista FECHADA das que voltam, ANEXADAS À BASE ATUAL (as
-// linhagens do Tiefling PHB entram no Tiefling XPHB). Registro explícito, no
-// mesmo espírito de SUBCLASS_GRANTS / NATURAL_ARMOR: nada de heurística de nome
-// — a curadoria foi manual, olho a olho (2026-07-22).
+// Este registro é a lista FECHADA das que voltam SEM reescrita — fundidas como
+// estão, seja na base atual (linhagem) ou na legada (espécie à parte). Registro
+// explícito, no mesmo espírito de SUBCLASS_GRANTS / NATURAL_ARMOR: nada de
+// heurística de nome — a curadoria foi manual, olho a olho (2026-07-22).
+//
+// O Tiefling seguiu outro caminho (DDL-0061) e por isso não aparece aqui: suas
+// 11 legacies foram REESCRITAS no formato 2024 e vivem em
+// `engine/legacyFiendishLegacies.js`.
 //
 // CRITÉRIO DE DESCARTE (do usuário): existe uma versão moderna AUTÔNOMA mais
 // completa e atual. Foram DESCARTADAS, deliberadamente:
@@ -56,9 +60,11 @@ export const LEGACY_PROSE_SECTIONS = Object.freeze(
  *      · absorveu o traço de UMA sub-raça 2014 — o Halfling XPHB é o de 2014 +
  *        **Naturally Stealthy**, que era do *Lightfoot*, e o Ghostwise ganhava
  *        de graça o traço que o Silent Speech dele substituía;
- *      · ganhou um traço NOVO — o Tiefling XPHB tem "Otherworldly Presence"
- *        (o Thaumaturgy que em 2014 vinha DENTRO da Infernal Legacy), e ainda
- *        deixa a resistência em ABERTO enquanto uma legacy 2024 fica travada;
+ *      · ganhou um traço NOVO — foi o caso do Tiefling XPHB, com o "Otherworldly
+ *        Presence" (o Thaumaturgy que em 2014 vinha DENTRO da Infernal Legacy) e
+ *        a resistência em ABERTO. Ele acabou saindo daqui por REESCRITA
+ *        (DDL-0061), que é a outra saída: neutralizado o empilhamento, a
+ *        sub-raça volta a caber como linhagem;
  *      · foi reescrita de cima a baixo — o Human XPHB dá Resourceful/Skillful/
  *        **Versatile** (um talento de origem), e o Keldon virava upgrade puro
  *        sobre o humano comum.
@@ -110,27 +116,17 @@ export const LEGACY_SUBRACES = Object.freeze([
   // com o que é dele.
   { race: 'Human|XPHB', subrace: 'Keldon|PSD', of: 'Human|PHB', as: 'species' },
 
-  // --- Tiefling: ESPÉCIES à parte -------------------------------------------
-  // O Tiefling 2024 ganhou um traço NOVO ("Otherworldly Presence", o Thaumaturgy
-  // que em 2014 vinha DENTRO da Infernal Legacy que estas substituem) e deixa a
-  // resistência EM ABERTO (poison/necrotic/fire à escolha), enquanto uma legacy
-  // 2024 fica travada na dela. Penduradas ali, estas ficavam com o cantrip de
-  // graça + resistência livre + o pacote próprio de magias. No chassi 2014 saem
-  // certas: Darkvision + Hellish Resistance (fire) + a legacy própria, que o
-  // `data.overwrite: "Infernal Legacy"` do dado já troca no lugar — por isso
-  // nenhuma delas precisa de `supersedes`.
-  { race: 'Tiefling|XPHB', subrace: 'Baalzebul|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Dispater|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Fierna|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Glasya|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Levistus|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Mammon|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Mephistopheles|MTF', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Zariel|MTF', of: 'Tiefling|PHB', as: 'species' },
-  // …e as variantes da Costa da Espada (a "Infernal Legacy" ficou de fora acima).
-  { race: 'Tiefling|XPHB', subrace: "Variant; Devil's Tongue|SCAG", of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Variant; Hellfire|SCAG', of: 'Tiefling|PHB', as: 'species' },
-  { race: 'Tiefling|XPHB', subrace: 'Variant; Winged|SCAG', of: 'Tiefling|PHB', as: 'species' },
+  // --- Tiefling: NÃO estão aqui (DDL-0061) ----------------------------------
+  // As 11 legacies do Tiefling saíram deste registro em 2026-07-23. Elas foram
+  // REESCRITAS no formato 2024 (resistência travada em fogo, atributo de
+  // conjuração Int/Wis/Cha, magias remapeadas para XPHB) e voltaram a ser
+  // LINHAGENS do Tiefling XPHB — ver `engine/legacyFiendishLegacies.js`.
+  //
+  // Isso NÃO contradiz a regra do `as` acima: ela julga a fusão CRUA, em que a
+  // sub-raça soma as vantagens dos dois chassis. Uma sub-raça REESCRITA neutraliza
+  // o empilhamento na fonte e por isso pode ser linhagem. Uma entrada nova sem
+  // reescrita continua seguindo a regra: se a base 2024 dá algo a mais, é
+  // `'species'`.
 ]);
 
 /** Quebra "Nome|FONTE" em `[nome, fonte]`. */

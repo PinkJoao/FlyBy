@@ -12,6 +12,7 @@
 
 import { skillCode } from './classData';
 import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
+import { legacyLegacyVersions } from './legacyFiendishLegacies';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
 function applyArrMods(arr, ops) {
@@ -278,14 +279,20 @@ export function subraceVersions(db, race) {
 }
 
 /**
- * TODAS as linhagens de uma raça: as variantes de `_versions` + as sub-raças
- * fundidas. É a lista que o seletor de linhagem, a completude e o import usam.
+ * TODAS as linhagens de uma raça: as variantes de `_versions` + as legacies
+ * legadas REESCRITAS (DDL-0061) + as sub-raças fundidas. É a lista que o seletor
+ * de linhagem, a completude e o import usam.
+ *
+ * As legadas reescritas entram por `legacyLegacyVersions`, que devolve
+ * DESCRITORES no formato `_versions` — por isso passam pelo mesmo `buildVariant`
+ * das nativas e nada a jusante precisa saber que elas são especiais.
  * @param {object} db
  * @param {object|null} race
  * @returns {object[]}
  */
 export function raceLineages(db, race) {
-  return [...expandRaceVersions(race), ...subraceVersions(db, race)];
+  const legacy = legacyLegacyVersions(db, race).map((v) => buildVariant(race, v));
+  return [...expandRaceVersions(race), ...legacy, ...subraceVersions(db, race)];
 }
 
 /**

@@ -25,6 +25,13 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058/0059/0060)', () => {
     expect(ids).not.toContain('Variant; Drow Descent|SCAG'); // → Khoravar|EFA
   });
 
+  it('as legacies do Tiefling saíram daqui: elas são REESCRITAS (DDL-0061)', () => {
+    // Este registro é só para as que voltam SEM reescrita. As 11 do Tiefling
+    // vivem em legacyFiendishLegacies.js, como linhagens no formato 2024.
+    expect(LEGACY_SUBRACES.some((e) => e.of === 'Tiefling|PHB')).toBe(false);
+    expect(legacySubracesFor({ name: 'Tiefling', source: 'XPHB' })).toEqual([]);
+  });
+
   it("`'species'` é a regra; `'lineage'` é a exceção (hoje só o Elf)", () => {
     // Balanceamento (DDL-0060): pendurada num chassi 2024 que dá algo A MAIS
     // que o de 2014, a sub-raça soma as vantagens dos dois. Só o Elf 2024 é o
@@ -32,16 +39,16 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058/0059/0060)', () => {
     const lineages = LEGACY_SUBRACES.filter((e) => e.as !== 'species');
     expect(lineages.map((e) => e.subrace)).toEqual(['Pallid|EGW']);
     expect(lineages[0].supersedes).toEqual(['Elven Lineage']);
-    expect(LEGACY_SUBRACES.filter((e) => e.as === 'species')).toHaveLength(14);
+    expect(LEGACY_SUBRACES.filter((e) => e.as === 'species')).toHaveLength(3);
   });
 
   it('as marcadas `as: species` saem do índice de LINHAGENS', () => {
-    for (const race of ['Halfling', 'Human', 'Tiefling']) {
+    for (const race of ['Halfling', 'Human']) {
       expect(legacySubracesFor({ name: race, source: 'XPHB' })).toEqual([]);
     }
     // …e cada uma aponta para a base LEGADA em que deve ser fundida
     const bases = new Set(legacyStandaloneRefs().map((r) => `${r.raceName}|${r.raceSource}`));
-    expect([...bases].sort()).toEqual(['Halfling|PHB', 'Human|PHB', 'Tiefling|PHB']);
+    expect([...bases].sort()).toEqual(['Halfling|PHB', 'Human|PHB']);
   });
 
   it('legacySubracesFor indexa pela raça ATUAL', () => {

@@ -4241,3 +4241,83 @@ espécie ao recarregar ou ao reimportar. Migrados os três pontos: `resolveRaceO
 tieflings + Ghostwise/Lotusden/Keldon como espécies irmãs, o Zariel derivando o pacote 2014 correto
 e **sobrevivendo a um reload** (é o que prova o `speciesCatalog`), e o Tiefling 2024 de volta às 3
 legacies. Mobile 375px sem overflow, zero erros de console.
+
+## 68. Tiefling: as legacies legadas voltam REESCRITAS no formato 2024 (DDL-0061)
+
+**A virada.** O §67 tinha empurrado as 11 legacies do Tiefling para fora da espécie 2024 porque,
+penduradas nela, empilhavam vantagens: ganhavam o Thaumaturgy de graça (Otherworldly Presence) e a
+resistência EM ABERTO por cima do pacote próprio de magias. O usuário propôs o contrário — em vez de
+FUGIR do empilhamento, **neutralizá-lo na fonte** e devolver as legacies ao lugar delas: uma linha a
+mais na tabela de Fiendish Legacies.
+
+**Os três vazamentos, fechados.**
+
+| vazamento | correção |
+|---|---|
+| resistência à escolha (poison/necrotic/fire) | **trava em fogo** — é o "Hellish Resistance" 2014, que era fogo fixo |
+| Thaumaturgy de graça | a legacy cujo cantrip **era** Thaumaturgy fica **sem cantrip próprio** (Baalzebul, Dispater, Zariel, Hellfire) |
+| Carisma fixo | vira o **Int/Wis/Cha à escolha** do padrão 2024, em texto **e** mecânica |
+
+Com isso a paridade é exata: oficial = resistência (à escolha) + cantrip + magia@3 + magia@5 +
+Thaumaturgy; legada = resistência (travada em fogo) + cantrip? + magia@3 + magia@5 + idem.
+
+**As 11 (das 12; Asmodeus e "Variant; Infernal Legacy" seguem descartadas — §66).** Todas as magias
+remapeadas para XPHB; o `#2` do dado (conjurar num círculo acima) foi MANTIDO, era a compensação de
+2014 por listas mais fracas.
+
+| Legacy | nível 1 (além da resistência a fogo) | nível 3 | nível 5 |
+|---|---|---|---|
+| Baalzebul | — | Ray of Sickness (2º) | Crown of Madness |
+| Dispater | — | Disguise Self | Detect Thoughts |
+| Fierna | Friends | Charm Person (2º) | Suggestion |
+| Glasya | Minor Illusion | Disguise Self | Invisibility |
+| Levistus | Ray of Frost | Armor of Agathys (2º) | Darkness |
+| Mammon | Mage Hand | Tenser's Floating Disk | Arcane Lock |
+| Mephistopheles | Mage Hand | Burning Hands (2º) | Flame Blade |
+| Zariel | — | Searing Smite (2º) | **Shining Smite** |
+| Devil's Tongue | Vicious Mockery | Charm Person (2º) | Enthrall |
+| Hellfire | — | Burning Hands (2º) | Darkness |
+| Winged | voo 30 ft (fora de armadura pesada) | — | — |
+
+Achado do levantamento: as 23 magias envolvidas têm versão XPHB **1:1, exceto Branding Smite**, que
+foi reimpressa com outro nome (`Shining Smite|XPHB`) — é a única remapagem manual. Duas
+normalizações menores: o Floating Disk do Mammon recarrega em descanso **longo** como todas (o dado
+2014 dizia "curto ou longo") e o "sem componente material" do Arcane Lock cai — o formato 2024 não
+tem onde pendurar rider por magia.
+
+**O texto é MONTADO do próprio dado, não escrito por nós** (DDL-0003: enviamos código, nunca
+conteúdo). A versão oficial "Tiefling; Infernal Legacy" serve de **template** — a resistência dela já
+é fogo, como a nossa — e só as tags `{@spell}` são trocadas; a frase do cantrip é removida quando não
+há cantrip próprio; a nota de upcast é a única frase autoral. A "Appearance" das variantes SCAG e o
+texto do voo do Winged são puxados da sub-raça de origem. Se o texto mudar upstream, o nosso muda
+junto — e **sem o template no dado, nenhuma legacy é gerada** (melhor não oferecer do que oferecer
+muda).
+
+**Forma da implementação.** `engine/legacyFiendishLegacies.js` produz DESCRITORES no formato
+`_versions`, então eles passam pelo mesmo `buildVariant` das linhagens nativas e **nada a jusante
+precisa saber que são especiais** — seletor, completude, guia, sweep, export e import já trabalham
+sobre linhagens. As 11 linhas saíram do `LEGACY_SUBRACES` (que segue sendo o registro das que voltam
+**sem** reescrita).
+
+**Tabela do preview.** `withLegacyTable` anexa uma linha por legacy à tabela "Fiendish Legacies" do
+traço da base — o preview passa a listar as mesmas 14 opções que o seletor de linhagem oferece. É
+idempotente (dedup pelo rótulo), não muda o objeto do compêndio, e numa linhagem já resolvida não
+faz nada (o traço com a tabela foi substituído).
+
+**Migração.** Uma ficha salva enquanto estas eram ESPÉCIES à parte (`Tiefling (Zariel)|MTF`,
+2026-07-22 → 23) volta a ser Tiefling XPHB + linhagem no `migrate` do schema — sem isso ela perderia
+a espécie ao recarregar, porque o nome antigo não existe em catálogo nenhum.
+
+**Bug pré-existente do sweep, corrigido de passagem.** `parseExistingCoverage` cortava a linha do
+COVERAGE com `split('|')`, mas o id de uma linha de ESPÉCIE **contém** um pipe
+(`species:Elf|XPHB/…`): as células deslizavam e **as colunas manuais UI/Export/Notes de toda linha de
+espécie se perdiam a cada varredura**. O pipe passa a ser escapado ao escrever e o corte só acontece
+nos pipes não-escapados; as notas apagadas foram restauradas e a preservação verificada com duas
+varreduras seguidas.
+
+**Verificado:** 1050 testes (+24), lint, **sweep 289/289 `--strict`** (as linhas voltaram a
+`species:Tiefling|XPHB/Tiefling; Zariel Legacy`), e ao vivo: o seletor de espécie mostra UM Tiefling,
+o de linhagem mostra as 14 com a procedência certa (XPHB/MTF/SCAG), a tabela do preview traz as 14
+linhas, o Zariel 5 deriva Thaumaturgy + Searing Smite + Shining Smite (1/Day) com DC por **Carisma**
+escolhido e "DAMAGE RESISTANCES: Fire", e o Winged mostra "30 ft, fly 30 ft" + o traço Appearance.
+Mobile 375px sem overflow (a tabela rola no próprio contêiner), zero erros de console.

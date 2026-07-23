@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T11:56:14.788Z · base seed 1 · 289 rows
+Last sweep: 2026-07-23T12:54:52.550Z · base seed 1 · 289 rows
 
 ## Classes × subclasses (135)
 
@@ -151,157 +151,157 @@ Last sweep: 2026-07-23T11:56:14.788Z · base seed 1 · 289 rows
 
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
-| `species:Aarakocra|MPMM` | ok | - | todo | todo |  |
-| `species:Aasimar|XPHB` | ok | - | todo | todo |  |
-| `species:Aetherborn|PSK/Variant; Gifted Aetherborn` | ok | - | todo | todo |  |
-| `species:Astral Elf|AAG` | ok | - | todo | todo |  |
-| `species:Autognome|AAG` | ok | - | todo | todo |  |
-| `species:Aven|PSA/Aven (Hawk-Headed)` | ok | - | todo | todo |  |
-| `species:Aven|PSA/Aven (Ibis-Headed)` | ok | - | todo | todo |  |
-| `species:Aven|PSD` | ok | - | todo | todo |  |
-| `species:Boggart|LFL` | ok | - | todo | todo |  |
-| `species:Bugbear|MPMM` | ok | - | todo | todo |  |
-| `species:Centaur|MPMM` | ok | - | todo | todo |  |
-| `species:Changeling|EFA` | ok | - | todo | todo |  |
-| `species:Custom Lineage|TCE/Custom Lineage; Darkvision` | ok | - | todo | todo |  |
-| `species:Custom Lineage|TCE/Custom Lineage; Skill Proficiency` | ok | - | todo | todo |  |
-| `species:Deep Gnome|MPMM` | ok | - | todo | todo |  |
-| `species:Dhampir|RHW` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Black)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Blue)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Brass)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Bronze)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Copper)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Gold)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Green)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Red)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (Silver)` | ok | - | todo | todo |  |
-| `species:Dragonborn|XPHB/Dragonborn (White)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Amethyst)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Crystal)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Emerald)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Sapphire)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Topaz)` | ok | - | todo | todo |  |
-| `species:Duergar|MPMM` | ok | - | todo | todo |  |
-| `species:Dwarf|XPHB` | ok | - | todo | todo |  |
-| `species:Dwarf (Kaladesh)|PSK` | ok | - | todo | todo |  |
-| `species:Eladrin|MPMM` | ok | - | todo | todo |  |
-| `species:Elf|LFL/Elf; Lorwyn Lineage` | ok | - | todo | todo |  |
-| `species:Elf|LFL/Elf; Shadowmoor Lineage` | ok | - | todo | todo |  |
-| `species:Elf|XPHB/Elf; Drow Lineage` | ok | - | todo | todo |  |
-| `species:Elf|XPHB/Elf; High Elf Lineage` | ok | - | todo | todo |  |
-| `species:Elf|XPHB/Elf; Wood Elf Lineage` | ok | - | todo | todo |  |
-| `species:Elf|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada, LINHAGEM (único caso - DDL-0060) |
-| `species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Bishatar and Tirahar)` | ok | - | todo | todo |  |
-| `species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Vahadar)` | ok | - | todo | todo |  |
-| `species:Elf (Zendikar)|PSZ/Elf (Zendikar; Joraga Nation)` | ok | - | todo | todo |  |
-| `species:Elf (Zendikar)|PSZ/Elf (Zendikar; Mul Daya Nation)` | ok | - | todo | todo |  |
-| `species:Elf (Zendikar)|PSZ/Elf (Zendikar; Tajuru Nation)` | ok | - | todo | todo |  |
-| `species:Faerie|LFL/Faerie; Lorwyn` | ok | - | todo | todo |  |
-| `species:Faerie|LFL/Faerie; Shadowmoor` | ok | - | todo | todo |  |
-| `species:Fairy|MPMM` | ok | - | todo | todo |  |
-| `species:Firbolg|MPMM` | ok | - | todo | todo |  |
-| `species:Flamekin|LFL` | ok | - | todo | todo |  |
-| `species:Genasi|MPMM/Genasi (Air)` | ok | - | todo | todo |  |
-| `species:Genasi|MPMM/Genasi (Earth)` | ok | - | todo | todo |  |
-| `species:Genasi|MPMM/Genasi (Fire)` | ok | - | todo | todo |  |
-| `species:Genasi|MPMM/Genasi (Water)` | ok | - | todo | todo |  |
-| `species:Giff|AAG` | ok | - | todo | todo |  |
-| `species:Githyanki|MPMM` | ok | - | todo | todo |  |
-| `species:Githzerai|MPMM` | ok | - | todo | todo |  |
-| `species:Gnome|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo |  |
-| `species:Gnome|XPHB/Gnome; Rock Gnome Lineage` | ok | - | todo | todo |  |
-| `species:Goblin|MPMM` | ok | - | todo | todo |  |
-| `species:Goblin|PSZ/Goblin (Ixalan)` | ok | - | todo | todo |  |
-| `species:Goblin|PSZ/Goblin (Zendikar; Grotag Tribe)` | ok | - | todo | todo |  |
-| `species:Goblin|PSZ/Goblin (Zendikar; Lavastep Tribe)` | ok | - | todo | todo |  |
-| `species:Goblin|PSZ/Goblin (Zendikar; Tuktuk Tribe)` | ok | - | todo | todo |  |
-| `species:Goliath|XPHB/Goliath; Cloud Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath|XPHB/Goliath; Fire Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath|XPHB/Goliath; Frost Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath|XPHB/Goliath; Hill Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath|XPHB/Goliath; Stone Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath|XPHB/Goliath; Storm Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Grung|OGA` | ok | - | todo | todo |  |
-| `species:Hadozee|AAG` | ok | - | todo | todo |  |
-| `species:Half-Orc|PHB` | ok | - | todo | todo |  |
-| `species:Halfling|XPHB` | ok | - | todo | todo |  |
-| `species:Harengon|MPMM` | ok | - | todo | todo |  |
-| `species:Hexblood|RHW` | ok | - | todo | todo |  |
-| `species:Hobgoblin|MPMM` | ok | - | todo | todo |  |
-| `species:Human|XPHB` | ok | - | todo | todo |  |
-| `species:Human (Innistrad)|PSI/Human (Innistrad; Gavony)` | ok | - | todo | todo |  |
-| `species:Human (Innistrad)|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
-| `species:Human (Innistrad)|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
-| `species:Human (Innistrad)|PSI/Human (Innistrad; Stensia)` | ok | - | todo | todo |  |
-| `species:Human (Ixalan)|PSX` | ok | - | todo | todo |  |
-| `species:Human (Kaladesh)|PSK` | ok | - | todo | todo |  |
-| `species:Human (Zendikar)|PSZ` | ok | - | todo | todo |  |
-| `species:Kalashtar|EFA` | ok | - | todo | todo |  |
-| `species:Kender|DSotDQ` | ok | - | todo | todo |  |
-| `species:Kenku|MPMM` | ok | - | todo | todo |  |
-| `species:Khenra|PSA` | ok | - | todo | todo |  |
-| `species:Khoravar|EFA` | ok | - | todo | todo |  |
-| `species:Kithkin|LFL/Kithkin; Lorwyn` | ok | - | todo | todo |  |
-| `species:Kithkin|LFL/Kithkin; Shadowmoor` | ok | - | todo | todo |  |
-| `species:Kobold|MPMM/Kobold; Craftiness` | ok | - | todo | todo |  |
-| `species:Kobold|MPMM/Kobold; Defiance` | ok | - | todo | todo |  |
-| `species:Kobold|MPMM/Kobold; Draconic Sorcery` | ok | - | todo | todo |  |
-| `species:Kor|PSZ` | ok | - | todo | todo |  |
-| `species:Leonin|MOT` | ok | - | todo | todo |  |
-| `species:Lizardfolk|MPMM` | ok | - | todo | todo |  |
-| `species:Locathah|LR` | ok | - | todo | todo |  |
-| `species:Lorwyn Changeling|LFL` | ok | - | todo | todo |  |
-| `species:Loxodon|GGR` | ok | - | todo | todo |  |
-| `species:Lupin|RHW` | ok | - | todo | todo |  |
-| `species:Merfolk|PSZ/Merfolk (Ixalan; Blue)` | ok | - | todo | todo |  |
-| `species:Merfolk|PSZ/Merfolk (Ixalan; Green)` | ok | - | todo | todo |  |
-| `species:Merfolk|PSZ/Merfolk (Zendikar; Cosi Creed)` | ok | - | todo | todo |  |
-| `species:Merfolk|PSZ/Merfolk (Zendikar; Emeria Creed)` | ok | - | todo | todo |  |
-| `species:Merfolk|PSZ/Merfolk (Zendikar; Ula Creed)` | ok | - | todo | todo |  |
-| `species:Minotaur|MPMM` | ok | - | todo | todo |  |
-| `species:Minotaur (Amonkhet)|PSA` | ok | - | todo | todo |  |
-| `species:Naga|PSA` | ok | - | todo | todo |  |
-| `species:Orc|XPHB` | ok | - | todo | todo |  |
-| `species:Orc (Ixalan)|PSX` | ok | - | todo | todo |  |
-| `species:Owlin|SCC` | ok | - | todo | todo |  |
-| `species:Plasmoid|AAG` | ok | - | todo | todo |  |
-| `species:Reborn|RHW` | ok | - | todo | todo |  |
-| `species:Rimekin|LFL` | ok | - | todo | todo |  |
-| `species:Satyr|MPMM` | ok | - | todo | todo |  |
-| `species:Sea Elf|MPMM` | ok | - | todo | todo |  |
-| `species:Shadar-Kai|MPMM` | ok | - | todo | todo |  |
-| `species:Shifter|EFA/Shifter; Beasthide` | ok | - | todo | todo |  |
-| `species:Shifter|EFA/Shifter; Longtooth` | ok | - | todo | todo |  |
-| `species:Shifter|EFA/Shifter; Swiftstride` | ok | - | todo | todo |  |
-| `species:Shifter|EFA/Shifter; Wildhunt` | ok | - | todo | todo |  |
-| `species:Simic Hybrid|GGR` | ok | - | todo | todo |  |
-| `species:Siren|PSX` | ok | - | todo | todo |  |
-| `species:Tabaxi|MPMM` | ok | - | todo | todo |  |
-| `species:Thri-kreen|AAG` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling; Abyssal Legacy` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling; Chthonic Legacy` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling; Infernal Legacy` | ok | - | todo | todo |  |
-| `species:Tortle|MPMM` | ok | - | todo | todo |  |
-| `species:Triton|MPMM` | ok | - | todo | todo |  |
-| `species:Vampire|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |
-| `species:Vampire|PSZ/Vampire (Zendikar)` | ok | - | todo | todo |  |
-| `species:Vedalken|GGR` | ok | - | todo | todo |  |
-| `species:Vedalken|PSK` | ok | - | todo | todo |  |
-| `species:Verdan|AI` | ok | - | todo | todo |  |
-| `species:Warforged|EFA` | ok | - | todo | todo |  |
-| `species:Yuan-Ti|MPMM` | ok | - | todo | todo |  |
-| `species:Halfling (Ghostwise)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Halfling (Lotusden)|EGW` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Human (Keldon)|PSD` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Baalzebul)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Dispater)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Fierna)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Glasya)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Levistus)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Mammon)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Mephistopheles)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Zariel)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Variant; Devil's Tongue)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Variant; Hellfire)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
-| `species:Tiefling (Variant; Winged)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Aarakocra\|MPMM` | ok | - | todo | todo |  |
+| `species:Aasimar\|XPHB` | ok | - | todo | todo |  |
+| `species:Aetherborn\|PSK/Variant; Gifted Aetherborn` | ok | - | todo | todo |  |
+| `species:Astral Elf\|AAG` | ok | - | todo | todo |  |
+| `species:Autognome\|AAG` | ok | - | todo | todo |  |
+| `species:Aven\|PSA/Aven (Hawk-Headed)` | ok | - | todo | todo |  |
+| `species:Aven\|PSA/Aven (Ibis-Headed)` | ok | - | todo | todo |  |
+| `species:Aven\|PSD` | ok | - | todo | todo |  |
+| `species:Boggart\|LFL` | ok | - | todo | todo |  |
+| `species:Bugbear\|MPMM` | ok | - | todo | todo |  |
+| `species:Centaur\|MPMM` | ok | - | todo | todo |  |
+| `species:Changeling\|EFA` | ok | - | todo | todo |  |
+| `species:Custom Lineage\|TCE/Custom Lineage; Darkvision` | ok | - | todo | todo |  |
+| `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | todo | todo |  |
+| `species:Deep Gnome\|MPMM` | ok | - | todo | todo |  |
+| `species:Dhampir\|RHW` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Blue)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Brass)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Bronze)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Copper)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Gold)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Green)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Red)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Silver)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (White)` | ok | - | todo | todo |  |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Amethyst)` | ok | - | todo | todo |  |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Crystal)` | ok | - | todo | todo |  |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Emerald)` | ok | - | todo | todo |  |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Sapphire)` | ok | - | todo | todo |  |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Topaz)` | ok | - | todo | todo |  |
+| `species:Duergar\|MPMM` | ok | - | todo | todo |  |
+| `species:Dwarf\|XPHB` | ok | - | todo | todo |  |
+| `species:Dwarf (Kaladesh)\|PSK` | ok | - | todo | todo |  |
+| `species:Eladrin\|MPMM` | ok | - | todo | todo |  |
+| `species:Elf\|LFL/Elf; Lorwyn Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|LFL/Elf; Shadowmoor Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf; Drow Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf; High Elf Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf; Wood Elf Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada, LINHAGEM sem reescrita (único caso - DDL-0060) |
+| `species:Elf (Kaladesh)\|PSK/Elf (Kaladesh; Bishatar and Tirahar)` | ok | - | todo | todo |  |
+| `species:Elf (Kaladesh)\|PSK/Elf (Kaladesh; Vahadar)` | ok | - | todo | todo |  |
+| `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Joraga Nation)` | ok | - | todo | todo |  |
+| `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Mul Daya Nation)` | ok | - | todo | todo |  |
+| `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Tajuru Nation)` | ok | - | todo | todo |  |
+| `species:Faerie\|LFL/Faerie; Lorwyn` | ok | - | todo | todo |  |
+| `species:Faerie\|LFL/Faerie; Shadowmoor` | ok | - | todo | todo |  |
+| `species:Fairy\|MPMM` | ok | - | todo | todo |  |
+| `species:Firbolg\|MPMM` | ok | - | todo | todo |  |
+| `species:Flamekin\|LFL` | ok | - | todo | todo |  |
+| `species:Genasi\|MPMM/Genasi (Air)` | ok | - | todo | todo |  |
+| `species:Genasi\|MPMM/Genasi (Earth)` | ok | - | todo | todo |  |
+| `species:Genasi\|MPMM/Genasi (Fire)` | ok | - | todo | todo |  |
+| `species:Genasi\|MPMM/Genasi (Water)` | ok | - | todo | todo |  |
+| `species:Giff\|AAG` | ok | - | todo | todo |  |
+| `species:Githyanki\|MPMM` | ok | - | todo | todo |  |
+| `species:Githzerai\|MPMM` | ok | - | todo | todo |  |
+| `species:Gnome\|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo |  |
+| `species:Gnome\|XPHB/Gnome; Rock Gnome Lineage` | ok | - | todo | todo |  |
+| `species:Goblin\|MPMM` | ok | - | todo | todo |  |
+| `species:Goblin\|PSZ/Goblin (Ixalan)` | ok | - | todo | todo |  |
+| `species:Goblin\|PSZ/Goblin (Zendikar; Grotag Tribe)` | ok | - | todo | todo |  |
+| `species:Goblin\|PSZ/Goblin (Zendikar; Lavastep Tribe)` | ok | - | todo | todo |  |
+| `species:Goblin\|PSZ/Goblin (Zendikar; Tuktuk Tribe)` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Cloud Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Fire Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Frost Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Hill Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Stone Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Storm Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Grung\|OGA` | ok | - | todo | todo |  |
+| `species:Hadozee\|AAG` | ok | - | todo | todo |  |
+| `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
+| `species:Halfling\|XPHB` | ok | - | todo | todo |  |
+| `species:Harengon\|MPMM` | ok | - | todo | todo |  |
+| `species:Hexblood\|RHW` | ok | - | todo | todo |  |
+| `species:Hobgoblin\|MPMM` | ok | - | todo | todo |  |
+| `species:Human\|XPHB` | ok | - | todo | todo |  |
+| `species:Human (Innistrad)\|PSI/Human (Innistrad; Gavony)` | ok | - | todo | todo |  |
+| `species:Human (Innistrad)\|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
+| `species:Human (Innistrad)\|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
+| `species:Human (Innistrad)\|PSI/Human (Innistrad; Stensia)` | ok | - | todo | todo |  |
+| `species:Human (Ixalan)\|PSX` | ok | - | todo | todo |  |
+| `species:Human (Kaladesh)\|PSK` | ok | - | todo | todo |  |
+| `species:Human (Zendikar)\|PSZ` | ok | - | todo | todo |  |
+| `species:Kalashtar\|EFA` | ok | - | todo | todo |  |
+| `species:Kender\|DSotDQ` | ok | - | todo | todo |  |
+| `species:Kenku\|MPMM` | ok | - | todo | todo |  |
+| `species:Khenra\|PSA` | ok | - | todo | todo |  |
+| `species:Khoravar\|EFA` | ok | - | todo | todo |  |
+| `species:Kithkin\|LFL/Kithkin; Lorwyn` | ok | - | todo | todo |  |
+| `species:Kithkin\|LFL/Kithkin; Shadowmoor` | ok | - | todo | todo |  |
+| `species:Kobold\|MPMM/Kobold; Craftiness` | ok | - | todo | todo |  |
+| `species:Kobold\|MPMM/Kobold; Defiance` | ok | - | todo | todo |  |
+| `species:Kobold\|MPMM/Kobold; Draconic Sorcery` | ok | - | todo | todo |  |
+| `species:Kor\|PSZ` | ok | - | todo | todo |  |
+| `species:Leonin\|MOT` | ok | - | todo | todo |  |
+| `species:Lizardfolk\|MPMM` | ok | - | todo | todo |  |
+| `species:Locathah\|LR` | ok | - | todo | todo |  |
+| `species:Lorwyn Changeling\|LFL` | ok | - | todo | todo |  |
+| `species:Loxodon\|GGR` | ok | - | todo | todo |  |
+| `species:Lupin\|RHW` | ok | - | todo | todo |  |
+| `species:Merfolk\|PSZ/Merfolk (Ixalan; Blue)` | ok | - | todo | todo |  |
+| `species:Merfolk\|PSZ/Merfolk (Ixalan; Green)` | ok | - | todo | todo |  |
+| `species:Merfolk\|PSZ/Merfolk (Zendikar; Cosi Creed)` | ok | - | todo | todo |  |
+| `species:Merfolk\|PSZ/Merfolk (Zendikar; Emeria Creed)` | ok | - | todo | todo |  |
+| `species:Merfolk\|PSZ/Merfolk (Zendikar; Ula Creed)` | ok | - | todo | todo |  |
+| `species:Minotaur\|MPMM` | ok | - | todo | todo |  |
+| `species:Minotaur (Amonkhet)\|PSA` | ok | - | todo | todo |  |
+| `species:Naga\|PSA` | ok | - | todo | todo |  |
+| `species:Orc\|XPHB` | ok | - | todo | todo |  |
+| `species:Orc (Ixalan)\|PSX` | ok | - | todo | todo |  |
+| `species:Owlin\|SCC` | ok | - | todo | todo |  |
+| `species:Plasmoid\|AAG` | ok | - | todo | todo |  |
+| `species:Reborn\|RHW` | ok | - | todo | todo |  |
+| `species:Rimekin\|LFL` | ok | - | todo | todo |  |
+| `species:Satyr\|MPMM` | ok | - | todo | todo |  |
+| `species:Sea Elf\|MPMM` | ok | - | todo | todo |  |
+| `species:Shadar-Kai\|MPMM` | ok | - | todo | todo |  |
+| `species:Shifter\|EFA/Shifter; Beasthide` | ok | - | todo | todo |  |
+| `species:Shifter\|EFA/Shifter; Longtooth` | ok | - | todo | todo |  |
+| `species:Shifter\|EFA/Shifter; Swiftstride` | ok | - | todo | todo |  |
+| `species:Shifter\|EFA/Shifter; Wildhunt` | ok | - | todo | todo |  |
+| `species:Simic Hybrid\|GGR` | ok | - | todo | todo |  |
+| `species:Siren\|PSX` | ok | - | todo | todo |  |
+| `species:Tabaxi\|MPMM` | ok | - | todo | todo |  |
+| `species:Thri-kreen\|AAG` | ok | - | todo | todo |  |
+| `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | todo | todo |  |
+| `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | todo | todo |  |
+| `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | todo | todo |  |
+| `species:Tiefling\|XPHB/Tiefling; Baalzebul Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Dispater Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Fierna Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Glasya Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Levistus Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Mammon Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Mephistopheles Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Zariel Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Devil's Tongue Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Hellfire Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Winged Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tortle\|MPMM` | ok | - | todo | todo |  |
+| `species:Triton\|MPMM` | ok | - | todo | todo |  |
+| `species:Vampire\|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |
+| `species:Vampire\|PSZ/Vampire (Zendikar)` | ok | - | todo | todo |  |
+| `species:Vedalken\|GGR` | ok | - | todo | todo |  |
+| `species:Vedalken\|PSK` | ok | - | todo | todo |  |
+| `species:Verdan\|AI` | ok | - | todo | todo |  |
+| `species:Warforged\|EFA` | ok | - | todo | todo |  |
+| `species:Yuan-Ti\|MPMM` | ok | - | todo | todo |  |
+| `species:Halfling (Ghostwise)\|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Halfling (Lotusden)\|EGW` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Human (Keldon)\|PSD` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |

@@ -192,13 +192,22 @@ function verdict(r) {
 }
 
 // --- COVERAGE.md: regenera preservando as colunas manuais --------------------
+// CUIDADO: o id de uma linha de ESPÉCIE contém um pipe (`species:Elf|XPHB/…`),
+// que é o separador de células do markdown. Ele é ESCAPADO ao escrever (`\|`) e
+// a leitura corta só nos pipes não-escapados - sem isso as células deslizam e as
+// colunas manuais (UI/Export/Notes) de toda linha de espécie se perdem a cada
+// varredura.
+const splitCells = (line) => line.split(/(?<!\\)\|/).map((s) => s.trim());
+const unescapePipes = (s) => s.replace(/\\\|/g, '|');
+const escapePipes = (s) => s.replace(/\|/g, '\\|');
+
 function parseExistingCoverage(text) {
   const manual = new Map();
   for (const line of (text ?? '').split('\n')) {
-    const cells = line.split('|').map((s) => s.trim());
+    const cells = splitCells(line);
     // | Unit | Auto | Decision levels | UI | Export | Notes |
     if (cells.length >= 8 && cells[1] && !cells[1].startsWith('-') && cells[1] !== 'Unit') {
-      manual.set(cells[1].replace(/`/g, ''), { ui: cells[4], export: cells[5], notes: cells[6] });
+      manual.set(unescapePipes(cells[1]).replace(/`/g, ''), { ui: cells[4], export: cells[5], notes: cells[6] });
     }
   }
   return manual;
@@ -215,7 +224,7 @@ function writeCoverage(results) {
       ...rows.map((r) =>
         [
           '',
-          `\`${r.id}\``,
+          `\`${escapePipes(r.id)}\``,
           verdict(r),
           r.levels?.decisionLevels?.join(' ') ?? '-',
           cell(r.id, 'ui', 'todo'),

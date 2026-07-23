@@ -231,13 +231,19 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    effects, CHANGELOG §35; DDL-0057 for the rest, CHANGELOG §65).** Effects, `activities`,
    `system` (uses/range/duration) and `advancement` (ScaleValue) are all adopted, curated-first.
    Nothing of the overlay remains unused.
-4. ~~**Curated LEGACY SUBRACES**~~ — **DONE 2026-07-22 (DDL-0058 planned it, DDL-0059 shipped it,
-   DDL-0060 refined it; CHANGELOG §66–67).** 15 of the 24 unreachable subraces came back, curated,
-   in `engine/legacySubraces.js`: 13 as LINEAGES of the current base species and 2 as SEPARATE
-   SPECIES built on the legacy chassis (`as: 'species'` — mandatory whenever the 2024 base absorbed
-   a 2014 subrace's trait, as the Halfling did with the Lightfoot's Naturally Stealthy). 9 were
-   deliberately discarded. The general edition toggle stays **cancelled**. Adding another legacy
-   subrace is one registry line, plus the `as` call spelled out in DDL-0060.
+4. ~~**Curated LEGACY SUBRACES**~~ — **DONE 2026-07-22/23 (DDL-0058 planned it, DDL-0059 shipped it,
+   DDL-0060 and DDL-0061 refined it; CHANGELOG §66–68).** 15 of the 24 unreachable subraces came
+   back, curated, and there are now THREE forms, decided per entry:
+   · **REWRITTEN as a lineage of the 2024 species** (DDL-0061) — the 11 Tiefling Fiendish Legacies,
+     in `engine/legacyFiendishLegacies.js`. Normalizes the 2014 mechanics into the 2024 format
+     (resistance locked, casting ability Int/Wis/Cha, spells remapped to XPHB) so the stacking the
+     `as` rule guards against is neutralized at the source. Preferred where a 2024 umbrella trait
+     with a TABLE exists to fit into.
+   · **SPECIES à parte** (DDL-0060) — Ghostwise, Lotusden, Keldon, merged onto the legacy chassis.
+   · **LINEAGE without rewriting** (DDL-0060) — only Elf/Pallid, in `engine/legacySubraces.js`.
+   9 were deliberately discarded. The general edition toggle stays **cancelled**. Adding another
+   legacy subrace is one registry line, plus the `as` call spelled out in DDL-0060 — or a rewrite,
+   per DDL-0061.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
@@ -317,6 +323,73 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0061 — Sub-raça legada tem uma TERCEIRA saída: REESCREVER no formato 2024 (Tiefling)
+**Date:** 2026-07-23
+**Refina o DDL-0060** (não o revoga: a regra do `as` continua valendo para quem volta SEM reescrita —
+Elf/Halfling/Human seguem exatamente como estão). **Builds on:** DDL-0059 (o registro curado),
+DDL-0003 (nunca redistribuir conteúdo — é o que dita a forma de montar o texto).
+
+**Context.** O DDL-0060 tinha tirado as 11 legacies do Tiefling da espécie 2024 porque, penduradas
+nela, empilhavam vantagens. O usuário propôs o inverso: em vez de FUGIR do empilhamento, neutralizá-lo
+na fonte e devolvê-las ao lugar delas — uma linha a mais na tabela de Fiendish Legacies. Ele apontou
+que a diferença real entre as variantes 2014 é UMA feature (Legacy of Minauros, de Cania, Hellfire,
+Winged…) que cabe exatamente na estrutura nível 1 / 3 / 5 da tabela 2024.
+
+**Decision — REESCREVER é a terceira saída, e ela fecha os três vazamentos.** Os mesmos três que o
+DDL-0060 usou como argumento para expulsar o Tiefling:
+- **resistência** trava em **fogo** (o "Hellish Resistance" 2014 era fogo fixo), em vez da escolha
+  livre poison/necrotic/fire do chassi 2024;
+- **cantrip**: a legacy cujo cantrip de nível 1 ERA Thaumaturgy fica **sem cantrip próprio** — ela já
+  recebe Thaumaturgy pelo Otherworldly Presence, e conceder o mesmo duas vezes é que seria o ganho de
+  graça (Baalzebul, Dispater, Zariel, Hellfire; decisão do usuário entre as três saídas possíveis);
+- **atributo de conjuração** deixa de ser Carisma FIXO e vira o Int/Wis/Cha à escolha, em texto E
+  mecânica.
+Com isso a paridade com as oficiais é exata, e a objeção do DDL-0060 deixa de existir. **REGRA:** a
+regra do `as` (DDL-0060) julga a fusão CRUA; uma sub-raça REESCRITA pode ser linhagem mesmo que a
+base 2024 dê algo a mais, PORQUE esse "a mais" foi explicitamente anulado. Não estenda isso para
+quem não passou pela reescrita.
+
+**Decision — o TEXTO é montado do dado, nunca escrito por nós.** A versão oficial "Tiefling; Infernal
+Legacy" é o **template** (a resistência dela já é fogo, como a nossa) e só as tags `{@spell}` são
+trocadas; a frase do cantrip é removida quando não há cantrip; a "Appearance" das variantes SCAG e o
+texto do voo do Winged saem da sub-raça de origem. A única frase autoral é a nota de upcast. **Sem o
+template no dado, nenhuma legacy é gerada** — melhor não oferecer a linhagem do que oferecê-la muda.
+Isso mantém o DDL-0003 (código, nunca conteúdo) e faz o nosso texto acompanhar o upstream.
+
+**Decision — a forma é DESCRITOR de `_versions`, não um merge novo.** `engine/legacyFiendishLegacies.js`
+emite objetos no formato `_versions`, que `raceLineages` passa pelo MESMO `buildVariant` das linhagens
+nativas. Nada a jusante sabe que elas são especiais: seletor, completude, guia, sweep, export e import
+já trabalham sobre linhagens. As 11 linhas saíram do `LEGACY_SUBRACES`, que segue sendo o registro das
+que voltam **sem** reescrita.
+
+**Decisions — os detalhes de curadoria (do usuário).**
+- **Marcador `#2` MANTIDO** nas 7 magias que o texto 2014 mandava conjurar um círculo acima: era a
+  compensação por listas mais fracas; sem ele várias legacies ficam abaixo das oficiais.
+- **Hellfire fica** (difere da Infernal 2024 só no nível 3: Burning Hands × Hellish Rebuke).
+- **Winged: voo no nível 1, nada em 3/5** — fiel ao SCAG.
+- **Achado do dado:** as 23 magias envolvidas têm versão XPHB 1:1 **exceto Branding Smite**, reimpressa
+  com outro nome (`Shining Smite|XPHB`). É a única remapagem manual — confira o `reprintedAs` antes de
+  supor que uma magia 2014 sumiu.
+- Normalizado: o Floating Disk do Mammon recarrega em descanso longo (o dado 2014 dizia "curto ou
+  longo") e o "sem componente material" do Arcane Lock cai — o formato 2024 não tem rider por magia.
+
+**Decision — a tabela exibida ganha as linhas legadas** (`withLegacyTable`, consumida por
+`raceEntity.entries`): o preview da espécie lista as mesmas 14 opções que o seletor de linhagem
+oferece. Idempotente, não muda o objeto do compêndio, e no-op numa linhagem já resolvida.
+
+**Consequences.**
+- **Migração obrigatória:** uma ficha salva enquanto estas eram espécies à parte (`Tiefling (Zariel)`,
+  janela de 2026-07-22 a 23) volta a Tiefling XPHB + linhagem no `migrate` do schema. Toda mudança de
+  FORMA de uma espécie legada precisa disso — o nome antigo não existe em catálogo nenhum.
+- **Bug pré-existente corrigido de passagem:** `parseExistingCoverage` (scripts/sweep.js) cortava a
+  linha do COVERAGE com `split('|')`, mas o id de uma linha de ESPÉCIE contém um pipe — as células
+  deslizavam e **as colunas manuais UI/Export/Notes de toda espécie se perdiam a cada varredura**. O
+  pipe passou a ser escapado ao escrever e o corte só ocorre nos não-escapados.
+- Verificado: 1050 testes (+24), lint, sweep **289/289 `--strict`**, e ao vivo (14 linhagens com a
+  procedência certa, tabela do preview com 14 linhas, Zariel 5 derivando Searing/Shining Smite 1/Day
+  com DC pelo atributo escolhido e resistência a fogo, Winged com "30 ft, fly 30 ft" + Appearance).
+  Mobile 375px sem overflow, zero erros de console. Ver CHANGELOG §68.
 
 ### DDL-0060 — Sub-raça legada tem DUAS formas de voltar: linhagem da base atual OU espécie à parte
 **Date:** 2026-07-22

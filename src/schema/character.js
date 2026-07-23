@@ -13,6 +13,8 @@
 // editor sem precisar de build TypeScript).
 // -----------------------------------------------------------------------------
 
+import { migrateLegacyTiefling } from '../engine/legacyFiendishLegacies';
+
 /** Versão atual do schema. Incremente ao mudar a forma + adicione um migrate.
  * v2 (2026-07-09): `ClassEntry.spells` - magias preparadas pelo jogador por
  * classe (Spellbook, Fase B2). Personagens v1 recebem `spells: []` no migrate. */
@@ -338,7 +340,11 @@ export function migrate(raw) {
     scores: { ...base.scores, ...(raw.scores ?? {}) },
     scoreMethod: raw.scoreMethod ?? base.scoreMethod,
     rulesConfig: { ...base.rulesConfig, ...(raw.rulesConfig ?? {}) },
-    species: raw.species ?? null,
+    // DDL-0061: uma ficha salva enquanto as legacies do Tiefling eram ESPÉCIES à
+    // parte ("Tiefling (Zariel)") volta a ser Tiefling XPHB + linhagem, senão
+    // perderia a espécie ao recarregar (o nome antigo não existe em catálogo
+    // nenhum). Qualquer outra espécie passa intacta.
+    species: migrateLegacyTiefling(raw.species ?? null),
     origin: { ...base.origin, ...(raw.origin ?? {}) },
     // v1→v2: cada classe ganha `spells: []` se não tiver (Fase B2).
     classes: Array.isArray(raw.classes)

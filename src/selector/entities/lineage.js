@@ -59,6 +59,13 @@ export function makeLineageEntity(baseRace, db = null) {
       if (walk && walk !== (typeof baseRace?.speed === 'number' ? baseRace.speed : baseRace?.speed?.walk)) {
         out.push({ label: 'Speed', value: `${walk} ft`, highlight: true });
       }
+      // Modo de movimento que a base não tem (o voo do Tiefling Winged) - é o
+      // traço definidor da linhagem e some se olharmos só o deslocamento a pé.
+      for (const mode of ['fly', 'swim', 'climb']) {
+        const value = typeof v.speed === 'object' ? v.speed?.[mode] : null;
+        const base = typeof baseRace?.speed === 'object' ? baseRace.speed?.[mode] : null;
+        if (value && value !== base) out.push({ label: cap(mode), value: `${value} ft`, highlight: true });
+      }
       // Ancestralidade de dragão: o tipo de dano resistido é o traço definidor.
       const resist = lineageResist(v, baseRace);
       if (resist.length) out.push({ label: 'Resistance', value: resist.map(cap).join(', '), highlight: true });

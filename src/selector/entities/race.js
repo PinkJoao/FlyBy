@@ -10,6 +10,7 @@
 import { latestOnly } from '../reprints';
 import { resolveCopies } from '../copy';
 import { legacyStandaloneSpecies } from '../../engine/speciesData';
+import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
@@ -150,6 +151,13 @@ const raceEntity = {
     meta: `${sizeText(race.size)} · ${speedText(race.speed)} · ${creatureTypes(race).map(cap).join(', ')}`,
     badges: traitKeys(race).slice(0, 3).map((k) => TRAIT_LABEL[k]),
   }),
+
+  // Traços mecânicos. Idênticos aos do dado, EXCETO no Tiefling XPHB: a tabela
+  // "Fiendish Legacies" ganha as linhas das legacies legadas (DDL-0061), para o
+  // preview listar as mesmas opções que o seletor de linhagem oferece. Numa
+  // linhagem já resolvida a tabela não existe mais (o traço foi substituído), e
+  // a função devolve os entries originais.
+  entries: (race, db) => withLegacyTable(db, race),
 
   // Lore + imagens (fluff-races.json) p/ o DetailView. Para uma linhagem resolvida
   // (`_baseName`), cai na arte/lore da RAÇA BASE (ex: Elf; Drow Lineage → Elf).

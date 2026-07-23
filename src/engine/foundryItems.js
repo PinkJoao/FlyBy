@@ -1067,6 +1067,17 @@ export function toolTraitKey(db, name) {
 
 /** Chave de trait de IDIOMA do Foundry ('Common' → 'languages:standard:common'),
  * com o tipo (standard/exotic) vindo do languages.json do 5etools. */
+/**
+ * O nome é um idioma REAL do compêndio? O 5etools também usa pseudo-entradas
+ * ("other" = o idioma próprio do cenário) que não têm chave no dnd5e.
+ * @param {object|null} db
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function isKnownLanguage(db, name) {
+  return (db?.languages?.language ?? []).some((l) => norm(l.name) === norm(name));
+}
+
 export function languageTraitKey(db, name) {
   const entry = (db?.languages?.language ?? []).find((l) => norm(l.name) === norm(name));
   const type = norm(entry?.type) === 'exotic' || norm(entry?.type) === 'rare' ? 'exotic' : 'standard';
@@ -1409,8 +1420,14 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   if (skills.length) advancement.push(traitAdv('Skill Proficiencies', skills.map((s) => `skills:${s}`)));
   const tools = shallowPicks(speciesChoices, 'tool');
   if (tools.length) advancement.push(traitAdv('Tool Proficiencies', tools.map((t) => toolTraitKey(db, t))));
+  // Idiomas: só os que EXISTEM no compêndio viram Trait. O 5etools usa o
+  // pseudo-idioma "other" para o idioma próprio do cenário (Simic Hybrid GGR:
+  // "Elvish ou Vedalken"), que não tem chave no dnd5e - emiti-lo produziria um
+  // `languages:standard:other` inválido, e o import não saberia desfazê-lo. Ele
+  // volta pela flag (ver `residual` abaixo), como manda o DDL-0028.
   const languages = shallowPicks(speciesChoices, 'language');
-  if (languages.length) advancement.push(traitAdv('Languages', languages.map((l) => languageTraitKey(db, l))));
+  const knownLanguages = languages.filter((l) => isKnownLanguage(db, l));
+  if (knownLanguages.length) advancement.push(traitAdv('Languages', knownLanguages.map((l) => languageTraitKey(db, l))));
 
   // ItemGrant do(s) talento(s) escolhido(s) pela espécie (ex: Human "Versatile").
   if (featItems.length) advancement.push(...itemGrantAdvancements(featItems, 'Species Feat'));
@@ -1426,8 +1443,11 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   const RESIDUAL_SPECIES_KINDS = ['spellAbility', 'size', 'mixed', 'resist', 'immune', 'vulnerable', 'spell', 'spellSet'];
   for (const [id, entry] of Object.entries(speciesChoices ?? {})) {
     if (!entry || typeof entry !== 'object') continue;
-    if (!RESIDUAL_SPECIES_KINDS.includes(entry.kind)) continue;
     if ((entry.picks?.length ?? 0) === 0) continue;
+    // Idioma sem chave no dnd5e ("other"): o Trait não o carrega, então a flag
+    // guarda a escolha INTEIRA (o import dá precedência à flag e a restaura).
+    const unmappedLanguage = entry.kind === 'language' && entry.picks.some((p) => !isKnownLanguage(db, p));
+    if (!RESIDUAL_SPECIES_KINDS.includes(entry.kind) && !unmappedLanguage) continue;
     residual[id] = entry;
   }
 

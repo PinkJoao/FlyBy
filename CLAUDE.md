@@ -324,6 +324,73 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0062 — O seletor de linhagem tira o NOME do dado; benefício OU-EXCLUSIVO é adiado; espécie nunca dá atributo
+**Date:** 2026-07-23
+**Refina o DDL-0061** (a regra de adiamento ganha uma irmã) e **estende o DDL-0058** (a regra do
+`ability` legado passa a valer para espécies BASE, não só sub-raças). Não revoga nada.
+
+**Context.** O usuário apontou que o **Custom Lineage** (TCE) tinha seletores que não correspondem
+ao que a fonte descreve — a começar por um seletor de LINHAGEM, que essa opção não tem. O RAW dela
+é: tamanho, um talento, o **Variable Trait** (visão no escuro OU uma perícia) e um idioma. A
+investigação achou cinco defeitos (TC-0046…TC-0050); três das correções são GERAIS.
+
+**Decision — o rótulo do seletor vem do DADO, não de uma string fixa.** O Variable Trait está
+codificado como `_versions` (que é o que o app chama de linhagem), mas cada versão declara qual
+traço ela SUBSTITUI (`_mod.entries.replace`) — e esse é o nome certo. `lineageSelectorLabel(race)`
+o usa no rótulo, no placeholder e no título do painel (a entity deriva sozinha; nenhum call site
+mudou). Conserta 8 espécies de uma vez: "Variable Trait", "Kobold Legacy", "Elven Lineage",
+"Gnomish Lineage", "Giant Ancestry", "Fiendish Legacy", "Shifting". **Fallback obrigatório:** sem
+`_versions` (linhagens vindas de sub-raças: Genasi) ou com `replace` sem letra nenhuma (lixo do
+dataset — Faerie/Kithkin LFL trazem `","`), volta o genérico "Lineage".
+**Escolha de mecanismo (do usuário):** manter `_versions` e corrigir o rótulo, em vez de reescrever
+o Variable Trait como um kind de escolha novo. Storage (`species.lineage`), export, import, sweep e
+a resolução do darkvision continuam intactos, e o Kobold é corrigido de graça. Custo aceito: o nome
+salvo/exportado da espécie carrega o sufixo ("Custom Lineage; Skill Proficiency"), como toda
+linhagem.
+
+**Decision — `lineageDeferredKinds` ganha a regra de REMOÇÃO.** A do DDL-0061 (adiar quando TODA
+linhagem SOBRESCREVE o campo) não pega um ou-exclusivo em que uma versão MANTÉM o campo da base e a
+outra o ANULA — era por isso que o Custom Lineage oferecia a perícia E derivava a visão no escuro ao
+mesmo tempo. Nova regra irmã: **adiar quando ALGUMA linhagem anula o campo**. Escopo medido:
+Custom Lineage (skill), Kobold MPMM (skill + magias), Goblin PSZ (resist, no-op).
+**REGRA:** `skillProficiencies`/`toolProficiencies`/`languageProficiencies` participam **só** da
+regra de remoção (`EXCLUSIVE_FIELD_KINDS`). Pela de sobrescrita esconderiam escolhas legítimas de
+várias espécies, porque o merge de sub-raça CONCATENA esses campos e o resultado "difere" da base
+sem substituí-la. Quem acrescentar um campo ao mapa precisa decidir de qual regra ele participa.
+
+**Decision — `ability` de ESPÉCIE é sempre descartado; o novo módulo é o lugar da curadoria.**
+`engine/legacySpeciesRules.js` (`normalizeLegacySpecies`) aplica as regras 2024 a qualquer espécie
+legada, chamado **dentro do `resolveRaceObj`** — o único ponto por onde o app pega um objeto de
+espécie para trabalhar (aba, guia, derivação, sweep, import), o que evita passar opção por sete call
+sites. Duas regras: a GERAL do `ability` (atinge Custom Lineage, Aetherborn PSK e Simic Hybrid GGR,
+as únicas alcançáveis com o campo) e um registro CURADO `FEAT_CATEGORY_OVERRIDES`, hoje com uma
+linha — o talento livre do Custom Lineage vira **ORIGIN**, a categoria do Human XPHB (decisão do
+usuário; "um talento que se ganha ao nascer" é o equivalente 2024). Nenhum consumidor lê `ability`
+de raça, então o strip é seguro; devolve a MESMA referência quando não há o que mudar.
+**Limitação aceita, NÃO migrar às cegas:** uma ficha salva antes guarda o pick em
+`species.choices['ability-0']` e ele continua contando, porque é exatamente essa entrada que o
+import do Foundry usa para reconstruir os scores de um ator legado (DDL-0028) — apagá-la quebraria
+os premades.
+
+**Decision — `speciesChoices` é a fonte ÚNICA da lista de escolhas de espécie.** A expressão
+(tamanho + `parseChoices` + `filterLineageDeferred`) estava copiada em quatro lugares e só dois
+aplicavam o filtro: a completude do guia e o `autoBuild` do sweep enxergavam o que a tela escondia.
+Mesmo espírito do DDL-0042. Isso deslocou o RNG do sweep e destapou um bug LATENTE (TC-0050): o
+pseudo-idioma `"other"` do 5etools (o idioma próprio do cenário — Simic Hybrid: "Elvish ou
+Vedalken") não tem chave no dnd5e e sumia no round-trip. Corrigido pela política do DDL-0028: só
+idioma REAL vira Trait; um pick não mapeável manda a escolha inteira para a flag do item de raça.
+
+**Consequences.**
+- Uma espécie nova com traço variável funciona sozinha (rótulo e adiamento são derivados); só a
+  categoria de talento é curadoria.
+- Pendência cosmética conhecida (não aberta como bug): a opção `"other"` aparece como **"Other"** no
+  seletor de idioma em vez do idioma que representa (Vedalken) — traduzir exige curadoria por
+  espécie.
+- Verificado: 1071 testes (+17), lint, sweep **289/289 `--strict`**, e ao vivo (Custom Lineage com
+  "Variable Trait", sem atributo e sem a perícia antes da escolha; a perícia aparecendo na opção
+  (b); o seletor de talento com as mesmas 25 origens do Human). Mobile 375px sem overflow, zero
+  erros de console. Ver CHANGELOG §70 e TC-0046…TC-0050.
+
 ### DDL-0061 — Sub-raça legada tem uma TERCEIRA saída: REESCREVER no formato 2024 (Tiefling)
 **Date:** 2026-07-23
 **Refina o DDL-0060** (não o revoga: a regra do `as` continua valendo para quem volta SEM reescrita —

@@ -8,7 +8,7 @@
 // mais (busca + cards + detalhe), em vez de cards ad-hoc.
 // -----------------------------------------------------------------------------
 
-import { raceLineages, lineageLabel } from '../../engine/speciesData';
+import { raceLineages, lineageLabel, lineageSelectorLabel } from '../../engine/speciesData';
 
 /** Rótulo curto da versão (ex: "Drow Lineage", "Black", "Amethyst"). */
 const lineageShort = (v) => lineageLabel(v?.name ?? '');
@@ -39,7 +39,9 @@ function lineageEntries(v, baseRace) {
 export function makeLineageEntity(baseRace, db = null) {
   return {
     type: 'lineage',
-    title: 'Lineage',
+    // Como a ESPÉCIE chama essa escolha, segundo o dado ("Variable Trait" no
+    // Custom Lineage, "Kobold Legacy", "Giant Ancestry"…); genérico se não disser.
+    title: lineageSelectorLabel(baseRace),
 
     list: (dbArg) => raceLineages(dbArg ?? db, baseRace),
 

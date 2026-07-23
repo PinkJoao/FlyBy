@@ -17,7 +17,7 @@
 import { parseChoices, LEGACY_ABILITY_CHOICE } from '../../engine/choices';
 import { resolveFeat, resolveRaceObj, resolveClassObj } from '../../engine/resolve';
 import { totalLevel } from '../../schema/character';
-import { requiresLineage, speciesSizeChoice } from '../../engine/speciesData';
+import { requiresLineage, speciesChoices } from '../../engine/speciesData';
 import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
 import { buildClassChoices, isProficiencyChoice, isFeatureChoice } from '../builder/classChoices';
 import { ORIGIN_CHOICES } from '../builder/originChoices';
@@ -94,9 +94,10 @@ export function speciesStepComplete(db, character) {
   // legadas curadas (DDL-0058) são opcionais e não obrigam (ver requiresLineage).
   if (requiresLineage(db, baseRace) && !sp.lineage) return false;
   const raceObj = resolveRaceObj(db, sp.id, sp.source, sp.lineage);
-  const sizeChoice = speciesSizeChoice(raceObj);
   const level = totalLevel(character);
-  const choices = [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level, bag: sp.choices })];
+  // MESMA lista que a aba/o passo mostram (inclusive o filtro das escolhas que a
+  // linhagem resolve) - senão o guia exige preencher o que a tela esconde.
+  const choices = speciesChoices({ db, baseRace, raceObj, lineage: sp.lineage, level, bag: sp.choices });
   return choicesComplete(choices, sp.choices, db, level);
 }
 

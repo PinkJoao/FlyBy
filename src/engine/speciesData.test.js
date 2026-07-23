@@ -3,6 +3,7 @@ import {
   expandRaceVersions, raceOrVersions, parseSpecies, lineageLabel,
   sizeCodes, speciesSizeChoice, sizePick, effectiveSizeCodes, sizeLabel,
   subraceVersions, raceLineages, filterLineageDeferred, lineageDeferredKinds,
+  lineageSelectorLabel, speciesChoices,
 } from './speciesData';
 
 // Recorte do Elf XPHB: base + _versions (linhagens) com overrides + _mod replaceArr.
@@ -314,5 +315,90 @@ describe('filterLineageDeferred (escolhas que a linhagem vai resolver)', () => {
     const soloDb = { races: { race: [solo] } };
     expect(lineageDeferredKinds(soloDb, solo)).toEqual(new Set());
     expect(filterLineageDeferred(choices, soloDb, solo, null)).toBe(choices);
+  });
+});
+
+describe('lineageSelectorLabel (o nome que a ESPÉCIE dá à escolha)', () => {
+  it('usa o traço que as versões substituem ("Elven Lineage")', () => {
+    expect(lineageSelectorLabel(elf)).toBe('Elven Lineage');
+  });
+
+  it('Custom Lineage: é "Variable Trait", não linhagem nenhuma', () => {
+    const cl = {
+      name: 'Custom Lineage',
+      source: 'TCE',
+      _versions: [
+        { name: 'Custom Lineage; Darkvision', _mod: { entries: { mode: 'replaceArr', replace: 'Variable Trait', items: {} } } },
+      ],
+    };
+    expect(lineageSelectorLabel(cl)).toBe('Variable Trait');
+  });
+
+  it('sem `_versions` (linhagens vindas de sub-raças) cai no genérico', () => {
+    expect(lineageSelectorLabel({ name: 'Genasi', source: 'MPMM' })).toBe('Lineage');
+    expect(lineageSelectorLabel(null)).toBe('Lineage');
+  });
+
+  it('ignora `replace` sem letra nenhuma (lixo do dataset: Faerie/Kithkin LFL)', () => {
+    const junk = { name: 'Faerie', _versions: [{ name: 'Faerie; Shadowmoor', _mod: { entries: { mode: 'replaceArr', replace: ',' } } }] };
+    expect(lineageSelectorLabel(junk)).toBe('Lineage');
+  });
+});
+
+describe('lineageDeferredKinds - regra de REMOÇÃO (benefício OU-EXCLUSIVO)', () => {
+  // Forma do Custom Lineage TCE / Kobold MPMM: a base traz o benefício e CADA
+  // versão anula o que ela não dá.
+  const base = {
+    name: 'Custom Lineage',
+    source: 'TCE',
+    darkvision: 60,
+    skillProficiencies: [{ any: 1 }],
+    languageProficiencies: [{ common: true, anyStandard: 1 }],
+    _versions: [
+      { name: 'Custom Lineage; Darkvision', source: 'TCE', skillProficiencies: null },
+      { name: 'Custom Lineage; Skill Proficiency', source: 'TCE', darkvision: null },
+    ],
+  };
+  const db = { races: { race: [base] } };
+
+  it('adia a perícia que só uma das versões concede', () => {
+    expect(lineageDeferredKinds(db, base)).toEqual(new Set(['skill']));
+  });
+
+  it('não adia o que TODA versão mantém (o idioma continua na base)', () => {
+    const kept = filterLineageDeferred(
+      [{ id: 'size-0', kind: 'size' }, { id: 'skill-0', kind: 'skill' }, { id: 'language-0', kind: 'language' }],
+      db, base, null,
+    ).map((c) => c.kind);
+    expect(kept).toEqual(['size', 'language']);
+  });
+});
+
+describe('speciesChoices (fonte única da lista de escolhas da espécie)', () => {
+  const race = {
+    name: 'Custom Lineage',
+    source: 'TCE',
+    size: ['S', 'M'],
+    skillProficiencies: [{ any: 1 }],
+    _versions: [
+      { name: 'Custom Lineage; Darkvision', source: 'TCE', skillProficiencies: null },
+      { name: 'Custom Lineage; Skill Proficiency', source: 'TCE', darkvision: null },
+    ],
+  };
+  const db = { races: { race: [race] } };
+
+  it('põe o TAMANHO na frente e aplica o filtro da linhagem', () => {
+    const ids = speciesChoices({ db, baseRace: race, raceObj: race, lineage: null, level: 1, bag: {} }).map((c) => c.id);
+    expect(ids).toEqual(['size-0']); // a perícia fica para a escolha do Variable Trait
+  });
+
+  it('com a versão escolhida, a escolha dela aparece', () => {
+    const variant = raceLineages(db, race).find((v) => v.name === 'Custom Lineage; Skill Proficiency');
+    const ids = speciesChoices({ db, baseRace: race, raceObj: variant, lineage: variant.name, level: 1, bag: {} }).map((c) => c.id);
+    expect(ids).toEqual(['size-0', 'skill-0']);
+  });
+
+  it('sem raça resolvida, lista vazia', () => {
+    expect(speciesChoices({ db, baseRace: null, raceObj: null })).toEqual([]);
   });
 });

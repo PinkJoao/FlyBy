@@ -9,10 +9,9 @@
 // instrui o jogador, no lugar da antiga frase abaixo do título.
 // -----------------------------------------------------------------------------
 
-import { parseChoices } from '../../../engine/choices';
 import { resolveRaceObj, ownedFromDb } from '../../../engine/resolve';
 import { totalLevel } from '../../../schema/character';
-import { raceLineages, lineageLabel, speciesSizeChoice, filterLineageDeferred } from '../../../engine/speciesData';
+import { raceLineages, lineageLabel, lineageSelectorLabel, speciesChoices } from '../../../engine/speciesData';
 import PickerField from '../../common/PickerField';
 import DetailView from '../../common/DetailView';
 import raceEntity from '../../../selector/entities/race';
@@ -30,18 +29,15 @@ export default function SpeciesStep({ character, db, onChange }) {
   // Linhagens = `_versions` + sub-raças fundidas do db (Genasi, Stensia…).
   const hasLineages = baseRace ? raceLineages(db, baseRace).length > 0 : false;
   const raceObj = species ? resolveRaceObj(db, species.id, species.source, species.lineage) : null;
-  // Tamanho primeiro (quando a raça deixa Small/Medium ao jogador) - mesma
-  // composição da SpeciesTab, mesmo choice-bag.
-  const sizeChoice = speciesSizeChoice(raceObj);
-  // Nível + bag alimentam as escolhas de MAGIA da raça (TC-0011).
-  const choices = raceObj
-    ? filterLineageDeferred(
-        [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level: totalLevel(character), bag: species?.choices })],
-        db,
-        baseRace,
-        species.lineage,
-      )
-    : [];
+  // Mesma lista da SpeciesTab, mesmo choice-bag (fonte única: speciesChoices).
+  const choices = speciesChoices({
+    db,
+    baseRace,
+    raceObj,
+    lineage: species?.lineage,
+    level: totalLevel(character),
+    bag: species?.choices,
+  });
 
   const pickSpecies = (race) =>
     onChange({ ...character, species: { id: race.name.toLowerCase(), source: race.source, choices: {}, lineage: null } });
@@ -72,14 +68,14 @@ export default function SpeciesStep({ character, db, onChange }) {
       {/* Linhagem (só quando a espécie tem `_versions`) - mesmo SelectorPanel. */}
       {hasLineages && (
         <div className={styles.field}>
-          <span className={styles.fieldLabel}>Lineage</span>
+          <span className={styles.fieldLabel}>{lineageSelectorLabel(baseRace)}</span>
           <PickerField
             entity={makeLineageEntity(baseRace, db)}
             db={db}
             // A fonte é a da LINHAGEM (`raceObj` já é a variante resolvida), não
             // a da base - ver a mesma nota na SpeciesTab.
             current={species.lineage ? { label: lineageLabel(species.lineage), source: raceObj?.source ?? baseRace.source, id: species.lineage } : null}
-            placeholder="Choose a lineage…"
+            placeholder={`Choose a ${lineageSelectorLabel(baseRace).toLowerCase()}…`}
             showInfo={false}
             onSelect={(v) => setLineage(v.name)}
             onClear={() => setLineage(null)}

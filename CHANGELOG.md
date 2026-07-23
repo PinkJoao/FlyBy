@@ -4358,3 +4358,66 @@ nível 1 é tudo que a legacy dá naquele nível — resistência, cantrip e o b
 Size, Elf base só com a perícia (e as duas de magia voltando ao escolher High Elf), Dragonborn base
 sem escolha nenhuma, e a linha "Winged" da tabela com "…Resistance to Fire damage. You have bat-like
 wings… flying speed of 30 feet…". Zero erros de console.
+
+## 70. Custom Lineage: "Variable Trait" no lugar de linhagem, `ability` legado fora, talento de ORIGEM
+
+Pedido do usuário: a opção **Custom Lineage** (TCE) tinha vários seletores que não correspondiam ao
+que a fonte descreve — a começar por um seletor de **linhagem**, que ela não tem. O RAW dela é:
+tamanho (Small/Medium), **um talento**, o **Variable Trait** — (a) visão no escuro 60 ft **ou** (b)
+proficiência em uma perícia — e **um idioma** além do Common.
+
+Cinco defeitos reais (TC-0046…TC-0050 em `testing/ISSUES.md`); **três das correções são gerais** e
+consertam outras espécies junto.
+
+**1. O seletor tira o nome do DADO (TC-0046).** O Variable Trait está codificado como `_versions`,
+que é o que o app chama de linhagem — mas cada versão declara qual traço ela substitui
+(`_mod.entries.replace`), e é esse o nome certo do seletor. `lineageSelectorLabel(race)` passa a
+usá-lo: "Variable Trait" no Custom Lineage, e de quebra **"Kobold Legacy"**, **"Elven Lineage"**,
+**"Gnomish Lineage"**, **"Giant Ancestry"**, **"Fiendish Legacy"** e **"Shifting"** nas outras. Sem
+`_versions` (Genasi, cujas linhagens são sub-raças fundidas) ou com `replace` sem letra nenhuma
+(Faerie/Kithkin LFL trazem `","`) segue o genérico "Lineage". Vale para o rótulo, o placeholder e o
+título do painel — a entity do seletor deriva sozinha, nenhum call site mudou.
+
+**2. Regra de REMOÇÃO: um benefício OU-EXCLUSIVO não é oferecido pela base (TC-0047).** Sem nada
+escolhido, o Custom Lineage já mostrava "Choose any skill" **e** derivava Darkvision 60 — os dois
+lados do "ou". A regra do §69 não pegava isso: ela exige que TODA linhagem sobrescreva o campo, e
+aqui uma das versões o MANTÉM enquanto a outra o ANULA. `lineageDeferredKinds` ganhou a regra irmã:
+**adia quando ALGUMA linhagem anula o campo**. Escopo medido no dataset inteiro:
+
+| espécie | campo | efeito |
+|---|---|---|
+| Custom Lineage TCE | `skillProficiencies` | a perícia só aparece na opção (b) |
+| Kobold MPMM | `skillProficiencies`, `additionalSpells` | perícia só no Craftiness, magia só no Draconic Sorcery |
+| Goblin PSZ | `resist` | no-op (o campo não gera escolha) |
+
+Perícia/ferramenta/idioma entram **só** por essa regra: pela regra de sobrescrita esconderiam
+escolhas legítimas, porque o merge de sub-raça CONCATENA esses campos e o resultado "difere" da base
+sem substituí-la.
+
+**3. Espécie não concede aumento de atributo (TC-0048).** O DDL-0058 já tinha fixado que o `ability`
+legado é ignorado, mas a limpeza só existia para as sub-raças curadas. O novo
+`engine/legacySpeciesRules.js` (`normalizeLegacySpecies`) aplica a regra a QUALQUER espécie, no
+`resolveRaceObj` — o único ponto por onde o app pega um objeto de espécie para trabalhar. Some o
+"+2 à escolha" do Custom Lineage e também os de **Aetherborn|PSK** e **Simic Hybrid|GGR**, as
+únicas outras alcançáveis com o campo.
+
+**4. O talento é de ORIGEM (TC-0049, decisão do usuário).** "One feat of your choice for which you
+qualify" era o conjunto inteiro em 2014; o equivalente 2024 de um talento que se ganha ao nascer é a
+categoria ORIGIN — a mesma do Human XPHB. Uma linha curada em `FEAT_CATEGORY_OVERRIDES` reescreve
+`[{any:1}]` como o `anyFromCategory` do Human. Ao vivo, o seletor passou de "tudo" para as mesmas
+25 origens do Human.
+
+**5. `speciesChoices` é a fonte ÚNICA da lista (e um bug de round-trip que ela revelou).** A mesma
+expressão (tamanho + `parseChoices` + filtro da linhagem) estava copiada em quatro lugares, e só
+dois aplicavam o filtro — a completude do guia e o `autoBuild` do sweep ainda enxergavam o que a
+tela escondia. Agora os quatro chamam `speciesChoices({db, baseRace, raceObj, lineage, level, bag})`.
+Isso deslocou o RNG do sweep e destapou o **TC-0050**: o pick de idioma `"other"` (o pseudo-idioma
+que o 5etools usa para o idioma próprio do cenário — Simic Hybrid: "Elvish ou Vedalken") não tem
+chave no dnd5e, então exportava um `languages:standard:other` inválido e sumia na reimportação.
+Corrigido pela política do DDL-0028: só idioma REAL vira Trait, e um pick não mapeável manda a
+escolha inteira para a flag do item de raça.
+
+**Verificado:** 1071 testes (+17), lint, sweep **289/289 `--strict`**, e ao vivo — Custom Lineage
+mostra "Variable Trait / Choose variable trait…" com Size + Language + Feat (sem atributo, sem
+perícia); escolher "Skill Proficiency" faz a perícia aparecer; o seletor de talento lista só
+origens. Mobile 375px sem overflow, zero erros de console.

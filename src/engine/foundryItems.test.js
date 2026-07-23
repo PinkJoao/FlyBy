@@ -590,6 +590,24 @@ describe('buildSpeciesItem', () => {
     expect(adv).toHaveLength(1);
     expect(adv[0].type).toBe('Size');
   });
+
+  // O 5etools usa o pseudo-idioma "other" para o idioma próprio do cenário
+  // (Simic Hybrid GGR: "Elvish ou Vedalken"). Ele não tem chave no dnd5e.
+  const langDb = { languages: { language: [{ name: 'Elvish', type: 'standard' }] } };
+
+  it('idioma sem chave no dnd5e ("other") não vira Trait e volta pela flag', () => {
+    const character = { species: { choices: { 'language-0': { kind: 'language', picks: ['other'] } } } };
+    const item = buildSpeciesItem(character, drow, langDb);
+    expect(advList(item).find((a) => a.title === 'Languages')).toBeUndefined();
+    expect(item.flags.builder5e.choices['language-0'].picks).toEqual(['other']);
+  });
+
+  it('idioma REAL segue nativo, sem flag', () => {
+    const character = { species: { choices: { 'language-0': { kind: 'language', picks: ['Elvish'] } } } };
+    const item = buildSpeciesItem(character, drow, langDb);
+    expect(advList(item).find((a) => a.title === 'Languages').value.chosen).toEqual(['languages:standard:elvish']);
+    expect(item.flags).toEqual({});
+  });
 });
 
 describe('buildSpeciesFeatItems', () => {

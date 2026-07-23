@@ -19,7 +19,7 @@ import {
 } from '../../src/engine/resolve';
 import { parseChoices, LEGACY_ABILITY_CHOICE, weaponFilterAllows } from '../../src/engine/choices';
 import { skillCode } from '../../src/engine/classData';
-import { speciesSizeChoice } from '../../src/engine/speciesData';
+import { speciesChoices } from '../../src/engine/speciesData';
 import { prereqContext, prereqStatus } from '../../src/engine/prereq';
 import { allSpells, classSpellList, spellChoosePredicate } from '../../src/engine/spells';
 import { buildClassChoices } from '../../src/components/builder/classChoices';
@@ -433,8 +433,15 @@ export function autoBuild(db, spec) {
     // p/ as escolhas de magia, TC-0011).
     const raceObj = resolveRaceObj(db, c.species.id, c.species.source, c.species.lineage);
     if (raceObj) {
-      const sizeCh = speciesSizeChoice(raceObj);
-      const spChoices = [...(sizeCh ? [sizeCh] : []), ...parseChoices(raceObj, { level: cls.level, bag: c.species.choices })];
+      const baseRace = resolveRaceObj(db, c.species.id, c.species.source);
+      const spChoices = speciesChoices({
+        db,
+        baseRace,
+        raceObj,
+        lineage: c.species.lineage,
+        level: cls.level,
+        bag: c.species.choices,
+      });
       const r = fillBag(spChoices, c.species.choices, { ...ctx, where: `${ctx.where} species` });
       if (r.changed) {
         c.species = { ...c.species, choices: r.bag };

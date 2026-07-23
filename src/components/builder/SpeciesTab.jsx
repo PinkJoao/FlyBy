@@ -8,10 +8,9 @@
 // seletor à parte preserva a arte/lore da raça base no picker.
 // -----------------------------------------------------------------------------
 
-import { parseChoices } from '../../engine/choices';
 import { resolveRaceObj, ownedFromDb } from '../../engine/resolve';
 import { totalLevel } from '../../schema/character';
-import { raceLineages, lineageLabel, speciesSizeChoice, filterLineageDeferred } from '../../engine/speciesData';
+import { raceLineages, lineageLabel, lineageSelectorLabel, speciesChoices } from '../../engine/speciesData';
 import PickerField from '../common/PickerField';
 import DetailView from '../common/DetailView';
 import raceEntity from '../../selector/entities/race';
@@ -31,19 +30,17 @@ export default function SpeciesTab({ character, db, onPick, onClear, onChangeCho
   // Linhagens = `_versions` + sub-raças fundidas do db (Genasi, Stensia…).
   const hasLineages = baseRace ? raceLineages(db, baseRace).length > 0 : false;
   const raceObj = species ? resolveRaceObj(db, species.id, species.source, species.lineage) : null;
-  // Tamanho primeiro (quando a raça deixa Small/Medium ao jogador), depois as
-  // demais sub-escolhas - tudo no MESMO choice-bag da espécie.
-  const sizeChoice = speciesSizeChoice(raceObj);
+  // Tamanho + sub-escolhas da raça/linhagem, tudo no MESMO choice-bag da espécie.
   // Nível + bag alimentam as escolhas de MAGIA da raça (TC-0011: gate por nível
   // e grupo ativo de um additionalSpells com várias listas).
-  const choices = raceObj
-    ? filterLineageDeferred(
-        [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level: totalLevel(character), bag: species?.choices })],
-        db,
-        baseRace,
-        species.lineage,
-      )
-    : [];
+  const choices = speciesChoices({
+    db,
+    baseRace,
+    raceObj,
+    lineage: species?.lineage,
+    level: totalLevel(character),
+    bag: species?.choices,
+  });
 
   return (
     <div className={styles.tab}>
@@ -66,10 +63,11 @@ export default function SpeciesTab({ character, db, onPick, onClear, onChangeCho
       </section>
 
       {/* Seletor de LINHAGEM (só quando a espécie tem `_versions`) - mesmo
-          SelectorPanel do resto (busca + cards + detalhe). */}
+          SelectorPanel do resto (busca + cards + detalhe). O rótulo vem do DADO
+          ("Variable Trait" no Custom Lineage, "Giant Ancestry" no Goliath…). */}
       {hasLineages && (
         <section className={styles.section}>
-          <span className={styles.label}>Lineage</span>
+          <span className={styles.label}>{lineageSelectorLabel(baseRace)}</span>
           <PickerField
             entity={makeLineageEntity(baseRace, db)}
             db={db}
@@ -77,7 +75,7 @@ export default function SpeciesTab({ character, db, onPick, onClear, onChangeCho
             // da base: uma sub-raça pode vir de outro livro (Zariel MTF num
             // Tiefling XPHB, Air MPMM num Genasi MPMM).
             current={species.lineage ? { label: lineageLabel(species.lineage), source: raceObj?.source ?? baseRace.source, id: species.lineage } : null}
-            placeholder="Choose lineage…"
+            placeholder={`Choose ${lineageSelectorLabel(baseRace).toLowerCase()}…`}
             onSelect={(v) => onChangeLineage(v.name)}
             onClear={() => onChangeLineage(null)}
             showInfo={false}

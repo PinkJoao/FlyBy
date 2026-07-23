@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T13:05:55.190Z · base seed 1 · 289 rows
+Last sweep: 2026-07-23T13:36:50.855Z · base seed 1 · 289 rows
 
 ## Classes × subclasses (135)
 
@@ -153,7 +153,7 @@ Last sweep: 2026-07-23T13:05:55.190Z · base seed 1 · 289 rows
 |---|---|---|---|---|---|
 | `species:Aarakocra\|MPMM` | ok | - | todo | todo |  |
 | `species:Aasimar\|XPHB` | ok | - | todo | todo |  |
-| `species:Aetherborn\|PSK/Variant; Gifted Aetherborn` | ok | - | todo | todo |  |
+| `species:Aetherborn\|PSK/Variant; Gifted Aetherborn` | ok | - | todo | todo | TC-0048 fixed 2026-07-23: sem atributo legado |
 | `species:Astral Elf\|AAG` | ok | - | todo | todo |  |
 | `species:Autognome\|AAG` | ok | - | todo | todo |  |
 | `species:Aven\|PSA/Aven (Hawk-Headed)` | ok | - | todo | todo |  |
@@ -163,8 +163,8 @@ Last sweep: 2026-07-23T13:05:55.190Z · base seed 1 · 289 rows
 | `species:Bugbear\|MPMM` | ok | - | todo | todo |  |
 | `species:Centaur\|MPMM` | ok | - | todo | todo |  |
 | `species:Changeling\|EFA` | ok | - | todo | todo |  |
-| `species:Custom Lineage\|TCE/Custom Lineage; Darkvision` | ok | - | todo | todo |  |
-| `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | todo | todo |  |
+| `species:Custom Lineage\|TCE/Custom Lineage; Darkvision` | ok | - | ok | todo | TC-0046/0047/0048/0049 fixed 2026-07-23: seletor "Variable Trait", sem atributo legado, talento restrito a ORIGIN |
+| `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | ok | todo | idem; a perícia só aparece nesta opção (TC-0047) |
 | `species:Deep Gnome\|MPMM` | ok | - | todo | todo |  |
 | `species:Dhampir\|RHW` | ok | - | todo | todo |  |
 | `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | todo | todo |  |
@@ -244,7 +244,7 @@ Last sweep: 2026-07-23T13:05:55.190Z · base seed 1 · 289 rows
 | `species:Khoravar\|EFA` | ok | - | todo | todo |  |
 | `species:Kithkin\|LFL/Kithkin; Lorwyn` | ok | - | todo | todo |  |
 | `species:Kithkin\|LFL/Kithkin; Shadowmoor` | ok | - | todo | todo |  |
-| `species:Kobold\|MPMM/Kobold; Craftiness` | ok | - | todo | todo |  |
+| `species:Kobold\|MPMM/Kobold; Craftiness` | ok | - | todo | todo | TC-0046/0047 (2026-07-23): seletor "Kobold Legacy"; perícia/magia adiadas até a escolha - falta passada de UI |
 | `species:Kobold\|MPMM/Kobold; Defiance` | ok | - | todo | todo |  |
 | `species:Kobold\|MPMM/Kobold; Draconic Sorcery` | ok | - | todo | todo |  |
 | `species:Kor\|PSZ` | ok | - | todo | todo |  |
@@ -275,7 +275,7 @@ Last sweep: 2026-07-23T13:05:55.190Z · base seed 1 · 289 rows
 | `species:Shifter\|EFA/Shifter; Longtooth` | ok | - | todo | todo |  |
 | `species:Shifter\|EFA/Shifter; Swiftstride` | ok | - | todo | todo |  |
 | `species:Shifter\|EFA/Shifter; Wildhunt` | ok | - | todo | todo |  |
-| `species:Simic Hybrid\|GGR` | ok | - | todo | todo |  |
+| `species:Simic Hybrid\|GGR` | ok | - | todo | todo | TC-0048/0050 fixed 2026-07-23: sem atributo legado; o idioma "other" sobrevive ao round-trip |
 | `species:Siren\|PSX` | ok | - | todo | todo |  |
 | `species:Tabaxi\|MPMM` | ok | - | todo | todo |  |
 | `species:Thri-kreen\|AAG` | ok | - | todo | todo |  |

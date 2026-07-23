@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 
 import { skillCode } from './classData';
+import { parseChoices } from './choices';
 import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { legacyLegacyVersions } from './legacyFiendishLegacies';
 
@@ -310,6 +311,41 @@ export function requiresLineage(db, race) {
   return raceLineages(db, race).some((v) => !v._legacy);
 }
 
+// --- Como a espécie CHAMA o seletor de linhagem -------------------------------
+// "Linhagem" é o nosso nome genérico, mas cada espécie tem o seu, e o DADO diz
+// qual: toda variante de `_versions` SUBSTITUI um traço nomeado da base
+// (`_mod.entries.replace`) - "Elven Lineage", "Giant Ancestry", "Fiendish
+// Legacy", "Kobold Legacy" e, no Custom Lineage, "Variable Trait". Usar esse
+// nome deixa de chamar de linhagem o que a fonte não chama (o Custom Lineage não
+// tem linhagem nenhuma: tem uma escolha entre visão no escuro OU uma perícia).
+
+/** O `replace` da PRIMEIRA op de `_mod.entries` de uma versão (ou null). */
+function replacedTraitName(version) {
+  const ops = version?._mod?.entries;
+  for (const op of Array.isArray(ops) ? ops : [ops]) {
+    const name = op?.replace;
+    // O dataset tem lixo (Faerie/Kithkin LFL trazem `replace: ","`): só serve um
+    // nome com letra.
+    if (typeof name === 'string' && /\p{L}/u.test(name)) return name.trim();
+  }
+  return null;
+}
+
+/**
+ * Rótulo do seletor de linhagem desta espécie, tirado do dado. Sem `_versions`
+ * (espécies cujas linhagens são sub-raças fundidas: Genasi, Stensia…) ou sem um
+ * traço substituído legível, cai no genérico "Lineage".
+ * @param {object|null} race  espécie BASE
+ * @returns {string}
+ */
+export function lineageSelectorLabel(race) {
+  for (const v of race?._versions ?? []) {
+    const name = replacedTraitName(v) ?? replacedTraitName(v?._abstract);
+    if (name) return name;
+  }
+  return 'Lineage';
+}
+
 // --- Escolhas que a LINHAGEM vai resolver ------------------------------------
 // Numa espécie que EXIGE linhagem, alguns campos da base existem só como
 // "padrão de vitrine": toda linhagem os sobrescreve. As escolhas geradas por
@@ -327,12 +363,31 @@ const LINEAGE_FIELD_KINDS = Object.freeze({
   additionalSpells: ['spellSet', 'spell', 'spellAbility'],
 });
 
+/**
+ * Campos que só participam da regra de REMOÇÃO (abaixo), nunca da de
+ * sobrescrita. Uma linhagem que CONCATENA idiomas/perícias (o merge de sub-raça
+ * faz isso) "difere" da base sem substituí-la — pela regra de sobrescrita eles
+ * esconderiam escolhas legítimas de várias espécies.
+ */
+const EXCLUSIVE_FIELD_KINDS = Object.freeze({
+  skillProficiencies: ['skill'],
+  toolProficiencies: ['tool'],
+  languageProficiencies: ['language'],
+});
+
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Os `kind` de escolha que devem ser adiados até a linhagem ser escolhida.
- * DERIVADO do dado: um campo entra quando TODA linhagem traz valor próprio para
- * ele — nada de lista curada por espécie.
+ * DERIVADO do dado (nada de lista curada por espécie), por duas regras:
+ *
+ *  - SOBRESCRITA: TODA linhagem traz valor próprio para o campo, então o da base
+ *    é só vitrine (a resistência do Tiefling, a lista de magias do Elf).
+ *  - REMOÇÃO: ALGUMA linhagem ANULA o campo — sinal de que o benefício é um
+ *    OU-EXCLUSIVO decidido pela escolha, não algo que a base concede. É o caso do
+ *    Custom Lineage (Variable Trait: visão no escuro OU uma perícia) e do Kobold
+ *    MPMM (Kobold Legacy: só Craftiness dá perícia, só Draconic Sorcery dá magia).
+ *    Sem ela, a base oferecia a perícia ANTES de o jogador ter direito a ela.
  * @param {object} db
  * @param {object|null} race  espécie BASE
  * @returns {Set<string>}
@@ -341,9 +396,12 @@ export function lineageDeferredKinds(db, race) {
   const lineages = raceLineages(db, race);
   if (!lineages.some((v) => !v._legacy)) return new Set(); // linhagem não é obrigatória
   const kinds = new Set();
-  for (const [field, list] of Object.entries(LINEAGE_FIELD_KINDS)) {
+  const fields = { ...LINEAGE_FIELD_KINDS, ...EXCLUSIVE_FIELD_KINDS };
+  for (const [field, list] of Object.entries(fields)) {
     if (race?.[field] == null) continue;
-    if (lineages.every((v) => !same(v[field], race[field]))) for (const k of list) kinds.add(k);
+    const overridesAll = field in LINEAGE_FIELD_KINDS && lineages.every((v) => !same(v[field], race[field]));
+    const someRemoves = lineages.some((v) => v[field] == null);
+    if (overridesAll || someRemoves) for (const k of list) kinds.add(k);
   }
   return kinds;
 }
@@ -362,6 +420,29 @@ export function filterLineageDeferred(choices, db, baseRace, lineage) {
   if (lineage || !choices?.length) return choices ?? [];
   const deferred = lineageDeferredKinds(db, baseRace);
   return deferred.size ? choices.filter((c) => !deferred.has(c.kind)) : choices;
+}
+
+/**
+ * TODAS as escolhas de uma espécie, na ordem em que a UI as mostra: o TAMANHO
+ * primeiro, depois as do dado (perícia/ferramenta/idioma/talento/magia…), menos
+ * as que a linhagem ainda vai resolver.
+ *
+ * É a fonte ÚNICA dessa lista - a aba, o passo do guia, a completude do guia e o
+ * autoBuild do sweep chamam esta função. Antes, cada um remontava a expressão à
+ * mão e eles divergiam (só as duas telas aplicavam o `filterLineageDeferred`,
+ * então a completude e o sweep ainda enxergavam escolhas escondidas).
+ *
+ * O `raceObj` deve vir de `resolveRaceObj` (é lá que as regras 2024 das espécies
+ * legadas se aplicam - ver engine/legacySpeciesRules).
+ * @param {{ db: object, baseRace: object|null, raceObj: object|null,
+ *           lineage?: string|null, level?: number, bag?: object|null }} args
+ * @returns {Array}
+ */
+export function speciesChoices({ db, baseRace, raceObj, lineage = null, level = 1, bag = null }) {
+  if (!raceObj) return [];
+  const size = speciesSizeChoice(raceObj);
+  const choices = [...(size ? [size] : []), ...parseChoices(raceObj, { level, bag })];
+  return filterLineageDeferred(choices, db, baseRace, lineage);
 }
 
 // --- Sub-raças legadas que voltam como ESPÉCIE À PARTE -----------------------

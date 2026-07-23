@@ -14,6 +14,7 @@ import { buildContext } from './context';
 import { resolveCopies } from '../selector/copy';
 import { deriveCharacter } from './index';
 import { parseSpecies, raceLineages, speciesCatalog } from './speciesData';
+import { normalizeLegacySpecies } from './legacySpeciesRules';
 import { collectOwned, collectFeatIds } from './proficiency';
 import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';
@@ -131,9 +132,12 @@ export function resolveRaceObj(db, id, source, lineage = null) {
   if (lineage) {
     // Linhagem = variante de `_versions` OU sub-raça fundida (raceLineages).
     const variant = raceLineages(db, base).find((v) => v.name === lineage);
-    if (variant) return variant;
+    if (variant) return normalizeLegacySpecies(variant);
   }
-  return base;
+  // Este é o ÚNICO ponto por onde o app pega um objeto de espécie para trabalhar
+  // (aba, guia, derivação, sweep, import), então é aqui que as regras 2024 das
+  // espécies legadas se aplicam - ver engine/legacySpeciesRules.
+  return normalizeLegacySpecies(base);
 }
 
 /**

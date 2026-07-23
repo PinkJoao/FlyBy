@@ -820,3 +820,87 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > **2026-07-22 (3)** - **TC-0043 FECHADO (DDL-0054)**, por decisão do usuário e com o escopo
 > ampliado por ele para todo alargamento de lista (patronos + Divine Soul + Magical Secrets).
 > **O ledger não tem mais nenhum item aberto** e a T1a segue concluída. Próximo estágio: T1b.
+
+## TC-0046 - Custom Lineage tratava o "Variable Trait" como LINHAGEM
+
+- **Unidade:** `species:Custom Lineage|TCE` (também `species:Kobold|MPMM`, mesma forma).
+  **Severidade:** bug (rótulo enganoso). **Encontrado:** sessão avulsa de espécies, 2026-07-23.
+  **Status:** fixed@2026-07-23.
+- Sintoma: a aba oferecia um seletor **"Lineage"** com "Darkvision"/"Skill Proficiency". O Custom
+  Lineage não tem linhagem nenhuma: tem um traço variável (a) visão no escuro OU (b) uma perícia.
+- Raiz: o 5etools codifica esse ou-exclusivo como `_versions`, e `_versions` é exatamente o que o
+  app chama de linhagem. O rótulo "Lineage" era uma string FIXA nos dois JSX.
+- Fix: `lineageSelectorLabel(race)` (`engine/speciesData.js`) tira o nome do DADO - o traço que as
+  versões substituem (`_mod.entries.replace`). Aplicado no rótulo, no placeholder e no título do
+  SelectorPanel (a entity o deriva sozinha, sem mudar call site).
+- Escopo: melhora 8 espécies de uma vez - "Variable Trait" (Custom Lineage), "Kobold Legacy",
+  "Elven Lineage", "Gnomish Lineage", "Giant Ancestry", "Fiendish Legacy", "Shifting". Sem
+  `_versions` (linhagens vindas de sub-raças: Genasi, Stensia) ou com `replace` sem letra (lixo do
+  dataset: Faerie/Kithkin LFL trazem `","`) cai no genérico "Lineage".
+
+## TC-0047 - benefício OU-EXCLUSIVO era oferecido pela BASE, antes de o jogador ter direito
+
+- **Unidade:** `species:Custom Lineage|TCE`, `species:Kobold|MPMM`. **Severidade:** bug (regra).
+  **Encontrado:** sessão avulsa de espécies, 2026-07-23. **Status:** fixed@2026-07-23.
+- Sintoma: sem nada escolhido, o Custom Lineage já mostrava "Choose any skill" E derivava
+  Darkvision 60 - os dois lados de um "ou". Idem no Kobold (perícia do Craftiness).
+- Raiz: `lineageDeferredKinds` (DDL-0061) só adiava um campo quando TODA linhagem o sobrescrevia.
+  Aqui a versão "Skill Proficiency" MANTÉM o campo da base e a outra o ANULA - então a regra de
+  sobrescrita não disparava.
+- Fix: regra irmã de REMOÇÃO - um campo é adiado quando ALGUMA linhagem o anula (sinal de
+  ou-exclusivo). `skillProficiencies`/`toolProficiencies`/`languageProficiencies` entram só por
+  ela (pela regra de sobrescrita esconderiam escolhas legítimas: o merge de sub-raça CONCATENA
+  idiomas/perícias e "difere" da base sem substituí-la).
+- Escopo medido no dataset: Custom Lineage (skill), Kobold (skill + magias), Goblin PSZ (resist,
+  no-op - o campo dele não gera escolha). A perícia do Keen Senses élfico continua aparecendo.
+- Nota: a visão no escuro da base ainda é derivada enquanto nada foi escolhido (a escolha é
+  obrigatória, então é transitório) - mesma situação de qualquer espécie sem linhagem escolhida.
+
+## TC-0048 - espécie legada concedia aumento de atributo (regra 2014)
+
+- **Unidade:** `species:Custom Lineage|TCE`, `species:Aetherborn|PSK` (+ a variante Gifted),
+  `species:Simic Hybrid|GGR`. **Severidade:** bug (regra). **Encontrado:** sessão avulsa de
+  espécies, 2026-07-23. **Status:** fixed@2026-07-23.
+- Sintoma: a aba mostrava "Ability Score Increase" (+2 à escolha no Custom Lineage), somado aos
+  boosts da origem 2024.
+- Raiz: o DDL-0058 fixou que o `ability` legado é ignorado, mas a limpeza só existia para as
+  SUB-RAÇAS curadas (`prepareLegacySubrace`); uma espécie BASE 2014 passava direto.
+- Fix: `normalizeLegacySpecies` (`engine/legacySpeciesRules.js`), aplicado no `resolveRaceObj` -
+  o único ponto por onde o app pega um objeto de espécie para trabalhar.
+- Limitação aceita: uma ficha salva ANTES com esse pick guarda o boost no bag e ele continua
+  contando. Não há migração porque o mesmo `species.choices['ability-0']` é o que o import do
+  Foundry usa para reconstruir os scores de um ator legado (DDL-0028) - apagá-lo cegamente
+  quebraria os premades. Basta limpar a escolha à mão na ficha afetada (as três são obscuras).
+
+## TC-0049 - o talento do Custom Lineage não tinha categoria
+
+- **Unidade:** `species:Custom Lineage|TCE`. **Severidade:** regra (curadoria). **Encontrado:**
+  sessão avulsa de espécies, 2026-07-23. **Status:** fixed@2026-07-23 (decisão do usuário).
+- Sintoma: o seletor de talento listava TODAS as categorias (General/Fighting Style/Epic Boon) no
+  nível 1, enquanto o Human XPHB - o análogo 2024 - restringe a ORIGIN.
+- Fix: registro `FEAT_CATEGORY_OVERRIDES` em `engine/legacySpeciesRules.js`
+  (`'Custom Lineage|TCE': ['O']`), reescrevendo `[{any:1}]` como o `anyFromCategory` do Human. A
+  chave é a da espécie BASE, então a variante de traço herda.
+- Verificado ao vivo: o seletor passou a listar as mesmas 25 origens do Human.
+
+## TC-0050 - pick de idioma "other" se perdia no round-trip
+
+- **Unidade:** `species:Simic Hybrid|GGR`. **Severidade:** bug (export/import). **Encontrado:**
+  pelo sweep `--strict` na mesma sessão (o deslocamento do RNG revelou um caso latente).
+  **Status:** fixed@2026-07-23.
+- Sintoma: `species.choices.language-0 = ['other']` sumia ao reimportar (1 diff no strict).
+- Raiz: o 5etools usa o pseudo-idioma `other` para o idioma próprio do cenário (Simic Hybrid:
+  "Elvish ou Vedalken"). Exportávamos `languages:standard:other`, que não existe no dnd5e, e o
+  import não achava idioma nenhum com esse código.
+- Fix: pela política do DDL-0028 - sem casa nativa, vai na flag. `isKnownLanguage(db, name)`
+  filtra o Trait (só idiomas reais) e um pick não mapeável manda a escolha INTEIRA para
+  `flags.builder5e.choices` do item de raça, de onde o import a restaura (a flag vence).
+- Pendente (cosmético, não aberto como bug): o seletor mostra a opção como **"Other"** em vez do
+  idioma que ela representa (Vedalken). Traduzir exigiria curadoria por espécie.
+
+---
+
+> **2026-07-23 (sessão avulsa - Custom Lineage)**: TC-0046…TC-0050 achados e corrigidos em sessão
+> (ver DDL-0062). Três dos cinco são GERAIS (rótulo derivado, regra de remoção, `ability` legado) e
+> pegam Kobold/Aetherborn/Simic Hybrid junto. O ledger segue sem itens abertos; a T1b (espécies)
+> ganha um adiantamento parcial - as linhas do Custom Lineage e do Kobold já foram olhadas.

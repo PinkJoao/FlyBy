@@ -231,13 +231,10 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    effects, CHANGELOG §35; DDL-0057 for the rest, CHANGELOG §65).** Effects, `activities`,
    `system` (uses/range/duration) and `advancement` (ScaleValue) are all adopted, curated-first.
    Nothing of the overlay remains unused.
-4. **Curated LEGACY SUBRACES** (replaces the old "legacy-content toggle" — see **DDL-0058**,
-   which has the full scope, the 22 candidates and the implementation strategy). The general
-   edition toggle is **cancelled**: only subraces come back, hand-curated, attached as lineages
-   of the CURRENT base species. Nothing is implemented yet; DDL-0058 is the starting context.
-   No open questions: the one that was blocking (a legacy subrace's fixed `ability` +2/+1) was
-   decided — **ignored**, because FlyBy targets the 2024 rules and ability boosts always come
-   from the origin. Nothing to implement for it; just don't reintroduce the field.
+4. ~~**Curated LEGACY SUBRACES**~~ — **DONE 2026-07-22 (DDL-0058 planned it, DDL-0059 shipped it;
+   CHANGELOG §66).** 15 of the 24 unreachable subraces came back as curated lineages of the
+   CURRENT base species (registry `engine/legacySubraces.js`); 9 were deliberately discarded. The
+   general edition toggle stays **cancelled**. Adding another legacy subrace is one registry line.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
@@ -318,10 +315,72 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0059 — Sub-raças legadas IMPLEMENTADAS: 15 curadas, `supersedes`/prosa 2014, e linhagem opcional
+**Date:** 2026-07-22
+**Implementa e FECHA o DDL-0058** (que era um entry de PLANEJAMENTO) e, com ele, o item 4 do
+known-deferred-backlog. **Builds on:** DDL-0030 (o merge `subraceVersions` que isto reusa),
+DDL-0018 (a regra "raça com linhagens só completa com uma escolhida", que este entry RECORTA).
+
+**Context.** O DDL-0058 fixou o escopo (só sub-raças, curadoria manual, `ability` ignorado) e
+deixou a curadoria e o código para a sessão seguinte. Feito aqui.
+
+**Decisions — a curadoria (15 voltam, 9 fora).** Critério do usuário: descartável quando existe
+uma versão moderna AUTÔNOMA mais completa. **Voltam:** Pallid (Elf), Ghostwise e Lotusden
+(Halfling), Keldon (Human), e 11 linhagens de Tiefling (Baalzebul, Dispater, Fierna, Glasya,
+Levistus, Mammon, Mephistopheles, Zariel; Devil's Tongue, Hellfire, Winged). **Descartadas:**
+Eladrin (→ `Eladrin|MPMM`); **Asmodeus|MTF** (a entrada NÃO TEM MECÂNICA no dado — é o tiefling
+PHB padrão); **Variant; Infernal Legacy|SCAG** (mesmas magias da Fiendish Legacy Infernal do
+XPHB); as 4 `Variant; … Descent` do Half-Elf (base atual = `Khoravar|EFA`, moderna e autônoma);
+**Draconblood e Ravenite** (o Dragonborn XPHB põe a ancestralidade nas próprias `_versions`, então
+como linhagens IRMÃS elas ficariam sem tipo de dano para o sopro).
+- **A heurística do DDL-0058 estava errada nos dois casos que ela mesma mandou conferir:** marcou
+  Ravenite e os `Descent` como redundantes por COINCIDÊNCIA DE SUBSTRING. Conferidos à mão, o
+  Ravenite não tinha equivalente algum (saiu por outro motivo). Confirma a regra: curadoria é
+  manual.
+
+**Decisions — implementação.** Registro fechado `engine/legacySubraces.js`, consumido por
+`subraceVersions` (`engine/speciesData.js`): a sub-raça é fundida na base ATUAL pelo MESMO merge
+das normais e entra como mais uma LINHAGEM — nada foi tocado em `latestOnly` nem em selector algum.
+- **O `ability` legado é descartado ANTES do merge.** A decisão já era do DDL-0058; o cuidado
+  concreto é este: `mergeSubrace` faz merge POSICIONAL de `ability`, então sem o strip ele
+  reintroduziria o campo numa base 2024 que não o tem.
+- **`supersedes` (por entrada do registro): qual traço da BASE ATUAL a linhagem ocupa.** Uma
+  sub-raça 2014 substituía o traço-guarda-chuva 2014 via `data.overwrite: "Infernal Legacy"`, e o
+  nome mudou no chassi 2024 ("Fiendish Legacy") — o merge não acha o alvo e ANEXA, deixando a ficha
+  com o traço 2024 pedindo para escolher uma legacy AO LADO da legacy escolhida (e com a mecânica
+  dele já sobrescrita pelo `additionalSpells` da linhagem). O Pallid precisa do mesmo por outro
+  motivo: não declara overwrite nenhum, mas ocupa o lugar do "Elven Lineage".
+- **`LEGACY_PROSE_SECTIONS` (Age/Alignment/Size/Speed/Languages) sai de TODA sub-raça legada.** São
+  seções de PROSA que uma raça 2014 escrevia à mão e o dado 2024 expressa em campos estruturados;
+  anexadas, viram texto morto (o Keldon traz as quatro). Só o TEXTO cai, nunca o campo homônimo.
+- **`requiresLineage(db, race)` — só linhagem NATIVA obriga a escolha.** Este é o recorte do
+  DDL-0018: sem ele, ganhar Ghostwise/Keldon como OPÇÃO passaria a IMPEDIR de construir um halfling
+  ou um humano 2024 simples (a completude do guia exigia linhagem sempre que houvesse alguma). As
+  legadas são marcadas com `_legacy` no merge; a matriz do sweep também voltou a emitir a linha da
+  BASE quando a linhagem é opcional (senão a linha `species:Halfling|XPHB` sumiria).
+- **Fix de exibição PRÉ-EXISTENTE, revelado aqui:** o chip de linhagem mostrava a fonte da BASE
+  (`baseRace.source`), não a da linhagem — já errava para Genasi/Half-Orc SCAG, mas com 11 tieflings
+  MTF/SCAG ficou gritante. Passa a usar `raceObj.source` (a variante já resolvida) na SpeciesTab e
+  no SpeciesStep.
+
+**Consequences.**
+- Uma sub-raça legada nova é UMA LINHA do registro (+ `supersedes` se ocupar um traço 2024) e vira
+  linha do sweep sozinha (a matriz deriva de `raceLineages`).
+- Limitação aceita e documentada (DDL-0058 item 5): conteúdo legado não tem uuid de compêndio (o
+  registro do DDL-0055 é SRD 2024), então essas linhagens exportam sem procedência e sem escada de
+  level-up — degrada como o Artificer já degrada.
+- A cobertura T1b ganhou 15 linhas `species:*` novas, anotadas em `testing/COVERAGE.md`.
+- Verificado: 1026 testes (+9), lint, sweep **289/289 `--strict`**, e passada ao vivo (14 linhagens
+  do Tiefling, Zariel derivando Thaumaturgy por Charisma sem "Fiendish Legacy" órfão, Keldon sem a
+  prosa 2014, Halfling completo sem linhagem), mobile 375px sem overflow, zero erros de console.
+  Ver CHANGELOG §66.
+
 ### DDL-0058 — O "toggle de conteúdo legado" foi RECORTADO: só sub-raças, e com curadoria manual
 **Date:** 2026-07-22
 **Substitui** o item de backlog "Legacy-content toggle" (§4) por um escopo muito menor.
-**Status: PLANEJADO — nada implementado.** Este entry é o contexto de partida da próxima sessão.
+**Status: IMPLEMENTADO em 2026-07-22 — ver DDL-0059**, que traz a curadoria final (15 de 24),
+o que a implementação exigiu além deste plano, e onde a triagem automática abaixo errou.
+O texto a seguir é o plano original, preservado como contexto.
 
 **Context.** Levantamento do que a política `latestOnly` (`selector/reprints.js`, `reprintedAs` do
 5etools) esconde hoje. Os números BRUTOS enganam — 41% das magias, 32% das espécies, 21% das

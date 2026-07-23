@@ -8,7 +8,7 @@
 
 import { CLASS_NAMES } from '../../src/data/config';
 import { resolveClassObj } from '../../src/engine/resolve';
-import { raceLineages } from '../../src/engine/speciesData';
+import { raceLineages, requiresLineage } from '../../src/engine/speciesData';
 import { makeSubclassEntity } from '../../src/selector/entities/subclass';
 import raceEntity from '../../src/selector/entities/race';
 
@@ -52,9 +52,9 @@ export function classMatrix(db) {
 }
 
 /**
- * Linhas de ESPÉCIE × LINHAGEM. Raças com `_versions` geram uma linha POR
- * linhagem (a linhagem é obrigatória no guia - DDL-0018); sem versões, uma
- * linha da raça base.
+ * Linhas de ESPÉCIE × LINHAGEM. Uma linha POR linhagem; a raça base ganha uma
+ * linha própria quando a linhagem NÃO é obrigatória (sem linhagens, ou só com as
+ * legadas curadas do DDL-0058, que são opcionais - ver requiresLineage).
  * @returns {Array<{id, kind:'species', speciesId, speciesSource, speciesName,
  *                  lineage:string|null}>}
  */
@@ -68,12 +68,11 @@ export function speciesMatrix(db) {
       speciesSource: race.source,
       speciesName: race.name,
     };
-    if (versions.length === 0) {
+    if (!requiresLineage(db, race)) {
       rows.push({ ...base, id: `species:${race.name}|${race.source}`, lineage: null });
-    } else {
-      for (const v of versions) {
-        rows.push({ ...base, id: `species:${race.name}|${race.source}/${v.name}`, lineage: v.name });
-      }
+    }
+    for (const v of versions) {
+      rows.push({ ...base, id: `species:${race.name}|${race.source}/${v.name}`, lineage: v.name });
     }
   }
   return rows;

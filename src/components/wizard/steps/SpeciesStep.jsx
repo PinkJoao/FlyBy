@@ -71,7 +71,9 @@ export default function SpeciesStep({ character, db, onChange }) {
           <PickerField
             entity={makeLineageEntity(baseRace, db)}
             db={db}
-            current={species.lineage ? { label: lineageLabel(species.lineage), source: baseRace.source, id: species.lineage } : null}
+            // A fonte é a da LINHAGEM (`raceObj` já é a variante resolvida), não
+            // a da base - ver a mesma nota na SpeciesTab.
+            current={species.lineage ? { label: lineageLabel(species.lineage), source: raceObj?.source ?? baseRace.source, id: species.lineage } : null}
             placeholder="Choose a lineage…"
             showInfo={false}
             onSelect={(v) => setLineage(v.name)}

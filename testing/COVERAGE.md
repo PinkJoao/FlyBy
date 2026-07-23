@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-22T19:28:43.957Z · base seed 1 · 274 rows
+Last sweep: 2026-07-22T23:59:43.428Z · base seed 1 · 289 rows
 
 ## Classes × subclasses (135)
 
@@ -147,7 +147,7 @@ Last sweep: 2026-07-22T19:28:43.957Z · base seed 1 · 274 rows
 | `class:warlock/Great Old One` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (XPHB): 12 magias concedidas Always Prepared |
 | `class:warlock/Undead` | ok | 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 19 | ok | todo | swap @19 (RHW): 11 magias concedidas Always Prepared; 3 subclass features renderizam |
 
-## Species × lineages (139)
+## Species × lineages (154)
 
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
@@ -191,6 +191,7 @@ Last sweep: 2026-07-22T19:28:43.957Z · base seed 1 · 274 rows
 | `species:Elf|XPHB/Elf; Drow Lineage` | ok | - | todo | todo |  |
 | `species:Elf|XPHB/Elf; High Elf Lineage` | ok | - | todo | todo |  |
 | `species:Elf|XPHB/Elf; Wood Elf Lineage` | ok | - | todo | todo |  |
+| `species:Elf|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
 | `species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Bishatar and Tirahar)` | ok | - | todo | todo |  |
 | `species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Vahadar)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)|PSZ/Elf (Zendikar; Joraga Nation)` | ok | - | todo | todo |  |
@@ -225,10 +226,13 @@ Last sweep: 2026-07-22T19:28:43.957Z · base seed 1 · 274 rows
 | `species:Hadozee|AAG` | ok | - | todo | todo |  |
 | `species:Half-Orc|PHB` | ok | - | todo | todo |  |
 | `species:Halfling|XPHB` | ok | - | todo | todo |  |
+| `species:Halfling|XPHB/Halfling (Ghostwise)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Halfling|XPHB/Halfling (Lotusden)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
 | `species:Harengon|MPMM` | ok | - | todo | todo |  |
 | `species:Hexblood|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin|MPMM` | ok | - | todo | todo |  |
 | `species:Human|XPHB` | ok | - | todo | todo |  |
+| `species:Human|XPHB/Human (Keldon)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
 | `species:Human (Innistrad)|PSI/Human (Innistrad; Gavony)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
@@ -281,6 +285,17 @@ Last sweep: 2026-07-22T19:28:43.957Z · base seed 1 · 274 rows
 | `species:Tiefling|XPHB/Tiefling; Abyssal Legacy` | ok | - | todo | todo |  |
 | `species:Tiefling|XPHB/Tiefling; Chthonic Legacy` | ok | - | todo | todo |  |
 | `species:Tiefling|XPHB/Tiefling; Infernal Legacy` | ok | - | todo | todo |  |
+| `species:Tiefling|XPHB/Tiefling (Baalzebul)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Dispater)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Fierna)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Glasya)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Levistus)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Mammon)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Mephistopheles)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Zariel)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Variant; Devil's Tongue)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Variant; Hellfire)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
+| `species:Tiefling|XPHB/Tiefling (Variant; Winged)` | ok | - | todo | todo | sub-raça legada curada (DDL-0059) |
 | `species:Tortle|MPMM` | ok | - | todo | todo |  |
 | `species:Triton|MPMM` | ok | - | todo | todo |  |
 | `species:Vampire|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |

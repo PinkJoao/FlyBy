@@ -4139,3 +4139,57 @@ problemas que a revisão de level-up havia listado sem corrigir.
 **Escopo removido do backlog (decisão do usuário, não adiamento):** criar personagem direto em
 nível alto e conteúdo sidekick/UA **não serão features do FlyBy**. Ver a subseção
 "Explicitly OUT OF SCOPE" no CLAUDE.md §4.
+
+---
+
+## 66. Sub-raças legadas voltam como linhagens curadas da espécie atual (DDL-0058 → DDL-0059)
+
+**O problema.** A política `latestOnly` esconde uma raça reprintada, e com ela somem por
+COLATERAL as SUB-RAÇAS dessa base: elas não têm `reprintedAs` próprio, mas `raceLineages` só roda
+sobre as bases LISTADAS. Eram **24** entradas sem nenhum equivalente 2024 — as legacies infernais
+do Tiefling, o Pallid Elf, Ghostwise/Lotusden, o Keldon.
+
+**A curadoria (manual, olho a olho).** **15 voltam, 9 foram descartadas.** O critério do usuário:
+descartável quando existe uma versão moderna AUTÔNOMA mais completa. Fora ficaram:
+- `Eladrin` (Elf|PHB) → `Eladrin|MPMM` já é espécie própria.
+- `Asmodeus|MTF` → a entrada não tem mecânica NENHUMA no dado; é o tiefling PHB padrão.
+- `Variant; Infernal Legacy|SCAG` → Thaumaturgy/Hellish Rebuke/Darkness, idêntica à Fiendish
+  Legacy (Infernal) do XPHB.
+- As 4 `Variant; … Descent` do Half-Elf → a base atual delas seria o `Khoravar|EFA`.
+- `Draconblood` e `Ravenite` → o Dragonborn XPHB põe a ancestralidade nas próprias `_versions`
+  (as 10 cores), então como linhagens IRMÃS elas ficariam sem tipo de dano para o sopro.
+
+A saída automática do DDL-0058 marcava `Ravenite` e os `Descent` como redundantes por
+COINCIDÊNCIA DE SUBSTRING (Ravenite→"Aven|PSA", Descent→"Elf|LFL"); conferidos à mão, o Ravenite
+não tinha equivalente nenhum — foi descartado por outro motivo. Não confie naquela heurística.
+
+**Como foi feito.** Registro fechado `engine/legacySubraces.js` (`LEGACY_SUBRACES`), consumido por
+`subraceVersions`: a sub-raça é fundida na base ATUAL pelo MESMO merge das sub-raças normais, então
+entra como mais uma LINHAGEM e tabs, guia, completude, import, sweep e export já funcionam sobre
+ela — nada de mexer no `latestOnly` ou em qualquer selector.
+
+- **O `ability` legado (+2/+1) é IGNORADO** (decisão do usuário no DDL-0058): o FlyBy segue as
+  regras 2024, onde os boosts vêm sempre da origem. O campo é descartado ANTES do merge, senão o
+  merge posicional o reintroduziria numa base 2024 que não o tem.
+- **`supersedes`**: uma sub-raça 2014 substituía o traço-de-linhagem 2014 (`data.overwrite:
+  "Infernal Legacy"`), cujo nome mudou no chassi 2024 ("Fiendish Legacy") — o merge não achava o
+  alvo e ANEXAVA, deixando a ficha com o traço 2024 pedindo para escolher uma legacy AO LADO da
+  legacy escolhida. O registro declara qual traço da base a linhagem ocupa.
+- **`LEGACY_PROSE_SECTIONS`**: Age/Alignment/Size/Speed/Languages eram seções de PROSA de uma raça
+  2014 que o chassi 2024 expressa em campos estruturados. O Keldon traz as quatro; anexadas,
+  virariam texto morto na ficha. Descartadas de toda sub-raça legada (só o texto, nunca o campo).
+- **`requiresLineage(db, race)`** — só as linhagens NATIVAS obrigam a escolha (DDL-0018). Sem isso,
+  ganhar Ghostwise/Keldon como OPÇÃO passaria a IMPEDIR de construir um halfling ou um humano 2024
+  simples. A matriz do sweep também voltou a emitir a linha da base quando a linhagem é opcional.
+- **Fix de exibição, pré-existente**: o chip de linhagem mostrava a fonte da BASE, não a da
+  linhagem ("Zariel **XPHB**"). Já estava errado para Genasi/Half-Orc SCAG; agora sai "Zariel MTF".
+
+**Limitação aceita** (DDL-0058 item 5): conteúdo legado não tem uuid de compêndio (o registro do
+DDL-0055 é SRD 2024), então essas linhagens exportam sem procedência e sem escada de level-up —
+degrada como o Artificer já degrada.
+
+**Verificado:** 1026 testes (+9, `legacySubraces.test.js`), lint, **sweep 289/289 `--strict`**
+(+15 linhas, exatamente as curadas, com `species:Halfling|XPHB` e `species:Human|XPHB` preservadas),
+e passada ao vivo: as 14 linhagens do Tiefling com rótulo e fonte certos, Zariel derivando
+Thaumaturgy por Charisma (DC 10/+2) e sem "Fiendish Legacy" órfão, Keldon sem a prosa 2014,
+Halfling completo sem linhagem, mobile 375px sem overflow e zero erros de console.

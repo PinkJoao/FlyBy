@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 
 import { skillCode } from './classData';
+import { legacySubracesFor, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
 function applyArrMods(arr, ops) {
@@ -178,6 +179,56 @@ function mergeSubrace(race, subrace) {
   return cpy;
 }
 
+// --- Sub-raças LEGADAS curadas (DDL-0058) ------------------------------------
+// Uma sub-raça de uma base REPRINTADA some por colateral (a base não é listada,
+// então `raceLineages` nunca roda sobre ela). O registro `legacySubraces.js` diz
+// quais voltam, ANEXADAS à base ATUAL — entram por aqui, como mais uma linhagem,
+// reusando o mesmo merge das sub-raças normais. Assim nada muda no `latestOnly`
+// nem nos seletores: tabs, guia, completude, import, sweep e export já trabalham
+// sobre linhagens.
+
+/**
+ * Cópia da sub-raça SEM o `ability` legado (+2/+1 fixos). O FlyBy segue as
+ * regras 2024, onde os aumentos de atributo vêm sempre da origem — ver a "regra
+ * de atributo" no cabeçalho de legacySubraces.js. Sem isso, o merge posicional
+ * de `mergeSubrace` reintroduziria o campo numa base 2024 que não o tem.
+ */
+function prepareLegacySubrace(subrace) {
+  const out = { ...subrace };
+  delete out.ability;
+  if (out.overwrite && typeof out.overwrite === 'object') {
+    const overwrite = { ...out.overwrite };
+    delete overwrite.ability;
+    if (Object.keys(overwrite).length) out.overwrite = overwrite;
+    else delete out.overwrite;
+  }
+  if (Array.isArray(out.entries)) {
+    out.entries = out.entries.filter((e) => !LEGACY_PROSE_SECTIONS.has(e?.name));
+  }
+  return out;
+}
+
+/** Remove da linhagem fundida os traços da BASE que ela SUBSTITUI (`supersedes`). */
+function dropSuperseded(merged, names) {
+  if (!names?.length || !Array.isArray(merged.entries)) return merged;
+  const drop = new Set(names);
+  merged.entries = merged.entries.filter((e) => !drop.has(e?.name));
+  return merged;
+}
+
+/** Localiza uma entrada de `db.races.subrace` pela chave de 4 campos. */
+function findSubrace(db, ref) {
+  return (
+    (db.races?.subrace ?? []).find(
+      (s) =>
+        s?.name === ref.name &&
+        s.source === ref.source &&
+        s.raceName === ref.raceName &&
+        s.raceSource === ref.raceSource,
+    ) ?? null
+  );
+}
+
 const subraceCache = new WeakMap(); // db → Map('Nome|FONTE' → variantes)
 
 /**
@@ -185,6 +236,10 @@ const subraceCache = new WeakMap(); // db → Map('Nome|FONTE' → variantes)
  * das variantes de `_versions`). Sem nome (Half-Elf/Half-Orc PHB "base") ou com
  * `reprintedAs` próprio (marcas ERLW) ficam fora. Sub-raças que ainda carregam
  * `_versions` (variantes SCAG do Half-Elf) expandem até as folhas.
+ *
+ * Inclui as sub-raças LEGADAS curadas (DDL-0058), cuja base no dado é a versão
+ * reprintada: elas são fundidas na base ATUAL e, por isso, aparecem como
+ * linhagens dela (o Tiefling XPHB recebe as legacies do Tiefling PHB).
  * @param {object} db
  * @param {object|null} race  raça BASE (objeto cru)
  * @returns {object[]}
@@ -199,12 +254,24 @@ export function subraceVersions(db, race) {
   const key = `${race.name}|${race.source}`;
   if (byRace.has(key)) return byRace.get(key);
   const out = [];
+  // Sub-raça que ainda carrega `_versions` (variantes SCAG do Half-Elf) expande
+  // até as folhas; as demais entram como uma variante só.
+  const push = (merged) => {
+    if (Array.isArray(merged._versions) && merged._versions.length) out.push(...expandRaceVersions(merged));
+    else out.push(merged);
+  };
   for (const s of db.races?.subrace ?? []) {
     if (!s?.name || s.raceName !== race.name || s.raceSource !== race.source) continue;
     if (s.reprintedAs?.length) continue;
-    const merged = mergeSubrace(race, s);
-    if (Array.isArray(merged._versions) && merged._versions.length) out.push(...expandRaceVersions(merged));
-    else out.push(merged);
+    push(mergeSubrace(race, s));
+  }
+  // …e as legadas curadas, cuja base no dado é a raça REPRINTADA (DDL-0058).
+  for (const ref of legacySubracesFor(race)) {
+    const s = findSubrace(db, ref);
+    if (!s) continue;
+    const merged = dropSuperseded(mergeSubrace(race, prepareLegacySubrace(s)), ref.supersedes);
+    merged._legacy = true; // marca: é um ACRÉSCIMO opcional, não uma linhagem nativa
+    push(merged);
   }
   byRace.set(key, out);
   return out;
@@ -219,6 +286,21 @@ export function subraceVersions(db, race) {
  */
 export function raceLineages(db, race) {
   return [...expandRaceVersions(race), ...subraceVersions(db, race)];
+}
+
+/**
+ * A raça EXIGE que uma linhagem seja escolhida? (DDL-0018: uma raça com
+ * linhagens só está completa com uma delas.) Só as linhagens NATIVAS obrigam -
+ * um Elfo precisa ser Drow/High/Wood, um Genasi precisa de um elemento. As
+ * sub-raças LEGADAS curadas (DDL-0058) são acréscimos OPCIONAIS: um Halfling ou
+ * um Human 2024 é completo sem linhagem nenhuma, e ganhar Ghostwise/Keldon como
+ * opção não pode passar a obrigá-lo a escolher.
+ * @param {object} db
+ * @param {object|null} race
+ * @returns {boolean}
+ */
+export function requiresLineage(db, race) {
+  return raceLineages(db, race).some((v) => !v._legacy);
 }
 
 /**

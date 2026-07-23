@@ -17,7 +17,7 @@
 import { parseChoices, LEGACY_ABILITY_CHOICE } from '../../engine/choices';
 import { resolveFeat, resolveRaceObj, resolveClassObj } from '../../engine/resolve';
 import { totalLevel } from '../../schema/character';
-import { raceLineages, speciesSizeChoice } from '../../engine/speciesData';
+import { requiresLineage, speciesSizeChoice } from '../../engine/speciesData';
 import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
 import { buildClassChoices, isProficiencyChoice, isFeatureChoice } from '../builder/classChoices';
 import { ORIGIN_CHOICES } from '../builder/originChoices';
@@ -89,9 +89,10 @@ export function speciesStepComplete(db, character) {
   if (!sp?.id) return false;
   const baseRace = resolveRaceObj(db, sp.id, sp.source);
   if (!baseRace) return true; // raça fora do compêndio: não há o que preencher
-  // Linhagens = `_versions` + sub-raças fundidas (Genasi, Stensia…): uma raça
-  // com qualquer uma delas só completa com a linhagem escolhida.
-  if (raceLineages(db, baseRace).length > 0 && !sp.lineage) return false;
+  // Linhagens NATIVAS = `_versions` + sub-raças fundidas (Genasi, Stensia…):
+  // uma raça com qualquer uma delas só completa com a linhagem escolhida. As
+  // legadas curadas (DDL-0058) são opcionais e não obrigam (ver requiresLineage).
+  if (requiresLineage(db, baseRace) && !sp.lineage) return false;
   const raceObj = resolveRaceObj(db, sp.id, sp.source, sp.lineage);
   const sizeChoice = speciesSizeChoice(raceObj);
   const level = totalLevel(character);

@@ -68,7 +68,10 @@ export default function SpeciesTab({ character, db, onPick, onClear, onChangeCho
           <PickerField
             entity={makeLineageEntity(baseRace, db)}
             db={db}
-            current={species.lineage ? { label: lineageLabel(species.lineage), source: baseRace.source, id: species.lineage } : null}
+            // A fonte é a da LINHAGEM (`raceObj` já é a variante resolvida), não a
+            // da base: uma sub-raça pode vir de outro livro (Zariel MTF num
+            // Tiefling XPHB, Air MPMM num Genasi MPMM).
+            current={species.lineage ? { label: lineageLabel(species.lineage), source: raceObj?.source ?? baseRace.source, id: species.lineage } : null}
             placeholder="Choose lineage…"
             onSelect={(v) => onChangeLineage(v.name)}
             onClear={() => onChangeLineage(null)}

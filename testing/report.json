@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T12:54:52.546Z",
+  "generatedAt": "2026-07-23T13:05:55.187Z",
   "baseSeed": 1,
   "results": [
     {
@@ -48,7 +48,7 @@
           "waived": 0
         }
       },
-      "ms": 116
+      "ms": 118
     },
     {
       "id": "class:artificer/Armorer",
@@ -144,7 +144,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 64
     },
     {
       "id": "class:artificer/Battle Smith",
@@ -192,7 +192,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 67
     },
     {
       "id": "class:artificer/Cartographer",
@@ -240,7 +240,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 64
     },
     {
       "id": "class:artificer/Reanimator",
@@ -288,7 +288,7 @@
           "waived": 0
         }
       },
-      "ms": 62
+      "ms": 64
     },
     {
       "id": "class:barbarian/Battlerager",
@@ -326,7 +326,7 @@
           "waived": 0
         }
       },
-      "ms": 35
+      "ms": 34
     },
     {
       "id": "class:barbarian/Ancestral Guardian",
@@ -364,7 +364,7 @@
           "waived": 0
         }
       },
-      "ms": 32
+      "ms": 31
     },
     {
       "id": "class:barbarian/Storm Herald",
@@ -402,7 +402,7 @@
           "waived": 0
         }
       },
-      "ms": 31
+      "ms": 30
     },
     {
       "id": "class:barbarian/Beast",
@@ -440,7 +440,7 @@
           "waived": 0
         }
       },
-      "ms": 29
+      "ms": 28
     },
     {
       "id": "class:barbarian/Wild Magic",
@@ -478,7 +478,7 @@
           "waived": 0
         }
       },
-      "ms": 27
+      "ms": 28
     },
     {
       "id": "class:barbarian/Giant",
@@ -516,7 +516,7 @@
           "waived": 0
         }
       },
-      "ms": 30
+      "ms": 31
     },
     {
       "id": "class:barbarian/Berserker",
@@ -554,7 +554,7 @@
           "waived": 0
         }
       },
-      "ms": 23
+      "ms": 22
     },
     {
       "id": "class:barbarian/Wild Heart",
@@ -594,7 +594,7 @@
           "waived": 0
         }
       },
-      "ms": 42
+      "ms": 44
     },
     {
       "id": "class:barbarian/World Tree",
@@ -632,7 +632,7 @@
           "waived": 0
         }
       },
-      "ms": 25
+      "ms": 26
     },
     {
       "id": "class:barbarian/Zealot",
@@ -670,7 +670,7 @@
           "waived": 0
         }
       },
-      "ms": 33
+      "ms": 30
     },
     {
       "id": "class:bard/Swords",
@@ -720,7 +720,7 @@
           "waived": 0
         }
       },
-      "ms": 124
+      "ms": 117
     },
     {
       "id": "class:bard/Whispers",
@@ -770,7 +770,7 @@
           "waived": 0
         }
       },
-      "ms": 124
+      "ms": 134
     },
     {
       "id": "class:bard/Creation",
@@ -820,7 +820,7 @@
           "waived": 0
         }
       },
-      "ms": 106
+      "ms": 110
     },
     {
       "id": "class:bard/Eloquence",
@@ -870,7 +870,7 @@
           "waived": 0
         }
       },
-      "ms": 116
+      "ms": 110
     },
     {
       "id": "class:bard/Dance",
@@ -920,7 +920,7 @@
           "waived": 0
         }
       },
-      "ms": 111
+      "ms": 109
     },
     {
       "id": "class:bard/Glamour",
@@ -970,7 +970,7 @@
           "waived": 0
         }
       },
-      "ms": 117
+      "ms": 119
     },
     {
       "id": "class:bard/Lore",
@@ -1020,7 +1020,7 @@
           "waived": 0
         }
       },
-      "ms": 121
+      "ms": 128
     },
     {
       "id": "class:bard/Valor",
@@ -1070,7 +1070,7 @@
           "waived": 0
         }
       },
-      "ms": 114
+      "ms": 141
     },
     {
       "id": "class:bard/Moon",
@@ -1120,7 +1120,7 @@
           "waived": 0
         }
       },
-      "ms": 113
+      "ms": 115
     },
     {
       "id": "class:bard/Spirits",
@@ -1170,7 +1170,7 @@
           "waived": 0
         }
       },
-      "ms": 117
+      "ms": 124
     },
     {
       "id": "class:cleric/Nature",
@@ -1220,7 +1220,7 @@
           "waived": 0
         }
       },
-      "ms": 94
+      "ms": 90
     },
     {
       "id": "class:cleric/Tempest",
@@ -1270,7 +1270,7 @@
           "waived": 0
         }
       },
-      "ms": 94
+      "ms": 98
     },
     {
       "id": "class:cleric/Death",
@@ -1320,7 +1320,7 @@
           "waived": 0
         }
       },
-      "ms": 98
+      "ms": 95
     },
     {
       "id": "class:cleric/Arcana",
@@ -1370,7 +1370,7 @@
           "waived": 0
         }
       },
-      "ms": 96
+      "ms": 98
     },
     {
       "id": "class:cleric/Ambition (PSA)",
@@ -1420,7 +1420,7 @@
           "waived": 0
         }
       },
-      "ms": 86
+      "ms": 89
     },
     {
       "id": "class:cleric/Knowledge (PSA)",
@@ -1470,7 +1470,7 @@
           "waived": 0
         }
       },
-      "ms": 91
+      "ms": 116
     },
     {
       "id": "class:cleric/Solidarity (PSA)",
@@ -1520,7 +1520,7 @@
           "waived": 0
         }
       },
-      "ms": 96
+      "ms": 99
     },
     {
       "id": "class:cleric/Strength (PSA)",
@@ -1570,7 +1570,7 @@
           "waived": 0
         }
       },
-      "ms": 91
+      "ms": 105
     },
     {
       "id": "class:cleric/Zeal (PSA)",
@@ -1620,7 +1620,7 @@
           "waived": 0
         }
       },
-      "ms": 102
+      "ms": 100
     },
     {
       "id": "class:cleric/Forge",
@@ -1670,7 +1670,7 @@
           "waived": 0
         }
       },
-      "ms": 106
+      "ms": 99
     },
     {
       "id": "class:cleric/Order",
@@ -1720,7 +1720,7 @@
           "waived": 0
         }
       },
-      "ms": 104
+      "ms": 96
     },
     {
       "id": "class:cleric/Peace",
@@ -1770,7 +1770,7 @@
           "waived": 0
         }
       },
-      "ms": 91
+      "ms": 90
     },
     {
       "id": "class:cleric/Twilight",
@@ -1820,7 +1820,7 @@
           "waived": 0
         }
       },
-      "ms": 92
+      "ms": 97
     },
     {
       "id": "class:cleric/Life",
@@ -1870,7 +1870,7 @@
           "waived": 0
         }
       },
-      "ms": 82
+      "ms": 77
     },
     {
       "id": "class:cleric/Light",
@@ -1920,7 +1920,7 @@
           "waived": 0
         }
       },
-      "ms": 88
+      "ms": 90
     },
     {
       "id": "class:cleric/Trickery",
@@ -1970,7 +1970,7 @@
           "waived": 0
         }
       },
-      "ms": 77
+      "ms": 86
     },
     {
       "id": "class:cleric/War",
@@ -2020,7 +2020,7 @@
           "waived": 0
         }
       },
-      "ms": 87
+      "ms": 76
     },
     {
       "id": "class:cleric/Knowledge",
@@ -2070,7 +2070,7 @@
           "waived": 0
         }
       },
-      "ms": 97
+      "ms": 96
     },
     {
       "id": "class:cleric/Grave",
@@ -2120,7 +2120,7 @@
           "waived": 0
         }
       },
-      "ms": 99
+      "ms": 94
     },
     {
       "id": "class:druid/Dreams",
@@ -2170,7 +2170,7 @@
           "waived": 0
         }
       },
-      "ms": 62
+      "ms": 73
     },
     {
       "id": "class:druid/Shepherd",
@@ -2220,7 +2220,7 @@
           "waived": 0
         }
       },
-      "ms": 59
+      "ms": 64
     },
     {
       "id": "class:druid/Spores",
@@ -2270,7 +2270,7 @@
           "waived": 0
         }
       },
-      "ms": 72
+      "ms": 76
     },
     {
       "id": "class:druid/Wildfire",
@@ -2320,7 +2320,7 @@
           "waived": 0
         }
       },
-      "ms": 69
+      "ms": 67
     },
     {
       "id": "class:druid/Land",
@@ -2370,7 +2370,7 @@
           "waived": 0
         }
       },
-      "ms": 61
+      "ms": 62
     },
     {
       "id": "class:druid/Moon",
@@ -2420,7 +2420,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 64
     },
     {
       "id": "class:druid/Sea",
@@ -2470,7 +2470,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 72
     },
     {
       "id": "class:druid/Stars",
@@ -2520,7 +2520,7 @@
           "waived": 0
         }
       },
-      "ms": 67
+      "ms": 71
     },
     {
       "id": "class:fighter/Arcane Archer",
@@ -2560,7 +2560,7 @@
           "waived": 0
         }
       },
-      "ms": 36
+      "ms": 38
     },
     {
       "id": "class:fighter/Cavalier",
@@ -2600,7 +2600,7 @@
           "waived": 0
         }
       },
-      "ms": 44
+      "ms": 31
     },
     {
       "id": "class:fighter/Samurai",
@@ -2680,7 +2680,7 @@
           "waived": 0
         }
       },
-      "ms": 34
+      "ms": 31
     },
     {
       "id": "class:fighter/Rune Knight",
@@ -2720,7 +2720,7 @@
           "waived": 0
         }
       },
-      "ms": 27
+      "ms": 28
     },
     {
       "id": "class:fighter/Battle Master",
@@ -2760,7 +2760,7 @@
           "waived": 0
         }
       },
-      "ms": 43
+      "ms": 41
     },
     {
       "id": "class:fighter/Champion",
@@ -2801,7 +2801,7 @@
           "waived": 0
         }
       },
-      "ms": 31
+      "ms": 30
     },
     {
       "id": "class:fighter/Eldritch Knight",
@@ -2846,7 +2846,7 @@
           "waived": 0
         }
       },
-      "ms": 71
+      "ms": 70
     },
     {
       "id": "class:fighter/Psi Warrior",
@@ -2886,7 +2886,7 @@
           "waived": 0
         }
       },
-      "ms": 33
+      "ms": 36
     },
     {
       "id": "class:fighter/Banneret",
@@ -2926,7 +2926,7 @@
           "waived": 0
         }
       },
-      "ms": 31
+      "ms": 34
     },
     {
       "id": "class:monk/Long Death",
@@ -2964,7 +2964,7 @@
           "waived": 0
         }
       },
-      "ms": 26
+      "ms": 24
     },
     {
       "id": "class:monk/Drunken Master",
@@ -3043,7 +3043,7 @@
           "waived": 0
         }
       },
-      "ms": 25
+      "ms": 26
     },
     {
       "id": "class:monk/Sun Soul",
@@ -3081,7 +3081,7 @@
           "waived": 0
         }
       },
-      "ms": 25
+      "ms": 24
     },
     {
       "id": "class:monk/Astral Self",
@@ -3119,7 +3119,7 @@
           "waived": 0
         }
       },
-      "ms": 29
+      "ms": 36
     },
     {
       "id": "class:monk/Ascendant Dragon",
@@ -3157,7 +3157,7 @@
           "waived": 0
         }
       },
-      "ms": 31
+      "ms": 48
     },
     {
       "id": "class:monk/Mercy",
@@ -3195,7 +3195,7 @@
           "waived": 0
         }
       },
-      "ms": 23
+      "ms": 35
     },
     {
       "id": "class:monk/Shadow",
@@ -3233,7 +3233,7 @@
           "waived": 0
         }
       },
-      "ms": 44
+      "ms": 38
     },
     {
       "id": "class:monk/Elements",
@@ -3272,7 +3272,7 @@
           "waived": 0
         }
       },
-      "ms": 43
+      "ms": 50
     },
     {
       "id": "class:monk/Open Hand",
@@ -3310,7 +3310,7 @@
           "waived": 0
         }
       },
-      "ms": 29
+      "ms": 25
     },
     {
       "id": "class:paladin/Oathbreaker",
@@ -3356,7 +3356,7 @@
           "waived": 0
         }
       },
-      "ms": 52
+      "ms": 54
     },
     {
       "id": "class:paladin/Crown",
@@ -3402,7 +3402,7 @@
           "waived": 0
         }
       },
-      "ms": 59
+      "ms": 56
     },
     {
       "id": "class:paladin/Conquest",
@@ -3448,7 +3448,7 @@
           "waived": 0
         }
       },
-      "ms": 68
+      "ms": 49
     },
     {
       "id": "class:paladin/Redemption",
@@ -3494,7 +3494,7 @@
           "waived": 0
         }
       },
-      "ms": 52
+      "ms": 49
     },
     {
       "id": "class:paladin/Watchers",
@@ -3540,7 +3540,7 @@
           "waived": 0
         }
       },
-      "ms": 53
+      "ms": 51
     },
     {
       "id": "class:paladin/Devotion",
@@ -3586,7 +3586,7 @@
           "waived": 0
         }
       },
-      "ms": 52
+      "ms": 51
     },
     {
       "id": "class:paladin/Glory",
@@ -3678,7 +3678,7 @@
           "waived": 0
         }
       },
-      "ms": 57
+      "ms": 59
     },
     {
       "id": "class:paladin/Vengeance",
@@ -3724,7 +3724,7 @@
           "waived": 0
         }
       },
-      "ms": 59
+      "ms": 57
     },
     {
       "id": "class:paladin/Noble Genies",
@@ -3816,7 +3816,7 @@
           "waived": 0
         }
       },
-      "ms": 53
+      "ms": 54
     },
     {
       "id": "class:ranger/Monster Slayer",
@@ -3908,7 +3908,7 @@
           "waived": 0
         }
       },
-      "ms": 54
+      "ms": 49
     },
     {
       "id": "class:ranger/Drakewarden",
@@ -3954,7 +3954,7 @@
           "waived": 0
         }
       },
-      "ms": 53
+      "ms": 51
     },
     {
       "id": "class:ranger/Beast Master",
@@ -4000,7 +4000,7 @@
           "waived": 0
         }
       },
-      "ms": 51
+      "ms": 57
     },
     {
       "id": "class:ranger/Fey Wanderer",
@@ -4092,7 +4092,7 @@
           "waived": 0
         }
       },
-      "ms": 70
+      "ms": 53
     },
     {
       "id": "class:ranger/Hunter",
@@ -4138,7 +4138,7 @@
           "waived": 0
         }
       },
-      "ms": 59
+      "ms": 48
     },
     {
       "id": "class:ranger/Winter Walker",
@@ -4184,7 +4184,7 @@
           "waived": 0
         }
       },
-      "ms": 64
+      "ms": 49
     },
     {
       "id": "class:ranger/Hollow Warden",
@@ -4230,7 +4230,7 @@
           "waived": 0
         }
       },
-      "ms": 57
+      "ms": 51
     },
     {
       "id": "class:rogue/Inquisitive",
@@ -4270,7 +4270,7 @@
           "waived": 0
         }
       },
-      "ms": 40
+      "ms": 33
     },
     {
       "id": "class:rogue/Mastermind",
@@ -4310,7 +4310,7 @@
           "waived": 0
         }
       },
-      "ms": 34
+      "ms": 29
     },
     {
       "id": "class:rogue/Scout",
@@ -4350,7 +4350,7 @@
           "waived": 0
         }
       },
-      "ms": 37
+      "ms": 34
     },
     {
       "id": "class:rogue/Swashbuckler",
@@ -4390,7 +4390,7 @@
           "waived": 0
         }
       },
-      "ms": 32
+      "ms": 30
     },
     {
       "id": "class:rogue/Arcane Trickster",
@@ -4435,7 +4435,7 @@
           "waived": 0
         }
       },
-      "ms": 73
+      "ms": 72
     },
     {
       "id": "class:rogue/Assassin",
@@ -4475,7 +4475,7 @@
           "waived": 0
         }
       },
-      "ms": 30
+      "ms": 27
     },
     {
       "id": "class:rogue/Soulknife",
@@ -4515,7 +4515,7 @@
           "waived": 0
         }
       },
-      "ms": 25
+      "ms": 23
     },
     {
       "id": "class:rogue/Thief",
@@ -4555,7 +4555,7 @@
           "waived": 0
         }
       },
-      "ms": 40
+      "ms": 33
     },
     {
       "id": "class:rogue/Scion of the Three",
@@ -4685,7 +4685,7 @@
           "waived": 0
         }
       },
-      "ms": 62
+      "ms": 58
     },
     {
       "id": "class:sorcerer/Divine Soul",
@@ -4735,7 +4735,7 @@
           "waived": 0
         }
       },
-      "ms": 121
+      "ms": 100
     },
     {
       "id": "class:sorcerer/Storm",
@@ -4785,7 +4785,7 @@
           "waived": 0
         }
       },
-      "ms": 62
+      "ms": 67
     },
     {
       "id": "class:sorcerer/Lunar",
@@ -4835,7 +4835,7 @@
           "waived": 0
         }
       },
-      "ms": 79
+      "ms": 75
     },
     {
       "id": "class:sorcerer/Aberrant",
@@ -4885,7 +4885,7 @@
           "waived": 0
         }
       },
-      "ms": 79
+      "ms": 69
     },
     {
       "id": "class:sorcerer/Clockwork",
@@ -4935,7 +4935,7 @@
           "waived": 0
         }
       },
-      "ms": 73
+      "ms": 63
     },
     {
       "id": "class:sorcerer/Draconic",
@@ -4985,7 +4985,7 @@
           "waived": 0
         }
       },
-      "ms": 82
+      "ms": 62
     },
     {
       "id": "class:sorcerer/Wild Magic",
@@ -5035,7 +5035,7 @@
           "waived": 0
         }
       },
-      "ms": 69
+      "ms": 68
     },
     {
       "id": "class:sorcerer/Spellfire",
@@ -5085,7 +5085,7 @@
           "waived": 0
         }
       },
-      "ms": 65
+      "ms": 69
     },
     {
       "id": "class:sorcerer/Shadow",
@@ -5135,7 +5135,7 @@
           "waived": 0
         }
       },
-      "ms": 71
+      "ms": 66
     },
     {
       "id": "class:wizard/Conjuration",
@@ -5186,7 +5186,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 58
     },
     {
       "id": "class:wizard/Enchantment",
@@ -5237,7 +5237,7 @@
           "waived": 0
         }
       },
-      "ms": 76
+      "ms": 63
     },
     {
       "id": "class:wizard/Necromancy",
@@ -5288,7 +5288,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 62
     },
     {
       "id": "class:wizard/Transmutation",
@@ -5339,7 +5339,7 @@
           "waived": 0
         }
       },
-      "ms": 59
+      "ms": 60
     },
     {
       "id": "class:wizard/War",
@@ -5390,7 +5390,7 @@
           "waived": 0
         }
       },
-      "ms": 60
+      "ms": 56
     },
     {
       "id": "class:wizard/Chronurgy",
@@ -5441,7 +5441,7 @@
           "waived": 0
         }
       },
-      "ms": 58
+      "ms": 57
     },
     {
       "id": "class:wizard/Graviturgy",
@@ -5543,7 +5543,7 @@
           "waived": 0
         }
       },
-      "ms": 66
+      "ms": 63
     },
     {
       "id": "class:wizard/Abjurer",
@@ -5594,7 +5594,7 @@
           "waived": 0
         }
       },
-      "ms": 90
+      "ms": 80
     },
     {
       "id": "class:wizard/Diviner",
@@ -5645,7 +5645,7 @@
           "waived": 0
         }
       },
-      "ms": 74
+      "ms": 73
     },
     {
       "id": "class:wizard/Evoker",
@@ -5696,7 +5696,7 @@
           "waived": 0
         }
       },
-      "ms": 84
+      "ms": 67
     },
     {
       "id": "class:wizard/Illusionist",
@@ -5747,7 +5747,7 @@
           "waived": 0
         }
       },
-      "ms": 100
+      "ms": 76
     },
     {
       "id": "class:wizard/Bladesinger",
@@ -5798,7 +5798,7 @@
           "waived": 0
         }
       },
-      "ms": 61
+      "ms": 57
     },
     {
       "id": "class:warlock/Undying",
@@ -5846,7 +5846,7 @@
           "waived": 0
         }
       },
-      "ms": 60
+      "ms": 57
     },
     {
       "id": "class:warlock/Hexblade",
@@ -5894,7 +5894,7 @@
           "waived": 0
         }
       },
-      "ms": 54
+      "ms": 55
     },
     {
       "id": "class:warlock/Fathomless",
@@ -5942,7 +5942,7 @@
           "waived": 0
         }
       },
-      "ms": 57
+      "ms": 65
     },
     {
       "id": "class:warlock/Genie",
@@ -5990,7 +5990,7 @@
           "waived": 0
         }
       },
-      "ms": 54
+      "ms": 52
     },
     {
       "id": "class:warlock/Archfey",
@@ -6038,7 +6038,7 @@
           "waived": 0
         }
       },
-      "ms": 73
+      "ms": 67
     },
     {
       "id": "class:warlock/Celestial",
@@ -6086,7 +6086,7 @@
           "waived": 0
         }
       },
-      "ms": 70
+      "ms": 62
     },
     {
       "id": "class:warlock/Fiend",
@@ -6134,7 +6134,7 @@
           "waived": 0
         }
       },
-      "ms": 74
+      "ms": 70
     },
     {
       "id": "class:warlock/Great Old One",
@@ -6182,7 +6182,7 @@
           "waived": 0
         }
       },
-      "ms": 60
+      "ms": 59
     },
     {
       "id": "class:warlock/Undead",
@@ -6256,7 +6256,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Aasimar|XPHB",
@@ -6282,7 +6282,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Aetherborn|PSK/Variant; Gifted Aetherborn",
@@ -6360,7 +6360,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Aven|PSA/Aven (Hawk-Headed)",
@@ -6412,7 +6412,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 5
     },
     {
       "id": "species:Aven|PSD",
@@ -6490,7 +6490,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 4
     },
     {
       "id": "species:Centaur|MPMM",
@@ -6516,7 +6516,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Changeling|EFA",
@@ -6542,7 +6542,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Custom Lineage|TCE/Custom Lineage; Darkvision",
@@ -6594,7 +6594,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Deep Gnome|MPMM",
@@ -6620,7 +6620,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 4
     },
     {
       "id": "species:Dhampir|RHW",
@@ -6672,7 +6672,7 @@
           "waived": 0
         }
       },
-      "ms": 16
+      "ms": 15
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (Blue)",
@@ -6750,7 +6750,7 @@
           "waived": 0
         }
       },
-      "ms": 12
+      "ms": 11
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (Copper)",
@@ -6776,7 +6776,7 @@
           "waived": 0
         }
       },
-      "ms": 12
+      "ms": 11
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (Gold)",
@@ -6802,7 +6802,7 @@
           "waived": 0
         }
       },
-      "ms": 13
+      "ms": 12
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (Green)",
@@ -6828,7 +6828,7 @@
           "waived": 0
         }
       },
-      "ms": 13
+      "ms": 12
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (Red)",
@@ -6854,7 +6854,7 @@
           "waived": 0
         }
       },
-      "ms": 16
+      "ms": 15
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (Silver)",
@@ -6880,7 +6880,7 @@
           "waived": 0
         }
       },
-      "ms": 13
+      "ms": 12
     },
     {
       "id": "species:Dragonborn|XPHB/Dragonborn (White)",
@@ -6906,7 +6906,7 @@
           "waived": 0
         }
       },
-      "ms": 14
+      "ms": 12
     },
     {
       "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Amethyst)",
@@ -6932,7 +6932,7 @@
           "waived": 0
         }
       },
-      "ms": 11
+      "ms": 12
     },
     {
       "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Crystal)",
@@ -6958,7 +6958,7 @@
           "waived": 0
         }
       },
-      "ms": 10
+      "ms": 9
     },
     {
       "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Emerald)",
@@ -6984,7 +6984,7 @@
           "waived": 0
         }
       },
-      "ms": 13
+      "ms": 10
     },
     {
       "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Sapphire)",
@@ -7010,7 +7010,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 9
     },
     {
       "id": "species:Dragonborn (Gem)|FTD/Dragonborn (Gem; Topaz)",
@@ -7036,7 +7036,7 @@
           "waived": 0
         }
       },
-      "ms": 9
+      "ms": 10
     },
     {
       "id": "species:Duergar|MPMM",
@@ -7062,7 +7062,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 7
     },
     {
       "id": "species:Dwarf|XPHB",
@@ -7088,7 +7088,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 7
     },
     {
       "id": "species:Dwarf (Kaladesh)|PSK",
@@ -7140,7 +7140,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 5
     },
     {
       "id": "species:Elf|LFL/Elf; Lorwyn Lineage",
@@ -7166,7 +7166,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Elf|LFL/Elf; Shadowmoor Lineage",
@@ -7192,7 +7192,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Elf|XPHB/Elf; Drow Lineage",
@@ -7270,7 +7270,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Elf|XPHB/Elf (Pallid)",
@@ -7348,7 +7348,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Elf (Zendikar)|PSZ/Elf (Zendikar; Joraga Nation)",
@@ -7400,7 +7400,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Elf (Zendikar)|PSZ/Elf (Zendikar; Tajuru Nation)",
@@ -7426,7 +7426,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Faerie|LFL/Faerie; Lorwyn",
@@ -7478,7 +7478,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "species:Fairy|MPMM",
@@ -7530,7 +7530,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Flamekin|LFL",
@@ -7556,7 +7556,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 7
     },
     {
       "id": "species:Genasi|MPMM/Genasi (Air)",
@@ -7608,7 +7608,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Genasi|MPMM/Genasi (Fire)",
@@ -7634,7 +7634,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Genasi|MPMM/Genasi (Water)",
@@ -7660,7 +7660,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Giff|AAG",
@@ -7686,7 +7686,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Githyanki|MPMM",
@@ -7738,7 +7738,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Gnome|XPHB/Gnome; Forest Gnome Lineage",
@@ -7790,7 +7790,7 @@
           "waived": 0
         }
       },
-      "ms": 9
+      "ms": 8
     },
     {
       "id": "species:Goblin|MPMM",
@@ -7816,7 +7816,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Goblin|PSZ/Goblin (Ixalan)",
@@ -7868,7 +7868,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Goblin|PSZ/Goblin (Zendikar; Lavastep Tribe)",
@@ -7894,7 +7894,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Goblin|PSZ/Goblin (Zendikar; Tuktuk Tribe)",
@@ -7946,7 +7946,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Goliath|XPHB/Goliath; Fire Giant Ancestry",
@@ -7972,7 +7972,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 9
     },
     {
       "id": "species:Goliath|XPHB/Goliath; Frost Giant Ancestry",
@@ -7998,7 +7998,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 5
     },
     {
       "id": "species:Goliath|XPHB/Goliath; Hill Giant Ancestry",
@@ -8050,7 +8050,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "species:Goliath|XPHB/Goliath; Storm Giant Ancestry",
@@ -8076,7 +8076,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Grung|OGA",
@@ -8128,7 +8128,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 5
     },
     {
       "id": "species:Half-Orc|PHB",
@@ -8154,7 +8154,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Halfling|XPHB",
@@ -8206,7 +8206,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 5
     },
     {
       "id": "species:Hexblood|RHW",
@@ -8232,7 +8232,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Hobgoblin|MPMM",
@@ -8284,7 +8284,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 8
     },
     {
       "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Gavony)",
@@ -8310,7 +8310,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Kessig)",
@@ -8336,7 +8336,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 7
     },
     {
       "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Nephalia)",
@@ -8362,7 +8362,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Human (Innistrad)|PSI/Human (Innistrad; Stensia)",
@@ -8414,7 +8414,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "species:Human (Kaladesh)|PSK",
@@ -8440,7 +8440,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 5
     },
     {
       "id": "species:Human (Zendikar)|PSZ",
@@ -8518,7 +8518,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 5
     },
     {
       "id": "species:Kenku|MPMM",
@@ -8544,7 +8544,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Khenra|PSA",
@@ -8570,7 +8570,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 7
     },
     {
       "id": "species:Khoravar|EFA",
@@ -8700,7 +8700,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Kobold|MPMM/Kobold; Draconic Sorcery",
@@ -8726,7 +8726,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Kor|PSZ",
@@ -8778,7 +8778,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 4
     },
     {
       "id": "species:Lizardfolk|MPMM",
@@ -8856,7 +8856,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Loxodon|GGR",
@@ -8908,7 +8908,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 7
     },
     {
       "id": "species:Merfolk|PSZ/Merfolk (Ixalan; Blue)",
@@ -8934,7 +8934,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "species:Merfolk|PSZ/Merfolk (Ixalan; Green)",
@@ -8986,7 +8986,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "species:Merfolk|PSZ/Merfolk (Zendikar; Emeria Creed)",
@@ -9012,7 +9012,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "species:Merfolk|PSZ/Merfolk (Zendikar; Ula Creed)",
@@ -9038,7 +9038,7 @@
           "waived": 0
         }
       },
-      "ms": 9
+      "ms": 8
     },
     {
       "id": "species:Minotaur|MPMM",
@@ -9064,7 +9064,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 10
     },
     {
       "id": "species:Minotaur (Amonkhet)|PSA",
@@ -9090,7 +9090,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 9
     },
     {
       "id": "species:Naga|PSA",
@@ -9116,7 +9116,7 @@
           "waived": 0
         }
       },
-      "ms": 10
+      "ms": 8
     },
     {
       "id": "species:Orc|XPHB",
@@ -9142,7 +9142,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 6
     },
     {
       "id": "species:Orc (Ixalan)|PSX",
@@ -9168,7 +9168,7 @@
           "waived": 0
         }
       },
-      "ms": 10
+      "ms": 6
     },
     {
       "id": "species:Owlin|SCC",
@@ -9220,7 +9220,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Reborn|RHW",
@@ -9272,7 +9272,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Satyr|MPMM",
@@ -9324,7 +9324,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Shadar-Kai|MPMM",
@@ -9350,7 +9350,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "species:Shifter|EFA/Shifter; Beasthide",
@@ -9376,7 +9376,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "species:Shifter|EFA/Shifter; Longtooth",
@@ -9428,7 +9428,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Shifter|EFA/Shifter; Wildhunt",
@@ -9454,7 +9454,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "species:Simic Hybrid|GGR",
@@ -9480,7 +9480,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "species:Siren|PSX",
@@ -9532,7 +9532,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Thri-kreen|AAG",
@@ -9584,7 +9584,7 @@
           "waived": 0
         }
       },
-      "ms": 10
+      "ms": 11
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Chthonic Legacy",
@@ -9610,7 +9610,7 @@
           "waived": 0
         }
       },
-      "ms": 9
+      "ms": 10
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Infernal Legacy",
@@ -9662,7 +9662,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Dispater Legacy",
@@ -9740,7 +9740,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Levistus Legacy",
@@ -9792,7 +9792,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Mephistopheles Legacy",
@@ -9818,7 +9818,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 10
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Zariel Legacy",
@@ -9844,7 +9844,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 9
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Devil's Tongue Legacy",
@@ -9870,7 +9870,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 9
     },
     {
       "id": "species:Tiefling|XPHB/Tiefling; Hellfire Legacy",
@@ -9922,7 +9922,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 9
     },
     {
       "id": "species:Tortle|MPMM",
@@ -9974,7 +9974,7 @@
           "waived": 0
         }
       },
-      "ms": 6
+      "ms": 7
     },
     {
       "id": "species:Vampire|PSZ/Vampire (Ixalan)",
@@ -10052,7 +10052,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 10
     },
     {
       "id": "species:Vedalken|PSK",
@@ -10078,7 +10078,7 @@
           "waived": 0
         }
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "species:Verdan|AI",
@@ -10104,7 +10104,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Warforged|EFA",
@@ -10130,7 +10130,7 @@
           "waived": 0
         }
       },
-      "ms": 8
+      "ms": 7
     },
     {
       "id": "species:Yuan-Ti|MPMM",
@@ -10156,7 +10156,7 @@
           "waived": 0
         }
       },
-      "ms": 7
+      "ms": 6
     },
     {
       "id": "species:Halfling (Ghostwise)|SCAG",
@@ -10182,7 +10182,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 6
     },
     {
       "id": "species:Halfling (Lotusden)|EGW",
@@ -10208,7 +10208,7 @@
           "waived": 0
         }
       },
-      "ms": 4
+      "ms": 6
     },
     {
       "id": "species:Human (Keldon)|PSD",

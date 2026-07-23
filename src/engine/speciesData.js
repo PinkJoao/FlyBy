@@ -310,6 +310,60 @@ export function requiresLineage(db, race) {
   return raceLineages(db, race).some((v) => !v._legacy);
 }
 
+// --- Escolhas que a LINHAGEM vai resolver ------------------------------------
+// Numa espécie que EXIGE linhagem, alguns campos da base existem só como
+// "padrão de vitrine": toda linhagem os sobrescreve. As escolhas geradas por
+// eles (a resistência do Tiefling/Dragonborn, a lista de magias do Tiefling/Elf)
+// aparecem enquanto nenhuma linhagem foi escolhida e SOMEM assim que ela é — são
+// ruído, e o Builder zera o choice-bag ao trocar de linhagem de qualquer jeito.
+// Escondê-las até lá deixa na tela só o que é decisão de verdade (o tamanho, a
+// perícia do Keen Senses élfico…).
+
+/** Campo do 5etools → os `kind` de escolha que ele gera (engine/choices). */
+const LINEAGE_FIELD_KINDS = Object.freeze({
+  resist: ['resist'],
+  immune: ['immune'],
+  vulnerable: ['vulnerable'],
+  additionalSpells: ['spellSet', 'spell', 'spellAbility'],
+});
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Os `kind` de escolha que devem ser adiados até a linhagem ser escolhida.
+ * DERIVADO do dado: um campo entra quando TODA linhagem traz valor próprio para
+ * ele — nada de lista curada por espécie.
+ * @param {object} db
+ * @param {object|null} race  espécie BASE
+ * @returns {Set<string>}
+ */
+export function lineageDeferredKinds(db, race) {
+  const lineages = raceLineages(db, race);
+  if (!lineages.some((v) => !v._legacy)) return new Set(); // linhagem não é obrigatória
+  const kinds = new Set();
+  for (const [field, list] of Object.entries(LINEAGE_FIELD_KINDS)) {
+    if (race?.[field] == null) continue;
+    if (lineages.every((v) => !same(v[field], race[field]))) for (const k of list) kinds.add(k);
+  }
+  return kinds;
+}
+
+/**
+ * Remove da lista as escolhas que a linhagem vai resolver — só enquanto NENHUMA
+ * linhagem estiver escolhida. Com linhagem, as escolhas já vêm da variante e
+ * nada é filtrado.
+ * @param {Array} choices
+ * @param {object} db
+ * @param {object|null} baseRace
+ * @param {string|null} lineage
+ * @returns {Array}
+ */
+export function filterLineageDeferred(choices, db, baseRace, lineage) {
+  if (lineage || !choices?.length) return choices ?? [];
+  const deferred = lineageDeferredKinds(db, baseRace);
+  return deferred.size ? choices.filter((c) => !deferred.has(c.kind)) : choices;
+}
+
 // --- Sub-raças legadas que voltam como ESPÉCIE À PARTE -----------------------
 // Quando a base 2024 ABSORVEU os traços de uma das sub-raças 2014 (o Halfling
 // XPHB é o de 2014 + o Naturally Stealthy do Lightfoot), pendurar uma irmã nela

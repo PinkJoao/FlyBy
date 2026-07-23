@@ -12,7 +12,7 @@
 import { parseChoices } from '../../../engine/choices';
 import { resolveRaceObj, ownedFromDb } from '../../../engine/resolve';
 import { totalLevel } from '../../../schema/character';
-import { raceLineages, lineageLabel, speciesSizeChoice } from '../../../engine/speciesData';
+import { raceLineages, lineageLabel, speciesSizeChoice, filterLineageDeferred } from '../../../engine/speciesData';
 import PickerField from '../../common/PickerField';
 import DetailView from '../../common/DetailView';
 import raceEntity from '../../../selector/entities/race';
@@ -35,7 +35,12 @@ export default function SpeciesStep({ character, db, onChange }) {
   const sizeChoice = speciesSizeChoice(raceObj);
   // Nível + bag alimentam as escolhas de MAGIA da raça (TC-0011).
   const choices = raceObj
-    ? [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level: totalLevel(character), bag: species?.choices })]
+    ? filterLineageDeferred(
+        [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level: totalLevel(character), bag: species?.choices })],
+        db,
+        baseRace,
+        species.lineage,
+      )
     : [];
 
   const pickSpecies = (race) =>

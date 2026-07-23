@@ -377,6 +377,20 @@ que voltam **sem** reescrita.
 **Decision — a tabela exibida ganha as linhas legadas** (`withLegacyTable`, consumida por
 `raceEntity.entries`): o preview da espécie lista as mesmas 14 opções que o seletor de linhagem
 oferece. Idempotente, não muda o objeto do compêndio, e no-op numa linhagem já resolvida.
+**A linha e o traço saem das MESMAS peças** (`buildVersion` devolve os dois): reprocessar o texto já
+montado fazia a Winged anunciar só a resistência, sem o voo, porque o benefício irregular dela mora
+no segundo parágrafo. Quem acrescentar uma legacy com benefício fora do padrão herda isso de graça.
+
+**Decision (CHANGELOG §69) — a base que EXIGE linhagem não oferece as escolhas que a linhagem
+resolve.** O Tiefling sem linhagem mostrava chips de Damage Resistance / Spell List / Spellcasting
+Ability que sumiam ao escolher uma — são da BASE, e toda linhagem sobrescreve esses campos (o
+Builder ainda zera o bag ao trocar de linhagem, então nada marcado ali sobrevive). `lineageDeferredKinds`
+DERIVA isso do dado: um campo é adiado quando TODA linhagem traz valor próprio para ele; o mapa
+campo→kind cobre `resist`/`immune`/`vulnerable` e `additionalSpells` (→ spellSet/spell/spellAbility).
+Afeta exatamente três espécies (Tiefling, Elf, Dragonborn XPHB) e é PRECISO: a perícia do Keen Senses
+élfico permanece, porque `skillProficiencies` não é sobrescrito por linhagem nenhuma. Aplicado via
+`filterLineageDeferred` nos dois call sites (SpeciesTab e SpeciesStep) — um consumidor novo de
+escolhas de espécie deve usá-lo também.
 
 **Consequences.**
 - **Migração obrigatória:** uma ficha salva enquanto estas eram espécies à parte (`Tiefling (Zariel)`,

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   expandRaceVersions, raceOrVersions, parseSpecies, lineageLabel,
   sizeCodes, speciesSizeChoice, sizePick, effectiveSizeCodes, sizeLabel,
-  subraceVersions, raceLineages,
+  subraceVersions, raceLineages, filterLineageDeferred, lineageDeferredKinds,
 } from './speciesData';
 
 // Recorte do Elf XPHB: base + _versions (linhagens) com overrides + _mod replaceArr.
@@ -262,5 +262,57 @@ describe('subraceVersions / raceLineages (sub-raças fundidas)', () => {
   it('raça sem sub-raças no db: lista vazia (e sem crash sem db)', () => {
     expect(subraceVersions(db, { name: 'Elf', source: 'XPHB' })).toEqual([]);
     expect(subraceVersions(null, genasi)).toEqual([]);
+  });
+});
+
+describe('filterLineageDeferred (escolhas que a linhagem vai resolver)', () => {
+  // Recorte do Tiefling XPHB: a base tem resistência à ESCOLHA e três grupos de
+  // magias, mas TODA linhagem sobrescreve os dois campos.
+  const base = {
+    name: 'Tiefling',
+    source: 'XPHB',
+    resist: [{ choose: { from: ['poison', 'necrotic', 'fire'] } }],
+    additionalSpells: [{ name: 'Abyssal' }, { name: 'Infernal' }],
+    skillProficiencies: [{ choose: { from: ['perception'] } }],
+    _versions: [
+      { name: 'Tiefling; Infernal Legacy', source: 'XPHB', resist: ['fire'], additionalSpells: [{ name: 'Infernal' }] },
+    ],
+  };
+  const db = { races: { race: [base] } };
+  const choices = [
+    { id: 'size-0', kind: 'size' },
+    { id: 'resist-0', kind: 'resist' },
+    { id: 'spellAbility-0', kind: 'spellAbility' },
+    { id: 'spellSet-0', kind: 'spellSet' },
+    { id: 'skill-0', kind: 'skill' },
+  ];
+
+  it('sem linhagem escolhida, esconde as que a linhagem resolve', () => {
+    const kept = filterLineageDeferred(choices, db, base, null).map((c) => c.kind);
+    // Sobram as decisões de verdade: o tamanho e a perícia (skillProficiencies
+    // não é sobrescrito por linhagem nenhuma).
+    expect(kept).toEqual(['size', 'skill']);
+    expect(lineageDeferredKinds(db, base)).toEqual(new Set(['resist', 'spellSet', 'spell', 'spellAbility']));
+  });
+
+  it('com linhagem escolhida, não filtra nada (as escolhas já vêm da variante)', () => {
+    expect(filterLineageDeferred(choices, db, base, 'Tiefling; Infernal Legacy')).toBe(choices);
+  });
+
+  it('um campo que ALGUMA linhagem não sobrescreve continua aparecendo', () => {
+    const partial = {
+      ...base,
+      _versions: [...base._versions, { name: 'Tiefling; Herdada', source: 'XPHB', resist: ['fire'] }],
+    };
+    // A segunda variante herda `additionalSpells` da base → a escolha de magias
+    // ainda é da base e tem de ser oferecida.
+    expect(lineageDeferredKinds({ races: { race: [partial] } }, partial)).toEqual(new Set(['resist']));
+  });
+
+  it('espécie sem linhagem obrigatória nunca adia nada', () => {
+    const solo = { name: 'Aasimar', source: 'XPHB', resist: [{ choose: { from: ['necrotic'] } }] };
+    const soloDb = { races: { race: [solo] } };
+    expect(lineageDeferredKinds(soloDb, solo)).toEqual(new Set());
+    expect(filterLineageDeferred(choices, soloDb, solo, null)).toBe(choices);
   });
 });

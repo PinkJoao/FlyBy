@@ -210,8 +210,13 @@ function benefitText(subrace, name) {
 }
 
 /**
- * Monta o descritor de versão (formato `_versions`) de uma legacy legada.
- * @returns {object|null} null se a sub-raça de origem não estiver no compêndio
+ * Monta o descritor de versão (formato `_versions`) de uma legacy legada, mais a
+ * LINHA dela na tabela de Fiendish Legacies — as duas coisas saem das MESMAS
+ * peças, para a tabela não poder discordar do traço (foi o que fez a Winged
+ * anunciar só a resistência, sem o voo, quando a linha era reprocessada do texto
+ * já montado).
+ * @returns {{version: object, row: string[]}|null} null se a sub-raça de origem
+ *   não estiver no compêndio
  */
 function buildVersion(db, race, spec, template) {
   const subrace = findSource(db, spec.from);
@@ -222,9 +227,12 @@ function buildVersion(db, race, spec, template) {
   const level3 = spec.level3 ? spellTag(db, spec.level3) : null;
   const level5 = spec.level5 ? spellTag(db, spec.level5) : null;
 
-  const paragraphs = [resistParagraph(template[0], cantrip?.tag ?? null)];
+  const resist = resistParagraph(template[0], cantrip?.tag ?? null);
+  const benefit = spec.benefitFrom ? benefitText(subrace, spec.benefitFrom) : [];
+
+  const paragraphs = [resist];
   if (level3 && level5) paragraphs.push(spellsParagraph(template[1], level3, level5));
-  if (spec.benefitFrom) paragraphs.push(...benefitText(subrace, spec.benefitFrom));
+  paragraphs.push(...benefit);
   paragraphs.push(template[2]); // a frase do atributo Int/Wis/Cha
 
   // Thaumaturgy vem SEMPRE (é o Otherworldly Presence da base, que as versões
@@ -241,7 +249,12 @@ function buildVersion(db, race, spec, template) {
   };
   const extras = extraEntries(subrace, spec.keepEntries);
 
-  return {
+  // A célula "Level 1" é tudo que a legacy dá nesse nível — resistência, cantrip
+  // e o benefício irregular (o voo da Winged) — sem a abertura genérica ("You are
+  // the recipient of a legacy…"), que é comum a todas e não pertence à tabela.
+  const level1Cell = [resist.replace(/^[^.]*\.\s*/, ''), ...benefit].join(' ');
+
+  const version = {
     name: legacyVersionName(spec.legacy),
     source,
     resist: [LEGACY_RESIST],
@@ -261,9 +274,27 @@ function buildVersion(db, race, spec, template) {
     },
     _legacy: true, // acréscimo curado, não uma linhagem nativa da espécie
   };
+
+  return { version, row: [spec.legacy, level1Cell, level3?.tag ?? '—', level5?.tag ?? '—'] };
 }
 
-const cache = new WeakMap(); // db → descritores de versão
+const cache = new WeakMap(); // db → { versions, rows }
+
+/** Versões + linhas de tabela, montadas juntas e memoizadas por db. */
+function build(db, race) {
+  if (!db || !race?.name || `${race.name}|${race.source}` !== TARGET_RACE) return { versions: [], rows: [] };
+  const cached = cache.get(db);
+  if (cached) return cached;
+  const template = templateParagraphs(race);
+  // Sem o template oficial no dado não há como montar o texto sem inventá-lo -
+  // melhor não oferecer a linhagem do que oferecê-la muda.
+  const built = template
+    ? LEGACY_FIENDISH_LEGACIES.map((spec) => buildVersion(db, race, spec, template)).filter(Boolean)
+    : [];
+  const out = { versions: built.map((b) => b.version), rows: built.map((b) => b.row) };
+  cache.set(db, out);
+  return out;
+}
 
 /**
  * Os descritores de versão (formato `_versions`) das legacies legadas de uma
@@ -273,17 +304,7 @@ const cache = new WeakMap(); // db → descritores de versão
  * @returns {object[]}
  */
 export function legacyLegacyVersions(db, race) {
-  if (!db || !race?.name || `${race.name}|${race.source}` !== TARGET_RACE) return [];
-  const cached = cache.get(db);
-  if (cached) return cached;
-  const template = templateParagraphs(race);
-  // Sem o template oficial no dado não há como montar o texto sem inventá-lo -
-  // melhor não oferecer a linhagem do que oferecê-la muda.
-  const out = template
-    ? LEGACY_FIENDISH_LEGACIES.map((spec) => buildVersion(db, race, spec, template)).filter(Boolean)
-    : [];
-  cache.set(db, out);
-  return out;
+  return build(db, race).versions;
 }
 
 // --- Tabela exibida ----------------------------------------------------------
@@ -295,23 +316,6 @@ export function legacyLegacyVersions(db, race) {
 const rowLabel = (row) => String(Array.isArray(row) ? row[0] : row);
 
 /**
- * Cópia da linha da tabela para uma legacy legada, no formato das oficiais
- * (Legacy | Level 1 | Level 3 | Level 5). Reusa os parágrafos já montados: a
- * coluna "Level 1" é a frase de resistência/cantrip sem a abertura genérica.
- */
-function tableRow(version) {
-  const entry = (version._mod?.entries ?? []).find((op) => op.mode === 'replaceArr')?.items;
-  const paragraphs = entry?.entries ?? [];
-  const label = String(entry?.name ?? '').replace(/^.*\((.*)\)$/, '$1');
-  // A abertura ("You are the recipient of a legacy…") é comum a todas e não
-  // pertence à célula da tabela: fica só o que a legacy dá de fato.
-  const level1 = String(paragraphs[0] ?? '').replace(/^[^.]*\.\s*/, '');
-  const spells = String(paragraphs[1] ?? '');
-  const tags = spells.match(/\{@spell[^}]*\}/g) ?? [];
-  return [label, level1, tags[0] ?? '—', tags[1] ?? '—'];
-}
-
-/**
  * Cópia dos `entries` da espécie com as linhas legadas anexadas à tabela de
  * Fiendish Legacies. Sem tabela (ou já anexada), devolve o array original.
  * @param {object|null} db
@@ -319,9 +323,8 @@ function tableRow(version) {
  * @returns {Array|undefined}
  */
 export function withLegacyTable(db, race) {
-  const versions = legacyLegacyVersions(db, race);
-  if (!versions.length || !Array.isArray(race?.entries)) return race?.entries;
-  const rows = versions.map(tableRow);
+  const { rows } = build(db, race);
+  if (!rows.length || !Array.isArray(race?.entries)) return race?.entries;
   let touched = false;
   const entries = race.entries.map((entry) => {
     if (entry?.name !== LEGACY_TRAIT || !Array.isArray(entry.entries)) return entry;

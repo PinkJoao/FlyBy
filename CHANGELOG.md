@@ -4321,3 +4321,40 @@ o de linhagem mostra as 14 com a procedência certa (XPHB/MTF/SCAG), a tabela do
 linhas, o Zariel 5 deriva Thaumaturgy + Searing Smite + Shining Smite (1/Day) com DC por **Carisma**
 escolhido e "DAMAGE RESISTANCES: Fire", e o Winged mostra "30 ft, fly 30 ft" + o traço Appearance.
 Mobile 375px sem overflow (a tabela rola no próprio contêiner), zero erros de console.
+
+## 69. A base que EXIGE linhagem não oferece as escolhas que a linhagem resolve (+ o voo na tabela)
+
+Dois acertos apontados pelo usuário logo depois do §68.
+
+**1. Escolhas fantasma na espécie base.** Ao selecionar o Tiefling sem linhagem, apareciam chips de
+**Damage Resistance** e **Spell List** (e a Spellcasting Ability que serve a eles) que sumiam assim
+que uma linhagem era escolhida — porque são a resistência e a lista de magias da BASE, campos que
+toda linhagem sobrescreve. Eram ruído puro: o Builder zera o choice-bag ao trocar de linhagem, então
+nada do que fosse marcado ali sobreviveria.
+
+A regra nova é **derivada do dado, não curada**: numa espécie que EXIGE linhagem, um campo é adiado
+quando **TODA** linhagem traz valor próprio para ele (`lineageDeferredKinds` compara o valor da
+variante com o da base). Levantamento do dataset — são exatamente três espécies afetadas:
+
+| espécie | campo adiado | escolhas escondidas | o que PERMANECE |
+|---|---|---|---|
+| Tiefling XPHB | `resist`, `additionalSpells` | Damage Resistance, Spell List, Spellcasting Ability | Size |
+| Elf XPHB | `additionalSpells` | Spell List, Spellcasting Ability | a perícia do Keen Senses |
+| Dragonborn XPHB | `resist` | Damage Resistance | (nenhuma) |
+
+A precisão da regra é o caso do Elf: `skillProficiencies` **não** é sobrescrito por linhagem nenhuma,
+então a escolha de perícia continua na base — só as duas de magia somem. Com a linhagem escolhida
+nada é filtrado (as escolhas já vêm da variante). `filterLineageDeferred` é aplicado nos dois call
+sites (SpeciesTab e o SpeciesStep do guia); a completude não diverge porque `speciesStepComplete` já
+retorna `false` antes disso quando falta a linhagem.
+
+**2. A tabela não anunciava o voo da Winged.** A linha dela dizia só "You have Resistance to Fire
+damage". A causa era a linha ser REPROCESSADA do texto já montado (pegava só o primeiro parágrafo),
+e o benefício da Winged mora no segundo. Agora o traço e a linha da tabela saem das **mesmas peças**
+(`buildVersion` devolve os dois juntos), então a tabela não tem como discordar do traço: a célula de
+nível 1 é tudo que a legacy dá naquele nível — resistência, cantrip e o benefício irregular.
+
+**Verificado:** 1054 testes (+4), lint, sweep 289/289 `--strict`, e ao vivo: Tiefling base só com
+Size, Elf base só com a perícia (e as duas de magia voltando ao escolher High Elf), Dragonborn base
+sem escolha nenhuma, e a linha "Winged" da tabela com "…Resistance to Fire damage. You have bat-like
+wings… flying speed of 30 feet…". Zero erros de console.

@@ -229,10 +229,15 @@ describe('tabela de Fiendish Legacies no preview', () => {
     expect(l5).toBe('{@spell Darkness|XPHB}');
   });
 
-  it('a legacy sem magias mostra "—" nas colunas de nível', () => {
+  it('a legacy sem magias mostra "—" nas colunas de nível e ANUNCIA o voo', () => {
     const entries = withLegacyTable(db, race);
     const table = entries.find((e) => e.name === 'Fiendish Legacy').entries.find((e) => e.type === 'table');
-    expect(table.rows.find((r) => r[0] === 'Winged').slice(2)).toEqual(['—', '—']);
+    const winged = table.rows.find((r) => r[0] === 'Winged');
+    expect(winged.slice(2)).toEqual(['—', '—']);
+    // O benefício irregular tem de estar na célula de nível 1: sem isso a tabela
+    // dizia só "Resistance to Fire damage" e o voo ficava invisível ali.
+    expect(winged[1]).toContain('to Fire damage');
+    expect(winged[1]).toContain('flying speed of 30 feet');
   });
 
   it('não muda o objeto original e é idempotente', () => {

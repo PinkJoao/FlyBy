@@ -11,7 +11,7 @@
 import { parseChoices } from '../../engine/choices';
 import { resolveRaceObj, ownedFromDb } from '../../engine/resolve';
 import { totalLevel } from '../../schema/character';
-import { raceLineages, lineageLabel, speciesSizeChoice } from '../../engine/speciesData';
+import { raceLineages, lineageLabel, speciesSizeChoice, filterLineageDeferred } from '../../engine/speciesData';
 import PickerField from '../common/PickerField';
 import DetailView from '../common/DetailView';
 import raceEntity from '../../selector/entities/race';
@@ -37,7 +37,12 @@ export default function SpeciesTab({ character, db, onPick, onClear, onChangeCho
   // Nível + bag alimentam as escolhas de MAGIA da raça (TC-0011: gate por nível
   // e grupo ativo de um additionalSpells com várias listas).
   const choices = raceObj
-    ? [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level: totalLevel(character), bag: species?.choices })]
+    ? filterLineageDeferred(
+        [...(sizeChoice ? [sizeChoice] : []), ...parseChoices(raceObj, { level: totalLevel(character), bag: species?.choices })],
+        db,
+        baseRace,
+        species.lineage,
+      )
     : [];
 
   return (

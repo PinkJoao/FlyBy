@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T01:22:36.906Z · base seed 1 · 289 rows
+Last sweep: 2026-07-23T11:56:14.788Z · base seed 1 · 289 rows
 
 ## Classes × subclasses (135)
 
@@ -191,7 +191,7 @@ Last sweep: 2026-07-23T01:22:36.906Z · base seed 1 · 289 rows
 | `species:Elf|XPHB/Elf; Drow Lineage` | ok | - | todo | todo |  |
 | `species:Elf|XPHB/Elf; High Elf Lineage` | ok | - | todo | todo |  |
 | `species:Elf|XPHB/Elf; Wood Elf Lineage` | ok | - | todo | todo |  |
-| `species:Elf|XPHB/Elf (Pallid)` | ok | - | todo | todo |  |
+| `species:Elf|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada, LINHAGEM (único caso - DDL-0060) |
 | `species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Bishatar and Tirahar)` | ok | - | todo | todo |  |
 | `species:Elf (Kaladesh)|PSK/Elf (Kaladesh; Vahadar)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)|PSZ/Elf (Zendikar; Joraga Nation)` | ok | - | todo | todo |  |
@@ -230,7 +230,6 @@ Last sweep: 2026-07-23T01:22:36.906Z · base seed 1 · 289 rows
 | `species:Hexblood|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin|MPMM` | ok | - | todo | todo |  |
 | `species:Human|XPHB` | ok | - | todo | todo |  |
-| `species:Human|XPHB/Human (Keldon)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)|PSI/Human (Innistrad; Gavony)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
@@ -283,17 +282,6 @@ Last sweep: 2026-07-23T01:22:36.906Z · base seed 1 · 289 rows
 | `species:Tiefling|XPHB/Tiefling; Abyssal Legacy` | ok | - | todo | todo |  |
 | `species:Tiefling|XPHB/Tiefling; Chthonic Legacy` | ok | - | todo | todo |  |
 | `species:Tiefling|XPHB/Tiefling; Infernal Legacy` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Baalzebul)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Dispater)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Fierna)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Glasya)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Levistus)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Mammon)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Mephistopheles)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Zariel)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Variant; Devil's Tongue)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Variant; Hellfire)` | ok | - | todo | todo |  |
-| `species:Tiefling|XPHB/Tiefling (Variant; Winged)` | ok | - | todo | todo |  |
 | `species:Tortle|MPMM` | ok | - | todo | todo |  |
 | `species:Triton|MPMM` | ok | - | todo | todo |  |
 | `species:Vampire|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |
@@ -303,5 +291,17 @@ Last sweep: 2026-07-23T01:22:36.906Z · base seed 1 · 289 rows
 | `species:Verdan|AI` | ok | - | todo | todo |  |
 | `species:Warforged|EFA` | ok | - | todo | todo |  |
 | `species:Yuan-Ti|MPMM` | ok | - | todo | todo |  |
-| `species:Halfling (Ghostwise)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0059) |
-| `species:Halfling (Lotusden)|EGW` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0059) |
+| `species:Halfling (Ghostwise)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Halfling (Lotusden)|EGW` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Human (Keldon)|PSD` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Baalzebul)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Dispater)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Fierna)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Glasya)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Levistus)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Mammon)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Mephistopheles)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Zariel)|MTF` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Variant; Devil's Tongue)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Variant; Hellfire)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Tiefling (Variant; Winged)|SCAG` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |

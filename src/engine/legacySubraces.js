@@ -45,25 +45,33 @@ export const LEGACY_PROSE_SECTIONS = Object.freeze(
 );
 
 /**
- * DUAS FORMAS DE VOLTAR (campo `as`), porque nem toda base 2024 é o mesmo
- * chassi que a base 2014 da sub-raça:
+ * DUAS FORMAS DE VOLTAR (campo `as`). O que decide é BALANCEAMENTO: uma
+ * sub-raça 2014 pendurada num chassi 2024 tende a somar as vantagens DOS DOIS,
+ * virando a escolha obviamente melhor ao lado das linhagens oficiais.
  *
- *  - `'lineage'` (padrão) — a sub-raça vira LINHAGEM da base ATUAL. Só é
- *    correto quando o chassi 2024 é genérico: o Elf e o Tiefling 2024 têm um
- *    traço GUARDA-CHUVA ("Elven Lineage", "Fiendish Legacy") que a linhagem
- *    ocupa via `supersedes`, e nada de sub-raça vaza para ela.
+ *  - `'species'` (a regra na prática) — a sub-raça vira uma ESPÉCIE À PARTE no
+ *    seletor de espécies, fundida na base LEGADA (`of`), como o `Eladrin|MPMM`
+ *    já é hoje. É o que fazer sempre que a base 2024 dê ALGO A MAIS que a 2014,
+ *    porque esse "a mais" é somado de graça:
+ *      · absorveu o traço de UMA sub-raça 2014 — o Halfling XPHB é o de 2014 +
+ *        **Naturally Stealthy**, que era do *Lightfoot*, e o Ghostwise ganhava
+ *        de graça o traço que o Silent Speech dele substituía;
+ *      · ganhou um traço NOVO — o Tiefling XPHB tem "Otherworldly Presence"
+ *        (o Thaumaturgy que em 2014 vinha DENTRO da Infernal Legacy), e ainda
+ *        deixa a resistência em ABERTO enquanto uma legacy 2024 fica travada;
+ *      · foi reescrita de cima a baixo — o Human XPHB dá Resourceful/Skillful/
+ *        **Versatile** (um talento de origem), e o Keldon virava upgrade puro
+ *        sobre o humano comum.
  *
- *  - `'species'` — a sub-raça vira uma ESPÉCIE À PARTE no seletor de espécies,
- *    fundida na base LEGADA (`of`), como o `Eladrin|MPMM` já é hoje. É o caso
- *    quando a base 2024 ABSORVEU os traços de UMA das sub-raças 2014: o
- *    Halfling XPHB é o Halfling 2014 + **Naturally Stealthy**, que era o traço
- *    do *Lightfoot* — então um Ghostwise pendurado nele ganharia de graça um
- *    traço que nunca teve (e que o Silent Speech dele substituía). Sobre a base
- *    2014 ele sai correto: Lucky/Brave/Nimbleness + Silent Speech.
+ *  - `'lineage'` — LINHAGEM da base ATUAL. Só quando o chassi 2024 é o MESMO da
+ *    base 2014 mais um traço GUARDA-CHUVA que a sub-raça ocupa via `supersedes`
+ *    — aí não há o que empilhar. Hoje o único caso é o **Elf**: os quatro traços
+ *    do Elf 2024 (Darkvision/Keen Senses/Fey Ancestry/Trance) são exatamente os
+ *    de 2014, e "Elven Lineage" é o guarda-chuva que o Pallid substitui.
  *
- * REGRA para uma entrada nova: compare os traços da base 2024 com os da base
- * 2014. Se a 2024 trouxer o traço de alguma sub-raça 2014, use `'species'`; se
- * ela só tiver o guarda-chuva de linhagem, `'lineage'` + `supersedes`.
+ * REGRA para uma entrada nova: liste os traços da base 2024 e os da base 2014.
+ * Se sobrar QUALQUER coisa na 2024 além do guarda-chuva de linhagem, use
+ * `'species'`. `'lineage'` é a exceção, não o padrão.
  *
  * Lista curada. Cada entrada:
  *  - `race`    raça ATUAL que recebe a linhagem ("Nome|FONTE"). Em `'species'`
@@ -95,22 +103,34 @@ export const LEGACY_SUBRACES = Object.freeze([
   { race: 'Halfling|XPHB', subrace: 'Ghostwise|SCAG', of: 'Halfling|PHB', as: 'species' },
   { race: 'Halfling|XPHB', subrace: 'Lotusden|EGW', of: 'Halfling|PHB', as: 'species' },
 
-  // --- Human ----------------------------------------------------------------
-  { race: 'Human|XPHB', subrace: 'Keldon|PSD', of: 'Human|PHB' },
+  // --- Human: ESPÉCIE à parte -----------------------------------------------
+  // Como linhagem, o Keldon somava os três traços próprios ao Resourceful +
+  // Skillful + Versatile (um TALENTO de origem) do Human 2024 — um upgrade puro
+  // que tornava o humano comum sem propósito. Sobre o chassi 2014 ele fica só
+  // com o que é dele.
+  { race: 'Human|XPHB', subrace: 'Keldon|PSD', of: 'Human|PHB', as: 'species' },
 
-  // --- Tiefling: as legacies infernais de Mordenkainen… ----------------------
-  { race: 'Tiefling|XPHB', subrace: 'Baalzebul|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Dispater|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Fierna|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Glasya|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Levistus|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Mammon|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Mephistopheles|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Zariel|MTF', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
+  // --- Tiefling: ESPÉCIES à parte -------------------------------------------
+  // O Tiefling 2024 ganhou um traço NOVO ("Otherworldly Presence", o Thaumaturgy
+  // que em 2014 vinha DENTRO da Infernal Legacy que estas substituem) e deixa a
+  // resistência EM ABERTO (poison/necrotic/fire à escolha), enquanto uma legacy
+  // 2024 fica travada na dela. Penduradas ali, estas ficavam com o cantrip de
+  // graça + resistência livre + o pacote próprio de magias. No chassi 2014 saem
+  // certas: Darkvision + Hellish Resistance (fire) + a legacy própria, que o
+  // `data.overwrite: "Infernal Legacy"` do dado já troca no lugar — por isso
+  // nenhuma delas precisa de `supersedes`.
+  { race: 'Tiefling|XPHB', subrace: 'Baalzebul|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Dispater|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Fierna|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Glasya|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Levistus|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Mammon|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Mephistopheles|MTF', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Zariel|MTF', of: 'Tiefling|PHB', as: 'species' },
   // …e as variantes da Costa da Espada (a "Infernal Legacy" ficou de fora acima).
-  { race: 'Tiefling|XPHB', subrace: "Variant; Devil's Tongue|SCAG", of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Variant; Hellfire|SCAG', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
-  { race: 'Tiefling|XPHB', subrace: 'Variant; Winged|SCAG', of: 'Tiefling|PHB', supersedes: ['Fiendish Legacy'] },
+  { race: 'Tiefling|XPHB', subrace: "Variant; Devil's Tongue|SCAG", of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Variant; Hellfire|SCAG', of: 'Tiefling|PHB', as: 'species' },
+  { race: 'Tiefling|XPHB', subrace: 'Variant; Winged|SCAG', of: 'Tiefling|PHB', as: 'species' },
 ]);
 
 /** Quebra "Nome|FONTE" em `[nome, fonte]`. */

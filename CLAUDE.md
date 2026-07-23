@@ -329,18 +329,38 @@ elas são sub-raças de uma versão DIFERENTE da base. Confirmado no dado — **
 Halfling 2014 + `Naturally Stealthy`, que era o traço do LIGHTFOOT**. Penduradas nele, as duas
 ganhavam de graça um traço que nunca tiveram (e que o Silent Speech do Ghostwise justamente
 substituía). O DDL-0059 tinha assumido, sem conferir, que toda base 2024 é um chassi genérico.
+Na revisão seguinte o usuário generalizou o critério para BALANCEAMENTO — costurar uma sub-raça
+2014 num chassi 2024 quase sempre a torna obviamente superior às linhagens oficiais — e pediu a
+análise caso a caso do Elf, a única base que se manteve consistente entre 2014 e 2024. Resultado:
+**14 das 15 viraram espécie; só o Pallid segue linhagem.**
 
-**Decision — o registro passa a ter um campo `as`.**
-- **`'lineage'` (padrão)** — só é correto quando o chassi 2024 é GENÉRICO, isto é, quando ele tem
-  um traço GUARDA-CHUVA que a linhagem ocupa via `supersedes` e nada de sub-raça vaza para ela.
-  É o caso do Elf ("Elven Lineage") e do Tiefling ("Fiendish Legacy") — conferidos traço a traço.
-- **`'species'`** — a sub-raça vira uma ESPÉCIE à parte no seletor de espécies, fundida na base
-  **LEGADA** (`of`), como o `Eladrin|MPMM` já é. Ghostwise e Lotusden saem assim, sobre o chassi
-  2014 correto: Lucky/Brave/Nimbleness + o traço próprio, 25 ft.
-- **REGRA para uma entrada nova (obrigatória, não opcional): compare os traços da base 2024 com os
-  da base 2014.** Se a 2024 trouxer o traço de ALGUMA sub-raça 2014, é `'species'`; se ela só
-  tiver o guarda-chuva de linhagem, é `'lineage'` + `supersedes`. A tabela que fecha os quatro
-  casos de hoje está no CHANGELOG §67.
+**Decision — o registro ganha um campo `as`, e o critério é BALANCEAMENTO.** Uma sub-raça 2014
+pendurada num chassi 2024 soma as vantagens DOS DOIS, virando a escolha obviamente melhor ao lado
+das linhagens oficiais (e, no caso do Human, tornando a espécie base sem propósito).
+- **`'species'` é a REGRA (14 das 15)** — a sub-raça vira uma ESPÉCIE à parte no seletor de
+  espécies, fundida na base **LEGADA** (`of`), como o `Eladrin|MPMM` já é. Use sempre que a base
+  2024 dê ALGO A MAIS que a de 2014, porque esse "a mais" é somado de graça. As três formas que o
+  dataset tem hoje:
+  · **absorveu o traço de uma sub-raça 2014** — o Halfling XPHB é o de 2014 + **Naturally
+    Stealthy**, que era do *Lightfoot*; o Ghostwise ganhava de graça o traço que o Silent Speech
+    dele justamente substituía;
+  · **ganhou um traço NOVO** — o Tiefling XPHB tem "Otherworldly Presence" (o Thaumaturgy que em
+    2014 vinha DENTRO da Infernal Legacy que estas substituem) e ainda deixa a resistência EM
+    ABERTO (poison/necrotic/fire à escolha) enquanto uma legacy 2024 fica travada na dela;
+  · **foi reescrita de cima a baixo** — o Human XPHB dá Resourceful/Skillful/**Versatile** (um
+    talento de origem), e o Keldon virava upgrade puro sobre o humano comum.
+- **`'lineage'` é a EXCEÇÃO (1 das 15)** — só quando o chassi 2024 é o MESMO da base 2014 mais um
+  traço GUARDA-CHUVA que a sub-raça ocupa via `supersedes`; aí não há o que empilhar. Hoje o único
+  caso é o **Elf**: os quatro traços do Elf 2024 (Darkvision/Keen Senses/Fey Ancestry/Trance) são
+  exatamente os de 2014, e "Elven Lineage" é o guarda-chuva que o Pallid substitui. O único ganho
+  de andar no chassi 2024 é o Keen Senses virar escolha de 3 perícias — que as três linhagens
+  oficiais também têm.
+- **REGRA para uma entrada nova (obrigatória, não opcional): liste os traços da base 2024 e os da
+  base 2014.** Se sobrar QUALQUER coisa na 2024 além do guarda-chuva de linhagem, é `'species'`.
+  A tabela que fecha os quatro casos de hoje está no CHANGELOG §67.
+- **Uma entrada `'species'` normalmente NÃO precisa de `supersedes`**: o `data.overwrite` do
+  próprio dado 2014 (ex: "Infernal Legacy") acha o alvo na base legada e troca no lugar. O
+  `supersedes` existe para o caso `'lineage'`, em que o nome do traço mudou de edição.
 - **A base legada passa pela MESMA limpeza da sub-raça** (`prepareLegacyBase`): sem o `ability`
   2014, sem as `LEGACY_PROSE_SECTIONS`. O `mergeSubrace` já apaga o `reprintedAs` da base — sem
   isso o `latestOnly` esconderia a espécie recém-criada.
@@ -357,14 +377,17 @@ deve usar `speciesCatalog`, nunca `db.races.race` cru.**
   `_copy`; uma que tivesse precisaria mover essa resolução para o engine.
 
 **Consequences.**
-- O Halfling XPHB volta a NÃO ter linhagem nenhuma (o seletor de Lineage some da aba), e as duas
-  aparecem como espécies irmãs — "Halfling (Ghostwise)", "Halfling (Lotusden)".
-- No sweep as linhas mudaram de `species:Halfling|XPHB/Halfling (Ghostwise)` para
-  `species:Halfling (Ghostwise)|SCAG`; o total continua 289 e o round-trip do export segue verde,
+- Halfling, Human e Tiefling XPHB voltam ao que o livro 2024 diz: os dois primeiros sem linhagem
+  nenhuma (o seletor de Lineage some da aba), o Tiefling só com as 3 legacies oficiais. As 14
+  legadas aparecem como espécies irmãs no seletor de espécies. Só o Elf mantém uma linhagem legada.
+- No sweep as linhas mudaram de `species:Tiefling|XPHB/Tiefling (Zariel)` para
+  `species:Tiefling (Zariel)|MTF`; o total continua 289 e o round-trip do export segue verde,
   então uma espécie legada exporta e reimporta como qualquer outra (sem uuid de compêndio, DDL-0059).
-- Verificado: 1028 testes (+2), lint, sweep **289/289 `--strict`**, e ao vivo: o Ghostwise deriva
-  Lucky/Brave/Halfling Nimbleness/**Silent Speech**, 25 ft, Small — sem Naturally Stealthy e sem a
-  prosa 2014; mobile 375px sem overflow, zero erros de console. Ver CHANGELOG §67.
+- Verificado: 1029 testes, lint, sweep **289/289 `--strict`**, e ao vivo: o Ghostwise deriva
+  Lucky/Brave/Halfling Nimbleness/**Silent Speech** (25 ft, sem Naturally Stealthy); o Zariel
+  deriva Darkvision/**Hellish Resistance** (fogo fixo)/Legacy of Avernus, sem Otherworldly Presence
+  nem resistência à escolha, e SOBREVIVE a um reload (é o que prova o `speciesCatalog`); o Tiefling
+  2024 volta às 3 legacies. Mobile 375px sem overflow, zero erros de console. Ver CHANGELOG §67.
 
 ### DDL-0059 — Sub-raças legadas IMPLEMENTADAS: 15 curadas, `supersedes`/prosa 2014, e linhagem opcional
 **Date:** 2026-07-22

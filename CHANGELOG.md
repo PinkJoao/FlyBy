@@ -4196,31 +4196,39 @@ Halfling completo sem linhagem, mobile 375px sem overflow e zero erros de consol
 
 ---
 
-## 67. Sub-raça legada: linhagem da base atual OU espécie à parte (DDL-0060)
+## 67. Sub-raça legada: espécie à parte por BALANCEAMENTO; linhagem vira a exceção (DDL-0060)
 
 **O achado do usuário.** Ghostwise e Lotusden não podiam ser linhagens do Halfling XPHB, porque são
-sub-raças de uma versão DIFERENTE da base. O dado confirma:
+sub-raças de uma versão DIFERENTE da base. Na revisão seguinte o critério foi generalizado: costurar
+uma sub-raça 2014 num chassi 2024 quase sempre a torna **obviamente superior** às linhagens oficiais,
+porque ela soma as vantagens dos dois — e no caso do Human deixa a espécie base sem propósito. O dado
+confirma, base por base:
 
-| espécie | base 2014 | base 2024 | veredito |
-|---|---|---|---|
-| **Halfling** | Lucky / Brave / Nimbleness | + **Naturally Stealthy** ← traço do *Lightfoot* | **espécie à parte** |
-| Elf | Darkvision / Keen Senses / Fey Ancestry / Trance | + "Elven Lineage" (guarda-chuva) | linhagem |
-| Tiefling | Darkvision / Hellish Resistance / Infernal Legacy | Darkvision / "Fiendish Legacy" / Otherworldly Presence | linhagem |
-| Human | (só prosa) | Resourceful / Skillful / Versatile (traços NOVOS) | linhagem |
+| espécie | base 2014 | base 2024 | o que empilhava | veredito |
+|---|---|---|---|---|
+| **Halfling** | Lucky / Brave / Nimbleness | + **Naturally Stealthy** | o traço do *Lightfoot*, de graça | **espécie** |
+| **Tiefling** | Darkvision / Hellish Resistance / Infernal Legacy | Darkvision / Fiendish Legacy / **Otherworldly Presence** | Thaumaturgy de graça + resistência à ESCOLHA (uma legacy 2024 fica travada na dela) | **espécie** |
+| **Human** | (só prosa) | Resourceful / Skillful / **Versatile** | um TALENTO de origem, de graça | **espécie** |
+| **Elf** | Darkvision / Keen Senses / Fey Ancestry / Trance | os mesmos 4 + "Elven Lineage" (guarda-chuva) | nada — o `supersedes` remove o guarda-chuva | linhagem |
 
-Como linhagens do Halfling 2024, as duas ganhavam **Naturally Stealthy** de graça — um traço que
-nunca tiveram, e que o Silent Speech do Ghostwise justamente substituía.
+**A regra, invertida.** O campo `as` do registro continua, mas **`'species'` passou a ser o padrão
+de fato (14 das 15) e `'lineage'` a exceção (1)**. Para uma entrada nova: liste os traços da base
+2024 e os da 2014 — se sobrar QUALQUER coisa na 2024 além do guarda-chuva de linhagem, é
+`'species'`. Uma entrada `'species'` normalmente não precisa de `supersedes`: o `data.overwrite` do
+próprio dado 2014 ("Infernal Legacy") acha o alvo na base legada e troca no lugar.
 
-**A correção.** O registro ganhou o campo **`as`**:
-- **`'lineage'`** (padrão, 13 entradas) — correto só quando o chassi 2024 é genérico, com um traço
-  GUARDA-CHUVA que a linhagem ocupa via `supersedes`. Elf e Tiefling conferidos traço a traço.
-- **`'species'`** (Ghostwise, Lotusden) — vira ESPÉCIE à parte no seletor, fundida na base
-  **LEGADA**, como o `Eladrin|MPMM` já é hoje. A base legada passa pela mesma limpeza da sub-raça
-  (sem `ability` 2014, sem as seções de prosa); o `mergeSubrace` já apaga o `reprintedAs`, senão o
-  `latestOnly` esconderia a espécie recém-criada.
+**O Elf, caso a caso.** É a única base que se manteve consistente entre as edições, então o Pallid
+não empilha nada: fica com a base + o pacote próprio, igual ao Drow/High/Wood. Ele troca o upgrade
+de sentido/velocidade dos outros três (dv 120, 35 ft) por um traço extra (Incisive Sense) — mesma
+faixa de poder. O único ganho de andar no chassi 2024 é o Keen Senses virar escolha de 3 perícias,
+que as três oficiais também têm.
 
-**REGRA para uma entrada nova:** compare os traços da base 2024 com os da 2014. Se a 2024 trouxer o
-traço de ALGUMA sub-raça 2014, é `'species'`; se ela só tiver o guarda-chuva, é `'lineage'`.
+**Resultado.** Halfling e Human XPHB voltam a não ter linhagem nenhuma; o Tiefling XPHB volta às 3
+legacies oficiais. As 14 legadas viram espécies irmãs no seletor, sobre o chassi 2014 correto:
+- `Halfling (Ghostwise)` = Lucky / Brave / Nimbleness / **Silent Speech**, 25 ft — sem Naturally Stealthy;
+- `Tiefling (Zariel)` = Darkvision / **Hellish Resistance** (fogo FIXO) / Legacy of Avernus — sem
+  Otherworldly Presence e sem resistência à escolha;
+- `Human (Keldon)` = só Natural Athlete / Keldon Resilience / Icehaven Born.
 
 **`speciesCatalog(db)` é a lista única de espécies.** Uma espécie legada não está em
 `db.races.race`, então toda resolução por nome tem de passar por ela — senão a ficha perde a
@@ -4228,8 +4236,8 @@ espécie ao recarregar ou ao reimportar. Migrados os três pontos: `resolveRaceO
 `findBaseRace` e `resolveRaceByExactName` (import do Foundry); a entity do seletor concatena
 `legacyStandaloneSpecies(db)`. Novos consumidores devem usar `speciesCatalog`, nunca a lista crua.
 
-**Verificado:** 1028 testes (+2), lint, **sweep 289/289 `--strict`** (as linhas viraram
-`species:Halfling (Ghostwise)|SCAG`; o round-trip do export segue verde), e ao vivo: o Ghostwise
-deriva **Lucky / Brave / Halfling Nimbleness / Silent Speech**, 25 ft, Small — sem Naturally
-Stealthy e sem a prosa 2014 — e o Halfling XPHB voltou a não ter seletor de linhagem nenhum.
-Mobile 375px sem overflow, zero erros de console.
+**Verificado:** 1029 testes, lint, **sweep 289/289 `--strict`** (as linhas viraram
+`species:Tiefling (Zariel)|MTF` etc.; o round-trip do export segue verde), e ao vivo: os 12
+tieflings + Ghostwise/Lotusden/Keldon como espécies irmãs, o Zariel derivando o pacote 2014 correto
+e **sobrevivendo a um reload** (é o que prova o `speciesCatalog`), e o Tiefling 2024 de volta às 3
+legacies. Mobile 375px sem overflow, zero erros de console.

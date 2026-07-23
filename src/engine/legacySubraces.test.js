@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LEGACY_SUBRACES, LEGACY_PROSE_SECTIONS, legacySubracesFor, legacyStandaloneRefs } from './legacySubraces';
 import { subraceVersions, raceLineages, requiresLineage, legacyStandaloneSpecies, speciesCatalog } from './speciesData';
 
-describe('LEGACY_SUBRACES (registro curado, DDL-0058)', () => {
+describe('LEGACY_SUBRACES (registro curado, DDL-0058/0059/0060)', () => {
   it('só anexa a bases ATUAIS e não repete uma sub-raça', () => {
     const seen = new Set();
     for (const e of LEGACY_SUBRACES) {
@@ -25,156 +25,150 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058)', () => {
     expect(ids).not.toContain('Variant; Drow Descent|SCAG'); // → Khoravar|EFA
   });
 
+  it("`'species'` é a regra; `'lineage'` é a exceção (hoje só o Elf)", () => {
+    // Balanceamento (DDL-0060): pendurada num chassi 2024 que dá algo A MAIS
+    // que o de 2014, a sub-raça soma as vantagens dos dois. Só o Elf 2024 é o
+    // mesmo chassi de 2014 + o guarda-chuva "Elven Lineage".
+    const lineages = LEGACY_SUBRACES.filter((e) => e.as !== 'species');
+    expect(lineages.map((e) => e.subrace)).toEqual(['Pallid|EGW']);
+    expect(lineages[0].supersedes).toEqual(['Elven Lineage']);
+    expect(LEGACY_SUBRACES.filter((e) => e.as === 'species')).toHaveLength(14);
+  });
+
   it('as marcadas `as: species` saem do índice de LINHAGENS', () => {
-    // O Halfling XPHB absorveu o Naturally Stealthy do Lightfoot, então
-    // Ghostwise/Lotusden voltam como espécie própria - não como linhagem dele.
-    expect(legacySubracesFor({ name: 'Halfling', source: 'XPHB' })).toEqual([]);
-    expect(legacyStandaloneRefs().map((r) => r.name).sort()).toEqual(['Ghostwise', 'Lotusden']);
-    // e a base em que elas se fundem é a LEGADA
-    for (const ref of legacyStandaloneRefs()) {
-      expect(ref).toMatchObject({ raceName: 'Halfling', raceSource: 'PHB' });
+    for (const race of ['Halfling', 'Human', 'Tiefling']) {
+      expect(legacySubracesFor({ name: race, source: 'XPHB' })).toEqual([]);
     }
+    // …e cada uma aponta para a base LEGADA em que deve ser fundida
+    const bases = new Set(legacyStandaloneRefs().map((r) => `${r.raceName}|${r.raceSource}`));
+    expect([...bases].sort()).toEqual(['Halfling|PHB', 'Human|PHB', 'Tiefling|PHB']);
   });
 
   it('legacySubracesFor indexa pela raça ATUAL', () => {
-    const names = legacySubracesFor({ name: 'Tiefling', source: 'XPHB' }).map((r) => r.name);
-    expect(names).toContain('Zariel');
-    expect(names).toContain("Variant; Winged");
+    const refs = legacySubracesFor({ name: 'Elf', source: 'XPHB' });
+    expect(refs.map((r) => r.name)).toEqual(['Pallid']);
     // a referência aponta para a raça LEGADA no dado
-    const zariel = legacySubracesFor({ name: 'Tiefling', source: 'XPHB' }).find((r) => r.name === 'Zariel');
-    expect(zariel).toMatchObject({ source: 'MTF', raceName: 'Tiefling', raceSource: 'PHB' });
+    expect(refs[0]).toMatchObject({ source: 'EGW', raceName: 'Elf', raceSource: 'PHB' });
 
-    expect(legacySubracesFor({ name: 'Tiefling', source: 'PHB' })).toEqual([]); // a base legada não recebe
+    expect(legacySubracesFor({ name: 'Elf', source: 'PHB' })).toEqual([]); // a base legada não recebe
     expect(legacySubracesFor({ name: 'Dwarf', source: 'XPHB' })).toEqual([]);
     expect(legacySubracesFor(null)).toEqual([]);
   });
 });
 
-describe('sub-raças legadas como linhagens da base atual', () => {
-  // Recorte real: Tiefling XPHB (base 2024, com uma linhagem própria) + duas
-  // entradas de `db.races.subrace` presas ao Tiefling PHB reprintado.
-  const tiefling = {
-    name: 'Tiefling',
+describe('sub-raça legada como LINHAGEM da base atual', () => {
+  // Recorte real: Elf XPHB (base 2024, com uma linhagem própria) + a entrada de
+  // `db.races.subrace` presa ao Elf PHB reprintado.
+  const elf = {
+    name: 'Elf',
     source: 'XPHB',
     entries: [
       { type: 'entries', name: 'Darkvision', entries: ['x'] },
-      { type: 'entries', name: 'Fiendish Legacy', entries: ['escolha Abyssal/Chthonic/Infernal'] },
-      { type: 'entries', name: 'Otherworldly Presence', entries: ['y'] },
+      { type: 'entries', name: 'Elven Lineage', entries: ['escolha Drow/High/Wood'] },
+      { type: 'entries', name: 'Trance', entries: ['y'] },
     ],
-    _versions: [{ name: 'Tiefling; Abyssal Legacy', source: 'XPHB' }],
+    _versions: [{ name: 'Elf; Drow Lineage', source: 'XPHB' }],
   };
-  const human = { name: 'Human', source: 'XPHB', entries: [{ type: 'entries', name: 'Skillful', entries: ['x'] }] };
   const db = {
     races: {
-      race: [tiefling, human],
+      race: [elf],
       subrace: [
         {
-          name: 'Zariel',
-          source: 'MTF',
-          raceName: 'Tiefling',
+          name: 'Pallid',
+          source: 'EGW',
+          raceName: 'Elf',
           raceSource: 'PHB',
-          ability: [{ str: 1, cha: 2 }],
-          overwrite: { ability: true },
-          additionalSpells: [{ ability: 'cha', known: { 1: ['thaumaturgy#c'] } }],
-          entries: [{ type: 'entries', name: 'Legacy of Avernus', entries: ['z'], data: { overwrite: 'Infernal Legacy' } }],
-        },
-        {
-          name: 'Keldon',
-          source: 'PSD',
-          raceName: 'Human',
-          raceSource: 'PHB',
-          ability: [{ str: 2, con: 1 }],
+          ability: [{ wis: 1 }],
+          additionalSpells: [{ ability: 'wis', known: { 1: ['light#c'] } }],
           entries: [
             { type: 'entries', name: 'Age', entries: ['prosa 2014'] },
-            { type: 'entries', name: 'Languages', entries: ['prosa 2014'] },
-            { type: 'entries', name: 'Keldon Resilience', entries: ['real'] },
+            { type: 'entries', name: 'Incisive Sense', entries: ['z'] },
           ],
         },
       ],
     },
   };
 
-  it('a linhagem legada é fundida na base ATUAL, ao lado das próprias', () => {
-    const names = raceLineages(db, tiefling).map((v) => v.name);
-    expect(names).toEqual(['Tiefling; Abyssal Legacy', 'Tiefling (Zariel)']);
-    const zariel = subraceVersions(db, tiefling)[0];
-    expect(zariel._baseName).toBe('Tiefling');
-    expect(zariel.source).toBe('MTF');
-    expect(zariel.additionalSpells).toEqual([{ ability: 'cha', known: { 1: ['thaumaturgy#c'] } }]);
+  it('é fundida na base ATUAL, ao lado das próprias', () => {
+    const names = raceLineages(db, elf).map((v) => v.name);
+    expect(names).toEqual(['Elf; Drow Lineage', 'Elf (Pallid)']);
+    const [pallid] = subraceVersions(db, elf);
+    expect(pallid._baseName).toBe('Elf');
+    expect(pallid.source).toBe('EGW');
+    expect(pallid.additionalSpells).toEqual([{ ability: 'wis', known: { 1: ['light#c'] } }]);
   });
 
   it('o `ability` legado (+2/+1) é IGNORADO — os boosts vêm sempre da origem', () => {
-    const [zariel] = subraceVersions(db, tiefling);
-    expect(zariel.ability).toBeUndefined();
-    expect(zariel.overwrite?.ability).toBeUndefined();
-    const [keldon] = subraceVersions(db, human);
-    expect(keldon.ability).toBeUndefined();
+    const [pallid] = subraceVersions(db, elf);
+    expect(pallid.ability).toBeUndefined();
+    expect(pallid.overwrite?.ability).toBeUndefined();
   });
 
   it('`supersedes` remove o traço 2024 que a linhagem ocupa', () => {
-    const [zariel] = subraceVersions(db, tiefling);
-    expect(zariel.entries.map((e) => e.name)).toEqual(['Darkvision', 'Otherworldly Presence', 'Legacy of Avernus']);
-  });
-
-  it('as seções de prosa 2014 (Age/Languages…) não viram traços', () => {
-    const [keldon] = subraceVersions(db, human);
-    expect(keldon.entries.map((e) => e.name)).toEqual(['Skillful', 'Keldon Resilience']);
+    const [pallid] = subraceVersions(db, elf);
+    // "Elven Lineage" some (é o lugar que o Pallid ocupa); as prosas 2014 também
+    expect(pallid.entries.map((e) => e.name)).toEqual(['Darkvision', 'Trance', 'Incisive Sense']);
     for (const name of LEGACY_PROSE_SECTIONS) {
-      expect(keldon.entries.some((e) => e.name === name)).toBe(false);
+      expect(pallid.entries.some((e) => e.name === name)).toBe(false);
     }
   });
 
   it('uma linhagem legada NÃO passa a obrigar a escolha de linhagem', () => {
-    // Tiefling tem `_versions` nativas → linhagem obrigatória, como sempre.
-    expect(requiresLineage(db, tiefling)).toBe(true);
-    // Human 2024 não tem linhagem nenhuma; ganhar o Keldon é um acréscimo
-    // OPCIONAL - obrigar seria impedir de construir um humano simples.
-    expect(raceLineages(db, human).map((v) => v.name)).toEqual(['Human (Keldon)']);
-    expect(requiresLineage(db, human)).toBe(false);
-    // e as legadas ficam marcadas como tal
-    expect(subraceVersions(db, human)[0]._legacy).toBe(true);
-    expect(raceLineages(db, tiefling)[0]._legacy).toBeUndefined();
-  });
-
-  it('a sub-raça `as: species` é montada sobre a base LEGADA, não a 2024', () => {
-    // Chassi 2014 (Lucky/Brave/Nimbleness, 25 ft) + o traço próprio; nada de
-    // Naturally Stealthy, que no 2024 veio do Lightfoot.
-    const legacyDb = {
-      races: {
-        race: [
-          { name: 'Halfling', source: 'PHB', speed: 25, ability: [{ dex: 2 }], reprintedAs: ['Halfling|XPHB'],
-            entries: [
-              { type: 'entries', name: 'Age', entries: ['prosa 2014'] },
-              { type: 'entries', name: 'Lucky', entries: ['a'] },
-              { type: 'entries', name: 'Brave', entries: ['b'] },
-            ] },
-          { name: 'Halfling', source: 'XPHB', speed: 30,
-            entries: [{ type: 'entries', name: 'Naturally Stealthy', entries: ['lightfoot'] }] },
-        ],
-        subrace: [
-          { name: 'Ghostwise', source: 'SCAG', raceName: 'Halfling', raceSource: 'PHB', ability: [{ wis: 1 }],
-            entries: [{ type: 'entries', name: 'Silent Speech', entries: ['c'] }] },
-        ],
-      },
-    };
-    const [ghostwise] = legacyStandaloneSpecies(legacyDb);
-    expect(ghostwise.name).toBe('Halfling (Ghostwise)');
-    expect(ghostwise.entries.map((e) => e.name)).toEqual(['Lucky', 'Brave', 'Silent Speech']);
-    expect(ghostwise.speed).toBe(25); // o chassi 2014, não os 30 ft de 2024
-    expect(ghostwise.ability).toBeUndefined(); // o `ability` legado sai dos DOIS lados
-    expect(ghostwise.reprintedAs).toBeUndefined(); // senão o latestOnly a esconderia
-    // e ela é uma ESPÉCIE do catálogo, não uma linhagem do Halfling 2024
-    expect(speciesCatalog(legacyDb).map((r) => `${r.name}|${r.source}`)).toContain('Halfling (Ghostwise)|SCAG');
-    const modern = legacyDb.races.race.find((r) => r.source === 'XPHB');
-    expect(raceLineages(legacyDb, modern)).toEqual([]);
-    expect(requiresLineage(legacyDb, modern)).toBe(false);
+    // Elf tem `_versions` nativas → linhagem obrigatória, como sempre.
+    expect(requiresLineage(db, elf)).toBe(true);
+    // Sem elas, o acréscimo legado sozinho não obriga (senão um halfling ou um
+    // humano 2024 simples ficaria impossível de construir).
+    const bare = { ...elf, _versions: undefined };
+    expect(raceLineages(db, bare).map((v) => v.name)).toEqual(['Elf (Pallid)']);
+    expect(requiresLineage(db, bare)).toBe(false);
+    expect(subraceVersions(db, bare)[0]._legacy).toBe(true);
+    expect(raceLineages(db, elf)[0]._legacy).toBeUndefined();
   });
 
   it('o tratamento curado vale só p/ a base ATUAL (a legada segue o merge cru)', () => {
     // A base legada é inalcançável na prática (latestOnly a esconde), mas se
     // alguém a resolver, ela cai no caminho NORMAL: sem `supersedes` e com o
     // `ability` 2014 intacto - a curadoria não vaza para fora do destino.
-    const [zariel] = subraceVersions(db, { name: 'Tiefling', source: 'PHB', entries: [] });
-    expect(zariel.ability).toEqual([{ str: 1, cha: 2 }]);
+    const [pallid] = subraceVersions(db, { name: 'Elf', source: 'PHB', entries: [] });
+    expect(pallid.ability).toEqual([{ wis: 1 }]);
+  });
+});
+
+describe('sub-raça legada como ESPÉCIE à parte', () => {
+  // Chassi 2014 (Lucky/Brave, 25 ft) + o traço próprio; nada de Naturally
+  // Stealthy, que no Halfling 2024 veio do Lightfoot.
+  const db = {
+    races: {
+      race: [
+        { name: 'Halfling', source: 'PHB', speed: 25, ability: [{ dex: 2 }], reprintedAs: ['Halfling|XPHB'],
+          entries: [
+            { type: 'entries', name: 'Age', entries: ['prosa 2014'] },
+            { type: 'entries', name: 'Lucky', entries: ['a'] },
+            { type: 'entries', name: 'Brave', entries: ['b'] },
+          ] },
+        { name: 'Halfling', source: 'XPHB', speed: 30,
+          entries: [{ type: 'entries', name: 'Naturally Stealthy', entries: ['lightfoot'] }] },
+      ],
+      subrace: [
+        { name: 'Ghostwise', source: 'SCAG', raceName: 'Halfling', raceSource: 'PHB', ability: [{ wis: 1 }],
+          entries: [{ type: 'entries', name: 'Silent Speech', entries: ['c'] }] },
+      ],
+    },
+  };
+
+  it('é montada sobre a base LEGADA, não a 2024', () => {
+    const [ghostwise] = legacyStandaloneSpecies(db);
+    expect(ghostwise.name).toBe('Halfling (Ghostwise)');
+    expect(ghostwise.entries.map((e) => e.name)).toEqual(['Lucky', 'Brave', 'Silent Speech']);
+    expect(ghostwise.speed).toBe(25); // o chassi 2014, não os 30 ft de 2024
+    expect(ghostwise.ability).toBeUndefined(); // o `ability` legado sai dos DOIS lados
+    expect(ghostwise.reprintedAs).toBeUndefined(); // senão o latestOnly a esconderia
+  });
+
+  it('entra no catálogo de espécies e NÃO nas linhagens da base 2024', () => {
+    expect(speciesCatalog(db).map((r) => `${r.name}|${r.source}`)).toContain('Halfling (Ghostwise)|SCAG');
+    const modern = db.races.race.find((r) => r.source === 'XPHB');
+    expect(raceLineages(db, modern)).toEqual([]);
+    expect(requiresLineage(db, modern)).toBe(false);
   });
 });

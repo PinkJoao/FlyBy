@@ -100,6 +100,20 @@
   outline: none;
 }
 
+.imageBtn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.imageBtn:hover {
+  filter: brightness(1.05);
+}
+
 .image {
   display: block;
   width: 100%;

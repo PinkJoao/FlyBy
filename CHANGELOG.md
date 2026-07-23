@@ -4655,3 +4655,37 @@ Lorwyn/Shadowmoor resolvem por linhagem. A pane do browser nao compos frames nes
 (limitacao de exibicao), entao a verificacao ao vivo foi pelos mesmos code paths da UI
 (`raceEntity.list`/`raceLineages`/`raceEntity.fluff`/`resolveRaceObj`) + o build/export/round-trip
 do sweep.
+
+## 76. Toda imagem do app expande em tela cheia; carrossel para as especies com varias artes (DDL-0067)
+
+Duas melhorias pedidas pelo usuario, num componente universal de imagem.
+
+**1. Imagem clicavel que expande em tela cheia (lightbox), em todo o app.** No modelo do
+visualizador do retrato: qualquer imagem que o usuario ve agora e clicavel e abre grande sobre um
+overlay escuro. Novo `store/imageViewerStore.js` (singleton Zustand, no espirito do
+glossaryStore/dialogStore) + `components/common/ImageViewer.jsx` montado UMA vez no App, acionado
+pela API imperativa `showImageViewer(images, index)`. O overlay se auto-foca ao abrir e trata Esc/
+setas nele mesmo com stopPropagation (mesmo padrao do DialogHost), entao convive com a pilha de
+dialogos por baixo - o Esc fecha so o visualizador, nao o painel que o abriu. z-index 1200 (acima
+dos dialogos, 1000). Alcanca todo lugar que passa pelo `DetailView` (previews de todos os seletores,
+aba de Species, telas de item e de magia individuais, popups de chip) e as imagens inline dentro de
+`EntryContent` (lore, prosa de traco).
+
+**2. Carrossel para as especies (e qualquer entidade) com varias artes.** Muitas especies trazem
+mais de uma imagem no fluff (as artes das linhagens - Elf com Drow/High/Wood etc.). Novo
+`components/common/ImageCarousel.jsx`: 1 imagem = so a arte clicavel; 2+ = carrossel com pontinhos
+abaixo, swipe no toque (mobile) e setas que aparecem no hover (desktop). Clicar em qualquer imagem
+abre o `ImageViewer` NO indice atual com o array inteiro, entao o carrossel continua funcionando em
+tela cheia. Hooks de navegacao compartilhados entre os dois em `components/common/imageNav.js`
+(`useSwipe`, `useCarouselIndex`). O `DetailView` passou a coletar TODAS as imagens do fluff (antes so
+a primeira) e renderiza o `ImageCarousel` no caminho nao-editavel; o caminho editavel (trocar a arte
+de um item do inventario) fica intacto. Imagens que falham ao carregar somem do carrossel; se todas
+falharem, nada e renderizado.
+
+O foco pedido do carrossel eram as especies, mas por viver no `DetailView` ele vale de graca para
+qualquer entidade com varias imagens (efeito colateral bem-vindo).
+
+**Verificado:** 1117 testes (inalterados), lint limpo, e ao vivo no browser: Halfling (1 imagem, so
+o botao Expandir), Elf (2 artes - carrossel com 2 pontinhos, setas, creditos por imagem "Mike Pape"/
+"Jedd Chevrier"), o expandir abrindo no indice certo, a navegacao em tela cheia, e o Esc fechando so
+o lightbox e deixando o carrossel por baixo no mesmo indice. Zero erros de console.

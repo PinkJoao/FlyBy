@@ -342,6 +342,58 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0067 — Imagem universal: lightbox em todo o app + carrossel para as espécies com várias artes
+**Date:** 2026-07-23
+**Builds on:** DDL-0007 (a pilha de diálogos in-app e o padrão foco/Esc do DialogHost, que o
+visualizador reusa para conviver com os diálogos por baixo), DDL-0025 (o `DetailView` como ponto
+único por onde toda entidade mostra imagem, então mexer nele alcança todo lugar de uma vez),
+DDL-0066/§73 (o `fluff.images` já traz VÁRIAS artes por espécie — as linhagens — que este entry
+finalmente exibe).
+
+**Context.** Duas melhorias pedidas pelo usuário: (1) toda imagem que o jogador vê deve ser clicável
+para aparecer maior na tela, no modelo do visualizador do retrato do personagem — valendo em TODO o
+app "logo de cara" (previews de seletor, aba de Species, telas de item e de magia, qualquer imagem);
+(2) muitas espécies têm mais de uma arte no fluff, e mostrar isso como um carrossel (pontinhos, swipe
+no mobile, setas no hover do desktop), que também funcione junto com o expandir. O foco do carrossel
+são as espécies, mas um componente universal é bônus.
+
+**Decisions.**
+- **Visualizador em tela cheia (lightbox) é um singleton montado UMA vez no App**, no espírito do
+  glossaryStore/dialogStore: `store/imageViewerStore.js` guarda `{ open, images, index }` (o array
+  inteiro, para o carrossel navegar em tela cheia) e a API imperativa `showImageViewer(images,
+  index)` o aciona de qualquer lugar. `components/common/ImageViewer.jsx` renderiza um overlay
+  escuro (portal em document.body, z-index 1200 — acima dos diálogos, 1000). **O foco/Esc segue o
+  DialogHost:** o overlay se auto-foca ao abrir e trata Esc/setas NELE mesmo com `stopPropagation`,
+  então o Esc fecha só o lightbox e NÃO o diálogo/painel que o abriu por baixo. Regra: uma nova
+  imagem clicável no app chama `showImageViewer`, nunca monta seu próprio overlay.
+- **Componente de imagem universal `ImageCarousel`** (`components/common/ImageCarousel.jsx`): recebe
+  um array de `{ src, alt?, credit? }` já resolvido. 1 imagem = só a arte clicável; 2+ = carrossel
+  com pontinhos, swipe no toque e setas no hover (`@media (hover: hover)` — sempre visíveis no
+  toque). Clicar em qualquer imagem abre o `ImageViewer` NO índice atual com o array inteiro, então
+  o carrossel continua funcionando em tela cheia. Os hooks de navegação (`useSwipe`,
+  `useCarouselIndex`) vivem em `components/common/imageNav.js`, compartilhados pelos dois.
+- **O ponto de entrada é o `DetailView` (caminho NÃO-editável).** Ele passou a coletar TODAS as
+  imagens do fluff (antes `images.find(i => i.href)` pegava só a primeira) e renderiza o
+  `ImageCarousel`. Como toda entidade mostra imagem por ele (previews de seletor, aba de Species,
+  overlays de item/magia, popups de chip), o expandir + carrossel valem em todos de uma vez. O
+  **caminho EDITÁVEL fica intocado** — na tela de um item do inventário o clique na arte serve para
+  TROCAR a imagem (selo ✎), que é uma affordance própria; não vira expandir. O retrato do personagem
+  também mantém seu visualizador próprio (Trocar/Baixar/Remover).
+- **Imagens inline dentro de `EntryContent`** (`case 'image'`: lore, prosa de traço) também viram
+  clicáveis → `showImageViewer` com aquela única imagem.
+- **Degradação:** imagem que falha ao carregar some do carrossel (estado `broken` por src); se todas
+  falharem, nada é renderizado. Mantém o comportamento antigo de esconder arte quebrada.
+
+**Consequences.**
+- Toda imagem nova que passe pelo `DetailView` ou pelo `EntryContent` ganha o expandir de graça;
+  uma imagem avulsa em qualquer outro lugar é uma chamada a `showImageViewer`.
+- O carrossel foi pedido só para espécies, mas por viver no `DetailView` vale para qualquer entidade
+  com várias imagens no fluff (efeito colateral bem-vindo, como previsto no pedido).
+- Verificado: 1117 testes (inalterados — a mudança é de UI/apresentação, sem tocar engine/derivação),
+  lint limpo, e ao vivo no browser: Halfling (1 imagem → só Expandir), Elf (2 artes → carrossel com
+  pontinhos/setas/créditos por imagem), expandir abrindo no índice certo, navegação em tela cheia, e
+  o Esc fechando só o lightbox. Zero erros de console. Ver CHANGELOG §76.
+
 ### DDL-0066 — Reimpressão de cenário (LFL) FUNDIDA na espécie mainstream; e o `_copy` resolvido no caminho de derivação (speed 0)
 **Date:** 2026-07-23
 **Builds on:** DDL-0060/0063 (o `as`/`swap`: uma sub-espécie de outra fonte vira linhagem da base

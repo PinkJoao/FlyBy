@@ -12,6 +12,7 @@ import { DataContext } from '../../data/dataContext';
 import { glossaryFor, lookupRule, parseTagContent, GLOSSARY_TAGS } from '../../engine/glossary';
 import { lookupEntityLink, isEntityTag, entityTagDisplay } from './entityLinks';
 import { imgUrl } from './media';
+import { showImageViewer } from '../../store/imageViewerStore';
 import TableViewer from './TableViewer';
 import { showRulePopup } from './RulePopup';
 import { showDetailPopup } from './detailPopup';
@@ -210,7 +211,19 @@ function renderEntry(entry, key) {
       );
     case 'image': {
       const src = imgUrl(entry.href);
-      return src ? <img key={key} className={styles.image} src={src} alt="" loading="lazy" /> : null;
+      if (!src) return null;
+      const credit = entry.credit || entry.title;
+      return (
+        <button
+          key={key}
+          type="button"
+          className={styles.imageBtn}
+          onClick={() => showImageViewer([{ src, credit }])}
+          title="Expand image"
+        >
+          <img className={styles.image} src={src} alt={entry.title || ''} loading="lazy" />
+        </button>
+      );
     }
     case 'table':
       return renderTable(entry, key);

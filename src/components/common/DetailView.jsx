@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import EntryContent from './EntryContent';
 import SourceTag from './SourceTag';
+import ImageCarousel from './ImageCarousel';
 import { imgUrl } from './media';
 import styles from './DetailView.module.css';
 
@@ -34,6 +35,14 @@ export default function DetailView({ entity, raw, db, capImage = false, customIm
   const image = fluff?.images?.find((i) => i.href);
   const fluffSrc = image ? imgUrl(image.href) : null;
   const displaySrc = customImg || fluffSrc;
+  // Galeria clicável (expande em tela cheia; carrossel quando há várias artes -
+  // ex. as linhagens de uma espécie). A imagem custom do usuário, quando houver,
+  // é uma única e sobrepõe a arte do fluff.
+  const gallery = customImg
+    ? [{ src: customImg, alt: raw?.name }]
+    : (fluff?.images ?? [])
+        .filter((i) => i.href)
+        .map((i) => ({ src: imgUrl(i.href), credit: i.credit, alt: raw?.name }));
 
   const [imgOk, setImgOk] = useState(true);
   // Reseta o estado de erro quando o src muda (ajuste no render, sem effect).
@@ -67,12 +76,7 @@ export default function DetailView({ entity, raw, db, capImage = false, customIm
           </button>
         )
       ) : (
-        displaySrc && imgOk && (
-          <>
-            <img className={imgClass} src={displaySrc} alt={raw.name} loading="lazy" onError={() => setImgOk(false)} />
-            {!customImg && image?.credit && <p className={styles.credit}>Art: {image.credit}</p>}
-          </>
-        )
+        gallery.length > 0 && <ImageCarousel images={gallery} capped={capImage} alt={raw.name} />
       )}
 
       {!hideHeader && <h3 className={styles.name}>{raw.name}</h3>}

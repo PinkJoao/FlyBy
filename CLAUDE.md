@@ -342,6 +342,70 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0066 — Reimpressão de cenário (LFL) FUNDIDA na espécie mainstream; e o `_copy` resolvido no caminho de derivação (speed 0)
+**Date:** 2026-07-23
+**Builds on:** DDL-0060/0063 (o `as`/`swap`: uma sub-espécie de outra fonte vira linhagem da base
+atual — aqui a fonte é uma REIMPRESSÃO de mesmo nome, não uma sub-raça legada), DDL-0064 (que
+EXCLUIU o LFL das listas de settingSpecies chamando-o "espécie irmã" — este entry REVISA esse
+tratamento para o Elf/Fairy), DDL-0059 (`speciesCatalog` como lista única de resolução).
+
+**Context.** Dois "Elf" no seletor (XPHB e LFL) e um par "Fairy"/"Faerie", e o Elf|LFL exibindo
+**deslocamento 0**. Pedidos do usuário: corrigir o speed 0 (e varrer outras raças), juntar os dois
+Elf numa entrada só sem perder a lore/arte do LFL, e resolver o "Fairy"/"Faerie".
+
+**Findings.**
+- **Speed 0 é `_copy` não resolvido no caminho de DERIVAÇÃO.** 16 raças herdam `size`/`speed`/traços
+  de um pai via `_copy` (`Elf|LFL` → `Elf|XPHB`, `Centaur|MOT` → `Centaur|GGR`, `Triton|MOT`,
+  `Orc|EGW`...). O SELETOR já resolvia (`race.js` `list` faz `resolveCopies`), mas `resolveRaceObj`
+  → `speciesCatalog` lia `db.races.race` CRU. As visíveis afetadas: Elf/Boggart/Faerie/Flamekin/
+  Kithkin|LFL, Centaur/Minotaur/Triton|MOT, Orc|EGW.
+- **Elf e Fairy são o MESMO caso: uma reimpressão LFL de mesma mecânica que só reflavoriza.** O
+  `Elf|LFL` é `_copy` do `Elf|XPHB` e SUBSTITUI o "Elven Lineage" por Lorwyn/Shadowmoor; o
+  `Faerie|LFL` é `_copy` do `Fairy|MPMM` e ACRESCENTA Lorwyn/Shadowmoor (superset do Fairy). Cada
+  linhagem do LFL tem lore e arte próprias (`races/LFL/Elf (Lorwyn).webp` etc.).
+
+**Decisions.**
+- **`speciesCatalog` resolve o `_copy` (memoizado por db).** Um lugar só; `resolveRaceObj`, o sweep,
+  o export e o import passam a ver o objeto completo. `resolveCopies` mora na camada de seletor mas é
+  puro, e `resolve.js`/`foundryImport.js` já o importavam — precedente aceito.
+- **Reimpressão de cenário que só reflavoriza é FUNDIDA na base mainstream** (`engine/mergedLineages.js`,
+  registro curado `{ base, from }`). As `_versions` do `from` viram linhagens da base (passando pelo
+  MESMO `buildVariant`), e a entrada standalone sai do seletor (`isFoldedSpecies` no filtro de
+  `raceEntity.list` — que também alimenta o sweep e o glossário). O `Elf|XPHB` oferece Drow/High/
+  Wood + Lorwyn/Shadowmoor; o `Fairy|MPMM` ganha as duas linhagens de Lorwyn. Os NOMES mainstream
+  ficam (decisão do usuário: Elf e Fairy, não Faerie).
+- **Opcional quando a base não exige linhagem nativamente.** Elf já exige (Drow/High/Wood), então as
+  fundidas são só mais opções obrigatórias. Fairy não exige, então as fundidas entram como acréscimos
+  OPCIONAIS, marcadas `_legacy` (mesma semântica das sub-raças legadas: `requiresLineage`/
+  `lineageDeferredKinds` já as tratam como não-obrigatórias). Regra: `optional` = a base não tem
+  `_versions` nativas.
+- **A lore/arte do LFL não se perde: a variante fundida carrega `source: 'LFL'`.** O fluff resolve
+  pela fonte LFL (Pallid Elf / Aven Ibis já fazem assim). Dois ajustes em `withLineageImages`/`fluff`
+  (`race.js`): (1) num fluff que empacota várias imagens de linhagem (o do Elf|LFL traz Lorwyn E
+  Shadowmoor), escolhe a que cita o TERMO da linhagem no nome do arquivo, testando cada palavra do
+  rótulo ("Shadowmoor Lineage" casa "(shadowmoor)"); (2) quando a reimpressão tem nome PRÓPRIO
+  (Faerie|LFL, != base "Fairy"), o fluff resolve por um passo de PREFIXO-do-nome ("Faerie" + fonte
+  LFL → Faerie.webp), inócuo para as linhagens nativas (prefixo == baseName).
+- **O import exclui as reimpressões fundidas do casamento por nome exato** (`resolveRaceByExactName`,
+  `foundryImport.js`): como `Faerie|LFL` segue no `speciesCatalog` (resolvível para fichas antigas),
+  a linhagem "Faerie; Lorwyn" bateria nas duas bases e reimportaria como "faerie" em vez de "fairy".
+  A entrada standalone continua resolvível por `resolveRaceObj` (por nome), então nada quebra ao
+  recarregar uma ficha salva com `Elf|LFL`/`Faerie|LFL`.
+
+**Consequences.**
+- Um novo par mainstream+reimpressão-de-cenário é UMA linha em `MERGED_LINEAGES` — desde que o `from`
+  seja `_copy` do `base` (as `_versions` se exprimem sobre os mesmos traços). Nenhuma migração: as
+  standalone ficam resolvíveis.
+- **Revisa o DDL-0064:** o LFL deixou de ser "espécie irmã intocada" para Elf e Fairy; segue fora das
+  listas de `settingSpecies.js` (que é sobre Plane Shift), agora tratado em `mergedLineages.js`. O
+  cabeçalho de `settingSpecies.js` foi atualizado.
+- Sweep 285/285 `--strict` (inalterado: -2 Elf|LFL, -2 Faerie|LFL, +2 Elf|XPHB, +2 Fairy|MPMM).
+- Verificado: 1117 testes (+7, `mergedLineages.test.js`), lint, sweep 285/285 `--strict`, e contra o
+  compêndio real (uma "Elf" com 5 linhagens + Pallid; uma "Fairy"; "Faerie" some; artes de Lorwyn/
+  Shadowmoor por linhagem; speeds 30/40/swim corrigidos). A pane do browser não compôs frames neste
+  ambiente (limitação de exibição); a verificação ao vivo foi pelos mesmos code paths da UI. Ver
+  CHANGELOG §75.
+
 ### DDL-0065 — Exibicao das fontes: nome por extenso no hover e no popup, de um mapa GERADO
 **Date:** 2026-07-23
 **Status: IMPLEMENTADO (inicio; ligado so a especie).** Primeiro passo da estrategia de exibicao das

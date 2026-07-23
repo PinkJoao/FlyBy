@@ -4613,3 +4613,45 @@ arte do Aven|PSD removido) segue funcionando, agora na mesma funcao `withLineage
 hover no card mostra o nome completo; clique na fonte do preview abre o popup ("Astral Adventurer's
 Guide" / badge Source / AAG) que empilha sobre o seletor e fecha deixando o seletor aberto; a
 resolucao de `_copy` do fluff carrega arte e lore. Mobile 375px sem overflow, zero erros de console.
+
+## 75. Elf e Fairy: reimpressao de cenario (LFL) fundida na especie mainstream + speed 0 corrigido (DDL-0066)
+
+Tres pedidos do usuario, na mesma leva.
+
+**1. Bug de speed 0 (raiz: `_copy` nao resolvido no caminho de derivacao).** Varias especies do
+5etools nao repetem `size`/`speed`/tracos: herdam de um pai via `_copy` (`Elf|LFL` -> `Elf|XPHB`,
+`Centaur|MOT` -> `Centaur|GGR`, e outras 14). O SELETOR ja resolvia o `_copy` (`race.js` `list`),
+mas o caminho de DERIVACAO (`resolveRaceObj` -> `speciesCatalog`) lia a lista CRUA, entao a ficha
+derivava deslocamento 0. Agora `speciesCatalog` resolve o `_copy` (memoizado por db) e os dois
+caminhos veem o objeto completo. Corrige, ao vivo: Elf|LFL 30, Centaur|MOT 40, Triton|MOT swim 30,
+Orc|EGW/Boggart|LFL/Flamekin|LFL/Kithkin|LFL 30 (todos eram 0).
+
+**2. Os dois "Elf" (XPHB + LFL) viram um so, sem perder a lore nem a arte do LFL.** Novo modulo
+curado `engine/mergedLineages.js`: uma reimpressao de cenario do LFL que so reflavoriza uma especie
+mainstream tem suas `_versions` FUNDIDAS na base, e a entrada standalone some do seletor. O
+`Elf|XPHB` passa a oferecer Drow/High/Wood **+ Lorwyn/Shadowmoor**; a entrada `Elf|LFL` sai. Cada
+linhagem fundida carrega `source: 'LFL'`, entao resolve o fluff/arte pela fonte LFL (Elf
+(Lorwyn).webp, Elf (Shadowmoor).webp) - a lore e a imagem do LFL nao se perdem. O
+`withLineageImages` ganhou um passo para escolher, num fluff que empacota varias imagens de
+linhagem, a que cita o termo da linhagem no nome do arquivo (Shadowmoor mostra a arte de
+Shadowmoor).
+
+**3. "Fairy" e "Faerie" viram um so.** Mesmo mecanismo: `Faerie|LFL` e o `Fairy|MPMM` +
+linhagens de Lorwyn (superset), entao suas duas linhagens sao fundidas no `Fairy|MPMM` e a entrada
+`Faerie|LFL` sai. Como o Fairy NAO exige linhagem nativamente, as fundidas entram como ACRESCIMOS
+opcionais (marcadas `_legacy`), sem passar a obrigar uma escolha. O nome mainstream ("Fairy") fica,
+por decisao do usuario. Como o LFL nomeia as linhagens "Faerie; ..." (nome proprio, != base
+"Fairy"), o fluff resolve por um novo passo de prefixo-do-nome (Faerie.webp) e o import exclui as
+reimpressoes fundidas do casamento por nome exato (`resolveRaceByExactName`), senao a linhagem
+reimportava como "faerie" em vez de "fairy".
+
+As entradas standalone (`Elf|LFL`, `Faerie|LFL`) continuam RESOLVIVEIS por nome (`speciesCatalog`
+nao as remove), entao uma ficha antiga salva com elas nao perde a especie ao recarregar.
+
+**Verificado:** 1117 testes (+7, `mergedLineages.test.js`), lint, sweep 285/285 `--strict`
+(inalterado: -2 linhas Elf|LFL -2 Faerie|LFL +2 Elf|XPHB +2 Fairy|MPMM), e contra o compendio real:
+"Elf" da uma entrada so com 5 linhagens + Pallid; "Fairy" da uma so; "Faerie" some; as artes de
+Lorwyn/Shadowmoor resolvem por linhagem. A pane do browser nao compos frames neste ambiente
+(limitacao de exibicao), entao a verificacao ao vivo foi pelos mesmos code paths da UI
+(`raceEntity.list`/`raceLineages`/`raceEntity.fluff`/`resolveRaceObj`) + o build/export/round-trip
+do sweep.

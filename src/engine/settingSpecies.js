@@ -18,11 +18,12 @@
 // O QUE NÃO ESTÁ AQUI, e por quê:
 //  - `LFL` ("Lorwyn: First Light", 2025-11-18) é livro OFICIAL e ATUAL, em
 //    regras 2024: suas espécies já vêm no formato moderno (entry "Creature
-//    Type", sem `ability`, guarda-chuva de linhagem). O `Elf|LFL` é traço a
-//    traço o `Elf|XPHB` com linhagens Lorwyn/Shadowmoor no lugar de Drow/High/
-//    Wood, e o `Kithkin|LFL` é o Halfling XPHB + darkvision + um guarda-chuva
-//    "Kithkin Lineage", ou seja, o livro faz o mesmo que o DDL-0063. É conteúdo
-//    atual como o Astral Elf ou o Sea Elf, e NÃO entra em nenhuma lista daqui.
+//    Type", sem `ability`, guarda-chuva de linhagem). NÃO entram em NENHUMA lista
+//    daqui. As reimpressões que só reflavorizam uma espécie mainstream (`Elf|LFL`
+//    é traço a traço o `Elf|XPHB` com Lorwyn/Shadowmoor no lugar de Drow/High/
+//    Wood; `Faerie|LFL` é o `Fairy|MPMM` + linhagens de Lorwyn) são FUNDIDAS na
+//    base por engine/mergedLineages.js (DDL-0066): as linhagens do LFL viram
+//    opções da espécie mainstream e a entrada LFL some do seletor - uma "Elf" só.
 //    REGRA: não confundir "cenário" com "legado" porque a fonte parece exótica.
 //    Confira a DATA da fonte e o FORMATO da espécie.
 //  - As demais espécies de cenário de LIVROS (GGR/Ravnica, EFA/Eberron,

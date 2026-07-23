@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T17:45:24.611Z · base seed 1 · 285 rows
+Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -185,20 +185,20 @@ Last sweep: 2026-07-23T17:45:24.611Z · base seed 1 · 285 rows
 | `species:Dwarf\|XPHB` | ok | - | todo | todo |  |
 | `species:Dwarf (Kaladesh)\|PSK` | ok | - | todo | todo |  |
 | `species:Eladrin\|MPMM` | ok | - | todo | todo |  |
-| `species:Elf\|LFL/Elf; Lorwyn Lineage` | ok | - | todo | todo |  |
-| `species:Elf\|LFL/Elf; Shadowmoor Lineage` | ok | - | todo | todo |  |
 | `species:Elf\|XPHB/Elf; Drow Lineage` | ok | - | todo | todo |  |
 | `species:Elf\|XPHB/Elf; High Elf Lineage` | ok | - | todo | todo |  |
 | `species:Elf\|XPHB/Elf; Wood Elf Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf; Lorwyn Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf; Shadowmoor Lineage` | ok | - | todo | todo |  |
 | `species:Elf\|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada, LINHAGEM sem reescrita (único caso - DDL-0060) |
 | `species:Elf (Kaladesh)\|PSK/Elf (Kaladesh; Bishatar and Tirahar)` | ok | - | todo | todo |  |
 | `species:Elf (Kaladesh)\|PSK/Elf (Kaladesh; Vahadar)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Joraga Nation)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Mul Daya Nation)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Tajuru Nation)` | ok | - | todo | todo |  |
-| `species:Faerie\|LFL/Faerie; Lorwyn` | ok | - | todo | todo |  |
-| `species:Faerie\|LFL/Faerie; Shadowmoor` | ok | - | todo | todo |  |
 | `species:Fairy\|MPMM` | ok | - | todo | todo |  |
+| `species:Fairy\|MPMM/Faerie; Lorwyn` | ok | - | todo | todo |  |
+| `species:Fairy\|MPMM/Faerie; Shadowmoor` | ok | - | todo | todo |  |
 | `species:Firbolg\|MPMM` | ok | - | todo | todo |  |
 | `species:Flamekin\|LFL` | ok | - | todo | todo |  |
 | `species:Genasi\|MPMM/Genasi (Air)` | ok | - | todo | todo |  |

@@ -17,6 +17,7 @@
 import { createCharacter, makeId, ABILITIES } from '../schema/character';
 import { toolId, languageCode } from './foundryExport';
 import { raceLineages, speciesCatalog } from './speciesData';
+import { isFoldedSpecies } from './mergedLineages';
 import { latestOnly } from '../selector/reprints';
 import { specificVariants } from './magicVariants';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from './resolve';
@@ -262,7 +263,11 @@ function resolveLineageName(db, baseName, source, rawLineagePart) {
  * Aetherborn"). Sem isso, a heurística de separador quebrava esses nomes em
  * base+linhagem inventadas (TC-0008). */
 function resolveRaceByExactName(db, name) {
-  const list = speciesCatalog(db); // compêndio + espécies legadas curadas
+  // Fora as reimpressões FUNDIDAS (Faerie|LFL): a linhagem delas ("Faerie;
+  // Lorwyn") agora vive na base mainstream (Fairy|MPMM), então casar contra a
+  // entrada standalone devolveria a espécie errada ("faerie" em vez de "fairy").
+  // A entrada standalone segue resolvível por resolveRaceObj (fichas antigas).
+  const list = speciesCatalog(db).filter((r) => !isFoldedSpecies(r));
   if (!list.length) return null;
   const n = norm(name);
   const bases = list.filter((r) => norm(r.name) === n);

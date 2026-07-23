@@ -10,11 +10,13 @@
 // `expandRaceVersions` as expande em variantes concretas (ver abaixo).
 // -----------------------------------------------------------------------------
 
+import { resolveCopies } from '../selector/copy';
 import { skillCode } from './classData';
 import { parseChoices } from './choices';
 import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { legacyLegacyVersions } from './legacyFiendishLegacies';
 import { halflingLineageVersions, withLineageUmbrella, lineageUmbrellaName } from './legacyHalflingLineages';
+import { mergedLineageVersions } from './mergedLineages';
 import { isEmptySubrace } from './settingSpecies';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
@@ -303,7 +305,19 @@ export function raceLineages(db, race) {
   const legacy = legacyLegacyVersions(db, race).map((v) => buildVariant(race, v));
   const halflingBase = withLineageUmbrella(db, race);
   const halfling = halflingLineageVersions(db, race).map((v) => buildVariant(halflingBase, v));
-  return [...expandRaceVersions(race), ...legacy, ...halfling, ...subraceVersions(db, race)];
+  // Linhagens de uma REIMPRESSÃO de cenário (LFL) fundidas na base mainstream:
+  // o Elf|XPHB ganha Lorwyn/Shadowmoor, o Fairy|MPMM ganha as duas linhagens
+  // Lorwyn (DDL-0066). Numa espécie SEM `_versions` nativas (Fairy) elas são
+  // ACRÉSCIMOS opcionais - marcadas `_legacy`, como as sub-raças legadas, para
+  // não passarem a OBRIGAR uma linhagem. Onde a base já exige linhagem (Elf) são
+  // apenas mais opções da escolha obrigatória.
+  const optional = !Array.isArray(race?._versions) || race._versions.length === 0;
+  const merged = mergedLineageVersions(db, race).map((v) => {
+    const built = buildVariant(race, v);
+    if (optional) built._legacy = true;
+    return built;
+  });
+  return [...expandRaceVersions(race), ...legacy, ...halfling, ...merged, ...subraceVersions(db, race)];
 }
 
 /**
@@ -517,7 +531,27 @@ export function legacyStandaloneSpecies(db) {
 export function speciesCatalog(db) {
   const list = db?.races?.race;
   if (!Array.isArray(list)) return legacyStandaloneSpecies(db);
-  return [...list, ...legacyStandaloneSpecies(db)];
+  return [...resolvedCatalog(db, list), ...legacyStandaloneSpecies(db)];
+}
+
+const catalogCache = new WeakMap(); // db → db.races.race com `_copy` resolvido
+
+/**
+ * O compêndio de espécies com a herança `_copy` RESOLVIDA (memoizado por db).
+ *
+ * Sem isto, uma espécie que herda `size`/`speed`/traços de um pai (`Elf|LFL` →
+ * `Elf|XPHB`, `Centaur|MOT` → `Centaur|GGR`, e outras 14) chegava ao
+ * `resolveRaceObj` com `speed` indefinido, e a ficha derivava deslocamento 0. O
+ * seletor já resolvia o `_copy` (`race.js` `list`), mas o caminho de DERIVAÇÃO
+ * (que passa por aqui) lia a lista crua. Agora os dois veem o objeto completo.
+ */
+function resolvedCatalog(db, list) {
+  let resolved = catalogCache.get(db);
+  if (!resolved) {
+    resolved = resolveCopies(list);
+    catalogCache.set(db, resolved);
+  }
+  return resolved;
 }
 
 /**

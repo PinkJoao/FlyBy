@@ -13,6 +13,8 @@ import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
 import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
 import { isRemovedSpecies, isSettingVariant, imageDonorFor } from '../../engine/settingSpecies';
+import { isFoldedSpecies } from '../../engine/mergedLineages';
+import { lineageLabel } from '../../engine/speciesData';
 import { sourceName } from '../../engine/sourceNames';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
@@ -144,6 +146,22 @@ function withLineageImages(found, race, list, base) {
     }
   }
 
+  // (1b) fluff que empacota VÁRIAS imagens de linhagem numa entrada só (o fluff
+  // do Elf|LFL traz "Elf (Lorwyn)" E "Elf (Shadowmoor)"): a linhagem fundida
+  // escolhe a imagem cujo caminho cita o nome dela, senão as duas mostrariam a
+  // primeira (Lorwyn) para ambas. Casa pelo rótulo da linhagem no nome do arquivo.
+  if (race._baseName && images.length > 1) {
+    // O nome do arquivo cita o TERMO da linhagem entre parênteses ("Elf
+    // (Shadowmoor).webp"); o rótulo pode trazer sufixo ("Shadowmoor Lineage"),
+    // então testa cada palavra dele.
+    const words = lineageLabel(race.name).toLowerCase().split(/\s+/).filter(Boolean);
+    const i = images.findIndex((img) => {
+      const p = imgPath(img)?.toLowerCase() ?? '';
+      return words.some((w) => p.includes(`(${w})`));
+    });
+    if (i > 0) images = [images[i], ...images.slice(0, i), ...images.slice(i + 1)];
+  }
+
   // (2) arte doada por uma espécie redundante removida
   const donorId = imageDonorFor(race);
   if (donorId) {
@@ -169,9 +187,12 @@ const raceEntity = {
   // base 2024 não é o mesmo chassi que a base 2014 delas. Fora, também, as
   // espécies de cenário removidas por não entregarem mecânica nenhuma ou por
   // serem redundantes (`isRemovedSpecies`, engine/settingSpecies).
+  // Fora, também, as reimpressões de cenário (LFL) cujas linhagens foram fundidas
+  // na espécie mainstream (`isFoldedSpecies`, engine/mergedLineages) - só a
+  // entrada standalone some; as linhagens dela viram opções da base.
   list: (db) =>
     [...latestOnly(resolveCopies(db?.races?.race ?? [])), ...legacyStandaloneSpecies(db)]
-      .filter((r) => !r.traitTags?.includes('NPC Race') && !isRemovedSpecies(r)),
+      .filter((r) => !r.traitTags?.includes('NPC Race') && !isRemovedSpecies(r) && !isFoldedSpecies(r)),
 
   idOf: (race) => `${race.name}|${race.source}`,
 
@@ -252,8 +273,15 @@ const raceEntity = {
   fluff: (race, db) => {
     const list = fluffList(db);
     const baseName = race._baseName ?? race.name;
+    // Prefixo do nome da linhagem, quando difere da base: uma reimpressão fundida
+    // com nome PRÓPRIO (Faerie|LFL → base Fairy) nomeia suas linhagens "Faerie;
+    // Lorwyn", então o fluff/arte da reimpressão (Faerie.webp) resolve por este
+    // prefixo + a fonte da linhagem (LFL), não por baseName. Para as linhagens
+    // nativas o prefixo é o próprio baseName e este passo é inócuo.
+    const prefix = race._baseName ? race.name.split(/[;(]/)[0].trim() : null;
     const found =
       list.find((f) => f.name === race.name && f.source === race.source) ??
+      (prefix && prefix !== baseName ? list.find((f) => f.name === prefix && f.source === race.source) : null) ??
       list.find((f) => f.name === baseName && f.source === race.source) ??
       list.find((f) => f.name === baseName) ??
       null;

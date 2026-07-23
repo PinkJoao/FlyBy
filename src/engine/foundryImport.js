@@ -16,7 +16,7 @@
 
 import { createCharacter, makeId, ABILITIES } from '../schema/character';
 import { toolId, languageCode } from './foundryExport';
-import { raceLineages } from './speciesData';
+import { raceLineages, speciesCatalog } from './speciesData';
 import { latestOnly } from '../selector/reprints';
 import { specificVariants } from './magicVariants';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from './resolve';
@@ -227,8 +227,8 @@ function languageKeyToName(key, db) {
 
 /** Acha a raça BASE no compêndio pelo nome (case-insensitive), preferindo a fonte dada. */
 function findBaseRace(db, baseName, source) {
-  const list = db?.races?.race;
-  if (!Array.isArray(list)) return null;
+  const list = speciesCatalog(db); // compêndio + espécies legadas curadas
+  if (!list.length) return null;
   const matches = list.filter((r) => norm(r.name) === norm(baseName));
   if (!matches.length) return null;
   return (source && matches.find((r) => r.source === source)) || matches[matches.length - 1];
@@ -262,8 +262,8 @@ function resolveLineageName(db, baseName, source, rawLineagePart) {
  * Aetherborn"). Sem isso, a heurística de separador quebrava esses nomes em
  * base+linhagem inventadas (TC-0008). */
 function resolveRaceByExactName(db, name) {
-  const list = db?.races?.race;
-  if (!Array.isArray(list)) return null;
+  const list = speciesCatalog(db); // compêndio + espécies legadas curadas
+  if (!list.length) return null;
   const n = norm(name);
   const bases = list.filter((r) => norm(r.name) === n);
   if (bases.length) return { id: bases[bases.length - 1].name.toLowerCase(), lineage: null };

@@ -9,6 +9,7 @@
 
 import { latestOnly } from '../reprints';
 import { resolveCopies } from '../copy';
+import { legacyStandaloneSpecies } from '../../engine/speciesData';
 
 // --- Stable keys → display labels (the only place a translator touches) -------
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
@@ -99,9 +100,12 @@ const raceEntity = {
   // Resolve herança `_copy` (size/speed/traits vêm do pai) → só versões atuais
   // (latestOnly) → e só JOGÁVEIS (fora as "NPC Species"). As sub-raças/linhagens
   // (`_versions`) NÃO entram aqui - são escolhidas num seletor separado (SpeciesTab),
-  // preservando a arte da raça base.
+  // preservando a arte da raça base. A exceção são as sub-raças legadas curadas
+  // marcadas `as: 'species'` (DDL-0059): elas VÊM como espécie própria, porque a
+  // base 2024 não é o mesmo chassi que a base 2014 delas.
   list: (db) =>
-    latestOnly(resolveCopies(db?.races?.race ?? [])).filter((r) => !r.traitTags?.includes('NPC Race')),
+    [...latestOnly(resolveCopies(db?.races?.race ?? [])), ...legacyStandaloneSpecies(db)]
+      .filter((r) => !r.traitTags?.includes('NPC Race')),
 
   idOf: (race) => `${race.name}|${race.source}`,
 

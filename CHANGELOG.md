@@ -4193,3 +4193,43 @@ degrada como o Artificer já degrada.
 e passada ao vivo: as 14 linhagens do Tiefling com rótulo e fonte certos, Zariel derivando
 Thaumaturgy por Charisma (DC 10/+2) e sem "Fiendish Legacy" órfão, Keldon sem a prosa 2014,
 Halfling completo sem linhagem, mobile 375px sem overflow e zero erros de console.
+
+---
+
+## 67. Sub-raça legada: linhagem da base atual OU espécie à parte (DDL-0060)
+
+**O achado do usuário.** Ghostwise e Lotusden não podiam ser linhagens do Halfling XPHB, porque são
+sub-raças de uma versão DIFERENTE da base. O dado confirma:
+
+| espécie | base 2014 | base 2024 | veredito |
+|---|---|---|---|
+| **Halfling** | Lucky / Brave / Nimbleness | + **Naturally Stealthy** ← traço do *Lightfoot* | **espécie à parte** |
+| Elf | Darkvision / Keen Senses / Fey Ancestry / Trance | + "Elven Lineage" (guarda-chuva) | linhagem |
+| Tiefling | Darkvision / Hellish Resistance / Infernal Legacy | Darkvision / "Fiendish Legacy" / Otherworldly Presence | linhagem |
+| Human | (só prosa) | Resourceful / Skillful / Versatile (traços NOVOS) | linhagem |
+
+Como linhagens do Halfling 2024, as duas ganhavam **Naturally Stealthy** de graça — um traço que
+nunca tiveram, e que o Silent Speech do Ghostwise justamente substituía.
+
+**A correção.** O registro ganhou o campo **`as`**:
+- **`'lineage'`** (padrão, 13 entradas) — correto só quando o chassi 2024 é genérico, com um traço
+  GUARDA-CHUVA que a linhagem ocupa via `supersedes`. Elf e Tiefling conferidos traço a traço.
+- **`'species'`** (Ghostwise, Lotusden) — vira ESPÉCIE à parte no seletor, fundida na base
+  **LEGADA**, como o `Eladrin|MPMM` já é hoje. A base legada passa pela mesma limpeza da sub-raça
+  (sem `ability` 2014, sem as seções de prosa); o `mergeSubrace` já apaga o `reprintedAs`, senão o
+  `latestOnly` esconderia a espécie recém-criada.
+
+**REGRA para uma entrada nova:** compare os traços da base 2024 com os da 2014. Se a 2024 trouxer o
+traço de ALGUMA sub-raça 2014, é `'species'`; se ela só tiver o guarda-chuva, é `'lineage'`.
+
+**`speciesCatalog(db)` é a lista única de espécies.** Uma espécie legada não está em
+`db.races.race`, então toda resolução por nome tem de passar por ela — senão a ficha perde a
+espécie ao recarregar ou ao reimportar. Migrados os três pontos: `resolveRaceObj` (engine),
+`findBaseRace` e `resolveRaceByExactName` (import do Foundry); a entity do seletor concatena
+`legacyStandaloneSpecies(db)`. Novos consumidores devem usar `speciesCatalog`, nunca a lista crua.
+
+**Verificado:** 1028 testes (+2), lint, **sweep 289/289 `--strict`** (as linhas viraram
+`species:Halfling (Ghostwise)|SCAG`; o round-trip do export segue verde), e ao vivo: o Ghostwise
+deriva **Lucky / Brave / Halfling Nimbleness / Silent Speech**, 25 ft, Small — sem Naturally
+Stealthy e sem a prosa 2014 — e o Halfling XPHB voltou a não ter seletor de linhagem nenhum.
+Mobile 375px sem overflow, zero erros de console.

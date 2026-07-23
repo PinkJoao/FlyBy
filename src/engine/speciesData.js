@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 
 import { skillCode } from './classData';
-import { legacySubracesFor, LEGACY_PROSE_SECTIONS } from './legacySubraces';
+import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
 function applyArrMods(arr, ops) {
@@ -301,6 +301,66 @@ export function raceLineages(db, race) {
  */
 export function requiresLineage(db, race) {
   return raceLineages(db, race).some((v) => !v._legacy);
+}
+
+// --- Sub-raças legadas que voltam como ESPÉCIE À PARTE -----------------------
+// Quando a base 2024 ABSORVEU os traços de uma das sub-raças 2014 (o Halfling
+// XPHB é o de 2014 + o Naturally Stealthy do Lightfoot), pendurar uma irmã nela
+// daria de graça um traço que ela nunca teve. Essas voltam fundidas na base
+// LEGADA, como espécie própria no seletor - do jeito que o `Eladrin|MPMM` já é.
+// Ver a nota sobre `as` no cabeçalho de legacySubraces.js.
+
+const standaloneCache = new WeakMap(); // db → espécies legadas montadas
+
+/**
+ * Cópia da base LEGADA pronta para receber a sub-raça: sem o `ability` 2014 e
+ * sem as seções de prosa que o chassi 2024 expressa em campos estruturados
+ * (mesmas regras aplicadas à sub-raça). `mergeSubrace` já limpa `reprintedAs`,
+ * então o resultado não é escondido pelo `latestOnly`.
+ */
+function prepareLegacyBase(race) {
+  const out = { ...race };
+  delete out.ability;
+  if (Array.isArray(out.entries)) {
+    out.entries = out.entries.filter((e) => !LEGACY_PROSE_SECTIONS.has(e?.name));
+  }
+  return out;
+}
+
+/**
+ * As espécies legadas curadas, montadas sobre a base LEGADA (memoizado por db).
+ * @param {object|null} db
+ * @returns {object[]}
+ */
+export function legacyStandaloneSpecies(db) {
+  if (!db) return [];
+  const cached = standaloneCache.get(db);
+  if (cached) return cached;
+  const out = [];
+  for (const ref of legacyStandaloneRefs()) {
+    const base = (db.races?.race ?? []).find((r) => r?.name === ref.raceName && r.source === ref.raceSource);
+    const sr = findSubrace(db, ref);
+    if (!base || !sr) continue;
+    const merged = dropSuperseded(mergeSubrace(prepareLegacyBase(base), prepareLegacySubrace(sr)), ref.supersedes);
+    merged._legacy = true;
+    out.push(merged);
+  }
+  standaloneCache.set(db, out);
+  return out;
+}
+
+/**
+ * O catálogo de espécies que o app reconhece: as do compêndio MAIS as espécies
+ * legadas curadas. É a lista que TODA resolução de espécie por nome deve usar
+ * (`resolveRaceObj`, o import do Foundry, a entity do seletor) - senão uma
+ * espécie legada some ao recarregar a ficha ou ao reimportar.
+ * @param {object|null} db
+ * @returns {object[]}
+ */
+export function speciesCatalog(db) {
+  const list = db?.races?.race;
+  if (!Array.isArray(list)) return legacyStandaloneSpecies(db);
+  return [...list, ...legacyStandaloneSpecies(db)];
 }
 
 /**

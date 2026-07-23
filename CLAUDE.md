@@ -231,10 +231,13 @@ not rediscover these; remove an item (and note where it was done) when it ships.
    effects, CHANGELOG §35; DDL-0057 for the rest, CHANGELOG §65).** Effects, `activities`,
    `system` (uses/range/duration) and `advancement` (ScaleValue) are all adopted, curated-first.
    Nothing of the overlay remains unused.
-4. ~~**Curated LEGACY SUBRACES**~~ — **DONE 2026-07-22 (DDL-0058 planned it, DDL-0059 shipped it;
-   CHANGELOG §66).** 15 of the 24 unreachable subraces came back as curated lineages of the
-   CURRENT base species (registry `engine/legacySubraces.js`); 9 were deliberately discarded. The
-   general edition toggle stays **cancelled**. Adding another legacy subrace is one registry line.
+4. ~~**Curated LEGACY SUBRACES**~~ — **DONE 2026-07-22 (DDL-0058 planned it, DDL-0059 shipped it,
+   DDL-0060 refined it; CHANGELOG §66–67).** 15 of the 24 unreachable subraces came back, curated,
+   in `engine/legacySubraces.js`: 13 as LINEAGES of the current base species and 2 as SEPARATE
+   SPECIES built on the legacy chassis (`as: 'species'` — mandatory whenever the 2024 base absorbed
+   a 2014 subrace's trait, as the Halfling did with the Lightfoot's Naturally Stealthy). 9 were
+   deliberately discarded. The general edition toggle stays **cancelled**. Adding another legacy
+   subrace is one registry line, plus the `as` call spelled out in DDL-0060.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
@@ -314,6 +317,54 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0060 — Sub-raça legada tem DUAS formas de voltar: linhagem da base atual OU espécie à parte
+**Date:** 2026-07-22
+**Refina o DDL-0059** (não o substitui: as 13 entradas `lineage` continuam exatamente como estão).
+**Builds on:** a observação do usuário de que o `Eladrin|MPMM` — tecnicamente uma linhagem de elfo —
+é tratado hoje como espécie própria, e é esse o precedente certo para alguns casos.
+
+**Context.** O usuário notou que Ghostwise e Lotusden não podiam ser linhagens do Halfling XPHB:
+elas são sub-raças de uma versão DIFERENTE da base. Confirmado no dado — **o Halfling XPHB é o
+Halfling 2014 + `Naturally Stealthy`, que era o traço do LIGHTFOOT**. Penduradas nele, as duas
+ganhavam de graça um traço que nunca tiveram (e que o Silent Speech do Ghostwise justamente
+substituía). O DDL-0059 tinha assumido, sem conferir, que toda base 2024 é um chassi genérico.
+
+**Decision — o registro passa a ter um campo `as`.**
+- **`'lineage'` (padrão)** — só é correto quando o chassi 2024 é GENÉRICO, isto é, quando ele tem
+  um traço GUARDA-CHUVA que a linhagem ocupa via `supersedes` e nada de sub-raça vaza para ela.
+  É o caso do Elf ("Elven Lineage") e do Tiefling ("Fiendish Legacy") — conferidos traço a traço.
+- **`'species'`** — a sub-raça vira uma ESPÉCIE à parte no seletor de espécies, fundida na base
+  **LEGADA** (`of`), como o `Eladrin|MPMM` já é. Ghostwise e Lotusden saem assim, sobre o chassi
+  2014 correto: Lucky/Brave/Nimbleness + o traço próprio, 25 ft.
+- **REGRA para uma entrada nova (obrigatória, não opcional): compare os traços da base 2024 com os
+  da base 2014.** Se a 2024 trouxer o traço de ALGUMA sub-raça 2014, é `'species'`; se ela só
+  tiver o guarda-chuva de linhagem, é `'lineage'` + `supersedes`. A tabela que fecha os quatro
+  casos de hoje está no CHANGELOG §67.
+- **A base legada passa pela MESMA limpeza da sub-raça** (`prepareLegacyBase`): sem o `ability`
+  2014, sem as `LEGACY_PROSE_SECTIONS`. O `mergeSubrace` já apaga o `reprintedAs` da base — sem
+  isso o `latestOnly` esconderia a espécie recém-criada.
+
+**Decision — `speciesCatalog(db)` é a lista única de espécies.** Uma espécie legada não está em
+`db.races.race`, então TODA resolução por nome tem de passar por ela, senão a ficha perde a espécie
+ao recarregar ou ao reimportar. Os três pontos de resolução (`resolveRaceObj` no engine,
+`findBaseRace` e `resolveRaceByExactName` no import do Foundry) foram migrados; a entity do seletor
+concatena `legacyStandaloneSpecies(db)` depois do `latestOnly`/`resolveCopies` (uma espécie legada
+já vem sem `_copy` e sem `reprintedAs`). **Quem adicionar um novo consumidor de lista de espécies
+deve usar `speciesCatalog`, nunca `db.races.race` cru.**
+- Limitação conhecida: `legacyStandaloneSpecies` monta a partir da base legada CRUA, sem
+  `resolveCopies` (o resolvedor mora na camada de seletor). Nenhuma das bases legadas curadas tem
+  `_copy`; uma que tivesse precisaria mover essa resolução para o engine.
+
+**Consequences.**
+- O Halfling XPHB volta a NÃO ter linhagem nenhuma (o seletor de Lineage some da aba), e as duas
+  aparecem como espécies irmãs — "Halfling (Ghostwise)", "Halfling (Lotusden)".
+- No sweep as linhas mudaram de `species:Halfling|XPHB/Halfling (Ghostwise)` para
+  `species:Halfling (Ghostwise)|SCAG`; o total continua 289 e o round-trip do export segue verde,
+  então uma espécie legada exporta e reimporta como qualquer outra (sem uuid de compêndio, DDL-0059).
+- Verificado: 1028 testes (+2), lint, sweep **289/289 `--strict`**, e ao vivo: o Ghostwise deriva
+  Lucky/Brave/Halfling Nimbleness/**Silent Speech**, 25 ft, Small — sem Naturally Stealthy e sem a
+  prosa 2014; mobile 375px sem overflow, zero erros de console. Ver CHANGELOG §67.
 
 ### DDL-0059 — Sub-raças legadas IMPLEMENTADAS: 15 curadas, `supersedes`/prosa 2014, e linhagem opcional
 **Date:** 2026-07-22

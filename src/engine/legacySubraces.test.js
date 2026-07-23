@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { LEGACY_SUBRACES, LEGACY_PROSE_SECTIONS, legacySubracesFor } from './legacySubraces';
-import { subraceVersions, raceLineages, requiresLineage } from './speciesData';
+import { LEGACY_SUBRACES, LEGACY_PROSE_SECTIONS, legacySubracesFor, legacyStandaloneRefs } from './legacySubraces';
+import { subraceVersions, raceLineages, requiresLineage, legacyStandaloneSpecies, speciesCatalog } from './speciesData';
 
 describe('LEGACY_SUBRACES (registro curado, DDL-0058)', () => {
   it('só anexa a bases ATUAIS e não repete uma sub-raça', () => {
@@ -23,6 +23,17 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058)', () => {
     expect(ids).not.toContain('Draconblood|EGW'); // sopro ficaria sem tipo de dano
     expect(ids).not.toContain('Ravenite|EGW'); // idem
     expect(ids).not.toContain('Variant; Drow Descent|SCAG'); // → Khoravar|EFA
+  });
+
+  it('as marcadas `as: species` saem do índice de LINHAGENS', () => {
+    // O Halfling XPHB absorveu o Naturally Stealthy do Lightfoot, então
+    // Ghostwise/Lotusden voltam como espécie própria - não como linhagem dele.
+    expect(legacySubracesFor({ name: 'Halfling', source: 'XPHB' })).toEqual([]);
+    expect(legacyStandaloneRefs().map((r) => r.name).sort()).toEqual(['Ghostwise', 'Lotusden']);
+    // e a base em que elas se fundem é a LEGADA
+    for (const ref of legacyStandaloneRefs()) {
+      expect(ref).toMatchObject({ raceName: 'Halfling', raceSource: 'PHB' });
+    }
   });
 
   it('legacySubracesFor indexa pela raça ATUAL', () => {
@@ -123,6 +134,40 @@ describe('sub-raças legadas como linhagens da base atual', () => {
     // e as legadas ficam marcadas como tal
     expect(subraceVersions(db, human)[0]._legacy).toBe(true);
     expect(raceLineages(db, tiefling)[0]._legacy).toBeUndefined();
+  });
+
+  it('a sub-raça `as: species` é montada sobre a base LEGADA, não a 2024', () => {
+    // Chassi 2014 (Lucky/Brave/Nimbleness, 25 ft) + o traço próprio; nada de
+    // Naturally Stealthy, que no 2024 veio do Lightfoot.
+    const legacyDb = {
+      races: {
+        race: [
+          { name: 'Halfling', source: 'PHB', speed: 25, ability: [{ dex: 2 }], reprintedAs: ['Halfling|XPHB'],
+            entries: [
+              { type: 'entries', name: 'Age', entries: ['prosa 2014'] },
+              { type: 'entries', name: 'Lucky', entries: ['a'] },
+              { type: 'entries', name: 'Brave', entries: ['b'] },
+            ] },
+          { name: 'Halfling', source: 'XPHB', speed: 30,
+            entries: [{ type: 'entries', name: 'Naturally Stealthy', entries: ['lightfoot'] }] },
+        ],
+        subrace: [
+          { name: 'Ghostwise', source: 'SCAG', raceName: 'Halfling', raceSource: 'PHB', ability: [{ wis: 1 }],
+            entries: [{ type: 'entries', name: 'Silent Speech', entries: ['c'] }] },
+        ],
+      },
+    };
+    const [ghostwise] = legacyStandaloneSpecies(legacyDb);
+    expect(ghostwise.name).toBe('Halfling (Ghostwise)');
+    expect(ghostwise.entries.map((e) => e.name)).toEqual(['Lucky', 'Brave', 'Silent Speech']);
+    expect(ghostwise.speed).toBe(25); // o chassi 2014, não os 30 ft de 2024
+    expect(ghostwise.ability).toBeUndefined(); // o `ability` legado sai dos DOIS lados
+    expect(ghostwise.reprintedAs).toBeUndefined(); // senão o latestOnly a esconderia
+    // e ela é uma ESPÉCIE do catálogo, não uma linhagem do Halfling 2024
+    expect(speciesCatalog(legacyDb).map((r) => `${r.name}|${r.source}`)).toContain('Halfling (Ghostwise)|SCAG');
+    const modern = legacyDb.races.race.find((r) => r.source === 'XPHB');
+    expect(raceLineages(legacyDb, modern)).toEqual([]);
+    expect(requiresLineage(legacyDb, modern)).toBe(false);
   });
 
   it('o tratamento curado vale só p/ a base ATUAL (a legada segue o merge cru)', () => {

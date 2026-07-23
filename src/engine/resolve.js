@@ -13,7 +13,7 @@
 import { buildContext } from './context';
 import { resolveCopies } from '../selector/copy';
 import { deriveCharacter } from './index';
-import { parseSpecies, raceLineages } from './speciesData';
+import { parseSpecies, raceLineages, speciesCatalog } from './speciesData';
 import { collectOwned, collectFeatIds } from './proficiency';
 import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';
@@ -121,8 +121,9 @@ export function resolveSubclassObj(db, classId, subclassId, subclassSource) {
  */
 export function resolveRaceObj(db, id, source, lineage = null) {
   if (!db || !id) return null;
-  const list = db.races?.race;
-  if (!Array.isArray(list)) return null;
+  // Catálogo = compêndio + espécies legadas curadas (DDL-0059).
+  const list = speciesCatalog(db);
+  if (list.length === 0) return null;
   const lc = id.toLowerCase();
   const matches = list.filter((r) => r.name?.toLowerCase() === lc);
   if (matches.length === 0) return null;

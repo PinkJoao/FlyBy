@@ -1,15 +1,15 @@
 // =============================================================================
-// Halfling Lineage — a linhagem que a edição 2024 não escreveu (DDL-0063)
+// Halfling Lineage - a linhagem que a edição 2024 não escreveu (DDL-0063)
 // =============================================================================
 // O Halfling 2014 tinha quatro sub-raças IRMÃS (Lightfoot e Stout no PHB,
 // Ghostwise no SCAG, Lotusden no EGW). Nenhuma delas era "a base": escolher uma
 // era obrigatório. O chassi 2024 não virou um guarda-chuva de linhagem como o do
-// Elf ou o do Gnome — ele simplesmente **ABSORVEU o traço do Lightfoot**
+// Elf ou o do Gnome - ele simplesmente **ABSORVEU o traço do Lightfoot**
 // (Naturally Stealthy) para dentro da espécie, e as outras três ficaram fora.
 //
 // Isso é o que torna as três formas anteriores insuficientes (ver DDL-0059/0060):
 //   · como LINHAGEM crua, o Stout ganharia Naturally Stealthy DE GRAÇA por cima
-//     do que é dele — Lightfoot + Stout de uma vez;
+//     do que é dele - Lightfoot + Stout de uma vez;
 //   · como ESPÉCIE à parte (o que Ghostwise/Lotusden eram entre 2026-07-22 e
 //     2026-07-23), ela é balanceada mas espalha a família em várias linhas do
 //     seletor, que é exatamente a confusão que se quer resolver;
@@ -32,7 +32,7 @@
 // pergunta "por que escolher a espécie pura?" volta.
 //
 // FIDELIDADE AO DADO (DDL-0003/0061: enviamos código, nunca conteúdo). O texto de
-// cada opção são os `entries` da própria sub-raça 2014, sem uma palavra nossa —
+// cada opção são os `entries` da própria sub-raça 2014, sem uma palavra nossa -
 // e o do Lightfoot é o `Naturally Stealthy` da BASE 2024, não o do Lightfoot|PHB,
 // justamente porque ele tem de reproduzir a base (a redação 2024 diz "take the
 // Hide action", a de 2014 dizia "attempt to hide"). A ÚNICA string autoral do
@@ -42,12 +42,12 @@
 // NÃO NORMALIZAMOS a mecânica das opções (decisão do usuário): o Lotusden segue
 // mais pesado que as irmãs (cantrip + magia@3 + magia@5, o formato de linhagem do
 // Elf 2024) e com o atributo de conjuração FIXO em Sabedoria, como o dado 2014
-// diz. É o mesmo tratamento que o Pallid recebe hoje no Elf (DDL-0060) — quem
+// diz. É o mesmo tratamento que o Pallid recebe hoje no Elf (DDL-0060) - quem
 // normaliza atributo e magias é a REESCRITA (DDL-0061), que aqui não se aplica.
 //
 // O Dwarf tem exatamente o mesmo padrão (Dwarf XPHB = Dwarf 2014 + o Dwarven
 // Toughness do *Hill*, e o *Mountain* ficou de fora com o Dwarven Armor
-// Training). Foi deixado FORA de propósito, a pedido do usuário — o escopo aqui é
+// Training). Foi deixado FORA de propósito, a pedido do usuário - o escopo aqui é
 // só o Halfling. Adicioná-lo depois é um segundo alvo neste mesmo módulo.
 // -----------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
 const TARGET_RACE = 'Halfling|XPHB';
 /** Nome do traço guarda-chuva que criamos (e rótulo do seletor de linhagem). */
 export const UMBRELLA_TRAIT = 'Halfling Lineage';
-/** Traço que a base 2024 ABSORVEU de uma sub-raça 2014 — o que sai do lugar. */
+/** Traço que a base 2024 ABSORVEU de uma sub-raça 2014 - o que sai do lugar. */
 const ABSORBED_TRAIT = 'Naturally Stealthy';
 /** Base LEGADA de onde vêm as sub-raças (a chave de 4 campos do 5etools). */
 const LEGACY_BASE = Object.freeze({ raceName: 'Halfling', raceSource: 'PHB' });
@@ -68,7 +68,7 @@ const UMBRELLA_INTRO = 'Choose one of the following options.';
  * Campos ESTRUTURADOS que a opção leva da sub-raça para a variante. Só os que
  * SOBRESCREVEM: `buildVariant` faz `{...base, ...overrides}`, então um campo de
  * semântica CONCATENATIVA (traitTags, languageProficiencies) não pode entrar
- * aqui sem tratamento próprio. Nenhuma das quatro opções usa um desses hoje —
+ * aqui sem tratamento próprio. Nenhuma das quatro opções usa um desses hoje -
  * quem acrescentar uma que use precisa decidir a semântica antes.
  */
 const LIFTED_FIELDS = Object.freeze([
@@ -80,7 +80,7 @@ const LIFTED_FIELDS = Object.freeze([
  * As quatro linhagens. Cada entrada:
  *  - `lineage` rótulo da opção, do nome da variante e da linha da lista.
  *  - `from`    sub-raça de origem em `db.races.subrace` ("Nome|FONTE"), ou
- *              `null` no Lightfoot — cujo traço vive na BASE 2024, porque foi
+ *              `null` no Lightfoot - cujo traço vive na BASE 2024, porque foi
  *              ela quem o absorveu (ver o cabeçalho).
  *  - `source`  procedência exibida (o chip de fonte da linhagem). É sempre o
  *              livro que deu NOME à sub-raça, inclusive no Lightfoot, mesmo que
@@ -154,7 +154,7 @@ function liftedFields(db, spec) {
 
 /**
  * Monta o descritor de versão (formato `_versions`) e o item da lista do
- * guarda-chuva a partir das MESMAS peças — é a lição do DDL-0061: reprocessar o
+ * guarda-chuva a partir das MESMAS peças - é a lição do DDL-0061: reprocessar o
  * texto já montado faz a lista discordar do traço.
  * @returns {{version: object, item: object}|null} null se a origem não estiver
  *   no compêndio carregado
@@ -187,7 +187,7 @@ const MIN_OPTIONS = 2;
 /**
  * Versões + o traço guarda-chuva, montados juntos e memoizados por db.
  * Com menos de duas opções montáveis (compêndio incompleto) o resultado é vazio
- * e a espécie segue exatamente como está hoje — trocar o Naturally Stealthy por
+ * e a espécie segue exatamente como está hoje - trocar o Naturally Stealthy por
  * um seletor de uma opção só seria ruído puro.
  */
 function build(db, race) {
@@ -215,7 +215,7 @@ function build(db, race) {
  *
  * Eles NÃO são marcados `_legacy`: ao contrário das sub-raças legadas opcionais
  * (DDL-0059), estas SUBSTITUEM um traço da base, então escolher uma é
- * obrigatório — é o que `requiresLineage` passa a devolver.
+ * obrigatório - é o que `requiresLineage` passa a devolver.
  * @param {object|null} db
  * @param {object|null} race  espécie BASE (objeto cru)
  * @returns {object[]}
@@ -230,7 +230,7 @@ export function halflingLineageVersions(db, race) {
  * vez de "Naturally Stealthy" (o traço de UMA das opções, exibido como se fosse
  * de todas).
  *
- * IDEMPOTENTE e devolve a MESMA referência quando não há o que mudar — quem
+ * IDEMPOTENTE e devolve a MESMA referência quando não há o que mudar - quem
  * compara identidade (memo de render, caches) não vê churn. Precisa rodar ANTES
  * de `buildVariant`, senão o `replaceArr` das versões não acha o alvo e o traço
  * da linhagem some silenciosamente.
@@ -251,7 +251,7 @@ export function withLineageUmbrella(db, race) {
 /**
  * O nome do guarda-chuva desta espécie, para o rótulo do seletor de linhagem
  * (DDL-0062: o rótulo vem do traço substituído). Aqui o traço é nosso, então o
- * nome sai daqui — e continua sendo uma fonte única, não uma string solta na UI.
+ * nome sai daqui - e continua sendo uma fonte única, não uma string solta na UI.
  * @param {object|null} race
  * @returns {string|null}
  */
@@ -287,9 +287,9 @@ const ABSORBED_LINEAGE = halflingVersionName(
  *  - **Halfling XPHB sem linhagem** → *Lightfoot*, a opção que reproduz a base de
  *    hoje. Migração SEM PERDA: o personagem mantém exatamente o Naturally
  *    Stealthy que já tinha. O choice-bag é PRESERVADO (nada nele dependia da
- *    linhagem — a base não gerava escolha nenhuma).
+ *    linhagem - a base não gerava escolha nenhuma).
  *
- * Qualquer outra espécie — e um Halfling que já tenha linhagem — passa intacta.
+ * Qualquer outra espécie - e um Halfling que já tenha linhagem - passa intacta.
  * @param {object|null} species  `character.species`
  * @returns {object|null}
  */

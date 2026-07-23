@@ -93,7 +93,7 @@ describe('as linhagens do Halfling', () => {
     expect(halflingLineageVersions(db, other)).toEqual([]);
   });
 
-  it('cada uma TROCA o traço absorvido — nunca soma a ele', () => {
+  it('cada uma TROCA o traço absorvido - nunca soma a ele', () => {
     const byName = Object.fromEntries(raceLineages(db, base).map((v) => [v.name, v]));
     for (const spec of HALFLING_LINEAGES) {
       const v = byName[halflingVersionName(spec.lineage)];
@@ -158,7 +158,7 @@ describe('migração das formas antigas', () => {
     });
   });
 
-  it('Halfling XPHB sem linhagem recebe Lightfoot — sem perda e sem zerar o bag', () => {
+  it('Halfling XPHB sem linhagem recebe Lightfoot - sem perda e sem zerar o bag', () => {
     expect(migrateHalflingSpecies({ id: 'halfling', source: 'XPHB', lineage: null, choices: { a: 1 } })).toEqual({
       id: 'halfling', source: 'XPHB', lineage: 'Halfling; Lightfoot Lineage', choices: { a: 1 },
     });

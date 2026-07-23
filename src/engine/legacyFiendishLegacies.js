@@ -211,7 +211,7 @@ function benefitText(subrace, name) {
 
 /**
  * Monta o descritor de versão (formato `_versions`) de uma legacy legada, mais a
- * LINHA dela na tabela de Fiendish Legacies — as duas coisas saem das MESMAS
+ * LINHA dela na tabela de Fiendish Legacies - as duas coisas saem das MESMAS
  * peças, para a tabela não poder discordar do traço (foi o que fez a Winged
  * anunciar só a resistência, sem o voo, quando a linha era reprocessada do texto
  * já montado).
@@ -249,8 +249,8 @@ function buildVersion(db, race, spec, template) {
   };
   const extras = extraEntries(subrace, spec.keepEntries);
 
-  // A célula "Level 1" é tudo que a legacy dá nesse nível — resistência, cantrip
-  // e o benefício irregular (o voo da Winged) — sem a abertura genérica ("You are
+  // A célula "Level 1" é tudo que a legacy dá nesse nível - resistência, cantrip
+  // e o benefício irregular (o voo da Winged) - sem a abertura genérica ("You are
   // the recipient of a legacy…"), que é comum a todas e não pertence à tabela.
   const level1Cell = [resist.replace(/^[^.]*\.\s*/, ''), ...benefit].join(' ');
 
@@ -275,7 +275,7 @@ function buildVersion(db, race, spec, template) {
     _legacy: true, // acréscimo curado, não uma linhagem nativa da espécie
   };
 
-  return { version, row: [spec.legacy, level1Cell, level3?.tag ?? '—', level5?.tag ?? '—'] };
+  return { version, row: [spec.legacy, level1Cell, level3?.tag ?? '-', level5?.tag ?? '-'] };
 }
 
 const cache = new WeakMap(); // db → { versions, rows }

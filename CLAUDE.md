@@ -44,6 +44,12 @@ These are firm user preferences — follow them unless told otherwise:
    lint`, and — for UI-observable changes — the browser preview, before saying
    something works.
 5. **Record decisions here** (section 4) as you make them.
+6. **No em dashes.** Never type `—` in anything written for this project: code
+   comments, test names, strings, CHANGELOG, CLAUDE.md, commit messages and chat
+   replies alike. Use a hyphen `-`, a colon, parentheses, or reword the sentence.
+   This generalizes the older notification-text rule (DDL-0007) to the whole
+   repository. Do not go rewriting old em dashes in files the task does not
+   touch; the rule governs new text and whatever is already being edited.
 
 ---
 

@@ -471,6 +471,21 @@ Elf numa entrada só sem perder a lore/arte do LFL, e resolver o "Fairy"/"Faerie
   ambiente (limitação de exibição); a verificação ao vivo foi pelos mesmos code paths da UI. Ver
   CHANGELOG §75.
 
+**Amendment (2026-07-24, arte por linhagem; CHANGELOG §75).** Duas artes das linhagens fundidas
+estavam erradas. Registro curado `LINEAGE_IMAGE` (mergedLineages.js) → `lineageImagePath(race)`,
+aplicado no fim do `raceEntity.fluff`: quando há override, as imagens do fluff são substituídas
+pela ÚNICA arte que retrata a linhagem (a lore segue intacta). Duas correções, confirmadas olhando
+os arquivos ao vivo:
+- **Elf: os dois arquivos do LFL estão TROCADOS no dado** — "Elf (Lorwyn).webp" retrata Shadowmoor
+  (escuro, cogumelos) e "Elf (Shadowmoor).webp" retrata Lorwyn (claro, flores). Cada linhagem aponta
+  para o arquivo que a retrata de fato. **Regra:** o `_baseName`-match por nome de arquivo do
+  `withLineageImages` casa pelo RÓTULO; quando o dado upstream nomeia a arte errada, o override é o
+  ponto de conserto - não mexer no matcher.
+- **Fairy: Lorwyn usa a arte ORIGINAL do Fairy (MPMM)**; a do Faerie (LFL) fica só para Shadowmoor
+  (antes as duas mostravam a do Faerie). Nota: o seletor de LINHAGEM (`makeLineageEntity`) não tem
+  `fluff`, então a arte da linhagem aparece na PREVIEW da espécie (`raceEntity`, SpeciesTab), não no
+  card do seletor de linhagem - é assim desde sempre, não é regressão.
+
 ### DDL-0065 — Exibicao das fontes: nome por extenso no hover e no popup, de um mapa GERADO
 **Date:** 2026-07-23
 **Status: IMPLEMENTADO (inicio; ligado so a especie).** Primeiro passo da estrategia de exibicao das

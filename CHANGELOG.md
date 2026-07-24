@@ -4656,6 +4656,17 @@ Lorwyn/Shadowmoor resolvem por linhagem. A pane do browser nao compos frames nes
 (`raceEntity.list`/`raceLineages`/`raceEntity.fluff`/`resolveRaceObj`) + o build/export/round-trip
 do sweep.
 
+**Correcao de arte por linhagem (2026-07-24, a pedido do usuario).** Duas artes das linhagens
+fundidas estavam erradas, agora curadas em `LINEAGE_IMAGE` (mergedLineages.js), aplicada no
+`raceEntity.fluff` (substitui as imagens pela unica arte que retrata a linhagem, mantendo a lore):
+- **Elf: os dois arquivos do LFL estao TROCADOS no dado.** Confirmado ao vivo: "Elf (Lorwyn).webp"
+  retrata a cena escura de Shadowmoor (cogumelos), e "Elf (Shadowmoor).webp" retrata a de Lorwyn
+  (flores). Cada linhagem passou a apontar para o arquivo que a retrata de fato.
+- **Fairy: Lorwyn usa a arte ORIGINAL do Fairy (MPMM)**; a arte do Faerie (LFL, fae mais sombrio)
+  fica so para Shadowmoor. Antes as duas mostravam a arte do Faerie.
+Verificado ao vivo os quatro casos + 1118 testes (+1, `mergedLineages.test.js`), lint, zero erros
+de console.
+
 ## 76. Toda imagem do app expande em tela cheia; carrossel para as especies com varias artes (DDL-0067)
 
 Duas melhorias pedidas pelo usuario, num componente universal de imagem.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MERGED_LINEAGES, isFoldedSpecies, mergedLineageVersions } from './mergedLineages';
+import { MERGED_LINEAGES, isFoldedSpecies, mergedLineageVersions, lineageImagePath } from './mergedLineages';
 import { raceLineages, requiresLineage, speciesCatalog } from './speciesData';
 
 // Recorte real: a base mainstream (Elf|XPHB com "Elven Lineage"; Fairy|MPMM sem
@@ -113,6 +113,18 @@ describe('mergedLineages', () => {
     expect(elfLFL.size).toEqual(['M']);
     const faerie = cat.find((r) => r.name === 'Faerie' && r.source === 'LFL');
     expect(faerie.speed).toEqual({ walk: 30, fly: true });
+  });
+
+  it('arte curada por linhagem: Elf trocado, Fairy Lorwyn usa a arte original', () => {
+    // Elf: os arquivos estão trocados no dado - cada linhagem aponta para o oposto.
+    expect(lineageImagePath({ name: 'Elf; Lorwyn Lineage', source: 'LFL' })).toBe('races/LFL/Elf (Shadowmoor).webp');
+    expect(lineageImagePath({ name: 'Elf; Shadowmoor Lineage', source: 'LFL' })).toBe('races/LFL/Elf (Lorwyn).webp');
+    // Fairy: Lorwyn = arte original (MPMM); Shadowmoor = arte do Faerie (LFL).
+    expect(lineageImagePath({ name: 'Faerie; Lorwyn', source: 'LFL' })).toBe('races/MPMM/Fairy.webp');
+    expect(lineageImagePath({ name: 'Faerie; Shadowmoor', source: 'LFL' })).toBe('races/LFL/Faerie.webp');
+    // Uma linhagem qualquer não tem override.
+    expect(lineageImagePath({ name: 'Elf; Drow Lineage', source: 'XPHB' })).toBeNull();
+    expect(lineageImagePath(null)).toBeNull();
   });
 
   it('o registro é fechado e bem formado', () => {

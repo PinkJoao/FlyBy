@@ -42,6 +42,24 @@ export const MERGED_LINEAGES = Object.freeze([
   { base: 'Fairy|MPMM', from: 'Faerie|LFL' }, // + Lorwyn / Shadowmoor
 ]);
 
+/**
+ * Arte CURADA por linhagem fundida (o caminho do href, resolvido pelo fluff).
+ * Duas correções pedidas pelo usuário:
+ *  - Elf: os dois arquivos do LFL estão TROCADOS no dado - "Elf (Lorwyn).webp"
+ *    retrata a cena de Shadowmoor (escura, cogumelos) e "Elf (Shadowmoor).webp"
+ *    retrata a de Lorwyn (clara, flores). Cada linhagem aponta para o arquivo que
+ *    REALMENTE a retrata.
+ *  - Fairy: Lorwyn usa a arte ORIGINAL do Fairy (MPMM); a arte do Faerie (LFL,
+ *    fae mais sombrio) fica só para Shadowmoor.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const LINEAGE_IMAGE = Object.freeze({
+  'Elf; Lorwyn Lineage|LFL': 'races/LFL/Elf (Shadowmoor).webp',
+  'Elf; Shadowmoor Lineage|LFL': 'races/LFL/Elf (Lorwyn).webp',
+  'Faerie; Lorwyn|LFL': 'races/MPMM/Fairy.webp',
+  'Faerie; Shadowmoor|LFL': 'races/LFL/Faerie.webp',
+});
+
 /** Ids das entradas standalone que a fusão remove do seletor ("Nome|FONTE"). */
 const foldedIds = new Set(MERGED_LINEAGES.map((e) => e.from));
 
@@ -90,4 +108,13 @@ export function mergedLineageVersions(db, race) {
     for (const v of fromRace?._versions ?? []) out.push(v);
   }
   return out;
+}
+
+/**
+ * Caminho da arte curada para uma linhagem fundida, ou null. Ver LINEAGE_IMAGE.
+ * @param {object|null} race  variante já resolvida (ex: "Elf; Lorwyn Lineage"|LFL)
+ * @returns {string|null}
+ */
+export function lineageImagePath(race) {
+  return LINEAGE_IMAGE[idOf(race)] ?? null;
 }

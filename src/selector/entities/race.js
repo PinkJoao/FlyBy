@@ -13,7 +13,7 @@ import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
 import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
 import { isRemovedSpecies, isSettingVariant, imageDonorFor } from '../../engine/settingSpecies';
-import { isFoldedSpecies } from '../../engine/mergedLineages';
+import { isFoldedSpecies, lineageImagePath } from '../../engine/mergedLineages';
 import { lineageLabel } from '../../engine/speciesData';
 import { sourceName } from '../../engine/sourceNames';
 
@@ -117,6 +117,15 @@ function fluffList(db) {
 }
 
 const imgPath = (img) => img?.href?.path ?? null;
+
+/** Objeto de imagem (com crédito) cujo href.path casa, em qualquer entrada do fluff. */
+function findFluffImage(list, path) {
+  for (const f of list) {
+    const img = f.images?.find((im) => imgPath(im) === path);
+    if (img) return img;
+  }
+  return null;
+}
 
 /**
  * A ARTE que REPRESENTA uma linhagem vem na FRENTE do array, porque o DetailView
@@ -291,7 +300,17 @@ const raceEntity = {
         list.find((f) => f.name === baseName) ??
         null)
       : null;
-    return withLineageImages(found, race, list, base);
+    const result = withLineageImages(found, race, list, base);
+
+    // Arte CURADA de uma linhagem fundida (DDL-0066): substitui as imagens pela
+    // única arte que a retrata de fato (os arquivos do Elf|LFL estão trocados no
+    // dado; o Fairy Lorwyn quer a arte original do Fairy). Mantém a lore.
+    const overridePath = lineageImagePath(race);
+    if (overridePath) {
+      const img = findFluffImage(list, overridePath) ?? { type: 'image', href: { type: 'internal', path: overridePath } };
+      return { ...(result ?? { name: race.name, source: race.source }), images: [img] };
+    }
+    return result;
   },
 };
 

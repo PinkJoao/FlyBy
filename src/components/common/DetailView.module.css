@@ -71,22 +71,6 @@
   color: var(--accent);
 }
 
-/* Selo "editar" no canto da imagem (indica que dá pra trocar). */
-.imgEditHint {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-}
-
 .credit {
   font-size: 11px;
   opacity: 0.5;

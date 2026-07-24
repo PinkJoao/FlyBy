@@ -4717,3 +4717,33 @@ o lightbox e deixando o carrossel por baixo no mesmo indice. Zero erros de conso
 Verificado ao vivo: setas fixas com duas artes de proporcoes diferentes (Elf), e o Battleaxe do
 inventario - expandir mostra so "Change" sem custom, "Change"+"Remove" com uma URL custom, Change
 abrindo o modal e Remove voltando a arte do 5etools. 1117 testes, lint, zero erros de console.
+
+- **O selo ✎ saiu da preview do item.** Ele indicava "clique para trocar", affordance que deixou de
+  existir quando o clique passou a EXPANDIR: a edicao agora vive nos botoes Change/Remove do
+  visualizador, exatamente como no retrato (que tambem nao tem selo). `.imgEditHint` removido do
+  `DetailView` e do CSS.
+
+## 77. Spellbook: trocar uma magia preparada direto (Change no preview + ⇄ no card)
+
+Preparar um substituto exigia dois passos desconectados: remover a magia e depois abrir "+ Prepare
+spell". Agora ha um caminho unico de TROCA, em dois pontos:
+
+- **Botao "Change" ao lado do "Remove"** no preview da magia preparada (rodape do overlay de
+  detalhe).
+- **Botao ⇄ no proprio card** da magia preparada, na extremidade direita da linha - espaco que,
+  diferente dos cards de inventario, nao estava sendo usado para nada (so o circulo do nivel).
+  So as magias ESCOLHIDAS pelo jogador o recebem: as concedidas ("Always Prepared") nao se trocam.
+
+**A troca e ATOMICA, e nao remove antes de escolher.** O seletor abre com o cabecalho "Replace
+<magia>" e a dica "The spell you pick takes its place. Close to keep the current one."; escolher
+uma magia faz sair a antiga e entrar a nova NUM SO update (`setSpells`), e fechar o painel sem
+escolher mantem a original. Isso evita tanto o estado intermediario (perder a magia se desistir)
+quanto a leitura defasada dos contadores - o balde da magia trocada e contado como livre
+(`freeCantripsFull`/`freePreparedFull`/`freeArcanumForPick`), entao o seletor ja abre com o circulo
+certo pre-marcado e o `addSpell` nao avisa "sem espaco" a toa.
+
+**Verificado ao vivo** (Wizard 1, 4 preparadas): ⇄ no card abre "Replace Burning Hands" (com a
+propria magia fora da lista, 61 → 60 resultados), escolher Charm Person troca mantendo o contador
+em 1/4, "Change" no preview abre o mesmo fluxo, fechar sem escolher preserva a magia, e a concedida
+Druidcraft (linhagem) nao tem o botao. Mobile 375px sem overflow. 1118 testes, lint, zero erros de
+console.

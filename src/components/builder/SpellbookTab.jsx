@@ -160,6 +160,10 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   const [infoKey, setInfoKey] = useState(null);
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [prepareOpen, setPrepareOpen] = useState(false);
+  // Magia que está sendo TROCADA (botão "Change"): o seletor abre no lugar dela e
+  // a substituição é ATÔMICA (remove + prepara num só update). Cancelar o painel
+  // mantém a original - por isso não removemos antes de escolher a substituta.
+  const [replacing, setReplacing] = useState(null);
 
   // A origem escolhida pode sumir (troca de classe/espécie) → cai na primeira.
   const origin = origins.find((o) => o.key === originKey) ?? origins[0];
@@ -267,6 +271,17 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   // preparadas e arcanum todos cheios.
   const prepareDisabled = cantripsFull && preparedFull && freeArcanumLevels.size === 0;
 
+  // Numa TROCA o balde da magia trocada conta como livre (ela vai sair no mesmo
+  // update), senão o seletor abriria filtrado como se não houvesse espaço e o
+  // addSpell avisaria "sem espaço" à toa. Sem troca, tudo igual aos originais.
+  const replRaw = replacing?.raw ?? null;
+  const replIsCantrip = replRaw?.level === 0;
+  const replIsArcanum = !!replRaw && replRaw.level > origin.maxPrepareLevel;
+  const replIsPrepared = !!replRaw && !replIsCantrip && !replIsArcanum;
+  const freeCantripsFull = cantripCount - (replIsCantrip ? 1 : 0) >= origin.cantripLimit;
+  const freePreparedFull = preparedCount - (replIsPrepared ? 1 : 0) >= origin.prepareLimit;
+  const freeArcanumForPick = replIsArcanum ? new Set([...freeArcanumLevels, replRaw.level]) : freeArcanumLevels;
+
   const uses = origin.uses ?? [];
 
   // UM card de recursos: slots (ou pacto) + arcanum + usos por dia/descanso.
@@ -366,24 +381,43 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
       warnings.push(`You already have ${raw.name} from ${from}.`);
     }
     if (raw.level === 0) {
-      if (cantripsFull) warnings.push(`You have no free cantrip slots (${cantripCount}/${origin.cantripLimit}).`);
+      if (freeCantripsFull) warnings.push(`You have no free cantrip slots (${cantripCount}/${origin.cantripLimit}).`);
     } else if (raw.level > origin.maxPrepareLevel) {
-      if (!freeArcanumLevels.has(raw.level)) {
+      if (!freeArcanumForPick.has(raw.level)) {
         warnings.push(`You have no spell slots (or free Mystic Arcanum) of the ${spellLevelLabel(raw.level).toLowerCase()}.`);
       }
-    } else if (preparedFull) {
+    } else if (freePreparedFull) {
       warnings.push(`You have no free prepared-spell slots (${preparedCount}/${origin.prepareLimit}).`);
     }
     if (warnings.length > 0) {
       const ok = await confirm({
-        title: 'Prepare this spell?',
+        title: replacing ? 'Prepare this spell instead?' : 'Prepare this spell?',
         message: `${warnings.join(' ')} Prepare it anyway?`,
         confirmLabel: 'Prepare anyway',
       });
       if (!ok) return;
     }
-    setSpells([...(classEntry.spells ?? []), { id: raw.name, source: raw.source }]);
+    // Numa troca, sai a antiga e entra a nova no MESMO update (atômico): se o
+    // jogador fechar o painel sem escolher, ele não perde a magia original.
+    const base = (classEntry.spells ?? []).filter(
+      (s) => !replacing || String(s.id ?? s.name).toLowerCase() !== replacing.raw.name.toLowerCase(),
+    );
+    setSpells([...base, { id: raw.name, source: raw.source }]);
+    closePicker();
+  };
+
+  /** Fecha o seletor e encerra qualquer troca em andamento. */
+  const closePicker = () => {
     setPrepareOpen(false);
+    setReplacing(null);
+  };
+
+  /** "Change": abre o seletor para escolher a substituta desta magia. */
+  const startReplace = (entry) => {
+    if (!classEntry || entry.granted) return;
+    setReplacing(entry);
+    setInfoKey(null);
+    setPrepareOpen(true);
   };
 
   const removeSpell = (entry) => {
@@ -401,11 +435,11 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   // Círculos pré-marcados no filtro de Level: os baldes onde AINDA cabe magia
   // (a mesma visão que o exclude antigo impunha, agora como filtro comum).
   const pickerLevels = [];
-  if (origin.cantripLimit > 0 && !cantripsFull) pickerLevels.push('Cantrip');
-  if (origin.prepareLimit > 0 && !preparedFull) {
+  if (origin.cantripLimit > 0 && !freeCantripsFull) pickerLevels.push('Cantrip');
+  if (origin.prepareLimit > 0 && !freePreparedFull) {
     for (let l = 1; l <= origin.maxPrepareLevel; l++) pickerLevels.push(String(l));
   }
-  for (const l of freeArcanumLevels) pickerLevels.push(String(l));
+  for (const l of freeArcanumForPick) pickerLevels.push(String(l));
   const pickerFilterState = {
     class: { [origin.spellListClass]: 'include' },
     level: Object.fromEntries(pickerLevels.map((v) => [v, 'include'])),
@@ -571,6 +605,7 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
                       arcanum={!entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level)}
                       thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
                       onInfo={() => setInfoKey(entry.raw.name)}
+                      onReplace={classEntry && !entry.granted ? () => startReplace(entry) : null}
                     />
                   ))}
                 </ul>
@@ -602,6 +637,11 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
               classEntry && (
                 <div className={styles.infoFooter}>
                   <span className={styles.infoNote}>Prepared for {origin.label}.</span>
+                  {/* Change: troca por outra magia direto (o seletor abre no
+                      lugar desta); Remove só libera o espaço. */}
+                  <button type="button" className={styles.changeBtn} onClick={() => startReplace(infoEntry)}>
+                    Change
+                  </button>
                   <button type="button" className={styles.removeBtn} onClick={() => removeSpell(infoEntry)}>
                     Remove
                   </button>
@@ -622,8 +662,10 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
           currentId={null}
           exclude={excludeFromPicker}
           initialFilterState={pickerFilterState}
+          heading={replacing ? `Replace ${replacing.raw.name}` : undefined}
+          hint={replacing ? 'The spell you pick takes its place. Close to keep the current one.' : undefined}
           onSelect={addSpell}
-          onClose={() => setPrepareOpen(false)}
+          onClose={closePicker}
         />
       )}
     </div>
@@ -643,7 +685,7 @@ function SpellThumb({ src, school, alt }) {
   );
 }
 
-function SpellRow({ entry, arcanum, thumb, onInfo }) {
+function SpellRow({ entry, arcanum, thumb, onInfo, onReplace }) {
   const raw = entry.raw;
   const meta = [schoolName(raw.school), castingTimeLabel(raw), rangeLabel(raw)].filter(Boolean);
   const cast = castTypeLabel(entry);
@@ -676,6 +718,19 @@ function SpellRow({ entry, arcanum, thumb, onInfo }) {
       </button>
       <div className={styles.rowSide}>
         <span className={styles.rowLevel}>{ORDINAL_SHORT[raw.level] ?? raw.level}</span>
+        {/* Trocar a magia sem abrir a ficha - o espaço à direita do card estava
+            livre (as concedidas não trocam, então não ganham o botão). */}
+        {onReplace && (
+          <button
+            type="button"
+            className={styles.swapBtn}
+            onClick={onReplace}
+            title={`Replace ${raw.name}`}
+            aria-label={`Replace ${raw.name}`}
+          >
+            ⇄
+          </button>
+        )}
       </div>
     </li>
   );

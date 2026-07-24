@@ -86,6 +86,7 @@ export default function DetailView({
         // os botões Change / Remove no visualizador (molde do retrato). SEM arte,
         // um botão pequeno "Add image". `customImg` sobrepõe a arte original;
         // Remove só aparece quando há imagem custom (volta à arte do 5etools).
+        // Sem selo ✎: a edição vive no visualizador, como no retrato.
         displaySrc && imgOk ? (
           <button
             type="button"
@@ -94,7 +95,6 @@ export default function DetailView({
             title="View image"
           >
             <img className={imgClass} src={displaySrc} alt={raw.name} loading="lazy" onError={() => setImgOk(false)} />
-            <span className={styles.imgEditHint} aria-hidden="true">✎</span>
           </button>
         ) : (
           <button type="button" className={styles.imgAddBtn} onClick={onImgClick}>

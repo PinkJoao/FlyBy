@@ -406,6 +406,46 @@ são as espécies, mas um componente universal é bônus.
   a EXPANDIR com os botões Change (abre o escolhedor) e Remove (`DetailView` ganhou `onImgRemove`,
   ligado ao `clearItemImg` da `InventoryTab`) — Remove só quando há `customImg`. Cada ação roda e
   fecha o viewer. O caso "sem arte" continua sendo o botão "Add image".
+- **O selo ✎ saiu da preview do item** (`.imgEditHint`, componente e CSS). Ele anunciava
+  "clique para trocar", affordance que deixou de existir quando o clique passou a EXPANDIR; a
+  edição vive nos botões do viewer, como no retrato (que nunca teve selo). Regra: a imagem editável
+  não anuncia a edição no thumbnail — quem a anuncia é o visualizador.
+
+### DDL-0068 — Trocar uma magia preparada é uma operação ATÔMICA, oferecida no preview e no card
+**Date:** 2026-07-24
+**Builds on:** DDL-0008/B2.4 (o fluxo de preparar: `SelectorPanel` direto + filtros pré-marcados),
+DDL-0026 (liberdade com aviso — os avisos do `addSpell` continuam valendo na troca), DDL-0067 (a
+mesma sessão; o par Change/Remove do visualizador de imagem inspirou o par no rodapé da magia).
+
+**Context.** Substituir uma magia preparada exigia dois passos desconectados (Remove, depois
+"+ Prepare spell"), e o espaço à direita dos cards de magia — ao contrário dos de inventário, que
+usam a área para quantidade/equipar — estava ocioso, só com o círculo do nível.
+
+**Decisions.**
+- **Um caminho de TROCA em dois pontos:** botão **"Change"** ao lado do "Remove" no rodapé do
+  preview, e um botão **⇄** na extremidade direita do card da magia. Só magias ESCOLHIDAS pelo
+  jogador recebem os dois — uma concedida ("Always Prepared") não se troca, então `onReplace` só é
+  passado para `!entry.granted`.
+- **A troca NÃO remove antes de escolher: ela é atômica.** O estado `replacing` guarda a magia
+  alvo, o seletor abre no lugar dela (heading "Replace <nome>" + hint) e o `addSpell` monta o novo
+  array filtrando a antiga e acrescentando a nova **num único `setSpells`**. Duas razões: (a)
+  fechar o painel sem escolher preserva a magia original — remover primeiro faria o jogador perdê-la
+  ao desistir; (b) remover primeiro deixaria os contadores DEFASADOS no momento em que o
+  `SelectorPanel` monta (o `initialFilterState` só é lido na montagem, e o save é assíncrono), então
+  o painel abriria pré-filtrado como se não houvesse espaço.
+- **O balde da magia trocada conta como LIVRE enquanto a troca está em curso**
+  (`freeCantripsFull` / `freePreparedFull` / `freeArcanumForPick`, derivados dos contadores reais
+  menos a magia alvo). É o que faz o círculo certo vir pré-marcado e evita um aviso "sem espaço"
+  falso no `addSpell`. Sem troca em curso, os três são idênticos aos originais — o fluxo normal de
+  preparar não muda em nada.
+- **`closePicker()` é o único ponto de saída** do seletor (fecha e zera `replacing`), para não
+  deixar uma troca pendurada.
+
+**Consequences.**
+- Um novo ponto de entrada para trocar magia só precisa chamar `startReplace(entry)`.
+- Verificado: 1118 testes, lint, e ao vivo (Wizard 1) — troca pelo card e pelo preview, contador
+  estável em 1/4, cancelar preservando a magia, concedida sem botão, mobile 375px sem overflow.
+  Ver CHANGELOG §77.
 
 ### DDL-0066 — Reimpressão de cenário (LFL) FUNDIDA na espécie mainstream; e o `_copy` resolvido no caminho de derivação (speed 0)
 **Date:** 2026-07-23

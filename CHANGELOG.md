@@ -4707,7 +4707,9 @@ o lightbox e deixando o carrossel por baixo no mesmo indice. Zero erros de conso
   imagem: sairam do `.stage` (que acompanha a imagem) para o `.overlay`, posicionadas nas bordas e
   sempre visiveis. Assim nao cobrem a arte e nao se deslocam quando a proporcao muda de uma foto
   para a outra. No desktop (>= 700px) o overlay abre calhas laterais de 76px para a imagem nunca
-  encostar nas setas.
+  encostar nas setas. **No mobile (< 700px) as setas do lightbox somem**: ali a navegacao e por
+  swipe (com os pontinhos como alternativa tocavel) e, sem as calhas, elas cairiam sobre a arte. O
+  carrossel INLINE nao muda - as setas dele seguem visiveis no toque.
 - **A imagem de item do inventario adota o molde do retrato: Trocar / Remover.** O visualizador
   ganhou uma linha opcional de botoes (`actions` no store/`showImageViewer`). Tocar na arte de um
   item agora EXPANDE em tela cheia com "Change" (abre o escolhedor de imagem) e "Remove" (volta a

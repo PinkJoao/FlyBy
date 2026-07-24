@@ -400,6 +400,11 @@ são as espécies, mas um componente universal é bônus.
   a arte nem se deslocam quando a proporção muda entre uma foto e outra. No desktop (>= 700px) o
   overlay abre calhas laterais de 76px para a imagem nunca encostar nas setas. Regra: elemento fixo
   do viewer se posiciona relativo ao overlay, não ao stage.
+  · **No MOBILE (< 700px) as setas do lightbox somem** (pedido do usuário): ali a navegação é por
+    SWIPE, com os pontinhos como alternativa tocável, e sem as calhas laterais elas cairiam sobre a
+    própria arte — o que a mudança para as extremidades veio evitar. Usa o MESMO breakpoint das
+    calhas, para as duas regras nunca discordarem. O carrossel INLINE não muda: lá as setas seguem
+    visíveis no toque (é um alvo pequeno, não uma imagem em tela cheia).
 - **Imagem de item do inventário no molde do retrato: Change / Remove.** O `ImageViewer` ganhou uma
   linha opcional de `actions` (`{ label, onClick, tone? }`), passada por `showImageViewer(images,
   index, actions)`. O caminho EDITÁVEL do `DetailView` deixou de trocar a imagem no clique e passou

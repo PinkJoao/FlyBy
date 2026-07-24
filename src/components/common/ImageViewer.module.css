@@ -99,6 +99,16 @@
   right: 14px;
 }
 
+/* No mobile as setas somem: a navegação ali é por SWIPE (+ os pontinhos), e sem
+ * as calhas laterais do desktop elas ficariam justamente sobre a arte - o que a
+ * mudança para as extremidades veio evitar. Mesmo breakpoint das calhas, para as
+ * duas regras nunca discordarem. */
+@media (max-width: 699px) {
+  .arrow {
+    display: none;
+  }
+}
+
 /* Botões de ação sob a imagem (ex.: item do inventário: Trocar / Remover),
  * no molde do visualizador do retrato. */
 .actions {

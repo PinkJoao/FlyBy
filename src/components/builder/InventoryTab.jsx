@@ -450,6 +450,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                   capImage
                   customImg={infoEntry.customImg}
                   onImgClick={() => setImgModalOpen(true)}
+                  onImgRemove={clearItemImg}
                 />
               ) : infoEntry.isCustom ? (
                 <CustomDetail entry={infoEntry} name={nameOf(infoEntry)} meta={metaParts(infoEntry)} />

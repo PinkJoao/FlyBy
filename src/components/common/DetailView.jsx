@@ -10,6 +10,7 @@ import { useState } from 'react';
 import EntryContent from './EntryContent';
 import SourceTag from './SourceTag';
 import ImageCarousel from './ImageCarousel';
+import { showImageViewer } from '../../store/imageViewerStore';
 import { imgUrl } from './media';
 import styles from './DetailView.module.css';
 
@@ -28,7 +29,16 @@ function metaClass(m) {
   return extra ? `${styles.metaItem} ${extra}` : styles.metaItem;
 }
 
-export default function DetailView({ entity, raw, db, capImage = false, customImg, onImgClick, hideHeader = false }) {
+export default function DetailView({
+  entity,
+  raw,
+  db,
+  capImage = false,
+  customImg,
+  onImgClick,
+  onImgRemove,
+  hideHeader = false,
+}) {
   // src candidato ANTES dos hooks/guard (raw pode ser null): imagem custom do
   // usuário tem prioridade sobre a arte do fluff.
   const fluff = raw ? (entity?.fluff?.(raw, db) ?? null) : null;
@@ -58,15 +68,31 @@ export default function DetailView({ entity, raw, db, capImage = false, customIm
   const bodyEntries = entity?.entries?.(raw, db) ?? raw.entries;
   const editable = typeof onImgClick === 'function';
   const imgClass = capImage ? `${styles.img} ${styles.imgCapped}` : styles.img;
+  // Ações do visualizador de imagem editável (item do inventário): Change sempre;
+  // Remove só quando há uma imagem custom para desfazer.
+  const editableActions = editable
+    ? [
+        { label: 'Change', onClick: onImgClick },
+        ...(customImg && typeof onImgRemove === 'function'
+          ? [{ label: 'Remove', tone: 'danger', onClick: onImgRemove }]
+          : []),
+      ]
+    : undefined;
 
   return (
     <div className={styles.detail}>
       {editable ? (
-        // Imagem editável (overlay de item): com arte, toca p/ trocar (selo ✎);
-        // SEM arte, um botão pequeno "Add image" (não ocupa espaço à toa - nem
-        // todo item vai querer imagem). `customImg` sobrepõe a arte original.
+        // Imagem editável (overlay de item): toca p/ EXPANDIR em tela cheia, com
+        // os botões Change / Remove no visualizador (molde do retrato). SEM arte,
+        // um botão pequeno "Add image". `customImg` sobrepõe a arte original;
+        // Remove só aparece quando há imagem custom (volta à arte do 5etools).
         displaySrc && imgOk ? (
-          <button type="button" className={styles.imgButton} onClick={onImgClick} title="Change item image">
+          <button
+            type="button"
+            className={styles.imgButton}
+            onClick={() => showImageViewer(gallery, 0, editableActions)}
+            title="View image"
+          >
             <img className={imgClass} src={displaySrc} alt={raw.name} loading="lazy" onError={() => setImgOk(false)} />
             <span className={styles.imgEditHint} aria-hidden="true">✎</span>
           </button>

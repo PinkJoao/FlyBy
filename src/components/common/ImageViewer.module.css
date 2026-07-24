@@ -24,6 +24,15 @@
   touch-action: pan-y; /* deixa o swipe horizontal p/ o carrossel */
 }
 
+/* No desktop, abre calhas laterais para as setas (fixas nas extremidades)
+ * ficarem SEMPRE fora da imagem, independentemente da proporção da arte. */
+@media (min-width: 700px) {
+  .overlay {
+    padding-left: 76px;
+    padding-right: 76px;
+  }
+}
+
 .img {
   max-width: min(100%, 1100px);
   max-height: calc(100svh - 120px);
@@ -55,12 +64,14 @@
   color: var(--accent);
 }
 
-/* Setas: sempre visíveis no toque; no desktop (hover disponível) ficam
- * discretas e ganham destaque ao passar o mouse pela imagem. */
+/* Setas fixas nas EXTREMIDADES da tela (relativas ao overlay, não à imagem),
+ * sempre visíveis. Assim não cobrem a arte e não deslocam quando a proporção da
+ * imagem muda de uma foto para a outra. */
 .arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 2;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -81,22 +92,41 @@
 }
 
 .arrowL {
-  left: 10px;
+  left: 14px;
 }
 
 .arrowR {
-  right: 10px;
+  right: 14px;
 }
 
-@media (hover: hover) {
-  .arrow {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-  .stage:hover .arrow,
-  .arrow:focus-visible {
-    opacity: 1;
-  }
+/* Botões de ação sob a imagem (ex.: item do inventário: Trocar / Remover),
+ * no molde do visualizador do retrato. */
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.actionBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.actionDanger:hover {
+  border-color: #d9534f;
+  color: #d9534f;
 }
 
 .credit {

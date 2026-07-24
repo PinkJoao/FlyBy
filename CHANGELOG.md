@@ -4689,3 +4689,20 @@ qualquer entidade com varias imagens (efeito colateral bem-vindo).
 o botao Expandir), Elf (2 artes - carrossel com 2 pontinhos, setas, creditos por imagem "Mike Pape"/
 "Jedd Chevrier"), o expandir abrindo no indice certo, a navegacao em tela cheia, e o Esc fechando so
 o lightbox e deixando o carrossel por baixo no mesmo indice. Zero erros de console.
+
+**Ajustes (mesma leva, a pedido do usuario):**
+
+- **As setas do visualizador em tela cheia ficam FIXAS nas extremidades da tela**, nao sobre a
+  imagem: sairam do `.stage` (que acompanha a imagem) para o `.overlay`, posicionadas nas bordas e
+  sempre visiveis. Assim nao cobrem a arte e nao se deslocam quando a proporcao muda de uma foto
+  para a outra. No desktop (>= 700px) o overlay abre calhas laterais de 76px para a imagem nunca
+  encostar nas setas.
+- **A imagem de item do inventario adota o molde do retrato: Trocar / Remover.** O visualizador
+  ganhou uma linha opcional de botoes (`actions` no store/`showImageViewer`). Tocar na arte de um
+  item agora EXPANDE em tela cheia com "Change" (abre o escolhedor de imagem) e "Remove" (volta a
+  arte original) - Remove so aparece quando ha imagem custom. Substitui o clique-para-trocar direto.
+  Wiring: `onImgRemove` novo no `DetailView`, ligado ao `clearItemImg` da `InventoryTab`.
+
+Verificado ao vivo: setas fixas com duas artes de proporcoes diferentes (Elf), e o Battleaxe do
+inventario - expandir mostra so "Change" sem custom, "Change"+"Remove" com uma URL custom, Change
+abrindo o modal e Remove voltando a arte do 5etools. 1117 testes, lint, zero erros de console.

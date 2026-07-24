@@ -18,7 +18,7 @@ import { useSwipe } from './imageNav';
 import styles from './ImageViewer.module.css';
 
 export default function ImageViewer() {
-  const { open, images, index, hide, setIndex } = useImageViewerStore();
+  const { open, images, index, actions, hide, setIndex } = useImageViewerStore();
   const overlayRef = useRef(null);
 
   // Foca o overlay ao abrir e devolve o foco ao elemento anterior ao fechar.
@@ -66,29 +66,31 @@ export default function ImageViewer() {
         ✕
       </button>
 
+      {/* Setas FIXAS nas extremidades da tela (não sobre a imagem), então não se
+       * mexem quando as proporções da imagem mudam entre uma foto e outra. */}
+      {multi && (
+        <>
+          <button
+            type="button"
+            className={`${styles.arrow} ${styles.arrowL}`}
+            onClick={() => setIndex(index - 1)}
+            aria-label="Previous image"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className={`${styles.arrow} ${styles.arrowR}`}
+            onClick={() => setIndex(index + 1)}
+            aria-label="Next image"
+          >
+            ›
+          </button>
+        </>
+      )}
+
       <div className={styles.stage} {...(multi ? swipe : {})}>
         <img className={styles.img} src={cur.src} alt={cur.alt ?? ''} onMouseDown={(e) => e.stopPropagation()} />
-
-        {multi && (
-          <>
-            <button
-              type="button"
-              className={`${styles.arrow} ${styles.arrowL}`}
-              onClick={() => setIndex(index - 1)}
-              aria-label="Previous image"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              className={`${styles.arrow} ${styles.arrowR}`}
-              onClick={() => setIndex(index + 1)}
-              aria-label="Next image"
-            >
-              ›
-            </button>
-          </>
-        )}
       </div>
 
       {cur.credit && <p className={styles.credit}>Art: {cur.credit}</p>}
@@ -104,6 +106,24 @@ export default function ImageViewer() {
               aria-label={`Go to image ${i + 1}`}
               aria-current={i === index}
             />
+          ))}
+        </div>
+      )}
+
+      {actions.length > 0 && (
+        <div className={styles.actions}>
+          {actions.map((a, i) => (
+            <button
+              key={`${a.label}-${i}`}
+              type="button"
+              className={a.tone === 'danger' ? `${styles.actionBtn} ${styles.actionDanger}` : styles.actionBtn}
+              onClick={() => {
+                a.onClick?.();
+                hide();
+              }}
+            >
+              {a.label}
+            </button>
           ))}
         </div>
       )}

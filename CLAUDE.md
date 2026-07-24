@@ -394,6 +394,19 @@ são as espécies, mas um componente universal é bônus.
   pontinhos/setas/créditos por imagem), expandir abrindo no índice certo, navegação em tela cheia, e
   o Esc fechando só o lightbox. Zero erros de console. Ver CHANGELOG §76.
 
+**Amendment (2026-07-23, mesmos pedidos do usuário; CHANGELOG §76):**
+- **Setas do lightbox FIXAS nas extremidades da tela, não sobre a imagem.** Saíram do `.stage` (que
+  acompanha a imagem) para o `.overlay`, posicionadas nas bordas e sempre visíveis, então não cobrem
+  a arte nem se deslocam quando a proporção muda entre uma foto e outra. No desktop (>= 700px) o
+  overlay abre calhas laterais de 76px para a imagem nunca encostar nas setas. Regra: elemento fixo
+  do viewer se posiciona relativo ao overlay, não ao stage.
+- **Imagem de item do inventário no molde do retrato: Change / Remove.** O `ImageViewer` ganhou uma
+  linha opcional de `actions` (`{ label, onClick, tone? }`), passada por `showImageViewer(images,
+  index, actions)`. O caminho EDITÁVEL do `DetailView` deixou de trocar a imagem no clique e passou
+  a EXPANDIR com os botões Change (abre o escolhedor) e Remove (`DetailView` ganhou `onImgRemove`,
+  ligado ao `clearItemImg` da `InventoryTab`) — Remove só quando há `customImg`. Cada ação roda e
+  fecha o viewer. O caso "sem arte" continua sendo o botão "Add image".
+
 ### DDL-0066 — Reimpressão de cenário (LFL) FUNDIDA na espécie mainstream; e o `_copy` resolvido no caminho de derivação (speed 0)
 **Date:** 2026-07-23
 **Builds on:** DDL-0060/0063 (o `as`/`swap`: uma sub-espécie de outra fonte vira linhagem da base

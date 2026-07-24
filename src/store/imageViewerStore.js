@@ -7,6 +7,9 @@
 // o carrossel navegar em tela cheia) e o índice atual.
 //
 // `images`: array de `{ src, alt?, credit? }`.
+// `actions`: opcional, botões de ação sob a imagem (`{ label, onClick, tone? }`) -
+// usado, por ex., pela imagem de item do inventário (Trocar / Remover), no molde
+// do visualizador do retrato.
 // -----------------------------------------------------------------------------
 
 import { create } from 'zustand';
@@ -15,12 +18,13 @@ const useImageViewerStore = create((set, get) => ({
   open: false,
   images: [],
   index: 0,
+  actions: [],
 
-  show: (images, index = 0) => {
+  show: (images, index = 0, actions = null) => {
     const list = (images ?? []).filter((im) => im && im.src);
     if (list.length === 0) return;
     const n = list.length;
-    set({ open: true, images: list, index: ((index % n) + n) % n });
+    set({ open: true, images: list, index: ((index % n) + n) % n, actions: actions ?? [] });
   },
 
   hide: () => set({ open: false }),
@@ -37,9 +41,9 @@ const useImageViewerStore = create((set, get) => ({
  *  - um array de `{ src, alt?, credit? }` (+ índice inicial), ou
  *  - uma única string de src (conveniência para imagens avulsas).
  */
-export function showImageViewer(images, index = 0) {
+export function showImageViewer(images, index = 0, actions = null) {
   const list = typeof images === 'string' ? [{ src: images }] : images;
-  useImageViewerStore.getState().show(list, index);
+  useImageViewerStore.getState().show(list, index, actions);
 }
 
 export default useImageViewerStore;

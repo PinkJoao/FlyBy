@@ -77,6 +77,33 @@ describe('expandRaceVersions (linhagens do Elf)', () => {
   });
 });
 
+describe('buildVariant: correção pontual do dado (Tiefling; Abyssal Legacy)', () => {
+  // O JSON cru do 5e.tools carrega darkvision:120 nessa versão, mas nem a
+  // prosa da entrada nem o SRD oficial (dnd5e system) mencionam isso - as
+  // outras legacies oficiais não alteram o campo (TC-0051).
+  const tiefling = {
+    name: 'Tiefling',
+    source: 'XPHB',
+    darkvision: 60,
+    _versions: [
+      { name: 'Tiefling; Abyssal Legacy', source: 'XPHB', darkvision: 120, resist: ['poison'] },
+      { name: 'Tiefling; Infernal Legacy', source: 'XPHB', resist: ['fire'] },
+    ],
+  };
+
+  it('Abyssal Legacy é corrigida de volta para 60 ft, sem afetar as outras', () => {
+    const [abyssal, infernal] = expandRaceVersions(tiefling);
+    expect(abyssal.darkvision).toBe(60);
+    expect(abyssal.resist).toEqual(['poison']); // o resto da variante intacto
+    expect(infernal.darkvision).toBe(60); // herdado da base, nunca teve o bug
+  });
+
+  it('a mesma versão em outra fonte/raça não é atingida (chave exata)', () => {
+    const other = { name: 'Tiefling', source: 'MTF', darkvision: 60, _versions: [{ name: 'Tiefling; Abyssal Legacy', source: 'MTF', darkvision: 120 }] };
+    expect(expandRaceVersions(other)[0].darkvision).toBe(120);
+  });
+});
+
 // Recorte do Dragonborn XPHB: _versions na forma ABSTRATA (template + implementações),
 // como as ancestralidades de dragão são codificadas (cor + tipo de dano).
 const dragonborn = {

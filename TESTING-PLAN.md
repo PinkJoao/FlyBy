@@ -211,8 +211,9 @@ As espécies que um jogador novo escolhe primeiro; têm de ser impecáveis. É a
 baseline visual/de derivação contra a qual os outros blocos se comparam.
 - **S-A1 (bases + linhagens curtas) - DONE 2026-07-25 (9 linhas `ui: ok`, zero bugs):** Aasimar,
   Dwarf, Human, Orc (sem linhagem); Elf|XPHB núcleo (Drow/High/Wood); Gnome (Forest/Rock).
-- **S-A2 (muitas linhagens do mesmo padrão):** Dragonborn|XPHB ×10, Goliath|XPHB
-  ×6, Tiefling|XPHB núcleo (Abyssal/Chthonic/Infernal — as 3 legacies OFICIAIS 2024).
+- **S-A2 (muitas linhagens do mesmo padrão) - DONE 2026-07-25 (19 linhas `ui: ok`, TC-0051
+  fixed):** Dragonborn|XPHB ×10, Goliath|XPHB ×6, Tiefling|XPHB núcleo (Abyssal/Chthonic/Infernal
+  — as 3 legacies OFICIAIS 2024).
 - **Atenção:** escolha de tamanho S/M (DDL-0017) em várias; a linhagem élfica
   adia `skillProficiencies`? não — Keen Senses permanece (DDL-0061/`lineageDeferredKinds`).
   Tiefling sem linhagem NÃO deve mostrar os chips de resist/spell list (DDL-0061 §69).
@@ -307,6 +308,32 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (3)** - **T1b sessão 2: Bloco S-A2 CONCLUÍDO (19 linhas `ui: ok`) - TC-0051 fixed.**
+  Sweep verde antes de começar (285/285 `--strict`). Passada de UI ao vivo (~1000/800px + spot-check
+  375px sem overflow) sobre **Dragonborn|XPHB** (as 10 ancestralidades presentes no seletor de
+  linhagem; preview resolve o tipo de dano por ancestralidade - Black→Acid, Red→Fire; selecionado Red
+  ao vivo: "1d10 Fire damage" + "Resistance to Fire" na ficha, Draconic Flight @5 renderiza),
+  **Goliath|XPHB** (as 6 ancestralidades de gigante; preview resolve só o benefício escolhido -
+  Cloud's Jaunt e Stone's Endurance testados ao vivo; Large Form @5 + Powerful Build) e o **núcleo do
+  Tiefling|XPHB** (as 3 legacies OFICIAIS 2024 - Abyssal/Chthonic/Infernal, cada uma selecionada ao
+  vivo com resistência+cantrip corretos + a escolha de atributo Int/Wis/Cha; Infernal com Charisma
+  escolhida deriva DC 10/Attack +2 na Spellbook, Fire Bolt+Thaumaturgy Always Prepared; reconfirmado
+  que SEM linhagem a ficha não mostra chip de resist/spell-list, DDL-0061 §69).
+  **TC-0051 FIXED em sessão:** a legacy Abyssal exibia "120 ft / Darkvision" (preview e ficha), único
+  caso entre as 14 legacies do dataset - as outras 13 (incl. Chthonic/Infernal oficiais) não tocam o
+  campo. Confirmado como erro do DADO upstream (JSON cru do 5e.tools carrega `darkvision: 120` sem
+  nenhuma entry de prosa correspondente) via cross-check contra o SRD oficial (dnd5e system,
+  CC-BY-4.0, `tiefling-abyssal.yml`: "Darkvision. You have Darkvision with a range of 60 feet.").
+  Fix: novo registro `KNOWN_DATA_FIXES` em `engine/speciesData.js`, aplicado dentro de `buildVariant`
+  por chave exata `Raça|Fonte/Versão` - corrige só o campo errado. Ver DDL-0070.
+  1138 testes (+2), lint, sweep 285/285 `--strict`, mobile 375px sem overflow, zero erros de console.
+  **Next action: T1b sessão 3 - Bloco S-B1** (as 11 legacies REESCRITAS do Tiefling, DDL-0061:
+  Baalzebul/Dispater/Fierna/Glasya/Levistus/Mammon/Mephistopheles/Zariel/Devil's Tongue/Hellfire/
+  Winged) - maior risco de código da campanha (caminho NOSSO de merge/reescrita), conferir contra o
+  DDL citado: resistência TRAVA em fogo, atributo de conjuração é escolha Int/Wis/Cha, magias
+  remapeadas para XPHB (Branding Smite→Shining Smite), Winged = voo no nível 1, tabela do preview
+  lista as 14 opções (`withLegacyTable`).
 
 - **2026-07-25 (2)** - **T1b sessão 1: Bloco S-A1 CONCLUÍDO (9 linhas `ui: ok`) - ZERO bugs.** Sweep
   verde antes de começar (285/285 `--strict`). Passada de UI ao vivo (mobile-first, ~560/820px + spot-

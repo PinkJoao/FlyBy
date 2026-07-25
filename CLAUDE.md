@@ -342,6 +342,49 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0070 — T1b sessão 2 (Bloco S-A2): correção pontual de dado upstream vira registro `KNOWN_DATA_FIXES`
+**Date:** 2026-07-25
+**Builds on:** DDL-0061/DDL-0066 (as legacies do Tiefling e as linhagens fundidas, cujo mecanismo
+de merge `buildVariant` este entry estende), DDL-0003 (fetch de dado, nunca reescrever conteúdo -
+a correção aqui é uma exceção estreita e justificada, não um precedente para "consertar" dado que
+discorda da nossa leitura pessoal).
+
+**Context.** Segunda sessão da T1b (espécies), Bloco S-A2: Dragonborn|XPHB (10 ancestralidades),
+Goliath|XPHB (6 ancestralidades de gigante) e o núcleo do Tiefling|XPHB (as 3 legacies OFICIAIS
+2024 - Abyssal/Chthonic/Infernal; as 11 reescritas do DDL-0061 ficam para o Bloco S-B). Achado:
+o preview e a ficha da linhagem "Abyssal Legacy" mostravam **"120 ft / Darkvision"**, único caso
+entre as 14 legacies do dataset - Chthonic e Infernal (as outras duas oficiais) ficam nos 60 ft
+da base, e nenhuma delas altera o campo.
+
+**Decision.**
+- **Confirmado como erro do DADO, não do código.** O JSON cru do 5e.tools (`races.json`,
+  `_versions` do Tiefling XPHB) carrega `darkvision: 120` no campo de topo da versão "Abyssal
+  Legacy", sem NENHUMA entry de prosa correspondente (as entries só falam de resistência a
+  veneno + cantrip). Cross-checado contra o SRD oficial (dnd5e system, CC-BY-4.0,
+  `packs/_source/origins24/species/tiefling-abyssal.yml`): "Darkvision. You have Darkvision with
+  a range of 60 feet." - sem exceção para a Abyssal. `buildVariant` (`engine/speciesData.js`)
+  aplicava o campo fielmente (`{...race, ...overrides}`), como faz para toda `_versions` - o
+  merge está correto, o dado upstream é que está errado.
+- **Novo registro `KNOWN_DATA_FIXES`** (`engine/speciesData.js`), chave exata
+  `Raça|Fonte/Nome da versão`, aplicado dentro do próprio `buildVariant` LOGO APÓS os overrides e
+  o `_mod` - um patch pontual sobre a variante já montada, sem tocar nenhum outro campo (a
+  resistência a veneno e o cantrip da Abyssal continuam intactos). **Regra para uma entrada
+  futura:** só cadastrar aqui um campo comprovadamente incoerente com a PRÓPRIA prosa da entrada
+  E, quando possível, cross-checado contra uma fonte alternativa confiável (o SRD do dnd5e
+  system é o padrão-ouro, por ser MIT/CC-BY-4.0 e mantido por um time separado) - nunca uma
+  "correção" por preferência de regra ou lembrança pessoal do livro.
+- **Verificação do bloco:** Dragonborn (10 ancestralidades no seletor, resolução por-lineage do
+  tipo de dano confirmada ao vivo em Black/Red), Goliath (6 ancestralidades, Cloud/Stone
+  confirmadas ao vivo, Large Form @5), Tiefling núcleo (as 3 oficiais selecionadas ao vivo uma a
+  uma - Abyssal pós-fix, Chthonic, Infernal com a escolha de atributo Charisma derivando DC 10/
+  Attack +2 na Spellbook). Reconfirmado de passagem: sem linhagem escolhida, a ficha do Tiefling
+  não mostra nenhum chip de resist/spell-list (DDL-0061 §69 continua correto).
+
+**Consequences.**
+- `KNOWN_DATA_FIXES` é o lugar certo para qualquer futuro erro pontual e comprovado do dado
+  upstream que sobreviva ao merge de linhagem - não recriar um mecanismo ad-hoc por espécie.
+- Ver TC-0051 em `testing/ISSUES.md` e CHANGELOG §84.
+
 ### DDL-0069 — Tutorial de USO (coach-marks) é um sistema à parte da Character Guidance
 **Date:** 2026-07-25
 **Builds on:** DDL-0007 (a pilha de diálogos in-app e o padrão foco/Esc), DDL-0025 (overlays

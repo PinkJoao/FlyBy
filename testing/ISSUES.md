@@ -898,6 +898,25 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - Pendente (cosmético, não aberto como bug): o seletor mostra a opção como **"Other"** em vez do
   idioma que ela representa (Vedalken). Traduzir exigiria curadoria por espécie.
 
+## TC-0051 - Tiefling; Abyssal Legacy exibia Darkvision 120 ft (dado upstream errado)
+
+- **Unidade:** `species:Tiefling|XPHB/Tiefling; Abyssal Legacy`. **Severidade:** bug (dado).
+  **Encontrado:** T1b sessão 2 (Bloco S-A2), 2026-07-25. **Status:** fixed@2026-07-25.
+- Sintoma: o preview do seletor e a ficha mostravam "120 ft / Darkvision" só para a legacy
+  Abyssal; Chthonic e Infernal (as outras duas oficiais 2024) ficavam nos 60 ft da base, e
+  nenhuma prosa da entrada menciona alteração de visão no escuro.
+- Raiz: confirmado no JSON cru do 5e.tools (`races.json`, `_versions` do Tiefling XPHB) - a
+  versão "Abyssal Legacy" carrega `darkvision: 120` no campo de topo, sem nenhuma entry
+  correspondente. Cross-checado contra o SRD oficial (dnd5e system, CC-BY-4.0,
+  `packs/_source/origins24/species/tiefling-abyssal.yml`): "Darkvision. You have Darkvision
+  with a range of 60 feet." - sem exceção para a Abyssal. É um erro pontual do dado upstream,
+  não uma regra do livro.
+- Fix: `KNOWN_DATA_FIXES` em `engine/speciesData.js`, aplicado dentro de `buildVariant` por
+  chave exata `Raça|Fonte/Versão` - corrige só essa entrada, sem tocar resistência/magias/
+  demais campos dela nem qualquer outra linhagem. 2 testes novos em `speciesData.test.js`.
+- Verificado ao vivo: preview e ficha da Abyssal Legacy agora mostram só "Poison / Resistance"
+  (sem badge de Darkvision), igual às outras duas legacies oficiais.
+
 ---
 
 > **2026-07-23 (sessão avulsa - Custom Lineage)**: TC-0046…TC-0050 achados e corrigidos em sessão

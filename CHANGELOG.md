@@ -4891,3 +4891,29 @@ linhagem de Elf/Gnome: **9 linhas `ui: ok`, ZERO bugs, nenhuma mudança de códi
 
 Todos com links de glossário resolvendo, zero `{@tag}` vazado, escolhas persistindo. Suíte e lint
 inalterados (sem código tocado). Ver TESTING-PLAN.md §7 e testing/COVERAGE.md.
+
+## 84. Phase T - T1b sessão 2: Bloco S-A2 (Dragonborn/Goliath/Tiefling núcleo) - TC-0051 fixed
+
+Segundo bloco da campanha de espécies. **19 linhas `ui: ok`** (Dragonborn|XPHB ×10, Goliath|XPHB
+×6, Tiefling|XPHB núcleo Abyssal/Chthonic/Infernal ×3). Sweep verde antes (285/285 `--strict`).
+- **Dragonborn** - as 10 ancestrias presentes no seletor de linhagem; preview resolve o tipo de
+  dano por ancestralidade (Black->Acid, Red->Fire); selecionado Red ao vivo: "1d10 Fire damage" +
+  "Resistance to Fire" na ficha, Draconic Flight @5 renderiza.
+- **Goliath** - as 6 ancestralidades de gigante presentes; preview resolve só o benefício
+  escolhido (Cloud's Jaunt / Stone's Endurance testados ao vivo); Large Form @5 + Powerful Build.
+- **Tiefling núcleo** - as 3 legacies oficiais 2024 (Abyssal/Chthonic/Infernal) testadas ao vivo,
+  cada uma com resistência+cantrip corretos e a escolha de atributo de conjuração (Int/Wis/Cha);
+  Infernal com Charisma escolhida deriva DC 10 / Attack +2 na Spellbook, Fire Bolt + Thaumaturgy
+  Always Prepared. Confirmado (regressão do DDL-0061 §69): SEM linhagem escolhida a ficha não
+  mostra nenhum chip de resistência/spell-list, só o seletor "Choose fiendish legacy...".
+- **TC-0051 (FIXED em sessão):** a legacy Abyssal exibia "120 ft / Darkvision" (preview e ficha),
+  única entre as 14 legacies do dataset. Raiz: o JSON cru do 5e.tools carrega `darkvision: 120`
+  no campo de topo da versão "Abyssal Legacy", sem nenhuma entry correspondente na prosa - as
+  outras 13 (incl. Chthonic/Infernal oficiais) não tocam o campo. Cross-checado contra o SRD
+  oficial (dnd5e system, CC-BY-4.0, `tiefling-abyssal.yml`): "Darkvision. You have Darkvision with
+  a range of 60 feet." - confirma erro pontual do dado upstream, não uma regra do livro. Fix:
+  `KNOWN_DATA_FIXES` em `engine/speciesData.js`, aplicado dentro de `buildVariant` por chave exata
+  `Raça|Fonte/Versão` - corrige só o campo errado, sem tocar o resto da variante. 2 testes novos.
+
+1138 testes (+2), lint, sweep 285/285 `--strict`, mobile 375px sem overflow, zero erros de
+console. Ver TESTING-PLAN.md §7, testing/COVERAGE.md e testing/ISSUES.md (TC-0051).

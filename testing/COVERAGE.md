@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-25T15:38:22.947Z · base seed 1 · 285 rows
+Last sweep: 2026-07-25T21:01:17.846Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -166,16 +166,16 @@ Last sweep: 2026-07-25T15:38:22.947Z · base seed 1 · 285 rows
 | `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | ok | todo | idem; a perícia só aparece nesta opção (TC-0047) |
 | `species:Deep Gnome\|MPMM` | ok | - | todo | todo |  |
 | `species:Dhampir\|RHW` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Blue)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Brass)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Bronze)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Copper)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Gold)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Green)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Red)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Silver)` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (White)` | ok | - | todo | todo |  |
+| `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | ok | todo | S-A2: preview resolve Acid/Resistance corretamente |
+| `species:Dragonborn\|XPHB/Dragonborn (Blue)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Brass)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Bronze)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Copper)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Gold)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Green)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Red)` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - 1d10 Fire damage + Resistance to Fire na ficha, Draconic Flight @5 |
+| `species:Dragonborn\|XPHB/Dragonborn (Silver)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (White)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Amethyst)` | ok | - | todo | todo |  |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Crystal)` | ok | - | todo | todo |  |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Emerald)` | ok | - | todo | todo |  |
@@ -215,12 +215,12 @@ Last sweep: 2026-07-25T15:38:22.947Z · base seed 1 · 285 rows
 | `species:Goblin\|PSZ/Goblin (Zendikar; Grotag Tribe)` | ok | - | todo | todo |  |
 | `species:Goblin\|PSZ/Goblin (Zendikar; Lavastep Tribe)` | ok | - | todo | todo |  |
 | `species:Goblin\|PSZ/Goblin (Zendikar; Tuktuk Tribe)` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Cloud Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Fire Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Frost Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Hill Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Stone Giant Ancestry` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Storm Giant Ancestry` | ok | - | todo | todo |  |
+| `species:Goliath\|XPHB/Goliath; Cloud Giant Ancestry` | ok | - | ok | todo | S-A2: preview resolve só Cloud's Jaunt (Bonus Action teleport) |
+| `species:Goliath\|XPHB/Goliath; Fire Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
+| `species:Goliath\|XPHB/Goliath; Frost Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
+| `species:Goliath\|XPHB/Goliath; Hill Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
+| `species:Goliath\|XPHB/Goliath; Stone Giant Ancestry` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - só Stone's Endurance na ficha; Large Form @5 + Powerful Build |
+| `species:Goliath\|XPHB/Goliath; Storm Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
 | `species:Grung\|OGA` | ok | - | todo | todo |  |
 | `species:Hadozee\|AAG` | ok | - | todo | todo |  |
 | `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
@@ -277,9 +277,9 @@ Last sweep: 2026-07-25T15:38:22.947Z · base seed 1 · 285 rows
 | `species:Siren\|PSX` | ok | - | todo | todo |  |
 | `species:Tabaxi\|MPMM` | ok | - | todo | todo |  |
 | `species:Thri-kreen\|AAG` | ok | - | todo | todo |  |
-| `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | todo | todo |  |
-| `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | todo | todo |  |
-| `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | todo | todo |  |
+| `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | ok | todo | S-A2: TC-0051 FIXED (darkvision 120->60, dado upstream errado); ficha 60ft correto |
+| `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | ok | todo | S-A2: selecionado ao vivo - Resistance Necrotic + Chill Touch, Darkvision 60ft |
+| `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - Fire resist + Fire Bolt/Thaumaturgy Always Prepared; DC 10/atk +2 (Cha) |
 | `species:Tiefling\|XPHB/Tiefling; Baalzebul Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
 | `species:Tiefling\|XPHB/Tiefling; Dispater Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
 | `species:Tiefling\|XPHB/Tiefling; Fierna Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |

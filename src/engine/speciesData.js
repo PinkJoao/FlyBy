@@ -54,6 +54,16 @@ function substituteVars(value, vars) {
   return value;
 }
 
+// Correção pontual de um erro do dado upstream (5e.tools): a versão "Abyssal
+// Legacy" do Tiefling XPHB carrega `darkvision: 120` no JSON cru, mas nem a
+// prosa da própria entrada nem o SRD oficial (dnd5e system, CC-BY-4.0 -
+// packs/_source/origins24/species/tiefling-abyssal.yml: "Darkvision. You have
+// Darkvision with a range of 60 feet.") mencionam isso - as outras duas
+// legacies oficiais (Chthonic/Infernal) não alteram o campo. TC-0051.
+const KNOWN_DATA_FIXES = {
+  'Tiefling|XPHB/Tiefling; Abyssal Legacy': { darkvision: 60 },
+};
+
 /** Constrói uma variante concreta a partir de uma versão { name, source, _mod, ...overrides }. */
 function buildVariant(race, version) {
   const { _mod, ...overrides } = version;
@@ -63,6 +73,8 @@ function buildVariant(race, version) {
     variant[field] = applyArrMods(variant[field], ops);
   }
   variant._baseName = race.name;
+  const fix = KNOWN_DATA_FIXES[`${race.name}|${race.source}/${version.name}`];
+  if (fix) Object.assign(variant, fix);
   return variant;
 }
 

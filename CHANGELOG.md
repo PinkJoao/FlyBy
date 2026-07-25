@@ -4867,3 +4867,27 @@ vivo (mobile): os tours de Species/Background/Class/Inventory/Biography disparan
 com as ancoras certas; o Spellbook corretamente SEM tour (Barbarian, nao-conjurador); e o botao-demo
 do guia aparecendo no passo 8 do tour da ficha (ficha completa, sem badge) e sumindo depois. Zero
 erros de console.
+
+## 83. Phase T - T1b sessão 1: Bloco S-A1 (núcleo 2024 XPHB) - sem achados
+
+Início da campanha de testes de ESPÉCIES (Tier 1b). Bloco S-A1 = as bases 2024 XPHB e os núcleos de
+linhagem de Elf/Gnome: **9 linhas `ui: ok`, ZERO bugs, nenhuma mudança de código.** Sweep verde antes
+(285/285 `--strict`). Passada ao vivo (mobile-first ~560/820px + spot-check 375px sem overflow):
+- **Aasimar** - escolha de tamanho S/M (link glossário "Size"); Light cantrip (Cha) chega à origem de
+  raça da Spellbook (DC 9); Celestial Revelation em opções estruturadas; lightbox de imagem OK.
+- **Dwarf** - sem sub-escolhas; Dwarven Toughness deriva (HP 14->15 @1); 1 resultado (filtro esconde
+  Kaladesh).
+- **Human** - os três pickers (size, any-skill 14, Origin feat 24 categoria-correta) filtram e
+  persistem; chip do feat com botão de detalhe (ℹ️, DDL-0021).
+- **Orc** - Adrenaline Rush / Darkvision 120 / Relentless Endurance; sem sub-escolhas (sem Powerful
+  Build, correto p/ 2024).
+- **Elf** - o seletor de linhagem traz as 6 (Drow/High/Wood + Lorwyn/Shadowmoor FOLDED, DDL-0066, +
+  Pallid), sem "Elf|LFL" duplicado; Drow deriva Darkvision 120 + Dancing Lights (Spellbook), High
+  abre o seletor "Choose a Wizard cantrip" (24 opts pré-marcado Wizard+Cantrip), Wood deriva Speed 35
+  + Druidcraft; Keen Senses fica visível e o spellcasting-ability é adiado p/ depois da linhagem
+  (DDL-0061).
+- **Gnome** - Forest + Rock; Gnomish Cunning; **TC-0044 CONFIRMADO ao vivo**: Forest concede Minor
+  Illusion + Speak with Animals (2/Day) ambos @1.
+
+Todos com links de glossário resolvendo, zero `{@tag}` vazado, escolhas persistindo. Suíte e lint
+inalterados (sem código tocado). Ver TESTING-PLAN.md §7 e testing/COVERAGE.md.

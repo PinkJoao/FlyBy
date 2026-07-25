@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
+Last sweep: 2026-07-25T15:38:22.947Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -152,7 +152,7 @@ Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
 | Unit | Auto | Decision levels | UI | Export | Notes |
 |---|---|---|---|---|---|
 | `species:Aarakocra\|MPMM` | ok | - | todo | todo |  |
-| `species:Aasimar\|XPHB` | ok | - | todo | todo |  |
+| `species:Aasimar\|XPHB` | ok | - | ok | todo | S-A1: size S/M choice + Light cantrip (Cha) na origem de raça; Celestial Revelation em opções estruturadas |
 | `species:Aetherborn\|PSK/Variant; Gifted Aetherborn` | ok | - | todo | todo | TC-0048 fixed 2026-07-23: sem atributo legado |
 | `species:Astral Elf\|AAG` | ok | - | todo | todo |  |
 | `species:Autognome\|AAG` | ok | - | todo | todo |  |
@@ -182,12 +182,12 @@ Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Sapphire)` | ok | - | todo | todo |  |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Topaz)` | ok | - | todo | todo |  |
 | `species:Duergar\|MPMM` | ok | - | todo | todo |  |
-| `species:Dwarf\|XPHB` | ok | - | todo | todo |  |
+| `species:Dwarf\|XPHB` | ok | - | ok | todo | S-A1: sem sub-escolhas; Dwarven Toughness deriva (HP 14->15 @1); só 1 resultado (filtro esconde Kaladesh) |
 | `species:Dwarf (Kaladesh)\|PSK` | ok | - | todo | todo |  |
 | `species:Eladrin\|MPMM` | ok | - | todo | todo |  |
-| `species:Elf\|XPHB/Elf; Drow Lineage` | ok | - | todo | todo |  |
-| `species:Elf\|XPHB/Elf; High Elf Lineage` | ok | - | todo | todo |  |
-| `species:Elf\|XPHB/Elf; Wood Elf Lineage` | ok | - | todo | todo |  |
+| `species:Elf\|XPHB/Elf; Drow Lineage` | ok | - | ok | todo | S-A1: Darkvision 120 + Dancing Lights (Cha) na Spellbook; Keen Senses skill + spellcasting ability (adiada) |
+| `species:Elf\|XPHB/Elf; High Elf Lineage` | ok | - | ok | todo | S-A1: Prestidigitation + seletor "Choose a Wizard cantrip" (24 cantrips, pré-marcado Wizard+Cantrip) |
+| `species:Elf\|XPHB/Elf; Wood Elf Lineage` | ok | - | ok | todo | S-A1: Speed 35 deriva; Druidcraft cantrip; Longstrider@3/Pass without Trace@5 |
 | `species:Elf\|XPHB/Elf; Lorwyn Lineage` | ok | - | todo | todo |  |
 | `species:Elf\|XPHB/Elf; Shadowmoor Lineage` | ok | - | todo | todo |  |
 | `species:Elf\|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada, LINHAGEM sem reescrita (único caso - DDL-0060) |
@@ -208,8 +208,8 @@ Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
 | `species:Giff\|AAG` | ok | - | todo | todo |  |
 | `species:Githyanki\|MPMM` | ok | - | todo | todo |  |
 | `species:Githzerai\|MPMM` | ok | - | todo | todo |  |
-| `species:Gnome\|XPHB/Gnome; Forest Gnome Lineage` | ok | - | todo | todo |  |
-| `species:Gnome\|XPHB/Gnome; Rock Gnome Lineage` | ok | - | todo | todo |  |
+| `species:Gnome\|XPHB/Gnome; Forest Gnome Lineage` | ok | - | ok | todo | S-A1: TC-0044 CONFIRMADO ao vivo - Minor Illusion + Speak with Animals (2/Day) ambos concedidos @1 |
+| `species:Gnome\|XPHB/Gnome; Rock Gnome Lineage` | ok | - | ok | todo | S-A1: Mending + Prestidigitation na Spellbook; Gnomish Cunning; size Small fixo |
 | `species:Goblin\|MPMM` | ok | - | todo | todo |  |
 | `species:Goblin\|PSZ/Goblin (Ixalan)` | ok | - | todo | todo |  |
 | `species:Goblin\|PSZ/Goblin (Zendikar; Grotag Tribe)` | ok | - | todo | todo |  |
@@ -231,7 +231,7 @@ Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
 | `species:Harengon\|MPMM` | ok | - | todo | todo |  |
 | `species:Hexblood\|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin\|MPMM` | ok | - | todo | todo |  |
-| `species:Human\|XPHB` | ok | - | todo | todo |  |
+| `species:Human\|XPHB` | ok | - | ok | todo | S-A1: size + any-skill (14) + Origin feat (24, categoria correta) - todos os pickers filtram/persistem |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Stensia)` | ok | - | todo | todo |  |
@@ -260,7 +260,7 @@ Last sweep: 2026-07-23T22:59:55.602Z · base seed 1 · 285 rows
 | `species:Minotaur\|MPMM` | ok | - | todo | todo |  |
 | `species:Minotaur (Amonkhet)\|PSA` | ok | - | todo | todo |  |
 | `species:Naga\|PSA` | ok | - | todo | todo |  |
-| `species:Orc\|XPHB` | ok | - | todo | todo |  |
+| `species:Orc\|XPHB` | ok | - | ok | todo | S-A1: Adrenaline Rush/Darkvision 120/Relentless Endurance; sem sub-escolhas (correto, sem Powerful Build em 2024) |
 | `species:Orc (Ixalan)\|PSX` | ok | - | todo | todo |  |
 | `species:Owlin\|SCC` | ok | - | todo | todo |  |
 | `species:Plasmoid\|AAG` | ok | - | todo | todo |  |

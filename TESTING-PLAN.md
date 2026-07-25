@@ -209,8 +209,8 @@ um DEVE ser conferido ao vivo na sessão do seu bloco, não presumido pelo sweep
 #### Bloco S-A — Núcleo 2024 (XPHB mainstream) · ~28 linhas · 2 sessões
 As espécies que um jogador novo escolhe primeiro; têm de ser impecáveis. É a
 baseline visual/de derivação contra a qual os outros blocos se comparam.
-- **S-A1 (bases + linhagens curtas):** Aasimar, Dwarf, Human, Orc (sem linhagem);
-  Elf|XPHB núcleo (Drow/High/Wood); Gnome (Forest/Rock).
+- **S-A1 (bases + linhagens curtas) - DONE 2026-07-25 (9 linhas `ui: ok`, zero bugs):** Aasimar,
+  Dwarf, Human, Orc (sem linhagem); Elf|XPHB núcleo (Drow/High/Wood); Gnome (Forest/Rock).
 - **S-A2 (muitas linhagens do mesmo padrão):** Dragonborn|XPHB ×10, Goliath|XPHB
   ×6, Tiefling|XPHB núcleo (Abyssal/Chthonic/Infernal — as 3 legacies OFICIAIS 2024).
 - **Atenção:** escolha de tamanho S/M (DDL-0017) em várias; a linhagem élfica
@@ -307,6 +307,31 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (2)** - **T1b sessão 1: Bloco S-A1 CONCLUÍDO (9 linhas `ui: ok`) - ZERO bugs.** Sweep
+  verde antes de começar (285/285 `--strict`). Passada de UI ao vivo (mobile-first, ~560/820px + spot-
+  check 375px sem overflow) sobre as bases 2024 XPHB e os núcleos de linhagem de Elf/Gnome:
+  **Aasimar** (escolha de tamanho S/M com link glossário "Size"; Light cantrip Cha na origem de raça da
+  Spellbook, DC 9; Celestial Revelation em opções estruturadas; lightbox de imagem OK), **Dwarf**
+  (sem sub-escolhas; Dwarven Toughness deriva HP 14->15 @1; filtro esconde Kaladesh - 1 resultado),
+  **Human** (os 3 pickers - size, any-skill 14, Origin feat 24 categoria-correta - filtram e persistem;
+  chip do feat com botão ℹ️ DDL-0021), **Orc** (Adrenaline Rush/Darkvision 120/Relentless Endurance;
+  sem Powerful Build, correto p/ 2024), **Elf** (os 6 da linhagem aparecem - Drow/High/Wood + Lorwyn/
+  Shadowmoor FOLDED DDL-0066 + Pallid, sem "Elf|LFL" duplicado; Drow: Darkvision 120 + Dancing Lights;
+  High: seletor "Choose a Wizard cantrip" 24 opts pré-marcado; Wood: Speed 35 + Druidcraft; Keen Senses
+  fica visível e o spellcasting-ability é adiado p/ depois da linhagem, DDL-0061), **Gnome** (Forest +
+  Rock; Gnomish Cunning; **TC-0044 CONFIRMADO ao vivo** - Forest concede Minor Illusion + Speak with
+  Animals 2/Day ambos @1). Todos com links de glossário resolvendo, zero `{@tag}` vazado, escolhas
+  persistindo, derivações corretas (HP/Darkvision/Speed/magias concedidas). Nenhuma mudança de código -
+  suíte/lint inalterados. Ledger sem itens novos; único aberto segue `TC-0043` (needs-user-eyes).
+  **Nota de harness:** o SelectorPanel a <=760px é MOBILE (tela de detalhe cheia via portal) e os cliques
+  por `ref` do read_page caem em coordenadas erradas nesse app - usar viewport ~820px (SelectorPanel em
+  3 painéis: filtros+lista+preview c/ Select, estável) e coordenadas VISUAIS de screenshot; `form_input`
+  por ref funciona sempre. Tutoriais foram DESLIGADOS pelo menu ☰ (auto-disparam em install nova).
+  **Next action: T1b sessão 2 - Bloco S-A2** (Dragonborn|XPHB ×10, Goliath|XPHB ×6, Tiefling|XPHB núcleo
+  Abyssal/Chthonic/Infernal): muitas linhagens do MESMO padrão (base repete, muda o seletor de linhagem)
+  - conferir tipo de dano do sopro/ancestralidade e que o Tiefling SEM linhagem não mostra chips de
+  resist/spell list (DDL-0061 §69).
 
 - **2026-07-25** - **T1b PLANEJADA: as ~150 espécies divididas em 5 blocos (§4.5).** Nenhuma
   linha testada nesta sessão - só o plano. Eixo: procedência + grau de curadoria, respondendo

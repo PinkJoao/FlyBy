@@ -10,6 +10,8 @@ import { createPortal } from 'react-dom';
 import { applyFilters, deriveOptions, cycleOption } from './filterModel';
 import DetailView from '../components/common/DetailView';
 import BackButton from '../components/common/BackButton';
+import { maybeStartTutorial } from '../store/tutorialStore';
+import { TUT } from '../tutorial/anchors';
 import styles from './SelectorPanel.module.css';
 
 /** Arrastar o puxador da gaveta de filtros (mobile) mais do que isto a fecha. */
@@ -91,6 +93,16 @@ export default function SelectorPanel({
 
   const isMobile = () =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
+
+  // Tutorial de uso: na 1a vez que um seletor "cheio" (com preview) abre, o tour
+  // do seletor dispara (contextual, so p/ quem ainda nao viu). O glossario
+  // (noPreview) e a loja tem layout proprio e ficam de fora - o alvo natural do
+  // tour e o picker normal. Um pequeno atraso deixa o painel assentar antes.
+  useEffect(() => {
+    if (noPreview) return undefined;
+    const t = setTimeout(() => maybeStartTutorial('selector'), 250);
+    return () => clearTimeout(t);
+  }, [noPreview]);
 
   const closeFilters = () => {
     setShowFilters(false);
@@ -270,6 +282,7 @@ export default function SelectorPanel({
         <div className={showFilters ? `${styles.searchBar} ${styles.searchBarHidden}` : styles.searchBar}>
           <input
             className={styles.search}
+            data-tour={TUT.SELECTOR_SEARCH}
             type="search"
             placeholder={`Search ${entity.title.toLowerCase()}…`}
             value={query}
@@ -279,6 +292,7 @@ export default function SelectorPanel({
           <button
             type="button"
             className={styles.filterToggle}
+            data-tour={TUT.SELECTOR_FILTERS_TOGGLE}
             onClick={() => setShowFilters((v) => !v)}
           >
             Filters{activeCount ? ` (${activeCount})` : ''}
@@ -289,6 +303,7 @@ export default function SelectorPanel({
           {/* Filters */}
           <aside
             className={`${styles.filters} ${showFilters ? styles.filtersOpen : ''}`}
+            data-tour={TUT.SELECTOR_FILTERS}
             style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
           >
             {/* Puxador (mobile): arrastar p/ baixo fecha a gaveta; tocar também. */}
@@ -382,7 +397,7 @@ export default function SelectorPanel({
           </aside>
 
           {/* Resultados */}
-          <main className={styles.results} ref={resultsRef}>
+          <main className={styles.results} ref={resultsRef} data-tour={TUT.SELECTOR_RESULTS}>
             <div className={styles.count}>{results.length} result(s)</div>
             <ul className={styles.cards}>
               {shown.map((item) => {
@@ -474,7 +489,7 @@ export default function SelectorPanel({
 
           {/* Preview */}
           {!noPreview && (
-            <aside className={styles.preview}>
+            <aside className={styles.preview} data-tour={TUT.SELECTOR_PREVIEW}>
               {preview ? (
                 <>
                   <div className={styles.previewScroll}>
@@ -484,7 +499,12 @@ export default function SelectorPanel({
                     {renderFooter ? (
                       renderFooter(preview)
                     ) : (
-                      <button type="button" className={styles.selectBtn} onClick={() => onSelect(preview)}>
+                      <button
+                        type="button"
+                        className={styles.selectBtn}
+                        data-tour={TUT.SELECTOR_SELECT}
+                        onClick={() => onSelect(preview)}
+                      >
                         Select
                       </button>
                     )}

@@ -24,6 +24,7 @@ import { totalLevel, classNames } from '../schema/character';
 import { orderRoster } from './roster';
 import MenuButton from '../components/common/MenuButton';
 import { openGlossary } from '../store/glossaryStore';
+import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
 import { confirm, ask } from '../components/common/dialog';
 import styles from './Home.module.css';
 
@@ -46,6 +47,15 @@ export default function Home() {
   const remove = useCharacterStore((s) => s.remove);
   const guidance = useSettingsStore((s) => s.guidance);
   const setGuidance = useSettingsStore((s) => s.setGuidance);
+  // Tutorial de uso (coach-marks): liga/desliga + replay. Replay religa e zera o
+  // `seen`, entao os tours voltam a auto-disparar conforme o usuario navega.
+  const tutEnabled = useTutorialStore((s) => s.enabled);
+  const setTutEnabled = useTutorialStore((s) => s.setEnabled);
+  const resetTutorials = useTutorialStore((s) => s.resetSeen);
+  const replayTutorials = () => {
+    setTutEnabled(true);
+    resetTutorials();
+  };
   const { db, forceCacheUpdate } = useData();
 
   const [query, setQuery] = useState('');
@@ -54,6 +64,14 @@ export default function Home() {
   useEffect(() => {
     if (!loaded) load();
   }, [loaded, load]);
+
+  // Semeadura de 1a execucao do tutorial: usuario que ja tem personagens nasce
+  // com os tours marcados como vistos (nao sao interrompidos); instalacao nova
+  // (roster vazio) mantem os tours ligados p/ auto-disparar. Roda uma vez, ao
+  // carregar o roster.
+  useEffect(() => {
+    if (loaded) seedTutorials(characters.length);
+  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Criar / importar --------------------------------------------------------
 
@@ -208,6 +226,11 @@ export default function Home() {
             guidanceItem('ask', 'Ask each time'),
             guidanceItem('on', 'Always guided'),
             guidanceItem('off', 'Never guided'),
+            { label: 'Tutorials', sub: 'In-app usage walkthroughs', disabled: true },
+            { label: 'Replay tutorials', sub: 'Show them again as you navigate', onClick: replayTutorials },
+            tutEnabled
+              ? { label: 'Disable tutorials', sub: 'Turn off the walkthroughs', onClick: () => setTutEnabled(false) }
+              : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
             { label: 'Import character', sub: 'Foundry actor JSON', onClick: pickFile },
             { label: 'Update game data', sub: 'Re-download 5e.tools content', onClick: updateData },
           ]}

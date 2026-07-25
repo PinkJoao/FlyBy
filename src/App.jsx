@@ -6,6 +6,7 @@ import ErrorScreen from './components/common/ErrorScreen';
 import DialogHost from './components/common/DialogHost';
 import GlossaryOverlay from './components/common/GlossaryOverlay';
 import ImageViewer from './components/common/ImageViewer';
+import TutorialOverlay from './components/common/TutorialOverlay';
 import Home from './pages/Home';
 import Builder from './pages/Builder';
 import WizardPage from './pages/WizardPage';
@@ -37,6 +38,7 @@ export default function App() {
       <GlossaryOverlay />
       <DialogHost />
       <ImageViewer />
+      <TutorialOverlay />
     </DataProvider>
   );
 }

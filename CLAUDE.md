@@ -342,6 +342,60 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0069 — Tutorial de USO (coach-marks) é um sistema à parte da Character Guidance
+**Date:** 2026-07-25
+**Builds on:** DDL-0007 (a pilha de diálogos in-app e o padrão foco/Esc), DDL-0025 (overlays
+montados uma vez no App e acionados por um singleton imperativo - glossaryStore/imageViewerStore),
+DDL-0012/0013 (a Character Guidance, da qual este recurso é DELIBERADAMENTE separado).
+
+**Context.** O usuário pediu um tutorial DINÂMICO de como USAR o app - mostrar o que cada parte faz
+e onde fica (o primeiro seletor que abrir, os mini cards de atributo, o card de proficiências, o
+botão do guia, cada aba, trocar a imagem, multiclasse, equipar item, preparar magia...), levemente
+diferente entre mobile e desktop. Isso NÃO é a Character Guidance (o wizard que ensina O QUE
+decidir): é um tour que ensina COMO a interface funciona. Escopo aprovado: todos os tours (core +
+6 abas); disparo automático só para instalações novas (marca "visto" por superfície) + replay pelo
+menu; usuário que já tem personagens nasce com tudo marcado como visto (não é interrompido).
+
+**Decision.**
+- **Um singleton no molde do imageViewerStore/glossaryStore**, não um fork da guidance. Quatro
+  peças: `store/tutorialStore.js` (Zustand + localStorage: `enabled` + `seen`; API `maybeStartTutorial`
+  auto/contextual e `startTutorial` replay; `seedTutorials(rosterCount)` na 1a execução), `tutorial/
+  tours.js` (DADOS puros: passos com `anchor`/`body`/`only`/`placement`), `tutorial/anchors.js`
+  (fonte única das chaves `data-tour`, compartilhada com os componentes) e
+  `components/common/TutorialOverlay.jsx` (montado uma vez no App).
+- **Ancoragem por `data-tour`, não por refs.** O overlay resolve o alvo por
+  `document.querySelector('[data-tour="..."]')` - funciona através de portais (o SelectorPanel
+  renderiza em document.body) e não exige encanar refs por vários níveis. Um componente vira alvo
+  declarando a chave em `anchors.js` e pondo o atributo.
+- **Diferença mobile×desktop é de DADOS, não de código.** Passo cujo TEXTO muda usa `body:
+  { desktop, mobile }`; passo cuja ÂNCORA muda (ex: filtros = painel fixo no desktop × botão de
+  gaveta no mobile; preview = coluna no desktop × "toque no card" no mobile) usa `only`. O breakpoint
+  é o MESMO do SelectorPanel (`matchMedia('(max-width: 760px)')`).
+- **Um tour por vez; disparo contextual no mount.** `maybeStartTutorial` só dispara se ligado, não
+  visto e nada ativo. O tour do seletor dispara no mount de um `SelectorPanel` "cheio" (com preview -
+  glossário/loja ficam de fora). `finish` marca visto (persistido).
+- **Cada passo é um `Spotlight` REMONTADO por passo** (key = tour:index). Isso evita o reset de
+  estado em render e o `useCallback` compartilhado que, com o React Compiler, disparava o aviso
+  "dependency array changed size". Regra p/ quem mexer no overlay: mantenha o estado por-passo no
+  componente remontado, não no pai.
+- **Faseamento:** F1 (DONE) = motor + tour do seletor. **F4 (DONE, adiantada)** = "Replay tutorial(s)"
+  + toggle Enable/Disable nos menus ☰ (Home/Builder), via `resetSeen`/`setEnabled` - o Replay religa
+  e zera o `seen` (os tours voltam a auto-disparar) e na ficha chama `startTutorial('sheet')` (no-op
+  ate a F2). Feita antes da F2/F3 para facilitar testar os proximos tours. F2 = tour da ficha (mini
+  cards, proficiências, abas). F3 = micro-tours por aba (Species/Background/Class/Inventory/Spellbook/
+  Biography).
+
+**Consequences.**
+- Um tour novo é uma entrada em `tours.js`; um alvo novo é uma chave em `anchors.js` + o atributo no
+  componente. Nenhum call site precisa saber do tutorial (o disparo mora no próprio SelectorPanel, e
+  virá nas abas por mount).
+- A semeadura de 1a execução (`seedTutorials`) é chamada na Home quando o roster carrega; um usuário
+  que abra direto a rota do Builder sem passar pela Home só será semeado depois - aceito (o pior caso
+  é ver um tour a mais, nunca perder dado).
+- **Verificado (F1):** 1136 testes (+18), lint limpo, e ao vivo nos dois breakpoints (desktop 6
+  passos, mobile 5 passos, âncoras/posições corretas, marca visto, zero erros novos de console). Ver
+  CHANGELOG §78.
+
 ### DDL-0067 — Imagem universal: lightbox em todo o app + carrossel para as espécies com várias artes
 **Date:** 2026-07-23
 **Builds on:** DDL-0007 (a pilha de diálogos in-app e o padrão foco/Esc do DialogHost, que o

@@ -4749,3 +4749,53 @@ propria magia fora da lista, 61 → 60 resultados), escolher Charm Person troca 
 em 1/4, "Change" no preview abre o mesmo fluxo, fechar sem escolher preserva a magia, e a concedida
 Druidcraft (linhagem) nao tem o botao. Mobile 375px sem overflow. 1118 testes, lint, zero erros de
 console.
+
+## 78. Tutorial de uso (coach-marks): motor + tour do seletor (F1, DDL-0069)
+
+Novo recurso, SEPARADO da Character Guidance (o wizard de criacao/level-up): um tutorial de USO que
+destaca (spotlight) as partes do app e explica o que cada uma faz e onde fica. Esta e a **Fase 1**
+(o motor + o primeiro tour, o do seletor); as fichas e as abas vem nas fases seguintes.
+
+**Motor.** Um singleton no molde do `imageViewerStore`/`glossaryStore`:
+- `store/tutorialStore.js` (Zustand + localStorage): persiste `enabled` (liga/desliga geral) e
+  `seen` (mapa tourId → visto). API imperativa `maybeStartTutorial(id)` (auto/contextual: so dispara
+  se ligado, nao visto e nada ativo - um por vez) e `startTutorial(id)` (replay, forca). `next`/
+  `back`/`finish` navegam; `finish` marca visto. `seedTutorials(rosterCount)` roda na 1a execucao:
+  usuario que ja tem personagens nasce com tudo marcado como visto (nao e interrompido), instalacao
+  nova mantem os tours ligados.
+- `tutorial/tours.js` + `tutorial/anchors.js`: os tours sao DADOS puros (passos com `anchor`, texto
+  `body` que pode variar entre `{ desktop, mobile }`, e `only: 'mobile'|'desktop'` quando a ANCORA
+  muda). As chaves `data-tour` vivem em `anchors.js` (fonte unica, compartilhada com os componentes).
+- `components/common/TutorialOverlay.jsx` (montado uma vez no App): resolve o alvo por
+  `[data-tour="..."]`, o ilumina com um recorte sobre um fundo escuro, e mostra um balao com Back/
+  Next/Skip que se posiciona sozinho pelos lados (auto-flip nas bordas; vertical no mobile).
+  Reposiciona em scroll/resize; passo sem alvo (ou alvo ausente) vira balao central. Cada passo e um
+  `Spotlight` REMONTADO por passo (key = tour:index), o que evita reset-em-render e callback
+  compartilhado - mantem o React Compiler feliz (sem o aviso de deps de tamanho variavel).
+
+**Tour do seletor.** Dispara na 1a vez que um `SelectorPanel` "cheio" (com preview) abre - o
+glossario/loja ficam de fora. Passos: abertura → busca → filtros → resultados → preview → Select.
+As diferencas mobile×desktop sao reais: no **desktop** o passo dos filtros aponta o painel fixo a
+esquerda e ha um passo de "Preview" (coluna a direita) + "Select" (6 passos); no **mobile** aponta o
+botao "Filters" (a gaveta) e funde preview+select num passo "Details" (toque no card) - 5 passos.
+
+**Verificado ao vivo** nos dois breakpoints: desktop 6 passos com o balao posicionado a direita dos
+filtros / acima do Select etc.; mobile 5 passos com o botao "Filters" destacado e o balao em sheet;
+o tour marca `seen.selector` ao concluir e nao reabre; sem erros novos de console. 1136 testes
+(+18: `tutorialStore.test.js`, `tours.test.js`), lint limpo.
+
+Pendente (proximas fases): tours da ficha (mini cards, proficiencias, abas) e por aba (F2/F3).
+
+## 79. Tutorial de uso: controles de menu - replay + liga/desliga (F4, DDL-0069)
+
+Adiantado antes da F2/F3 porque facilita testar os proximos tours. Os menus sanduiche (☰) ganharam
+uma secao **Tutorials**:
+- **Replay tutorial(s)**: religa o tutorial (`enabled=true`) e ZERA o `seen`, entao os tours voltam
+  a auto-disparar conforme o usuario navega. Na ficha (Builder) tambem chama `startTutorial('sheet')`
+  para abrir o tour da ficha na hora - no-op ate a F2 existir, ja deixando o gancho pronto.
+- **Enable/Disable tutorials**: alterna `enabled` (o rotulo reflete o estado). Desligado, nenhum tour
+  auto-dispara; o Replay religa.
+
+Na **Home** e na **ficha**, via `useTutorialStore` (`enabled`/`setEnabled`/`resetSeen`). Verificado
+ao vivo: Disable grava `enabled:false` e o item vira "Enable tutorials"; Replay grava
+`{enabled:true, seen:{}}` e, ao reabrir um seletor, o tour re-dispara. 1136 testes, lint.

@@ -1,0 +1,130 @@
+/* Tutorial (coach-marks). z-index acima do SelectorPanel (150), menus (200) e
+ * tabelas (130), abaixo do ImageViewer (1200) e dos dialogos (1000): o tour
+ * aponta para o chrome do app, nunca para um dialogo/lightbox. */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+}
+
+/* Camada transparente que engole cliques do fundo (tour dirigido por Next). */
+.blocker {
+  position: absolute;
+  inset: 0;
+}
+
+/* Recorte iluminado: o proprio elemento e transparente; o box-shadow gigante
+ * escurece tudo em volta. Uma borda accent marca o alvo. pointer-events:none
+ * para nao roubar o hit-testing (o blocker por baixo cuida dos cliques). */
+.hole {
+  position: absolute;
+  border-radius: 10px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  transition: top 0.18s ease, left 0.18s ease, width 0.18s ease, height 0.18s ease;
+}
+
+/* Passo sem alvo (balao central): escurece a tela inteira. */
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+/* Balao */
+.tip {
+  position: absolute;
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+  transition: opacity 0.12s ease;
+}
+
+.tip:focus {
+  outline: none;
+}
+
+.tipTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-h);
+}
+
+.tipBody {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.tipFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.counter {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.navBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.skip {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: var(--text);
+  opacity: 0.65;
+  cursor: pointer;
+}
+.skip:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.navBtn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.navBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+/* Primario: borda + texto accent (mesmo padrao do Select / dialogo primario). */
+.navPrimary {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+.navPrimary:hover {
+  border-color: var(--accent);
+  filter: brightness(1.12);
+}

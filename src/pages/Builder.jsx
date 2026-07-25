@@ -20,6 +20,7 @@ import { seedStartingGold } from '../engine/startingGold';
 import { fileToPortrait } from '../components/common/imageFile';
 import MenuButton from '../components/common/MenuButton';
 import { openGlossary } from '../store/glossaryStore';
+import useTutorialStore, { startTutorial } from '../store/tutorialStore';
 import BackButton from '../components/common/BackButton';
 import LevelControls from '../components/builder/LevelControls';
 import LevelUpWizard from '../components/wizard/LevelUpWizard';
@@ -92,6 +93,18 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   const fileRef = useRef(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Tutorial de uso (coach-marks): liga/desliga + replay. Replay religa, zera o
+  // `seen` (os tours contextuais voltam a auto-disparar) e abre o tour da ficha
+  // na hora - no-op ate a F2 existir, entao ja fica pronto para ela.
+  const tutEnabled = useTutorialStore((s) => s.enabled);
+  const setTutEnabled = useTutorialStore((s) => s.setEnabled);
+  const resetTutorials = useTutorialStore((s) => s.resetSeen);
+  const replayTutorials = () => {
+    setTutEnabled(true);
+    resetTutorials();
+    startTutorial('sheet');
+  };
 
   const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
 
@@ -341,6 +354,10 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               active
                 ? { label: 'Disable Character Guidance', sub: 'Hide the guide for this character', onClick: () => setGuided(false) }
                 : { label: 'Enable Character Guidance', sub: 'Show the guide for this character', onClick: () => setGuided(true) },
+              { label: 'Replay tutorial', sub: 'Show the usage walkthrough again', onClick: replayTutorials },
+              tutEnabled
+                ? { label: 'Disable tutorials', sub: 'Turn off the walkthroughs', onClick: () => setTutEnabled(false) }
+                : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
             ]}
           >
             <span aria-hidden="true">☰</span>

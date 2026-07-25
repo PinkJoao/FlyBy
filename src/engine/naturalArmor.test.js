@@ -18,6 +18,24 @@ describe('naturalArmorFor', () => {
   it('cai no _baseName quando presente (linhagem/versão)', () => {
     expect(naturalArmorFor({ name: 'Tortle (Small)', _baseName: 'Tortle', source: 'MPMM' })).toMatchObject({ type: 'flat' });
   });
+
+  // Achadas 2026-07-25 (T1b/S-C) varrendo TODA espécie alcançável com o traço
+  // `Natural Armor`: declaram a própria CA em prosa e derivavam 10+Dex.
+  it('as cinco espécies que faltavam resolvem, cada uma com sua fórmula', () => {
+    expect(naturalArmorFor({ name: 'Lizardfolk', source: 'MPMM' })).toMatchObject({ type: 'unarmored', base: 13, ability: 'dex' });
+    expect(naturalArmorFor({ name: 'Thri-kreen', source: 'AAG' })).toMatchObject({ type: 'unarmored', base: 13, ability: 'dex' });
+    expect(naturalArmorFor({ name: 'Locathah', source: 'LR' })).toMatchObject({ type: 'unarmored', base: 12, ability: 'dex' });
+    // o ÚNICO que soma Constituição
+    expect(naturalArmorFor({ name: 'Loxodon', source: 'GGR' })).toMatchObject({ type: 'unarmored', base: 12, ability: 'con' });
+    expect(naturalArmorFor({ name: 'Goblin', source: 'PSZ' })).toMatchObject({ type: 'unarmored', base: 11, ability: 'dex' });
+  });
+
+  it('as tribos de goblin herdam pelo _baseName, incl. a de Ixalan (fonte PSX)', () => {
+    expect(naturalArmorFor({ name: 'Goblin (Zendikar; Grotag Tribe)', _baseName: 'Goblin', source: 'PSZ' }))
+      .toMatchObject({ base: 11 });
+    expect(naturalArmorFor({ name: 'Goblin (Ixalan)', _baseName: 'Goblin', source: 'PSX' }))
+      .toMatchObject({ base: 11 });
+  });
 });
 
 describe('naturalArmorChanges - codificação Foundry (== overlay foundry-races)', () => {

@@ -37,7 +37,27 @@ const NATURAL_ARMOR = {
   'Tortle|MPMM': { type: 'flat', ac: 17, label: 'Natural Armor' },
   'Autognome|AAG': { type: 'unarmored', base: 13, ability: 'dex', label: 'Armored Casing' },
   'Warforged|EFA': { type: 'bonus', bonus: 1, label: 'Integrated Protection' },
+  // Acrescentadas 2026-07-25 (T1b/S-C): a varredura de TODA espécie alcançável
+  // com o traço `Natural Armor` mostrou que só Tortle/Autognome/Warforged
+  // estavam no registro - as cinco abaixo declaram a própria CA em prosa e
+  // derivavam 10+Dex. O Loxodon é o único que soma CONSTITUIÇÃO.
+  'Lizardfolk|MPMM': { type: 'unarmored', base: 13, ability: 'dex', label: 'Natural Armor' },
+  'Thri-kreen|AAG': { type: 'unarmored', base: 13, ability: 'dex', label: 'Chameleon Carapace' },
+  'Locathah|LR': { type: 'unarmored', base: 12, ability: 'dex', label: 'Natural Armor' },
+  'Loxodon|GGR': { type: 'unarmored', base: 12, ability: 'con', label: 'Natural Armor' },
+  'Goblin|PSZ': { type: 'unarmored', base: 11, ability: 'dex', label: 'Grit' },
+  // O goblin de Ixalan é sub-raça FUNDIDA do de Zendikar (herda o Grit nas
+  // entries), mas carrega a fonte PSX - e o fallback deste módulo procura
+  // `<baseName>|<fonte da variante>`. Sem esta linha ele derivaria 10+Dex.
+  'Goblin|PSX': { type: 'unarmored', base: 11, ability: 'dex', label: 'Grit' },
 };
+
+// FORA do registro, de propósito:
+//  - Simic Hybrid (GGR): a CA vem de uma OPÇÃO escolhível do "Animal
+//    Enhancement" (Carapace), não de um traço fixo - é caso do caminho de
+//    featureoption/AC_BONUS_FEATURES, não deste registro.
+//  - As versões antigas que o `latestOnly` esconde (Lizardfolk VGM/DMG, Tortle
+//    TTP, Warforged ERLW, Troglodyte DMG): o app não as oferece.
 
 /**
  * Padrão de armadura natural de uma raça resolvida (ou null).

@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-25T23:34:07.931Z · base seed 1 · 285 rows
+Last sweep: 2026-07-25T23:51:50.529Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -247,10 +247,10 @@ Last sweep: 2026-07-25T23:34:07.931Z · base seed 1 · 285 rows
 | `species:Kobold\|MPMM/Kobold; Draconic Sorcery` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN); 1 magia concedida (so esta das 3 concede - o adiamento do TC-0047). Seletor conferido ao vivo junto com Craftiness. |
 | `species:Kor\|PSZ` | ok | - | todo | todo |  |
 | `species:Leonin\|MOT` | ok | - | todo | todo |  |
-| `species:Lizardfolk\|MPMM` | ok | - | todo | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): natacao; 6 tracos. FALTA a passada de UI. |
-| `species:Locathah\|LR` | ok | - | todo | todo |  |
+| `species:Lizardfolk\|MPMM` | ok | - | todo | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): natacao; 6 tracos. FALTA a passada de UI. **TC-0053 FIXED aqui**: declarava Natural Armor (13+Dex) e derivava 10+Dex; ao vivo a ficha mostra AC 13 com Dex 10. |
+| `species:Locathah\|LR` | ok | - | todo | todo | TC-0053: Natural Armor (12+Dex) passou a derivar. |
 | `species:Lorwyn Changeling\|LFL` | ok | - | todo | todo |  |
-| `species:Loxodon\|GGR` | ok | - | todo | todo |  |
+| `species:Loxodon\|GGR` | ok | - | todo | todo | TC-0053: Natural Armor (12+CON - o unico que soma Constituicao) passou a derivar. |
 | `species:Lupin\|RHW` | ok | - | todo | todo |  |
 | `species:Merfolk\|PSZ/Merfolk (Ixalan; Blue)` | ok | - | todo | todo |  |
 | `species:Merfolk\|PSZ/Merfolk (Ixalan; Green)` | ok | - | todo | todo |  |
@@ -276,7 +276,7 @@ Last sweep: 2026-07-25T23:34:07.931Z · base seed 1 · 285 rows
 | `species:Simic Hybrid\|GGR` | ok | - | todo | todo | TC-0048/0050 fixed 2026-07-23: sem atributo legado; o idioma "other" sobrevive ao round-trip |
 | `species:Siren\|PSX` | ok | - | todo | todo |  |
 | `species:Tabaxi\|MPMM` | ok | - | todo | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): escalada; dv 60. FALTA a passada de UI. |
-| `species:Thri-kreen\|AAG` | ok | - | todo | todo |  |
+| `species:Thri-kreen\|AAG` | ok | - | todo | todo | TC-0053: Chameleon Carapace (13+Dex) passou a derivar. |
 | `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Poison, darkvision 60, Otherworldly Presence presente. TC-0051 confirmado tambem no engine (darkvision 60). |
 | `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Necrotic, darkvision 60, Otherworldly Presence presente. |
 | `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Fire, darkvision 60, Otherworldly Presence presente. |
@@ -291,7 +291,7 @@ Last sweep: 2026-07-25T23:34:07.931Z · base seed 1 · 285 rows
 | `species:Tiefling\|XPHB/Tiefling; Devil's Tongue Legacy` | ok | - | ok | todo | S-B1: cantrip Vicious Mockery; Charm Person@3 upcast lvl2 + Enthrall@5; traco Appearance do SCAG anexado (TC-0052 lore corrigida) |
 | `species:Tiefling\|XPHB/Tiefling; Hellfire Legacy` | ok | - | ok | todo | S-B1: sem cantrip; Burning Hands@3 upcast lvl2 + Darkness@5 (difere da Infernal oficial so no nivel 3); Appearance (TC-0052 lore corrigida) |
 | `species:Tiefling\|XPHB/Tiefling; Winged Legacy` | ok | - | ok | todo | S-B1: ao vivo - Speed 30 ft, fly 30 ft na ficha; sem magias (3/5 = "-"); Spellbook so Thaumaturgy; Appearance (TC-0052 lore corrigida) |
-| `species:Tortle\|MPMM` | ok | - | todo | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): AC 17 (armadura natural FLAT, DDL-0034 - unica linha fora do padrao 11-12). FALTA a passada de UI. |
+| `species:Tortle\|MPMM` | ok | - | todo | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): AC 17 (armadura natural FLAT, DDL-0034 - unica linha fora do padrao 11-12). FALTA a passada de UI. AC 17 reconfirmado pelo probe do TC-0053. |
 | `species:Triton\|MPMM` | ok | - | todo | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist cold; natacao; 3 magias. FALTA a passada de UI. |
 | `species:Vampire\|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |
 | `species:Vampire\|PSZ/Vampire (Zendikar)` | ok | - | todo | todo |  |

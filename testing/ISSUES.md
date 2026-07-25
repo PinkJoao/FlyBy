@@ -941,6 +941,49 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - Verificado: sonda sobre o compêndio real (14 linhas antes → 14 corrigidas, 0 regressões), 3
   testes novos em `race.test.js`, e ao vivo (Zariel Legacy passou a exibir a lore 2024).
 
+## TC-0053 - cinco especies declaravam a propria CA em prosa e derivavam 10+Dex
+
+- **Unidade:** `species:Lizardfolk|MPMM` (onde foi notado), `species:Thri-kreen|AAG`,
+  `species:Locathah|LR`, `species:Loxodon|GGR`, `species:Goblin|PSZ` (+ suas tribos e a
+  variante de Ixalan). **Severidade:** bug (regra). **Encontrado:** T1b sessao 5/6 (Bloco S-C),
+  2026-07-25. **Status:** fixed@2026-07-25.
+- Sintoma: o card do seletor marcava o traco **Natural Armor**, mas a ficha derivava a CA base
+  comum (10 + Dex). O probe do S-C mostrou o contraste: Tortle derivou 17 e Lizardfolk 11.
+- Raiz: o registro `NATURAL_ARMOR` (DDL-0034) tinha so tres entradas (Tortle/Autognome/
+  Warforged). A maquinaria ja era generica - `deriveArmorClass` aceita `unarmored` com
+  `base`+`ability`, permite escudo e escolhe a MAIOR CA - faltavam so as linhas.
+- Fix: varredura de TODA especie alcancavel com o traitTag `Natural Armor` cruzada com o
+  registro, e as cinco que faltavam entraram: Lizardfolk 13+Dex, Thri-kreen 13+Dex (Chameleon
+  Carapace), Locathah 12+Dex, **Loxodon 12+Con** (o unico que soma Constituicao) e Goblin PSZ
+  11+Dex (Grit). Mais `Goblin|PSX`, porque o goblin de Ixalan e sub-raca FUNDIDA do de Zendikar
+  e o fallback do modulo procura `<baseName>|<fonte da variante>`.
+- **Fora do registro de proposito:** Simic Hybrid (GGR) - a CA dele vem de uma OPCAO escolhivel
+  do "Animal Enhancement", que e caminho de featureoption, nao traco fixo; e as versoes que o
+  `latestOnly` esconde (Lizardfolk VGM/DMG, Tortle TTP, Warforged ERLW, Troglodyte DMG).
+- Verificado: probe sobre o compendio real (as 12 linhas com o traco agora resolvem: Lizardfolk
+  15, Loxodon 14, Thri-kreen 14, Locathah 13, Goblin 13, Tortle 17), 2 testes novos, e ao vivo
+  (**Lizardfolk com Dex 10 mostra AC 13** na ficha; era 10).
+
+## TC-0054 - Tiefling Winged: texto de atributo de conjuracao pendurado no vazio
+
+- **Unidade:** `species:Tiefling|XPHB/Tiefling; Winged Legacy`. **Severidade:** polish (texto).
+  **Encontrado:** relatado pelo USUARIO, 2026-07-25. **Status:** fixed@2026-07-25.
+- Sintoma: a Winged e a unica legacy que nao concede magia (da asas e resistencia), mas (a) o
+  traco dela terminava com "Intelligence, Wisdom, or Charisma is your spellcasting ability for
+  the spells you cast with this trait" - e nao ha magia alguma conjurada com esse traco; e (b) o
+  "Otherworldly Presence" dizia que o Thaumaturgy usa "the same spellcasting ability you use for
+  your Fiendish Legacy Trait", apontando para um traco que nao fala de atributo nenhum.
+- Fix (pontual, so para legacy SEM magia propria - hoje so a Winged): a frase do atributo **muda
+  de traco** em vez de sumir, porque o atributo continua existindo (o Thaumaturgy precisa dele).
+  O traco da legacy fica com resistencia + asas; o Otherworldly Presence perde a frase que
+  apontava para a legacy e recebe a frase do atributo - ali o "this trait" passa a se referir a
+  ele mesmo, que e o traco com que o Thaumaturgy e conjurado.
+- **Sem prosa nossa** (DDL-0061/DDL-0003): as duas frases saem do dado (a 1a sentenca do
+  Otherworldly Presence + o paragrafo 3 do template oficial). Se o texto upstream mudar a ponto
+  de a frase nao ser reconhecida, o traco fica intacto (degradar em vez de inventar).
+- Verificado: 4 testes novos (incl. que as legacies COM magia nao mudam), conferencia contra o
+  compendio real e ao vivo na ficha.
+
 ---
 
 > **2026-07-23 (sessão avulsa - Custom Lineage)**: TC-0046…TC-0050 achados e corrigidos em sessão

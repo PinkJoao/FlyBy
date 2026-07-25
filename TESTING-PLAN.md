@@ -325,6 +325,28 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-25 (8)** - **Dois fixes: TC-0054 (Winged, pedido do usuário) e TC-0053 (armadura
+  natural de 5 espécies).** A pane do browser voltou a funcionar depois de um `navigate` limpo.
+  **TC-0054:** na Winged - a única legacy sem magia própria - a frase do atributo de conjuração
+  MUDA DE TRAÇO em vez de sumir (o atributo continua existindo por causa do Thaumaturgy): a
+  legacy fica com resistência + asas, e o Otherworldly Presence perde a referência à legacy e
+  recebe a frase, onde "this trait" passa a apontar para ele mesmo. Sem prosa nossa - as duas
+  frases vêm do dado; upstream irreconhecível ⇒ nada muda. Ver a emenda no DDL-0061.
+  **TC-0053 (achado ao continuar o S-C):** o probe mostrou Tortle AC 17 × **Lizardfolk 11**, com
+  o card marcando "Natural Armor" nos dois. Varri TODA espécie alcançável com esse traitTag
+  contra o registro `NATURAL_ARMOR` e ele tinha **3 de 9**. Entraram Lizardfolk (13+Dex),
+  Thri-kreen (13+Dex), Locathah (12+Dex), **Loxodon (12+Con)** e Goblin PSZ (11+Dex) + a chave
+  `Goblin|PSX`. Nada da máquina mudou - era só registro, como o DDL-0034 previu. Ao vivo:
+  Lizardfolk com Dex 10 mostra **AC 13**. Ver a emenda no DDL-0034.
+  **Aprendizado (vale para os blocos que faltam):** foi o **probe comparativo** que denunciou o
+  bug - uma linha destoando das irmãs (11 no meio de 17). Ao rodar o probe de um bloco, **olhe a
+  coluna inteira procurando o que destoa**, não só a linha que você foi conferir. E ao achar um
+  caso, varra a FAMÍLIA (o traitTag) em vez de corrigir o caso isolado.
+  1147 testes (+6), lint, sweep 285/285 `--strict`.
+  **Next action: a passada de UI das 26 linhas restantes do S-C** (inalterado - a derivação já
+  está certificada e agora também a CA). O Lizardfolk já pode entrar como `ui: ok` na próxima
+  sessão junto com o resto.
+
 - **2026-07-25 (7)** - **T1b sessão 5: Bloco S-C (MPMM) - DERIVAÇÃO das 30 linhas certificada;
   UI feita só no Kobold (3 linhas `ui: ok`). Zero bugs, nenhum código tocado.**
   Aplicando a lição da revisão do S-A2, comecei pelo **probe exaustivo**: as 30 linhas MPMM

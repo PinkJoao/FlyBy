@@ -5034,3 +5034,34 @@ As notas do COVERAGE dizem exatamente isso - derivação certificada, UI pendent
 as linhas como prontas.
 
 Suíte (1141), lint e sweep (285/285 `--strict`) inalterados. Ver TESTING-PLAN.md §7.
+
+## 89. Tiefling Winged: a frase do atributo muda de traço (TC-0054) + a família da armadura natural (TC-0053)
+
+Duas correções, uma pedida pelo usuário e outra achada ao continuar o Bloco S-C.
+
+**TC-0054 (pedido do usuário) - Tiefling; Winged Legacy.** É a única legacy que não concede magia
+(dá asas e resistência), e por isso duas frases ficavam sem sentido: o traço dela terminava com
+"Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this
+trait" - não há magia conjurada com esse traço - e o **Otherworldly Presence** dizia que o
+Thaumaturgy usa "the same spellcasting ability you use for your Fiendish Legacy Trait", apontando
+para um traço que não fala de atributo. Apagar a frase não resolveria: o atributo **continua
+existindo**, porque o Thaumaturgy depende dele. Então ela **muda de traço**: a legacy fica com
+resistência + asas, e o Otherworldly Presence perde a referência à legacy e recebe a frase do
+atributo, onde o "this trait" passa a se referir a ele mesmo - que é o traço com que o Thaumaturgy
+é conjurado. Continua **sem prosa nossa**: as duas frases vêm do dado, e se o upstream mudar a
+ponto de a frase não ser reconhecida o traço fica intacto. As 13 legacies COM magia não mudam
+(testado).
+
+**TC-0053 - cinco espécies declaravam a própria CA em prosa e derivavam 10+Dex.** O probe do S-C
+mostrou o contraste que denunciou: Tortle derivou AC 17 e **Lizardfolk 11**, mesmo com o card
+marcando "Natural Armor". A varredura de TODA espécie alcançável com esse traitTag, cruzada com o
+registro `NATURAL_ARMOR` (DDL-0034), achou que ele tinha só 3 das 9. Entraram: **Lizardfolk|MPMM**
+(13+Dex), **Thri-kreen|AAG** (13+Dex, "Chameleon Carapace"), **Locathah|LR** (12+Dex),
+**Loxodon|GGR** (12+**Con**, o único que soma Constituição) e **Goblin|PSZ** (11+Dex, "Grit"),
+mais a chave `Goblin|PSX` porque o goblin de Ixalan é sub-raça fundida do de Zendikar. **Nada da
+máquina mudou** - `deriveArmorClass` já fazia tudo; era só registro, como o DDL-0034 previu. O
+**Simic Hybrid** fica de fora de propósito: a CA dele vem de uma OPÇÃO escolhível.
+
+1147 testes (+6), lint, sweep 285/285 `--strict`. Ao vivo: o texto do Winged na ficha e
+**Lizardfolk com Dex 10 mostrando AC 13** (era 10). Ver DDL-0061 e DDL-0034 (emendas) e
+testing/ISSUES.md.

@@ -46,7 +46,13 @@ function makeDb() {
           },
         ],
       },
-      { type: 'entries', name: 'Otherworldly Presence', entries: ['You know the Thaumaturgy cantrip.'] },
+      {
+        type: 'entries',
+        name: 'Otherworldly Presence',
+        entries: [
+          'You know the {@spell Thaumaturgy|XPHB} cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy Trait.',
+        ],
+      },
     ],
     _versions: [
       {
@@ -174,6 +180,44 @@ describe('geração das variantes', () => {
     const paragraphs = winged._mod.entries[0].items.entries;
     expect(paragraphs.some((p) => p.includes('bat-like wings'))).toBe(true);
     expect(paragraphs.some((p) => p.includes('character level 3'))).toBe(false);
+  });
+
+  // A Winged é a ÚNICA legacy sem magia própria: a frase do atributo de
+  // conjuração não pode ficar num traço que só dá asas e resistência, mas o
+  // atributo continua existindo (o Thaumaturgy precisa dele).
+  describe('Winged: a frase do atributo migra para o Otherworldly Presence', () => {
+    const winged = () => versions.get('Tiefling; Winged Legacy');
+
+    it('o traço da legacy NÃO fala mais de atributo de conjuração', () => {
+      const paragraphs = winged()._mod.entries[0].items.entries;
+      expect(paragraphs.some((p) => p.includes('spellcasting ability'))).toBe(false);
+      // e segue com o que ela de fato dá
+      expect(paragraphs.some((p) => p.includes('to Fire damage'))).toBe(true);
+      expect(paragraphs.some((p) => p.includes('bat-like wings'))).toBe(true);
+    });
+
+    it('o Otherworldly Presence deixa de apontar para a legacy e passa a dizer o atributo', () => {
+      const op = winged()._mod.entries.find(
+        (o) => o.mode === 'replaceArr' && o.replace === 'Otherworldly Presence',
+      );
+      expect(op).toBeTruthy();
+      expect(op.items.entries).toEqual([
+        'You know the {@spell Thaumaturgy|XPHB} cantrip.',
+        TEMPLATE_P3,
+      ]);
+    });
+
+    it('a escolha do atributo continua existindo (o Thaumaturgy depende dela)', () => {
+      expect(winged().additionalSpells[0].ability).toEqual({ choose: ['int', 'wis', 'cha'] });
+    });
+
+    it('as legacies COM magia não são afetadas', () => {
+      for (const name of ['Tiefling; Zariel Legacy', 'Tiefling; Levistus Legacy']) {
+        const v = versions.get(name);
+        expect(v._mod.entries.some((o) => o.replace === 'Otherworldly Presence')).toBe(false);
+        expect(v._mod.entries[0].items.entries).toContain(TEMPLATE_P3);
+      }
+    });
   });
 
   it('os traços extras da variante SCAG seguem junto (Appearance)', () => {

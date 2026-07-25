@@ -1049,6 +1049,21 @@ escolhas de espécie deve usá-lo também.
   com DC pelo atributo escolhido e resistência a fogo, Winged com "30 ft, fly 30 ft" + Appearance).
   Mobile 375px sem overflow, zero erros de console. Ver CHANGELOG §68.
 
+**Amendment (2026-07-25, TC-0054 — reportado pelo usuário): numa legacy SEM magia própria, a frase
+do atributo de conjuração MUDA DE TRAÇO em vez de sumir.** A **Winged** é a única que não concede
+magia (dá asas e resistência), e por isso duas frases ficavam penduradas no vazio: o traço dela
+terminava com "…is your spellcasting ability for the spells you cast with this trait" (não há
+magia conjurada com esse traço), e o **Otherworldly Presence** dizia que o Thaumaturgy usa "the
+same spellcasting ability you use for your Fiendish Legacy Trait" — apontando para um traço que
+não fala de atributo. **Apagar a frase não serve:** o atributo CONTINUA existindo, porque o
+Thaumaturgy precisa dele. Então, quando `!spec.cantrip && !spec.level3 && !spec.level5`: o traço da
+legacy fica só com resistência + benefício, e o Otherworldly Presence perde a frase que apontava
+para a legacy e RECEBE a frase do atributo — ali o "this trait" passa a se referir a ele mesmo, que
+é justamente o traço com que o Thaumaturgy é conjurado. **Continua sem prosa nossa:** as duas
+frases saem do dado (a 1ª sentença do Otherworldly Presence + o parágrafo 3 do template oficial);
+se o upstream mudar a ponto de a frase não ser reconhecida, `otherworldlyWithoutLegacyRef` devolve
+null e **tudo fica como estava** (degradar em vez de inventar, o mesmo princípio do template).
+
 ### DDL-0060 — Sub-raça legada tem DUAS formas de voltar: linhagem da base atual OU espécie à parte
 **Date:** 2026-07-22
 **Refina o DDL-0059** (não o substitui: as 13 entradas `lineage` continuam exatamente como estão).
@@ -2331,6 +2346,20 @@ a race with curated natural armor, so Autognome doesn't double.
 - Verified: 888 tests (+19), lint, sweep 274/274 `--strict`, live browser (Barbarian 19 Str
   now 20→21 via the boon without re-picking; end-to-end AC 17/13/15 + single AC effect each).
   See CHANGELOG §38.
+
+**Amendment (2026-07-25, TC-0053) — o registro de ARMADURA NATURAL estava INCOMPLETO.** Ele tinha
+só as 3 espécies deste entry, mas o dataset tem **9 alcançáveis** com o traço. As cinco que
+faltavam declaram a própria CA em prosa e derivavam 10+Dex: **Lizardfolk|MPMM** (13+Dex),
+**Thri-kreen|AAG** (13+Dex, "Chameleon Carapace"), **Locathah|LR** (12+Dex), **Loxodon|GGR**
+(12+**Con** - o único que soma Constituição) e **Goblin|PSZ** (11+Dex, "Grit"); mais a chave
+`Goblin|PSX`, porque o goblin de Ixalan é sub-raça FUNDIDA do de Zendikar e o fallback procura
+`<baseName>|<fonte da variante>`. **Nada da máquina mudou** - `deriveArmorClass` já aceitava
+`unarmored` com `base`+`ability`, já permitia escudo e já escolhia a maior CA; era só registro,
+exatamente como este entry previu. **Fora de propósito:** o **Simic Hybrid**, cuja CA vem de uma
+OPÇÃO escolhível do "Animal Enhancement" - é caminho de featureoption/`AC_BONUS_FEATURES`, não
+traço fixo. **REGRA que fica:** ao acrescentar uma espécie aqui, **varra o `traitTag` `Natural
+Armor` no dataset inteiro** e cruze com o registro, em vez de tratar o caso isolado que apareceu -
+foi assim que as cinco surgiram de uma vez, a partir de UM sintoma (o Lizardfolk).
 
 ### DDL-0033 — T1a Barbarian session: badge counts DECISIONS, per-class mastery filters, Storm Aura is a real choice
 **Date:** 2026-07-17

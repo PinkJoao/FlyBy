@@ -50,6 +50,8 @@ const TARGET_RACE = 'Tiefling|XPHB';
 const TEMPLATE_VERSION = 'Tiefling; Infernal Legacy';
 /** Traço da base que a linhagem SUBSTITUI (o guarda-chuva com a tabela). */
 export const LEGACY_TRAIT = 'Fiendish Legacy';
+/** Traço da base que concede o Thaumaturgy (e cita a legacy para o atributo). */
+const OTHERWORLDLY_TRAIT = 'Otherworldly Presence';
 /** Resistência de TODA legacy legada (o "Hellish Resistance" 2014 era fogo). */
 const LEGACY_RESIST = 'fire';
 /** Atributo de conjuração do padrão 2024 (substitui o Carisma fixo de 2014). */
@@ -171,6 +173,34 @@ function resistParagraph(template, cantripTag) {
   return hasSpellTag ? template.replace(/\s*[^.]*\{@spell[^}]*\}[^.]*\.\s*$/, '') : template;
 }
 
+/**
+ * Uma legacy SEM magia própria (só a Winged) não pode carregar a frase do
+ * atributo de conjuração: ela fala das "spells you cast with this trait", e essa
+ * legacy não concede magia nenhuma - dá asas e resistência. Mas o atributo
+ * CONTINUA existindo, porque o Thaumaturgy do "Otherworldly Presence" precisa
+ * dele; então a frase MUDA DE TRAÇO em vez de sumir.
+ *
+ * O texto base do Otherworldly Presence termina apontando para a legacy ("uses
+ * the same spellcasting ability you use for your Fiendish Legacy Trait"), o que
+ * fica pendurado no vazio quando a legacy não fala de atributo. Aqui essa frase
+ * final é trocada pela PRÓPRIA frase do atributo (o parágrafo 3 do template), e
+ * o "this trait" passa a se referir ao Otherworldly Presence - que é exatamente
+ * o traço com que o Thaumaturgy é conjurado.
+ *
+ * Continua valendo o DDL-0061: nenhuma prosa nossa - as duas frases saem do dado.
+ * Se o texto upstream mudar a ponto de a frase não ser reconhecida, devolve null
+ * e o traço fica intacto (degradar é melhor que inventar).
+ * @returns {object|null} entrada substituta do traço, ou null
+ */
+function otherworldlyWithoutLegacyRef(race, abilityParagraph) {
+  const entry = (race?.entries ?? []).find((e) => e?.name === OTHERWORLDLY_TRAIT);
+  const text = (entry?.entries ?? []).find((e) => typeof e === 'string');
+  if (!text || !abilityParagraph) return null;
+  const trimmed = text.replace(/\s*[^.]*Fiendish Legacy[^.]*\.\s*$/i, '');
+  if (trimmed === text) return null; // frase não reconhecida - não mexe
+  return { ...entry, entries: [trimmed, abilityParagraph] };
+}
+
 /** Parágrafo 2: troca as duas magias do template pelas da legacy. */
 function spellsParagraph(template, level3, level5) {
   let i = 0;
@@ -230,10 +260,18 @@ function buildVersion(db, race, spec, template) {
   const resist = resistParagraph(template[0], cantrip?.tag ?? null);
   const benefit = spec.benefitFrom ? benefitText(subrace, spec.benefitFrom) : [];
 
+  // Uma legacy que não concede magia NENHUMA (só a Winged) não fala de atributo
+  // de conjuração: a frase migra para o Otherworldly Presence (ver a função).
+  const grantsSpells = Boolean(spec.cantrip || spec.level3 || spec.level5);
+  const otherworldly = grantsSpells ? null : otherworldlyWithoutLegacyRef(race, template[2]);
+
   const paragraphs = [resist];
   if (level3 && level5) paragraphs.push(spellsParagraph(template[1], level3, level5));
   paragraphs.push(...benefit);
-  paragraphs.push(template[2]); // a frase do atributo Int/Wis/Cha
+  // A frase do atributo Int/Wis/Cha só faz sentido se a legacy conceder magia.
+  // Sem conseguir movê-la para o Otherworldly Presence, mantém onde estava (o
+  // atributo É escolhido aqui, então some-la deixaria a escolha inexplicada).
+  if (grantsSpells || !otherworldly) paragraphs.push(template[2]);
 
   // Thaumaturgy vem SEMPRE (é o Otherworldly Presence da base, que as versões
   // oficiais também repetem aqui); o cantrip próprio entra ao lado, quando há.
@@ -269,6 +307,7 @@ function buildVersion(db, race, spec, template) {
     _mod: {
       entries: [
         { mode: 'replaceArr', replace: LEGACY_TRAIT, items: legacyEntry },
+        ...(otherworldly ? [{ mode: 'replaceArr', replace: OTHERWORLDLY_TRAIT, items: otherworldly }] : []),
         ...(extras.length ? [{ mode: 'appendArr', items: extras }] : []),
       ],
     },

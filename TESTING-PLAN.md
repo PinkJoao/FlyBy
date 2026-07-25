@@ -189,6 +189,90 @@ start (fixes are cheapest at this tier).
 Every matrix row has `ui: ok` or `ui: issues` with all its `TC-` entries either
 fixed or explicitly accepted. Then T2 curation starts.
 
+### 4.5 T1b — plano de blocos das ESPÉCIES (fixado 2026-07-25)
+
+T1a fechou (as 135 linhas `class:*` estão `ui: ok`). T1b são as **~150 linhas
+`species:*`** de `testing/COVERAGE.md`, quase todas `todo`. Diferente das classes
+(uma classe + subclasses por sessão), aqui o eixo natural é **procedência + grau
+de curadoria**: as três queixas do usuário — *por source*, *legacy × atualizado*,
+e *as linhagens adaptadas individualmente num bloco à parte* — se resolvem numa
+divisão em **5 blocos**, testados nesta ordem (valor decrescente e risco
+decrescente do código). Cada bloco é 1-3 sessões de ~10-12 linhas (§4.2); linhagens
+que compartilham a MESMA base (Dragonborn ×10, Goliath ×6…) contam como leves — a
+base se repete, muda só o seletor de linhagem, então cabem mais numa sessão.
+
+Regra transversal: rodar `npm run sweep` verde antes de cada sessão; usar o
+checklist de espécie do §4.3 por linhagem; **fix small, log big** (§4.1). Os
+"itens de atenção" abaixo são mecânicas especiais que já têm DDL/TC próprios — cada
+um DEVE ser conferido ao vivo na sessão do seu bloco, não presumido pelo sweep.
+
+#### Bloco S-A — Núcleo 2024 (XPHB mainstream) · ~28 linhas · 2 sessões
+As espécies que um jogador novo escolhe primeiro; têm de ser impecáveis. É a
+baseline visual/de derivação contra a qual os outros blocos se comparam.
+- **S-A1 (bases + linhagens curtas):** Aasimar, Dwarf, Human, Orc (sem linhagem);
+  Elf|XPHB núcleo (Drow/High/Wood); Gnome (Forest/Rock).
+- **S-A2 (muitas linhagens do mesmo padrão):** Dragonborn|XPHB ×10, Goliath|XPHB
+  ×6, Tiefling|XPHB núcleo (Abyssal/Chthonic/Infernal — as 3 legacies OFICIAIS 2024).
+- **Atenção:** escolha de tamanho S/M (DDL-0017) em várias; a linhagem élfica
+  adia `skillProficiencies`? não — Keen Senses permanece (DDL-0061/`lineageDeferredKinds`).
+  Tiefling sem linhagem NÃO deve mostrar os chips de resist/spell list (DDL-0061 §69).
+
+#### Bloco S-B — Linhagens ADAPTADAS individualmente (o bloco à parte pedido) · ~23 linhas · 2 sessões
+Maior RISCO da campanha: são caminhos de código NOSSOS (DDL-0059…0066), com
+migração de ficha e texto montado do dado. Vem cedo porque o contexto está fresco
+no DDL log e várias linhas já são `ui: ok` (foram rep-builds), então o bloco em
+parte se autovalida. Conferir contra o DDL citado, não só "renderiza".
+- **S-B1 (Tiefling reescritos, DDL-0061):** as 11 legacies (Baalzebul, Dispater,
+  Fierna, Glasya, Levistus, Mammon, Mephistopheles, Zariel, Devil's Tongue,
+  Hellfire, Winged). **Atenção:** resistência TRAVA em fogo; atributo de conjuração
+  é escolha Int/Wis/Cha; magias remapeadas para XPHB (Branding Smite→Shining Smite);
+  Winged = voo no nível 1; a tabela do preview lista as 14 opções (`withLegacyTable`).
+- **S-B2 (o resto da curadoria):** Elf (Pallid) [DDL-0060 lineage], Elf
+  Lorwyn/Shadowmoor + Fairy Faerie Lorwyn/Shadowmoor [DDL-0066 merged — **conferir
+  a ARTE por linhagem**, DDL-0066 amendment: os arquivos do Elf LFL estão trocados
+  no dado], Halfling Lightfoot/Stout/Ghostwise/Lotusden [DDL-0063 swap, já `ok` —
+  validar Stout=resist. veneno, Lotusden=origem de magia Wis], Human (Keldon)
+  [DDL-0060 species], Custom Lineage ×2 [DDL-0062, já `ok` — seletor "Variable
+  Trait", talento ORIGIN, sem atributo legado].
+
+#### Bloco S-C — MPMM (Monsters of the Multiverse, reformatados) · ~31 linhas · 3 sessões
+Espécies 2014 reformatadas para o padrão moderno; entram como linhagens/bases via
+`raceLineages`. Aarakocra, Bugbear, Centaur, Deep Gnome, Duergar, Eladrin, Fairy
+(base), Firbolg, Genasi ×4, Githyanki, Githzerai, Goblin, Harengon, Hobgoblin,
+Kenku, Kobold ×3, Lizardfolk, Minotaur, Satyr, Sea Elf, Shadar-Kai, Tabaxi,
+Tortle, Triton, Yuan-Ti.
+- **Atenção:** **Tortle** = armadura natural flat (DDL-0034); **Kobold** = seletor
+  "Kobold Legacy" com perícia/magia adiadas (TC-0046/0047, tem nota de UI PENDENTE
+  no COVERAGE — fechar aqui); Genasi = resistência por elemento na ficha.
+
+#### Bloco S-D — Outros livros modernos · ~28 linhas · 2-3 sessões
+AAG (Astral Elf, Autognome, Giff, Hadozee, Plasmoid, Thri-kreen), EFA (Changeling,
+Kalashtar, Khoravar, Warforged), RHW (Dhampir, Hexblood, Reborn, Lupin), SCC
+(Owlin), GGR (Loxodon, Vedalken, Simic Hybrid), MOT (Leonin), FTD (Dragonborn Gem
+×5), OGA (Grung), DSotDQ (Kender), LR (Locathah), AI (Verdan).
+- **Atenção:** **Autognome/Warforged** = armadura natural unarmored/bonus
+  (DDL-0034); **Verdan** = tamanho por nível (S→M no 5º, DDL-0017 — nunca é escolha);
+  **Simic Hybrid** = idioma "other" mostra "Other" no seletor (cosmético conhecido,
+  TC-0050/DDL-0062 — não é bug); Dragonborn Gem = tipo de dano do sopro + voo.
+
+#### Bloco S-E — CENÁRIO / legado (atrás do filtro "Setting Variant") · ~36 linhas · 2-3 sessões
+Menor prioridade (2014-era, escondidas por padrão pelo filtro DDL-0064). Passada
+mais leve: confirmar que constroem, derivam e não vazam `{@tag}`; polish vai para
+`needs-user-eyes`.
+- **LFL (Lorwyn, oficial 2024 mas de cenário):** Boggart, Flamekin, Kithkin
+  Lorwyn/Shadowmoor, Lorwyn Changeling, Rimekin.
+- **Plane Shift (PS*):** Aetherborn, Aven ×2, Dwarf (Kaladesh), Elf (Kaladesh) ×2,
+  Elf (Zendikar) ×3, Goblin ×4, Human (Innistrad) ×3, Khenra, Kor, Merfolk ×5,
+  Minotaur (Amonkhet), Naga, Orc (Ixalan), Siren, Vampire ×2, Vedalken (PSK).
+- **Atenção:** conferir que o filtro "Setting Variant" pré-marcado ESCONDE as que
+  colidem de nome e um clique no chip as revela (DDL-0064); as vazias já foram
+  REMOVIDAS (não devem aparecer nem com o filtro desligado).
+
+**Ordem e ajuste.** A ordem S-A → S-B → S-C → S-D → S-E é mainstream/alto-valor
+primeiro, cenário/legado por último, com o bloco de código próprio (S-B) logo em
+seguida enquanto o contexto está quente. É ajustável — se o usuário preferir varrer
+o legado antes, os blocos são independentes.
+
 ---
 
 ## 5. Tier 2 — user curation & real Foundry validation
@@ -223,6 +307,17 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25** - **T1b PLANEJADA: as ~150 espécies divididas em 5 blocos (§4.5).** Nenhuma
+  linha testada nesta sessão - só o plano. Eixo: procedência + grau de curadoria, respondendo
+  as três queixas do usuário (por source / legacy × atualizado / linhagens adaptadas num bloco
+  à parte). Ordem: **S-A** núcleo 2024 XPHB (~28, 2 sessões) → **S-B** linhagens ADAPTADAS por
+  nós (~23, 2 sessões, maior risco de código) → **S-C** MPMM (~31, 3 sessões) → **S-D** outros
+  livros modernos (~28, 2-3 sessões) → **S-E** cenário/legado atrás do filtro (~36, passada leve).
+  Cada bloco carrega seus "itens de atenção" (armadura natural DDL-0034, tamanho por nível
+  DDL-0017, Tiefling reescrito DDL-0061, arte das linhagens fundidas DDL-0066, Kobold TC-0046/0047
+  pendente…). **Next action: T1b sessão 1 - Bloco S-A1** (bases + Elf/Gnome núcleo); rodar o
+  sweep verde antes. O único item aberto do ledger segue sendo `TC-0043` (needs-user-eyes).
 
 - **2026-07-22 (5)** - **Foundry level-up + overlay: três levas fora da campanha, a pedido do
   usuário** (DDL-0055/0056/0057, CHANGELOG §63-65). Relato dele: exportar um Barbarian 1, importar

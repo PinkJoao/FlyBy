@@ -6,7 +6,10 @@
 // cortariam um dropdown posicionado dentro deles. A posição é medida a cada
 // abertura e ancorada ao gatilho.
 //
-// Itens: [{ label, sub?, onClick?, disabled?, danger?, title? }]
+// Itens: [{ label, sub?, onClick?, href?, disabled?, danger?, title? }]
+// `href` renderiza o item como link real em vez de botão (ex: mailto:) - mais
+// confiável que disparar a navegação num onClick. Um href http(s) abre em nova
+// aba; mailto: não (dispara o cliente de e-mail, não há aba pra abrir).
 // -----------------------------------------------------------------------------
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -18,7 +21,7 @@ const MARGIN = 8; // respiro mínimo até a borda da viewport
 
 /**
  * @param {object} props
- * @param {Array<{label: string, sub?: string, onClick?: () => void, disabled?: boolean, danger?: boolean, title?: string}>} props.items
+ * @param {Array<{label: string, sub?: string, onClick?: () => void, href?: string, disabled?: boolean, danger?: boolean, title?: string}>} props.items
  * @param {string} [props.buttonClassName]
  * @param {string} [props.buttonTitle]
  * @param {'left'|'right'} [props.align]  lado em que o menu abre (relativo ao gatilho)
@@ -90,23 +93,48 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
             style={pos ?? { top: 0, left: 0, visibility: 'hidden' }}
             role="menu"
           >
-            {items.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                role="menuitem"
-                className={item.danger ? `${styles.item} ${styles.itemDanger}` : styles.item}
-                disabled={item.disabled}
-                title={item.title}
-                onClick={() => {
-                  setOpen(false);
-                  item.onClick?.();
-                }}
-              >
-                <span className={styles.itemTitle}>{item.label}</span>
-                {item.sub && <span className={styles.itemSub}>{item.sub}</span>}
-              </button>
-            ))}
+            {items.map((item) => {
+              const className = item.danger ? `${styles.item} ${styles.itemDanger}` : styles.item;
+              const body = (
+                <>
+                  <span className={styles.itemTitle}>{item.label}</span>
+                  {item.sub && <span className={styles.itemSub}>{item.sub}</span>}
+                </>
+              );
+              if (item.href) {
+                const isExternal = /^https?:/.test(item.href);
+                return (
+                  <a
+                    key={item.label}
+                    role="menuitem"
+                    className={className}
+                    title={item.title}
+                    href={item.href}
+                    target={isExternal ? '_blank' : undefined}
+                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    {body}
+                  </a>
+                );
+              }
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  role="menuitem"
+                  className={className}
+                  disabled={item.disabled}
+                  title={item.title}
+                  onClick={() => {
+                    setOpen(false);
+                    item.onClick?.();
+                  }}
+                >
+                  {body}
+                </button>
+              );
+            })}
           </div>,
           document.body,
         )}

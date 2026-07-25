@@ -20,6 +20,7 @@ import { seedStartingGold } from '../engine/startingGold';
 import { fileToPortrait } from '../components/common/imageFile';
 import MenuButton from '../components/common/MenuButton';
 import { openGlossary } from '../store/glossaryStore';
+import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { startTutorial, maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import BackButton from '../components/common/BackButton';
@@ -412,6 +413,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               tutEnabled
                 ? { label: 'Disable tutorials', sub: 'Turn off the walkthroughs', onClick: () => setTutEnabled(false) }
                 : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
+              { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
             ]}
           >
             <span aria-hidden="true">☰</span>

@@ -24,6 +24,7 @@ import { totalLevel, classNames } from '../schema/character';
 import { orderRoster } from './roster';
 import MenuButton from '../components/common/MenuButton';
 import { openGlossary } from '../store/glossaryStore';
+import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
 import { confirm, ask } from '../components/common/dialog';
 import styles from './Home.module.css';
@@ -233,6 +234,7 @@ export default function Home() {
               : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
             { label: 'Import character', sub: 'Foundry actor JSON', onClick: pickFile },
             { label: 'Update game data', sub: 'Re-download 5e.tools content', onClick: updateData },
+            { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
           ]}
         >
           <span aria-hidden="true">☰</span>

@@ -323,7 +323,8 @@ on the user's machines).
   Rock; Gnomish Cunning; **TC-0044 CONFIRMADO ao vivo** - Forest concede Minor Illusion + Speak with
   Animals 2/Day ambos @1). Todos com links de glossário resolvendo, zero `{@tag}` vazado, escolhas
   persistindo, derivações corretas (HP/Darkvision/Speed/magias concedidas). Nenhuma mudança de código -
-  suíte/lint inalterados. Ledger sem itens novos; único aberto segue `TC-0043` (needs-user-eyes).
+  suíte/lint inalterados. Ledger sem itens novos e sem nenhum item aberto (TC-0043 foi fechado em
+  2026-07-22, DDL-0054 - a nota "único aberto TC-0043" de sessões T1b anteriores estava desatualizada).
   **Nota de harness:** o SelectorPanel a <=760px é MOBILE (tela de detalhe cheia via portal) e os cliques
   por `ref` do read_page caem em coordenadas erradas nesse app - usar viewport ~820px (SelectorPanel em
   3 painéis: filtros+lista+preview c/ Select, estável) e coordenadas VISUAIS de screenshot; `form_input`

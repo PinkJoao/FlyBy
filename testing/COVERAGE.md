@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-25T23:05:51.895Z · base seed 1 · 285 rows
+Last sweep: 2026-07-25T23:17:33.195Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -166,16 +166,16 @@ Last sweep: 2026-07-25T23:05:51.895Z · base seed 1 · 285 rows
 | `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | ok | todo | idem; a perícia só aparece nesta opção (TC-0047); S-B2 revalidado |
 | `species:Deep Gnome\|MPMM` | ok | - | todo | todo |  |
 | `species:Dhampir\|RHW` | ok | - | todo | todo |  |
-| `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | ok | todo | S-A2: preview resolve Acid/Resistance corretamente |
-| `species:Dragonborn\|XPHB/Dragonborn (Blue)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (Brass)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (Bronze)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (Copper)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (Gold)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (Green)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (Red)` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - 1d10 Fire damage + Resistance to Fire na ficha, Draconic Flight @5 |
-| `species:Dragonborn\|XPHB/Dragonborn (Silver)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
-| `species:Dragonborn\|XPHB/Dragonborn (White)` | ok | - | ok | todo | S-A2: mesmo padrão da tabela, engine-verificado |
+| `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Acid, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. Preview conferido na 1a passada. |
+| `species:Dragonborn\|XPHB/Dragonborn (Blue)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Lightning, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
+| `species:Dragonborn\|XPHB/Dragonborn (Brass)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Fire, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
+| `species:Dragonborn\|XPHB/Dragonborn (Bronze)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Lightning, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
+| `species:Dragonborn\|XPHB/Dragonborn (Copper)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Acid, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
+| `species:Dragonborn\|XPHB/Dragonborn (Gold)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Fire, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
+| `species:Dragonborn\|XPHB/Dragonborn (Green)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Poison, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. Conferido na FICHA: DAMAGE RESISTANCES Poison. |
+| `species:Dragonborn\|XPHB/Dragonborn (Red)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Fire, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. Selecionado ao vivo na 1a passada (1d10 Fire + Resistance to Fire). |
+| `species:Dragonborn\|XPHB/Dragonborn (Silver)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Cold, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
+| `species:Dragonborn\|XPHB/Dragonborn (White)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Cold, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Amethyst)` | ok | - | todo | todo |  |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Crystal)` | ok | - | todo | todo |  |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Emerald)` | ok | - | todo | todo |  |
@@ -215,12 +215,12 @@ Last sweep: 2026-07-25T23:05:51.895Z · base seed 1 · 285 rows
 | `species:Goblin\|PSZ/Goblin (Zendikar; Grotag Tribe)` | ok | - | todo | todo |  |
 | `species:Goblin\|PSZ/Goblin (Zendikar; Lavastep Tribe)` | ok | - | todo | todo |  |
 | `species:Goblin\|PSZ/Goblin (Zendikar; Tuktuk Tribe)` | ok | - | todo | todo |  |
-| `species:Goliath\|XPHB/Goliath; Cloud Giant Ancestry` | ok | - | ok | todo | S-A2: preview resolve só Cloud's Jaunt (Bonus Action teleport) |
-| `species:Goliath\|XPHB/Goliath; Fire Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
-| `species:Goliath\|XPHB/Goliath; Frost Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
-| `species:Goliath\|XPHB/Goliath; Hill Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
-| `species:Goliath\|XPHB/Goliath; Stone Giant Ancestry` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - só Stone's Endurance na ficha; Large Form @5 + Powerful Build |
-| `species:Goliath\|XPHB/Goliath; Storm Giant Ancestry` | ok | - | ok | todo | S-A2: mesmo padrão, engine-verificado |
+| `species:Goliath\|XPHB/Goliath; Cloud Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Cloud)/Large Form/Powerful Build; autoBuild converge. Preview conferido na 1a passada. |
+| `species:Goliath\|XPHB/Goliath; Fire Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Fire)/Large Form/Powerful Build; autoBuild converge. Conferido na FICHA: SEM card de resistencia (correto). |
+| `species:Goliath\|XPHB/Goliath; Frost Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Frost)/Large Form/Powerful Build; autoBuild converge. |
+| `species:Goliath\|XPHB/Goliath; Hill Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Hill)/Large Form/Powerful Build; autoBuild converge. |
+| `species:Goliath\|XPHB/Goliath; Stone Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Stone)/Large Form/Powerful Build; autoBuild converge. Selecionado ao vivo na 1a passada. |
+| `species:Goliath\|XPHB/Goliath; Storm Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Storm)/Large Form/Powerful Build; autoBuild converge. |
 | `species:Grung\|OGA` | ok | - | todo | todo |  |
 | `species:Hadozee\|AAG` | ok | - | todo | todo |  |
 | `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
@@ -277,9 +277,9 @@ Last sweep: 2026-07-25T23:05:51.895Z · base seed 1 · 285 rows
 | `species:Siren\|PSX` | ok | - | todo | todo |  |
 | `species:Tabaxi\|MPMM` | ok | - | todo | todo |  |
 | `species:Thri-kreen\|AAG` | ok | - | todo | todo |  |
-| `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | ok | todo | S-A2: TC-0051 FIXED (darkvision 120->60, dado upstream errado); ficha 60ft correto |
-| `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | ok | todo | S-A2: selecionado ao vivo - Resistance Necrotic + Chill Touch, Darkvision 60ft |
-| `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - Fire resist + Fire Bolt/Thaumaturgy Always Prepared; DC 10/atk +2 (Cha) |
+| `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Poison, darkvision 60, Otherworldly Presence presente. TC-0051 confirmado tambem no engine (darkvision 60). |
+| `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Necrotic, darkvision 60, Otherworldly Presence presente. |
+| `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Fire, darkvision 60, Otherworldly Presence presente. |
 | `species:Tiefling\|XPHB/Tiefling; Baalzebul Legacy` | ok | - | ok | todo | S-B1: sem cantrip proprio (Thaumaturgy ja vem do Otherworldly Presence); Ray of Sickness@3 upcast lvl2 + Crown of Madness@5 (TC-0052 lore corrigida) |
 | `species:Tiefling\|XPHB/Tiefling; Dispater Legacy` | ok | - | ok | todo | S-B1: sem cantrip proprio; Disguise Self@3 + Detect Thoughts@5, sem upcast (TC-0052 lore corrigida) |
 | `species:Tiefling\|XPHB/Tiefling; Fierna Legacy` | ok | - | ok | todo | S-B1: cantrip Friends; Charm Person@3 upcast lvl2 + Suggestion@5 (TC-0052 lore corrigida) |

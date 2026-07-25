@@ -214,14 +214,20 @@ baseline visual/de derivação contra a qual os outros blocos se comparam.
 - **S-A2 (muitas linhagens do mesmo padrão) - DONE 2026-07-25 (19 linhas `ui: ok`, TC-0051
   fixed):** Dragonborn|XPHB ×10, Goliath|XPHB ×6, Tiefling|XPHB núcleo (Abyssal/Chthonic/Infernal
   — as 3 legacies OFICIAIS 2024).
-- 🔁 **REVISÃO PENDENTE (pedida pelo usuário em 2026-07-25):** a passada do **S-A2** rodou com o
-  modelo **Sonnet**, não o Opus, e o usuário quer uma **segunda passada** desse bloco para pegar
-  o que possa ter escapado. As linhas seguem `ui: ok` (nada foi reprovado) — isto é um
-  RE-EXAME, não uma regressão conhecida. **Confirmar com o usuário se o S-A1 entra junto** (ele
-  também foi executado em 2026-07-25, em outra sessão). Fazer antes de fechar o Bloco S-B ou logo
-  após, a critério dele. Ao revisar, olhar com atenção o que uma passada rápida tende a pular:
-  as ancestralidades do Dragonborn/Goliath conferidas só pelo preview (não uma a uma na FICHA),
-  o card de Uses/Spellbook por linhagem, e os links de glossário dentro dos textos de traço.
+- ✅ **REVISÃO DO S-A2 FEITA em 2026-07-25** (pedida pelo usuário porque a 1ª passada rodou em
+  Sonnet). **Resultado: as conclusões da 1ª passada se sustentam — zero bugs novos.** O que ela
+  tinha de frágil era a EVIDÊNCIA, não o veredito: 8 das 10 ancestralidades de Dragonborn e 4 das
+  6 de Goliath estavam anotadas como "engine-verificado" sem que nada tivesse sido executado por
+  ancestralidade, e o card de **DAMAGE RESISTANCES da FICHA** nunca fora aberto para o Dragonborn.
+  Fechado assim: um **probe exaustivo** construiu as 19 linhas pelo `autoBuild` e comparou a
+  derivação contra um oráculo **digitado do livro** (as 10 duplas dragão→dano, as 6
+  ancestralidades de gigante, as 3 legacies) — resist, darkvision, speed, traços e convergência
+  do autoBuild, tudo verde; e ao vivo conferi **Dragonborn (Green) → DAMAGE RESISTANCES: Poison**
+  e **Goliath (Fire) → sem card de resistência**. As notas do COVERAGE foram reescritas para dizer
+  o que foi de fato verificado. **REGRA que fica:** não anotar "engine-verificado" sem ter
+  rodado algo; ou roda um probe, ou a nota diz "inferido do padrão".
+  **O S-A1 NÃO foi revisado** — o usuário falou de um bloco só e o desta conversa era o S-A2;
+  se quiser o S-A1 também, é uma sessão curta (9 linhas, mesmo método).
 - **Atenção:** escolha de tamanho S/M (DDL-0017) em várias; a linhagem élfica
   adia `skillProficiencies`? não — Keen Senses permanece (DDL-0061/`lineageDeferredKinds`).
   Tiefling sem linhagem NÃO deve mostrar os chips de resist/spell list (DDL-0061 §69).
@@ -318,6 +324,28 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (6)** - **REVISÃO do Bloco S-A2 (pedida pelo usuário; a 1ª passada rodou em
+  Sonnet). Zero bugs novos - as conclusões se sustentam.** O frágil era a EVIDÊNCIA: 8 das 10
+  ancestralidades de Dragonborn e 4 das 6 de Goliath estavam anotadas como "engine-verificado"
+  sem nada ter sido executado por ancestralidade, e o card de DAMAGE RESISTANCES da FICHA nunca
+  fora aberto para o Dragonborn (só para o Tiefling).
+  **Método:** um probe construiu as **19 linhas** pelo `autoBuild` (Fighter 5 + Champion) e
+  comparou a derivação contra um oráculo **digitado do livro** - as 10 duplas dragão→dano, as 6
+  ancestralidades de gigante e as 3 legacies oficiais - checando resist, darkvision, speed, os
+  traços esperados e a convergência do autoBuild. **Tudo verde.** Ao vivo, fechei as duas
+  lacunas de UI: **Dragonborn (Green) → DAMAGE RESISTANCES: Poison** na ficha e **Goliath (Fire)
+  → sem card de resistência** (correto). O TC-0051 (darkvision da Abyssal) também se confirma no
+  engine. As 19 notas do COVERAGE foram REESCRITAS para dizer o que foi de fato verificado.
+  **Aprendizado que virou regra (§4.5):** não anotar "engine-verificado" sem ter rodado algo -
+  ou roda um probe, ou a nota diz "inferido do padrão". Um probe descartável sobre `autoBuild` +
+  um oráculo digitado do livro custa ~10 min e cobre a família inteira; é o jeito certo de
+  fechar um bloco com muitas linhagens do mesmo padrão (vale para o S-C, que tem Genasi ×4,
+  Kobold ×3 e Shifter ×4).
+  **Nota de harness:** ao escrever probes descartáveis, criei-os na RAIZ do repo por engano -
+  use o scratchpad. Também: `resolveRaceObj` é `(db, id, source, lineage)`, e `deriveFromDb` NÃO
+  devolve speed/darkvision (isso vem de `parseSpecies(resolveRaceObj(...))`).
+  **Next action: T1b sessão 5 - Bloco S-C (MPMM)**, inalterado (ver a entrada abaixo).
 
 - **2026-07-25 (5)** - **T1b sessão 4: Bloco S-B2 CONCLUÍDO (6 linhas novas `ui: ok` + 6
   revalidadas) - ZERO bugs. O Bloco S-B inteiro está FECHADO (23 linhas).** Sweep verde

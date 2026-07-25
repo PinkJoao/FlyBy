@@ -4983,3 +4983,27 @@ só se confere OLHANDO a imagem - e as quatro conferem:
 
 Sem código tocado → suíte (1141), lint e sweep (285/285 `--strict`) inalterados. Mobile 375px sem
 overflow, zero erros de console. Ver TESTING-PLAN.md §7 e testing/COVERAGE.md.
+
+## 87. Phase T - revisão do Bloco S-A2 (pedida pelo usuário): evidência refeita, veredito mantido
+
+O usuário notou que a passada do S-A2 (CHANGELOG §84) rodou com o modelo Sonnet e pediu um
+re-exame. **Resultado: zero bugs novos - as conclusões da 1ª passada se sustentam.** O que estava
+frágil era a EVIDÊNCIA, não o veredito:
+- 8 das 10 ancestralidades de Dragonborn e 4 das 6 de Goliath estavam anotadas no COVERAGE como
+  "engine-verificado" **sem que nada tivesse sido executado por ancestralidade** - a 1ª passada
+  só abriu o preview de Black/Red e Cloud/Stone.
+- O card de **DAMAGE RESISTANCES da FICHA** nunca fora aberto para o Dragonborn (só para o
+  Tiefling), então "a resistência deriva" era uma leitura do texto do preview, não da derivação.
+
+**Como foi fechado.** Um probe descartável construiu as **19 linhas** pelo `autoBuild` (Fighter 5
++ Champion) e comparou a derivação contra um oráculo **digitado do livro** - as 10 duplas
+dragão→dano, as 6 ancestralidades de gigante e as 3 legacies oficiais - checando resistência,
+darkvision, deslocamento, os traços esperados e a convergência do autoBuild. Tudo verde. Ao vivo,
+as duas lacunas de UI foram fechadas: **Dragonborn (Green) → DAMAGE RESISTANCES: Poison** na ficha
+e **Goliath (Fire) → sem card de resistência** (correto, o Goliath dá um boon, não resistência).
+O TC-0051 (darkvision da Abyssal) confirma-se também no engine.
+
+As 19 notas do `testing/COVERAGE.md` foram **reescritas** para dizer o que foi de fato verificado.
+**Regra que fica (TESTING-PLAN §4.5):** não anotar "engine-verificado" sem ter rodado algo - ou
+roda um probe, ou a nota diz "inferido do padrão". Nenhum código foi tocado: suíte (1141), lint e
+sweep (285/285 `--strict`) inalterados.

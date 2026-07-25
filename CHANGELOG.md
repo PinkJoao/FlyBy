@@ -4819,3 +4819,28 @@ para o fechar-ao-terminar. O `TutorialOverlay` ganhou re-medicoes atrasadas (180
 recorte assentar sobre a gaveta que ANIMA (transform 0.25s). Verificado ao vivo (mobile 375px): a
 gaveta abre no passo 3 e fecha no 4; o detalhe abre no 5 e fecha no Done, com a lista de resultados
 de volta. Desktop inalterado. 1136 testes, lint, zero erros de console.
+
+## 81. Tutorial da FICHA (F2, DDL-0069)
+
+Segundo tour do tutorial de uso: apresenta a ficha (Builder) na 1a vez que ela monta - o que cada
+parte faz e onde fica, complementando o tour do seletor (F1). Como a F1, e SO dado + ancoras + um
+disparo contextual; nenhum call site precisa saber do tutorial.
+- **`tutorial/tours.js`**: novo tour `sheet` (9 passos): abertura central → retrato/nome → nivel →
+  tiles (Level/HP/AC/Alignment) → mini cards de atributo → card de proficiencias → abas → botao ⚛ do
+  guia → menu ☰. Os passos cujo TEXTO muda entre desktop e mobile (retrato "clicar" × "tocar"; abas
+  "switch" × "tap through") usam `body: { desktop, mobile }`; as ancoras sao as mesmas nos dois.
+- **`tutorial/anchors.js`**: 8 chaves `SHEET_*` novas.
+- **Ancoras marcadas** nos componentes (`data-tour`): `Builder` (identity, level slot, botao do guia,
+  menu, stack de proficiencias, barra de abas), `StatsHeader` (tiles, abilities) e `MenuButton`
+  (ganhou uma prop `dataTour` opcional que repassa ao gatilho). Todas via as constantes `TUT`, fonte
+  unica das chaves.
+- **Disparo**: `maybeStartTutorial('sheet')` num `useEffect([])` do `BuilderInner` - roda no mount
+  (sem atraso), entao ganha a vez sobre o timer de 250ms do seletor pela garantia "um por vez" do
+  store. O item "Replay tutorial" do menu (F4) ja chamava `startTutorial('sheet')`, que deixa de ser
+  no-op. O passo do botao ⚛ degrada para balao central quando a ficha esta completa (o botao some) -
+  o texto ja considera isso ("When required choices are still missing, this button appears").
+
+1136 testes (o `tours.test.js` cobre o tour novo automaticamente), lint limpo. Verificacao ao vivo
+ficou bloqueada pela limitacao de exibicao do browser neste ambiente (o mesmo caso ja registrado em
+sessoes anteriores); a validacao foi pelos mesmos code paths da UI + testes. Falta a F3 (micro-tours
+por aba).

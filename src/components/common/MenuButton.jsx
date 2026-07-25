@@ -22,9 +22,10 @@ const MARGIN = 8; // respiro mínimo até a borda da viewport
  * @param {string} [props.buttonClassName]
  * @param {string} [props.buttonTitle]
  * @param {'left'|'right'} [props.align]  lado em que o menu abre (relativo ao gatilho)
+ * @param {string} [props.dataTour]  chave data-tour do gatilho (alvo do tutorial)
  * @param {import('react').ReactNode} props.children  conteúdo do gatilho
  */
-export default function MenuButton({ items, buttonClassName, buttonTitle, align = 'right', children }) {
+export default function MenuButton({ items, buttonClassName, buttonTitle, align = 'right', dataTour, children }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
   const btnRef = useRef(null);
@@ -72,6 +73,7 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
         type="button"
         className={buttonClassName}
         title={buttonTitle}
+        data-tour={dataTour}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}

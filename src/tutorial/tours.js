@@ -91,8 +91,82 @@ const selector = {
   ],
 };
 
+/**
+ * Tour da FICHA (F2), disparado na 1a vez que o Builder monta uma ficha "cheia":
+ * apresenta o retrato/nome, o nivel, os tiles derivados, os mini cards de
+ * atributo, o card de proficiencias, as abas e os botoes do topo (guia + menu).
+ * Os micro-tours POR ABA sao a F3 - aqui as abas sao so apresentadas.
+ */
+const sheet = {
+  id: 'sheet',
+  steps: [
+    {
+      // Abertura: balao central apresentando a ficha.
+      title: 'Your character sheet',
+      body: 'Everything about your character lives here. Let us walk through it - the numbers up top update on their own as you make choices below.',
+    },
+    {
+      anchor: TUT.SHEET_IDENTITY,
+      title: 'Portrait & name',
+      body: {
+        desktop: 'Set the name here, and click the portrait to add art (upload a file or paste an image URL).',
+        mobile: 'Tap the name to edit it, and tap the portrait to add art (upload a file or paste an image URL).',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_LEVEL,
+      title: 'Level',
+      body: 'Raise or lower your level here. When a new level unlocks a decision, the guide opens to help.',
+      placement: 'auto',
+    },
+    {
+      anchor: TUT.SHEET_TILES,
+      title: 'Key numbers',
+      body: 'Level, Hit Points, Armor Class and Alignment. Tap any tile to expand it - see the breakdown, roll HP, or set your alignment.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_ABILITIES,
+      title: 'Ability scores',
+      body: 'Your six abilities, each with its total and modifier. Tap a card to set the base score - bonuses from your species and background fold in automatically.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_PROFICIENCIES,
+      title: 'Proficiencies',
+      body: 'Your proficiency bonus, plus every save, skill, tool, language and more you are proficient in. Tap to expand the full list - it all comes from your choices.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_TABS,
+      title: 'Building tabs',
+      body: {
+        desktop: 'Switch between Species, Background, Class, Inventory, Spellbook and Biography here. This is where you actually build the character.',
+        mobile: 'Tap through Species, Background, Class, Inventory, Spellbook and Biography here. This is where you actually build the character.',
+      },
+      placement: 'bottom',
+    },
+    {
+      // Botao do guia (⚛): so aparece enquanto ha pendencias. Se ausente, o passo
+      // vira um balao central (o overlay degrada sozinho).
+      anchor: TUT.SHEET_GUIDE,
+      title: 'The guide',
+      body: 'When required choices are still missing, this button appears with a count. Tap it to be walked through what is left.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_MENU,
+      title: 'Menu',
+      body: 'Export to Foundry VTT or PDF, open the rules glossary, import a character, or replay these tutorials.',
+      placement: 'bottom',
+    },
+  ],
+};
+
 export const TOURS = {
   selector,
+  sheet,
 };
 
 export const ALL_TOUR_IDS = Object.keys(TOURS);

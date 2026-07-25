@@ -389,10 +389,15 @@ menu; usuário que já tem personagens nasce com tudo marcado como visto (não �
   componente remontado, não no pai.
 - **Faseamento:** F1 (DONE) = motor + tour do seletor. **F4 (DONE, adiantada)** = "Replay tutorial(s)"
   + toggle Enable/Disable nos menus ☰ (Home/Builder), via `resetSeen`/`setEnabled` - o Replay religa
-  e zera o `seen` (os tours voltam a auto-disparar) e na ficha chama `startTutorial('sheet')` (no-op
-  ate a F2). Feita antes da F2/F3 para facilitar testar os proximos tours. F2 = tour da ficha (mini
-  cards, proficiências, abas). F3 = micro-tours por aba (Species/Background/Class/Inventory/Spellbook/
-  Biography).
+  e zera o `seen` (os tours voltam a auto-disparar) e na ficha chama `startTutorial('sheet')` (era
+  no-op ate a F2 existir; agora dispara o tour da ficha). Feita antes da F2/F3 para facilitar testar
+  os proximos tours. **F2 (DONE, 2026-07-25)** = tour da FICHA (9 passos): abertura → retrato/nome →
+  nivel → tiles → mini cards de atributo → proficiencias → abas → botao ⚛ → menu ☰. Disparo por
+  `maybeStartTutorial('sheet')` num `useEffect([])` do `BuilderInner` (roda no mount, ganha a vez
+  sobre o timer de 250ms do seletor pela garantia "um por vez"); ancoras `SHEET_*` marcadas em
+  `Builder`/`StatsHeader`/`MenuButton` (este ganhou a prop `dataTour`); o passo do ⚛ degrada para
+  balao central quando a ficha esta completa (o botao some). Ver CHANGELOG §81. F3 = micro-tours por
+  aba (Species/Background/Class/Inventory/Spellbook/Biography).
 
 **Consequences.**
 - Um tour novo é uma entrada em `tours.js`; um alvo novo é uma chave em `anchors.js` + o atributo no

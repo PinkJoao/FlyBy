@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { ABILITIES } from '../../schema/character';
 import { formatBonus } from '../../engine/math';
 import Stepper from '../common/Stepper';
+import { TUT } from '../../tutorial/anchors';
 import { ABILITY_FULL } from './labels';
 import styles from './StatsHeader.module.css';
 
@@ -67,7 +68,7 @@ export default function StatsHeader({
 }) {
   return (
     <div className={styles.header}>
-      <div className={styles.tiles}>
+      <div className={styles.tiles} data-tour={TUT.SHEET_TILES}>
         <LevelTile level={derived.level} classBreakdown={derived.classBreakdown} />
         <HpTile
           maxHp={derived.maxHp}
@@ -82,7 +83,7 @@ export default function StatsHeader({
         <AlignmentTile current={character.identity.alignment} onSelect={onChangeAlignment} />
       </div>
 
-      <div className={styles.abilities}>
+      <div className={styles.abilities} data-tour={TUT.SHEET_ABILITIES}>
         {ABILITIES.map((a) => (
           <AbilityCard
             key={a}

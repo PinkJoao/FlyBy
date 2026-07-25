@@ -20,7 +20,8 @@ import { seedStartingGold } from '../engine/startingGold';
 import { fileToPortrait } from '../components/common/imageFile';
 import MenuButton from '../components/common/MenuButton';
 import { openGlossary } from '../store/glossaryStore';
-import useTutorialStore, { startTutorial } from '../store/tutorialStore';
+import useTutorialStore, { startTutorial, maybeStartTutorial } from '../store/tutorialStore';
+import { TUT } from '../tutorial/anchors';
 import BackButton from '../components/common/BackButton';
 import LevelControls from '../components/builder/LevelControls';
 import LevelUpWizard from '../components/wizard/LevelUpWizard';
@@ -105,6 +106,14 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     resetTutorials();
     startTutorial('sheet');
   };
+
+  // Auto-dispara o tour da FICHA (F2) na 1a vez que o Builder monta (contextual,
+  // so p/ quem ainda nao viu). Sem atraso: roda antes do timer de 250ms do
+  // seletor, entao a ficha ganha a vez sobre um seletor que porventura abra no
+  // mount (a garantia "um por vez" do store impede sobreposicao).
+  useEffect(() => {
+    maybeStartTutorial('sheet');
+  }, []);
 
   const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
 
@@ -326,6 +335,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               type="button"
               className={`${styles.guideBtn} ${styles.guideBtnAlert}`}
               onClick={openGuide}
+              data-tour={TUT.SHEET_GUIDE}
               title={`${pend.total} choice${pend.total > 1 ? 's' : ''} left - open the guide`}
             >
               <span aria-hidden="true">⚛</span>
@@ -338,6 +348,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
           <MenuButton
             buttonClassName={styles.menuBtn}
             buttonTitle="Menu"
+            dataTour={TUT.SHEET_MENU}
             items={[
               { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
               { label: 'Export', sub: 'Foundry actor JSON', onClick: exportFoundry },
@@ -365,7 +376,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         </div>
       </div>
 
-      <div className={styles.identity}>
+      <div className={styles.identity} data-tour={TUT.SHEET_IDENTITY}>
         <div className={styles.portraitWrap}>
           <button
             type="button"
@@ -405,7 +416,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         </div>
         {/* Desktop: à direita do perfil. Mobile (identity em coluna): logo
             abaixo do nome + legenda de classes, centralizado. */}
-        <div className={styles.levelSlot}>
+        <div className={styles.levelSlot} data-tour={TUT.SHEET_LEVEL}>
           <LevelControls character={character} onChangeClasses={setClasses} />
         </div>
       </div>
@@ -421,11 +432,11 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         hpRolled={hpRolled}
       />
 
-      <div className={styles.stack}>
+      <div className={styles.stack} data-tour={TUT.SHEET_PROFICIENCIES}>
         <ProficienciesCard derived={derived} />
       </div>
 
-      <nav className={styles.tabBar}>
+      <nav className={styles.tabBar} data-tour={TUT.SHEET_TABS}>
         {TABS.map((tab) => (
           <button
             key={tab}

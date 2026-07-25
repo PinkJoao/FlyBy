@@ -16,5 +16,6 @@ export const TUT = {
   SELECTOR_FILTERS_TOGGLE: 'sel-filters-toggle', // mobile: botao que abre a gaveta
   SELECTOR_RESULTS: 'sel-results',
   SELECTOR_PREVIEW: 'sel-preview', // desktop: coluna de detalhe a direita
+  SELECTOR_DETAIL: 'sel-detail', // mobile: tela de detalhe (aberta pelo tour)
   SELECTOR_SELECT: 'sel-select',
 };

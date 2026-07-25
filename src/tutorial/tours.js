@@ -45,12 +45,15 @@ const selector = {
       placement: 'right',
     },
     {
-      // Mobile: os filtros vivem numa gaveta atras deste botao.
+      // Mobile: o tour ABRE a gaveta de filtros (mobileAction) e destaca-a; ao
+      // avancar, o SelectorPanel a fecha. Por isso a ancora e o painel, nao o
+      // botao "Filters" (que some quando a gaveta esta aberta).
       only: 'mobile',
-      anchor: TUT.SELECTOR_FILTERS_TOGGLE,
+      anchor: TUT.SELECTOR_FILTERS,
+      mobileAction: 'filters',
       title: 'Filters',
-      body: 'Tap to open the filters. Inside, tap a chip once to include it (purple), twice to exclude it (red).',
-      placement: 'bottom',
+      body: 'The "Filters" button opens this drawer. Tap a chip once to include it (purple), twice to exclude it (red).',
+      placement: 'top',
     },
     {
       anchor: TUT.SELECTOR_RESULTS,
@@ -67,12 +70,15 @@ const selector = {
       placement: 'left',
     },
     {
-      // Mobile: nao ha coluna de preview; o detalhe abre ao tocar num card.
+      // Mobile: nao ha coluna de preview; o tour ABRE a tela de detalhe (do 1o
+      // resultado) para demonstra-la, e a fecha ao terminar - deixando o usuario
+      // livre para tocar num card e selecionar o que quiser.
       only: 'mobile',
-      anchor: TUT.SELECTOR_RESULTS,
+      anchor: TUT.SELECTOR_DETAIL,
+      mobileAction: 'detail',
       title: 'Details',
-      body: 'Tap any card to open its full details, art and lore, then confirm your choice.',
-      placement: 'auto',
+      body: 'Tapping a card opens its full details, art and lore. Select adds it - or go back to pick another.',
+      placement: 'top',
     },
     {
       // Desktop: botao Select no rodape do preview.

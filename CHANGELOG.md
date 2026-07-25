@@ -4799,3 +4799,23 @@ uma secao **Tutorials**:
 Na **Home** e na **ficha**, via `useTutorialStore` (`enabled`/`setEnabled`/`resetSeen`). Verificado
 ao vivo: Disable grava `enabled:false` e o item vira "Enable tutorials"; Replay grava
 `{enabled:true, seen:{}}` e, ao reabrir um seletor, o tour re-dispara. 1136 testes, lint.
+
+## 80. Tutorial do seletor no MOBILE: o tour dirige a gaveta e o preview (F1, DDL-0069)
+
+No mobile o painel esconde atras de gestos o que no desktop e sempre visivel (os filtros numa gaveta,
+o preview numa tela de detalhe). Agora o tour DEMONSTRA isso: cada passo mobile declara um
+`mobileAction` e o `SelectorPanel` abre/fecha para acompanhar.
+- Passo **Filters**: abre a gaveta de filtros e destaca-a (a ancora passou a ser o painel, nao o
+  botao "Filters", que some com a gaveta aberta).
+- Passo **Details**: abre a tela de detalhe do 1o resultado (arte/lore/texto + Select), com a ancora
+  `sel-detail` na propria tela.
+- Ao AVANCAR de passo, o painel reverte a acao (fecha a gaveta ao ir para Results, etc.); ao TERMINAR
+  o tour, fecha a tela de detalhe - deixando o usuario livre para tocar num card e selecionar o que
+  quiser (pedido do usuario).
+
+Implementacao: o `SelectorPanel` le o passo atual do `tutorialStore` e reflete `mobileAction` na UI
+pelo padrao de ajuste-durante-o-render (como o reset de `visibleCount`), com um efeito de cleanup
+para o fechar-ao-terminar. O `TutorialOverlay` ganhou re-medicoes atrasadas (180/400 ms) para o
+recorte assentar sobre a gaveta que ANIMA (transform 0.25s). Verificado ao vivo (mobile 375px): a
+gaveta abre no passo 3 e fecha no 4; o detalhe abre no 5 e fecha no Done, com a lista de resultados
+de volta. Desktop inalterado. 1136 testes, lint, zero erros de console.

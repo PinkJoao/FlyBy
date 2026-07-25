@@ -164,8 +164,15 @@ function Spotlight({ step, index, total, onNext, onBack, onSkip }) {
     const onMove = () => measure();
     window.addEventListener('scroll', onMove, true);
     window.addEventListener('resize', onMove);
+    // Re-medicoes atrasadas: um alvo que ANIMA ao aparecer (ex: a gaveta de
+    // filtros do mobile, transform 0.25s) so assenta depois; sem isto o recorte
+    // ficaria na posicao intermediaria.
+    const t1 = setTimeout(measure, 180);
+    const t2 = setTimeout(measure, 400);
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
       window.removeEventListener('scroll', onMove, true);
       window.removeEventListener('resize', onMove);
     };

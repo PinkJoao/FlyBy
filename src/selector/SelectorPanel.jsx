@@ -10,7 +10,7 @@ import { createPortal } from 'react-dom';
 import { applyFilters, deriveOptions, cycleOption } from './filterModel';
 import DetailView from '../components/common/DetailView';
 import BackButton from '../components/common/BackButton';
-import { maybeStartTutorial } from '../store/tutorialStore';
+import useTutorialStore, { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import styles from './SelectorPanel.module.css';
 
@@ -169,6 +169,44 @@ export default function SelectorPanel({
     () => (exclude ? filtered.filter((it) => !exclude(it.raw)) : filtered),
     [filtered, exclude]
   );
+
+  // --- Tutorial (mobile): o tour DIRIGE este painel -------------------------
+  // No mobile o tour do seletor demonstra o que no desktop e sempre visivel: a
+  // gaveta de filtros e a tela de detalhe (preview). Cada passo declara um
+  // `mobileAction` e o painel abre/fecha para acompanhar; ao avancar de passo
+  // (ou terminar o tour) reverte, deixando o usuario livre para selecionar.
+  // So age em mobile e no tour do seletor - fora disso o usuario controla tudo.
+  const tourId = useTutorialStore((s) => s.tourId);
+  const tourSteps = useTutorialStore((s) => s.steps);
+  const tourIndex = useTutorialStore((s) => s.index);
+
+  // A cada PASSO do tour do seletor, reflete o `mobileAction` na UI (abre/fecha a
+  // gaveta e a tela de detalhe). Padrao de ajuste-durante-o-render, como o reset
+  // de visibleCount acima - roda so quando o passo muda, nunca durante o uso
+  // normal (o usuario controla). O fechar ao TERMINAR fica no efeito de cleanup.
+  const tourKey = `${tourId}:${tourIndex}`;
+  const [prevTourKey, setPrevTourKey] = useState(tourKey);
+  if (prevTourKey !== tourKey) {
+    setPrevTourKey(tourKey);
+    if (tourId === 'selector' && isMobile()) {
+      const action = tourSteps[tourIndex]?.mobileAction ?? null;
+      setShowFilters(action === 'filters');
+      setDetailItem(action === 'detail' ? results[0]?.raw ?? null : null);
+    }
+  }
+
+  // Ao SAIR do tour do seletor (finish/skip/troca), fecha a gaveta e o detalhe -
+  // e o "ao finalizar, sair do preview para o usuario selecionar". Roda no
+  // cleanup do efeito, disparado quando `tourId` deixa de ser 'selector'.
+  useEffect(() => {
+    if (tourId !== 'selector') return undefined;
+    return () => {
+      if (isMobile()) {
+        setShowFilters(false);
+        setDetailItem(null);
+      }
+    };
+  }, [tourId]);
 
   // Renderização em levas (ver RENDER_CHUNK). Reseta ao REFINAR (busca/filtros/
   // entity) - não em qualquer mudança de `results`: o `exclude` da loja muda a
@@ -524,7 +562,7 @@ export default function SelectorPanel({
 
         {/* Tela de detalhe (mobile): tocar num card mostra info antes de selecionar. */}
         {!noPreview && detailItem && isMobile() && (
-          <div className={styles.detailScreen}>
+          <div className={styles.detailScreen} data-tour={TUT.SELECTOR_DETAIL}>
             <div className={styles.detailHead}>
               <BackButton onClick={() => setDetailItem(null)} label="results" />
             </div>

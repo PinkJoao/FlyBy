@@ -368,9 +368,18 @@ menu; usuário que já tem personagens nasce com tudo marcado como visto (não �
   renderiza em document.body) e não exige encanar refs por vários níveis. Um componente vira alvo
   declarando a chave em `anchors.js` e pondo o atributo.
 - **Diferença mobile×desktop é de DADOS, não de código.** Passo cujo TEXTO muda usa `body:
-  { desktop, mobile }`; passo cuja ÂNCORA muda (ex: filtros = painel fixo no desktop × botão de
-  gaveta no mobile; preview = coluna no desktop × "toque no card" no mobile) usa `only`. O breakpoint
-  é o MESMO do SelectorPanel (`matchMedia('(max-width: 760px)')`).
+  { desktop, mobile }`; passo cuja ÂNCORA muda (ex: filtros = painel fixo no desktop × gaveta no
+  mobile; preview = coluna no desktop × tela de detalhe no mobile) usa `only`. O breakpoint é o MESMO
+  do SelectorPanel (`matchMedia('(max-width: 760px)')`).
+- **No mobile o TOUR DIRIGE o painel (não só descreve).** Um passo mobile pode declarar um
+  `mobileAction` (`'filters'` | `'detail'`); o `SelectorPanel` lê o passo atual do `tutorialStore` e
+  reflete a ação na UI (abre a gaveta / abre a tela de detalhe do 1o resultado) pelo padrão de
+  ajuste-durante-o-render (como o reset de `visibleCount`). Ao AVANCAR de passo reverte; ao TERMINAR o
+  tour, um efeito de cleanup fecha a gaveta e o detalhe - deixando o usuário livre para selecionar.
+  Regra: quem quiser que um passo manipule uma superfície própria declara um `mobileAction` (ou
+  equivalente) e deixa o COMPONENTE dono do estado reagir, em vez de o overlay mexer no DOM alheio. O
+  overlay ganhou re-medições atrasadas (180/400 ms) para o recorte assentar sobre alvos que ANIMAM
+  (a gaveta, transform 0.25s).
 - **Um tour por vez; disparo contextual no mount.** `maybeStartTutorial` só dispara se ligado, não
   visto e nada ativo. O tour do seletor dispara no mount de um `SelectorPanel` "cheio" (com preview -
   glossário/loja ficam de fora). `finish` marca visto (persistido).
@@ -393,8 +402,9 @@ menu; usuário que já tem personagens nasce com tudo marcado como visto (não �
   que abra direto a rota do Builder sem passar pela Home só será semeado depois - aceito (o pior caso
   é ver um tour a mais, nunca perder dado).
 - **Verificado (F1):** 1136 testes (+18), lint limpo, e ao vivo nos dois breakpoints (desktop 6
-  passos, mobile 5 passos, âncoras/posições corretas, marca visto, zero erros novos de console). Ver
-  CHANGELOG §78.
+  passos, mobile 5 passos, âncoras/posições corretas, marca visto, zero erros novos de console). No
+  mobile, verificado que a gaveta abre no passo Filters e fecha em Results, o detalhe abre em Details e
+  fecha no Done com a lista de volta. Ver CHANGELOG §78, §80 (mobile) e §79 (F4).
 
 ### DDL-0067 — Imagem universal: lightbox em todo o app + carrossel para as espécies com várias artes
 **Date:** 2026-07-23

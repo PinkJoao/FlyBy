@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-25T22:38:23.994Z · base seed 1 · 285 rows
+Last sweep: 2026-07-25T23:05:51.895Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -162,8 +162,8 @@ Last sweep: 2026-07-25T22:38:23.994Z · base seed 1 · 285 rows
 | `species:Bugbear\|MPMM` | ok | - | todo | todo |  |
 | `species:Centaur\|MPMM` | ok | - | todo | todo |  |
 | `species:Changeling\|EFA` | ok | - | todo | todo |  |
-| `species:Custom Lineage\|TCE/Custom Lineage; Darkvision` | ok | - | ok | todo | TC-0046/0047/0048/0049 fixed 2026-07-23: seletor "Variable Trait", sem atributo legado, talento restrito a ORIGIN |
-| `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | ok | todo | idem; a perícia só aparece nesta opção (TC-0047) |
+| `species:Custom Lineage\|TCE/Custom Lineage; Darkvision` | ok | - | ok | todo | TC-0046/0047/0048/0049 fixed 2026-07-23: seletor "Variable Trait", sem atributo legado, talento restrito a ORIGIN; S-B2 revalidado: rotulo "Variable Trait", 25 talentos de ORIGEM |
+| `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | ok | todo | idem; a perícia só aparece nesta opção (TC-0047); S-B2 revalidado |
 | `species:Deep Gnome\|MPMM` | ok | - | todo | todo |  |
 | `species:Dhampir\|RHW` | ok | - | todo | todo |  |
 | `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | ok | todo | S-A2: preview resolve Acid/Resistance corretamente |
@@ -188,17 +188,17 @@ Last sweep: 2026-07-25T22:38:23.994Z · base seed 1 · 285 rows
 | `species:Elf\|XPHB/Elf; Drow Lineage` | ok | - | ok | todo | S-A1: Darkvision 120 + Dancing Lights (Cha) na Spellbook; Keen Senses skill + spellcasting ability (adiada) |
 | `species:Elf\|XPHB/Elf; High Elf Lineage` | ok | - | ok | todo | S-A1: Prestidigitation + seletor "Choose a Wizard cantrip" (24 cantrips, pré-marcado Wizard+Cantrip) |
 | `species:Elf\|XPHB/Elf; Wood Elf Lineage` | ok | - | ok | todo | S-A1: Speed 35 deriva; Druidcraft cantrip; Longstrider@3/Pass without Trace@5 |
-| `species:Elf\|XPHB/Elf; Lorwyn Lineage` | ok | - | todo | todo |  |
-| `species:Elf\|XPHB/Elf; Shadowmoor Lineage` | ok | - | todo | todo |  |
-| `species:Elf\|XPHB/Elf (Pallid)` | ok | - | todo | todo | sub-raça legada curada, LINHAGEM sem reescrita (único caso - DDL-0060) |
+| `species:Elf\|XPHB/Elf; Lorwyn Lineage` | ok | - | ok | todo | S-B2: fundida LFL (DDL-0066) - ARTE conferida ao vivo: flores rosas/borboletas = Lorwyn de fato (o arquivo do dado esta trocado; override curado OK); Thorn Whip trocavel + Command@3 + Silence@5 |
+| `species:Elf\|XPHB/Elf; Shadowmoor Lineage` | ok | - | ok | todo | S-B2: fundida LFL - ARTE conferida ao vivo: cena escura com cogumelos = Shadowmoor de fato; Darkvision 120 + Starry Wisp + Heroism@3 + Gentle Repose@5 |
+| `species:Elf\|XPHB/Elf (Pallid)` | ok | - | ok | todo | sub-raca legada curada, LINHAGEM sem reescrita (unico caso - DDL-0060). S-B2: sem "Elven Lineage" orfao (supersedes OK); os 4 tracos da base 2024 + Incisive Sense/Blessing of the Moon Weaver; texto 2014 literal com Wisdom FIXO; arte propria |
 | `species:Elf (Kaladesh)\|PSK/Elf (Kaladesh; Bishatar and Tirahar)` | ok | - | todo | todo |  |
 | `species:Elf (Kaladesh)\|PSK/Elf (Kaladesh; Vahadar)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Joraga Nation)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Mul Daya Nation)` | ok | - | todo | todo |  |
 | `species:Elf (Zendikar)\|PSZ/Elf (Zendikar; Tajuru Nation)` | ok | - | todo | todo |  |
 | `species:Fairy\|MPMM` | ok | - | todo | todo |  |
-| `species:Fairy\|MPMM/Faerie; Lorwyn` | ok | - | todo | todo |  |
-| `species:Fairy\|MPMM/Faerie; Shadowmoor` | ok | - | todo | todo |  |
+| `species:Fairy\|MPMM/Faerie; Lorwyn` | ok | - | ok | todo | S-B2: arte ORIGINAL do Fairy (MPMM) conferida ao vivo, distinta da irma (DDL-0066 amendment); seletor "Lineage" opcional |
+| `species:Fairy\|MPMM/Faerie; Shadowmoor` | ok | - | ok | todo | S-B2: arte do Faerie (LFL) conferida ao vivo, distinta da Lorwyn |
 | `species:Firbolg\|MPMM` | ok | - | todo | todo |  |
 | `species:Flamekin\|LFL` | ok | - | todo | todo |  |
 | `species:Genasi\|MPMM/Genasi (Air)` | ok | - | todo | todo |  |
@@ -224,10 +224,10 @@ Last sweep: 2026-07-25T22:38:23.994Z · base seed 1 · 285 rows
 | `species:Grung\|OGA` | ok | - | todo | todo |  |
 | `species:Hadozee\|AAG` | ok | - | todo | todo |  |
 | `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
-| `species:Halfling\|XPHB/Halfling; Lightfoot Lineage` | ok | - | ok | todo | reproduz a base 2024 exatamente (Naturally Stealthy, redacao XPHB) |
-| `species:Halfling\|XPHB/Halfling; Stout Lineage` | ok | - | ok | todo | Stout Resilience + DAMAGE RESISTANCES: Poison na ficha |
-| `species:Halfling\|XPHB/Halfling; Ghostwise Lineage` | ok | - | ok | todo | Silent Speech; a prosa 2014 ("Size") cai; TC-0052 lore corrigida (era a de 2014) |
-| `species:Halfling\|XPHB/Halfling; Lotusden Lineage` | ok | - | ok | todo | 2 tracos + origem de magia propria (Wis, DC 10) com Druidcraft Always Prepared; TC-0052 lore corrigida |
+| `species:Halfling\|XPHB/Halfling; Lightfoot Lineage` | ok | - | ok | todo | reproduz a base 2024 exatamente (Naturally Stealthy, redacao XPHB); S-B2 revalidado: redacao XPHB ("take the Hide action") |
+| `species:Halfling\|XPHB/Halfling; Stout Lineage` | ok | - | ok | todo | Stout Resilience + DAMAGE RESISTANCES: Poison na ficha; S-B2 revalidado: Resistance Poison no preview |
+| `species:Halfling\|XPHB/Halfling; Ghostwise Lineage` | ok | - | ok | todo | Silent Speech; a prosa 2014 ("Size") cai; TC-0052 lore corrigida (era a de 2014); S-B2 revalidado: Silent Speech |
+| `species:Halfling\|XPHB/Halfling; Lotusden Lineage` | ok | - | ok | todo | 2 tracos + origem de magia propria (Wis, DC 10) com Druidcraft Always Prepared; TC-0052 lore corrigida; S-B2 revalidado ao vivo: Spellbook WISDOM DC 10 sem seletor de atributo; lore 2024 (TC-0052) confirmada |
 | `species:Harengon\|MPMM` | ok | - | todo | todo |  |
 | `species:Hexblood\|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin\|MPMM` | ok | - | todo | todo |  |
@@ -300,4 +300,4 @@ Last sweep: 2026-07-25T22:38:23.994Z · base seed 1 · 285 rows
 | `species:Verdan\|AI` | ok | - | todo | todo |  |
 | `species:Warforged\|EFA` | ok | - | todo | todo |  |
 | `species:Yuan-Ti\|MPMM` | ok | - | todo | todo |  |
-| `species:Human (Keldon)\|PSD` | ok | - | todo | todo | sub-raça legada curada, ESPÉCIE à parte (DDL-0060) |
+| `species:Human (Keldon)\|PSD` | ok | - | ok | todo | sub-raca legada curada, ESPECIE a parte (DDL-0060). S-B2: atras do filtro Setting Variant (0 resultados; volta a UM clique no chip, DDL-0064); prosa 2014 removida e sem Ability Score Increase; 3 tracos proprios + arte propria |

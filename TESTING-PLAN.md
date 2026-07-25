@@ -214,6 +214,14 @@ baseline visual/de derivação contra a qual os outros blocos se comparam.
 - **S-A2 (muitas linhagens do mesmo padrão) - DONE 2026-07-25 (19 linhas `ui: ok`, TC-0051
   fixed):** Dragonborn|XPHB ×10, Goliath|XPHB ×6, Tiefling|XPHB núcleo (Abyssal/Chthonic/Infernal
   — as 3 legacies OFICIAIS 2024).
+- 🔁 **REVISÃO PENDENTE (pedida pelo usuário em 2026-07-25):** a passada do **S-A2** rodou com o
+  modelo **Sonnet**, não o Opus, e o usuário quer uma **segunda passada** desse bloco para pegar
+  o que possa ter escapado. As linhas seguem `ui: ok` (nada foi reprovado) — isto é um
+  RE-EXAME, não uma regressão conhecida. **Confirmar com o usuário se o S-A1 entra junto** (ele
+  também foi executado em 2026-07-25, em outra sessão). Fazer antes de fechar o Bloco S-B ou logo
+  após, a critério dele. Ao revisar, olhar com atenção o que uma passada rápida tende a pular:
+  as ancestralidades do Dragonborn/Goliath conferidas só pelo preview (não uma a uma na FICHA),
+  o card de Uses/Spellbook por linhagem, e os links de glossário dentro dos textos de traço.
 - **Atenção:** escolha de tamanho S/M (DDL-0017) em várias; a linhagem élfica
   adia `skillProficiencies`? não — Keen Senses permanece (DDL-0061/`lineageDeferredKinds`).
   Tiefling sem linhagem NÃO deve mostrar os chips de resist/spell list (DDL-0061 §69).
@@ -229,7 +237,8 @@ parte se autovalida. Conferir contra o DDL citado, não só "renderiza".
   fogo; atributo de conjuração é escolha Int/Wis/Cha; magias remapeadas para XPHB (Branding
   Smite→Shining Smite); Winged = voo no nível 1; a tabela do preview lista as 14 opções
   (`withLegacyTable`).
-- **S-B2 (o resto da curadoria):** Elf (Pallid) [DDL-0060 lineage], Elf
+- **S-B2 (o resto da curadoria) - DONE 2026-07-25 (6 linhas novas `ui: ok` + 6 revalidadas, zero
+  bugs). O Bloco S-B está FECHADO.** Elf (Pallid) [DDL-0060 lineage], Elf
   Lorwyn/Shadowmoor + Fairy Faerie Lorwyn/Shadowmoor [DDL-0066 merged — **conferir
   a ARTE por linhagem**, DDL-0066 amendment: os arquivos do Elf LFL estão trocados
   no dado], Halfling Lightfoot/Stout/Ghostwise/Lotusden [DDL-0063 swap, já `ok` —
@@ -309,6 +318,31 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (5)** - **T1b sessão 4: Bloco S-B2 CONCLUÍDO (6 linhas novas `ui: ok` + 6
+  revalidadas) - ZERO bugs. O Bloco S-B inteiro está FECHADO (23 linhas).** Sweep verde
+  (285/285 `--strict`, inalterado - nenhum código tocado nesta sessão).
+  A verificação central era a **ARTE por linhagem** (DDL-0066 amendment), que só se confere
+  OLHANDO: **Elf; Lorwyn** mostra flores rosas/borboletas (Lorwyn de fato, do arquivo chamado
+  `Elf (Shadowmoor).webp`) e **Elf; Shadowmoor** mostra cogumelos numa cena escura (do arquivo
+  `Elf (Lorwyn).webp`) - os arquivos ESTÃO trocados no dado e o override curado os desfaz;
+  **Faerie; Lorwyn** usa a arte original do Fairy (MPMM) e **Faerie; Shadowmoor** a do Faerie
+  (LFL), distintas. **Elf (Pallid)** sem "Elven Lineage" órfão (supersedes OK), texto 2014 com
+  Wisdom fixo, arte própria. **Human (Keldon)** atrás do filtro Setting Variant (0 resultados →
+  1 clique no chip devolve, DDL-0064), prosa 2014 removida e sem Ability Score Increase.
+  **Revalidadas:** Halfling ×4 (Lightfoot com a redação XPHB; Stout → Poison; Lotusden →
+  Spellbook WISDOM/DC 10 sem seletor) e Custom Lineage ×2 ("Variable Trait", 25 talentos de
+  ORIGEM). O fix de lore do TC-0052 confirmado ao vivo também no Halfling.
+  **Nota de harness (custou tempo):** ao editar `COVERAGE.md` por script, o id da linha contém um
+  **pipe ESCAPADO** (`species:Elf\|XPHB/...`) - cortar a linha com um `split('|')` ingênuo desloca
+  todas as colunas. É a MESMA armadilha que o DDL-0061 já documenta no `parseExistingCoverage` do
+  sweep. Substitua `\|` por um placeholder antes de cortar (e confira que deram 8 células).
+  **Next action: T1b sessão 5 - Bloco S-C (MPMM), ~31 linhas em ~3 sessões.** Espécies 2014
+  reformatadas no padrão moderno, que entram por `raceLineages`. Itens de atenção do §4.5:
+  **Tortle** = armadura natural FLAT (DDL-0034); **Kobold** = seletor "Kobold Legacy" com perícia
+  e magias adiadas (TC-0046/0047 - a nota de UI pendente no COVERAGE fecha aqui); **Genasi** ×4 =
+  resistência por elemento na ficha. **Antes ou depois dela, encaixar a REVISÃO do S-A2 pedida
+  pelo usuário** (ver o marcador 🔁 no §4.5).
 
 - **2026-07-25 (4)** - **T1b sessão 3: Bloco S-B1 CONCLUÍDO (11 linhas `ui: ok`) - TC-0052 fixed.**
   O bloco de maior RISCO da campanha (código NOSSO, DDL-0061). Sweep verde antes (285/285

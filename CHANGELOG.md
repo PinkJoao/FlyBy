@@ -4956,3 +4956,30 @@ arte Lorwyn↔Shadowmoor.
 
 1141 testes (+3), lint, sweep 285/285 `--strict`, mobile 375px sem overflow horizontal, zero erros
 de console. Ver DDL-0071, TESTING-PLAN.md §7, testing/COVERAGE.md e testing/ISSUES.md (TC-0052).
+
+## 86. Phase T - T1b sessão 4: Bloco S-B2 (o resto da curadoria de espécies) - sem achados
+
+Fecha o **Bloco S-B**. 6 linhas novas `ui: ok` + 6 revalidadas, **zero bugs, nenhuma mudança de
+código**. A verificação central deste bloco era a **ARTE por linhagem** (DDL-0066 amendment), que
+só se confere OLHANDO a imagem - e as quatro conferem:
+- **Elf; Lorwyn** → arte de flores rosas e borboletas (Lorwyn de fato), que mora no arquivo
+  enganosamente chamado `Elf (Shadowmoor).webp`; **Elf; Shadowmoor** → cena escura com cogumelos,
+  do arquivo `Elf (Lorwyn).webp`. Os arquivos ESTÃO trocados no dado upstream e o override curado
+  os desfaz corretamente.
+- **Faerie; Lorwyn** → a arte ORIGINAL do Fairy (MPMM); **Faerie; Shadowmoor** → a do Faerie
+  (LFL). Distintas, como o amendment exige (antes as duas mostravam a mesma).
+- **Elf (Pallid)**: sem "Elven Lineage" órfão (o `supersedes` do DDL-0059 funciona), os 4 traços da
+  base 2024 + os 2 próprios, texto 2014 literal com Wisdom FIXO (é a única que volta como linhagem
+  SEM reescrita, DDL-0060) e arte própria.
+- **Human (Keldon)**: 0 resultados com o filtro "Setting Variant" pré-marcado e volta a **um
+  clique** no chip (DDL-0064); sem seletor de linhagem, sem escolhas, **prosa 2014 removida**
+  (Age/Alignment/Size/Speed/Languages) e sem "Ability Score Increase" (DDL-0060/0058).
+- **Revalidadas:** Halfling ×4 (guarda-chuva "Halfling Lineage"; Lightfoot com a redação **XPHB**
+  "take the Hide action"; Stout → Resistance Poison; Ghostwise → Silent Speech; Lotusden → origem
+  de magia própria com **WISDOM/DC 10 sem seletor de atributo**) e Custom Lineage ×2 (rótulo
+  "Variable Trait", **25** talentos de ORIGEM, perícia adiada para a opção que a concede).
+- O **fix de lore do TC-0052** (§85) confirmado ao vivo também no Halfling: a lore agora é a de
+  2024 ("Cherished and guided by gods who value life, home, and hearth…").
+
+Sem código tocado → suíte (1141), lint e sweep (285/285 `--strict`) inalterados. Mobile 375px sem
+overflow, zero erros de console. Ver TESTING-PLAN.md §7 e testing/COVERAGE.md.

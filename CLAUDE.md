@@ -342,6 +342,46 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0071 — Lore/arte de uma linhagem CURADA volta para a EDIÇÃO DA BASE (`_baseSource`), não para a primeira de mesmo nome
+**Date:** 2026-07-25
+**Refina o DDL-0066** (a resolução de fluff POR FONTE, que continua valendo e tem precedência) e
+serve todo o grupo do DDL-0059…0063 (as linhagens curadas). **Builds on:** a convenção `_baseName`/
+`_baseSource` que o `mergeSubrace` já usava.
+
+**Context.** T1b sessão 3 (Bloco S-B1, as 11 legacies reescritas do Tiefling). Escolher uma delas
+trocava a LORE da espécie para o texto de 2014 - numa espécie que é `Tiefling|XPHB` e cuja linhagem
+foi explicitamente REESCRITA para o formato 2024 (DDL-0061).
+
+**Findings.** Uma linhagem curada carrega a fonte da sub-raça de ORIGEM (MTF/SCAG/EGW) como
+procedência exibida - decisão deliberada do DDL-0059/0061. Mas esses livros **não têm entrada de
+fluff da espécie**, então a cadeia do `raceEntity.fluff` esgotava os passos por fonte e caía no
+último, `list.find((f) => f.name === baseName)` - **a primeira entrada de mesmo nome do array**, que
+por ordem do dataset é a de 2014. Nenhum sabor 2014 estava sendo preservado: era ordem de array. A
+prova de que o passo é arbitrário, e não uma escolha: o `Elf (Eladrin)` caía na lore E na arte do
+**Elf de Lorwyn** (LFL), sem relação nenhuma com ele.
+
+**Decision.**
+- **`buildVariant` grava `_baseSource` ao lado do `_baseName`.** A convenção já existia - o
+  `mergeSubrace` a definia desde sempre; só o funil de `_versions` não a preenchia.
+- **A cadeia do fluff ganha um passo `baseName + _baseSource` ANTES do fallback por nome puro.**
+  Ordem final: (1) nome+fonte exatos → (2) prefixo+fonte (reimpressão fundida de nome próprio,
+  DDL-0066) → (3) baseName+fonte da PRÓPRIA linhagem → (4) **baseName+fonte da BASE** → (5) nome
+  puro. O passo (5) fica como rede de segurança para dado inesperado, não como caminho normal.
+- **A precedência do DDL-0066 é preservada por construção:** as fundidas (Elf/Fairy de Lorwyn e
+  Shadowmoor) resolvem no passo (3), porque o livro DELAS tem fluff próprio - o passo novo só age
+  quando a fonte da linhagem não tem nada, que é exatamente o caso das curadas.
+- **REGRA para quem mexer nisto:** o fallback de uma linhagem é a EDIÇÃO em que ela foi montada
+  (a base), nunca "a primeira que casar o nome". Um passo de busca por nome sem fonte é sempre
+  suspeito num dataset com duas edições.
+
+**Consequences.**
+- Alcance medido por sonda sobre o compêndio real, não estimado: **14 linhas** mudaram (as 11
+  legacies do Tiefling, Halfling Ghostwise/Lotusden, Elf (Eladrin)) e **zero** regrediram.
+- Toda linhagem curada futura (`as: 'lineage'`/`'swap'`/reescrita) herda o fallback correto de
+  graça, sem precisar de fluff próprio no livro de origem.
+- Verificado: 1141 testes (+3 em `race.test.js`), lint, sweep 285/285 `--strict`, e ao vivo.
+  Ver TC-0052 e CHANGELOG §85.
+
 ### DDL-0070 — T1b sessão 2 (Bloco S-A2): correção pontual de dado upstream vira registro `KNOWN_DATA_FIXES`
 **Date:** 2026-07-25
 **Builds on:** DDL-0061/DDL-0066 (as legacies do Tiefling e as linhagens fundidas, cujo mecanismo

@@ -288,15 +288,24 @@ const raceEntity = {
     // prefixo + a fonte da linhagem (LFL), não por baseName. Para as linhagens
     // nativas o prefixo é o próprio baseName e este passo é inócuo.
     const prefix = race._baseName ? race.name.split(/[;(]/)[0].trim() : null;
+    // Fonte da BASE, para o penúltimo passo: uma linhagem CURADA carrega a fonte
+    // da sub-raça de origem (Tiefling; Zariel Legacy|MTF, Halfling; Ghostwise
+    // Lineage|SCAG), e esses livros não têm fluff próprio da espécie. Sem este
+    // passo a busca caía no `find` por nome puro, que devolve a PRIMEIRA entrada
+    // de mesmo nome - a de 2014 - dando lore da edição errada a uma linhagem
+    // montada no chassi 2024 (e, no caso do Eladrin, a arte do Elf de Lorwyn).
+    const baseSource = race._baseSource ?? null;
     const found =
       list.find((f) => f.name === race.name && f.source === race.source) ??
       (prefix && prefix !== baseName ? list.find((f) => f.name === prefix && f.source === race.source) : null) ??
       list.find((f) => f.name === baseName && f.source === race.source) ??
+      (baseSource ? list.find((f) => f.name === baseName && f.source === baseSource) : null) ??
       list.find((f) => f.name === baseName) ??
       null;
     // A base é o alvo da comparação de imagens (o que a linhagem herdou).
     const base = race._baseName
       ? (list.find((f) => f.name === baseName && f.source === race.source) ??
+        (baseSource ? list.find((f) => f.name === baseName && f.source === baseSource) : null) ??
         list.find((f) => f.name === baseName) ??
         null)
       : null;

@@ -4917,3 +4917,42 @@ Segundo bloco da campanha de espécies. **19 linhas `ui: ok`** (Dragonborn|XPHB 
 
 1138 testes (+2), lint, sweep 285/285 `--strict`, mobile 375px sem overflow, zero erros de
 console. Ver TESTING-PLAN.md §7, testing/COVERAGE.md e testing/ISSUES.md (TC-0051).
+
+## 85. Phase T - T1b sessão 3: Bloco S-B1 (as 11 legacies REESCRITAS do Tiefling) - TC-0052 fixed
+
+O bloco de maior RISCO da campanha de espécies: caminho de código NOSSO (DDL-0061), não dado
+upstream. **11 linhas `ui: ok`.** Cada legacy conferida ao vivo contra a especificação do
+`engine/legacyFiendishLegacies.js`, e as 11 batem exatamente:
+- **Resistência TRAVADA em fogo** em todas as 11 (o "Hellish Resistance" 2014), contra a escolha
+  livre poison/necrotic/fire do chassi 2024 - verificado no preview e na ficha (DAMAGE
+  RESISTANCES: Fire).
+- **As 4 sem cantrip próprio** (Baalzebul, Dispater, Zariel, Hellfire) têm a frase do cantrip
+  CORTADA do parágrafo, não uma frase vazia - elas já recebem Thaumaturgy pelo Otherworldly
+  Presence. As outras 7 anunciam o cantrip certo (Friends, Minor Illusion, Ray of Frost, Mage
+  Hand ×2, Vicious Mockery).
+- **Os 7 upcasts `#2`** aparecem como frase própria ("When you cast X with this trait, you cast it
+  as a level 2 spell") só onde o dado 2014 mandava; os 4 sem upcast não a exibem.
+- **Zariel: `Shining Smite`** (a reimpressão XPHB de Branding Smite, o único remap manual do
+  módulo) resolve e é concedida ao vivo - build Fighter 5 derivou Searing Smite 1/Day @3 e
+  Shining Smite 1/Day @5, com o card USES e a origem "Zariel Legacy" na Spellbook.
+- **Winged: voo no nível 1 e nada em 3/5** - a ficha deriva "Speed 30 ft, fly 30 ft", a Spellbook
+  mostra só Thaumaturgy, e a linha da tabela traz o voo no nível 1 com "-" em 3/5.
+- **Devil's Tongue / Hellfire / Winged** trazem o traço "Appearance" do SCAG anexado, e ele só
+  aparece ao selecionar a linhagem.
+- O atributo de conjuração é a escolha Int/Wis/Cha em todas (não o Carisma fixo de 2014);
+  escolhido Wisdom, a Spellbook derivou DC 10 / Attack +2.
+
+**TC-0052 (FIXED em sessão):** escolher uma legacy legada trocava a **LORE** da espécie para o
+texto de **2014**. Raiz: uma linhagem curada carrega a fonte da sub-raça de ORIGEM (MTF/SCAG/EGW),
+livros que não têm entrada de fluff da espécie, e a cadeia do `raceEntity.fluff` terminava num
+`find(name === baseName)` - a PRIMEIRA entrada de mesmo nome, que é a de 2014. Não era preservação
+de sabor: era ordem de array (o `Elf (Eladrin)` chegava a exibir a lore e a arte do Elf de
+**Lorwyn**). Fix: `buildVariant` passou a gravar `_baseSource` ao lado do `_baseName` (a MESMA
+convenção que o `mergeSubrace` já usava) e a cadeia ganhou um passo `baseName + _baseSource` antes
+do fallback por nome puro. Sonda sobre o compêndio real: exatamente **14 linhas** mudaram (as 11
+legacies + Halfling Ghostwise/Lotusden + Elf (Eladrin)), **zero regressões** - as linhagens
+fundidas do DDL-0066 resolvem num passo anterior e seguem idênticas, incluindo a troca curada de
+arte Lorwyn↔Shadowmoor.
+
+1141 testes (+3), lint, sweep 285/285 `--strict`, mobile 375px sem overflow horizontal, zero erros
+de console. Ver DDL-0071, TESTING-PLAN.md §7, testing/COVERAGE.md e testing/ISSUES.md (TC-0052).

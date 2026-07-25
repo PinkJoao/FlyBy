@@ -73,6 +73,12 @@ function buildVariant(race, version) {
     variant[field] = applyArrMods(variant[field], ops);
   }
   variant._baseName = race.name;
+  // A PROCEDÊNCIA da base, ao lado do nome dela. Uma linhagem curada carrega a
+  // fonte da sub-raça de origem (MTF/SCAG/EGW), que pode não ter fluff próprio -
+  // aí o fallback de lore/arte precisa saber para qual EDIÇÃO voltar (a base
+  // 2024), em vez de pegar a primeira entrada de mesmo nome (a de 2014). Mesma
+  // convenção que o `mergeSubrace` já usa.
+  variant._baseSource = race.source;
   const fix = KNOWN_DATA_FIXES[`${race.name}|${race.source}/${version.name}`];
   if (fix) Object.assign(variant, fix);
   return variant;

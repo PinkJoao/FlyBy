@@ -223,11 +223,12 @@ Maior RISCO da campanha: são caminhos de código NOSSOS (DDL-0059…0066), com
 migração de ficha e texto montado do dado. Vem cedo porque o contexto está fresco
 no DDL log e várias linhas já são `ui: ok` (foram rep-builds), então o bloco em
 parte se autovalida. Conferir contra o DDL citado, não só "renderiza".
-- **S-B1 (Tiefling reescritos, DDL-0061):** as 11 legacies (Baalzebul, Dispater,
-  Fierna, Glasya, Levistus, Mammon, Mephistopheles, Zariel, Devil's Tongue,
-  Hellfire, Winged). **Atenção:** resistência TRAVA em fogo; atributo de conjuração
-  é escolha Int/Wis/Cha; magias remapeadas para XPHB (Branding Smite→Shining Smite);
-  Winged = voo no nível 1; a tabela do preview lista as 14 opções (`withLegacyTable`).
+- **S-B1 (Tiefling reescritos, DDL-0061) - DONE 2026-07-25 (11 linhas `ui: ok`, TC-0052
+  fixed):** as 11 legacies (Baalzebul, Dispater, Fierna, Glasya, Levistus, Mammon,
+  Mephistopheles, Zariel, Devil's Tongue, Hellfire, Winged). **Atenção:** resistência TRAVA em
+  fogo; atributo de conjuração é escolha Int/Wis/Cha; magias remapeadas para XPHB (Branding
+  Smite→Shining Smite); Winged = voo no nível 1; a tabela do preview lista as 14 opções
+  (`withLegacyTable`).
 - **S-B2 (o resto da curadoria):** Elf (Pallid) [DDL-0060 lineage], Elf
   Lorwyn/Shadowmoor + Fairy Faerie Lorwyn/Shadowmoor [DDL-0066 merged — **conferir
   a ARTE por linhagem**, DDL-0066 amendment: os arquivos do Elf LFL estão trocados
@@ -308,6 +309,37 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (4)** - **T1b sessão 3: Bloco S-B1 CONCLUÍDO (11 linhas `ui: ok`) - TC-0052 fixed.**
+  O bloco de maior RISCO da campanha (código NOSSO, DDL-0061). Sweep verde antes (285/285
+  `--strict`). Método: li o `engine/legacyFiendishLegacies.js` PRIMEIRO e montei a tabela esperada
+  (cantrip / L3 / L5 / upcast / extras por legacy), depois conferi cada uma ao vivo contra ela - as
+  11 batem exatamente. **Resistência travada em fogo** nas 11; **as 4 sem cantrip próprio**
+  (Baalzebul/Dispater/Zariel/Hellfire) têm a frase do cantrip CORTADA, não vazia; **os 7 upcasts
+  `#2`** aparecem só onde devem; **Zariel deriva `Shining Smite`** (o único remap manual) - build
+  Fighter 5 ao vivo com Searing Smite 1/Day @3 + Shining Smite 1/Day @5, card USES e DAMAGE
+  RESISTANCES: Fire; **Winged** deriva "Speed 30 ft, fly 30 ft" e Spellbook só com Thaumaturgy;
+  as 3 do SCAG trazem o traço "Appearance". Atributo de conjuração Int/Wis/Cha em todas (Wisdom →
+  DC 10 / +2).
+  **TC-0052 FIXED em sessão (transversal):** escolher uma legacy legada trocava a LORE da espécie
+  para o texto de 2014. A cadeia do `raceEntity.fluff` terminava num `find(name === baseName)` - a
+  PRIMEIRA entrada de mesmo nome - porque MTF/SCAG/EGW não têm fluff da espécie. Não era sabor
+  preservado, era ordem de array (o `Elf (Eladrin)` pegava lore E arte do Elf de **Lorwyn**). Fix:
+  `buildVariant` grava `_baseSource` (convenção que o `mergeSubrace` já tinha) + um passo
+  `baseName + _baseSource` antes do fallback por nome puro. **Sonda sobre o compêndio real: 14
+  linhas mudaram, 0 regressões** (as fundidas do DDL-0066 resolvem num passo anterior). Também
+  corrigiu Halfling Ghostwise/Lotusden. Ver DDL-0071.
+  1141 testes (+3), lint, sweep 285/285 `--strict`, mobile 375px sem overflow, zero erros de console.
+  **Nota de harness:** o `.click()` via `javascript_tool` NÃO move o preview do SelectorPanel (ele
+  segue `hovered`, DDL-0048) e, após muitos hot-updates, cliques por `ref` param de responder -
+  recarregue a página e clique por COORDENADA VISUAL de screenshot (a pane compõe frames depois do
+  primeiro screenshot bem-sucedido). Ler o preview por JS funciona sempre.
+  **Next action: T1b sessão 4 - Bloco S-B2** (o resto da curadoria, ~12 linhas): Elf (Pallid)
+  [DDL-0060 lineage], Elf Lorwyn/Shadowmoor + Fairy Lorwyn/Shadowmoor [DDL-0066 merged - **conferir
+  a ARTE por linhagem**: os arquivos do Elf LFL estão TROCADOS no dado e há override curado],
+  Halfling Lightfoot/Stout/Ghostwise/Lotusden [DDL-0063 swap, já `ok` - validar Stout=resist.
+  veneno e Lotusden=origem de magia Wis], Human (Keldon) [DDL-0060 species], Custom Lineage ×2
+  [DDL-0062, já `ok`]. As linhas do Halfling acabaram de ganhar a lore 2024 pelo TC-0052 - conferir.
 
 - **2026-07-25 (3)** - **T1b sessão 2: Bloco S-A2 CONCLUÍDO (19 linhas `ui: ok`) - TC-0051 fixed.**
   Sweep verde antes de começar (285/285 `--strict`). Passada de UI ao vivo (~1000/800px + spot-check

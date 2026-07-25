@@ -917,6 +917,30 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - Verificado ao vivo: preview e ficha da Abyssal Legacy agora mostram só "Poison / Resistance"
   (sem badge de Darkvision), igual às outras duas legacies oficiais.
 
+## TC-0052 - linhagem curada caía na lore da EDIÇÃO ERRADA (fallback por nome puro)
+
+- **Unidade:** as 11 `species:Tiefling|XPHB/Tiefling; * Legacy` legadas, `Halfling; Ghostwise
+  Lineage`, `Halfling; Lotusden Lineage`, `Elf (Eladrin)`. **Severidade:** bug (exibição).
+  **Encontrado:** T1b sessão 3 (Bloco S-B1), 2026-07-25. **Status:** fixed@2026-07-25.
+- Sintoma: ao escolher uma legacy legada do Tiefling (Zariel/Winged/…), a LORE da espécie
+  trocava para o texto de **2014** ("To be greeted with stares and whispers…") em vez do texto
+  2024 da base. Idem para as duas linhagens legadas do Halfling. O `Elf (Eladrin)` chegava a
+  exibir a lore e a ARTE do **Elf de Lorwyn** (LFL), sem relação nenhuma com ele.
+- Raiz: uma linhagem curada carrega a fonte da sub-raça de ORIGEM (MTF/SCAG/EGW), e esses livros
+  não têm entrada de fluff da espécie. A cadeia de resolução do `raceEntity.fluff` terminava num
+  `list.find((f) => f.name === baseName)` - **a primeira entrada de mesmo nome**, que é a de 2014
+  (ou, no caso do Eladrin, uma entrada de outro cenário). Não era uma escolha de sabor: nenhum
+  sabor 2014 estava sendo preservado, era ordem de array.
+- Fix: `buildVariant` (`engine/speciesData.js`) passou a gravar `_baseSource` ao lado do
+  `_baseName` (a MESMA convenção que o `mergeSubrace` já usava), e a cadeia do
+  `raceEntity.fluff` ganhou um passo `baseName + _baseSource` **antes** do fallback por nome puro.
+  Cirúrgico: só as 14 linhas que caíam no último passo mudaram.
+- Não regride o DDL-0066: as fundidas (Elf/Fairy de Lorwyn e Shadowmoor) resolvem no passo 3
+  (`baseName + fonte da própria linhagem` = LFL), antes do novo passo - verificado, incluindo a
+  troca curada de arte Lorwyn↔Shadowmoor. Pallid, Genasi, Aven e as linhagens nativas idênticas.
+- Verificado: sonda sobre o compêndio real (14 linhas antes → 14 corrigidas, 0 regressões), 3
+  testes novos em `race.test.js`, e ao vivo (Zariel Legacy passou a exibir a lore 2024).
+
 ---
 
 > **2026-07-23 (sessão avulsa - Custom Lineage)**: TC-0046…TC-0050 achados e corrigidos em sessão

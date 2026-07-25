@@ -144,6 +144,41 @@ describe('raceEntity.fluff', () => {
     const f = raceEntity.fluff({ name: 'Aven', source: 'PSA' }, db);
     expect(f.images.map((i) => i.href.path)).toEqual(['races/PSA/Aven.webp']);
   });
+
+  // TC-0052: uma linhagem CURADA carrega a fonte da sub-raça de origem, e esse
+  // livro pode não ter fluff da espécie. O fallback tem de voltar para a EDIÇÃO
+  // DA BASE (`_baseSource`), não para a primeira entrada de mesmo nome.
+  describe('fallback pela fonte da BASE (`_baseSource`)', () => {
+    const twoEditions = {
+      'fluff-races': {
+        raceFluff: [
+          { name: 'Tiefling', source: 'PHB', entries: ['lore 2014'] },
+          { name: 'Tiefling', source: 'XPHB', entries: ['lore 2024'] },
+        ],
+      },
+    };
+
+    it('linhagem de fonte sem fluff cai na lore da BASE, não na primeira da lista', () => {
+      const f = raceEntity.fluff(
+        { name: 'Tiefling; Zariel Legacy', source: 'MTF', _baseName: 'Tiefling', _baseSource: 'XPHB' },
+        twoEditions,
+      );
+      expect(f.entries).toEqual(['lore 2024']);
+    });
+
+    it('sem `_baseSource` mantém o comportamento antigo (primeira de mesmo nome)', () => {
+      const f = raceEntity.fluff({ name: 'Tiefling; X', source: 'MTF', _baseName: 'Tiefling' }, twoEditions);
+      expect(f.entries).toEqual(['lore 2014']);
+    });
+
+    it('a fonte da PRÓPRIA linhagem continua vencendo o fallback da base', () => {
+      const f = raceEntity.fluff(
+        { name: 'Tiefling; Y', source: 'PHB', _baseName: 'Tiefling', _baseSource: 'XPHB' },
+        twoEditions,
+      );
+      expect(f.entries).toEqual(['lore 2014']);
+    });
+  });
 });
 
 describe('raceEntity.card', () => {

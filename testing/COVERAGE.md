@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-25T21:01:17.846Z · base seed 1 · 285 rows
+Last sweep: 2026-07-25T22:38:23.994Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -226,8 +226,8 @@ Last sweep: 2026-07-25T21:01:17.846Z · base seed 1 · 285 rows
 | `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
 | `species:Halfling\|XPHB/Halfling; Lightfoot Lineage` | ok | - | ok | todo | reproduz a base 2024 exatamente (Naturally Stealthy, redacao XPHB) |
 | `species:Halfling\|XPHB/Halfling; Stout Lineage` | ok | - | ok | todo | Stout Resilience + DAMAGE RESISTANCES: Poison na ficha |
-| `species:Halfling\|XPHB/Halfling; Ghostwise Lineage` | ok | - | ok | todo | Silent Speech; a prosa 2014 ("Size") cai |
-| `species:Halfling\|XPHB/Halfling; Lotusden Lineage` | ok | - | ok | todo | 2 tracos + origem de magia propria (Wis, DC 10) com Druidcraft Always Prepared |
+| `species:Halfling\|XPHB/Halfling; Ghostwise Lineage` | ok | - | ok | todo | Silent Speech; a prosa 2014 ("Size") cai; TC-0052 lore corrigida (era a de 2014) |
+| `species:Halfling\|XPHB/Halfling; Lotusden Lineage` | ok | - | ok | todo | 2 tracos + origem de magia propria (Wis, DC 10) com Druidcraft Always Prepared; TC-0052 lore corrigida |
 | `species:Harengon\|MPMM` | ok | - | todo | todo |  |
 | `species:Hexblood\|RHW` | ok | - | todo | todo |  |
 | `species:Hobgoblin\|MPMM` | ok | - | todo | todo |  |
@@ -280,17 +280,17 @@ Last sweep: 2026-07-25T21:01:17.846Z · base seed 1 · 285 rows
 | `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | ok | todo | S-A2: TC-0051 FIXED (darkvision 120->60, dado upstream errado); ficha 60ft correto |
 | `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | ok | todo | S-A2: selecionado ao vivo - Resistance Necrotic + Chill Touch, Darkvision 60ft |
 | `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | ok | todo | S-A2 REP: selecionado ao vivo - Fire resist + Fire Bolt/Thaumaturgy Always Prepared; DC 10/atk +2 (Cha) |
-| `species:Tiefling\|XPHB/Tiefling; Baalzebul Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Dispater Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Fierna Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Glasya Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Levistus Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Mammon Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Mephistopheles Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Zariel Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Devil's Tongue Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Hellfire Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
-| `species:Tiefling\|XPHB/Tiefling; Winged Legacy` | ok | - | todo | todo | legacy legada REESCRITA no formato 2024 (DDL-0061) |
+| `species:Tiefling\|XPHB/Tiefling; Baalzebul Legacy` | ok | - | ok | todo | S-B1: sem cantrip proprio (Thaumaturgy ja vem do Otherworldly Presence); Ray of Sickness@3 upcast lvl2 + Crown of Madness@5 (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Dispater Legacy` | ok | - | ok | todo | S-B1: sem cantrip proprio; Disguise Self@3 + Detect Thoughts@5, sem upcast (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Fierna Legacy` | ok | - | ok | todo | S-B1: cantrip Friends; Charm Person@3 upcast lvl2 + Suggestion@5 (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Glasya Legacy` | ok | - | ok | todo | S-B1: cantrip Minor Illusion; Disguise Self@3 + Invisibility@5, sem upcast (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Levistus Legacy` | ok | - | ok | todo | S-B1: cantrip Ray of Frost; Armor of Agathys@3 upcast lvl2 + Darkness@5 (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Mammon Legacy` | ok | - | ok | todo | S-B1: cantrip Mage Hand; Tenser's Floating Disk@3 (nome resolvido do compendio) + Arcane Lock@5 (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Mephistopheles Legacy` | ok | - | ok | todo | S-B1: cantrip Mage Hand; Burning Hands@3 upcast lvl2 + Flame Blade@5 (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Zariel Legacy` | ok | - | ok | todo | S-B1 REP: ao vivo nos niveis 3 e 5 - Searing Smite 1/Day + SHINING SMITE (remap de Branding Smite) 1/Day; card USES; DAMAGE RESISTANCES Fire (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Devil's Tongue Legacy` | ok | - | ok | todo | S-B1: cantrip Vicious Mockery; Charm Person@3 upcast lvl2 + Enthrall@5; traco Appearance do SCAG anexado (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Hellfire Legacy` | ok | - | ok | todo | S-B1: sem cantrip; Burning Hands@3 upcast lvl2 + Darkness@5 (difere da Infernal oficial so no nivel 3); Appearance (TC-0052 lore corrigida) |
+| `species:Tiefling\|XPHB/Tiefling; Winged Legacy` | ok | - | ok | todo | S-B1: ao vivo - Speed 30 ft, fly 30 ft na ficha; sem magias (3/5 = "-"); Spellbook so Thaumaturgy; Appearance (TC-0052 lore corrigida) |
 | `species:Tortle\|MPMM` | ok | - | todo | todo |  |
 | `species:Triton\|MPMM` | ok | - | todo | todo |  |
 | `species:Vampire\|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |

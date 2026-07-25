@@ -4837,10 +4837,33 @@ disparo contextual; nenhum call site precisa saber do tutorial.
 - **Disparo**: `maybeStartTutorial('sheet')` num `useEffect([])` do `BuilderInner` - roda no mount
   (sem atraso), entao ganha a vez sobre o timer de 250ms do seletor pela garantia "um por vez" do
   store. O item "Replay tutorial" do menu (F4) ja chamava `startTutorial('sheet')`, que deixa de ser
-  no-op. O passo do botao ⚛ degrada para balao central quando a ficha esta completa (o botao some) -
-  o texto ja considera isso ("When required choices are still missing, this button appears").
+  no-op. (O passo do botao ⚛ ganhou tratamento proprio na §82 - ver ali.)
 
-1136 testes (o `tours.test.js` cobre o tour novo automaticamente), lint limpo. Verificacao ao vivo
-ficou bloqueada pela limitacao de exibicao do browser neste ambiente (o mesmo caso ja registrado em
-sessoes anteriores); a validacao foi pelos mesmos code paths da UI + testes. Falta a F3 (micro-tours
-por aba).
+1136 testes (o `tours.test.js` cobre o tour novo automaticamente), lint limpo, e verificado ao vivo
+(mobile): os 9 passos com as ancoras/textos corretos, marca visto (nao re-dispara), e o Replay
+re-dispara.
+
+## 82. Tutorial das ABAS (F3) + botao-demo do guia (DDL-0069)
+
+Terceiro lote do tutorial de uso: um micro-tour para cada uma das seis abas do Builder (Species /
+Background / Class / Inventory / Spellbook / Biography), mais um ajuste no passo do botao ⚛ do tour
+da ficha (F2).
+- **Seis tours `tab-*` em `tutorial/tours.js`** (2-5 passos cada): uma abertura + os elementos
+  ESTAVEIS da aba (os que existem mesmo com a aba "vazia"); o que aparece dinamicamente e mencionado
+  no texto. 14 ancoras `TAB_*` novas em `anchors.js`, marcadas nos seis componentes de aba.
+- **Disparo centralizado no `Builder`** (nao em cada aba): um `useEffect([activeTab, hasSpellcasting])`
+  chama `maybeStartTutorial('tab-<aba>')` ~300 ms apos a aba abrir. Central (em vez de por-mount de
+  cada aba) para SEQUENCIAR com o tour da ficha: no 1o mount o tour da ficha ja esta ativo e a
+  garantia "um por vez" bloqueia o da aba Species (que dispara ao ser REABERTA). O tour do Spellbook
+  so dispara para conjuradores (a aba fica vazia sem magia) - gate no efeito.
+- **Botao ⚛ vira DEMO durante o seu passo** (pedido do usuario): antes o passo "The guide" caia num
+  balao central quando o botao estava escondido (guidance desligada nesta ficha OU nada faltando). O
+  `Builder` agora le o anchor do passo atual do `tutorialStore` (`tourAnchor`) e, quando e o do guia,
+  FORCA o botao a aparecer so para ilustrar aparencia e localizacao - sem badge (nada a contar) e com
+  clique inerte (o tour ja bloqueia cliques). Ao avancar/terminar o passo, o botao some de novo.
+
+1136 testes (as abas novas sao cobertas pelo `tours.test.js` automatico), lint limpo, e verificado ao
+vivo (mobile): os tours de Species/Background/Class/Inventory/Biography disparando ao abrir cada aba
+com as ancoras certas; o Spellbook corretamente SEM tour (Barbarian, nao-conjurador); e o botao-demo
+do guia aparecendo no passo 8 do tour da ficha (ficha completa, sem badge) e sumindo depois. Zero
+erros de console.

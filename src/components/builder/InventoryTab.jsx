@@ -24,6 +24,7 @@ import { fileToPortrait } from '../common/imageFile';
 import { itemValue } from '../../engine/magicItemPrice';
 import { imgUrl } from '../common/media';
 import itemEntity from '../../selector/entities/item';
+import { TUT } from '../../tutorial/anchors';
 import CurrencyCard from './CurrencyCard';
 import EquipmentShop from './EquipmentShop';
 import styles from './InventoryTab.module.css';
@@ -308,7 +309,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
   return (
     <div className={styles.tab}>
-      <div className={styles.header}>
+      <div className={styles.header} data-tour={TUT.TAB_INV_TOP}>
         <CurrencyCard currency={character.currency} onChange={onChangeCurrency} />
         <div className={styles.statusCard}>
           <div className={encumbrance.encumbered ? `${styles.carried} ${styles.carriedOver}` : styles.carried}>
@@ -330,7 +331,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
       </div>
 
       {/* Busca + Shop SEMPRE lado a lado numa única linha (pedido do usuário). */}
-      <div className={styles.controls}>
+      <div className={styles.controls} data-tour={TUT.TAB_INV_CONTROLS}>
         <div className={styles.searchBox}>
           <input
             type="search"

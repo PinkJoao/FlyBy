@@ -35,6 +35,7 @@ import SelectorPanel from '../../selector/SelectorPanel';
 import { confirm } from '../common/dialog';
 import { imgUrl } from '../common/media';
 import spellEntity, { makeSpellEntity } from '../../selector/entities/spell';
+import { TUT } from '../../tutorial/anchors';
 import { castTypeLabel } from '../../engine/grantedSpells';
 import { preparedElsewhere } from '../../engine/spellcasting';
 import {
@@ -452,7 +453,7 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
       {/* Dois cards, um por linha de informação: RECURSOS (slots/pacto/arcanum/
           usos) e NÚMEROS (DC, ataque, contadores). Ambos crescem p/ preencher a
           largura no desktop; no mobile cada um é uma faixa compacta. */}
-      <div className={styles.header}>
+      <div className={styles.header} data-tour={TUT.TAB_SPELL_CARDS}>
         {resourceChips.length > 0 && (
           <div className={styles.card}>
             <span className={styles.cardLabel}>{resourceLabel}</span>
@@ -492,7 +493,7 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
       </div>
 
       {/* Sub-abas por ORIGEM (R1), abaixo dos cards: classes + racial + talentos. */}
-      <nav className={styles.subTabs}>
+      <nav className={styles.subTabs} data-tour={TUT.TAB_SPELL_ORIGINS}>
         {origins.map((o) => (
           <button
             key={o.key}
@@ -507,7 +508,7 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
       </nav>
 
       {/* Busca + "Prepare spell" numa linha (mesmo padrão de busca + Shop). */}
-      <div className={styles.controls}>
+      <div className={styles.controls} data-tour={TUT.TAB_SPELL_CONTROLS}>
         <div className={styles.searchBox}>
           <input
             type="search"

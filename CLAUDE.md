@@ -395,9 +395,17 @@ menu; usuário que já tem personagens nasce com tudo marcado como visto (não �
   nivel → tiles → mini cards de atributo → proficiencias → abas → botao ⚛ → menu ☰. Disparo por
   `maybeStartTutorial('sheet')` num `useEffect([])` do `BuilderInner` (roda no mount, ganha a vez
   sobre o timer de 250ms do seletor pela garantia "um por vez"); ancoras `SHEET_*` marcadas em
-  `Builder`/`StatsHeader`/`MenuButton` (este ganhou a prop `dataTour`); o passo do ⚛ degrada para
-  balao central quando a ficha esta completa (o botao some). Ver CHANGELOG §81. F3 = micro-tours por
-  aba (Species/Background/Class/Inventory/Spellbook/Biography).
+  `Builder`/`StatsHeader`/`MenuButton` (este ganhou a prop `dataTour`). Ver CHANGELOG §81.
+  **F3 (DONE, 2026-07-25)** = micro-tours POR ABA (Species/Background/Class/Inventory/Spellbook/
+  Biography): seis tours `tab-*` (2-5 passos, ancorados nos elementos ESTAVEIS de cada aba, 14
+  ancoras `TAB_*`), disparados CENTRALMENTE pelo `Builder` num `useEffect([activeTab, hasSpellcasting])`
+  (~300 ms apos a aba abrir) - central, nao por-mount de cada aba, para SEQUENCIAR com o tour da
+  ficha (no 1o mount o "um por vez" bloqueia o da Species, que dispara ao ser reaberta); o do
+  Spellbook so dispara para conjuradores. Nesta mesma leva, o passo do botao ⚛ do tour da ficha
+  virou DEMO: quando o botao esta escondido (guidance desligada OU nada faltando), o `Builder` le o
+  anchor do passo atual (`tourAnchor` do `tutorialStore`) e FORCA o botao a aparecer so para ilustrar
+  aparencia/localizacao (sem badge, clique inerte), sumindo ao avancar. Ver CHANGELOG §82. **O
+  tutorial de uso esta COMPLETO (F1-F4).**
 
 **Consequences.**
 - Um tour novo é uma entrada em `tours.js`; um alvo novo é uma chave em `anchors.js` + o atributo no

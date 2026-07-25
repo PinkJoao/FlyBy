@@ -13,6 +13,7 @@ import { totalLevel } from '../../schema/character';
 import { raceLineages, lineageLabel, lineageSelectorLabel, speciesChoices } from '../../engine/speciesData';
 import PickerField from '../common/PickerField';
 import DetailView from '../common/DetailView';
+import { TUT } from '../../tutorial/anchors';
 import raceEntity from '../../selector/entities/race';
 import { makeLineageEntity } from '../../selector/entities/lineage';
 import ChoiceList from './ChoiceList';
@@ -44,7 +45,7 @@ export default function SpeciesTab({ character, db, onPick, onClear, onChangeCho
 
   return (
     <div className={styles.tab}>
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_SPECIES_PICKER}>
         <PickerField
           entity={raceEntity}
           db={db}

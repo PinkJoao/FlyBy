@@ -20,6 +20,7 @@ import ClassProgression from './ClassProgression';
 import classEntity from '../../selector/entities/class';
 import { makeSubclassEntity } from '../../selector/entities/subclass';
 import { confirm } from '../common/dialog';
+import { TUT } from '../../tutorial/anchors';
 import styles from './ClassTab.module.css';
 
 const MAX_TOTAL = 20;
@@ -123,7 +124,7 @@ export default function ClassTab({ character, db, onChange }) {
   return (
     <div className={styles.tab}>
       {/* Sub-abas: uma por classe (multiclasse) + adicionar. */}
-      <nav className={styles.subTabs}>
+      <nav className={styles.subTabs} data-tour={TUT.TAB_CLASS_TABS}>
         {classes.map((cl, i) => (
           <button
             key={cl.uid}
@@ -141,7 +142,7 @@ export default function ClassTab({ character, db, onChange }) {
         )}
       </nav>
 
-      <div className={styles.classCard}>
+      <div className={styles.classCard} data-tour={TUT.TAB_CLASS_CARD}>
         <div className={styles.classTop}>
           <span className={styles.multiBadge}>{c.isOriginalClass ? 'Original' : 'Multiclass'}</span>
           {c.classId && (

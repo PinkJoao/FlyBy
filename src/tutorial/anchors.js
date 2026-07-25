@@ -28,4 +28,26 @@ export const TUT = {
   SHEET_TABS: 'sheet-tabs', // barra de abas (Species / Background / ...)
   SHEET_GUIDE: 'sheet-guide', // botao ⚛ do guia (pendencias)
   SHEET_MENU: 'sheet-menu', // menu ☰ (export / glossario / tutorial)
+
+  // --- Micro-tours por aba (F3) ---
+  // Aba Species
+  TAB_SPECIES_PICKER: 'tab-species-picker',
+  // Aba Background
+  TAB_BG_BOOSTS: 'tab-bg-boosts',
+  TAB_BG_FEAT: 'tab-bg-feat',
+  TAB_BG_PROFS: 'tab-bg-profs',
+  TAB_BG_STORY: 'tab-bg-story',
+  // Aba Class
+  TAB_CLASS_TABS: 'tab-class-tabs', // sub-abas (uma por classe) + botao de multiclasse
+  TAB_CLASS_CARD: 'tab-class-card', // card com seletor de classe / nivel / subclasse / escolhas
+  // Aba Inventory
+  TAB_INV_TOP: 'tab-inv-top', // moedas + carga/attunement
+  TAB_INV_CONTROLS: 'tab-inv-controls', // busca + loja
+  // Aba Spellbook
+  TAB_SPELL_CARDS: 'tab-spell-cards', // slots / DC / contadores
+  TAB_SPELL_ORIGINS: 'tab-spell-origins', // sub-abas por origem
+  TAB_SPELL_CONTROLS: 'tab-spell-controls', // busca + preparar magia
+  // Aba Biography
+  TAB_BIO_TRAITS: 'tab-bio-traits',
+  TAB_BIO_DETAILS: 'tab-bio-details',
 };

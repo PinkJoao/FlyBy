@@ -22,6 +22,7 @@ import { makeFeatEntity } from '../../selector/entities/feat';
 import { ORIGIN_CHOICES } from './originChoices';
 import { namedRuleEntry } from './choiceRules';
 import { showRulePopup } from '../common/RulePopup';
+import { TUT } from '../../tutorial/anchors';
 import styles from './BackgroundTab.module.css';
 
 /** Deriva o modo de boost a partir do array salvo. */
@@ -82,7 +83,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
     <div className={styles.tab}>
       {/* Ability Score Boosts - título linka a regra "Ability Score and
           Modifier" (XPHB) no popup do glossário (DDL-0032). */}
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_BG_BOOSTS}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>
             {boostsRule ? (
@@ -129,7 +130,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
       </section>
 
       {/* Origin Feat */}
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_BG_FEAT}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>Origin Feat</h3>
         </div>
@@ -158,7 +159,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
       </section>
 
       {/* Proficiências & Idioma (padronizado via ChoiceList) */}
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_BG_PROFS}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>Proficiencies &amp; Language</h3>
         </div>
@@ -175,7 +176,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
       {/* A HISTÓRIA fica aqui, e não na Biography: é o texto que justifica as
           escolhas de origem acima. No Foundry vai para os DOIS lugares - a
           descrição do item de background e `details.biography`. */}
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_BG_STORY}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>Background</h3>
           <span className={styles.sectionHint}>Where they came from, and how it shaped the choices above.</span>

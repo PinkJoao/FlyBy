@@ -15,6 +15,7 @@
 
 import { randomSuggestion } from '../../engine/suggestedCharacteristics';
 import RoleplayField from '../common/RoleplayField';
+import { TUT } from '../../tutorial/anchors';
 import styles from './BiographyTab.module.css';
 
 /** Os quatro traços do 5e: lista de entradas + randomizador (RoleplayField). */
@@ -49,7 +50,7 @@ export default function BiographyTab({ character, db, onChange }) {
 
   return (
     <div className={styles.tab}>
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_BIO_TRAITS}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>Traits</h3>
           <span className={styles.sectionHint}>Free text. Add entries or roll 🎲 for a suggestion.</span>
@@ -76,7 +77,7 @@ export default function BiographyTab({ character, db, onChange }) {
         </label>
       </section>
 
-      <section className={styles.section}>
+      <section className={styles.section} data-tour={TUT.TAB_BIO_DETAILS}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>Details</h3>
         </div>

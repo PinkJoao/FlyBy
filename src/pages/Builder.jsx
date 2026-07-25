@@ -41,6 +41,18 @@ import styles from './Builder.module.css';
 
 const TABS = ['Species', 'Background', 'Class', 'Inventory', 'Spellbook', 'Biography'];
 
+// Micro-tour (F3) de cada aba, disparado quando a aba abre (ver o efeito em
+// BuilderInner). O tour do Spellbook so faz sentido para conjuradores - o gate
+// fica no efeito.
+const TAB_TOUR = {
+  Species: 'tab-species',
+  Background: 'tab-background',
+  Class: 'tab-class',
+  Inventory: 'tab-inventory',
+  Spellbook: 'tab-spellbook',
+  Biography: 'tab-biography',
+};
+
 export default function Builder() {
   const { id } = useParams();
   const { db } = useData();
@@ -114,6 +126,22 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   useEffect(() => {
     maybeStartTutorial('sheet');
   }, []);
+
+  // Micro-tour da ABA ATIVA (F3): dispara quando a aba abre. Um pequeno atraso
+  // deixa a aba montar (as ancoras existirem) e cede a vez ao tour da ficha no
+  // 1o mount (que ja esta ativo, sem atraso - a garantia "um por vez" bloqueia
+  // este ate ele terminar; a aba Species so ganha o tour ao ser reaberta). O tour
+  // do Spellbook nao dispara sem conjuracao (a aba fica vazia). O anchor do passo
+  // atual (`tourAnchor`) alimenta o botao-demo do guia (abaixo).
+  const hasSpellcasting = (derived.spellcasting?.origins?.length ?? 0) > 0;
+  const tourAnchor = useTutorialStore((s) => (s.tourId ? s.steps[s.index]?.anchor ?? null : null));
+  useEffect(() => {
+    const id = TAB_TOUR[activeTab];
+    if (!id) return undefined;
+    if (activeTab === 'Spellbook' && !hasSpellcasting) return undefined;
+    const t = setTimeout(() => maybeStartTutorial(id), 300);
+    return () => clearTimeout(t);
+  }, [activeTab, hasSpellcasting]);
 
   const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
 
@@ -330,18 +358,33 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               subclasse, talento de origem, proficiências, atributos, boosts e as
               decisões de classe. Some quando a ficha está completa ou a guidance
               foi desligada nesta ficha (meta.guided === false). */}
-          {active && pend.total > 0 && (
-            <button
-              type="button"
-              className={`${styles.guideBtn} ${styles.guideBtnAlert}`}
-              onClick={openGuide}
-              data-tour={TUT.SHEET_GUIDE}
-              title={`${pend.total} choice${pend.total > 1 ? 's' : ''} left - open the guide`}
-            >
-              <span aria-hidden="true">⚛</span>
-              <span className={styles.guideBadge}>{pend.total}</span>
-            </button>
-          )}
+          {/* Botao do guia. Normalmente so aparece com pendencias (`guideShown`);
+              mas durante o passo do tutorial que o descreve, ele aparece MESMO se
+              estiver escondido (guidance desligada ou ficha completa) so para
+              ilustrar aparencia e localizacao - `guideDemo`. Nesse caso o badge
+              some (nada a contar) e o clique fica inerte (o tour bloqueia cliques
+              de qualquer forma). */}
+          {(() => {
+            const guideShown = active && pend.total > 0;
+            const guideDemo = !guideShown && tourAnchor === TUT.SHEET_GUIDE;
+            if (!guideShown && !guideDemo) return null;
+            return (
+              <button
+                type="button"
+                className={`${styles.guideBtn} ${styles.guideBtnAlert}`}
+                onClick={guideShown ? openGuide : undefined}
+                data-tour={TUT.SHEET_GUIDE}
+                title={
+                  guideShown
+                    ? `${pend.total} choice${pend.total > 1 ? 's' : ''} left - open the guide`
+                    : 'The guide button (shown here for the tutorial)'
+                }
+              >
+                <span aria-hidden="true">⚛</span>
+                {pend.total > 0 && <span className={styles.guideBadge}>{pend.total}</span>}
+              </button>
+            );
+          })()}
           {/* Menu sanduíche: export (Foundry / PDF) + liga/desliga a Character
               Guidance DESTE personagem (meta.guided). "Just the sheet" nasce
               desligado; aqui o jogador reativa/desativa o botão ✦ por ficha. */}

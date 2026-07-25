@@ -164,9 +164,164 @@ const sheet = {
   ],
 };
 
+// --- Micro-tours por ABA (F3) ------------------------------------------------
+// Disparados pelo Builder na 1a vez que cada aba e aberta (contextual, um por
+// vez). Curtos: uma abertura + os elementos ESTAVEIS da aba (os que existem
+// mesmo com a aba "vazia"); o que aparece dinamicamente e mencionado no texto.
+
+const tabSpecies = {
+  id: 'tab-species',
+  steps: [
+    {
+      title: 'Species',
+      body: 'Your species sets your size, speed and innate traits. Here is how this tab works.',
+    },
+    {
+      anchor: TUT.TAB_SPECIES_PICKER,
+      title: 'Choose a species',
+      body: "Pick your species here. If it has lineages (like an Elf's Drow, High or Wood), a second picker appears - then any trait choices, and the full description below.",
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabBackground = {
+  id: 'tab-background',
+  steps: [
+    {
+      title: 'Background',
+      body: 'Your origin: where the character came from, and the mechanical benefits it grants.',
+    },
+    {
+      anchor: TUT.TAB_BG_BOOSTS,
+      title: 'Ability boosts',
+      body: 'In the 2024 rules your ability increases come from your background: +2 and +1, or +1 to three. Choose the abilities here.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BG_FEAT,
+      title: 'Origin feat',
+      body: 'Your starting feat goes here - and if it has its own choices (like Magic Initiate), they show up right below it.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BG_PROFS,
+      title: 'Proficiencies & language',
+      body: 'Pick your background skills, a tool and a language here.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BG_STORY,
+      title: 'Story',
+      body: 'Write where they came from. It also fills the background description when you export.',
+      placement: 'top',
+    },
+  ],
+};
+
+const tabClass = {
+  id: 'tab-class',
+  steps: [
+    {
+      title: 'Class',
+      body: 'Your class drives most of the sheet - hit points, proficiencies, features and spells.',
+    },
+    {
+      anchor: TUT.TAB_CLASS_TABS,
+      title: 'One tab per class',
+      body: 'Each tab is a class. The first is your original class; use + to multiclass into another.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_CLASS_CARD,
+      title: 'Configure the class',
+      body: 'Choose the class here, then set its level, its subclass (from level 3), and any class choices. The full feature progression is listed underneath.',
+      placement: 'auto',
+    },
+  ],
+};
+
+const tabInventory = {
+  id: 'tab-inventory',
+  steps: [
+    {
+      title: 'Inventory',
+      body: 'Everything the character carries - gear, weapons, armor, coins.',
+    },
+    {
+      anchor: TUT.TAB_INV_TOP,
+      title: 'Coins & load',
+      body: 'Your currency on the left; carried weight and attunement (max 3 items) on the right.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_INV_CONTROLS,
+      title: 'Search & shop',
+      body: 'Search what you carry, or open the Shop to buy gear - it stays open across purchases. Items then group into sub-tabs you can sort and filter.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabSpellbook = {
+  id: 'tab-spellbook',
+  steps: [
+    {
+      title: 'Spellbook',
+      body: 'Your spells, grouped by where they come from. Only shown for spellcasters.',
+    },
+    {
+      anchor: TUT.TAB_SPELL_CARDS,
+      title: 'Slots & numbers',
+      body: 'Your spell slots (or pact slots), save DC and attack bonus, and how many cantrips and spells you can prepare.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_SPELL_ORIGINS,
+      title: 'By source',
+      body: 'One tab per source: each caster class, plus racial and feat spells.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_SPELL_CONTROLS,
+      title: 'Prepare spells',
+      body: 'Search your list, or use "Prepare spell" to add one. Spells granted for free show "Always Prepared" and do not count against your limit.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabBiography = {
+  id: 'tab-biography',
+  steps: [
+    {
+      title: 'Biography',
+      body: 'Who the character is, outside the rules - none of this affects your numbers.',
+    },
+    {
+      anchor: TUT.TAB_BIO_TRAITS,
+      title: 'Traits',
+      body: 'Personality, ideals, bonds and flaws - free text, or roll 🎲 for a suggestion. Appearance goes here too.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BIO_DETAILS,
+      title: 'Details',
+      body: 'Physical descriptors: age, height, eyes, faith and more.',
+      placement: 'top',
+    },
+  ],
+};
+
 export const TOURS = {
   selector,
   sheet,
+  'tab-species': tabSpecies,
+  'tab-background': tabBackground,
+  'tab-class': tabClass,
+  'tab-inventory': tabInventory,
+  'tab-spellbook': tabSpellbook,
+  'tab-biography': tabBiography,
 };
 
 export const ALL_TOUR_IDS = Object.keys(TOURS);

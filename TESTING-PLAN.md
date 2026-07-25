@@ -226,8 +226,8 @@ baseline visual/de derivação contra a qual os outros blocos se comparam.
   e **Goliath (Fire) → sem card de resistência**. As notas do COVERAGE foram reescritas para dizer
   o que foi de fato verificado. **REGRA que fica:** não anotar "engine-verificado" sem ter
   rodado algo; ou roda um probe, ou a nota diz "inferido do padrão".
-  **O S-A1 NÃO foi revisado** — o usuário falou de um bloco só e o desta conversa era o S-A2;
-  se quiser o S-A1 também, é uma sessão curta (9 linhas, mesmo método).
+  **O S-A1 NÃO será revisado — decisão do usuário (2026-07-25):** ele confirmou que não precisa.
+  Não é pendência; não reabrir.
 - **Atenção:** escolha de tamanho S/M (DDL-0017) em várias; a linhagem élfica
   adia `skillProficiencies`? não — Keen Senses permanece (DDL-0061/`lineageDeferredKinds`).
   Tiefling sem linhagem NÃO deve mostrar os chips de resist/spell list (DDL-0061 §69).
@@ -324,6 +324,40 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (7)** - **T1b sessão 5: Bloco S-C (MPMM) - DERIVAÇÃO das 30 linhas certificada;
+  UI feita só no Kobold (3 linhas `ui: ok`). Zero bugs, nenhum código tocado.**
+  Aplicando a lição da revisão do S-A2, comecei pelo **probe exaustivo**: as 30 linhas MPMM
+  construídas pelo `autoBuild`, comparando a derivação contra o que o DADO declara (pega "o dado
+  diz X e a derivação perde X"), mais convergência do autoBuild e deep-scan de NaN. **Zero
+  problemas.** Prova, entre outros: **Tortle AC 17** (armadura natural FLAT, DDL-0034 - única fora
+  do padrão 11-12); todas as resistências (Duergar/Yuan-Ti poison, Githyanki/Githzerai psychic,
+  Sea Elf/Triton cold, Shadar-Kai necrotic, Genasi Air/Fire/Water lightning/fire/acid e **Earth
+  sem nenhuma**, correto p/ MPMM); e os deslocamentos especiais (voo do Aarakocra, natação de
+  Genasi Water/Lizardfolk/Sea Elf/Triton, escalada do Tabaxi, 35 do Genasi Air/Satyr, 40 do
+  Centauro).
+  **UI ao vivo: só o Kobold ×3** - que era a pendência EXPLÍCITA do bloco. Rótulo "Kobold Legacy"
+  vindo do dado (DDL-0062), as 3 opções, e o **TC-0046/0047 FECHADO**: sem "Species Choices" antes
+  de escolher a legacy, e "Choose a skill 0/1" aparece só ao escolher Craftiness.
+  **As outras 26 linhas seguem `ui: todo` DE PROPÓSITO.** A aba do browser degradou no meio da
+  sessão (o lightbox passou a interceptar cliques, os refs derivaram e por fim o painel parou de
+  receber teclado); insistir teria gerado verificação de má qualidade. As notas do COVERAGE dizem
+  exatamente o que foi provado e o que falta - não marcar linha como pronta sem ter olhado é a
+  mesma regra que a revisão do S-A2 estabeleceu.
+  **Notas de harness (duas, custaram tempo):**
+  1. Quando o SelectorPanel para de responder a clique/teclado, **recarregar a página não basta se
+     o lightbox estiver aberto** - ele fica por cima interceptando tudo, e o Esc só funciona se a
+     pane tiver foco. Feche pelo X. Se o teclado parar de chegar na página, a aba está degradada:
+     encerre a passada e registre, em vez de forçar.
+  2. Ao editar `COVERAGE.md` por script, o placeholder do pipe escapado **não pode ser um espaço**
+     (`replaceAll` de volta converte TODO espaço em `\|` e destrói o arquivo - aconteceu, revertido
+     com `git checkout`). Use algo como `@@PIPE@@` e confira que deram 8 células.
+  **Next action: terminar o Bloco S-C** - a passada de UI das 26 linhas restantes (a derivação já
+  está certificada, então é olhar seletor/preview/escolhas/ficha). Sugestão: reiniciar a pane do
+  browser antes de começar e fazer em 2 levas de ~13. Itens que ainda merecem olho ao vivo:
+  **Tortle** (AC 17 na ficha), **Genasi ×4** (resistência no card), **Aarakocra** (voo + o
+  1/Long Rest curado do DDL-0011) e **Fairy|MPMM base** (a única linha MPMM que o probe não cobriu,
+  porque só tem sentido sem linhagem; as duas linhagens dela já saíram no S-B2).
 
 - **2026-07-25 (6)** - **REVISÃO do Bloco S-A2 (pedida pelo usuário; a 1ª passada rodou em
   Sonnet). Zero bugs novos - as conclusões se sustentam.** O frágil era a EVIDÊNCIA: 8 das 10

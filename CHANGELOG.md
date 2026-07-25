@@ -5007,3 +5007,30 @@ As 19 notas do `testing/COVERAGE.md` foram **reescritas** para dizer o que foi d
 **Regra que fica (TESTING-PLAN §4.5):** não anotar "engine-verificado" sem ter rodado algo - ou
 roda um probe, ou a nota diz "inferido do padrão". Nenhum código foi tocado: suíte (1141), lint e
 sweep (285/285 `--strict`) inalterados.
+
+## 88. Phase T - T1b sessão 5: Bloco S-C (MPMM) - derivação certificada; UI parcial
+
+Sessão de resultado MISTO, registrado como tal. **Nada de código foi tocado; nenhum bug encontrado.**
+
+**Feito (sólido):** um probe exaustivo construiu **as 30 linhas MPMM** pelo `autoBuild` e comparou a
+derivação contra o que o DADO declara - pegando a classe de bug "o dado diz X e a derivação perde
+X" - além de checar convergência do autoBuild e ausência de NaN no objeto derivado. **Zero
+problemas.** Destaques que o probe prova: **Tortle AC 17** (armadura natural FLAT, DDL-0034 - a
+única linha fora do padrão 11-12), todas as resistências passando do dado à derivação (Duergar/
+Yuan-Ti poison, Githyanki/Githzerai psychic, Sea Elf/Triton cold, Shadar-Kai necrotic, Genasi
+Air/Fire/Water lightning/fire/acid e **Earth sem nenhuma**, correto para MPMM), e os deslocamentos
+especiais (voo do Aarakocra, natação de Genasi Water/Lizardfolk/Sea Elf/Triton, escalada do Tabaxi,
+35 do Genasi Air/Satyr, 40 do Centauro).
+
+**Feito (UI ao vivo): as 3 linhas do Kobold**, que eram a pendência explícita do bloco. O rótulo
+**"Kobold Legacy"** vem do dado (DDL-0062), as 3 opções aparecem, e o **TC-0046/0047 fica FECHADO**:
+antes de escolher a legacy a aba não mostra "Species Choices" nenhuma, e o "Choose a skill 0/1"
+surge **só** ao escolher Craftiness (a magia, só na Draconic Sorcery - provado pelo probe).
+
+**NÃO feito, e por isso as outras 26 linhas seguem `ui: todo`:** a passada de UI por espécie. A aba
+do browser degradou no meio da sessão (o lightbox passou a interceptar cliques, os refs derivaram e
+por fim o painel parou de receber teclado), e insistir teria produzido verificação de má qualidade.
+As notas do COVERAGE dizem exatamente isso - derivação certificada, UI pendente - em vez de marcar
+as linhas como prontas.
+
+Suíte (1141), lint e sweep (285/285 `--strict`) inalterados. Ver TESTING-PLAN.md §7.

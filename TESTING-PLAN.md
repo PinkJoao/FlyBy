@@ -261,8 +261,14 @@ Tortle, Triton, Yuan-Ti.
 - **Atenção:** **Tortle** = armadura natural flat (DDL-0034); **Kobold** = seletor
   "Kobold Legacy" com perícia/magia adiadas (TC-0046/0047, tem nota de UI PENDENTE
   no COVERAGE — fechar aqui); Genasi = resistência por elemento na ficha.
+- ✅ **DECIDIDO pelo usuário (2026-07-25) — NÃO reabrir:** 22 espécies MPMM trazem
+  `Creature Type` / `Size` / `Speed` como traços de PROSA, duplicando os chips de meta
+  da ficha. **Fica como está.** Razão dele: "por mais que seja redundante com as chips,
+  é mínimo, então vamos minimizar a interferência onde não precisamos". Ou seja, o
+  `LEGACY_PROSE_SECTIONS` (DDL-0059) **não** se estende ao conteúdo próprio do
+  compêndio — ele existe só para sobras dos merges que NÓS fazemos.
 
-#### Bloco S-D — Outros livros modernos · ~28 linhas · 2-3 sessões
+#### Bloco S-D — Outros livros modernos · 32 linhas · CONCLUÍDO 2026-07-26
 AAG (Astral Elf, Autognome, Giff, Hadozee, Plasmoid, Thri-kreen), EFA (Changeling,
 Kalashtar, Khoravar, Warforged), RHW (Dhampir, Hexblood, Reborn, Lupin), SCC
 (Owlin), GGR (Loxodon, Vedalken, Simic Hybrid), MOT (Leonin), FTD (Dragonborn Gem
@@ -325,6 +331,29 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-26** - **T1b sessão 7: Bloco S-D CONCLUÍDO - 32 linhas `ui: ok`, zero bugs, nenhum
+  código tocado.** Mesmo método de duas camadas do S-C (probe de cobertura total + passada ao
+  vivo com o helper `__pick`). Todos os itens de atenção do §4.5 passaram: **as cinco fórmulas de
+  armadura natural na ficha** (Autognome 13, Warforged 11 = 10+Dex+1, Thri-kreen 13, Locathah 12,
+  Loxodon 12 por **Constituição** - as três últimas só derivam desde o TC-0053); **Verdan** com o
+  chip **"Varies"** e SEM escolha de tamanho (vem do NÍVEL, S→M no 5º - DDL-0017, asserido no
+  probe); **Dragonborn Gem ×5** com as resistências distintas + voo; **Simic Hybrid** só com
+  escolha de idioma (a CA dele vem de uma opção escolhível, por isso fora do registro).
+  **Dois falsos positivos do probe, verificados ANTES de virarem bug** - vale como lembrete
+  permanente: (a) escolha de **magia** tem pool por EXPRESSÃO DE FILTRO, não lista estática
+  (`spellChoosePredicate`), então contar `pool.options` acusa "sem opções" injustamente - o
+  Khoravar resolve para 35 cantrips; (b) ao extrair trechos do `innerText` ao vivo, **não use o
+  crédito da arte como delimitador** - espécies sem arte (Simic Hybrid, Vedalken) quebram o corte
+  e parecem não ter escolhas.
+  1147 testes, lint, sweep 285/285 `--strict`, mobile sem overflow, zero erros de console.
+  **Next action: Bloco S-E** (~37 linhas, o último de T1b): LFL (Boggart, Flamekin, Kithkin ×2,
+  Lorwyn Changeling, Rimekin) + Plane Shift (Aetherborn, Aven ×2, Elf/Goblin/Merfolk/Vampire/
+  Human (Innistrad)/Dwarf/Minotaur/Naga/Khenra/Kor/Orc/Siren/Vedalken...). Passada mais leve por
+  decisão do §4.5: confirmar que constroem, derivam e não vazam tag; polish vai para
+  `needs-user-eyes`. **Atenção:** conferir que o filtro "Setting Variant" pré-marcado ESCONDE as
+  que colidem de nome e que um clique no chip as revela (DDL-0064), e que as espécies VAZIAS
+  seguem removidas (não aparecem nem com o filtro desligado).
+
 - **2026-07-25 (9)** - **T1b sessão 6: Bloco S-C (MPMM) CONCLUÍDO - 27 linhas `ui: ok`, zero bugs
   novos.** Método em duas camadas: (1) **probe de qualidade de preview** cobrindo as 28 unidades -
   todo traço com texto, **zero link morto** (todo `{@tag}` de glossário/entidade resolve; o
@@ -340,12 +369,11 @@ on the user's machines).
   em `javascript_tool` (abre o seletor, digita, clica o card, confere que o heading do preview
   mudou, commita) fez ~25 espécies em poucas chamadas; sem o clique no card, todas as leituras
   saem iguais à espécie anterior e parecem "não mudou nada".
-  **PENDENTE DE DECISÃO DO USUÁRIO (needs-user-eyes, não é bug):** 22 espécies MPMM trazem
+  **RESOLVIDO pelo usuário (2026-07-25): fica como está** - ver a nota ✅ no §4.5. Contexto: 22 espécies MPMM trazem
   `Creature Type` / `Size` / `Speed` como traços de PROSA, duplicando os chips de meta que a ficha
   já mostra (é o formato 2022; a edição 2024 moveu isso para campos estruturados). Existe
-  precedente de limpeza - o `LEGACY_PROSE_SECTIONS` do DDL-0059 tira exatamente essas seções das
-  sub-raças legadas curadas - mas ali eram sobras de merge, e aqui é conteúdo próprio do
-  compêndio, então **não mexi**. Se o usuário quiser, é estender aquele mesmo mecanismo.
+  precedente de limpeza (o `LEGACY_PROSE_SECTIONS` do DDL-0059), mas ali eram sobras de merge e
+  aqui é conteúdo próprio do compêndio - o usuário optou por minimizar interferência.
   **Next action: Bloco S-D** (outros livros modernos, ~28 linhas) - AAG, EFA, RHW, SCC, GGR, MOT,
   FTD, OGA, DSotDQ, LR, AI. Atenção: **Autognome/Warforged** = armadura natural unarmored/bonus
   (DDL-0034; Thri-kreen/Locathah/Loxodon já entraram no registro pelo TC-0053, mas a UI deles

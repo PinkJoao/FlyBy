@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
+Last sweep: 2026-07-26T04:05:37.859Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 
@@ -154,18 +154,18 @@ Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
 | `species:Aarakocra\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): voo; 1 magia concedida (gust of wind, overlay DDL-0011). UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). Voo; sem magia no nível 1 (Wind Caller só concede a partir do 3 - correto). |
 | `species:Aasimar\|XPHB` | ok | - | ok | todo | S-A1: size S/M choice + Light cantrip (Cha) na origem de raça; Celestial Revelation em opções estruturadas |
 | `species:Aetherborn\|PSK/Variant; Gifted Aetherborn` | ok | - | todo | todo | TC-0048 fixed 2026-07-23: sem atributo legado |
-| `species:Astral Elf\|AAG` | ok | - | todo | todo |  |
-| `species:Autognome\|AAG` | ok | - | todo | todo |  |
+| `species:Astral Elf\|AAG` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
+| `species:Autognome\|AAG` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). CA 13 na ficha com Dex 10 = armadura natural unarmored 13+Dex (DDL-0034); resist Poison; 2 ferramentas. |
 | `species:Aven\|PSA/Aven (Hawk-Headed)` | ok | - | todo | todo |  |
 | `species:Aven\|PSA/Aven (Ibis-Headed)` | ok | - | todo | todo |  |
 | `species:Boggart\|LFL` | ok | - | todo | todo |  |
 | `species:Bugbear\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): dv 60; 7 tracos. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Centaur\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): speed 40. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). 40 ft, tipo Fey. |
-| `species:Changeling\|EFA` | ok | - | todo | todo |  |
+| `species:Changeling\|EFA` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Custom Lineage\|TCE/Custom Lineage; Darkvision` | ok | - | ok | todo | TC-0046/0047/0048/0049 fixed 2026-07-23: seletor "Variable Trait", sem atributo legado, talento restrito a ORIGIN; S-B2 revalidado: rotulo "Variable Trait", 25 talentos de ORIGEM |
 | `species:Custom Lineage\|TCE/Custom Lineage; Skill Proficiency` | ok | - | ok | todo | idem; a perícia só aparece nesta opção (TC-0047); S-B2 revalidado |
 | `species:Deep Gnome\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): dv 120 (superior); 2 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
-| `species:Dhampir\|RHW` | ok | - | todo | todo |  |
+| `species:Dhampir\|RHW` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). 35 ft + escalada; resist Necrotic. |
 | `species:Dragonborn\|XPHB/Dragonborn (Black)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Acid, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. Preview conferido na 1a passada. |
 | `species:Dragonborn\|XPHB/Dragonborn (Blue)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Lightning, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
 | `species:Dragonborn\|XPHB/Dragonborn (Brass)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Fire, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
@@ -176,11 +176,11 @@ Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
 | `species:Dragonborn\|XPHB/Dragonborn (Red)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Fire, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. Selecionado ao vivo na 1a passada (1d10 Fire + Resistance to Fire). |
 | `species:Dragonborn\|XPHB/Dragonborn (Silver)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Cold, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
 | `species:Dragonborn\|XPHB/Dragonborn (White)` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo vs oraculo do livro): resist Cold, darkvision 60, speed 30, os 4 tracos (Breath Weapon/Damage Resistance/Darkvision/Draconic Flight); autoBuild converge. |
-| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Amethyst)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Crystal)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Emerald)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Sapphire)` | ok | - | todo | todo |  |
-| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Topaz)` | ok | - | todo | todo |  |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Amethyst)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Force (as 5 distintas) + o voo no texto. |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Crystal)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Radiant (as 5 distintas) + o voo no texto. |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Emerald)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Psychic (as 5 distintas) + o voo no texto. |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Sapphire)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Thunder (as 5 distintas) + o voo no texto. |
+| `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Topaz)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Necrotic (as 5 distintas) + o voo no texto. |
 | `species:Duergar\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): dv 120; resist poison; 2 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Dwarf\|XPHB` | ok | - | ok | todo | S-A1: sem sub-escolhas; Dwarven Toughness deriva (HP 14->15 @1); só 1 resultado (filtro esconde Kaladesh) |
 | `species:Dwarf (Kaladesh)\|PSK` | ok | - | todo | todo |  |
@@ -205,7 +205,7 @@ Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
 | `species:Genasi\|MPMM/Genasi (Earth)` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): SEM resistencia (correto p/ MPMM); 2 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Genasi\|MPMM/Genasi (Fire)` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist fire; 3 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Genasi\|MPMM/Genasi (Water)` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist acid; natacao; 3 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). Card DAMAGE RESISTANCES: Acid; natação. |
-| `species:Giff\|AAG` | ok | - | todo | todo |  |
+| `species:Giff\|AAG` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Githyanki\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist psychic; 3 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). 3 escolhas (perícia/ferramenta/atributo) renderizam. |
 | `species:Githzerai\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist psychic; 3 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Gnome\|XPHB/Gnome; Forest Gnome Lineage` | ok | - | ok | todo | S-A1: TC-0044 CONFIRMADO ao vivo - Minor Illusion + Speak with Animals (2/Day) ambos concedidos @1 |
@@ -221,37 +221,37 @@ Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
 | `species:Goliath\|XPHB/Goliath; Hill Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Hill)/Large Form/Powerful Build; autoBuild converge. |
 | `species:Goliath\|XPHB/Goliath; Stone Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Stone)/Large Form/Powerful Build; autoBuild converge. Selecionado ao vivo na 1a passada. |
 | `species:Goliath\|XPHB/Goliath; Storm Giant Ancestry` | ok | - | ok | todo | S-A2 + REVISAO 2026-07-25 (probe exaustivo): NENHUMA resistencia (correto), speed 35, tracos Giant Ancestry (Storm)/Large Form/Powerful Build; autoBuild converge. |
-| `species:Grung\|OGA` | ok | - | todo | todo |  |
-| `species:Hadozee\|AAG` | ok | - | todo | todo |  |
+| `species:Grung\|OGA` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). 25 ft + escalada 25. |
+| `species:Hadozee\|AAG` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Half-Orc\|PHB` | ok | - | todo | todo |  |
 | `species:Halfling\|XPHB/Halfling; Lightfoot Lineage` | ok | - | ok | todo | reproduz a base 2024 exatamente (Naturally Stealthy, redacao XPHB); S-B2 revalidado: redacao XPHB ("take the Hide action") |
 | `species:Halfling\|XPHB/Halfling; Stout Lineage` | ok | - | ok | todo | Stout Resilience + DAMAGE RESISTANCES: Poison na ficha; S-B2 revalidado: Resistance Poison no preview |
 | `species:Halfling\|XPHB/Halfling; Ghostwise Lineage` | ok | - | ok | todo | Silent Speech; a prosa 2014 ("Size") cai; TC-0052 lore corrigida (era a de 2014); S-B2 revalidado: Silent Speech |
 | `species:Halfling\|XPHB/Halfling; Lotusden Lineage` | ok | - | ok | todo | 2 tracos + origem de magia propria (Wis, DC 10) com Druidcraft Always Prepared; TC-0052 lore corrigida; S-B2 revalidado ao vivo: Spellbook WISDOM DC 10 sem seletor de atributo; lore 2024 (TC-0052) confirmada |
 | `species:Harengon\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): 5 tracos. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
-| `species:Hexblood\|RHW` | ok | - | todo | todo |  |
+| `species:Hexblood\|RHW` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Hobgoblin\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): dv 60. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Human\|XPHB` | ok | - | ok | todo | S-A1: size + any-skill (14) + Origin feat (24, categoria correta) - todos os pickers filtram/persistem |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Kessig)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Nephalia)` | ok | - | todo | todo |  |
 | `species:Human (Innistrad)\|PSI/Human (Innistrad; Stensia)` | ok | - | todo | todo |  |
-| `species:Kalashtar\|EFA` | ok | - | todo | todo |  |
-| `species:Kender\|DSotDQ` | ok | - | todo | todo |  |
+| `species:Kalashtar\|EFA` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). tipo Aberration; resist Psychic. |
+| `species:Kender\|DSotDQ` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Kenku\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): 4 tracos. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). Size + 2 perícias. |
 | `species:Khenra\|PSA` | ok | - | todo | todo |  |
-| `species:Khoravar\|EFA` | ok | - | todo | todo |  |
+| `species:Khoravar\|EFA` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). escolha de cantrip com pool por FILTRO (Cleric/Druid/Wizard nivel 0) que resolve para 35 magias - checado a parte, meu contador de opcoes nao lia pool de filtro. |
 | `species:Kithkin\|LFL/Kithkin; Lorwyn` | ok | - | todo | todo |  |
 | `species:Kithkin\|LFL/Kithkin; Shadowmoor` | ok | - | todo | todo |  |
 | `species:Kobold\|MPMM/Kobold; Craftiness` | ok | - | ok | todo | S-C: UI CONFERIDA AO VIVO - rotulo "Kobold Legacy" (DDL-0062) + as 3 opcoes; TC-0046/0047 FECHADO: sem "Species Choices" antes de escolher, e "Choose a skill 0/1" aparece so ao escolher Craftiness. DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN). |
 | `species:Kobold\|MPMM/Kobold; Defiance` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN); sem pericia nem magia (adiadas as irmas). Seletor conferido ao vivo junto com Craftiness. |
 | `species:Kobold\|MPMM/Kobold; Draconic Sorcery` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN); 1 magia concedida (so esta das 3 concede - o adiamento do TC-0047). Seletor conferido ao vivo junto com Craftiness. |
 | `species:Kor\|PSZ` | ok | - | todo | todo |  |
-| `species:Leonin\|MOT` | ok | - | todo | todo |  |
+| `species:Leonin\|MOT` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Lizardfolk\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): natacao; 6 tracos. **TC-0053 FIXED aqui**: declarava Natural Armor (13+Dex) e derivava 10+Dex; ao vivo a ficha mostra AC 13 com Dex 10. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). Ficha mostra **AC 13** (TC-0053). |
-| `species:Locathah\|LR` | ok | - | todo | todo | TC-0053: Natural Armor (12+Dex) passou a derivar. |
+| `species:Locathah\|LR` | ok | - | ok | todo | TC-0053: Natural Armor (12+Dex) passou a derivar. S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). CA 12 = 12+Dex (TC-0053); natacao 30. |
 | `species:Lorwyn Changeling\|LFL` | ok | - | todo | todo |  |
-| `species:Loxodon\|GGR` | ok | - | todo | todo | TC-0053: Natural Armor (12+CON - o unico que soma Constituicao) passou a derivar. |
-| `species:Lupin\|RHW` | ok | - | todo | todo |  |
+| `species:Loxodon\|GGR` | ok | - | ok | todo | TC-0053: Natural Armor (12+CON - o unico que soma Constituicao) passou a derivar. S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). CA 12 = 12+**Con** (TC-0053, o unico com Constituicao). |
+| `species:Lupin\|RHW` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Merfolk\|PSZ/Merfolk (Ixalan; Blue)` | ok | - | todo | todo |  |
 | `species:Merfolk\|PSZ/Merfolk (Ixalan; Green)` | ok | - | todo | todo |  |
 | `species:Merfolk\|PSZ/Merfolk (Zendikar; Cosi Creed)` | ok | - | todo | todo |  |
@@ -262,21 +262,21 @@ Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
 | `species:Naga\|PSA` | ok | - | todo | todo |  |
 | `species:Orc\|XPHB` | ok | - | ok | todo | S-A1: Adrenaline Rush/Darkvision 120/Relentless Endurance; sem sub-escolhas (correto, sem Powerful Build em 2024) |
 | `species:Orc (Ixalan)\|PSX` | ok | - | todo | todo |  |
-| `species:Owlin\|SCC` | ok | - | todo | todo |  |
-| `species:Plasmoid\|AAG` | ok | - | todo | todo |  |
-| `species:Reborn\|RHW` | ok | - | todo | todo |  |
+| `species:Owlin\|SCC` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). dv 120 + voo. |
+| `species:Plasmoid\|AAG` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). tipo Ooze; resist Acid+Poison. |
+| `species:Reborn\|RHW` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
 | `species:Rimekin\|LFL` | ok | - | todo | todo |  |
 | `species:Satyr\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): speed 35. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). 35 ft, Fey; escolha de Instrumento Musical. |
 | `species:Sea Elf\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist cold; natacao; 8 tracos. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Shadar-Kai\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist necrotic; dv 60. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
-| `species:Shifter\|EFA/Shifter; Beasthide` | ok | - | todo | todo |  |
-| `species:Shifter\|EFA/Shifter; Longtooth` | ok | - | todo | todo |  |
-| `species:Shifter\|EFA/Shifter; Swiftstride` | ok | - | todo | todo |  |
-| `species:Shifter\|EFA/Shifter; Wildhunt` | ok | - | todo | todo |  |
-| `species:Simic Hybrid\|GGR` | ok | - | todo | todo | TC-0048/0050 fixed 2026-07-23: sem atributo legado; o idioma "other" sobrevive ao round-trip |
+| `species:Shifter\|EFA/Shifter; Beasthide` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
+| `species:Shifter\|EFA/Shifter; Longtooth` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
+| `species:Shifter\|EFA/Shifter; Swiftstride` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
+| `species:Shifter\|EFA/Shifter; Wildhunt` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). |
+| `species:Simic Hybrid\|GGR` | ok | - | ok | todo | TC-0048/0050 fixed 2026-07-23: sem atributo legado; o idioma "other" sobrevive ao round-trip S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). so a escolha de idioma (a CA dele vem de uma OPCAO escolhivel, por isso fora do registro de armadura natural - TC-0053). |
 | `species:Siren\|PSX` | ok | - | todo | todo |  |
 | `species:Tabaxi\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): escalada; dv 60. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). Escalada; Size S/M. |
-| `species:Thri-kreen\|AAG` | ok | - | todo | todo | TC-0053: Chameleon Carapace (13+Dex) passou a derivar. |
+| `species:Thri-kreen\|AAG` | ok | - | ok | todo | TC-0053: Chameleon Carapace (13+Dex) passou a derivar. S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). CA 13 = Chameleon Carapace 13+Dex (entrou no registro pelo TC-0053); Monstrosity. |
 | `species:Tiefling\|XPHB/Tiefling; Abyssal Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Poison, darkvision 60, Otherworldly Presence presente. TC-0051 confirmado tambem no engine (darkvision 60). |
 | `species:Tiefling\|XPHB/Tiefling; Chthonic Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Necrotic, darkvision 60, Otherworldly Presence presente. |
 | `species:Tiefling\|XPHB/Tiefling; Infernal Legacy` | ok | - | ok | todo | S-A2 (as 3 selecionadas ao vivo) + REVISAO 2026-07-25 (probe exaustivo): resist Fire, darkvision 60, Otherworldly Presence presente. |
@@ -295,9 +295,9 @@ Last sweep: 2026-07-26T02:21:48.688Z · base seed 1 · 285 rows
 | `species:Triton\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist cold; natacao; 3 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Vampire\|PSZ/Vampire (Ixalan)` | ok | - | todo | todo |  |
 | `species:Vampire\|PSZ/Vampire (Zendikar)` | ok | - | todo | todo |  |
-| `species:Vedalken\|GGR` | ok | - | todo | todo |  |
+| `species:Vedalken\|GGR` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). tres escolhas (pericia/ferramenta/idioma) renderizam. |
 | `species:Vedalken\|PSK` | ok | - | todo | todo |  |
-| `species:Verdan\|AI` | ok | - | todo | todo |  |
-| `species:Warforged\|EFA` | ok | - | todo | todo |  |
+| `species:Verdan\|AI` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). chip de tamanho mostra **"Varies"** e NAO ha escolha de tamanho - o tamanho vem do NIVEL (S ate o 4, M do 5 em diante), asserido no probe (DDL-0017). |
+| `species:Warforged\|EFA` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). CA 11 = 10+Dex+**1 de bonus** (padrao `bonus`, DDL-0034); resist Poison; size+pericia+ferramenta. |
 | `species:Yuan-Ti\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): resist poison; 3 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Human (Keldon)\|PSD` | ok | - | ok | todo | sub-raca legada curada, ESPECIE a parte (DDL-0060). S-B2: atras do filtro Setting Variant (0 resultados; volta a UM clique no chip, DDL-0064); prosa 2014 removida e sem Ability Score Increase; 3 tracos proprios + arte propria |

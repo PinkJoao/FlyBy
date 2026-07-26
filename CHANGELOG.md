@@ -5094,3 +5094,31 @@ inalterados. **Observação de apresentação levada ao usuário** (não é bug,
 espécies MPMM trazem `Creature Type` / `Size` / `Speed` como traços de PROSA, duplicando os chips
 de meta que a ficha já mostra - é o formato de 2022, que a edição 2024 moveu para campos
 estruturados.
+
+## 91. Phase T - T1b sessão 7: Bloco S-D (outros livros modernos) CONCLUÍDO - 32 linhas `ui: ok`
+
+Fecha o Bloco S-D. **Nenhum bug; nenhum código tocado.** Mesmo método de duas camadas do S-C
+(probe de cobertura total + passada ao vivo), agora com asserções para os itens de atenção que o
+plano listava - e todos passaram:
+- **Armadura natural (DDL-0034 + TC-0053), as cinco fórmulas na ficha com Dex 10:** Autognome
+  **13** (unarmored 13+Dex), Warforged **11** (10+Dex **+1 de bônus**), Thri-kreen **13**,
+  Locathah **12**, Loxodon **12** (o único que soma **Constituição**). As três últimas só passaram
+  a derivar no TC-0053 desta leva.
+- **Verdan:** o chip mostra **"Varies"** e **não existe escolha de tamanho** - o tamanho vem do
+  NÍVEL (S até o 4, M do 5 em diante), asserido no probe. É exatamente o DDL-0017.
+- **Dragonborn (Gem) ×5:** as cinco resistências distintas (Force/Radiant/Psychic/Thunder/
+  Necrotic) e o voo no texto.
+- **Simic Hybrid:** só a escolha de idioma - a CA dele vem de uma OPÇÃO escolhível, e é por isso
+  que ele fica deliberadamente fora do registro de armadura natural.
+- Owlin dv 120 + voo, Plasmoid tipo Ooze com Acid/Poison, Kalashtar Aberration com Psychic, Grung
+  25 ft + escalada 25, Dhampir 35 ft + escalada, Shifter ×4 com size+perícia.
+
+**Dois falsos positivos do meu probe, verificados antes de virarem bug reportado** (o mesmo
+cuidado que a revisão do S-A2 fixou como regra): (a) "Khoravar: escolha sem opções" - o pool dela
+é uma **expressão de filtro** (Cleric/Druid/Wizard nível 0) que resolve para **35 cantrips**, e meu
+contador só sabia ler lista estática; (b) "Simic Hybrid/Vedalken sem escolhas" na leitura ao vivo -
+essas espécies **não têm arte**, e meu extrator de trecho usava o crédito da arte como delimitador.
+Ambos eram defeito do instrumento, não do app.
+
+Mobile 375px sem overflow, zero erros de console. Suíte (1147), lint e sweep (285/285 `--strict`)
+inalterados. **Restam 37 linhas `todo`, todas do Bloco S-E** (cenário/legado, atrás do filtro).

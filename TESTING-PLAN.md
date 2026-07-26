@@ -252,7 +252,7 @@ parte se autovalida. Conferir contra o DDL citado, não só "renderiza".
   [DDL-0060 species], Custom Lineage ×2 [DDL-0062, já `ok` — seletor "Variable
   Trait", talento ORIGIN, sem atributo legado].
 
-#### Bloco S-C — MPMM (Monsters of the Multiverse, reformatados) · ~31 linhas · 3 sessões
+#### Bloco S-C — MPMM (Monsters of the Multiverse, reformatados) · ~31 linhas · CONCLUÍDO 2026-07-25
 Espécies 2014 reformatadas para o padrão moderno; entram como linhagens/bases via
 `raceLineages`. Aarakocra, Bugbear, Centaur, Deep Gnome, Duergar, Eladrin, Fairy
 (base), Firbolg, Genasi ×4, Githyanki, Githzerai, Goblin, Harengon, Hobgoblin,
@@ -324,6 +324,35 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-25 (9)** - **T1b sessão 6: Bloco S-C (MPMM) CONCLUÍDO - 27 linhas `ui: ok`, zero bugs
+  novos.** Método em duas camadas: (1) **probe de qualidade de preview** cobrindo as 28 unidades -
+  todo traço com texto, **zero link morto** (todo `{@tag}` de glossário/entidade resolve; o
+  renderer nunca vaza tag crua, ele degrada, então o que importa é o link que deveria resolver e
+  não resolve) e toda escolha com opções; (2) **passada ao vivo nas 27**, conferindo meta,
+  escolhas renderizadas e os casos de forma distinta (Tortle AC 17 e Lizardfolk AC 13 na ficha,
+  Genasi Water com DAMAGE RESISTANCES: Acid e as 4 linhagens trocando, Centauro 40 ft Fey, Satyr
+  com Instrumento Musical, Githyanki com 3 escolhas, Fairy base com linhagem opcional, Aarakocra
+  sem magia no nível 1 - o Wind Caller só concede a partir do 3, correto).
+  **Nota de harness (o atalho que destravou a passada):** com a busca filtrando para UM resultado,
+  a sequência confiável é **clicar o card e DEPOIS "Select"** - o "Select" sozinho recommita o
+  item já SELECIONADO, porque o `selectedRaw` trava o preview (DDL-0048). Um helper `__pick(nome)`
+  em `javascript_tool` (abre o seletor, digita, clica o card, confere que o heading do preview
+  mudou, commita) fez ~25 espécies em poucas chamadas; sem o clique no card, todas as leituras
+  saem iguais à espécie anterior e parecem "não mudou nada".
+  **PENDENTE DE DECISÃO DO USUÁRIO (needs-user-eyes, não é bug):** 22 espécies MPMM trazem
+  `Creature Type` / `Size` / `Speed` como traços de PROSA, duplicando os chips de meta que a ficha
+  já mostra (é o formato 2022; a edição 2024 moveu isso para campos estruturados). Existe
+  precedente de limpeza - o `LEGACY_PROSE_SECTIONS` do DDL-0059 tira exatamente essas seções das
+  sub-raças legadas curadas - mas ali eram sobras de merge, e aqui é conteúdo próprio do
+  compêndio, então **não mexi**. Se o usuário quiser, é estender aquele mesmo mecanismo.
+  **Next action: Bloco S-D** (outros livros modernos, ~28 linhas) - AAG, EFA, RHW, SCC, GGR, MOT,
+  FTD, OGA, DSotDQ, LR, AI. Atenção: **Autognome/Warforged** = armadura natural unarmored/bonus
+  (DDL-0034; Thri-kreen/Locathah/Loxodon já entraram no registro pelo TC-0053, mas a UI deles
+  ainda não foi olhada); **Verdan** = tamanho por NÍVEL (S→M no 5º, DDL-0017 - nunca é escolha);
+  **Simic Hybrid** = idioma "other" mostra "Other" (cosmético conhecido, TC-0050) **e** a CA dele
+  vem de uma opção escolhível, deliberadamente fora do registro de armadura natural;
+  **Dragonborn Gem (FTD ×5)** = tipo de dano do sopro + voo.
 
 - **2026-07-25 (8)** - **Dois fixes: TC-0054 (Winged, pedido do usuário) e TC-0053 (armadura
   natural de 5 espécies).** A pane do browser voltou a funcionar depois de um `navigate` limpo.

@@ -5065,3 +5065,32 @@ máquina mudou** - `deriveArmorClass` já fazia tudo; era só registro, como o D
 1147 testes (+6), lint, sweep 285/285 `--strict`. Ao vivo: o texto do Winged na ficha e
 **Lizardfolk com Dex 10 mostrando AC 13** (era 10). Ver DDL-0061 e DDL-0034 (emendas) e
 testing/ISSUES.md.
+
+## 90. Phase T - T1b sessão 6: Bloco S-C (MPMM) CONCLUÍDO - 27 linhas `ui: ok`
+
+Fecha o Bloco S-C. **Nenhum bug novo; nenhum código tocado** (os dois fixes desta leva saíram em
+§89). Método em duas camadas, o mesmo que a revisão do S-A2 estabeleceu:
+
+**1. Probe de qualidade de PREVIEW (cobertura total, sem clicar).** Para as 28 unidades: todo
+traço tem nome e texto (nenhum preview vazio), **todo `{@tag}` de glossário/entidade RESOLVE**
+(zero link morto - a checagem que importa, já que o renderer nunca vaza a tag crua, ele degrada
+para texto inerte) e **toda escolha de espécie oferece opções** (a classe de bug "Problem 1" do
+DDL-0002). Zero problemas.
+
+**2. Passada ao vivo nas 27 linhas.** Descoberto um atalho confiável para o harness: com a busca
+filtrando para UM resultado, clicar o card e depois "Select" commita exatamente ela - **o clique
+no card é obrigatório**, porque o "Select" sozinho recommita o item SELECIONADO (o `selectedRaw`
+que trava o preview, DDL-0048). Conferidos meta (tamanho/deslocamento/tipo), as escolhas
+renderizadas e a ausência de tag crua em todas; e nos casos de forma distinta: **Tortle AC 17**
+e **Lizardfolk AC 13** na ficha (o fix do TC-0053 ao vivo), **Genasi (Water) com DAMAGE
+RESISTANCES: Acid** e as quatro linhagens trocando com os deslocamentos certos (Air 35, Water
+natação), Centauro 40 ft Fey, Satyr 35 ft Fey com escolha de Instrumento Musical, Githyanki com
+as três escolhas (perícia/ferramenta/atributo), Tabaxi com escalada, Fairy base com voo e
+linhagem OPCIONAL, e o Aarakocra corretamente **sem magia no nível 1** (o Wind Caller só concede
+a partir do 3).
+
+Mobile 375px sem overflow, zero erros de console. Suíte (1147), lint e sweep (285/285 `--strict`)
+inalterados. **Observação de apresentação levada ao usuário** (não é bug, não foi mexido): 22 das
+espécies MPMM trazem `Creature Type` / `Size` / `Speed` como traços de PROSA, duplicando os chips
+de meta que a ficha já mostra - é o formato de 2022, que a edição 2024 moveu para campos
+estruturados.

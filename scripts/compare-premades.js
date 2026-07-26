@@ -25,7 +25,7 @@ import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 
 import { join } from 'node:path';
 import process from 'node:process';
 import { loadDb } from './lib/loadDb';
-import { comparePremade, aggregate, DELIBERATE } from './lib/premadeDiff';
+import { comparePremade, aggregate, DELIBERATE, EXPECTED } from './lib/premadeDiff';
 import { foundryToCharacter } from '../src/engine/foundryImport';
 import { assembleFoundryActor } from '../src/engine/foundryActor';
 
@@ -85,7 +85,9 @@ function main() {
     }
     if (args.cat) findings = findings.filter((f) => f.cat.startsWith(String(args.cat)));
     perActor.push({ actor: id, file: s.name, official: s.official, findings });
-    console.log(`  ${findings.length === 0 ? '✓' : '✗'} ${id.padEnd(14)} ${findings.length} findings`);
+    const real = findings.filter((f) => !f.expected).length;
+    const exp = findings.length - real;
+    console.log(`  ${real === 0 ? '✓' : '✗'} ${id.padEnd(14)} ${real} findings${exp ? ` (+${exp} expected)` : ''}`);
     if (args.verbose) {
       for (const f of findings) {
         console.log(`      ${f.cat} · ${f.key}: premade=${JSON.stringify(f.before)} ours=${JSON.stringify(f.after)}`);
@@ -97,14 +99,20 @@ function main() {
   writeFileSync(
     join(OUT_DIR, 'premade-report.json'),
     JSON.stringify(
-      { generatedAt: new Date().toISOString(), deliberate: DELIBERATE, aggregate: agg, perActor },
+      { generatedAt: new Date().toISOString(), deliberate: DELIBERATE, expected: EXPECTED.map((e) => ({ id: e.id, why: e.why })), aggregate: agg, perActor },
       null,
       2,
     ),
   );
 
-  const total = perActor.reduce((n, a) => n + a.findings.length, 0);
-  console.log(`\n=== ${total} findings across ${perActor.length} sheets, in ${agg.length} classes ===`);
+  // As ESPERADAS (premadeDiff.EXPECTED) ficam fora da contagem, mas aparecem
+  // nomeadas no resumo e inteiras no report - contadas, nunca escondidas.
+  const total = perActor.reduce((n, a) => n + a.findings.filter((f) => !f.expected).length, 0);
+  const expected = perActor.reduce((n, a) => n + a.findings.filter((f) => f.expected).length, 0);
+  console.log(
+    `\n=== ${total} findings across ${perActor.length} sheets, in ${agg.length} classes`
+    + `${expected ? ` (+${expected} expected: ${EXPECTED.map((e) => e.id).join(', ')})` : ''} ===`,
+  );
   for (const g of agg) {
     const ex = g.examples[0];
     const shown = `${ex.key}: premade=${JSON.stringify(ex.before)} ours=${JSON.stringify(ex.after)}`;

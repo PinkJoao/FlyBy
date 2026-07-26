@@ -52,6 +52,43 @@ export const DELIBERATE = [
   'spellcasting progression artificer == half (identical in the dnd5e config)',
 ];
 
+/**
+ * ESPERADAS: divergências REAIS mas já investigadas, em que a nossa saída está
+ * certa (ou é equivalente) e não vai mudar. Ficam FORA da contagem de achados e
+ * são impressas à parte - contadas e nomeadas, nunca escondidas (mesmo espírito
+ * dos WAIVERS do sweep). Uma entrada só entra aqui com o motivo verificado.
+ */
+export const EXPECTED = [
+  {
+    id: 'baked-feature-grant',
+    why:
+      'O premade deixa a proficiência concedida por uma feature a cargo de um Active Effect '
+      + '(Divine Order Protector → mar/hvy, Primal Order Warden → med, Disciplined Survivor → '
+      + 'flags.dnd5e.diamondSoul = todas as salvaguardas); nós a assamos no ator, que é o que a '
+      + 'nossa própria derivação usa na ficha. Runtime idêntico - proficiência é flag, não soma.',
+    test: (f) =>
+      (f.cat === 'saves' && f.before === 0 && f.after === 1)
+      || (['traits.weaponProf', 'traits.armorProf'].includes(f.cat)
+        && Array.isArray(f.before) && Array.isArray(f.after)
+        && f.before.length === 0
+        && f.after.length > 0
+        && f.after.every((v) => ['mar', 'hvy', 'med'].includes(v))),
+  },
+  {
+    id: 'capstone-asi-on-class-item',
+    why:
+      'O aumento de atributo do capstone (Primal Champion, Body and Mind) vira um '
+      + 'AbilityScoreImprovement no item de CLASSE. O próprio SRD usa as duas formas - no Monge '
+      + 'ele está no item de classe (como o nosso), no Bárbaro no item da FEATURE -, então o passo '
+      + 'a mais no item de classe do Bárbaro é escolha de forma, não lacuna.',
+    test: (f) =>
+      f.cat === 'advancement.class'
+      && Array.isArray(f.after)
+      && f.after.some((x) => String(x).startsWith('AbilityScoreImprovement@20'))
+      && (f.before ?? []).length === 0,
+  },
+];
+
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 /** Nome comparável de item: minúsculo, sem sufixo de repetição "(2)". */
 export const itemKey = (name) => norm(name).replace(/\s*\(\d+\)$/, '');
@@ -267,7 +304,10 @@ export function comparePremade(premade, ours) {
   const out = [];
   compareSystem(premade, ours, out);
   compareItems(premade, ours, out);
-  return out;
+  return out.map((f) => {
+    const e = EXPECTED.find((x) => x.test(f));
+    return e ? { ...f, expected: e.id } : f;
+  });
 }
 
 /** Agrupa achados de várias fichas por classe (`cat`) → contagem + exemplos. */
@@ -275,6 +315,7 @@ export function aggregate(perActor) {
   const byCat = new Map();
   for (const { actor, findings } of perActor) {
     for (const f of findings) {
+      if (f.expected) continue;
       const g = byCat.get(f.cat) ?? { cat: f.cat, count: 0, actors: new Set(), examples: [] };
       g.count++;
       g.actors.add(actor);

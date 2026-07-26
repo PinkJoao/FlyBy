@@ -11,6 +11,7 @@
 
 import { deriveFromDb, resolveRaceObj, resolveClassObj, resolveSubclassObj } from './resolve';
 import { deriveHpBonus } from './hpBonuses';
+import { buildClassGrantAdvancements } from './classFeatureGrants';
 import { buildActorSystem, foundrySize } from './foundryExport';
 import { effectiveSizeCodes, sizePick } from './speciesData';
 import {
@@ -93,7 +94,10 @@ export function assembleFoundryActor(character, db) {
       fightingStyles,
       db,
       futureGrants: buildClassFutureGrants(cls, classObj, db),
-      choiceTraits: buildClassChoiceTraits(cls, classObj, db),
+      // Traits/ASI dos grants em prosa da classe (Slippery Mind, Disciplined
+      // Survivor, os capstones de +4) entram junto dos Traits de escolha - são
+      // advancements do mesmo tipo (TC-0059/0075/0077).
+      choiceTraits: [...buildClassChoiceTraits(cls, classObj, db), ...buildClassGrantAdvancements(cls, db)],
       itemChoices: buildItemChoiceAdvancements(cls, classObj, subObj, db, optionItems),
     });
     // Escolhas da classe SEM casa nativa (tool@start/expertise/grants curados/

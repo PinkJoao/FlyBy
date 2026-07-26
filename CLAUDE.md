@@ -243,6 +243,11 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   nada; e o `compendiumSource` das optional features, que veio de graça ao indexar as pastas de
   opções da classe). Total: 457 → 395. **Regra que ficou: meça a premissa contra o source do dnd5e
   antes de corrigir** - metade do enunciado do TC-0062 não sobreviveu a abrir o `scale-value.mjs`.
+  **T2b sessão 3 (2026-07-26): TC-0059, TC-0075 e TC-0077 fechados** (DDL-0073) - a família "feature
+  de CLASSE que concede algo em prosa", que afeta a FICHA e não só o export: novo registro curado
+  `engine/classFeatureGrants.js` (Druidic, Thieves' Cant + o idioma à escolha, Slippery Mind,
+  Disciplined Survivor, e os capstones de +4 do Monge e do Bárbaro com teto 25). Total: 361 achados
+  (+23 marcadas como ESPERADAS, com motivo - ver DDL-0073).
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,
@@ -372,6 +377,63 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0073 - Grant em PROSA de feature de CLASSE é um registro curado (irmão do SUBCLASS_GRANTS)
+**Date:** 2026-07-26
+**Resolve:** TC-0059, TC-0075 e TC-0077 (a mesma família, resolvida de uma vez). **Builds on:**
+DDL-0029 (o `SUBCLASS_GRANTS`, cujo formato este espelha), DDL-0034 (a ordenação por TETO de
+atributo, que os capstones reusam sem mudança), DDL-0072 (a T2 e o oráculo que achou os três).
+
+**Context.** Três achados da T2 eram o mesmo problema: uma feature de CLASSE concede algo que o
+5etools só tem no TEXTO (idioma, proficiência de salvaguarda, aumento de atributo), então nada
+derivava - a ficha ficava errada, não só o export. O hand-off da sessão anterior pedia varrer o
+dataset antes de cadastrar caso a caso, e a varredura mudou o escopo: de três casos conhecidos para
+**seis**, dois deles nunca reportados (Disciplined Survivor e Primal Champion).
+
+**Decision - a varredura é de DOIS LADOS, e é ela que fecha o registro.** (a) o SRD do dnd5e
+(`packs/_source/classes24`): todo advancement `Trait`/`AbilityScoreImprovement` de classe fora dos
+iniciais e dos ASIs padrão; (b) o dado do 5etools: toda feature de fonte atual cujo texto casa
+`{@language}`, "proficien* … saving throw" ou "score(s) increase by N". Os dois convergem, e a
+convergência é o que autoriza chamar o registro de FECHADO. **REGRA para acrescentar uma entrada:
+refaça as duas varreduras** (os scripts estão descritos no cabeçalho do módulo) em vez de cadastrar
+o caso isolado que apareceu.
+
+**Decision - `engine/classFeatureGrants.js`**, formato do `SUBCLASS_GRANTS`: `{level, feature,
+languages?, languageChoices?, saves?|allSaves?, abilityBoosts?}`, keyed por classId. Consumido pela
+derivação (idiomas/salvaguardas/boosts, em `resolve.js`) e pelo export (`buildClassGrantAdvancements`).
+- **O teto 25 dos capstones não pediu máquina nova:** o `finalScores` do DDL-0034 aplica os boosts
+  do MENOR teto para o maior, então um ASI para em 20, o capstone segue até 25 e um Epic Boon até
+  30. Só o `max` na entrada do registro.
+- **`allSaves: true`** para o Disciplined Survivor: o RAW concede as seis, e enumerar seria pior.
+
+**Decision - "and one other language of your choice" é uma CHOICE, não um grant.** O Thieves' Cant
+declara `languageChoices: 1` e `classGrantChoices` emite um descritor de kind `language`
+(`classgrant-lang@1`) - com isso ganha seletor na aba Class, entra na completude, é sorteada pelo
+autoBuild e viaja na flag residual, tudo sem fiação nova (o kind já existia). No export ela vira um
+Trait com o idioma CONCEDIDO em `configuration.grants` e o ESCOLHIDO em `choices`, que é a forma
+exata do premade; o import passou a **subtrair `grants` do `chosen`** antes de gravar o pick.
+**REGRA:** um Trait que mistura grant e escolha (a forma comum nos premades) só pode virar bag
+depois dessa subtração - senão a concessão entra como se fosse decisão do jogador.
+
+**Decision - o harness ganhou `EXPECTED`: divergência verificada não se esconde, se NOMEIA.** Duas
+diferenças permanentes ficariam poluindo o relatório da T2 para sempre: (a) o premade deixa a
+proficiência de uma feature a cargo de um Active Effect (Divine Order Protector, Primal Order
+Warden, Disciplined Survivor → `flags.dnd5e.diamondSoul`) e nós a assamos no ator - runtime
+idêntico, proficiência é flag e não soma; (b) o ASI do capstone, que o SRD publica em DUAS formas
+(item de classe no Monge, item da feature no Bárbaro). Em vez de entrarem na lista `DELIBERATE` (que
+o comparador nem reporta), viraram predicados em `EXPECTED`, com o motivo escrito: saem da contagem
+mas aparecem nomeadas no resumo (`+23 expected: baked-feature-grant, capstone-asi-on-class-item`) e
+inteiras no report. **Distinção que fica:** `DELIBERATE` = o comparador não olha (identidade de
+documento, prosa, estado de sessão); `EXPECTED` = ele olha, acha, e sabe por que aquilo está certo.
+
+**Consequences.**
+- Um Rogue passa a ter uma escolha a mais no nível 1 (o idioma) - correto por RAW, e o badge de
+  pendências passa a pedi-la.
+- O import ficou mais defensivo com ASI de valores fixos (`assignments` vazio não é decisão) - a
+  regressão apareceu no sweep no mesmo minuto, em 20 linhas.
+- Verificado: 1184 testes (+11), lint, sweep 285/285 `--strict`, `npm run t2` 395 → 361 (+23
+  esperadas), e ao vivo (Rogue 1 com o seletor "Language 0/1" e Thieves' Cant no card; Rogue 15 com
+  Wis/Cha nas salvaguardas). Ver CHANGELOG §96.
 
 ### DDL-0072 — Stage T2: o oráculo do EXPORT é re-exportar as fichas premade oficiais e diffar por CLASSE de achado
 **Date:** 2026-07-26

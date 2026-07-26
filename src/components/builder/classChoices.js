@@ -22,6 +22,7 @@ import {
 } from '../../engine/classFeatureChoices';
 import { collectSkillProficiencies } from '../../engine/proficiency';
 import { subclassConditionalChoices } from '../../engine/subclassGrants';
+import { classGrantChoices } from '../../engine/classFeatureGrants';
 import { additionalSpellChoices } from '../../engine/grantedSpells';
 import { featureOptionChoices, subclassFeatureOptionChoices } from '../../engine/featureOptions';
 import { lookupEntityLink } from '../common/entityLinks';
@@ -130,6 +131,9 @@ export function buildClassChoices(db, cls, character) {
   // this proficiency…" - TC-0012): dependem do que o personagem tem de outras
   // fontes, então são geradas ao vivo contra ele.
   const condChoices = subObj ? subclassConditionalChoices(db, cls, subObj, character).map(resolvePool) : [];
+  // Escolhas abertas por um grant em PROSA de feature de CLASSE - hoje o idioma
+  // extra do Thieves' Cant ("and one other language of your choice", TC-0059).
+  const grantChoices = classGrantChoices(cls.classId, cls.level);
   // Escolhas de MAGIA concedidas pelo `additionalSpells` da classe/subclasse
   // (TC-0011: Abjurer "escolha uma magia de Abjuração", Arcane Archer
   // prestidigitation OU druidcraft…). Ids prefixados ('class:'/'sub:') moram no
@@ -145,6 +149,7 @@ export function buildClassChoices(db, cls, character) {
     ...levelChoices,
     ...subFeatChoices,
     ...condChoices,
+    ...grantChoices,
     ...spellChoices,
     ...featOptChoices,
     ...optChoices,

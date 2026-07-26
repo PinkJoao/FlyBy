@@ -1056,12 +1056,20 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 - **Unidade:** `class:druid/*`, `class:rogue/*` (8 achados de `traits.languages`).
   **Severidade:** bug. **Causa:** derivação (atinge a FICHA, não só o export).
-  **Encontrado:** 2026-07-26. **Status:** open.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26 (com TC-0075 e TC-0077, ver DDL-0073).
 - Druidic e Thieves' Cant são **features de nível 1** no dado do 5etools (prosa), não entradas de
-  `languageProficiencies` - então nossa derivação não concede o idioma, e o card Languages de um
-  Druida/Ladino não os lista. Os premades os trazem em `traits.languages` (`druidic`, `cant`).
-- Caminho: uma linha de registro curado no espírito do `SUBCLASS_GRANTS` (DDL-0029), mas para
-  features de CLASSE. Conferir a varredura inteira antes: pode haver outros idiomas em prosa.
+  `languageProficiencies` - então nossa derivação não concedia o idioma, e o card Languages de um
+  Druida/Ladino não os listava. Os premades os trazem em `traits.languages` (`druidic`, `cant`).
+- Fix: registro curado `CLASS_FEATURE_GRANTS` (`engine/classFeatureGrants.js`), irmão do
+  `SUBCLASS_GRANTS`. O Thieves' Cant tem uma segunda metade que faltava: o RAW diz "You know
+  Thieves' Cant **and one other language of your choice**", então a entrada declara
+  `languageChoices: 1` e isso vira uma Choice de kind `language` no bag da classe
+  (`classgrant-lang@1`) - seletor na aba Class, contada na completude, sorteada pelo autoBuild.
+- O idioma escolhido faz round-trip nas duas pontas: o Trait exportado leva o CONCEDIDO em
+  `grants` e o ESCOLHIDO em `choices` (a forma do premade), e o import ignora o que está em
+  `grants` para não confundir concessão com escolha.
+- Verificado ao vivo: um Rogue 1 mostra o seletor "Language 0/1" e o card **LANGUAGES: Common ·
+  Thieves' Cant**.
 
 ## TC-0060 - Progressão de conjuração inválida; subclasse conjuradora sem nenhuma
 
@@ -1270,10 +1278,16 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0075 - Proficiência de save do Slippery Mind (Ladino 15) não deriva
 
 - **Unidade:** `class:rogue/*` (2 achados, Riswynn L17). **Severidade:** bug.
-  **Causa:** derivação (atinge a FICHA). **Encontrado:** 2026-07-26. **Status:** open.
+  **Causa:** derivação (atinge a FICHA). **Encontrado:** 2026-07-26.
+  **Status:** fixed@2026-07-26 (com TC-0059 e TC-0077, ver DDL-0073).
 - O premade tem Wis e Cha proficientes em save no nível 17; nós não. Slippery Mind (nível 15)
-  concede as duas, e é feature de CLASSE em prosa - mesmo mecanismo que falta ao TC-0059.
+  concede as duas, e é feature de CLASSE em prosa - mesmo mecanismo que faltava ao TC-0059.
   Achado do lado do BUILDER que a T1a não pegou (o sweep não tem oráculo de regra).
+- Fix: entrada no `CLASS_FEATURE_GRANTS` (`saves: ['wis','cha']` no nível 15) + um `Trait` no
+  nível dela no item de classe, que é a forma do premade. A varredura achou um SEGUNDO caso que
+  ninguém tinha reportado: **Disciplined Survivor (Monge 14) concede TODAS as seis salvaguardas**
+  (`allSaves: true`).
+- Verificado ao vivo: um Rogue 15 mostra SAVING THROWS Dex/Int/**Wis/Cha**.
 
 ## TC-0076 - Proficiência de arma CONDICIONAL não é enumerada no export
 
@@ -1292,7 +1306,16 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 - **Unidade:** `class:monk/*` (1 achado, `AbilityScoreImprovement@20`). **Severidade:** bug.
   **Causa:** derivação (atinge a FICHA). **Encontrado:** 2026-07-26, ao fechar o TC-0063.
-  **Status:** open.
+  **Status:** fixed@2026-07-26 (com TC-0059 e TC-0075, ver DDL-0073). A varredura achou o
+  IRMÃO que faltava: o **Primal Champion do Bárbaro 20** (+4 Força, +4 Constituição). Os dois
+  entraram no `CLASS_FEATURE_GRANTS` com `max: 25`, o teto que o RAW dá a eles (acima do 20 dos
+  ASIs, abaixo do 30 dos Epic Boons - a máquina de tetos do DDL-0034 ordena por teto e já
+  fazia a coisa certa). No export viram um `AbilityScoreImprovement` de valores FIXOS, com
+  `value` só no nível alcançado.
+- **Achado de import na mesma leva:** um ASI de valores fixos chega com `assignments` vazio, e o
+  import o tratava como decisão do jogador - inventava um pick de talento "Ability Score
+  Improvement" que o round-trip do sweep acusou na hora (20 linhas vermelhas). Agora exige ao
+  menos um aumento real.
 - O premade do Monge tem um `AbilityScoreImprovement` no nível 20 com valores FIXOS - é o "Body
   and Mind" (+4 Destreza, +4 Sabedoria). Nossa derivação não concede o aumento e o export não
   emite o passo.
@@ -1300,4 +1323,15 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   CLASSE que concede algo em prosa. Vale resolver os três com um registro só, no espírito do
   `SUBCLASS_GRANTS` (DDL-0029) mas para features de classe - e varrer o dataset inteiro antes, em
   vez de cadastrar caso a caso.
+
+## TC-0078 - Proficiências de arma INDIVIDUAIS do premade não são enumeradas (parte do TC-0076)
+
+- **Unidade:** `class:monk/*`, `class:rogue/*`, `class:ranger/*` (11 achados). **Severidade:** bug.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open (é o TC-0076 medido de perto).
+- Com os supersets já classificados como ESPERADOS (o `EXPECTED` do harness), o que sobra em
+  `traits.weaponProf` é só a direção que FALTA: o premade enumera as armas individuais que a regra
+  condicional concede (Monge: `weapon:mar:handcrossbow/scimitar/shortsword`; Ladino: rapier/whip…;
+  Ranger: longbow/shortbow), e nós exportamos só a categoria `sim`.
+- O dado TEM o filtro (`weaponProficiencies[].all.fromFilter`), então dá para enumerar sem
+  curadoria - é o mesmo insumo do `weaponFilterAllows` (DDL-0033). Ver TC-0076 para o contexto.
 

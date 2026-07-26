@@ -5369,3 +5369,78 @@ pact boon) foram a zero sem tocar no export.
 ### Verificação
 
 1173 testes (+10), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **457 → 395** achados.
+
+---
+
+## 96. Phase T - T2b: grants em PROSA de feature de classe (TC-0059/0075/0077) + o balde de esperadas
+
+Terceira leva do burn-down. Diferente das duas anteriores, esta corrige a **FICHA**, não só o
+export: três TCs eram a mesma família - "uma feature de CLASSE concede algo que só existe no texto"
+- e foram resolvidos por um registro só.
+
+### A varredura veio antes do código
+
+O hand-off pedia varrer o dataset em vez de cadastrar o caso que apareceu, e foi o que decidiu o
+escopo. Dois lados, que se confirmam:
+
+- **o SRD do dnd5e** (`packs/_source/classes24`): todo advancement `Trait`/`AbilityScoreImprovement`
+  de classe fora dos iniciais e dos ASIs padrão;
+- **o dado do 5etools**: toda feature de classe/subclasse de fonte atual cujo texto casa
+  `{@language …}`, "proficien* in … saving throw" ou "score(s) increase by N".
+
+Os dois convergem para **seis casos de classe** - e dois deles ninguém tinha reportado:
+
+| feature | nível | concede |
+|---|---|---|
+| Druidic (Druida) | 1 | o idioma Druidic |
+| Thieves' Cant (Ladino) | 1 | o idioma Thieves' Cant **+ um idioma à escolha** |
+| Slippery Mind (Ladino) | 15 | salvaguarda de Sabedoria e Carisma |
+| **Disciplined Survivor (Monge)** | 14 | **todas as seis** salvaguardas |
+| **Body and Mind (Monge)** | 20 | +4 Destreza, +4 Sabedoria (teto 25) |
+| **Primal Champion (Bárbaro)** | 20 | +4 Força, +4 Constituição (teto 25) |
+
+Deft Explorer (Ranger), Iron Mind (Gloom Stalker) e Unfettered Mind (Knowledge) já estavam
+cobertos - a varredura serviu também para confirmar isso em vez de duplicar.
+
+### O registro
+
+`engine/classFeatureGrants.js`, irmão do `subclassGrants.js`, com quatro campos: `languages`,
+`languageChoices`, `saves`/`allSaves` e `abilityBoosts`. Consumido pela derivação (idiomas,
+salvaguardas, boosts) e pelo export (um `Trait` no nível da feature para as salvaguardas, um
+`AbilityScoreImprovement` de valores FIXOS para o capstone).
+
+Três detalhes que valem registro:
+
+- **O teto 25 dos capstones** não exigiu máquina nova: a ordenação por teto do DDL-0034 (aplica o
+  menor primeiro) já faz a coisa certa - um ASI para em 20, o capstone segue até 25, um Epic Boon
+  até 30. Coberto por teste.
+- **O "one other language of your choice"** do Thieves' Cant virou uma Choice de kind `language`
+  (`classgrant-lang@1`), então ganhou seletor na aba Class, entra na completude e é sorteada pelo
+  autoBuild sem fiação nova. No export ela viaja num Trait com o idioma CONCEDIDO em `grants` e o
+  ESCOLHIDO em `choices` - a forma exata do premade -, e o import passou a **ignorar o que está em
+  `grants`** para não confundir concessão com escolha.
+- **O sweep pegou uma regressão na hora:** um ASI de valores fixos chega com `assignments` vazio, e
+  o import o tratava como decisão do jogador, inventando um pick "Ability Score Improvement" em
+  toda linha de nível 20 (20 linhas vermelhas). Agora exige ao menos um aumento real.
+
+### Divergências ESPERADAS: um balde nomeado, não um silêncio
+
+Dois grupos de diferença que **não vão mudar** ficariam para sempre no relatório:
+
+- o premade deixa uma proficiência concedida por feature a cargo de um **Active Effect** (Divine
+  Order Protector → `mar`/`hvy`, Primal Order Warden → `med`, Disciplined Survivor →
+  `flags.dnd5e.diamondSoul`), e nós a assamos no ator, que é o que a nossa derivação usa na ficha;
+- o `AbilityScoreImprovement` do capstone: o próprio SRD usa **as duas formas** (no Monge está no
+  item de classe, como o nosso; no Bárbaro, no item da feature).
+
+Em vez de escondê-las na lista `DELIBERATE`, o harness ganhou `EXPECTED`: predicados com motivo
+verificado que tiram o achado da contagem e o imprimem **nomeado** no resumo (`+23 expected:
+baked-feature-grant, capstone-asi-on-class-item`) e por inteiro no report - mesmo espírito dos
+`WAIVERS` do sweep. Contadas, nunca escondidas.
+
+### Verificação
+
+1184 testes (+11, `classFeatureGrants.test.js`), lint limpo, sweep 285/285 `--strict`, `npm run t2`
+de **395 → 361** achados (+23 esperadas). **Ao vivo:** um Rogue 1 mostra o seletor "Language 0/1" e
+o card LANGUAGES com Common · Thieves' Cant; no 15, SAVING THROWS passa a Dex/Int/**Wis/Cha**.
+Decisões em DDL-0073.

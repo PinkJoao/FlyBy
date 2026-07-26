@@ -390,6 +390,48 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-26 (6)** - **T2b sessão 3: TC-0059, TC-0075 e TC-0077 fechados** (395 → **361**
+  achados, +23 marcadas como ESPERADAS). Primeira leva da T2 que corrige a **FICHA** e não só o
+  export. 1184 testes (+11), lint, sweep 285/285 `--strict`, e passada ao vivo no browser.
+  **A varredura veio antes do código** (como o hand-off pedia) e MUDOU o escopo: de 3 casos
+  conhecidos para **6**. Dois lados que se confirmam - o SRD do dnd5e (advancements `Trait`/`ASI` de
+  classe fora dos iniciais) e o dado do 5etools (texto casando `{@language}` / "proficien* … saving
+  throw" / "score increase by N"). Os dois novos: **Disciplined Survivor (Monge 14) concede TODAS as
+  seis salvaguardas** e **Primal Champion (Bárbaro 20) dá +4 Força/+4 Constituição**.
+  **O registro:** `engine/classFeatureGrants.js`, irmão do `SUBCLASS_GRANTS` (DDL-0073). O teto 25
+  dos capstones não pediu máquina nova - a ordenação por teto do DDL-0034 já resolvia. O "one other
+  language of your choice" do Thieves' Cant virou uma **Choice** de kind `language`, então ganhou
+  seletor na aba Class de graça.
+  **Duas lições de método:**
+  1. **O sweep é o guarda-costas do burn-down.** Um ASI de valores fixos chega com `assignments`
+     vazio e o import o tratava como decisão do jogador - 20 linhas ficaram vermelhas no mesmo
+     minuto. Rode `npm run sweep -- --strict` DEPOIS de cada mudança de export/import, não só no
+     fim da sessão.
+  2. **Divergência verificada não se esconde, se NOMEIA.** O harness ganhou `EXPECTED` (predicados
+     com motivo escrito): tiram o achado da contagem, mas ele aparece nomeado no resumo e inteiro no
+     report. Diferente de `DELIBERATE`, que o comparador nem olha. As duas entradas de hoje:
+     `baked-feature-grant` (o premade deixa a proficiência de uma feature a cargo de um Active
+     Effect; nós assamos no ator) e `capstone-asi-on-class-item` (o SRD usa as duas formas).
+  **Next action: T2b sessão 4.** Alvos, na ordem:
+  1. **TC-0067** (12+12 achados): magia sempre-preparada de linhagem/legacy saindo `innate` em vez
+     de `spell`+`prepared:2`. O premade deixa o jogador gastar espaço de magia nelas; nós não.
+     Conferir o DDL-0011 antes - o `uses` (1/descanso) continua valendo, muda o método.
+  2. **TC-0068** (10) e **TC-0070** (10): `uses` faltando (Draconic Flight, Divine Intervention,
+     Wild Resurgence) e activities divergentes nos dois sentidos. Os dois vivem no cruzamento
+     `foundryFeatureUses`/`foundryActivities` × overlay - e lembre que o casamento do overlay é
+     **edição-estrita** (foi o que explicou o diamondSoul só existir na entrada 2014).
+  3. **TC-0064/0065** (16 + 4): item de espécie magro (falta o Trait de resistência do Dragonborn,
+     o ScaleValue do sopro, o ItemGrant de nível 5) e a ancestralidade que não volta no import.
+     **Parte do TC-0064 é `needs-user-eyes`** (um item por traço de espécie × effects no item de
+     raça, DDL-0057): não decidir sozinho.
+  4. **TC-0078** (11, era a metade que faltava do TC-0076): enumerar as armas individuais que a
+     regra condicional concede (Monge/Ladino/Ranger). O dado tem o filtro
+     (`weaponProficiencies[].all.fromFilter`), então não precisa curadoria.
+  5. Sobram de baixo valor: **TC-0071** (composição do ItemGrant por nível, a investigar caso a
+     caso), **TC-0072** (escada de magias da subclasse só nos níveis futuros), **TC-0073** (tamanho
+     Small quando a escolha S/M não foi feita), **TC-0074** (alinhamento "True Neutral" × "Neutral";
+     identificador `open-hand` × `hand`) e o `details.xp` do Riswynn L11, que é quirk do premade.
+
 - **2026-07-26 (5)** - **T2b sessão 2: TC-0062, TC-0063 e TC-0069 fechados** (457 → **395**
   achados). Tudo no `advancement[]` do item de classe/subclasse. 1173 testes (+10), lint, sweep
   285/285 `--strict`.

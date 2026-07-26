@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-26T16:41:06.266Z · base seed 1 · 285 rows
+Last sweep: 2026-07-26T22:56:40.225Z · base seed 1 · 285 rows
 
 ## Classes × subclasses (135)
 

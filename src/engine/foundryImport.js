@@ -27,6 +27,7 @@ import { parseClass } from './classData';
 import { TRAIT_CHOICE_KINDS, choiceTraitTitle } from './foundryItems';
 import { parseChoices, collectAbilityPicks } from './choices';
 import { deriveHpBonus } from './hpBonuses';
+import { classGrantChoices } from './classFeatureGrants';
 
 const norm = (s) => (s ?? '').toString().trim().toLowerCase();
 
@@ -365,6 +366,9 @@ function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
     ...classLevelChoices(parsed, classObj, level),
     ...classToolChoices(classObj),
     ...subclassFeatureChoices(db, classId, subclassObj, level, parsed?.skillChoice?.from ?? []),
+    // Escolha aberta por um grant em prosa (o idioma extra do Thieves' Cant):
+    // sem ela o idioma escolhido de um ator externo se perdia (TC-0059).
+    ...classGrantChoices(classId, level),
   ].filter((d) => TRAIT_CHOICE_KINDS.has(d.kind));
   if (!descriptors.length) return {};
 
@@ -383,7 +387,12 @@ function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
     if (!kind) continue; // saves/weapon/armor: não são escolhas do nosso bag
     const desc = byKey.get(key(t.title, t.level, kind));
     if (!desc) continue;
+    // O que o Trait CONCEDE não é escolha do jogador (o premade põe grants e
+    // choices no mesmo Trait: o Thieves' Cant concede o Cant e deixa escolher um
+    // idioma) - só o resto entra no bag.
+    const granted = new Set(t.configuration?.grants ?? []);
     const picks = chosen
+      .filter((c) => !granted.has(c))
       .map((c) => {
         if (kind === 'tool') return toolKeyToName(c, db);
         if (kind === 'language') return languageKeyToName(c, db);
@@ -516,8 +525,11 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
             for (const b of featFixedBoosts(featItem)) boostAcc[b.ability] += b.amount;
             for (const b of collectAbilityPicks(bag ?? {})) boostAcc[b.ability] += b.amount;
           }
-        } else if (val.type === 'asi' && val.assignments) {
-          // ASI cru → o talento especial "Ability Score Improvement".
+        } else if (val.type === 'asi' && Object.values(val.assignments ?? {}).some((n) => n > 0)) {
+          // ASI cru → o talento especial "Ability Score Improvement". Exige ao
+          // menos um aumento REAL: um ASI de valores FIXOS (o capstone do
+          // Bárbaro/Monge - TC-0077) chega com `assignments` vazio, e tratá-lo
+          // como decisão do jogador inventava um pick de talento inexistente.
           const featRef = 'Ability Score Improvement|XPHB';
           choices[key] = { kind: 'feat', picks: [featRef], sub: asiFeatSubBag(val.assignments, featRef) };
           for (const [ab, amt] of Object.entries(val.assignments)) boostAcc[ab] += amt;

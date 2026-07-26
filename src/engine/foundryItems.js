@@ -10,6 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import { latestOnly } from '../selector/reprints';
+import { classGrantChoices, classGrantGroups } from './classFeatureGrants';
 import { parseClass, parseFeatureRef } from './classData';
 import { classLevelChoices, classToolChoices, subclassFeatureChoices, optionalFeatureChoices, optionalFeatureCount } from './classFeatureChoices';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
@@ -688,7 +689,11 @@ export function buildChoiceTraits(descriptors, bag, db) {
     const cfg = traitChoiceConfig(desc, db);
     if (!cfg?.pool?.length) continue;
     const picks = bag?.[desc.id]?.picks ?? [];
-    const chosen = traitChoiceValues(desc, picks, db).filter(Boolean);
+    // `fixedGrants` (só o Thieves' Cant hoje): a feature CONCEDE algo e ainda
+    // deixa escolher - é a forma do premade (grants + choices no mesmo Trait), e
+    // os concedidos entram no `chosen` junto dos escolhidos.
+    const grants = traitChoiceValues(desc, desc.fixedGrants ?? [], db).filter(Boolean);
+    const chosen = [...grants, ...traitChoiceValues(desc, picks, db).filter(Boolean)];
     out.push({
       _id: randomFoundryId(),
       type: 'Trait',
@@ -697,7 +702,7 @@ export function buildChoiceTraits(descriptors, bag, db) {
       configuration: {
         mode: cfg.mode,
         allowReplacements: false,
-        grants: [],
+        grants,
         choices: [{ count: desc.count ?? 1, pool: cfg.pool }],
       },
       value: chosen.length ? { chosen } : {},
@@ -715,6 +720,11 @@ export function buildChoiceTraits(descriptors, bag, db) {
  * @param {object} db
  * @returns {object[]}
  */
+/** Idiomas CONCEDIDOS (não escolhidos) pelo grupo de grant daquele nível. */
+function grantedLanguagesFor(classId, level) {
+  return classGrantGroups(classId, level).filter((g) => g.level === level).flatMap((g) => g.languages ?? []);
+}
+
 export function buildClassChoiceTraits(classEntry, classObj, db) {
   const parsed = parseClass(classObj);
   if (!parsed) return [];
@@ -725,6 +735,13 @@ export function buildClassChoiceTraits(classEntry, classObj, db) {
   if (classEntry.isOriginalClass !== false) {
     descriptors.push(...classToolChoices(classObj).map((d) => ({ ...d, foundryTitle: 'Tool Proficiencies' })));
   }
+  // Escolha aberta por um grant em prosa (o idioma extra do Thieves' Cant): o
+  // Trait leva o idioma CONCEDIDO em `grants` e o escolhido em `choices`, que é
+  // exatamente a forma do premade - e é o que faz o pick voltar no import.
+  descriptors.push(...classGrantChoices(classEntry.classId, MAX_LEVEL).map((d) => ({
+    ...d,
+    fixedGrants: grantedLanguagesFor(classEntry.classId, d.level),
+  })));
   return buildChoiceTraits(descriptors, classEntry.choices, db);
 }
 

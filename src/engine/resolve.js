@@ -21,6 +21,7 @@ import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';
 import { deriveFeatureGrants, cantripLimitBonus, acFeatureBonuses } from './featureEffects';
 import { deriveSubclassGrants } from './subclassGrants';
+import { deriveClassFeatureGrants } from './classFeatureGrants';
 import { collectChoicePicks } from './choices';
 import { deriveInventory, carryingCapacity } from './items';
 import { deriveArmorClass, deriveSaveBonusFromItems } from './armorClass';
@@ -727,9 +728,16 @@ export function deriveFromDb(character, db) {
   const auto = deriveGrantedProficiencies(character, db);
   const feat = deriveFeatureGrants(character);
   const sub = deriveSubclassGrants(character, db);
+  // Grants em PROSA de features de CLASSE: idioma (Druidic, Thieves' Cant),
+  // salvaguarda (Slippery Mind, Disciplined Survivor) e o aumento de atributo dos
+  // capstones (Primal Champion, Body and Mind) - TC-0059/0075/0077.
+  const clsGrants = deriveClassFeatureGrants(character);
+  const langPicks = (character.classes ?? []).flatMap((c) => collectChoicePicks(c.choices, 'language'));
   const grantedLanguages = [
     ...(raceObj ? (parseSpecies(raceObj)?.languages?.fixed ?? []) : []),
     ...sub.languages,
+    ...clsGrants.languages,
+    ...langPicks,
   ];
   // Proficiências de ARMA INDIVIDUAL escolhidas (kind 'weaponProf' - Kensei):
   // os picks (nomes de arma) derivam como armas proficientes.
@@ -749,11 +757,13 @@ export function deriveFromDb(character, db) {
   const savePicks = (character.classes ?? []).flatMap((c) => collectChoicePicks(c.choices, 'save'));
   // + as salvaguardas concedidas por TALENTO (Resilient - TC-0041).
   const featSaves = deriveFeatSaveProficiencies(character, db);
-  ctx.proficientSaves = [...new Set([...(ctx.proficientSaves ?? []), ...sub.saves, ...savePicks, ...featSaves])];
+  ctx.proficientSaves = [
+    ...new Set([...(ctx.proficientSaves ?? []), ...sub.saves, ...savePicks, ...featSaves, ...clsGrants.saves]),
+  ];
 
   // Boosts de atributo FIXOS de talentos escolhidos (ex: GWM +1 Str) - derivados
   // do compêndio e injetados na derivação de scores/mods/saves/skills/HP.
-  const extraAbilityBoosts = deriveFeatAbilityBoosts(character, db);
+  const extraAbilityBoosts = [...deriveFeatAbilityBoosts(character, db), ...clsGrants.abilityBoosts];
 
   // Aumentos de HP MÁXIMO de feats/raça/subclasse (Tough +2/nível, Boon of
   // Fortitude +40, Dwarven Toughness, Draconic Resilience - engine/hpBonuses).

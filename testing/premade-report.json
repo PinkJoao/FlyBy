@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T16:42:50.005Z",
+  "generatedAt": "2026-07-26T22:56:43.913Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -8,6 +8,16 @@
     "container items (packs are one item)",
     "senses/movement (derived by Foundry from effects)",
     "spellcasting progression artificer == half (identical in the dnd5e config)"
+  ],
+  "expected": [
+    {
+      "id": "baked-feature-grant",
+      "why": "O premade deixa a proficiência concedida por uma feature a cargo de um Active Effect (Divine Order Protector → mar/hvy, Primal Order Warden → med, Disciplined Survivor → flags.dnd5e.diamondSoul = todas as salvaguardas); nós a assamos no ator, que é o que a nossa própria derivação usa na ficha. Runtime idêntico - proficiência é flag, não soma."
+    },
+    {
+      "id": "capstone-asi-on-class-item",
+      "why": "O aumento de atributo do capstone (Primal Champion, Body and Mind) vira um AbilityScoreImprovement no item de CLASSE. O próprio SRD usa as duas formas - no Monge ele está no item de classe (como o nosso), no Bárbaro no item da FEATURE -, então o passo a mais no item de classe do Bárbaro é escolha de forma, não lacuna."
+    }
   ],
   "aggregate": [
     {
@@ -607,69 +617,6 @@
       ]
     },
     {
-      "cat": "traits.weaponProf",
-      "count": 19,
-      "actors": [
-        "Akra L01",
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17",
-        "Riswynn L01",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17"
-      ],
-      "examples": [
-        {
-          "actor": "Akra L01",
-          "cat": "traits.weaponProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "mar"
-          ]
-        },
-        {
-          "actor": "Akra L05",
-          "cat": "traits.weaponProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "mar"
-          ]
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "traits.weaponProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "mar"
-          ]
-        },
-        {
-          "actor": "Akra L17",
-          "cat": "traits.weaponProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "mar"
-          ]
-        }
-      ]
-    },
-    {
       "cat": "feat.activities",
       "count": 18,
       "actors": [
@@ -944,14 +891,16 @@
       ]
     },
     {
-      "cat": "advancement.class",
-      "count": 9,
+      "cat": "traits.weaponProf",
+      "count": 11,
       "actors": [
-        "Merric L17",
         "Perrin L01",
         "Perrin L05",
         "Perrin L11",
         "Perrin L17",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
         "Riswynn L01",
         "Riswynn L05",
         "Riswynn L11",
@@ -959,142 +908,46 @@
       ],
       "examples": [
         {
-          "actor": "Merric L17",
-          "cat": "advancement.class",
-          "key": "barbarian",
-          "before": [
-            "ItemGrant@17"
-          ],
-          "after": []
-        },
-        {
           "actor": "Perrin L01",
-          "cat": "advancement.class",
-          "key": "monk",
+          "cat": "traits.weaponProf",
+          "key": "value",
           "before": [
-            "AbilityScoreImprovement@20"
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
           ],
           "after": []
         },
         {
           "actor": "Perrin L05",
-          "cat": "advancement.class",
-          "key": "monk",
+          "cat": "traits.weaponProf",
+          "key": "value",
           "before": [
-            "AbilityScoreImprovement@20"
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
           ],
           "after": []
         },
         {
           "actor": "Perrin L11",
-          "cat": "advancement.class",
-          "key": "monk",
-          "before": [
-            "AbilityScoreImprovement@20"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
-      "cat": "traits.armorProf",
-      "count": 8,
-      "actors": [
-        "Akra L01",
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17"
-      ],
-      "examples": [
-        {
-          "actor": "Akra L01",
-          "cat": "traits.armorProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "hvy"
-          ]
-        },
-        {
-          "actor": "Akra L05",
-          "cat": "traits.armorProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "hvy"
-          ]
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "traits.armorProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "hvy"
-          ]
-        },
-        {
-          "actor": "Akra L17",
-          "cat": "traits.armorProf",
-          "key": "value",
-          "before": [],
-          "after": [
-            "hvy"
-          ]
-        }
-      ]
-    },
-    {
-      "cat": "traits.languages",
-      "count": 8,
-      "actors": [
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Riswynn L01",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17"
-      ],
-      "examples": [
-        {
-          "actor": "Aoth L01",
-          "cat": "traits.languages",
+          "cat": "traits.weaponProf",
           "key": "value",
           "before": [
-            "druidic"
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
           ],
           "after": []
         },
         {
-          "actor": "Aoth L05",
-          "cat": "traits.languages",
+          "actor": "Perrin L17",
+          "cat": "traits.weaponProf",
           "key": "value",
           "before": [
-            "druidic"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Aoth L11",
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "druidic"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Aoth L17",
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "druidic"
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
           ],
           "after": []
         }
@@ -1183,25 +1036,22 @@
       ]
     },
     {
-      "cat": "saves",
-      "count": 2,
+      "cat": "advancement.class",
+      "count": 1,
       "actors": [
-        "Riswynn L17"
+        "Merric L17"
       ],
       "examples": [
         {
-          "actor": "Riswynn L17",
-          "cat": "saves",
-          "key": "wis",
-          "before": 1,
-          "after": 0
-        },
-        {
-          "actor": "Riswynn L17",
-          "cat": "saves",
-          "key": "cha",
-          "before": 1,
-          "after": 0
+          "actor": "Merric L17",
+          "cat": "advancement.class",
+          "key": "barbarian",
+          "before": [
+            "ItemGrant@17"
+          ],
+          "after": [
+            "AbilityScoreImprovement@20"
+          ]
         }
       ]
     },
@@ -1234,7 +1084,8 @@
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1242,7 +1093,8 @@
           "before": [],
           "after": [
             "hvy"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.dr",
@@ -1295,7 +1147,8 @@
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1303,7 +1156,8 @@
           "before": [],
           "after": [
             "hvy"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.dr",
@@ -1369,7 +1223,8 @@
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1377,7 +1232,8 @@
           "before": [],
           "after": [
             "hvy"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.dr",
@@ -1461,7 +1317,8 @@
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1469,7 +1326,8 @@
           "before": [],
           "after": [
             "hvy"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.dr",
@@ -1574,20 +1432,13 @@
           "after": "sm"
         },
         {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "druidic"
-          ],
-          "after": []
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1595,7 +1446,8 @@
           "before": [],
           "after": [
             "med"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "details.alignment",
@@ -1657,20 +1509,13 @@
           "after": "sm"
         },
         {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "druidic"
-          ],
-          "after": []
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1678,7 +1523,8 @@
           "before": [],
           "after": [
             "med"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "details.alignment",
@@ -1763,20 +1609,13 @@
           "after": "sm"
         },
         {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "druidic"
-          ],
-          "after": []
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1784,7 +1623,8 @@
           "before": [],
           "after": [
             "med"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "details.alignment",
@@ -1871,20 +1711,13 @@
           "after": "sm"
         },
         {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "druidic"
-          ],
-          "after": []
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
           "after": [
             "mar"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "traits.armorProf",
@@ -1892,7 +1725,8 @@
           "before": [],
           "after": [
             "med"
-          ]
+          ],
+          "expected": "baked-feature-grant"
         },
         {
           "cat": "details.alignment",
@@ -2528,6 +2362,15 @@
           ]
         },
         {
+          "cat": "advancement.class",
+          "key": "barbarian",
+          "before": [],
+          "after": [
+            "AbilityScoreImprovement@20"
+          ],
+          "expected": "capstone-asi-on-class-item"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "barbarian Class Features@1",
           "before": 4,
@@ -2558,6 +2401,15 @@
             "powerful build"
           ],
           "after": []
+        },
+        {
+          "cat": "advancement.class",
+          "key": "barbarian",
+          "before": [],
+          "after": [
+            "AbilityScoreImprovement@20"
+          ],
+          "expected": "capstone-asi-on-class-item"
         },
         {
           "cat": "advancement.class.grants",
@@ -2604,6 +2456,15 @@
             "enlarge/reduce"
           ],
           "after": []
+        },
+        {
+          "cat": "advancement.class",
+          "key": "barbarian",
+          "before": [],
+          "after": [
+            "AbilityScoreImprovement@20"
+          ],
+          "expected": "capstone-asi-on-class-item"
         },
         {
           "cat": "advancement.class.grants",
@@ -2663,7 +2524,9 @@
           "before": [
             "ItemGrant@17"
           ],
-          "after": []
+          "after": [
+            "AbilityScoreImprovement@20"
+          ]
         },
         {
           "cat": "advancement.class.grants",
@@ -3119,14 +2982,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "monk",
-          "before": [
-            "AbilityScoreImprovement@20"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "monk Class Features@1",
           "before": 3,
@@ -3195,14 +3050,6 @@
             "bless",
             "guidance",
             "sacred flame"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "monk",
-          "before": [
-            "AbilityScoreImprovement@20"
           ],
           "after": []
         },
@@ -3294,14 +3141,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "monk",
-          "before": [
-            "AbilityScoreImprovement@20"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "monk Class Features@1",
           "before": 3,
@@ -3334,6 +3173,34 @@
       "file": "fvtt-Actor-perrin-PerrinLv17000000",
       "official": true,
       "findings": [
+        {
+          "cat": "saves",
+          "key": "con",
+          "before": 0,
+          "after": 1,
+          "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "saves",
+          "key": "int",
+          "before": 0,
+          "after": 1,
+          "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "saves",
+          "key": "wis",
+          "before": 0,
+          "after": 1,
+          "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "saves",
+          "key": "cha",
+          "before": 0,
+          "after": 1,
+          "expected": "baked-feature-grant"
+        },
         {
           "cat": "tools",
           "key": "keys",
@@ -3379,14 +3246,6 @@
             "fireball",
             "guidance",
             "sacred flame"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "monk",
-          "before": [
-            "AbilityScoreImprovement@20"
           ],
           "after": []
         },
@@ -3957,15 +3816,6 @@
           "after": 0
         },
         {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "cant",
-            "halfling"
-          ],
-          "after": []
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [
@@ -3989,14 +3839,6 @@
           "before": [
             "dwarven resilience",
             "dwarven toughness"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "rogue",
-          "before": [
-            "Trait@15"
           ],
           "after": []
         },
@@ -4034,15 +3876,6 @@
           "after": 0
         },
         {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "cant",
-            "elvish"
-          ],
-          "after": []
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [
@@ -4078,14 +3911,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "rogue",
-          "before": [
-            "Trait@15"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "dwarf",
           "before": [
@@ -4114,15 +3939,6 @@
           "key": "arc",
           "before": 1,
           "after": 0
-        },
-        {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "cant",
-            "elvish"
-          ],
-          "after": []
         },
         {
           "cat": "traits.weaponProf",
@@ -4169,14 +3985,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "rogue",
-          "before": [
-            "Trait@15"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "dwarf",
           "before": [
@@ -4201,31 +4009,10 @@
       "official": true,
       "findings": [
         {
-          "cat": "saves",
-          "key": "wis",
-          "before": 1,
-          "after": 0
-        },
-        {
-          "cat": "saves",
-          "key": "cha",
-          "before": 1,
-          "after": 0
-        },
-        {
           "cat": "skills",
           "key": "arc",
           "before": 1,
           "after": 0
-        },
-        {
-          "cat": "traits.languages",
-          "key": "value",
-          "before": [
-            "cant",
-            "elvish"
-          ],
-          "after": []
         },
         {
           "cat": "traits.weaponProf",
@@ -4292,14 +4079,6 @@
             "unseen servant",
             "wall of force",
             "web"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "rogue",
-          "before": [
-            "Trait@15"
           ],
           "after": []
         },

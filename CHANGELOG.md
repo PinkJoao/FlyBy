@@ -5238,3 +5238,54 @@ faltava para o round-trip pegar o TC-0055 - agora uma regressão volta a falhar 
 conjuração de subclasse, e o próprio comparador), lint limpo, **sweep 285/285 `--strict`**,
 `npm run t2` reproduzível (745 achados, todos triados). Plano da T2 em TESTING-PLAN §5.1-5.2;
 decisões em DDL-0072.
+
+---
+
+## 94. Phase T - T2b: **TC-0066 fechado** - o inventário deixa de virar `loot` no Foundry (288 → 0)
+
+Primeira classe do burn-down da T2, e a maior: **288 dos 745 achados** eram itens de inventário
+saindo com o tipo errado. No Foundry o tipo do Item decide o que dá para fazer com ele - um `loot`
+não se equipa nem se consome -, então uma ficha importada perdia affordance real: tocha, ração,
+óleo e poção viravam tesouro morto, e manto, botas e kits também.
+
+### A raiz: a distinção não sai do dado do 5etools
+
+Todo item de aventura carrega o mesmo código de tipo (`G`), e o nosso `GROUP_FOUNDRY` mandava o
+grupo `gear` inteiro para `loot`. O SRD reparte item a item - só na pasta `adventuring-gear` são
+**35 `loot`, 32 `equipment` e 22 `consumable`**. Não há regra a inferir: é classificação curada
+pelo sistema, item por item.
+
+### O fix: o SRD do dnd5e como autoridade, por um registro GERADO
+
+Mesmo padrão do DDL-0055 (uuids de compêndio): `npm run gen:uuids` passou a emitir também
+**`EQUIPMENT_TYPES`** (`nome` → `"tipo/subtipo"`, **572 itens**) a partir do pacote `equipment24`
+do sistema dnd5e. Só classificação - nenhum texto de regra é copiado, como manda o DDL-0003.
+`equipmentFoundryType(name)` consulta o registro e `buildInventoryItems` o adota **apenas dentro
+do trio `equipment`/`consumable`/`loot`**: arma, armadura e ferramenta continuam com a nossa
+classificação, que é quem carrega dano, CA e perícia.
+
+Resultado por par (o que era e virou):
+
+| era | virou | itens |
+|---|---|---|
+| `loot` | `consumable` | ball bearings, caltrops, candle, healer's kit, holy water, hunting trap, ink, oil, rations, rope, torch |
+| `loot` | `equipment` | bell, costume, ink pen, lamp, net, robe, sprig of mistletoe, tinderbox |
+| `equipment` | `consumable` | bead of force |
+
+**Uma exceção deliberada:** o SRD **promove a arma** um item que o 5etools classifica como foco de
+conjuração - o "Staff" (e o "Wooden Staff") tem `weaponCategory`, `dmg1` e propriedades no dado, é
+só o `type` que diz `SCF`. A promoção só acontece **quando há dano no dado**, então a ficha de arma
+nunca é inventada; a categoria vem do raw. Um Staff exportado agora é atacável no Foundry.
+
+### Achado colateral: nome com caixa diferente perdia o item inteiro
+
+A ficha da Quillathe traz **"Sprig of mistletoe"** (m minúsculo). `resolveItemObj` casava o nome
+com caixa EXATA, então o item não resolvia contra o compêndio e perdia peso, preço, descrição e
+tipo de uma vez - o tipo errado era só o sintoma visível. Agora há uma rede case-insensitive
+**depois** do casamento exato, então o caminho normal do builder não muda em nada.
+
+### Verificação
+
+`items.gear.type`: **288 → 0** nas 48 fichas (`npm run t2 -- --cat=items` mostra as três classes
+restantes, todas de outros TCs). 1168 testes (+5), lint limpo, sweep 285/285 `--strict`.
+Total do comparativo: **745 → 457 achados**.

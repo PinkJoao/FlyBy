@@ -45,12 +45,15 @@ function walk(dir, out = []) {
  * Campos de TOPO de um documento do pack. Regex em vez de um parser de YAML: só
  * lemos três chaves não indentadas (`_id`, `name`, `type`), o que é estável no
  * formato do dnd5e e evita uma dependência só para o gerador.
+ * `subtype` é o `system.type.value` (INDENTADO) - a única chave interna lida, e
+ * só ela: é a classificação de inventário do item (TC-0066), não conteúdo.
  */
 function head(file) {
   const txt = readFileSync(file, 'utf8');
   const pick = (k) => txt.match(new RegExp(`^${k}: *(.+)$`, 'm'))?.[1]?.trim();
-  const name = pick('name')?.replace(/^['"]|['"]$/g, '');
-  return { id: pick('_id'), name, type: pick('type') };
+  const unquote = (s) => s?.replace(/^['"]|['"]$/g, '');
+  const subtype = unquote(txt.match(/^ +type:\n +value: *(.*)$/m)?.[1]?.trim());
+  return { id: pick('_id'), name: unquote(pick('name')), type: pick('type'), subtype: subtype || '' };
 }
 
 if (!existsSync(PACKS)) {
@@ -116,6 +119,11 @@ for (const f of walk(join(PACKS, 'spells24'))) {
 // dos itens embutidos. `origins24` guarda espécies E seus traços (que exportamos
 // como feat), então os dois convivem no mesmo mapa - a busca é por nome.
 const flat = { origins: {}, feats: {}, equipment: {} };
+// Classificação de inventário do dnd5e: `nome` → "tipo/subtipo" (TC-0066). O
+// tipo de um item de aventura NÃO é derivável do código do 5etools (o `G` de
+// "adventuring gear" vira loot, equipment OU consumable, item a item), e é o
+// tipo que decide se dá para equipar/consumir na ficha do Foundry.
+const equipmentTypes = {};
 const FLAT_PACKS = [
   ['origins', 'origins24', new Set(['race', 'feat', 'background'])],
   ['feats', 'feats24', new Set(['feat'])],
@@ -123,11 +131,12 @@ const FLAT_PACKS = [
 ];
 for (const [key, dir, types] of FLAT_PACKS) {
   for (const f of walk(join(PACKS, dir))) {
-    const { id, name, type } = head(f);
+    const { id, name, type, subtype } = head(f);
     if (!id || !name || !types.has(type)) continue;
     // Homônimos dentro do mesmo pacote: fica o PRIMEIRO (ordem alfabética de
     // arquivo), determinístico entre regerações.
     if (!flat[key][norm(name)]) flat[key][norm(name)] = id;
+    if (key === 'equipment' && !equipmentTypes[norm(name)]) equipmentTypes[norm(name)] = `${type}/${subtype}`;
   }
 }
 
@@ -181,6 +190,11 @@ export const FEAT_IDS = ${literal(flat.feats)};
 
 /** \`nomeDoItem\` → _id (pacote equipment24). */
 export const EQUIPMENT_IDS = ${literal(flat.equipment)};
+
+/** \`nomeDoItem\` → "tipo/subtipo" do Item do Foundry ("consumable/food"). É a
+ *  classificação de inventário do dnd5e - o que decide se o item pode ser
+ *  equipado ou consumido na ficha. Ver engine/compendiumUuids.js. */
+export const EQUIPMENT_TYPES = ${literal(equipmentTypes)};
 `;
 
 writeFileSync(OUT, out);

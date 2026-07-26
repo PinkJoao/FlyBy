@@ -239,3 +239,53 @@ describe('feature Active Effects', () => {
     expect(effectChangesFor('Unarmored Defense')).toBeNull(); // sem classe → sem efeito ambíguo
   });
 });
+
+// --- Fase T2 / TC-0066: a classificação de inventário vem do SRD do dnd5e -----
+// O código de tipo do 5etools não distingue equipment × consumable × loot (todo
+// "adventuring gear" é `G`), e o tipo decide se dá para equipar/consumir na ficha
+// do Foundry. O registro gerado (`npm run gen:uuids`) é a autoridade, por nome.
+describe('classificação de inventário contra o SRD (TC-0066)', () => {
+  const gearDb = {
+    'items-base': {
+      baseitem: [
+        { name: 'Torch', source: 'XPHB', type: 'G|XPHB', weight: 1, value: 1 },
+        { name: 'Robe', source: 'XPHB', type: 'G|XPHB', weight: 4, value: 100 },
+        { name: 'Bedroll', source: 'XPHB', type: 'G|XPHB', weight: 7, value: 100 },
+        // Foco de conjuração COM dados de arma - o SRD o publica como arma.
+        { name: 'Staff', source: 'XPHB', type: 'SCF|XPHB', scfType: 'arcane', weaponCategory: 'simple', dmg1: '1d6', dmgType: 'B', property: ['V'], weight: 4, value: 500 },
+      ],
+    },
+    items: { item: [] },
+    'fluff-items': { itemFluff: [] },
+  };
+  const inv = (names) => ({ inventory: names.map((n, i) => ({ uid: String(i), itemId: n, source: 'XPHB', quantity: 1 })) });
+  const typeOf = (name) => {
+    const it = buildInventoryItems(inv([name]), gearDb)[0];
+    return `${it.type}/${it.system.type.value}`;
+  };
+
+  it('gear vira consumable/equipment/loot conforme o SRD, não tudo loot', () => {
+    expect(typeOf('Torch')).toBe('consumable/trinket');
+    expect(typeOf('Robe')).toBe('equipment/clothing');
+    expect(typeOf('Bedroll')).toBe('loot/gear'); // este o SRD confirma como loot
+  });
+
+  it('o SRD promove a ARMA um foco que tem dano no dado (Staff)', () => {
+    const it = buildInventoryItems(inv(['Staff']), gearDb)[0];
+    expect(it.type).toBe('weapon');
+    expect(it.system.type.value).toBe('simpleM'); // categoria vinda do raw
+    expect(it.system.damage.base).toMatchObject({ number: 1, denomination: 6 });
+  });
+
+  it('arma/armadura/ferramenta NÃO são reclassificadas pelo SRD', () => {
+    const items = buildInventoryItems(
+      { inventory: [
+        { uid: '1', itemId: 'Longsword', source: 'XPHB', quantity: 1 },
+        { uid: '2', itemId: 'Chain Mail', source: 'XPHB', quantity: 1 },
+        { uid: '3', itemId: "Thieves' Tools", source: 'XPHB', quantity: 1 },
+      ] },
+      db,
+    );
+    expect(items.map((i) => i.type)).toEqual(['weapon', 'equipment', 'tool']);
+  });
+});

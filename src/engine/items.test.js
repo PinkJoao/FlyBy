@@ -149,3 +149,20 @@ describe('carryingCapacity', () => {
     expect(carryingCapacity(undefined)).toBe(150);
   });
 });
+
+describe('resolveItemObj - nome com caixa diferente (TC-0066)', () => {
+  const db = {
+    'items-base': { baseitem: [{ name: 'Torch', source: 'XPHB', type: 'G|XPHB' }] },
+    items: { item: [{ name: 'Sprig of Mistletoe', source: 'XPHB', type: 'SCF|XPHB' }] },
+  };
+
+  it('casa exato primeiro e, na falta, ignora a caixa (ator externo escreve como quer)', () => {
+    expect(resolveItemObj(db, 'Sprig of Mistletoe', 'XPHB')?.name).toBe('Sprig of Mistletoe');
+    expect(resolveItemObj(db, 'Sprig of mistletoe', 'XPHB')?.name).toBe('Sprig of Mistletoe');
+    expect(resolveItemObj(db, 'TORCH', 'XPHB')?.name).toBe('Torch');
+  });
+
+  it('fonte diferente continua não casando', () => {
+    expect(resolveItemObj(db, 'Torch', 'PHB')).toBeNull();
+  });
+});

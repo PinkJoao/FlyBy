@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:30:35.063Z",
+  "generatedAt": "2026-07-26T16:03:32.175Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -9,90 +9,6 @@
     "senses/movement (derived by Foundry from effects)"
   ],
   "aggregate": [
-    {
-      "cat": "items.gear.type",
-      "count": 288,
-      "actors": [
-        "Akra L01",
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Beiro L01",
-        "Beiro L05",
-        "Beiro L11",
-        "Beiro L17",
-        "Krusk L01",
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17",
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Morthos L01",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Quillathe L01",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17",
-        "Randal L01",
-        "Randal L05",
-        "Randal L11",
-        "Randal L17",
-        "Riswynn L01",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17",
-        "Sefris L01",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17",
-        "Zanna L01",
-        "Zanna L05",
-        "Zanna L11",
-        "Zanna L17"
-      ],
-      "examples": [
-        {
-          "actor": "Akra L01",
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "actor": "Akra L01",
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "actor": "Akra L01",
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "actor": "Akra L01",
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        }
-      ]
-    },
     {
       "cat": "items.feat",
       "count": 44,
@@ -1463,36 +1379,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "cleric",
           "before": [
@@ -1559,36 +1445,6 @@
             "sacred flame"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -1673,36 +1529,6 @@
             "sacred flame"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -1803,36 +1629,6 @@
             "sacred flame"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -1957,42 +1753,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "staff",
-          "before": "weapon",
-          "after": "equipment"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "druid",
           "before": [
@@ -2099,42 +1859,6 @@
           "after": [
             "find familiar"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "staff",
-          "before": "weapon",
-          "after": "equipment"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -2253,36 +1977,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "staff",
-          "before": "weapon",
-          "after": "equipment"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "druid",
           "before": [
@@ -2399,36 +2093,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "staff",
-          "before": "weapon",
-          "after": "equipment"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "druid",
           "before": [
@@ -2499,36 +2163,6 @@
           "after": [
             "elf; high elf lineage"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "costume",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         }
       ]
     },
@@ -2600,36 +2234,6 @@
           "after": [
             "elf; high elf lineage"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "costume",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "spell.method",
@@ -2736,36 +2340,6 @@
           "after": [
             "elf; high elf lineage"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "costume",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "spell.method",
@@ -2876,36 +2450,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "costume",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "spell.method",
           "key": "detect magic",
           "before": "spell",
@@ -2936,36 +2480,6 @@
       "file": "fvtt-Actor-krusk-KruskLv010000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
-        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -3005,36 +2519,6 @@
             "detect poison and disease"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class.grants",
@@ -3093,36 +2577,6 @@
             "greater restoration"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class.grants",
@@ -3190,36 +2644,6 @@
             "dimension door"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "holy water",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class.grants",
@@ -3298,36 +2722,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "barbarian Class Features@1",
           "before": 4,
@@ -3358,36 +2752,6 @@
             "powerful build"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class.grants",
@@ -3434,36 +2798,6 @@
             "enlarge/reduce"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class.grants",
@@ -3516,36 +2850,6 @@
             "enlarge/reduce"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -3637,60 +2941,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "sorcerer",
           "before": [
@@ -3744,60 +2994,6 @@
           "after": [
             "metamagic options"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -3922,60 +3118,6 @@
           "after": [
             "metamagic options"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -4124,60 +3266,6 @@
           "after": [
             "metamagic options"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -4329,36 +3417,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "monk",
           "before": [
@@ -4437,36 +3495,6 @@
             "sacred flame"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -4564,36 +3592,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "monk",
           "before": [
@@ -4683,36 +3681,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "monk",
           "before": [
@@ -4775,54 +3743,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "net",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "sprig of mistletoe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "hunting trap",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "class.spellcasting",
           "key": "ranger",
           "before": "half",
@@ -4880,48 +3800,6 @@
             "detect poison and disease"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "net",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "sprig of mistletoe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "class.spellcasting",
@@ -5009,48 +3887,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "net",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "sprig of mistletoe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "class.spellcasting",
           "key": "ranger",
           "before": "half",
@@ -5134,48 +3970,6 @@
             "silence"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "net",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "sprig of mistletoe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "class.spellcasting",
@@ -5264,48 +4058,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "healer's kit",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.race",
           "key": "human",
           "before": [
@@ -5355,48 +4107,6 @@
             "versatile"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "healer's kit",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.subclass",
@@ -5457,48 +4167,6 @@
             "versatile"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "healer's kit",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.subclass",
@@ -5567,48 +4235,6 @@
             "fireball"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "healer's kit",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "torch",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "caltrops",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.subclass",
@@ -5687,48 +4313,6 @@
             "dwarven toughness"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ball bearings",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "candle",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -5814,48 +4398,6 @@
             "magic missile"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ball bearings",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "candle",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -5947,48 +4489,6 @@
             "magic missile"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ball bearings",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "candle",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -6118,54 +4618,6 @@
           "after": []
         },
         {
-          "cat": "items.gear.type",
-          "key": "bell",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ball bearings",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rations",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "candle",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "rope",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "bead of force",
-          "before": "consumable",
-          "after": "equipment"
-        },
-        {
           "cat": "advancement.class",
           "key": "rogue",
           "before": [
@@ -6229,36 +4681,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "warlock",
           "before": [
@@ -6316,36 +4738,6 @@
             "hideous laughter"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -6473,36 +4865,6 @@
             "tongues"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -6651,36 +5013,6 @@
             "tongues"
           ],
           "after": []
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -6844,42 +5176,6 @@
           ]
         },
         {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
           "cat": "advancement.class",
           "key": "wizard",
           "before": [
@@ -6930,42 +5226,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -7027,42 +5287,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",
@@ -7140,42 +5364,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "robe",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "lamp",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "tinderbox",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink pen",
-          "before": "equipment",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "ink",
-          "before": "consumable",
-          "after": "loot"
-        },
-        {
-          "cat": "items.gear.type",
-          "key": "oil",
-          "before": "consumable",
-          "after": "loot"
         },
         {
           "cat": "advancement.class",

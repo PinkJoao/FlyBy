@@ -233,6 +233,10 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   `source` desaparecendo do export, chaves de idioma `sign`/`cant`, e **Eldritch Knight/Arcane
   Trickster chegando ao Foundry sem conjuração**). Nenhuma linha está `export: ok` ainda - o
   burn-down (T2b) é o trabalho das próximas sessões, e a ordem sugerida está no §7 do plano.
+  **T2b sessão 1 (2026-07-26): TC-0066 fechado** - a maior classe (288 achados): quase todo item de
+  inventário saía como `loot` no Foundry. A distinção equipment/consumable/loot não é derivável do
+  5etools, então o gerador `npm run gen:uuids` passou a emitir `EQUIPMENT_TYPES` do pacote
+  `equipment24` do dnd5e (572 itens) - mesmo padrão do DDL-0055. Total: 745 → 457 achados.
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,

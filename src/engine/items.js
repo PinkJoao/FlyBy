@@ -136,14 +136,19 @@ export function customTypeInfo(custom) {
  * @returns {object|null}
  */
 export function resolveItemObj(db, itemId, source) {
-  const base = latestOnly(db?.['items-base']?.baseitem ?? []).find(
-    (i) => i.name === itemId && i.source === source,
-  );
+  const bases = latestOnly(db?.['items-base']?.baseitem ?? []);
+  const items = latestOnly(db?.items?.item ?? []);
+  const base = bases.find((i) => i.name === itemId && i.source === source);
   if (base) return base;
-  return (
-    latestOnly(db?.items?.item ?? []).find((i) => i.name === itemId && i.source === source) ??
-    resolveVariantObj(db, itemId, source)
-  );
+  const exact = items.find((i) => i.name === itemId && i.source === source);
+  if (exact) return exact;
+  // Nome com CAIXA diferente: um ator de fora escreve o item como quiser (a
+  // ficha premade da Quillathe traz "Sprig of mistletoe"), e sem esta rede o
+  // item não resolve e perde peso, preço, descrição e tipo de uma vez (TC-0066).
+  // Só depois do casamento exato, então o caminho normal não muda.
+  const n = String(itemId ?? '').trim().toLowerCase();
+  const ci = (list) => list.find((i) => i.source === source && String(i.name).toLowerCase() === n);
+  return ci(bases) ?? ci(items) ?? resolveVariantObj(db, itemId, source);
 }
 
 /**

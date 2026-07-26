@@ -1141,13 +1141,29 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 ## TC-0066 - Inventário: quase todo item vira `loot` no Foundry
 
-- **Unidade:** todas (288 achados - a maior classe). **Severidade:** bug. **Causa:** export.
-  **Encontrado:** 2026-07-26. **Status:** open.
+- **Unidade:** todas (288 achados - era a maior classe). **Severidade:** bug. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
 - Pares observados: `consumable -> loot` (171: tochas, rações, óleo, poções), `equipment -> loot`
   (112: mantos, botas, mochilas, kits), `weapon -> equipment` (4). No Foundry um `loot` não se
-  equipa nem se consome, então a ficha importada perde affordances reais.
-- Caminho: o mapa de tipo em `buildInventoryItems` a partir do tipo do 5etools (o premade é o
-  gabarito de qual tipo cada item deveria ter).
+  equipa nem se consome, então a ficha importada perdia affordances reais.
+- **Raiz: a distinção NÃO é derivável do dado do 5etools.** Todo item de aventura é o mesmo código
+  `G`, e o SRD o reparte item a item (35 loot, 32 equipment, 22 consumable só na pasta
+  adventuring-gear). Nosso mapa `GROUP_FOUNDRY` mandava o grupo `gear` inteiro para `loot`.
+- Fix, no molde do DDL-0055: o gerador `npm run gen:uuids` passou a emitir **`EQUIPMENT_TYPES`**
+  (`nome` → `"tipo/subtipo"`, 572 itens) a partir do pacote `equipment24` do sistema dnd5e - só
+  classificação, nenhum conteúdo de regra. `equipmentFoundryType(name)` consulta, e
+  `buildInventoryItems` adota **apenas dentro do trio equipment/consumable/loot**, para não tocar
+  nos ramos de arma/armadura/ferramenta, que carregam dano/CA/perícia.
+- **Uma exceção deliberada:** o SRD PROMOVE a arma um item que o 5etools classifica como foco -
+  o "Staff" (e o "Wooden Staff") tem `weaponCategory`, `dmg1` e propriedades no dado, é só o
+  `type` que diz `SCF`. A promoção só acontece quando há dano no dado, então a ficha de arma
+  nunca é inventada; a categoria vem do raw.
+- **Achado colateral, corrigido junto:** `resolveItemObj` casava o nome com CAIXA EXATA, então a
+  "Sprig of mistletoe" da Quillathe (m minúsculo, como o premade escreve) não resolvia e o item
+  perdia peso, preço, descrição E tipo de uma vez. Agora há uma rede case-insensitive DEPOIS do
+  casamento exato - o caminho normal do builder não muda.
+- Verificado: `items.gear.type` de **288 → 0** nas 48 fichas; 5 testes novos; sweep 285/285
+  `--strict`.
 
 ## TC-0067 - Magia concedida como sempre-preparada sai `innate` em vez de `spell`+`prepared:2`
 

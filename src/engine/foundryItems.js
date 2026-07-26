@@ -34,7 +34,7 @@ import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { itemValue } from './magicItemPrice';
 import {
   classUuid, classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid,
-  originUuid, featUuid, equipmentUuid,
+  originUuid, featUuid, equipmentUuid, equipmentFoundryType,
 } from './compendiumUuids';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
@@ -1825,7 +1825,24 @@ export function buildInventoryItems(character, db) {
       ? itemTypeInfo(raw)
       : { group: 'other', groupLabel: 'Other', armorSlot: null, category: null, kind: null };
     const map = GROUP_FOUNDRY[info.group] ?? GROUP_FOUNDRY.other;
-    const fType = map.type;
+    // O SRD do dnd5e é a autoridade sobre equipment × consumable × loot: essa
+    // distinção não sai do código de tipo do 5etools (todo "adventuring gear" é
+    // `G`, e o SRD reparte item a item), e ela decide se dá para EQUIPAR ou
+    // CONSUMIR na ficha do Foundry - antes quase tudo virava `loot`, que não faz
+    // nem um nem outro (TC-0066). Só dentro desse trio: arma/armadura/ferramenta
+    // continuam com a nossa classificação, que carrega dano/CA/perícia.
+    // Exceção: o SRD pode PROMOVER a arma um item que o 5etools classifica como
+    // foco de conjuração - o "Staff" (e o "Wooden Staff") tem dano e categoria de
+    // arma no dado, é só o `type` que diz SCF. Promovemos só quando o dado tem
+    // dano, então a ficha de arma nunca é inventada.
+    const RECLASSIFIABLE = ['equipment', 'consumable', 'loot'];
+    const srd = raw ? equipmentFoundryType(raw.name) : null;
+    const useSrd =
+      srd
+      && ((RECLASSIFIABLE.includes(srd.type) && RECLASSIFIABLE.includes(map.type))
+        || (srd.type === 'weapon' && map.type !== 'weapon' && !!raw?.dmg1));
+    const fType = useSrd ? srd.type : map.type;
+    const typeValue = (useSrd ? srd.subtype : '') || map.typeValue;
     const attune = raw ? attunementInfo(raw) : { required: false };
 
     const description = raw
@@ -1848,7 +1865,9 @@ export function buildInventoryItems(character, db) {
     };
 
     if (fType === 'weapon') {
-      const cat = info.category === 'martial' ? 'martial' : 'simple';
+      // `info` só traz categoria/tipo quando o 5etools classifica o item COMO
+      // arma; num item promovido (o Staff, que lá é foco) elas vêm do raw.
+      const cat = (info.category ?? raw?.weaponCategory) === 'martial' ? 'martial' : 'simple';
       const km = info.kind === 'ranged' ? 'R' : 'M';
       system.type = { value: cat + km, baseItem: slugify(raw?.name ?? entry.itemId) };
       system.damage = { base: weaponDamageBase(raw), versatile: weaponDamageVersatile(raw) };
@@ -1864,7 +1883,7 @@ export function buildInventoryItems(character, db) {
       // Activity de ataque → tap-to-roll no Foundry (dano/acerto derivados).
       system.activities = weaponAttackActivity(info, raw);
     } else if (fType === 'equipment') {
-      const tv = map.typeValue ?? info.armorSlot ?? 'trinket';
+      const tv = typeValue ?? info.armorSlot ?? 'trinket';
       system.type = { value: tv, baseItem: slugify(raw?.name ?? entry.itemId) };
       const isArmor = ['light', 'medium', 'heavy', 'shield'].includes(tv);
       system.armor = { value: isArmor ? (raw?.ac ?? null) : null, dex: isArmor ? (ARMOR_DEX[tv] ?? null) : null };
@@ -1876,12 +1895,12 @@ export function buildInventoryItems(character, db) {
       system.equipped = !!entry.equipped;
       system.attuned = !!entry.attuned;
     } else if (fType === 'tool') {
-      system.type = { value: map.typeValue, baseItem: toolId(raw?.name ?? entry.itemId) };
+      system.type = { value: typeValue, baseItem: toolId(raw?.name ?? entry.itemId) };
       system.ability = '';
       system.proficient = null;
     } else {
       // consumable / loot
-      system.type = { value: map.typeValue, subtype: '' };
+      system.type = { value: typeValue, subtype: '' };
     }
 
     const name = entry.customName || raw?.name || entry.itemId;

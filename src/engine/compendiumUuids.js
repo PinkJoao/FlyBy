@@ -33,6 +33,7 @@ import {
   ORIGIN_IDS,
   FEAT_IDS,
   EQUIPMENT_IDS,
+  EQUIPMENT_TYPES,
 } from './compendiumUuidsData';
 
 // Apóstrofo tipográfico → reto: o pack usa o reto, o 5etools mistura os dois
@@ -128,6 +129,23 @@ export function featUuid(name) {
 /** Item de equipamento/inventário (pacote equipment24). */
 export function equipmentUuid(name) {
   return flatUuid(EQUIPMENT_IDS, PACK_EQUIPMENT, name);
+}
+
+/**
+ * Classificação de inventário do dnd5e para um item, pelo NOME: `{type, subtype}`
+ * (ex: Torch → `{type:'consumable', subtype:'trinket'}`). O tipo decide se o item
+ * pode ser equipado/consumido na ficha do Foundry, e **não é derivável** do código
+ * de tipo do 5etools: o `G` de "adventuring gear" vira `loot`, `equipment` OU
+ * `consumable` item a item no SRD (TC-0066). Item fora do pacote → null, e o
+ * chamador fica com a classificação por grupo, que é o comportamento antigo.
+ * @param {string} name
+ * @returns {{type: string, subtype: string}|null}
+ */
+export function equipmentFoundryType(name) {
+  const entry = EQUIPMENT_TYPES[norm(name)];
+  if (!entry) return null;
+  const [type, subtype = ''] = entry.split('/');
+  return type ? { type, subtype } : null;
 }
 
 /** Documento da CLASSE em si (não uma feature dela). */

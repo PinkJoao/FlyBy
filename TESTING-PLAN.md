@@ -390,6 +390,34 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-26 (4)** - **T2b sessão 1: TC-0066 FECHADO** - a maior classe do backlog (288 dos 745
+  achados). `items.gear.type` foi a **zero** nas 48 fichas; total do comparativo **745 → 457**.
+  Sweep verde antes e depois (285/285 `--strict`), 1168 testes (+5), lint.
+  **O que era:** quase todo item de inventário saía como `loot` no Foundry - que não se equipa nem
+  se consome. **A raiz:** a distinção `equipment × consumable × loot` NÃO é derivável do dado do
+  5etools (todo item de aventura é o código `G`; o SRD reparte item a item - 35/32/22 só na pasta
+  adventuring-gear). **O fix**, no molde do DDL-0055: `npm run gen:uuids` passou a emitir
+  **`EQUIPMENT_TYPES`** (nome → "tipo/subtipo", 572 itens) do pacote `equipment24` do dnd5e, e o
+  export adota **só dentro daquele trio** - arma/armadura/ferramenta seguem com a nossa
+  classificação, que carrega dano/CA/perícia. Uma exceção deliberada: o SRD **promove a arma** o
+  "Staff"/"Wooden Staff" (o dado tem `weaponCategory`+`dmg1`; só o `type` diz SCF), e a promoção só
+  ocorre quando há dano no dado.
+  **Achado colateral corrigido junto:** `resolveItemObj` casava o nome com CAIXA EXATA, então a
+  "Sprig of mistletoe" da Quillathe (m minúsculo, como o premade escreve) não resolvia e perdia
+  peso, preço, descrição E tipo - o tipo errado era só o sintoma. Rede case-insensitive DEPOIS do
+  casamento exato; o caminho normal do builder não muda.
+  **Lição que vale para o resto do burn-down:** quando uma classe de achado tem centenas de casos e
+  nenhum padrão no dado do 5etools, a resposta provável é **gerar um registro do SRD do dnd5e**, não
+  curar à mão nem inventar heurística - e restringir a adoção ao subconjunto onde ela é segura.
+  **Next action: T2b sessão 2.** Alvos sugeridos, na ordem: **TC-0062** (ScaleValue com identificador
+  VAZIO - sem ele `@scale.<classe>.x` não referencia nada - + a escala `max-prepared` e o
+  `preparation.formula` que todo premade conjurador traz) e **TC-0063** (sem escadas `ItemChoice`:
+  o pool do Fighting Style sai vazio e as escolhas de feature não geram passo, então subir de nível
+  dentro do Foundry não pergunta nada). Os dois mexem no mesmo arquivo (`foundryItems.js`, montagem
+  do advancement da classe) e dependem do registro de uuids para o pool. Depois deles: TC-0067/0068
+  (magia sempre-preparada saindo `innate`; `uses` faltando), TC-0064/0065 (item de espécie magro;
+  ancestralidade que não volta - **parte do 0064 é `needs-user-eyes`**, não decidir sozinho).
+
 - **2026-07-26 (3)** - **🚀 STAGE T2 ABERTO: harness de export construído (`npm run t2`) + 1º lote
   de correções (1023 → 745 achados).** Sweep verde antes e depois (285/285 `--strict`).
   **O oráculo (TESTING-PLAN §5.1, DDL-0072):** re-exportar as **48 fichas premade OFICIAIS**

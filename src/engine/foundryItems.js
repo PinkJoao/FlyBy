@@ -9,8 +9,9 @@
 // personagem) nem ItemGrant/ItemChoice/ScaleValue - próximos incrementos.
 // -----------------------------------------------------------------------------
 
+import { latestOnly } from '../selector/reprints';
 import { parseClass, parseFeatureRef } from './classData';
-import { classLevelChoices, classToolChoices, subclassFeatureChoices } from './classFeatureChoices';
+import { classLevelChoices, classToolChoices, subclassFeatureChoices, optionalFeatureChoices, optionalFeatureCount } from './classFeatureChoices';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
 import { buildClassAdvancement } from './foundryAdvancement';
 import { effectChangesFor, targetEffectFor } from './foundryEffects';
@@ -416,6 +417,8 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   // Escolhas de proficiência/expertise no nível DELAS (Primal Knowledge @3,
   // Expertise @1/@6…) - é o que faz o Foundry perguntar ao subir de nível.
   advancement.push(...(opts.choiceTraits ?? []));
+  // Escadas de escolha de feature (Divine Order, Metamagic…) - TC-0063.
+  advancement.push(...(opts.itemChoices ?? []).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })));
 
   const faces = classObj.hd?.faces ?? parsed.hitDieMax ?? 8;
   const caster = fvttProgression(parsed.spellcasting.casterProgression);
@@ -429,8 +432,15 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
       identifier: parsed.id,
       levels: classEntry.level || 1,
       hd: { denomination: `d${faces}`, spent: 0, additional: '' },
+      // `preparation.formula` aponta para a escala de preparadas do próprio item
+      // (é assim que o Foundry sabe quantas magias a classe prepara por nível);
+      // o ScaleValue `max-prepared` é emitido pelo advancement (TC-0062).
       spellcasting: caster
-        ? { progression: caster, ability: parsed.spellcasting.ability ?? '', preparation: { formula: '' } }
+        ? {
+            progression: caster,
+            ability: parsed.spellcasting.ability ?? '',
+            preparation: { formula: classObj?.preparedSpellsProgression ? `@scale.${parsed.id}.max-prepared` : '' },
+          }
         : { progression: 'none', ability: '', preparation: { formula: '' } },
       advancement: keyById(advancement),
       description: { value: opts.description ?? '', chat: '' },
@@ -936,6 +946,130 @@ export function buildClassChosenFeats(classEntry, db) {
  * @param {object} db
  * @returns {object[]} itens Foundry (type 'feat')
  */
+/**
+ * Advancements `ItemChoice` de um item de classe/subclasse - a ESCADA de escolhas
+ * de feature (Divine Order, Blessed Strikes, Primal Order, Metamagic, Eldritch
+ * Invocations, Fighting Style de subclasse…). Sem ela o Foundry não pergunta nada
+ * ao subir de nível: só o item já escolhido aparece, sem o passo que o produziu
+ * (TC-0063) - é o irmão do ItemGrant de níveis futuros (DDL-0055).
+ *
+ * Duas metades, como no SRD: `configuration.pool` são os uuids de compêndio de
+ * TODAS as opções (é o que o Foundry oferece no prompt) e `value.added` aponta,
+ * por nível, para o item EMBUTIDO que o jogador já escolheu (uuid relativo), para
+ * o passo não voltar a perguntar o que já foi decidido. Uma opção sem uuid
+ * conhecido simplesmente não entra no pool (`allowDrops` deixa arrastar à mão);
+ * um descritor cujo pool inteiro fique vazio não vira passo - melhor não ter a
+ * escada do que uma escada que não oferece nada.
+ *
+ * @param {import('../schema/character').ClassEntry} classEntry
+ * @param {object} classObj  objeto de classe 5etools
+ * @param {object|null} subObj  subclasse resolvida (null p/ o escopo de classe)
+ * @param {object} db
+ * @param {object[]} optionItems  itens já gerados (buildFeatureOptionItems +
+ *   buildOptionalFeatureItems), p/ ligar o `value.added` pelo NOME
+ * @param {{ scope?: 'class'|'subclass' }} [opts]
+ * @returns {object[]} entradas de advancement ItemChoice (sem `_id`)
+ */
+export function buildItemChoiceAdvancements(classEntry, classObj, subObj, db, optionItems = [], opts = {}) {
+  const classId = classEntry?.classId;
+  if (!classObj || !classId) return [];
+  const scope = opts.scope ?? 'class';
+  const itemByName = new Map(optionItems.map((i) => [norm(i.name), i]));
+  const out = [];
+
+  const push = (title, level, count, poolNames, restriction, uuidOf) => {
+    const pool = poolNames.map((n) => uuidOf(n)).filter(Boolean).map((uuid) => ({ uuid }));
+    if (!pool.length) return;
+    const choices = {};
+    for (const [lvl, c] of Object.entries(level)) choices[lvl] = { count: c, replacement: false };
+    const added = {};
+    for (const [lvl, names] of Object.entries(count)) {
+      for (const n of names) {
+        const item = itemByName.get(norm(n));
+        if (item) added[lvl] = { ...(added[lvl] ?? {}), [item._id]: `.${item._id}` };
+      }
+    }
+    out.push({
+      type: 'ItemChoice',
+      title,
+      configuration: { choices, allowDrops: true, type: 'feat', pool, spell: null, restriction },
+      value: { added, replaced: {} },
+    });
+  };
+
+  // 1) Escolhas de OPÇÃO de feature ("Divine Order: Protector"): um nível, uma
+  //    escolha. O item da opção chama-se "<Feature>: <Opção>" nos dois lados.
+  const featureDescriptors =
+    scope === 'subclass'
+      ? subclassFeatureOptionChoices(db, classId, subObj, 20)
+      : featureOptionChoices(db, classId, classObj, 20);
+  for (const ch of featureDescriptors) {
+    const names = (ch.pool?.options ?? []).map((o) => `${ch.label}: ${o.label}`);
+    const picked = (classEntry.choices?.[ch.id]?.picks ?? [])
+      .map((p) => (ch.pool.options ?? []).find((o) => o.value === p))
+      .filter(Boolean)
+      .map((o) => `${ch.label}: ${o.label}`);
+    push(
+      ch.label,
+      { [ch.level ?? 1]: ch.count ?? 1 },
+      { [ch.level ?? 1]: picked },
+      names,
+      { type: 'class', subtype: '', list: [] },
+      (n) => (scope === 'subclass' ? subclassFeatureUuid(classId, subObj, n) ?? classFeatureUuid(classId, n) : classFeatureUuid(classId, n)),
+    );
+  }
+
+  // 2) Optional features (Metamagic, Invocations, Maneuvers…): a contagem CRESCE,
+  //    e o SRD grava o DELTA de cada nível. Um descritor pertence à SUBCLASSE
+  //    quando só aparece com ela (`optionalFeatureChoices` funde as duas listas
+  //    sem marcá-las) - sem essa diferença o Warlock emitia as invocações duas
+  //    vezes, na classe E na subclasse.
+  const classOpt = optionalFeatureChoices(classObj, null, 20);
+  const optDescriptors =
+    scope === 'subclass'
+      ? optionalFeatureChoices(classObj, subObj, 20).filter((ch) => !classOpt.some((c) => c.id === ch.id))
+      : classOpt;
+  for (const ch of optDescriptors) {
+    if (ch.kind !== 'optionalfeature') continue;
+    const types = ch.pool?.featureType ?? [];
+    const list = latestOnly(db?.optionalfeatures?.optionalfeature ?? []).filter((f) =>
+      (f.featureType ?? []).some((t) => types.includes(t)),
+    );
+    const progression = progressionOf(classObj, subObj, types);
+    const byLevel = {};
+    let prev = 0;
+    for (let lvl = 1; lvl <= 20; lvl += 1) {
+      const total = optionalFeatureCount(progression, lvl);
+      if (total > prev) byLevel[lvl] = total - prev;
+      prev = total;
+    }
+    if (!Object.keys(byLevel).length) continue;
+    // O bag guarda UMA lista de picks para todos os níveis (a UI conta o total),
+    // então os escolhidos são FATIADOS entre os níveis na ordem - o mesmo que os
+    // Traits de Weapon Mastery fazem (DDL-0055).
+    const picked = (classEntry.choices?.[ch.id]?.picks ?? []).map((p) => String(p).split('|')[0]);
+    const pickedByLevel = {};
+    let from = 0;
+    for (const [lvl, count] of Object.entries(byLevel)) {
+      const slice = picked.slice(from, from + count);
+      if (slice.length) pickedByLevel[lvl] = slice;
+      from += count;
+    }
+    const subtype = types.map((t) => OPTFEAT_SUBTYPE[t]).find(Boolean) ?? '';
+    push(ch.label, byLevel, pickedByLevel, list.map((f) => f.name), { type: 'class', subtype, list: [] }, (n) =>
+      classFeatureUuid(classId, n),
+    );
+  }
+  return out;
+}
+
+/** A `progression` de optional feature de um conjunto de featureTypes. */
+function progressionOf(classObj, subObj, types) {
+  const all = [...(classObj?.optionalfeatureProgression ?? []), ...(subObj?.optionalfeatureProgression ?? [])];
+  const match = all.find((ofp) => (ofp.featureType ?? []).some((t) => types.includes(t)));
+  return match?.progression ?? null;
+}
+
 export function buildFeatureOptionItems(classEntry, classObj, subObj, db) {
   if (!classObj) return [];
   const descriptors = [
@@ -1529,6 +1663,8 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
         ...overlaySubclassAdvancement(opts.db, {
           className: classId, shortName: subclass.shortName, source: subclass.source,
         }).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
+        // Escolhas de feature da SUBCLASSE (o Fighting Style extra do Champion…).
+        ...(opts.itemChoices ?? []).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
       ]),
       source: sourceBlock(subclass.source),
     },

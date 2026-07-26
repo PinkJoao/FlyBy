@@ -390,6 +390,45 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-26 (5)** - **T2b sessão 2: TC-0062, TC-0063 e TC-0069 fechados** (457 → **395**
+  achados). Tudo no `advancement[]` do item de classe/subclasse. 1173 testes (+10), lint, sweep
+  285/285 `--strict`.
+  **TC-0062 - a premissa do ledger estava ERRADA, e medir mudou o alvo.** Eu havia registrado
+  "ScaleValue com identificador vazio" como bug; o dnd5e faz fallback para o slug do título
+  (`identifier || formatIdentifier(title)`) e os premades deixam a maioria em branco. O bug real é
+  mais estreito: onde o SRD usa um identificador CURTO próprio (`points`, `focus`, `die`, `aura`,
+  `mark`, `rage-damage`, `inspiration`), nós emitíamos o slug do NOSSO título - quebrando as
+  fórmulas do overlay que o citam. Causa: a entrada da TABELA vencia por título e a do overlay
+  (que traz o identificador) era descartada. Agora a precedência é por ENTRADA (curadas → overlay →
+  tabela), com dedup por título **ou por escala** (o SRD nomeia diferente o mesmo recurso: "Bardic
+  Die" × "Inspiration Die"). Mais `max-prepared` (+ o `preparation.formula` que a referencia),
+  `Cantrips Known`, `mastery` e `invocations-known`.
+  **TC-0063:** `buildItemChoiceAdvancements` emite as escadas de escolha (pool de uuids +
+  `value.added` para o item já escolhido, com os picks FATIADOS entre os níveis). Sem elas, subir
+  de nível dentro do Foundry não perguntava nada.
+  **TC-0069 fechou junto:** as optional features são documentos de CLASSE em pastas irmãs
+  (`metamagic-options`, `eldritch-invocation-options`) que o gerador de uuids não varria (159 → 197
+  features indexadas).
+  **REGRA que esta sessão firmou (vale para todo TC restante):** antes de corrigir, **meça a
+  premissa contra o sistema dnd5e** - metade do meu enunciado do TC-0062 não sobreviveu a olhar o
+  `scale-value.mjs`. Uma sonda que compara o valor EFETIVO (depois dos fallbacks do sistema), e não
+  o campo cru, é o que separa bug de diferença cosmética.
+  **Dois achados novos:** **TC-0077** (Body and Mind do Monge 20: +4 Dex/+4 Wis não deriva - mesma
+  família do TC-0059 e do TC-0075) e o Fighting Style extra do Champion @7, que vem de um descritor
+  `feat` do `SUBCLASS_FEATURE_GRANTS` e por isso ainda não gera passo (anotado dentro do TC-0063).
+  **Next action: T2b sessão 3.** Alvos sugeridos, na ordem:
+  1. **TC-0059 + TC-0075 + TC-0077 numa tacada só** - os três são "feature de CLASSE que concede
+     algo em prosa" (idioma, proficiência de salvaguarda, aumento de atributo). Um registro no
+     espírito do `SUBCLASS_GRANTS` (DDL-0029), **varrendo o dataset inteiro antes** em vez de
+     cadastrar caso a caso. Estes afetam a FICHA, não só o export - é o maior valor restante.
+  2. **TC-0067** (26+25 achados): magia sempre-preparada de espécie/linhagem saindo `innate` em vez
+     de `spell`+`prepared:2`. Conferir contra o DDL-0011 antes (o `uses` continua valendo).
+  3. **TC-0068** (`uses` faltando em Draconic Flight, Divine Intervention, Wild Resurgence...) e
+     **TC-0070** (activities divergentes nos dois sentidos).
+  4. **TC-0064/0065** (item de espécie magro; ancestralidade do Dragonborn que não volta no import)
+     - **parte do 0064 é `needs-user-eyes`** (um item por traço de espécie × effects no item de
+     raça, DDL-0057): não decidir sozinho.
+
 - **2026-07-26 (4)** - **T2b sessão 1: TC-0066 FECHADO** - a maior classe do backlog (288 dos 745
   achados). `items.gear.type` foi a **zero** nas 48 fichas; total do comparativo **745 → 457**.
   Sweep verde antes e depois (285/285 `--strict`), 1168 testes (+5), lint.

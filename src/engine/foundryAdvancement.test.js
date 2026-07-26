@@ -110,12 +110,34 @@ describe('scaleValueAdvancements', () => {
     expect(move.configuration).toMatchObject({ type: 'distance', distance: { units: 'ft' }, scale: { 1: { value: 0 }, 2: { value: 10 } } });
   });
 
-  it('IGNORA colunas de magia/invocations e o grupo de spell slots', () => {
+  it('colunas de magia e o grupo de spell slots não viram escala da tabela', () => {
     const obj = { name: 'Warlock', classTableGroups: [
-      { colLabels: ['{@filter Invocations|optionalfeatures|feature type=ei}', '{@filter Cantrips|spells|level=0}', 'Slot Level'], rows: [[1, 2, '1st']] },
+      { colLabels: ['{@filter Cantrips|spells|level=0}', 'Slot Level'], rows: [[2, '1st']] },
       { title: 'Spell Slots per Spell Level', colLabels: ['{@filter 1st|spells|level=1}'], rows: [[1]] },
     ] };
     expect(scaleValueAdvancements(obj)).toEqual([]);
+  });
+
+  // TC-0062: as escalas que o SRD publica e a tabela não dá de graça.
+  it('cantrips/preparadas/invocações viram escalas com o título e o id do SRD', () => {
+    const warlock = {
+      name: 'Warlock',
+      casterProgression: 'pact',
+      cantripProgression: [2, 2, 2, 3],
+      preparedSpellsProgression: [2, 3, 4, 5],
+      classTableGroups: [
+        { colLabels: ['{@filter Invocations|optionalfeatures|feature type=ei}'], rows: [[1], [3], [3], [3]] },
+      ],
+    };
+    const byTitle = Object.fromEntries(scaleValueAdvancements(warlock).map((a) => [a.title, a.configuration]));
+    expect(byTitle['Max Pact Magic Spells']).toMatchObject({ identifier: 'max-prepared', scale: { 1: { value: 2 }, 2: { value: 3 } } });
+    expect(byTitle['Cantrips Known']).toMatchObject({ identifier: '', scale: { 1: { value: 2 }, 4: { value: 3 } } });
+    expect(byTitle['Eldritch Invocations Known']).toMatchObject({ identifier: 'invocations-known', scale: { 1: { value: 1 }, 2: { value: 3 } } });
+  });
+
+  it('classe preparada NÃO-pact usa o título "Max Prepared Spells"', () => {
+    const wizard = { name: 'Wizard', casterProgression: 'full', preparedSpellsProgression: [4, 5] };
+    expect(scaleValueAdvancements(wizard).map((a) => a.title)).toContain('Max Prepared Spells');
   });
 
   it('escalas curadas em prosa do Fighter (Action Surge, Indomitable)', () => {

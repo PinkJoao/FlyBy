@@ -1092,28 +1092,57 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - Caminho: estender o `choiceTraitBag` (DDL-0056) a esses três casos, com o mesmo casamento por
   descritor - e por prefixo de chave, não por título.
 
-## TC-0062 - ScaleValue com identificador VAZIO; falta `max-prepared` e o `preparation.formula`
+## TC-0062 - Chave de ScaleValue divergente do SRD; falta `max-prepared` e o `preparation.formula`
 
-- **Unidade:** toda classe conjuradora + várias features com escala. **Severidade:** bug.
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
-- Nosso item de classe emite ScaleValues com `configuration.identifier: ''` (ex: "Channel
-  Divinity", "Divine Spark"). Sem identificador não há como referenciar (`@scale.cleric.x`), o que
-  é justamente o que as activities e os premades fazem. Falta também a escala **"Max Prepared
-  Spells"** (`max-prepared`) e o `system.spellcasting.preparation.formula`
-  (`@scale.<classe>.max-prepared`) que todo premade conjurador traz.
-- Cuidado ao fechar: o registro curado (`CURATED_SCALE_VALUES`) e o overlay (DDL-0057) são as duas
-  fontes; o identificador tem de sair de uma delas, não de um slug improvisado.
+- **Unidade:** toda classe conjuradora + Monge/Bardo/Feiticeiro/Warlock. **Severidade:** bug.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
+- **A premissa original estava ERRADA e foi corrigida ao medir:** `identifier: ''` NÃO é inválido -
+  o dnd5e faz fallback para o slug do título (`scale-value.mjs`: `configuration.identifier ||
+  formatIdentifier(this.title)`), e os próprios premades deixam a maioria em branco. O bug real é
+  mais estreito: onde o SRD usa um identificador CURTO e próprio (`points`, `focus`, `die`, `aura`,
+  `mark`, `rage-damage`, `inspiration`, `mastery`, `max-prepared`, `invocations-known`), nós
+  emitíamos o slug do NOSSO título - `@scale.sorcerer.sorcery-points` em vez de
+  `@scale.sorcerer.points` -, quebrando qualquer fórmula do overlay que o cite.
+- Causa: a entrada da TABELA vencia e a do overlay (que traz o identificador) era descartada por
+  ter o mesmo título; e o overlay era ignorado INTEIRO para uma classe com entrada curada.
+- Fix: precedência por ENTRADA - curadas, depois overlay, depois tabela -, com a tabela descartada
+  quando já existe entrada de mesmo título **ou de mesma escala** (o SRD às vezes nomeia diferente
+  o mesmo recurso: "Bardic Die" x "Inspiration Die", "Martial Arts" x "Martial Arts Die"). Mais
+  quatro escalas que a tabela não dá: **Max Prepared Spells / Max Pact Magic Spells**
+  (`max-prepared`, de `preparedSpellsProgression`) + o `spellcasting.preparation.formula` que a
+  referencia, **Cantrips Known**, **Weapon Masteries Known** (`mastery`, só onde a contagem CRESCE
+  - no SRD as classes de contagem fixa não têm a escala) e **Eldritch Invocations Known**
+  (`invocations-known`).
+- Verificado por sonda comparando a chave EFETIVA (`identifier || slug(title)`) das 12 classes
+  contra os premades: **zero chave faltando**, e a única a mais é a `divine-spark` curada
+  (deliberada - a activity do Clérigo a referencia). 4 testes.
 
 ## TC-0063 - Sem escadas `ItemChoice`: nada a escolher ao subir de nível no Foundry
 
 - **Unidade:** toda classe com escolha (Fighting Style, Divine Order, Blessed Strikes, Primal
-  Order, Metamagic...) + Human/Goliath (linhagem). **Severidade:** bug. **Causa:** export.
-  **Encontrado:** 2026-07-26. **Status:** open.
+  Order, Metamagic, Invocations...). **Severidade:** bug. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
 - O premade modela cada escolha de feature como um advancement `ItemChoice` com o POOL de opções
-  (uuid de compêndio) e o nível. Nós emitimos o item ESCOLHIDO, mas: o `ItemChoice` do Fighting
-  Style sai com **pool vazio**, e as demais escolhas não geram passo nenhum. Consequência: quem
-  sobe de nível dentro do Foundry não recebe o prompt (o irmão do DDL-0055 para o ItemGrant).
-- Depende do registro de uuids (`npm run gen:uuids`) cobrir os itens do pool.
+  (uuid de compêndio) e o nível. Nós emitíamos o item ESCOLHIDO, mas o `ItemChoice` do Fighting
+  Style saía com **pool vazio** e as demais escolhas não geravam passo nenhum - quem subisse de
+  nível dentro do Foundry não recebia prompt algum (o irmão do DDL-0055 para o ItemGrant).
+- Fix: `buildItemChoiceAdvancements` (`foundryItems.js`), emitido no item de classe E no de
+  subclasse. Duas metades, como no SRD: `configuration.pool` com os uuids de TODAS as opções
+  (é o que o Foundry oferece) e `value.added` apontando, por nível, para o item EMBUTIDO já
+  escolhido - senão o passo voltaria a perguntar o que já foi decidido. Os picks são FATIADOS
+  entre os níveis na ordem (o bag guarda uma lista só para todos), como os Traits de Weapon
+  Mastery do DDL-0055.
+- Duas armadilhas que a sonda pegou: `optionalFeatureChoices` funde os descritores da classe e da
+  subclasse sem marcá-los (o Warlock emitia as invocações DUAS vezes - a diferença é o descritor
+  que só aparece com a subclasse); e uma opção sem uuid conhecido não entra no pool, com o
+  descritor inteiro descartado quando o pool fica vazio (escada que não oferece nada é pior que
+  nenhuma; `allowDrops` continua deixando arrastar à mão).
+- **Destravou o TC-0069 de graça:** o gerador de uuids passou a indexar as pastas de OPÇÕES da
+  classe (`metamagic-options`, `eldritch-invocation-options`), que é de onde saem tanto o pool
+  quanto o `compendiumSource` das optional features.
+- **Resta um caso** (não reaberto como bug): o Fighting Style EXTRA do Champion no nível 7 vem de
+  um descritor `feat` do `SUBCLASS_FEATURE_GRANTS`, não de featureoption nem de optionalfeature, e
+  por isso ainda não gera passo na subclasse. 3 testes.
 
 ## TC-0064 - Item de espécie muito mais magro que o do premade
 
@@ -1187,9 +1216,13 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0069 - `compendiumSource` ausente em toda OPTIONAL FEATURE
 
 - **Unidade:** 7 fichas (34 achados: metamagias, invocações, pact boon). **Severidade:** polish.
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
 - O registro do DDL-0055/0056 cobre features de classe/subclasse, talentos e magias, mas não
   `optionalfeatures`. Sem procedência, o Foundry não oferece "atualizar do compêndio".
+- Fix (junto com o TC-0063): no dnd5e as optional features são documentos de CLASSE (pastas
+  `metamagic-options` / `eldritch-invocation-options` dentro de `classes24`), e o gerador só
+  varria `class-features`. Passou a varrer todas as pastas da classe (159 para 197 features), e as
+  34 divergências foram a zero sem nenhuma mudança no export.
 
 ## TC-0070 - Cobertura de `activities` divergente nos DOIS sentidos
 
@@ -1254,3 +1287,17 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - Nota: o sentido INVERSO desta classe (nossas com `mar`/`hvy` a mais - Akra, Aoth) foi
   verificado e está **correto**: vem de Divine Order Protector / Primal Order Warden, que o
   premade deixa como Active Effect em vez de assar no ator.
+
+## TC-0077 - Aumento de atributo do CAPSTONE não deriva (Body and Mind, Monge 20)
+
+- **Unidade:** `class:monk/*` (1 achado, `AbilityScoreImprovement@20`). **Severidade:** bug.
+  **Causa:** derivação (atinge a FICHA). **Encontrado:** 2026-07-26, ao fechar o TC-0063.
+  **Status:** open.
+- O premade do Monge tem um `AbilityScoreImprovement` no nível 20 com valores FIXOS - é o "Body
+  and Mind" (+4 Destreza, +4 Sabedoria). Nossa derivação não concede o aumento e o export não
+  emite o passo.
+- Mesma FAMÍLIA do TC-0059 (Druidic/Thieves' Cant) e do TC-0075 (Slippery Mind): feature de
+  CLASSE que concede algo em prosa. Vale resolver os três com um registro só, no espírito do
+  `SUBCLASS_GRANTS` (DDL-0029) mas para features de classe - e varrer o dataset inteiro antes, em
+  vez de cadastrar caso a caso.
+

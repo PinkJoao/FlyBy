@@ -49,6 +49,7 @@ export const DELIBERATE = [
   'session state (hp.value, spell slots value, uses.spent, death, exhaustion)',
   'container items (packs are one item)',
   'senses/movement (derived by Foundry from effects)',
+  'spellcasting progression artificer == half (identical in the dnd5e config)',
 ];
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -218,7 +219,13 @@ function compareItems(P, A, out) {
         cmp(out, 'class.levels', label, pit.system?.levels, ait.system?.levels);
         cmp(out, 'class.hitDice', label, pit.system?.hd?.denomination ?? pit.system?.hitDice, ait.system?.hd?.denomination ?? ait.system?.hitDice);
         cmp(out, 'class.identifier', label, pit.system?.identifier, ait.system?.identifier);
-        cmp(out, 'class.spellcasting', label, pit.system?.spellcasting?.progression ?? null, ait.system?.spellcasting?.progression ?? null);
+        // `artificer` e `half` são a MESMA progressão no dnd5e (divisor 2,
+        // roundUp - ver config.mjs); o dado do 5etools chama de `artificer` a do
+        // Paladino/Ranger 2024 e nós a preservamos (TC-0060), então o par não é
+        // divergência. Qualquer outro valor é.
+        const prog = (p) => (p === 'artificer' ? 'half' : (p ?? null));
+        cmp(out, 'class.spellcasting', label, prog(pit.system?.spellcasting?.progression), prog(ait.system?.spellcasting?.progression));
+        cmp(out, 'class.spellcasting.formula', label, pit.system?.spellcasting?.preparation?.formula ?? '', ait.system?.spellcasting?.preparation?.formula ?? '');
       }
       if (t === 'subclass') cmp(out, 'subclass.identifier', label, pit.system?.identifier, ait.system?.identifier);
     }

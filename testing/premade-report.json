@@ -1,12 +1,13 @@
 {
-  "generatedAt": "2026-07-26T16:03:32.175Z",
+  "generatedAt": "2026-07-26T16:42:50.005Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
     "prose (description/biography HTML)",
     "session state (hp.value, spell slots value, uses.spent, death, exhaustion)",
     "container items (packs are one item)",
-    "senses/movement (derived by Foundry from effects)"
+    "senses/movement (derived by Foundry from effects)",
+    "spellcasting progression artificer == half (identical in the dnd5e config)"
   ],
   "aggregate": [
     {
@@ -242,122 +243,6 @@
             "protection from evil and good",
             "protection from poison",
             "sacred flame"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
-      "cat": "feat.compendiumSource",
-      "count": 34,
-      "actors": [
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Sefris L01",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Morthos L05",
-          "cat": "feat.compendiumSource",
-          "key": "empowered spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "actor": "Morthos L05",
-          "cat": "feat.compendiumSource",
-          "key": "quickened spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "actor": "Morthos L11",
-          "cat": "feat.compendiumSource",
-          "key": "empowered spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "actor": "Morthos L11",
-          "cat": "feat.compendiumSource",
-          "key": "quickened spell",
-          "before": "has",
-          "after": "none"
-        }
-      ]
-    },
-    {
-      "cat": "advancement.class",
-      "count": 29,
-      "actors": [
-        "Akra L01",
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Merric L17",
-        "Morthos L01",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Riswynn L01",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17",
-        "Sefris L01",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17",
-        "Zanna L01",
-        "Zanna L05",
-        "Zanna L11",
-        "Zanna L17"
-      ],
-      "examples": [
-        {
-          "actor": "Akra L01",
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Akra L05",
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Akra L17",
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
           ],
           "after": []
         }
@@ -1059,46 +944,55 @@
       ]
     },
     {
-      "cat": "class.spellcasting",
-      "count": 8,
+      "cat": "advancement.class",
+      "count": 9,
       "actors": [
-        "Krusk L01",
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17",
-        "Quillathe L01",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17"
+        "Merric L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17"
       ],
       "examples": [
         {
-          "actor": "Krusk L01",
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
+          "actor": "Merric L17",
+          "cat": "advancement.class",
+          "key": "barbarian",
+          "before": [
+            "ItemGrant@17"
+          ],
+          "after": []
         },
         {
-          "actor": "Krusk L05",
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
+          "actor": "Perrin L01",
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
         },
         {
-          "actor": "Krusk L11",
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
+          "actor": "Perrin L05",
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
         },
         {
-          "actor": "Krusk L17",
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
+          "actor": "Perrin L11",
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
         }
       ]
     },
@@ -1379,14 +1273,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "dragonborn",
           "before": [
@@ -1443,14 +1329,6 @@
             "guidance",
             "protection from evil and good",
             "sacred flame"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
           ],
           "after": []
         },
@@ -1527,14 +1405,6 @@
             "protection from evil and good",
             "protection from poison",
             "sacred flame"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
           ],
           "after": []
         },
@@ -1627,14 +1497,6 @@
             "protection from evil and good",
             "protection from poison",
             "sacred flame"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "cleric",
-          "before": [
-            "ItemChoice@0"
           ],
           "after": []
         },
@@ -1753,14 +1615,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "druid",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "human",
           "before": [
@@ -1859,14 +1713,6 @@
           "after": [
             "find familiar"
           ]
-        },
-        {
-          "cat": "advancement.class",
-          "key": "druid",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         },
         {
           "cat": "advancement.race",
@@ -1977,14 +1823,6 @@
           ]
         },
         {
-          "cat": "advancement.class",
-          "key": "druid",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "human",
           "before": [
@@ -2091,14 +1929,6 @@
           "after": [
             "find familiar"
           ]
-        },
-        {
-          "cat": "advancement.class",
-          "key": "druid",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         },
         {
           "cat": "advancement.race",
@@ -2493,12 +2323,6 @@
           "after": 2
         },
         {
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
-        },
-        {
           "cat": "feat.uses",
           "key": "relentless endurance",
           "before": "has",
@@ -2531,12 +2355,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        },
-        {
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
         },
         {
           "cat": "advancement.subclass",
@@ -2589,12 +2407,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        },
-        {
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
         },
         {
           "cat": "advancement.subclass",
@@ -2656,12 +2468,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        },
-        {
-          "cat": "class.spellcasting",
-          "key": "paladin",
-          "before": "half",
-          "after": "artificer"
         },
         {
           "cat": "advancement.subclass",
@@ -2939,14 +2745,6 @@
             "otherworldly presence"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.class",
-          "key": "sorcerer",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -2996,14 +2794,6 @@
           ]
         },
         {
-          "cat": "advancement.class",
-          "key": "sorcerer",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "sorcerer Class Features@2",
           "before": 2,
@@ -3017,18 +2807,6 @@
             "Trait@6"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "empowered spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "quickened spell",
-          "before": "has",
-          "after": "none"
         },
         {
           "cat": "feat.uses",
@@ -3120,14 +2898,6 @@
           ]
         },
         {
-          "cat": "advancement.class",
-          "key": "sorcerer",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "sorcerer Class Features@2",
           "before": 2,
@@ -3145,32 +2915,8 @@
           "after": []
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "empowered spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "quickened spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.uses",
           "key": "sorcerous restoration",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "careful spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "twinned spell",
           "before": "has",
           "after": "none"
         },
@@ -3268,14 +3014,6 @@
           ]
         },
         {
-          "cat": "advancement.class",
-          "key": "sorcerer",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "sorcerer Class Features@2",
           "before": 2,
@@ -3293,50 +3031,14 @@
           "after": []
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "empowered spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "quickened spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.uses",
           "key": "sorcerous restoration",
           "before": "has",
           "after": "none"
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "careful spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "twinned spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.uses",
           "key": "dragon wings",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "extended spell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "subtle spell",
           "before": "has",
           "after": "none"
         },
@@ -3743,12 +3445,6 @@
           ]
         },
         {
-          "cat": "class.spellcasting",
-          "key": "ranger",
-          "before": "half",
-          "after": "artificer"
-        },
-        {
           "cat": "feat.activities",
           "key": "favored enemy",
           "before": [
@@ -3800,12 +3496,6 @@
             "detect poison and disease"
           ],
           "after": []
-        },
-        {
-          "cat": "class.spellcasting",
-          "key": "ranger",
-          "before": "half",
-          "after": "artificer"
         },
         {
           "cat": "feat.activities",
@@ -3887,12 +3577,6 @@
           "after": []
         },
         {
-          "cat": "class.spellcasting",
-          "key": "ranger",
-          "before": "half",
-          "after": "artificer"
-        },
-        {
           "cat": "feat.activities",
           "key": "favored enemy",
           "before": [
@@ -3970,12 +3654,6 @@
             "silence"
           ],
           "after": []
-        },
-        {
-          "cat": "class.spellcasting",
-          "key": "ranger",
-          "before": "half",
-          "after": "artificer"
         },
         {
           "cat": "feat.uses",
@@ -4681,25 +4359,10 @@
           ]
         },
         {
-          "cat": "advancement.class",
-          "key": "warlock",
-          "before": [
-            "ItemChoice@0",
-            "ScaleValue@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@1",
           "before": 2,
           "after": 3
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "pact of the chain",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -4740,15 +4403,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "warlock",
-          "before": [
-            "ItemChoice@0",
-            "ScaleValue@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@1",
           "before": 2,
@@ -4763,42 +4417,12 @@
           "after": []
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "pact of the chain",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
           "after": [
             "enchant"
           ]
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "agonizing blast",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "armor of shadows",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "eldritch mind",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "investment of the chain master",
-          "before": "has",
-          "after": "none"
         },
         {
           "cat": "spell.method",
@@ -4867,15 +4491,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "warlock",
-          "before": [
-            "ItemChoice@0",
-            "ScaleValue@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@1",
           "before": 2,
@@ -4892,54 +4507,12 @@
           "after": []
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "pact of the chain",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
           "after": [
             "enchant"
           ]
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "agonizing blast",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "eldritch mind",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "investment of the chain master",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "otherworldly leap",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "devil's sight",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "repelling blast",
-          "before": "has",
-          "after": "none"
         },
         {
           "cat": "spell.method",
@@ -5015,15 +4588,6 @@
           "after": []
         },
         {
-          "cat": "advancement.class",
-          "key": "warlock",
-          "before": [
-            "ItemChoice@0",
-            "ScaleValue@0"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@1",
           "before": 2,
@@ -5040,12 +4604,6 @@
           "after": []
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "pact of the chain",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
@@ -5054,56 +4612,8 @@
           ]
         },
         {
-          "cat": "feat.compendiumSource",
-          "key": "agonizing blast",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "eldritch mind",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "investment of the chain master",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "otherworldly leap",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "devil's sight",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "repelling blast",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "mask of many faces",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.uses",
           "key": "hurl through hell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.compendiumSource",
-          "key": "witch sight",
           "before": "has",
           "after": "none"
         },
@@ -5174,14 +4684,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "advancement.class",
-          "key": "wizard",
-          "before": [
-            "ScaleValue@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -5226,14 +4728,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "advancement.class",
-          "key": "wizard",
-          "before": [
-            "ScaleValue@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -5287,14 +4781,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "advancement.class",
-          "key": "wizard",
-          "before": [
-            "ScaleValue@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -5364,14 +4850,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "advancement.class",
-          "key": "wizard",
-          "before": [
-            "ScaleValue@0"
-          ],
-          "after": []
         },
         {
           "cat": "feat.uses",

@@ -73,11 +73,17 @@ for (const classDir of readdirSync(CLASSES_DIR)) {
   if (!statSync(dir).isDirectory()) continue;
   const classId = norm(classDir);
 
-  // Features de classe.
-  for (const f of walk(join(dir, 'class-features'))) {
-    const { id, name, type } = head(f);
-    if (type !== 'feat' || !id || !name) continue; // 'weapon' (Unarmed Strike) mora no equipment24
-    classFeatures[`${classId}|${norm(name)}`] = id;
+  // Features de classe + as pastas de OPÇÕES da classe (`metamagic-options`,
+  // `eldritch-invocation-options`): no dnd5e as optional features são documentos
+  // de classe como qualquer outra feature, e é de lá que saem tanto o pool dos
+  // ItemChoice quanto o `compendiumSource` delas (TC-0063/TC-0069).
+  for (const sub of readdirSync(dir)) {
+    if (sub === 'subclass-features' || !statSync(join(dir, sub)).isDirectory()) continue;
+    for (const f of walk(join(dir, sub))) {
+      const { id, name, type } = head(f);
+      if (type !== 'feat' || !id || !name) continue; // 'weapon' (Unarmed Strike) mora no equipment24
+      classFeatures[`${classId}|${norm(name)}`] = id;
+    }
   }
 
   // Documento da CLASSE e subclasses (arquivos soltos na raiz da pasta).

@@ -237,6 +237,12 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   inventário saía como `loot` no Foundry. A distinção equipment/consumable/loot não é derivável do
   5etools, então o gerador `npm run gen:uuids` passou a emitir `EQUIPMENT_TYPES` do pacote
   `equipment24` do dnd5e (572 itens) - mesmo padrão do DDL-0055. Total: 745 → 457 achados.
+  **T2b sessão 2 (2026-07-26): TC-0062, TC-0063 e TC-0069 fechados** - as escadas do item de classe
+  (chaves de ScaleValue iguais às do SRD + `max-prepared`/`preparation.formula`; advancements
+  `ItemChoice` com pool e `value.added`, sem os quais subir de nível dentro do Foundry não pergunta
+  nada; e o `compendiumSource` das optional features, que veio de graça ao indexar as pastas de
+  opções da classe). Total: 457 → 395. **Regra que ficou: meça a premissa contra o source do dnd5e
+  antes de corrigir** - metade do enunciado do TC-0062 não sobreviveu a abrir o `scale-value.mjs`.
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,

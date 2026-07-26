@@ -5289,3 +5289,83 @@ tipo de uma vez - o tipo errado era só o sintoma visível. Agora há uma rede c
 `items.gear.type`: **288 → 0** nas 48 fichas (`npm run t2 -- --cat=items` mostra as três classes
 restantes, todas de outros TCs). 1168 testes (+5), lint limpo, sweep 285/285 `--strict`.
 Total do comparativo: **745 → 457 achados**.
+
+---
+
+## 95. Phase T - T2b: escadas do item de classe - **TC-0062, TC-0063 e TC-0069 fechados** (457 → 395)
+
+Segunda leva do burn-down da T2, toda no `advancement[]` do item de classe/subclasse - a "receita"
+que o Foundry desdobra ao importar e ao subir de nível.
+
+### TC-0062 - a premissa estava errada; medir mudou o alvo
+
+Eu tinha registrado "ScaleValue com identificador VAZIO" como bug. **Não é:** o dnd5e faz fallback
+para o slug do título (`configuration.identifier || formatIdentifier(this.title)`), e os próprios
+premades deixam a maioria em branco. Uma sonda comparando a chave EFETIVA (`identifier ||
+slug(title)`) das 12 classes contra as fichas oficiais mostrou o bug de verdade, mais estreito:
+
+- onde o SRD usa um identificador **curto e próprio** (`points`, `focus`, `die`, `aura`, `mark`,
+  `rage-damage`, `inspiration`), nós emitíamos o slug do NOSSO título - `@scale.sorcerer.sorcery-points`
+  em vez de `@scale.sorcerer.points`, o que quebra qualquer fórmula do overlay que o cite;
+- a causa: a entrada da TABELA vencia por título e a do overlay (que traz o identificador) era
+  descartada; e o overlay era ignorado INTEIRO para uma classe com entrada curada.
+
+A precedência passou a ser por ENTRADA - curadas → overlay → tabela -, com a tabela descartada
+quando já existe entrada de mesmo título **ou de mesma escala**. Esse segundo critério importa: o
+SRD às vezes nomeia diferente o mesmo recurso ("Bardic Die" × "Inspiration Die", "Martial Arts" ×
+"Martial Arts Die"), e sem ele o mesmo dado saía duas vezes sob dois nomes.
+
+Mais quatro escalas que a tabela não dá de graça, com o título e o identificador das fichas
+oficiais: **Max Prepared Spells / Max Pact Magic Spells** (`max-prepared`) — junto com o
+`spellcasting.preparation.formula` que a referencia, que é como o Foundry sabe quantas magias a
+classe prepara —, **Cantrips Known**, **Weapon Masteries Known** (`mastery`, só onde a contagem
+CRESCE: no SRD, Paladino/Ranger/Ladino, de contagem fixa, não têm a escala) e **Eldritch
+Invocations Known**.
+
+Resultado medido: **zero chave faltando** nas 12 classes; a única a mais é a `divine-spark` curada,
+que é deliberada (a activity do Clérigo a referencia).
+
+### TC-0063 - sem `ItemChoice`, subir de nível no Foundry não pergunta nada
+
+O premade modela cada escolha de feature como um advancement `ItemChoice` com o POOL de opções e o
+nível. Nós emitíamos só o item ESCOLHIDO: o passo do Fighting Style saía com **pool vazio** e as
+demais escolhas (Divine Order, Blessed Strikes, Primal Order, Metamagic, Invocations) não geravam
+passo nenhum - é o irmão do ItemGrant de níveis futuros do DDL-0055, e sem ele o level-up dentro do
+Foundry é mudo.
+
+`buildItemChoiceAdvancements` emite as duas metades, como o SRD: `configuration.pool` com os uuids
+de todas as opções e `value.added` apontando, por nível, para o item EMBUTIDO já escolhido - senão o
+passo voltaria a perguntar o que já foi decidido. Os picks são **fatiados entre os níveis na ordem**
+(o choice-bag guarda uma lista só para todos os níveis), exatamente como os Traits de Weapon Mastery.
+
+Duas armadilhas que só a sonda pegou:
+
+- `optionalFeatureChoices` **funde** os descritores da classe e da subclasse sem marcá-los, então o
+  Warlock emitia as invocações duas vezes (classe E subclasse). A diferença é o descritor que só
+  aparece quando a subclasse entra.
+- Uma opção sem uuid conhecido não entra no pool, e o descritor inteiro é descartado se o pool ficar
+  vazio: uma escada que não oferece nada é pior que nenhuma (`allowDrops` segue permitindo arrastar).
+
+Conferido ao vivo: Clérigo 7 (Divine Order @1, Blessed Strikes @7), Feiticeiro 10 (Metamagic 2@2 +
+2@10), Warlock 5 (invocações 1@1, 2@2, 2@5, sem duplicata na subclasse), Guerreiro (pool de 4
+fighting styles, que é o que o SRD publica).
+
+### TC-0069 fechado de lambuja
+
+No dnd5e as optional features são documentos de CLASSE, em pastas irmãs (`metamagic-options`,
+`eldritch-invocation-options`) que o gerador de uuids não varria. Passou a varrer todas as pastas da
+classe (159 → **197** features), e as 34 divergências de `compendiumSource` (metamagias, invocações,
+pact boon) foram a zero sem tocar no export.
+
+### Dois achados novos, registrados
+
+- **TC-0077** (novo): o premade do Monge tem um `AbilityScoreImprovement@20` com valores fixos - é o
+  **Body and Mind** (+4 Dex, +4 Wis), que nossa derivação não concede. Mesma família do TC-0059
+  (Druidic/Thieves' Cant) e do TC-0075 (Slippery Mind): feature de CLASSE que concede algo em prosa.
+  Vale um registro só para os três.
+- O Fighting Style EXTRA do Champion @7 ainda não gera passo: vem de um descritor `feat` do
+  `SUBCLASS_FEATURE_GRANTS`, fora dos dois caminhos que a nova função cobre. Anotado no TC-0063.
+
+### Verificação
+
+1173 testes (+10), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **457 → 395** achados.

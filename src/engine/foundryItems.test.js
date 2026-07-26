@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -664,5 +664,45 @@ describe('fvttProgression + conjuração da subclasse', () => {
   it('subclasse sem conjuração segue com progression "none"', () => {
     const sub = { shortName: 'Champion', name: 'Champion', source: 'XPHB' };
     expect(buildSubclassItem(sub, 'fighter').system.spellcasting.progression).toBe('none');
+  });
+});
+
+// --- Fase T2 / TC-0063: escadas de ItemChoice -------------------------------
+describe('buildItemChoiceAdvancements', () => {
+  const db = {
+    'class-cleric': { classFeature: [
+      { name: 'Divine Order', source: 'XPHB', className: 'Cleric', classSource: 'XPHB', level: 1, entries: [
+        { type: 'options', count: 1, entries: [
+          { type: 'refClassFeature', classFeature: 'Protector|Cleric|XPHB|1|XPHB' },
+          { type: 'refClassFeature', classFeature: 'Thaumaturge|Cleric|XPHB|1|XPHB' },
+        ] },
+      ] },
+      { name: 'Protector', source: 'XPHB', className: 'Cleric', classSource: 'XPHB', level: 1, entries: ['armadura'] },
+      { name: 'Thaumaturge', source: 'XPHB', className: 'Cleric', classSource: 'XPHB', level: 1, entries: ['cantrip'] },
+    ] },
+  };
+  const classObj = { name: 'Cleric', source: 'XPHB', classFeatures: ['Divine Order|Cleric|XPHB|1'] };
+  const entry = (picks) => ({
+    classId: 'cleric', source: 'XPHB', level: 5,
+    choices: { 'featopt@Divine Order@1': { kind: 'featureoption', picks } },
+  });
+
+  it('emite o passo com o POOL das opções e o nível certo', () => {
+    const [adv] = buildItemChoiceAdvancements(entry(['Protector|XPHB']), classObj, null, db, []);
+    expect(adv).toMatchObject({ type: 'ItemChoice', title: 'Divine Order' });
+    expect(adv.configuration.choices).toEqual({ 1: { count: 1, replacement: false } });
+    // Os uuids vêm do registro do dnd5e (classes24) - 2 opções conhecidas.
+    expect(adv.configuration.pool.length).toBe(2);
+  });
+
+  it('`value.added` aponta para o ITEM embutido já escolhido (não pergunta de novo)', () => {
+    const item = { _id: 'OPT0000000000001', name: 'Divine Order: Protector' };
+    const [adv] = buildItemChoiceAdvancements(entry(['Protector|XPHB']), classObj, null, db, [item]);
+    expect(adv.value.added).toEqual({ 1: { OPT0000000000001: '.OPT0000000000001' } });
+  });
+
+  it('sem opção com uuid conhecido, nenhum passo é emitido (escada vazia é pior que nenhuma)', () => {
+    const unknown = { name: 'Zzz', source: 'XPHB', classFeatures: ['Divine Order|Cleric|XPHB|1'] };
+    expect(buildItemChoiceAdvancements({ ...entry([]), classId: 'zzz' }, unknown, null, db, [])).toEqual([]);
   });
 });

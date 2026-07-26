@@ -25,6 +25,7 @@ import {
   buildFeatureOptionItems,
   buildOptionalFeatureItems,
   buildSubclassItem,
+  buildItemChoiceAdvancements,
   buildSubclassFeatureItems,
   buildSpeciesItem,
   buildSpeciesFeatItems,
@@ -81,6 +82,11 @@ export function assembleFoundryActor(character, db) {
     const subObj = cls.subclassId ? resolveSubclassObj(db, cls.classId, cls.subclassId, cls.subclassSource) : null;
     const featureItems = buildClassFeatureItems(cls, classObj, db);
     const { items: chosenFeatItems, asiByLevel, fightingStyles } = buildClassChosenFeats(cls, db);
+    // Itens das ESCOLHAS de feature ("Divine Order: Thaumaturge") e das optional
+    // features (invocações, metamagias). Gerados ANTES dos itens de classe/
+    // subclasse porque as escadas de ItemChoice apontam para eles no `value.added`
+    // (TC-0063) - sem isso o Foundry perguntaria de novo o que já foi escolhido.
+    const optionItems = [...buildFeatureOptionItems(cls, classObj, subObj, db), ...buildOptionalFeatureItems(cls, db)];
     const classItem = buildClassItem(cls, classObj, featureItems, asiByLevel, {
       description: classFluffHtml(db, cls.classId, cls.source),
       traitValues: buildClassTraitValues(cls, db),
@@ -88,6 +94,7 @@ export function assembleFoundryActor(character, db) {
       db,
       futureGrants: buildClassFutureGrants(cls, classObj, db),
       choiceTraits: buildClassChoiceTraits(cls, classObj, db),
+      itemChoices: buildItemChoiceAdvancements(cls, classObj, subObj, db, optionItems),
     });
     // Escolhas da classe SEM casa nativa (tool@start/expertise/grants curados/
     // optional features/grants de subclasse) viajam na flag do item de classe
@@ -96,11 +103,9 @@ export function assembleFoundryActor(character, db) {
     if (Object.keys(residual).length) {
       classItem.flags = { ...classItem.flags, builder5e: { ...(classItem.flags?.builder5e ?? {}), choices: residual } };
     }
-    items.push(classItem, ...featureItems, ...chosenFeatItems);
     // Sub-features escolhidas ("Divine Order: Thaumaturge") e optional features
     // (invocations, metamagic…) - itens próprios, como nos premades reais.
-    items.push(...buildFeatureOptionItems(cls, classObj, subObj, db));
-    items.push(...buildOptionalFeatureItems(cls, db));
+    items.push(classItem, ...featureItems, ...chosenFeatItems, ...optionItems);
     if (cls.isOriginalClass || !originalClassId) originalClassId = classItem._id;
 
     if (subObj) {
@@ -110,6 +115,7 @@ export function assembleFoundryActor(character, db) {
         db,
         futureGrants: buildSubclassFutureGrants(subObj, cls.classId, db, cls.level),
         choiceTraits: buildSubclassChoiceTraits(subObj, cls.classId, cls, classObj, db),
+        itemChoices: buildItemChoiceAdvancements(cls, classObj, subObj, db, optionItems, { scope: 'subclass' }),
       });
       items.push(subItem, ...subFeatureItems);
       // Liga o passo `Subclass` do advancement da classe à subclasse EMBUTIDA.

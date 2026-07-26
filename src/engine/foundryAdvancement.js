@@ -6,17 +6,19 @@
 // Aqui GERAMOS esses passos a partir dos dados ESTRUTURADOS do 5e.tools (que já
 // baixamos) - sem depender do Plutonium (ver DDL-0003).
 //
-// Cobre os passos DERIVÁVEIS e auto-contidos:
-//   HitPoints · Trait (saves/skills/armas/armadura/weapon mastery) ·
-//   AbilityScoreImprovement (níveis de ASI + Epic Boon) · Subclass
-// Ficam para depois (precisam de UUIDs de itens do compêndio / tabela):
-//   ItemGrant (features por nível) · ItemChoice (Fighting Style) · ScaleValue
+// Cobre: HitPoints · Trait (saves/skills/armas/armadura/weapon mastery) ·
+//   AbilityScoreImprovement (ASI + Epic Boon) · Subclass · ScaleValue (colunas da
+//   tabela + overlay + o que o SRD publica à parte) · ItemChoice do Fighting Style.
+// O ItemGrant por nível e as demais escadas de ItemChoice são montados no
+// foundryItems (precisam dos itens já gerados e dos uuids de compêndio).
 //
 // Formato validado contra exports reais (etienne = Plutonium, randal = premade
 // oficial) e o source MIT do sistema dnd5e.
 // -----------------------------------------------------------------------------
 
+import { latestOnly } from '../selector/reprints';
 import { parseClass, skillCode } from './classData';
+import { featUuid } from './compendiumUuids';
 import { weaponMasteryCount } from './classFeatureChoices';
 import { overlayClassAdvancement } from './foundryOverlay';
 
@@ -49,10 +51,10 @@ const CURATED_SCALE_VALUES = {
   ],
 };
 
-// Rótulos de coluna que NÃO são recursos escaláveis (magia/derivados) → ignorados.
-// 'weapon mastery' entra aqui porque a contagem já é modelada pelos Traits de
-// `mode: 'mastery'` (um por breakpoint, como no SRD) - um ScaleValue homônimo
-// seria ruído que os premades não têm.
+// Rótulos de coluna que NÃO viram escala a partir da TABELA. Magia e maestria
+// saem por `srdScaleValues`, com o título e o identificador que o SRD usa
+// ("Weapon Masteries Known"/`mastery`, "Max Prepared Spells"/`max-prepared`) -
+// pela coluna sairiam com o nome da tabela e um identificador diferente.
 const SCALE_LABEL_DENY = new Set([
   'slot level', 'cantrips', 'prepared spells', 'spells known', 'spell slots', 'weapon mastery',
 ]);
@@ -91,15 +93,139 @@ function sameScale(a, b) {
   return a.type === 'dice' ? a.number === b.number && a.faces === b.faces : a.value === b.value;
 }
 
+/** Entrada de ScaleValue no formato do advancement. */
+function scaleAdv(title, type, scale, identifier = '') {
+  return {
+    type: 'ScaleValue',
+    title,
+    configuration: { identifier, type, distance: { units: type === 'distance' ? 'ft' : '' }, scale },
+  };
+}
+
+/** Progressão por nível (array de 20) → só os breakpoints, no formato `scale`. */
+function progressionScale(values) {
+  const scale = {};
+  let prev = null;
+  (values ?? []).forEach((v, i) => {
+    if (typeof v === 'number' && v !== prev) {
+      scale[i + 1] = { value: v };
+      prev = v;
+    }
+  });
+  return Object.keys(scale).length ? scale : null;
+}
+
 /**
- * Advancements ScaleValue a partir das colunas de RECURSO da tabela da classe
- * (Rages, Second Wind, Sneak Attack, Focus Points…), pulando colunas de magia
- * (`|spells`) e de optional features (`|optionalfeatures`). Guarda só os breakpoints.
- * Soma as escalas em prosa curadas (CURATED_SCALE_VALUES).
+ * Escalas que o SRD publica mas a TABELA não dá de graça, com os títulos e
+ * identificadores das fichas premade (conferidos uma a uma):
+ *   · "Max Prepared Spells" / "Max Pact Magic Spells" → `max-prepared`, que é o
+ *     que o `spellcasting.preparation.formula` referencia;
+ *   · "Cantrips Known" (identificador vazio: o dnd5e cai no slug do título);
+ *   · "Weapon Masteries Known" → `mastery` (a CONTAGEM; quais maestrias foram
+ *     escolhidas continua nos Traits `mode: 'mastery'`, como no SRD - os premades
+ *     têm as duas coisas);
+ *   · "Eldritch Invocations Known" → `invocations-known` (única coluna
+ *     `|optionalfeatures` do dataset, do Warlock).
+ */
+function srdScaleValues(classObj) {
+  const out = [];
+  const prepared = progressionScale(classObj?.preparedSpellsProgression);
+  if (prepared) {
+    const pact = norm(classObj?.casterProgression) === 'pact';
+    out.push(scaleAdv(pact ? 'Max Pact Magic Spells' : 'Max Prepared Spells', 'number', prepared, 'max-prepared'));
+  }
+  const cantrips = progressionScale(classObj?.cantripProgression);
+  if (cantrips) out.push(scaleAdv('Cantrips Known', 'number', cantrips));
+
+  // Só para quem TEM a feature: `weaponMasteryCount` devolve o default do 2024
+  // para qualquer classe, então sem este gate um Mago ganharia a escala.
+  const hasMastery = (parseClass(classObj)?.features ?? []).some((f) => norm(f.name) === 'weapon mastery');
+  if (hasMastery) {
+    const masteryScale = {};
+    let prevMastery = 0;
+    for (let level = 1; level <= 20; level += 1) {
+      const count = weaponMasteryCount(classObj, level);
+      if (count > prevMastery) {
+        masteryScale[level] = { value: count };
+        prevMastery = count;
+      }
+    }
+    // Só quando a contagem CRESCE: no SRD as classes de contagem fixa (Paladino,
+    // Ranger, Ladino) não têm a escala - um valor constante não é um ScaleValue.
+    if (Object.keys(masteryScale).length > 1) {
+      out.push(scaleAdv('Weapon Masteries Known', 'number', masteryScale, 'mastery'));
+    }
+  }
+
+  for (const group of classObj?.classTableGroups ?? []) {
+    const labels = group.colLabels ?? [];
+    for (let j = 0; j < labels.length; j += 1) {
+      if (!/feature type=ei/.test(String(labels[j] ?? ''))) continue;
+      const scale = progressionScale((group.rows ?? []).map((r) => parseScaleCell(r?.[j])?.value));
+      if (scale) out.push(scaleAdv('Eldritch Invocations Known', 'number', scale, 'invocations-known'));
+    }
+  }
+  return out;
+}
+
+/**
+ * Advancements ScaleValue de um item de classe. Três fontes, nesta PRECEDÊNCIA
+ * (a mesma do DDL-0031/0057, agora aplicada por ENTRADA e não por classe):
+ *   1. curadas em prosa (CURATED_SCALE_VALUES) - validadas contra os premades;
+ *   2. o overlay `class/foundry.json` - é quem traz os IDENTIFICADORES que o SRD
+ *      usa (`points`, `focus`, `die`, `aura`, `rage-damage`…), e sem eles o
+ *      dnd5e cai no slug do título: `@scale.sorcerer.sorcery-points` em vez de
+ *      `@scale.sorcerer.points`, quebrando toda fórmula que os cite (TC-0062);
+ *   3. as colunas de RECURSO da tabela, que preenchem o que faltar.
+ * Uma entrada da TABELA é descartada quando já existe uma de mesmo TÍTULO **ou de
+ * mesma escala** - o overlay às vezes nomeia diferente o mesmo recurso ("Bardic
+ * Die" na tabela × "Inspiration Die" no SRD), e emitir as duas duplicaria.
+ * Fecha com `srdScaleValues` (o que a tabela não expressa: preparadas, cantrips,
+ * maestrias, invocações).
  * @param {object} classObj  objeto de classe 5etools
  * @returns {object[]} entradas de advancement ScaleValue (sem `_id`)
  */
 export function scaleValueAdvancements(classObj, db = null) {
+  const out = [];
+  const seenTitle = new Set();
+  const seenScale = new Set();
+  // Chave canônica da ESCALA (nível → valor), para reconhecer o mesmo recurso sob
+  // dois nomes. Normaliza a forma do dado: o overlay escreve `{faces}` e o SRD
+  // `{number: null, faces}`, nós `{number: 1, faces}` - tudo "1dN".
+  const scaleKey = (a) =>
+    Object.entries(a.configuration.scale ?? {})
+      .map(([lvl, v]) => `${lvl}:${v.faces != null ? `${v.number ?? 1}d${v.faces}` : v.value}`)
+      .join('|');
+  const push = (adv) => {
+    out.push(adv);
+    seenTitle.add(norm(adv.title));
+    seenScale.add(scaleKey(adv));
+  };
+
+  for (const c of CURATED_SCALE_VALUES[norm(classObj?.name)] ?? []) {
+    push(scaleAdv(c.title, c.type, c.scale));
+  }
+  if (db) {
+    for (const a of overlayClassAdvancement(db, classObj?.name, classObj?.source)) {
+      if (!seenTitle.has(norm(a.title))) push(a);
+    }
+  }
+  for (const a of tableScaleValues(classObj)) {
+    if (!seenTitle.has(norm(a.title)) && !seenScale.has(scaleKey(a))) push(a);
+  }
+  for (const a of srdScaleValues(classObj)) {
+    if (!seenTitle.has(norm(a.title))) push(a);
+  }
+  return out;
+}
+
+/**
+ * ScaleValues derivados das colunas de RECURSO da tabela da classe (Rages,
+ * Second Wind, Sneak Attack…), pulando colunas de magia (`|spells`) e de optional
+ * features (`|optionalfeatures`) - essas viram escalas próprias em
+ * `srdScaleValues`, com o título e o identificador do SRD.
+ */
+function tableScaleValues(classObj) {
   const out = [];
   for (const group of classObj?.classTableGroups ?? []) {
     if (/spell slots/i.test(group.title ?? '')) continue; // grupo de slots de magia
@@ -127,24 +253,7 @@ export function scaleValueAdvancements(classObj, db = null) {
         }
       });
       if (Object.keys(scale).length === 0) continue;
-      out.push({
-        type: 'ScaleValue',
-        title,
-        configuration: { identifier: '', type, distance: { units: type === 'distance' ? 'ft' : '' }, scale },
-      });
-    }
-  }
-  const curated = CURATED_SCALE_VALUES[norm(classObj?.name)];
-  for (const c of curated ?? []) {
-    out.push({ type: 'ScaleValue', title: c.title, configuration: { identifier: '', type: c.type, distance: { units: '' }, scale: c.scale } });
-  }
-  // Overlay: só onde não há curado para a classe (precedência do DDL-0031) e
-  // sem repetir um título que a TABELA já produziu (o overlay do Fighter lista
-  // Second Wind, que a coluna da tabela já cobre).
-  if (!curated && db) {
-    const seen = new Set(out.map((a) => norm(a.title)));
-    for (const a of overlayClassAdvancement(db, classObj?.name, classObj?.source)) {
-      if (!seen.has(norm(a.title))) out.push(a);
+      out.push(scaleAdv(title, type, scale));
     }
   }
   return out;
@@ -261,6 +370,14 @@ export function buildClassAdvancement(classObj, db = null) {
   // feat escolhido, embutido) é preenchido pelo buildClassItem.
   const fsFeature = parsed.features.find((f) => norm(f.name) === 'fighting style');
   if (fsFeature) {
+    // O POOL são os talentos de Fighting Style que o compêndio do dnd5e publica
+    // (o SRD tem 4 dos 10) - sem ele o passo existe mas não oferece nada ao subir
+    // de nível (TC-0063). `allowDrops` continua permitindo arrastar os demais.
+    const pool = latestOnly(db?.feats?.feat ?? [])
+      .filter((f) => f.category === 'FS')
+      .map((f) => featUuid(f.name))
+      .filter(Boolean)
+      .map((uuid) => ({ uuid }));
     out.push({
       type: 'ItemChoice',
       title: 'Fighting Style',
@@ -268,7 +385,7 @@ export function buildClassAdvancement(classObj, db = null) {
         choices: { [fsFeature.level]: { count: 1, replacement: true } },
         allowDrops: true,
         type: 'feat',
-        pool: [],
+        pool,
         spell: null,
         restriction: { type: 'feat', subtype: 'fightingStyle', list: [] },
       },

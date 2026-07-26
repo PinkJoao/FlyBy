@@ -194,16 +194,20 @@ function resolveInventorySource(db, name) {
   return sv?.source ?? null;
 }
 
-/** "Nome|Fonte" de um item (formato dos picks de talento/optional feature). Se o
- * item veio SEM fonte (Plutonium/homebrew), tenta re-resolver pelo nome no db -
- * senão o pick não re-resolveria num export posterior. */
+/** Fonte de um item de TALENTO: a do próprio documento ou, se ele veio sem
+ *  nenhuma (premades/Plutonium/homebrew), a do talento de mesmo nome no db. Sem
+ *  isso o talento não re-resolve num export posterior - `findFeat` casa nome E
+ *  fonte, então uma fonte vazia faz o item DESAPARECER do ator (TC-0057). */
+function featSource(item, db) {
+  const own = itemSource(item);
+  if (own || !db) return own;
+  const feat = (db.feats?.feat ?? []).find((f) => norm(f.name) === norm(item?.name));
+  return feat?.source ?? '';
+}
+
+/** "Nome|Fonte" de um item (formato dos picks de talento/optional feature). */
 function itemRef(item, db) {
-  let source = itemSource(item);
-  if (!source && db) {
-    const feat = (db.feats?.feat ?? []).find((f) => norm(f.name) === norm(item.name));
-    if (feat) source = feat.source;
-  }
-  return `${item.name}|${source}`;
+  return `${item.name}|${featSource(item, db)}`;
 }
 
 /** Reverte uma chave de trait de FERRAMENTA ('tool:game:dice') no nome do 5etools
@@ -271,13 +275,22 @@ function resolveRaceByExactName(db, name) {
   if (!list.length) return null;
   const n = norm(name);
   const bases = list.filter((r) => norm(r.name) === n);
-  if (bases.length) return { id: bases[bases.length - 1].name.toLowerCase(), lineage: null };
+  if (bases.length) {
+    const race = bases[bases.length - 1];
+    return { id: race.name.toLowerCase(), source: race.source, lineage: null };
+  }
   for (const r of list) {
     // Linhagens = `_versions` + sub-raças fundidas ("Human (Innistrad; Stensia)").
     const v = raceLineages(db, r).find((v) => norm(v.name) === n);
-    if (v) return { id: r.name.toLowerCase(), lineage: v.name };
+    if (v) return { id: r.name.toLowerCase(), source: r.source, lineage: v.name };
   }
   return null;
+}
+
+/** Fonte da espécie de mesmo nome no catálogo (a mais recente), ou ''. */
+function speciesSourceByName(db, name) {
+  const matches = speciesCatalog(db).filter((r) => norm(r.name) === norm(name));
+  return matches.length ? matches[matches.length - 1].source : '';
 }
 
 /** Reconstrói species a partir do item de raça. Primeiro tenta o casamento
@@ -296,7 +309,11 @@ function parseSpecies(raceItem, db) {
   const name = raceItem.name ?? '';
   const exact = resolveRaceByExactName(db, name);
   if (exact) {
-    return { id: exact.id, source: itemSource(raceItem), lineage: exact.lineage, choices: {} };
+    // A fonte do DOCUMENTO tem precedência (é o que o nosso export escreve); um
+    // ator externo vem sem nenhuma, e aí vale a da espécie resolvida - com fonte
+    // vazia o re-export resolveria outra EDIÇÃO da mesma espécie (o Dragonborn
+    // 2014 em vez do XPHB), perdendo ancestralidade/traços (TC-0057).
+    return { id: exact.id, source: itemSource(raceItem) || exact.source || '', lineage: exact.lineage, choices: {} };
   }
   const m = name.match(/^([^;,(]+)[;,(]/);
   const hasLineage = !!m;
@@ -309,7 +326,7 @@ function parseSpecies(raceItem, db) {
   }
   return {
     id: baseName.toLowerCase(),
-    source: itemSource(raceItem),
+    source: itemSource(raceItem) || speciesSourceByName(db, baseName),
     lineage,
     choices: {},
   };
@@ -494,7 +511,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
             // Sub-escolhas do talento: flag do item (TC-0002); os aumentos
             // ESCOLHIDOS lá dentro contam nos boosts reconstruídos.
             const bag = featItem.flags?.builder5e?.choices;
-            const ref = itemRef(featItem);
+            const ref = itemRef(featItem, db);
             choices[key] = { kind: 'feat', picks: [ref], sub: bag ? { [ref]: bag } : {} };
             for (const b of featFixedBoosts(featItem)) boostAcc[b.ability] += b.amount;
             for (const b of collectAbilityPicks(bag ?? {})) boostAcc[b.ability] += b.amount;
@@ -513,7 +530,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
             const featItem = byId.get(Object.keys(m ?? {})[0]);
             if (featItem) {
               const bag = featItem.flags?.builder5e?.choices;
-              const ref = itemRef(featItem);
+              const ref = itemRef(featItem, db);
               choices[`feat@${lvl}`] = { kind: 'feat', picks: [ref], sub: bag ? { [ref]: bag } : {} };
               for (const b of collectAbilityPicks(bag ?? {})) boostAcc[b.ability] += b.amount;
             }
@@ -704,25 +721,33 @@ export function foundryToCharacter(actor, db) {
           char.origin.abilityBoosts.push({ ability: ab, amount: amt });
           boostAcc[ab] += amt;
         }
-      } else if (adv.type === 'Trait' && /skill/i.test(adv.title ?? '')) {
-        char.origin.skillProficiencies = (adv.value?.chosen ?? [])
-          .filter((c) => c.startsWith('skills:'))
-          .map((c) => c.slice('skills:'.length));
-      } else if (adv.type === 'Trait' && /tool/i.test(adv.title ?? '')) {
-        char.origin.toolProficiencies = (adv.value?.chosen ?? [])
-          .map((c) => toolKeyToName(c, db))
-          .filter(Boolean);
-      } else if (adv.type === 'Trait' && /language/i.test(adv.title ?? '')) {
-        char.origin.languages = (adv.value?.chosen ?? [])
-          .map((c) => languageKeyToName(c, db))
-          .filter(Boolean);
+      } else if (adv.type === 'Trait') {
+        // O TIPO de cada proficiência vem do PREFIXO da chave escolhida, nunca do
+        // título do Trait (mesma regra do item de raça, ali acima): um premade
+        // real põe perícias E ferramenta num único Trait chamado "Background
+        // Proficiencies", e um título de sabor não casa com /skill|tool|language/
+        // - era assim que as perícias e a ferramenta da origem se perdiam inteiras
+        // ao importar qualquer premade (TC-0056). Os três baldes ACUMULAM, então
+        // vários Traits (a forma do nosso próprio export) também funcionam.
+        for (const key of adv.value?.chosen ?? []) {
+          if (key.startsWith('skills:')) {
+            const skill = key.slice('skills:'.length);
+            if (!char.origin.skillProficiencies.includes(skill)) char.origin.skillProficiencies.push(skill);
+          } else if (key.startsWith('tool')) {
+            const tool = toolKeyToName(key, db);
+            if (tool && !char.origin.toolProficiencies.includes(tool)) char.origin.toolProficiencies.push(tool);
+          } else if (key.startsWith('languages:')) {
+            const lang = languageKeyToName(key, db);
+            if (lang && !char.origin.languages.includes(lang)) char.origin.languages.push(lang);
+          }
+        }
       } else if (adv.type === 'ItemGrant') {
         const feat = grantedItems(adv, byId)[0];
         if (feat) {
           // Sub-escolhas do talento de origem: flag do item (TC-0002); os
           // aumentos ESCOLHIDOS lá dentro contam nos boosts reconstruídos.
           const featChoices = feat.flags?.builder5e?.choices ?? {};
-          char.origin.originFeat = { id: feat.name, source: itemSource(feat), subtype: 'origin', choices: featChoices };
+          char.origin.originFeat = { id: feat.name, source: featSource(feat, db), subtype: 'origin', choices: featChoices };
           for (const b of featFixedBoosts(feat)) boostAcc[b.ability] += b.amount;
           for (const b of collectAbilityPicks(featChoices)) boostAcc[b.ability] += b.amount;
         }

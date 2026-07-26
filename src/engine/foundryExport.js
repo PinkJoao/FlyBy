@@ -44,10 +44,16 @@ function weaponProfCode(name) {
 }
 
 // Idiomas: a maioria é só o nome em minúsculas; overrides p/ os que divergem.
+// Idiomas: nosso nome → chave canônica do dnd5e (`CONFIG.DND5E.languages`).
+// Só entram os que NÃO saem do slug do nome; conferidos contra `module/config.mjs`
+// do sistema e contra as fichas premade reais (TC-0058 - "Common Sign Language"
+// slugificava para `common-sign-language`, e Thieves' Cant estava como
+// `thievescant`, mas o sistema usa `sign` e `cant`).
 const LANGUAGE_TO_FVTT = {
   'deep speech': 'deep',
-  "thieves' cant": 'thievescant',
-  'thieves cant': 'thievescant',
+  "thieves' cant": 'cant',
+  'thieves cant': 'cant',
+  'common sign language': 'sign',
 };
 
 // Ferramentas: nosso código/nome → id do Foundry. Cobre as comuns; fallback
@@ -325,6 +331,12 @@ function emptySpells() {
   return out;
 }
 
+/** Moedas do personagem (mesma forma nos dois lados: pp/gp/ep/sp/cp). */
+function buildCurrency(character) {
+  const c = character?.currency ?? {};
+  return { pp: c.pp || 0, gp: c.gp || 0, ep: c.ep || 0, sp: c.sp || 0, cp: c.cp || 0 };
+}
+
 function emptyResources() {
   const r = () => ({ value: 0, max: 0, sr: false, lr: false, label: '' });
   return { primary: r(), secondary: r(), tertiary: r() };
@@ -344,7 +356,8 @@ export function buildActorSystem(character, derived, { size = 'med', hpExtra = n
     tools: buildTools(derived),
     traits: buildTraits(derived, character, size),
     details: buildDetails(character, derived),
-    currency: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
+    // As moedas do personagem (o import já as lia; o export as zerava - TC-0055).
+    currency: buildCurrency(character),
     bonuses: emptyBonuses(),
     spells: emptySpells(),
     resources: emptyResources(),

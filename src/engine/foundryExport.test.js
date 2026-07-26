@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { etienneFixture, etienneContext } from './fixtures/etienne';
 import { deriveCharacter } from './index';
-import { buildActorSystem, buildFoundryActor, foundrySize } from './foundryExport';
+import { buildActorSystem, buildFoundryActor, foundrySize, languageCode } from './foundryExport';
 
 describe('foundryExport - Étienne (Fighter 6) vs gabarito etienne.json', () => {
   const c = etienneFixture();
@@ -86,5 +86,34 @@ describe('foundryExport - mapeamento e scaffold', () => {
     expect(foundrySize(['M'])).toBe('med');
     expect(foundrySize(['S'])).toBe('sm');
     expect(foundrySize(undefined)).toBe('med');
+  });
+});
+
+// --- Fase T2 (TESTING-PLAN §5): achados do comparativo com as fichas premade ---
+describe('buildActorSystem - moeda e chaves de idioma (TC-0055/TC-0058)', () => {
+  const base = () => {
+    const c = etienneFixture();
+    c.currency = { pp: 1, gp: 84, ep: 0, sp: 5, cp: 7 };
+    return c;
+  };
+
+  it('as moedas do personagem chegam ao ator (antes saía tudo zero)', () => {
+    const c = base();
+    const sys = buildActorSystem(c, deriveCharacter(c, etienneContext));
+    expect(sys.currency).toEqual({ pp: 1, gp: 84, ep: 0, sp: 5, cp: 7 });
+  });
+
+  it('personagem sem moeda exporta o bloco zerado', () => {
+    const c = etienneFixture();
+    delete c.currency;
+    const sys = buildActorSystem(c, deriveCharacter(c, etienneContext));
+    expect(sys.currency).toEqual({ pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 });
+  });
+
+  it('Common Sign Language → "sign" e Thieves\' Cant → "cant" (chaves do dnd5e)', () => {
+    expect(languageCode('Common Sign Language')).toBe('sign');
+    expect(languageCode("Thieves' Cant")).toBe('cant');
+    expect(languageCode('Deep Speech')).toBe('deep');
+    expect(languageCode('Giant')).toBe('giant'); // slug simples segue valendo
   });
 });

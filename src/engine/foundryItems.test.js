@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -639,5 +639,30 @@ describe('buildBackgroundItem', () => {
 
   it('sem origem → null', () => {
     expect(buildBackgroundItem({})).toBeNull();
+  });
+});
+
+// --- Fase T2 (TESTING-PLAN §5): progressão de conjuração (TC-0060) ------------
+describe('fvttProgression + conjuração da subclasse', () => {
+  it('as frações do 5etools viram as chaves do dnd5e', () => {
+    expect(fvttProgression('1/2')).toBe('half');
+    expect(fvttProgression('1/3')).toBe('third');
+    // Preservados: são chaves válidas do sistema (artificer == half lá).
+    expect(fvttProgression('full')).toBe('full');
+    expect(fvttProgression('pact')).toBe('pact');
+    expect(fvttProgression('artificer')).toBe('artificer');
+    expect(fvttProgression(null)).toBe(null);
+  });
+
+  it('subclasse terço-conjuradora carrega a própria progressão', () => {
+    const sub = { shortName: 'Eldritch Knight', name: 'Eldritch Knight', source: 'XPHB', casterProgression: '1/3', spellcastingAbility: 'int' };
+    expect(buildSubclassItem(sub, 'fighter').system.spellcasting).toEqual({
+      progression: 'third', ability: 'int', preparation: { formula: '' },
+    });
+  });
+
+  it('subclasse sem conjuração segue com progression "none"', () => {
+    const sub = { shortName: 'Champion', name: 'Champion', source: 'XPHB' };
+    expect(buildSubclassItem(sub, 'fighter').system.spellcasting.progression).toBe('none');
   });
 });

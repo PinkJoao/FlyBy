@@ -224,7 +224,15 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   oráculo (o livro, ou o que o dado declara) certifica a DERIVAÇÃO da família inteira em
   minutos; a passada ao vivo fica para o que exige olho (arte, layout, fluxo). E **verifique a
   suposição do probe antes de reportar** - vários "bugs" que ele acusou eram defeito do
-  instrumento. **Next step: T2** (curação do export + importações reais no Foundry).
+  instrumento.
+  **T2 EM ANDAMENTO (aberta 2026-07-26, DDL-0072):** a curação do EXPORT tem oráculo próprio -
+  `npm run t2` re-exporta as **48 fichas premade oficiais** e diffa contra elas, agregando os
+  achados por CLASSE (TESTING-PLAN §5.1). 1ª rodada: 1023 achados em 27 classes, todos triados em
+  `testing/ISSUES.md` (**TC-0055…TC-0076**, cada um com a causa: export / import / deliberada);
+  cinco corrigidos na abertura (moeda zerada, Traits de origem roteados por título, item sem
+  `source` desaparecendo do export, chaves de idioma `sign`/`cant`, e **Eldritch Knight/Arcane
+  Trickster chegando ao Foundry sem conjuração**). Nenhuma linha está `export: ok` ainda - o
+  burn-down (T2b) é o trabalho das próximas sessões, e a ordem sugerida está no §7 do plano.
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,
@@ -354,6 +362,70 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0072 — Stage T2: o oráculo do EXPORT é re-exportar as fichas premade oficiais e diffar por CLASSE de achado
+**Date:** 2026-07-26
+**Abre o stage T2** da campanha (DDL-0024; plano em `TESTING-PLAN.md` §5.1-5.2). **Builds on:**
+DDL-0005 (Foundry é o formato único, nos dois sentidos - por isso um achado de IMPORT conta tanto
+quanto um de export), DDL-0028 (a política nativo-x-flag que o comparador põe à prova), DDL-0001/
+0003 (o sistema dnd5e como esquema autoritativo licenciado).
+
+**Context.** A T1 fechou com as 285 unidades certificadas do lado do builder. O piso do export já
+era garantido pelo sweep, mas ele compara **o nosso export com o nosso próprio import**: tudo que
+nunca foi exportado é invisível para ele. A prova apareceu na primeira hora da T2 - a **moeda do
+personagem saía zerada** (`currency: {gp: 0…}` LITERAL no `buildActorSystem`) e nenhum teste ou
+varredura percebia, porque o `decisionSummary` não comparava o campo.
+
+**Decision — o gabarito são as 48 fichas premade OFICIAIS, e o teste é o ciclo completo.**
+`npm run t2` (`scripts/compare-premades.js` + `scripts/lib/premadeDiff.js`) roda
+`P --foundryToCharacter--> C --assembleFoundryActor--> A` em cada premade e diffa `A × P`. São
+documentos gerados pelo próprio sistema dnd5e, então a divergência é sempre nossa - e vale como
+verdade de esquema de um jeito que nenhum teste escrito por nós vale.
+- **Toda divergência é triada em UMA de três causas, e a triagem tem de dizer qual:** (a) export
+  não emite o que o Foundry espera; (b) import perdeu a decisão (o premade a tinha); (c) diferença
+  DELIBERADA do nosso modelo. **A (c) vive na lista `DELIBERATE` do módulo, cada uma com o porquê**
+  - uma diferença sem justificativa ali é bug disfarçado, não ruído. A lista se pagou de imediato:
+  os 48 achados de "item faltando" eram os packs, que o nosso modelo compra como um item só.
+- **Os achados são agregados por CLASSE (`cat`), não por ficha.** 1023 achados em 27 classes na 1ª
+  rodada; a unidade de trabalho do burn-down é a CLASSE (corrigir no mecanismo), nunca a linha.
+- **Cobertura e limite:** as 12 classes 2024 (menos Artificer), uma subclasse cada, 12 espécies,
+  4 níveis. O resto da matriz (123 subclasses, ~138 linhas de espécie, multiclasse) sai por
+  GENERALIZAÇÃO - uma classe de achado corrigida no mecanismo vale para todas, e o sweep guarda
+  contra regressão.
+
+**Decision — comparar contagem de grants, não só a forma da escada.** `grantCounts` compara
+quantos itens cada passo de `ItemGrant` concede por `título@nível`. A escada comparada como
+CONJUNTO esconde isso; foi a contagem que revelou o TC-0071.
+
+**Decisions de código do 1º lote** (detalhe em `testing/ISSUES.md`, CHANGELOG §93):
+- **Um Trait de proficiência é roteado pelo PREFIXO da chave escolhida, nunca pelo título**
+  (TC-0056). A regra já estava escrita no bloco do item de RAÇA ("premades reais usam títulos de
+  sabor"); o bloco do BACKGROUND a violava e perdia perícias+ferramenta de todo ator externo. Vale
+  para qualquer documento novo que se passe a ler.
+- **Um ator de fora não tem `source`, e fonte vazia não é inofensiva** (TC-0057): `findFeat` casa
+  nome E fonte, então o talento de origem sumia do export inteiro; e uma espécie sem fonte podia
+  resolver em OUTRA EDIÇÃO. Ao importar, **resolva e grave a fonte canônica** (helper
+  `featSource`; `resolveRaceByExactName` devolve a `source`). Cuidado correlato: passar o `db` para
+  helpers que re-resolvem - duas chamadas `itemRef(featItem)` sem ele anulavam a re-resolução.
+- **A progressão de conjuração é traduzida, e a subclasse tem a sua** (TC-0060): o 5etools escreve
+  `'1/2'`/`'1/3'`, que **não existem** em `CONFIG.DND5E.spellcasting` → `fvttProgression()`
+  (`half`/`third`); e `buildSubclassItem` escrevia `progression: 'none'` FIXO, então **Eldritch
+  Knight e Arcane Trickster chegavam ao Foundry sem conjuração alguma**. `artificer` é PRESERVADO
+  no Paladino/Ranger 2024 (é o que o dado diz, e o sistema o define igual a `half`).
+  **REGRA:** antes de exportar um valor enumerado, confira o vocabulário no `module/config.mjs` do
+  dnd5e - passar o código do 5etools cru é a armadilha padrão.
+- **Todo campo de decisão do jogador tem de estar no `decisionSummary`** (TC-0055). A moeda entrou;
+  quem acrescentar um campo de decisão ao schema deve acrescentá-lo lá, senão o round-trip fica
+  cego para ele.
+
+**Consequences.**
+- `export: ok` numa linha do COVERAGE exige sweep verde em `--strict`, nenhuma classe de achado
+  ABERTA que atinja aquela unidade e - nas 12 famílias com premade - o `npm run t2` limpo para as
+  fichas dela. Nenhuma linha foi marcada nesta sessão: o backlog está aberto.
+- Achados de REGRA do lado do builder aparecem aqui (TC-0075 Slippery Mind, TC-0059 Druidic/
+  Thieves' Cant): o premade é o primeiro oráculo de regra que a campanha tem - o sweep nunca teve um.
+- Verificado: 1163 testes (+16), lint, sweep 285/285 `--strict`, e o `npm run t2` de 1023 → 745
+  achados.
 
 ### DDL-0071 — Lore/arte de uma linhagem CURADA volta para a EDIÇÃO DA BASE (`_baseSource`), não para a primeira de mesmo nome
 **Date:** 2026-07-25

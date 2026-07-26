@@ -91,6 +91,9 @@ export function decisionSummary(c) {
     inventory: (c.inventory ?? [])
       .map((i) => `${String(i.itemId).toLowerCase()} x${i.quantity}${i.equipped ? ' [eq]' : ''}`)
       .sort(),
+    // A moeda é decisão do jogador (compras/gasto) e faltava aqui: o export a
+    // zerava e o oráculo não via nada, porque não comparava o campo (TC-0055).
+    currency: { ...(c.currency ?? {}) },
   };
 }
 

@@ -329,3 +329,58 @@ describe('reconstrói escolhas de sub-feature (Divine Order / Blessed Strikes)',
     expect(cls.choices['featopt@Blessed Strikes@7']).toEqual({ kind: 'featureoption', picks: ['Potent Spellcasting|XPHB'] });
   });
 });
+
+// --- Fase T2: lacunas que só as fichas premade OFICIAIS revelam ---------------
+// O nosso próprio export escreve um Trait por tipo de proficiência e sempre com
+// a fonte do compêndio, então o round-trip do sweep nunca passava por estes dois
+// caminhos. Ver TESTING-PLAN §5 e testing/ISSUES.md (TC-0056/TC-0057).
+describe('foundryToCharacter - forma dos premades oficiais', () => {
+  const premadeDb = {
+    languages: { language: [{ name: 'Common', type: 'standard' }, { name: 'Giant', type: 'standard' }] },
+    'items-base': { baseitem: [{ name: "Mason's Tools", source: 'XPHB', type: 'AT' }] },
+    // O talento existe no compêndio COM fonte; o ITEM do ator vem sem nenhuma.
+    feats: { feat: [{ name: 'Savage Attacker', source: 'XPHB', category: 'O' }] },
+    races: { race: [{ name: 'Goliath', source: 'XPHB' }] },
+  };
+  const premadeActor = () => ({
+    name: 'Merric', type: 'character',
+    system: { abilities: {}, currency: { gp: 84, sp: 5 }, details: {} },
+    items: [
+      { _id: 'R1', name: 'Goliath', type: 'race', system: { advancement: {} } },
+      {
+        _id: 'BG1', name: 'Vigilante', type: 'background',
+        system: { advancement: {
+          // UM Trait só, com título de sabor, misturando perícias E ferramenta.
+          t1: { _id: 't1', type: 'Trait', title: 'Background Proficiencies', level: 0,
+            value: { chosen: ['skills:ath', 'skills:ins', 'tool:art:mason'] } },
+          t2: { _id: 't2', type: 'Trait', title: 'Choose Languages', level: 0,
+            value: { chosen: ['languages:standard:common', 'languages:standard:giant'] } },
+          g1: { _id: 'g1', type: 'ItemGrant', level: 0, value: { added: { FT1: 'Compendium.x.y.Item.z' } } },
+        } },
+      },
+      { _id: 'FT1', name: 'Savage Attacker', type: 'feat', system: { type: { value: 'feat' }, advancement: {} } },
+    ],
+  });
+
+  it('Trait de origem é roteado pelo PREFIXO da chave, não pelo título (TC-0056)', () => {
+    const char = foundryToCharacter(premadeActor(), premadeDb);
+    expect(char.origin.skillProficiencies).toEqual(['ath', 'ins']);
+    expect(char.origin.toolProficiencies).toEqual(["Mason's Tools"]);
+    expect(char.origin.languages).toEqual(['Common', 'Giant']);
+  });
+
+  it('talento de origem sem fonte no item ganha a fonte do compêndio (TC-0057)', () => {
+    const char = foundryToCharacter(premadeActor(), premadeDb);
+    expect(char.origin.originFeat).toMatchObject({ id: 'Savage Attacker', source: 'XPHB' });
+  });
+
+  it('espécie sem fonte no item ganha a fonte da espécie resolvida (TC-0057)', () => {
+    const char = foundryToCharacter(premadeActor(), premadeDb);
+    expect(char.species).toMatchObject({ id: 'goliath', source: 'XPHB' });
+  });
+
+  it('moeda faz round-trip (o import já lia; o export zerava - TC-0055)', () => {
+    const char = foundryToCharacter(premadeActor(), premadeDb);
+    expect(char.currency).toMatchObject({ gp: 84, sp: 5, cp: 0 });
+  });
+});

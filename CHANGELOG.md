@@ -5167,3 +5167,74 @@ eram defeito do instrumento (pool de magia por filtro, delimitador de texto, for
 
 1147 testes, lint, sweep 285/285 `--strict`, mobile sem overflow, zero erros de console.
 **Próxima etapa: T2** - curação do export + importações reais no Foundry.
+
+---
+
+## 93. Phase T - **abertura do STAGE T2**: oráculo de export contra as 48 fichas premade + 1º lote de correções
+
+Com a T1 fechada (as 285 unidades `ui: ok`), começa a **T2: curação do EXPORT**. O sweep já
+garantia o piso estrutural do lado Foundry, mas ele compara o nosso export com o nosso próprio
+import - então tudo que **nunca foi exportado** era invisível para ele. A prova disso abre esta
+seção: a **moeda do personagem saía zerada há meses** e nenhum teste percebia.
+
+### `npm run t2` - re-exportar as fichas oficiais e diffar
+
+Novo harness (`scripts/compare-premades.js` + `scripts/lib/premadeDiff.js`), no espírito do
+sweep. Para cada uma das **48 fichas premade oficiais** (12 personagens x níveis 1/5/11/17, em
+`DnD Source Material/Character Sheets in JSON/Standard Premade Characters` - documentos gerados
+pelo próprio sistema dnd5e, portanto verdade de esquema):
+
+```
+P --foundryToCharacter--> C --assembleFoundryActor--> A     e diffa A x P
+```
+
+Os achados saem **agregados por CLASSE** (`cat`: `currency`, `skills`, `items.gear.type`,
+`advancement.race`...), para triar uma vez por classe de problema em vez de linha a linha. Flags:
+`--actor=merric`, `--level=05`, `--cat=currency`, `--verbose`, `--players`. Saída completa em
+`testing/premade-report.json`.
+
+Duas peças de projeto que valem para quem for usar:
+
+- **A lista `DELIBERATE`** documenta o que o comparador NÃO reporta e por quê (nome do background,
+  identidade de documento, prosa, estado de sessão, contêineres, sentidos derivados). Uma
+  diferença sem justificativa ali é bug disfarçado, não ruído - e a lista se pagou na hora: os 48
+  achados de "item faltando" eram os packs, que o nosso modelo compra como um item só.
+- **`grantCounts`** compara quantos itens cada passo de `ItemGrant` concede por `título@nível`. A
+  escada comparada como conjunto esconde isso, e foi só com a contagem que apareceu o TC-0071
+  (`paladin Class Features@2`: 3 no premade, 2 nas nossas).
+
+**1ª rodada: 1023 achados em 27 classes.** Todas triadas em `testing/ISSUES.md` (TC-0055…TC-0076),
+cada uma com a CAUSA: nosso export, nosso import, ou diferença deliberada.
+
+### Corrigido nesta sessão (1023 -> 745)
+
+| TC | O que era | Onde |
+|---|---|---|
+| **TC-0055** | `currency` exportada como zero LITERAL - toda a carteira sumia | export |
+| **TC-0056** | Traits de origem roteados pelo TÍTULO: as perícias e a ferramenta da origem se perdiam ao importar qualquer premade (129+48 achados) | import |
+| **TC-0057** | Item sem `source` gravava fonte vazia; `findFeat` casa nome E fonte, então o talento de origem (e as magias do Magic Initiate) **desaparecia** no re-export, e a espécie podia resolver na EDIÇÃO errada | import |
+| **TC-0058** | `sign` e `cant`: exportávamos `common-sign-language` e `thievescant`, fora do vocabulário do dnd5e | export |
+| **TC-0060** | **Eldritch Knight e Arcane Trickster chegavam ao Foundry SEM conjuração**: as frações `'1/3'` do 5etools não existem no sistema, e o item de subclasse escrevia `progression: 'none'` fixo | export |
+
+O TC-0060 é o mais severo do lote e não vem dos premades (nenhum deles é EK/AT): saiu de conferir
+o vocabulário de `CONFIG.DND5E.spellcasting` contra o que o dado do 5etools escreve. `artificer`
+foi **preservado** no Paladino/Ranger 2024 - é o que o dado diz, e o sistema define `artificer` e
+`half` de forma idêntica (`divisor: 2`, `roundUp: true`), então a diferença com o premade é de
+rótulo, não de mecânica.
+
+O TC-0056/0057 valem também para as fichas Plutonium do usuário e para qualquer ator de fora: um
+premade importado agora chega com as perícias da origem, a ferramenta, o talento de origem e a
+espécie na edição certa.
+
+### A cegueira do oráculo do sweep, fechada
+
+`decisionSummary` (`scripts/lib/roundtrip.js`) passou a comparar **`currency`**. Era o campo que
+faltava para o round-trip pegar o TC-0055 - agora uma regressão volta a falhar a linha em
+`--strict`.
+
+### Verificação
+
+1163 testes (+16: moeda, chaves de idioma, forma dos premades no import, `fvttProgression`,
+conjuração de subclasse, e o próprio comparador), lint limpo, **sweep 285/285 `--strict`**,
+`npm run t2` reproduzível (745 achados, todos triados). Plano da T2 em TESTING-PLAN §5.1-5.2;
+decisões em DDL-0072.

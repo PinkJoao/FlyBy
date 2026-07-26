@@ -336,6 +336,22 @@ export function hitPointsValue(classEntry) {
 }
 
 /**
+ * Progressão de conjuração do 5etools → chave do dnd5e (`CONFIG.DND5E.spellcasting`
+ * → `spell.progression` / `pact.progression`). O 5etools escreve as frações
+ * `'1/2'`/`'1/3'`, que NÃO existem no sistema: exportadas cruas, o bloco de
+ * conjuração é inválido e a classe/subclasse chega ao Foundry sem espaços de magia
+ * (TC-0060; hoje isso atinge Eldritch Knight e Arcane Trickster, os únicos
+ * `'1/3'` alcançáveis). `artificer` é preservado: o sistema o define exatamente
+ * como `half` (divisor 2, roundUp) e é o que o dado diz do Paladino/Ranger 2024.
+ * @param {string|null|undefined} code
+ * @returns {string|null} chave válida do dnd5e, ou null quando não conjura
+ */
+export function fvttProgression(code) {
+  if (!code) return null;
+  return { '1/2': 'half', '1/3': 'third' }[code] ?? code;
+}
+
+/**
  * Constrói o documento de ITEM de classe do Foundry. Se receber os `featureItems`
  * (de buildClassFeatureItems), adiciona um advancement ItemGrant por nível ligando
  * a classe às suas features (via `value.added` mapeando o _id do item).
@@ -402,7 +418,7 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   advancement.push(...(opts.choiceTraits ?? []));
 
   const faces = classObj.hd?.faces ?? parsed.hitDieMax ?? 8;
-  const caster = parsed.spellcasting.casterProgression;
+  const caster = fvttProgression(parsed.spellcasting.casterProgression);
 
   return {
     _id: randomFoundryId(),
@@ -1493,7 +1509,17 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
       identifier,
       classIdentifier: classId,
       description: { value: opts.description ?? '', chat: '' },
-      spellcasting: { progression: 'none', ability: '', preparation: { formula: '' } },
+      // Subclasse CONJURADORA (Eldritch Knight, Arcane Trickster): a progressão é
+      // da subclasse, não da classe, e o dnd5e tem o campo para isso (o
+      // SpellcastingField do DataModel de subclass). Sem ele o terço-conjurador
+      // chegava no Foundry sem nenhum espaço de magia (TC-0060).
+      spellcasting: subclass.casterProgression
+        ? {
+            progression: fvttProgression(subclass.casterProgression),
+            ability: subclass.spellcastingAbility ?? '',
+            preparation: { formula: '' },
+          }
+        : { progression: 'none', ability: '', preparation: { formula: '' } },
       advancement: keyById([
         ...itemGrantAdvancements(featureItems, 'Subclass Features'),
         ...(opts.futureGrants ?? []),

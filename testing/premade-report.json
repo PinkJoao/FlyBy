@@ -1,0 +1,7197 @@
+{
+  "generatedAt": "2026-07-26T15:30:35.063Z",
+  "deliberate": [
+    "background item name (custom origins only)",
+    "document identity (_id/_stats/img/sort/ownership/folder/flags)",
+    "prose (description/biography HTML)",
+    "session state (hp.value, spell slots value, uses.spent, death, exhaustion)",
+    "container items (packs are one item)",
+    "senses/movement (derived by Foundry from effects)"
+  ],
+  "aggregate": [
+    {
+      "cat": "items.gear.type",
+      "count": 288,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Krusk L01",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Morthos L01",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Quillathe L01",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Randal L01",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17",
+        "Sefris L01",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17",
+        "Zanna L01",
+        "Zanna L05",
+        "Zanna L11",
+        "Zanna L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "actor": "Akra L01",
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "actor": "Akra L01",
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "actor": "Akra L01",
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        }
+      ]
+    },
+    {
+      "cat": "items.feat",
+      "count": 44,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Morthos L01",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Quillathe L01",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Randal L01",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17",
+        "Sefris L01",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17",
+        "Zanna L01",
+        "Zanna L05",
+        "Zanna L11",
+        "Zanna L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": [
+            "draconic flight"
+          ]
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "skills",
+      "count": 39,
+      "actors": [
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Randal L01",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17"
+      ],
+      "examples": [
+        {
+          "actor": "Aoth L01",
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "actor": "Aoth L01",
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "actor": "Aoth L05",
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "actor": "Aoth L05",
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "cat": "items.spell",
+      "count": 38,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Merric L11",
+        "Merric L17",
+        "Morthos L01",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Randal L17",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17",
+        "Zanna L01",
+        "Zanna L05",
+        "Zanna L11",
+        "Zanna L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "bless",
+            "guidance",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "command",
+            "guidance",
+            "protection from evil and good",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "command",
+            "guidance",
+            "protection from energy",
+            "protection from evil and good",
+            "protection from poison",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "command",
+            "guidance",
+            "protection from energy",
+            "protection from evil and good",
+            "protection from poison",
+            "sacred flame"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "feat.compendiumSource",
+      "count": 34,
+      "actors": [
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Sefris L01",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Morthos L05",
+          "cat": "feat.compendiumSource",
+          "key": "empowered spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "actor": "Morthos L05",
+          "cat": "feat.compendiumSource",
+          "key": "quickened spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "actor": "Morthos L11",
+          "cat": "feat.compendiumSource",
+          "key": "empowered spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "actor": "Morthos L11",
+          "cat": "feat.compendiumSource",
+          "key": "quickened spell",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "cat": "advancement.class",
+      "count": 29,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Merric L17",
+        "Morthos L01",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17",
+        "Sefris L01",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17",
+        "Zanna L01",
+        "Zanna L05",
+        "Zanna L11",
+        "Zanna L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "feat.uses",
+      "count": 29,
+      "actors": [
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Krusk L01",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Quillathe L17",
+        "Sefris L17",
+        "Zanna L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L05",
+          "cat": "feat.uses",
+          "key": "draconic flight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "feat.uses",
+          "key": "draconic flight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "feat.uses",
+          "key": "divine intervention",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "feat.uses",
+          "key": "draconic flight",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "cat": "spell.method",
+      "count": 26,
+      "actors": [
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Beiro L05",
+          "cat": "spell.method",
+          "key": "detect magic",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "actor": "Beiro L05",
+          "cat": "spell.method",
+          "key": "misty step",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "actor": "Beiro L11",
+          "cat": "spell.method",
+          "key": "detect magic",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "actor": "Beiro L11",
+          "cat": "spell.method",
+          "key": "misty step",
+          "before": "spell",
+          "after": "innate"
+        }
+      ]
+    },
+    {
+      "cat": "advancement.class.grants",
+      "count": 25,
+      "actors": [
+        "Krusk L01",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Sefris L01",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Krusk L01",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "actor": "Krusk L01",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "actor": "Krusk L05",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "actor": "Krusk L05",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        }
+      ]
+    },
+    {
+      "cat": "spell.prepared",
+      "count": 25,
+      "actors": [
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Krusk L17",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Beiro L05",
+          "cat": "spell.prepared",
+          "key": "detect magic",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "actor": "Beiro L05",
+          "cat": "spell.prepared",
+          "key": "misty step",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "actor": "Beiro L11",
+          "cat": "spell.prepared",
+          "key": "detect magic",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "actor": "Beiro L11",
+          "cat": "spell.prepared",
+          "key": "misty step",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "cat": "advancement.race",
+      "count": 24,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Randal L01",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "items.race",
+      "count": 20,
+      "actors": [
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Morthos L01",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Quillathe L01",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Sefris L01",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17",
+        "Zanna L01",
+        "Zanna L05",
+        "Zanna L11",
+        "Zanna L17"
+      ],
+      "examples": [
+        {
+          "actor": "Beiro L01",
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "actor": "Beiro L05",
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "actor": "Beiro L11",
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "actor": "Beiro L17",
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        }
+      ]
+    },
+    {
+      "cat": "traits.weaponProf",
+      "count": 19,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        }
+      ]
+    },
+    {
+      "cat": "feat.activities",
+      "count": 18,
+      "actors": [
+        "Akra L11",
+        "Akra L17",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Quillathe L01",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L11",
+          "cat": "feat.activities",
+          "key": "blessed strikes: potent spellcasting",
+          "before": [
+            "damage"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "feat.activities",
+          "key": "blessed strikes: potent spellcasting",
+          "before": [
+            "damage"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Krusk L05",
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        },
+        {
+          "actor": "Krusk L11",
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        }
+      ]
+    },
+    {
+      "cat": "advancement.subclass",
+      "count": 15,
+      "actors": [
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L05",
+          "cat": "advancement.subclass",
+          "key": "life domain",
+          "before": [
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "advancement.subclass",
+          "key": "life domain",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "advancement.subclass",
+          "key": "life domain",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Krusk L05",
+          "cat": "advancement.subclass",
+          "key": "oath of devotion",
+          "before": [
+            "ItemGrant@5"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "details.alignment",
+      "count": 12,
+      "actors": [
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17"
+      ],
+      "examples": [
+        {
+          "actor": "Aoth L01",
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "actor": "Aoth L05",
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "actor": "Aoth L11",
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "actor": "Aoth L17",
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        }
+      ]
+    },
+    {
+      "cat": "tools",
+      "count": 12,
+      "actors": [
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17"
+      ],
+      "examples": [
+        {
+          "actor": "Aoth L01",
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Aoth L05",
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Aoth L11",
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Aoth L17",
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "traits.size",
+      "count": 12,
+      "actors": [
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Morthos L01",
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Randal L01",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17"
+      ],
+      "examples": [
+        {
+          "actor": "Aoth L01",
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "actor": "Aoth L05",
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "actor": "Aoth L11",
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "actor": "Aoth L17",
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        }
+      ]
+    },
+    {
+      "cat": "class.spellcasting",
+      "count": 8,
+      "actors": [
+        "Krusk L01",
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Quillathe L01",
+        "Quillathe L05",
+        "Quillathe L11",
+        "Quillathe L17"
+      ],
+      "examples": [
+        {
+          "actor": "Krusk L01",
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "actor": "Krusk L05",
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "actor": "Krusk L11",
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "actor": "Krusk L17",
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        }
+      ]
+    },
+    {
+      "cat": "traits.armorProf",
+      "count": 8,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        }
+      ]
+    },
+    {
+      "cat": "traits.languages",
+      "count": 8,
+      "actors": [
+        "Aoth L01",
+        "Aoth L05",
+        "Aoth L11",
+        "Aoth L17",
+        "Riswynn L01",
+        "Riswynn L05",
+        "Riswynn L11",
+        "Riswynn L17"
+      ],
+      "examples": [
+        {
+          "actor": "Aoth L01",
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Aoth L05",
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Aoth L11",
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Aoth L17",
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "traits.dr",
+      "count": 6,
+      "actors": [
+        "Akra L01",
+        "Akra L05",
+        "Akra L11",
+        "Akra L17",
+        "Morthos L11",
+        "Morthos L17"
+      ],
+      "examples": [
+        {
+          "actor": "Akra L01",
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L05",
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L11",
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Akra L17",
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "subclass.identifier",
+      "count": 3,
+      "actors": [
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17"
+      ],
+      "examples": [
+        {
+          "actor": "Perrin L05",
+          "cat": "subclass.identifier",
+          "key": "warrior of the open hand",
+          "before": "hand",
+          "after": "open-hand"
+        },
+        {
+          "actor": "Perrin L11",
+          "cat": "subclass.identifier",
+          "key": "warrior of the open hand",
+          "before": "hand",
+          "after": "open-hand"
+        },
+        {
+          "actor": "Perrin L17",
+          "cat": "subclass.identifier",
+          "key": "warrior of the open hand",
+          "before": "hand",
+          "after": "open-hand"
+        }
+      ]
+    },
+    {
+      "cat": "saves",
+      "count": 2,
+      "actors": [
+        "Riswynn L17"
+      ],
+      "examples": [
+        {
+          "actor": "Riswynn L17",
+          "cat": "saves",
+          "key": "wis",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "actor": "Riswynn L17",
+          "cat": "saves",
+          "key": "cha",
+          "before": 1,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "cat": "details.xp",
+      "count": 1,
+      "actors": [
+        "Riswynn L11"
+      ],
+      "examples": [
+        {
+          "actor": "Riswynn L11",
+          "cat": "details.xp",
+          "key": "value",
+          "before": 6500,
+          "after": 85000
+        }
+      ]
+    }
+  ],
+  "perActor": [
+    {
+      "actor": "Akra L01",
+      "file": "fvtt-Actor-akra-AkraLv0100000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": [
+            "draconic flight"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "bless",
+            "guidance",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Akra L05",
+      "file": "fvtt-Actor-akra-AkraLv0500000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "command",
+            "guidance",
+            "protection from evil and good",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "life domain",
+          "before": [
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "draconic flight",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Akra L11",
+      "file": "fvtt-Actor-akra-AkraLv1100000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "command",
+            "guidance",
+            "protection from energy",
+            "protection from evil and good",
+            "protection from poison",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "life domain",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "draconic flight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "blessed strikes: potent spellcasting",
+          "before": [
+            "damage"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "divine intervention",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Akra L17",
+      "file": "fvtt-Actor-akra-AkraLv1700000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "hvy"
+          ]
+        },
+        {
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "cold"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "breath weapon"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "command",
+            "guidance",
+            "protection from energy",
+            "protection from evil and good",
+            "protection from poison",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "cleric",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "life domain",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dragonborn",
+          "before": [
+            "ItemGrant@5",
+            "ScaleValue@0",
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "draconic flight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "blessed strikes: potent spellcasting",
+          "before": [
+            "damage"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "divine intervention",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Aoth L01",
+      "file": "fvtt-Actor-aoth-AothLv0100000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "med"
+          ]
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "staff",
+          "before": "weapon",
+          "after": "equipment"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "druid",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Aoth L05",
+      "file": "fvtt-Actor-aoth-AothLv0500000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "med"
+          ]
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "create or destroy water",
+            "detect magic",
+            "detect poison and disease",
+            "lightning bolt",
+            "misty step",
+            "protection from evil and good",
+            "shocking grasp",
+            "sleep"
+          ],
+          "after": [
+            "find familiar"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "staff",
+          "before": "weapon",
+          "after": "equipment"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "druid",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "wild resurgence",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Aoth L11",
+      "file": "fvtt-Actor-aoth-AothLv1100000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "med"
+          ]
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "create or destroy water",
+            "detect magic",
+            "detect poison and disease",
+            "freedom of movement",
+            "lightning bolt",
+            "misty step",
+            "protection from evil and good",
+            "shocking grasp",
+            "sleep",
+            "tree stride"
+          ],
+          "after": [
+            "find familiar"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "staff",
+          "before": "weapon",
+          "after": "equipment"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "druid",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "wild resurgence",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Aoth L17",
+      "file": "fvtt-Actor-aoth-AothLv1700000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "woodcarver"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "druidic"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "mar"
+          ]
+        },
+        {
+          "cat": "traits.armorProf",
+          "key": "value",
+          "before": [],
+          "after": [
+            "med"
+          ]
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "create or destroy water",
+            "detect magic",
+            "detect poison and disease",
+            "freedom of movement",
+            "lightning bolt",
+            "misty step",
+            "protection from evil and good",
+            "shocking grasp",
+            "sleep",
+            "tree stride"
+          ],
+          "after": [
+            "find familiar"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "staff",
+          "before": "weapon",
+          "after": "equipment"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "druid",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "wild resurgence",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Beiro L01",
+      "file": "fvtt-Actor-beiro-BeiroLv010000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "bagpipes",
+            "flute",
+            "viol"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, high elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "mage hand",
+            "prestidigitation",
+            "shield",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "costume",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        }
+      ]
+    },
+    {
+      "actor": "Beiro L05",
+      "file": "fvtt-Actor-beiro-BeiroLv050000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "dec",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "slt",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "bagpipes",
+            "flute",
+            "viol"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, high elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "feather fall",
+            "heroism",
+            "hideous laughter",
+            "mage hand",
+            "prestidigitation",
+            "shield",
+            "tiny hut",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "costume",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "spell.method",
+          "key": "detect magic",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "detect magic",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "misty step",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "misty step",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Beiro L11",
+      "file": "fvtt-Actor-beiro-BeiroLv110000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "dec",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 2,
+          "after": 1
+        },
+        {
+          "cat": "skills",
+          "key": "slt",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "bagpipes",
+            "flute",
+            "viol"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, high elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "clairvoyance",
+            "feather fall",
+            "find familiar",
+            "heroism",
+            "hideous laughter",
+            "mage hand",
+            "magic missile",
+            "nondetection",
+            "prestidigitation",
+            "shield",
+            "spirit guardians",
+            "tiny hut",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "costume",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "spell.method",
+          "key": "detect magic",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "detect magic",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "misty step",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "misty step",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Beiro L17",
+      "file": "fvtt-Actor-beiro-BeiroLv170000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "dec",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 2,
+          "after": 1
+        },
+        {
+          "cat": "skills",
+          "key": "slt",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "bagpipes",
+            "flute",
+            "viol"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, high elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "clairvoyance",
+            "feather fall",
+            "find familiar",
+            "heroism",
+            "hideous laughter",
+            "mage hand",
+            "magic missile",
+            "magnificent mansion",
+            "nondetection",
+            "prestidigitation",
+            "shield",
+            "spirit guardians",
+            "teleport",
+            "tiny hut",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, high"
+          ],
+          "after": [
+            "elf; high elf lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "costume",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "spell.method",
+          "key": "detect magic",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "detect magic",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "misty step",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "misty step",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Krusk L01",
+      "file": "fvtt-Actor-krusk-KruskLv010000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "relentless endurance",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Krusk L05",
+      "file": "fvtt-Actor-krusk-KruskLv050000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "detect evil and good",
+            "detect poison and disease"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "oath of devotion",
+          "before": [
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "relentless endurance",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        }
+      ]
+    },
+    {
+      "actor": "Krusk L11",
+      "file": "fvtt-Actor-krusk-KruskLv110000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "cure wounds",
+            "detect evil and good",
+            "detect poison and disease",
+            "greater restoration"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "oath of devotion",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "relentless endurance",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        },
+        {
+          "cat": "feat.activities",
+          "key": "aura of protection",
+          "before": [
+            "utility"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Krusk L17",
+      "file": "fvtt-Actor-krusk-KruskLv170000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "cure wounds",
+            "detect evil and good",
+            "detect poison and disease",
+            "dimension door"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "holy water",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "paladin",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "oath of devotion",
+          "before": [
+            "ItemGrant@13",
+            "ItemGrant@17",
+            "ItemGrant@5",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "relentless endurance",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        },
+        {
+          "cat": "feat.activities",
+          "key": "aura of protection",
+          "before": [
+            "utility"
+          ],
+          "after": []
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "greater restoration",
+          "before": 0,
+          "after": 1
+        }
+      ]
+    },
+    {
+      "actor": "Merric L01",
+      "file": "fvtt-Actor-merric-MerricLv01000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt",
+            "giant ancestry",
+            "powerful build"
+          ],
+          "after": [
+            "large form"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "barbarian Class Features@1",
+          "before": 4,
+          "after": 3
+        },
+        {
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@5"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Merric L05",
+      "file": "fvtt-Actor-merric-MerricLv05000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt",
+            "giant ancestry",
+            "powerful build"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "barbarian Class Features@1",
+          "before": 4,
+          "after": 3
+        },
+        {
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "large form",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Merric L11",
+      "file": "fvtt-Actor-merric-MerricLv11000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt",
+            "giant ancestry",
+            "powerful build"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "enlarge/reduce"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "barbarian Class Features@1",
+          "before": 4,
+          "after": 3
+        },
+        {
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "large form",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "relentless rage",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Merric L17",
+      "file": "fvtt-Actor-merric-MerricLv17000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt",
+            "giant ancestry",
+            "powerful build"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "enlarge/reduce"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "barbarian",
+          "before": [
+            "ItemGrant@17"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "barbarian Class Features@1",
+          "before": 4,
+          "after": 3
+        },
+        {
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "large form",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "relentless rage",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "intimidating presence",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "persistent rage",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Morthos L01",
+      "file": "fvtt-Actor-morthos-MorthosLv0100000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "tiefling, infernal"
+          ],
+          "after": [
+            "tiefling; infernal legacy"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "mage armor",
+            "mage hand",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "fiendish legacy, infernal",
+            "otherworldly presence"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "sorcerer",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Morthos L05",
+      "file": "fvtt-Actor-morthos-MorthosLv0500000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "tiefling, infernal"
+          ],
+          "after": [
+            "tiefling; infernal legacy"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "comprehend languages",
+            "disguise self",
+            "feather fall",
+            "mage hand",
+            "shield",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "fiendish legacy, infernal",
+            "otherworldly presence"
+          ],
+          "after": [
+            "metamagic options"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "sorcerer",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "sorcerer Class Features@2",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "draconic sorcery",
+          "before": [
+            "ItemGrant@5",
+            "Trait@6"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "empowered spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "quickened spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "sorcerous restoration",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "spell.method",
+          "key": "hellish rebuke",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "hellish rebuke",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "darkness",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "darkness",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Morthos L11",
+      "file": "fvtt-Actor-morthos-MorthosLv1100000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "poison"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "tiefling, infernal"
+          ],
+          "after": [
+            "tiefling; infernal legacy"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "arcane hand",
+            "comprehend languages",
+            "daylight",
+            "disguise self",
+            "feather fall",
+            "haste",
+            "knock",
+            "mage hand",
+            "shield",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "fiendish legacy, infernal",
+            "otherworldly presence"
+          ],
+          "after": [
+            "metamagic options"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "sorcerer",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "sorcerer Class Features@2",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "draconic sorcery",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9",
+            "Trait@6"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "empowered spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "quickened spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "sorcerous restoration",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "careful spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "twinned spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "spell.method",
+          "key": "hellish rebuke",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "hellish rebuke",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "darkness",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "darkness",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Morthos L17",
+      "file": "fvtt-Actor-morthos-MorthosLv1700000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "traits.dr",
+          "key": "value",
+          "before": [
+            "poison"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "tiefling, infernal"
+          ],
+          "after": [
+            "tiefling; infernal legacy"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "arcane hand",
+            "comprehend languages",
+            "daylight",
+            "dimension door",
+            "disguise self",
+            "feather fall",
+            "haste",
+            "knock",
+            "mage armor",
+            "mage hand",
+            "private sanctum",
+            "protection from energy",
+            "resilient sphere",
+            "shield",
+            "teleportation circle",
+            "tiny hut",
+            "tongues",
+            "true strike",
+            "wall of force",
+            "water breathing"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "fiendish legacy, infernal",
+            "otherworldly presence"
+          ],
+          "after": [
+            "metamagic options"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "sorcerer",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "sorcerer Class Features@2",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "draconic sorcery",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9",
+            "Trait@6"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "empowered spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "quickened spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "sorcerous restoration",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "careful spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "twinned spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "dragon wings",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "extended spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "subtle spell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "spell.method",
+          "key": "hellish rebuke",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "hellish rebuke",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "darkness",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "darkness",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Perrin L01",
+      "file": "fvtt-Actor-perrin-PerrinLv01000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "brewer"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "brave",
+            "halfling nimbleness",
+            "luck",
+            "naturally stealthy"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "bless",
+            "guidance",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "monk Class Features@1",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "monk Class Features@10",
+          "before": 2,
+          "after": 1
+        },
+        {
+          "cat": "advancement.race",
+          "key": "halfling",
+          "before": [
+            "ItemGrant@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Perrin L05",
+      "file": "fvtt-Actor-perrin-PerrinLv05000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "brewer"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "brave",
+            "halfling nimbleness",
+            "luck",
+            "naturally stealthy"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "bless",
+            "guidance",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "monk Class Features@1",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "monk Class Features@10",
+          "before": 2,
+          "after": 1
+        },
+        {
+          "cat": "subclass.identifier",
+          "key": "warrior of the open hand",
+          "before": "hand",
+          "after": "open-hand"
+        },
+        {
+          "cat": "advancement.race",
+          "key": "halfling",
+          "before": [
+            "ItemGrant@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "uncanny metabolism",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Perrin L11",
+      "file": "fvtt-Actor-perrin-PerrinLv11000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "brewer"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "brave",
+            "halfling nimbleness",
+            "luck",
+            "naturally stealthy"
+          ],
+          "after": [
+            "self-restoration"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "bless",
+            "fireball",
+            "guidance",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "monk Class Features@1",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "subclass.identifier",
+          "key": "warrior of the open hand",
+          "before": "hand",
+          "after": "open-hand"
+        },
+        {
+          "cat": "advancement.race",
+          "key": "halfling",
+          "before": [
+            "ItemGrant@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "uncanny metabolism",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Perrin L17",
+      "file": "fvtt-Actor-perrin-PerrinLv17000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "tools",
+          "key": "keys",
+          "before": [
+            "brewer"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "scimitar",
+            "shortsword"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "brave",
+            "halfling nimbleness",
+            "luck",
+            "naturally stealthy"
+          ],
+          "after": [
+            "self-restoration"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "bless",
+            "fireball",
+            "guidance",
+            "sacred flame"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "monk",
+          "before": [
+            "AbilityScoreImprovement@20"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "monk Class Features@1",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "cat": "subclass.identifier",
+          "key": "warrior of the open hand",
+          "before": "hand",
+          "after": "open-hand"
+        },
+        {
+          "cat": "advancement.race",
+          "key": "halfling",
+          "before": [
+            "ItemGrant@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "uncanny metabolism",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Quillathe L01",
+      "file": "fvtt-Actor-quillathe-QuillatheLv01000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, wood elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, wood"
+          ],
+          "after": [
+            "elf; wood elf lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "net",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "sprig of mistletoe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "hunting trap",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "ranger",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "favored enemy",
+          "before": [
+            "cast"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Quillathe L05",
+      "file": "fvtt-Actor-quillathe-QuillatheLv05000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "longbow",
+            "shortbow"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, wood elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, wood"
+          ],
+          "after": [
+            "elf; wood elf lineage"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "detect poison and disease"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "net",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "sprig of mistletoe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "ranger",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "favored enemy",
+          "before": [
+            "cast"
+          ],
+          "after": []
+        },
+        {
+          "cat": "spell.method",
+          "key": "longstrider",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "longstrider",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "pass without trace",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "pass without trace",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Quillathe L11",
+      "file": "fvtt-Actor-quillathe-QuillatheLv11000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "longbow",
+            "shortbow"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, wood elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, wood"
+          ],
+          "after": [
+            "elf; wood elf lineage"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "daylight",
+            "detect poison and disease",
+            "silence"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "net",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "sprig of mistletoe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "ranger",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "favored enemy",
+          "before": [
+            "cast"
+          ],
+          "after": []
+        },
+        {
+          "cat": "spell.method",
+          "key": "longstrider",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "longstrider",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "pass without trace",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "pass without trace",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Quillathe L17",
+      "file": "fvtt-Actor-quillathe-QuillatheLv17000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "longbow",
+            "shortbow"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, wood elf",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, wood"
+          ],
+          "after": [
+            "elf; wood elf lineage"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "daylight",
+            "detect poison and disease",
+            "silence"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "net",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "sprig of mistletoe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "class.spellcasting",
+          "key": "ranger",
+          "before": "half",
+          "after": "artificer"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "nature's veil",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "favored enemy",
+          "before": [
+            "cast"
+          ],
+          "after": []
+        },
+        {
+          "cat": "spell.method",
+          "key": "longstrider",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "longstrider",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "pass without trace",
+          "before": "spell",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "pass without trace",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Randal L01",
+      "file": "fvtt-Actor-randal-RandalLv01000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "med",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "per",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "healer's kit",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Randal L05",
+      "file": "fvtt-Actor-randal-RandalLv05000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "med",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "per",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "healer's kit",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "champion",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Randal L11",
+      "file": "fvtt-Actor-randal-RandalLv11000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "med",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "per",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "great weapon fighting",
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "healer's kit",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "champion",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Randal L17",
+      "file": "fvtt-Actor-randal-RandalLv17000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "ins",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "med",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "per",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.size",
+          "key": "size",
+          "before": "med",
+          "after": "sm"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "great weapon fighting",
+            "resourceful",
+            "skilled",
+            "skillful",
+            "versatile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "fireball"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "healer's kit",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "torch",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "caltrops",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "champion",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "human",
+          "before": [
+            "ItemChoice@0",
+            "ItemGrant@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Riswynn L01",
+      "file": "fvtt-Actor-riswynn-RiswynnLv0100000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "dec",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "cant",
+            "halfling"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "rapier",
+            "scimitar",
+            "shortsword",
+            "whip"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "dwarven resilience",
+            "dwarven toughness"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ball bearings",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "candle",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "rogue",
+          "before": [
+            "Trait@15"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dwarf",
+          "before": [
+            "Trait@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Riswynn L05",
+      "file": "fvtt-Actor-riswynn-RiswynnLv0500000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "dec",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "prc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "cant",
+            "elvish"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "rapier",
+            "scimitar",
+            "shortsword",
+            "whip"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "dwarven resilience",
+            "dwarven toughness"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "magic missile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ball bearings",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "candle",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "rogue",
+          "before": [
+            "Trait@15"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dwarf",
+          "before": [
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.activities",
+          "key": "cunning strike",
+          "before": [
+            "save",
+            "utility"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Riswynn L11",
+      "file": "fvtt-Actor-riswynn-RiswynnLv1100000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "cant",
+            "elvish"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "rapier",
+            "scimitar",
+            "shortsword",
+            "whip"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.xp",
+          "key": "value",
+          "before": 6500,
+          "after": 85000
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "dwarven resilience",
+            "dwarven toughness"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "fireball",
+            "freedom of movement",
+            "grease",
+            "magic missile"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ball bearings",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "candle",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "rogue",
+          "before": [
+            "Trait@15"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dwarf",
+          "before": [
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.activities",
+          "key": "cunning strike",
+          "before": [
+            "save",
+            "utility"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Riswynn L17",
+      "file": "fvtt-Actor-riswynn-RiswynnLv1700000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "saves",
+          "key": "wis",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "saves",
+          "key": "cha",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "skills",
+          "key": "arc",
+          "before": 1,
+          "after": 0
+        },
+        {
+          "cat": "traits.languages",
+          "key": "value",
+          "before": [
+            "cant",
+            "elvish"
+          ],
+          "after": []
+        },
+        {
+          "cat": "traits.weaponProf",
+          "key": "value",
+          "before": [
+            "handcrossbow",
+            "rapier",
+            "scimitar",
+            "shortsword",
+            "whip"
+          ],
+          "after": []
+        },
+        {
+          "cat": "details.alignment",
+          "key": "alignment",
+          "before": "neutral",
+          "after": "true neutral"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "dwarven resilience",
+            "dwarven toughness"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "comprehend languages",
+            "create or destroy water",
+            "detect magic",
+            "detect thoughts",
+            "dimension door",
+            "disguise self",
+            "enlarge/reduce",
+            "find familiar",
+            "fireball",
+            "fly",
+            "fog cloud",
+            "freedom of movement",
+            "gaseous form",
+            "goodberry",
+            "grease",
+            "heroism",
+            "jump",
+            "locate object",
+            "longstrider",
+            "mage armor",
+            "magic missile",
+            "mirror image",
+            "prayer of healing",
+            "private sanctum",
+            "protection from evil and good",
+            "resilient sphere",
+            "revivify",
+            "see invisibility",
+            "shield",
+            "suggestion",
+            "tiny hut",
+            "unseen servant",
+            "wall of force",
+            "web"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bell",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ball bearings",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rations",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "candle",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "rope",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "bead of force",
+          "before": "consumable",
+          "after": "equipment"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "rogue",
+          "before": [
+            "Trait@15"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.race",
+          "key": "dwarf",
+          "before": [
+            "Trait@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.activities",
+          "key": "cunning strike",
+          "before": [
+            "save",
+            "utility"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.activities",
+          "key": "devious strikes",
+          "before": [
+            "save"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Sefris L01",
+      "file": "fvtt-Actor-sefris-SefrisLv01000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, drow",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": [
+            "eldritch invocation options"
+          ]
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, drow"
+          ],
+          "after": [
+            "elf; drow lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "warlock",
+          "before": [
+            "ItemChoice@0",
+            "ScaleValue@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "warlock Class Features@1",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "pact of the chain",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "actor": "Sefris L05",
+      "file": "fvtt-Actor-sefris-SefrisLv05000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, drow",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": [
+            "eldritch invocation options"
+          ]
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, drow"
+          ],
+          "after": [
+            "elf; drow lineage"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "hideous laughter"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "warlock",
+          "before": [
+            "ItemChoice@0",
+            "ScaleValue@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "warlock Class Features@1",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "fiend patron",
+          "before": [
+            "ItemGrant@5"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "pact of the chain",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "agonizing blast",
+          "before": [],
+          "after": [
+            "enchant"
+          ]
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "agonizing blast",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "armor of shadows",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "eldritch mind",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "investment of the chain master",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "spell.method",
+          "key": "faerie fire",
+          "before": "pact",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "faerie fire",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "darkness",
+          "before": "pact",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "darkness",
+          "before": 2,
+          "after": 0
+        }
+      ]
+    },
+    {
+      "actor": "Sefris L11",
+      "file": "fvtt-Actor-sefris-SefrisLv11000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, drow",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": [
+            "eldritch invocation options"
+          ]
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, drow"
+          ],
+          "after": [
+            "elf; drow lineage"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "dispel magic",
+            "eldritch blast (repelling)",
+            "hideous laughter",
+            "remove curse",
+            "tongues"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "warlock",
+          "before": [
+            "ItemChoice@0",
+            "ScaleValue@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "warlock Class Features@1",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "fiend patron",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "pact of the chain",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "agonizing blast",
+          "before": [],
+          "after": [
+            "enchant"
+          ]
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "agonizing blast",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "eldritch mind",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "investment of the chain master",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "otherworldly leap",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "devil's sight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "repelling blast",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "spell.method",
+          "key": "faerie fire",
+          "before": "pact",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "faerie fire",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "darkness",
+          "before": "pact",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "darkness",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "contact other plane",
+          "before": "spell",
+          "after": "pact"
+        }
+      ]
+    },
+    {
+      "actor": "Sefris L17",
+      "file": "fvtt-Actor-sefris-SefrisLv17000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "elven lineage, drow",
+            "fey ancestry",
+            "keen senses",
+            "trance"
+          ],
+          "after": [
+            "eldritch invocation options"
+          ]
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "elf, drow"
+          ],
+          "after": [
+            "elf; drow lineage"
+          ]
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "dispel magic",
+            "eldritch blast (repelling)",
+            "hideous laughter",
+            "remove curse",
+            "telekinesis",
+            "tongues"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "warlock",
+          "before": [
+            "ItemChoice@0",
+            "ScaleValue@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "advancement.class.grants",
+          "key": "warlock Class Features@1",
+          "before": 2,
+          "after": 3
+        },
+        {
+          "cat": "advancement.subclass",
+          "key": "fiend patron",
+          "before": [
+            "ItemGrant@5",
+            "ItemGrant@7",
+            "ItemGrant@9"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "pact of the chain",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.activities",
+          "key": "agonizing blast",
+          "before": [],
+          "after": [
+            "enchant"
+          ]
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "agonizing blast",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "eldritch mind",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "investment of the chain master",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "otherworldly leap",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "devil's sight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "repelling blast",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "mask of many faces",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.uses",
+          "key": "hurl through hell",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "feat.compendiumSource",
+          "key": "witch sight",
+          "before": "has",
+          "after": "none"
+        },
+        {
+          "cat": "spell.method",
+          "key": "faerie fire",
+          "before": "pact",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "faerie fire",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "darkness",
+          "before": "pact",
+          "after": "innate"
+        },
+        {
+          "cat": "spell.prepared",
+          "key": "darkness",
+          "before": 2,
+          "after": 0
+        },
+        {
+          "cat": "spell.method",
+          "key": "contact other plane",
+          "before": "spell",
+          "after": "pact"
+        }
+      ]
+    },
+    {
+      "actor": "Zanna L01",
+      "file": "fvtt-Actor-zanna-ZannaLv010000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "gnomish cunning",
+            "gnomish lineage, rock"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "detect magic",
+            "minor illusion",
+            "shield",
+            "thunderwave",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "gnome, rock"
+          ],
+          "after": [
+            "gnome; rock gnome lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "wizard",
+          "before": [
+            "ScaleValue@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Zanna L05",
+      "file": "fvtt-Actor-zanna-ZannaLv050000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "gnomish cunning",
+            "gnomish lineage, rock"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "alarm",
+            "detect magic",
+            "find familiar",
+            "magic missile",
+            "minor illusion",
+            "mirror image",
+            "scorching ray",
+            "shield",
+            "thunderwave",
+            "tiny hut",
+            "true strike"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "gnome, rock"
+          ],
+          "after": [
+            "gnome; rock gnome lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "wizard",
+          "before": [
+            "ScaleValue@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Zanna L11",
+      "file": "fvtt-Actor-zanna-ZannaLv110000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "gnomish cunning",
+            "gnomish lineage, rock"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "alarm",
+            "arcane hand",
+            "detect magic",
+            "divination",
+            "find familiar",
+            "fire shield",
+            "fly",
+            "magic missile",
+            "minor illusion",
+            "mirror image",
+            "scorching ray",
+            "scrying",
+            "sending",
+            "shield",
+            "telepathic bond",
+            "teleportation circle",
+            "thunderwave",
+            "tiny hut",
+            "true strike",
+            "water breathing"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "gnome, rock"
+          ],
+          "after": [
+            "gnome; rock gnome lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "wizard",
+          "before": [
+            "ScaleValue@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "actor": "Zanna L17",
+      "file": "fvtt-Actor-zanna-ZannaLv170000000",
+      "official": true,
+      "findings": [
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "gnomish cunning",
+            "gnomish lineage, rock"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "alarm",
+            "arcane hand",
+            "clone",
+            "cone of cold",
+            "contingency",
+            "demiplane",
+            "detect magic",
+            "disintegrate",
+            "divination",
+            "find familiar",
+            "fire shield",
+            "forcecage",
+            "globe of invulnerability",
+            "hold monster",
+            "levitate",
+            "lightning bolt",
+            "magic missile",
+            "magnificent mansion",
+            "mind blank",
+            "minor illusion",
+            "prismatic wall",
+            "ray of enfeeblement",
+            "reverse gravity",
+            "scorching ray",
+            "scrying",
+            "sending",
+            "shield",
+            "simulacrum",
+            "sunburst",
+            "telepathic bond",
+            "teleport",
+            "teleportation circle",
+            "thunderwave",
+            "tiny hut",
+            "true strike",
+            "water breathing"
+          ],
+          "after": []
+        },
+        {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "gnome, rock"
+          ],
+          "after": [
+            "gnome; rock gnome lineage"
+          ]
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "robe",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "lamp",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "tinderbox",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink pen",
+          "before": "equipment",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "ink",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "items.gear.type",
+          "key": "oil",
+          "before": "consumable",
+          "after": "loot"
+        },
+        {
+          "cat": "advancement.class",
+          "key": "wizard",
+          "before": [
+            "ScaleValue@0"
+          ],
+          "after": []
+        },
+        {
+          "cat": "feat.uses",
+          "key": "overchannel",
+          "before": "has",
+          "after": "none"
+        }
+      ]
+    }
+  ]
+}

@@ -990,3 +990,251 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 > (ver DDL-0062). Três dos cinco são GERAIS (rótulo derivado, regra de remoção, `ability` legado) e
 > pegam Kobold/Aetherborn/Simic Hybrid junto. O ledger segue sem itens abertos; a T1b (espécies)
 > ganha um adiantamento parcial - as linhas do Custom Lineage e do Kobold já foram olhadas.
+
+---
+
+> **2026-07-26 - ABERTURA DO STAGE T2**: o oráculo novo (`npm run t2`, TESTING-PLAN §5.1)
+> re-exporta as 48 fichas premade oficiais e compara o resultado com elas: **1023 achados em
+> 27 classes** na 1ª rodada. Cinco foram corrigidos na mesma sessão (TC-0055…TC-0058 + TC-0060),
+> levando o total a **745**. Os demais estão abaixo, cada um com a CAUSA triada (export /
+> import / decisão de produto). Regra do burn-down: corrigir no MECANISMO, nunca por unidade;
+> re-rodar `npm run t2` e `npm run sweep -- --strict` depois de cada classe fechada.
+
+## TC-0055 - A moeda do personagem nunca era exportada
+
+- **Unidade:** todas (48/48 fichas). **Severidade:** bug (perda de dado). **Causa:** export.
+  **Encontrado:** 2026-07-26, 1ª rodada do `npm run t2`. **Status:** fixed@2026-07-26.
+- `buildActorSystem` escrevia `currency: {pp:0, gp:0, ep:0, sp:0, cp:0}` LITERAL, então todo o
+  dinheiro do personagem (a carteira da aba Inventory, CHANGELOG §11) desaparecia no export. O
+  import já lia o campo corretamente desde sempre.
+- **Por que o sweep não pegava:** `decisionSummary` (o oráculo de round-trip) não comparava
+  `currency` - zerado nos dois lados, o diff era vazio. O campo entrou no resumo junto com o fix,
+  então uma regressão volta a falhar a linha.
+- Fix: `buildCurrency(character)` em `foundryExport.js` + `currency` no `decisionSummary`.
+  3 testes.
+
+## TC-0056 - Perícias e ferramenta da ORIGEM se perdiam ao importar qualquer premade
+
+- **Unidade:** todas (129 achados de `skills` + 48 de `tools`). **Severidade:** bug.
+  **Causa:** import. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
+- O import roteava os Traits do item de background pelo TÍTULO (`/skill/i`, `/tool/i`,
+  `/language/i`). Um premade real usa **um Trait só**, chamado "Background Proficiencies",
+  misturando `skills:*` E `tool:*` - nenhum dos três regexes casa, e as perícias e a ferramenta
+  da origem sumiam inteiras (um Merric importado ficava sem Athletics/Insight/Mason's Tools).
+- Fix: rotear pelo **PREFIXO da chave escolhida**, acumulando nos três baldes - exatamente a
+  regra que o bloco do item de RAÇA já documentava logo acima ("não pelo título - premades reais
+  usam títulos de sabor"). Vários Traits (a forma do nosso próprio export) continuam funcionando.
+- Sobra o mesmo padrão em OUTROS documentos: ver TC-0061.
+
+## TC-0057 - Item sem `source` no ator externo desaparecia no re-export
+
+- **Unidade:** todas (parte de `items.feat`, `items.spell`, `traits.dr`). **Severidade:** bug.
+  **Causa:** import. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
+- Um ator de fora (premade/Plutonium) não traz `system.source.book`, e o import gravava a fonte
+  VAZIA no personagem. Consequências em cadeia: `findFeat` casa nome E fonte, então
+  `'Savage Attacker|'` não resolvia e **o talento de origem inteiro não saía no export** (com ele,
+  as magias do Magic Initiate); a espécie com fonte vazia resolvia por nome e podia cair em OUTRA
+  EDIÇÃO (o Dragonborn 2014 em vez do XPHB), perdendo traços.
+- Fix: helper `featSource(item, db)` (a fonte do documento, ou a do talento de mesmo nome no
+  compêndio) usado no talento de origem e no `itemRef`; `resolveRaceByExactName` passou a devolver
+  a `source` da espécie resolvida, e `parseSpecies` a usa quando o item não tem nenhuma. Também
+  corrigidas duas chamadas `itemRef(featItem)` **sem `db`** (talento de ASI e Fighting Style), que
+  anulavam a re-resolução que a função já fazia. 3 testes.
+
+## TC-0058 - Chaves de idioma fora do vocabulário do dnd5e (`sign`, `cant`)
+
+- **Unidade:** 20 fichas. **Severidade:** bug. **Causa:** export (e o import, que inverte pelo
+  mesmo mapa). **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
+- "Common Sign Language" slugificava para `common-sign-language` e Thieves' Cant estava mapeado
+  para `thievescant`; o sistema usa **`sign`** e **`cant`** (conferido em `module/config.mjs` e
+  nas fichas reais, que trazem `sign` 16x e `cant` 4x). Uma chave fora do vocabulário não aparece
+  na ficha do Foundry, e na volta não reverte para idioma nenhum.
+- Fix: duas linhas em `LANGUAGE_TO_FVTT`. O reverso (`languageKeyToName`) inverte pelo mesmo mapa,
+  então veio de graça. 1 teste.
+
+## TC-0059 - Idioma concedido por FEATURE de classe (Druidic, Thieves' Cant) nunca é concedido
+
+- **Unidade:** `class:druid/*`, `class:rogue/*` (8 achados de `traits.languages`).
+  **Severidade:** bug. **Causa:** derivação (atinge a FICHA, não só o export).
+  **Encontrado:** 2026-07-26. **Status:** open.
+- Druidic e Thieves' Cant são **features de nível 1** no dado do 5etools (prosa), não entradas de
+  `languageProficiencies` - então nossa derivação não concede o idioma, e o card Languages de um
+  Druida/Ladino não os lista. Os premades os trazem em `traits.languages` (`druidic`, `cant`).
+- Caminho: uma linha de registro curado no espírito do `SUBCLASS_GRANTS` (DDL-0029), mas para
+  features de CLASSE. Conferir a varredura inteira antes: pode haver outros idiomas em prosa.
+
+## TC-0060 - Progressão de conjuração inválida; subclasse conjuradora sem nenhuma
+
+- **Unidade:** `class:fighter/Eldritch Knight`, `class:rogue/Arcane Trickster` (+ toda classe
+  legada). **Severidade:** blocker (ficha sem espaços de magia no Foundry). **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-26.
+- Duas metades. (a) O 5etools escreve as frações `'1/2'`/`'1/3'`, que **não existem** em
+  `CONFIG.DND5E.spellcasting`; exportadas cruas, o bloco é inválido. (b) `buildSubclassItem`
+  escrevia `progression: 'none'` FIXO, mas o terço-conjurador é da SUBCLASSE - o dnd5e tem o campo
+  (o `SpellcastingField` do DataModel de subclass) e é assim que modela EK/AT. Resultado: um
+  Eldritch Knight exportado chegava ao Foundry **sem conjuração em lugar nenhum**.
+- Fix: `fvttProgression()` (`'1/2'→half`, `'1/3'→third`) aplicada na classe e na subclasse, e a
+  subclasse passa a emitir a própria progressão + atributo. Verificado ao vivo: EK/AT agora saem
+  `{progression:'third', ability:'int'}`. 3 testes.
+- **Deliberado, verificado:** `artificer` é PRESERVADO no Paladino/Ranger 2024 (é o que o dado
+  diz). O premade escreve `half`, mas o sistema define os dois de forma idêntica (`divisor: 2`,
+  `roundUp: true`), então não há diferença mecânica.
+
+## TC-0061 - Escolhas de proficiência dentro de OUTROS documentos não voltam de um ator externo
+
+- **Unidade:** 15 fichas (39 achados de `skills`, 12 de `tools`). **Severidade:** bug.
+  **Causa:** import. **Encontrado:** 2026-07-26. **Status:** open.
+- Depois do TC-0056, o que sobra são os Traits de escolha que vivem em documentos que o import
+  ainda não varre por prefixo: as **ferramentas iniciais da classe** (`tool:music:*` do Bardo,
+  `tool:art:brewer` do Monge - hoje `tool@start` só existe na nossa flag, sem descritor nativo),
+  as **Bonus Proficiencies de subclasse** (as 3 perícias do College of Lore) e os **Traits INTERNOS
+  de um talento concedido** (as 3 perícias do Skilled que o Human ganha por Versatile).
+- Caminho: estender o `choiceTraitBag` (DDL-0056) a esses três casos, com o mesmo casamento por
+  descritor - e por prefixo de chave, não por título.
+
+## TC-0062 - ScaleValue com identificador VAZIO; falta `max-prepared` e o `preparation.formula`
+
+- **Unidade:** toda classe conjuradora + várias features com escala. **Severidade:** bug.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+- Nosso item de classe emite ScaleValues com `configuration.identifier: ''` (ex: "Channel
+  Divinity", "Divine Spark"). Sem identificador não há como referenciar (`@scale.cleric.x`), o que
+  é justamente o que as activities e os premades fazem. Falta também a escala **"Max Prepared
+  Spells"** (`max-prepared`) e o `system.spellcasting.preparation.formula`
+  (`@scale.<classe>.max-prepared`) que todo premade conjurador traz.
+- Cuidado ao fechar: o registro curado (`CURATED_SCALE_VALUES`) e o overlay (DDL-0057) são as duas
+  fontes; o identificador tem de sair de uma delas, não de um slug improvisado.
+
+## TC-0063 - Sem escadas `ItemChoice`: nada a escolher ao subir de nível no Foundry
+
+- **Unidade:** toda classe com escolha (Fighting Style, Divine Order, Blessed Strikes, Primal
+  Order, Metamagic...) + Human/Goliath (linhagem). **Severidade:** bug. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** open.
+- O premade modela cada escolha de feature como um advancement `ItemChoice` com o POOL de opções
+  (uuid de compêndio) e o nível. Nós emitimos o item ESCOLHIDO, mas: o `ItemChoice` do Fighting
+  Style sai com **pool vazio**, e as demais escolhas não geram passo nenhum. Consequência: quem
+  sobe de nível dentro do Foundry não recebe o prompt (o irmão do DDL-0055 para o ItemGrant).
+- Depende do registro de uuids (`npm run gen:uuids`) cobrir os itens do pool.
+
+## TC-0064 - Item de espécie muito mais magro que o do premade
+
+- **Unidade:** 24 fichas (`advancement.race`). **Severidade:** bug + 1 decisão de produto.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open (parte `needs-user-eyes`).
+- Falta no nosso item de raça: o **Trait de escolha de resistência** do Dragonborn 2024
+  (`dr:cold` - é assim que o dnd5e modela a ancestralidade), o **ScaleValue do Breath Weapon**
+  (`breath`), o **ItemGrant de nível 5** (Draconic Flight / Large Form) e o título convencional
+  (`"<Raça> Traits"` em vez do nosso `"Species Traits"`).
+- **`needs-user-eyes`:** o premade emite **um item por traço de espécie** (Fey Ancestry, Trance,
+  Keen Senses...); nós só emitimos itens para traços com ação/recurso e deixamos o resto como
+  effects no item de raça (DDL-0057). Funciona, mas no Foundry o jogador não VÊ esses traços como
+  features. É escolha de produto - não mexer sem decisão.
+
+## TC-0065 - Ancestralidade do Dragonborn/Goliath não volta de um ator externo
+
+- **Unidade:** `species:Dragonborn|XPHB/*`, `species:Goliath|XPHB/*` (6 achados de `traits.dr`).
+  **Severidade:** bug. **Causa:** import. **Encontrado:** 2026-07-26. **Status:** open.
+- No premade o item de raça chama-se só "Dragonborn" e a ancestralidade está num **Trait de
+  escolha de resistência** (`chosen: ['dr:cold']`) - não no nome. Nosso import resolve o nome e
+  fica com `lineage: null`, então a ficha reimportada perde ancestralidade, resistência, tipo de
+  dano do sopro e o traço de nível 5. O Goliath tem a forma equivalente (`ItemChoice` de linhagem).
+- Caminho: mapear o `dr:*` escolhido (e o `ItemChoice` do Goliath) de volta para a linhagem, no
+  espírito do `resolveLineageName` (DDL-0005).
+
+## TC-0066 - Inventário: quase todo item vira `loot` no Foundry
+
+- **Unidade:** todas (288 achados - a maior classe). **Severidade:** bug. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** open.
+- Pares observados: `consumable -> loot` (171: tochas, rações, óleo, poções), `equipment -> loot`
+  (112: mantos, botas, mochilas, kits), `weapon -> equipment` (4). No Foundry um `loot` não se
+  equipa nem se consome, então a ficha importada perde affordances reais.
+- Caminho: o mapa de tipo em `buildInventoryItems` a partir do tipo do 5etools (o premade é o
+  gabarito de qual tipo cada item deveria ter).
+
+## TC-0067 - Magia concedida como sempre-preparada sai `innate` em vez de `spell`+`prepared:2`
+
+- **Unidade:** 12 fichas (26 `spell.method` + 25 `spell.prepared`). **Severidade:** bug.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+- Detect Magic/Misty Step (linhagem élfica) e Hellish Rebuke/Darkness (legacy do Tiefling) saem
+  como `method: 'innate'`, `prepared: 0`; o premade usa `method: 'spell'`, `prepared: 2` (sempre
+  preparada) - o que o RAW 2024 diz ("you always have X prepared", MAIS um uso grátis por descanso).
+  Com `innate` o jogador perde a possibilidade de gastar espaço de magia.
+- Conferir contra o DDL-0011 (as frequências curadas) antes de mexer: o `uses` continua valendo;
+  o que muda é o método + `prepared`.
+
+## TC-0068 - `uses` faltando em features que o SRD rastreia
+
+- **Unidade:** 22 fichas (29 achados). **Severidade:** bug. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** open.
+- Exemplos: Draconic Flight, Divine Intervention, Wild Resurgence, Relentless Endurance. O
+  premade traz `system.uses.max`; nós não - então não há recurso para gastar na ficha do Foundry.
+  Cruzar `foundryFeatureUses` + overlay (DDL-0057) com a lista completa do report.
+
+## TC-0069 - `compendiumSource` ausente em toda OPTIONAL FEATURE
+
+- **Unidade:** 7 fichas (34 achados: metamagias, invocações, pact boon). **Severidade:** polish.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+- O registro do DDL-0055/0056 cobre features de classe/subclasse, talentos e magias, mas não
+  `optionalfeatures`. Sem procedência, o Foundry não oferece "atualizar do compêndio".
+
+## TC-0070 - Cobertura de `activities` divergente nos DOIS sentidos
+
+- **Unidade:** 15 fichas (18 achados). **Severidade:** bug. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** open.
+- Faltam nas nossas: Potent Spellcasting (`damage`), Aura of Protection (`utility`), Favored Enemy
+  (`cast`), Cunning Strike (`save`+`utility`), Devious Strikes (`save`). Sobram nas nossas:
+  Paladin's Smite (`cast`), Agonizing Blast (`enchant`). Comparar com o overlay antes de curar -
+  algumas podem ser a mecânica 2014 do overlay num chassi 2024 (o casamento é edição-estrita).
+
+## TC-0071 - Composição do ItemGrant por nível difere do premade (dois sentidos)
+
+- **Unidade:** 19 fichas (25 achados). **Severidade:** polish/bug (a investigar).
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+- Ex: `paladin Class Features@2` concede 3 no premade e 2 nas nossas; `sorcerer Class Features@2`
+  o contrário (2 x 3). Pode ser agrupamento diferente (o premade separa em passos com títulos
+  distintos) ou feature realmente ausente - **checar caso a caso** antes de tratar como bug.
+
+## TC-0072 - Escada de magias da subclasse só cobre os níveis FUTUROS
+
+- **Unidade:** 15 fichas (`advancement.subclass`). **Severidade:** polish. **Causa:** export.
+  **Encontrado:** 2026-07-26. **Status:** open.
+- O premade traz o `ItemGrant` de "<Subclasse> Spells" em TODOS os níveis (os alcançados com
+  `value.added` preenchido); nós emitimos só os futuros - as magias dos níveis já alcançados vão
+  embutidas, sem o passo correspondente. Mesma questão para o `Trait@6` do Draconic Sorcery e o
+  `ItemChoice` do Champion.
+
+## TC-0073 - Tamanho exportado como Small quando a escolha S/M não foi feita
+
+- **Unidade:** 12 fichas (Human, Tiefling). **Severidade:** bug. **Causa:** export + import.
+  **Encontrado:** 2026-07-26. **Status:** open.
+- Uma espécie com escolha de tamanho (DDL-0017) sem pick nenhum exporta o PRIMEIRO código
+  (`'S'` -> `sm`), então um Humano premade reimportado vira **Small**. Duas frentes: o import
+  devia recuperar a escolha do advancement `Size` (ou do `traits.size`) do ator, e o export
+  precisa de um default honesto (o maior) quando não há escolha.
+
+## TC-0074 - Cosméticos do export (rótulos e slugs)
+
+- **Unidade:** 12 fichas (`details.alignment`), 3 (`subclass.identifier`). **Severidade:** polish.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+- `alignment`: escrevemos "True Neutral", o premade "Neutral". `identifier` de subclasse:
+  `open-hand` x `hand` do premade - e identificador **é referenciado em fórmula**
+  (`@subclasses.hand.levels`), então este pesa mais que um rótulo.
+
+## TC-0075 - Proficiência de save do Slippery Mind (Ladino 15) não deriva
+
+- **Unidade:** `class:rogue/*` (2 achados, Riswynn L17). **Severidade:** bug.
+  **Causa:** derivação (atinge a FICHA). **Encontrado:** 2026-07-26. **Status:** open.
+- O premade tem Wis e Cha proficientes em save no nível 17; nós não. Slippery Mind (nível 15)
+  concede as duas, e é feature de CLASSE em prosa - mesmo mecanismo que falta ao TC-0059.
+  Achado do lado do BUILDER que a T1a não pegou (o sweep não tem oráculo de regra).
+
+## TC-0076 - Proficiência de arma CONDICIONAL não é enumerada no export
+
+- **Unidade:** `class:monk/*`, `class:rogue/*`, `class:ranger/*` (parte de `traits.weaponProf`).
+  **Severidade:** bug. **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+- O Monge 2024 é proficiente em "Martial weapons that have the Light property" e o Ladino em
+  "Finesse or Light"; o premade ENUMERA (`weapon:mar:scimitar`, `weapon:mar:shortsword`,
+  `weapon:mar:handcrossbow`...). Nós exportamos só a categoria `sim`, então no Foundry o Monge não
+  é proficiente com cimitarra. **O dado tem o filtro** (`weaponProficiencies[].all.fromFilter`),
+  então dá para enumerar sem curadoria - é o mesmo insumo do `weaponFilterAllows` (DDL-0033).
+- Nota: o sentido INVERSO desta classe (nossas com `mar`/`hvy` a mais - Akra, Aoth) foi
+  verificado e está **correto**: vem de Divine Order Protector / Primal Order Warden, que o
+  premade deixa como Active Effect em vez de assar no ator.

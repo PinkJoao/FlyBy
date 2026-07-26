@@ -298,7 +298,7 @@ o legado antes, os blocos são independentes.
 
 ---
 
-## 5. Tier 2 — user curation & real Foundry validation
+## 5. Tier 2 — export curation & real Foundry validation (stage T2)
 
 - Tier 1 flags anything subjective as `needs-user-eyes` in the coverage notes;
   the user sweeps those in batches at their own pace.
@@ -310,6 +310,65 @@ o legado antes, os blocos são independentes.
   actors with a small script (`npm run sweep -- --emit-actors`) so this is one
   drag-and-drop session, not twenty.
 
+### 5.1 O oráculo da T2: re-exportar as fichas premade (`npm run t2`)
+
+Fixado 2026-07-26, na abertura do stage. O sweep (Tier 0) já garante o PISO do
+export para as 285 linhas: estrutura válida, zero `NaN`/`undefined`, e round-trip
+das nossas DECISÕES ida-e-volta. O que ele **não** vê é fidelidade ao que o
+Foundry espera - ele compara o nosso export com o nosso próprio import, então
+tudo que nunca foi exportado é invisível para ele (foi assim que a **moeda** ficou
+zerada por meses: o campo não estava no `decisionSummary`).
+
+O gabarito são as **48 fichas premade OFICIAIS** (12 personagens × níveis
+1/5/11/17, em `DnD Source Material/Character Sheets in JSON/Standard Premade
+Characters`) - documentos gerados pelo próprio sistema dnd5e, ou seja a verdade
+de esquema. O harness (`scripts/compare-premades.js` + `scripts/lib/premadeDiff.js`)
+roda o ciclo completo em cada uma:
+
+```
+P --foundryToCharacter--> C --assembleFoundryActor--> A   e diffa A × P
+```
+
+e **agrega os achados por CLASSE** (`cat`), para triar uma vez por classe de
+problema em vez de linha a linha. Flags: `--actor=merric`, `--level=05`,
+`--cat=currency` (fatia de burn-down), `--verbose`, `--players` (as fichas
+Plutonium do usuário - homebrew, NÃO são verdade de esquema).
+
+**Uma divergência tem três causas, e a triagem DEVE dizer qual:**
+1. **export** - não emitimos o que o Foundry espera;
+2. **import** - a decisão se perdeu no caminho (o premade a tinha);
+3. **deliberada** - diferença conhecida do nosso modelo. Estas vivem na lista
+   `DELIBERATE` do `premadeDiff.js`, **cada uma com o porquê** - uma diferença
+   sem justificativa ali é bug disfarçado, não ruído.
+
+Cobertura do gabarito: as **12 classes** 2024 (todas menos Artificer), uma
+subclasse cada, 12 espécies e 12 origens, em quatro níveis. O que ele NÃO cobre
+(as outras 123 subclasses, as outras ~138 linhas de espécie, multiclasse,
+inventário mágico) sai por **generalização**: uma classe de achado corrigida no
+mecanismo vale para todas as linhas, e o sweep guarda contra regressão.
+
+### 5.2 Ordem de trabalho da T2
+
+- **T2a — o harness.** ✅ DONE 2026-07-26 (ver §7). Primeira rodada: **1023
+  achados em 27 classes**; o lote de correções da mesma sessão levou a **745**.
+- **T2b — burn-down por classe de achado**, do maior valor para o menor. Uma
+  sessão pega 2-4 classes de `testing/ISSUES.md` (TC-0055+), corrige no
+  MECANISMO (nunca por unidade), adiciona teste, e re-roda `npm run t2` +
+  `npm run sweep -- --strict`. Prioridade: o que quebra a ficha no Foundry
+  (progressão de conjuração, ScaleValue sem identificador, tipo de item de
+  inventário) antes do que só empobrece (títulos, `compendiumSource`).
+- **T2c — decisões do usuário.** Alguns achados são escolha de produto, não bug
+  (ex: emitir um item por traço de espécie como os premades × mantê-los como
+  effects no item de raça, DDL-0057). Ficam marcados `needs-user-eyes` no
+  ledger, nunca "corrigidos" por conta própria.
+- **T2d — importações reais no Foundry** (o único passo que Claude não faz):
+  `npm run sweep -- --emit-actors` gera o lote em `testing/actors/`, o usuário
+  arrasta para o Foundry e confere runtime.
+- **Marcar `export: ok`** numa linha do COVERAGE exige: sweep verde em
+  `--strict`, nenhuma classe de achado ABERTA que atinja aquela unidade, e -
+  para uma das 12 famílias com premade - o `npm run t2` limpo para as fichas
+  dela. Não marcar por "não achei nada olhando".
+
 ---
 
 ## 6. Stage plan (ordered)
@@ -319,7 +378,7 @@ o legado antes, os blocos são independentes.
 | **T0** | Build the harness (loadDb lib, matrix, autoBuild, invariants, round-trip, trackers, `npm run sweep`); first full sweep; burn down the backlog | sweep green or every failure logged |
 | **T1a** | UI sessions: all classes + subclasses | ✅ **DONE 2026-07-22** - as 135 linhas `class:*` com `ui: ok` |
 | **T1b** | UI sessions: all species + lineages | ✅ **DONE 2026-07-26** - as 150 linhas `species:*` com `ui: ok` |
-| **T2** | Export curation + real-Foundry milestone imports | all rows `export: ok` |
+| **T2** | Export curation + real-Foundry milestone imports (§5.1-5.2; `npm run t2`) | all rows `export: ok` |
 | **T3** | Feats → spells → items, same machinery (new matrix units, same trackers) | later; re-plan then |
 
 Notes for T0 implementation: build it as ordinary code with unit tests where the
@@ -330,6 +389,47 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-26 (3)** - **🚀 STAGE T2 ABERTO: harness de export construído (`npm run t2`) + 1º lote
+  de correções (1023 → 745 achados).** Sweep verde antes e depois (285/285 `--strict`).
+  **O oráculo (TESTING-PLAN §5.1, DDL-0072):** re-exportar as **48 fichas premade OFICIAIS**
+  (`P --import--> C --export--> A`, diff `A × P`) e agregar os achados por CLASSE. São documentos
+  do próprio sistema dnd5e, então servem de verdade de esquema - e de primeiro **oráculo de regra**
+  que a campanha tem (o sweep nunca teve um: ele compara o nosso export com o nosso import, e por
+  isso não via nada que nunca foi exportado).
+  **1ª rodada: 1023 achados em 27 classes**, TODAS triadas em `testing/ISSUES.md` como
+  **TC-0055…TC-0076**, cada uma com a causa (export / import / deliberada).
+  **Corrigidos em sessão (5):** TC-0055 (moeda saía ZERADA - o export escrevia `currency: {gp:0…}`
+  literal), TC-0056 (Traits de origem roteados por TÍTULO: perícias+ferramenta da origem se perdiam
+  ao importar qualquer premade - 177 achados), TC-0057 (item sem `source` → o talento de origem
+  DESAPARECIA do export e a espécie podia resolver na edição errada), TC-0058 (`sign`/`cant` fora
+  do vocabulário do dnd5e) e **TC-0060 - o mais severo: Eldritch Knight e Arcane Trickster chegavam
+  ao Foundry SEM conjuração** (as frações `'1/3'` do 5etools não existem no sistema, e o item de
+  subclasse escrevia `progression: 'none'` fixo).
+  **A cegueira do sweep foi fechada:** `currency` entrou no `decisionSummary` - regra que fica:
+  todo campo de DECISÃO do schema tem de estar lá, senão o round-trip é cego para ele.
+  1163 testes (+16), lint, sweep 285/285 `--strict`. Ver CHANGELOG §93 + DDL-0072.
+  **NENHUMA linha foi marcada `export: ok`** - o backlog está aberto, e os critérios para marcar
+  estão no §5.2 (não marcar por "não achei nada olhando").
+  **Next action: T2b - burn-down por classe de achado**, 2-4 classes por sessão, corrigindo no
+  MECANISMO. Ordem sugerida (impacto na ficha dentro do Foundry primeiro):
+  1. **TC-0066** (288 achados, o maior): quase todo item de inventário vira `loot`, então não se
+     equipa nem se consome no Foundry. Mapa de tipo em `buildInventoryItems`; o premade é o gabarito.
+  2. **TC-0062** (ScaleValue com identificador VAZIO + falta `max-prepared`/`preparation.formula`) e
+     **TC-0063** (sem escadas `ItemChoice` - o pool do Fighting Style sai vazio e as escolhas de
+     feature não geram passo, então subir de nível no Foundry não pergunta nada).
+  3. **TC-0067** (magia sempre-preparada saindo `innate`) + **TC-0068** (`uses` faltando).
+  4. **TC-0064/0065** (item de espécie magro; ancestralidade de Dragonborn/Goliath não volta) -
+     ATENÇÃO: parte do TC-0064 é `needs-user-eyes` (um item por traço de espécie × effects no item
+     de raça, DDL-0057), não decidir sozinho.
+  5. Regra: **TC-0059 e TC-0075** são achados de DERIVAÇÃO (Druidic/Thieves' Cant; save do Slippery
+     Mind) - afetam a FICHA, não só o export, e pedem um registro de grants de feature de CLASSE.
+  **Nota de harness:** rode `npm run t2 -- --cat=<classe>` para isolar uma classe durante o fix, e
+  `--actor=<nome>`/`--level=05` para uma ficha. E antes de corrigir uma classe, confira se ela não é
+  diferença DELIBERADA - a lista está no cabeçalho do `premadeDiff.js`, e ela já eliminou 48
+  falsos positivos (os packs) na primeira rodada.
+  **T2d (só o usuário):** `npm run sweep -- --emit-actors` gera o lote em `testing/actors/` para as
+  importações reais no Foundry.
 
 - **2026-07-26 (2)** - **T1b sessão 8: Bloco S-E CONCLUÍDO ⇒ 🏁 STAGE T1 COMPLETO.** Zero bugs,
   nenhum código tocado. Passada leve nas 38 unidades de cenário/legado (LFL + Plane Shift +

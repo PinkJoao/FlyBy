@@ -278,7 +278,7 @@ Kalashtar, Khoravar, Warforged), RHW (Dhampir, Hexblood, Reborn, Lupin), SCC
   **Simic Hybrid** = idioma "other" mostra "Other" no seletor (cosmético conhecido,
   TC-0050/DDL-0062 — não é bug); Dragonborn Gem = tipo de dano do sopro + voo.
 
-#### Bloco S-E — CENÁRIO / legado (atrás do filtro "Setting Variant") · ~36 linhas · 2-3 sessões
+#### Bloco S-E — CENÁRIO / legado (atrás do filtro "Setting Variant") · 37 linhas · CONCLUÍDO 2026-07-26
 Menor prioridade (2014-era, escondidas por padrão pelo filtro DDL-0064). Passada
 mais leve: confirmar que constroem, derivam e não vazam `{@tag}`; polish vai para
 `needs-user-eyes`.
@@ -317,8 +317,8 @@ o legado antes, os blocos são independentes.
 | Stage | What | Exit |
 |---|---|---|
 | **T0** | Build the harness (loadDb lib, matrix, autoBuild, invariants, round-trip, trackers, `npm run sweep`); first full sweep; burn down the backlog | sweep green or every failure logged |
-| **T1a** | UI sessions: all classes + subclasses | all class rows `ui: ok` |
-| **T1b** | UI sessions: all species + lineages | all species rows `ui: ok` |
+| **T1a** | UI sessions: all classes + subclasses | ✅ **DONE 2026-07-22** - as 135 linhas `class:*` com `ui: ok` |
+| **T1b** | UI sessions: all species + lineages | ✅ **DONE 2026-07-26** - as 150 linhas `species:*` com `ui: ok` |
 | **T2** | Export curation + real-Foundry milestone imports | all rows `export: ok` |
 | **T3** | Feats → spells → items, same machinery (new matrix units, same trackers) | later; re-plan then |
 
@@ -330,6 +330,27 @@ on the user's machines).
 ---
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
+
+- **2026-07-26 (2)** - **T1b sessão 8: Bloco S-E CONCLUÍDO ⇒ 🏁 STAGE T1 COMPLETO.** Zero bugs,
+  nenhum código tocado. Passada leve nas 38 unidades de cenário/legado (LFL + Plane Shift +
+  Half-Orc PHB): todas constroem, derivam, `autoBuild` converge, zero link morto, toda escolha
+  com opções. De passagem, confirma o TC-0053: os goblins derivam **AC 10 contra 9** das demais
+  (o Grit 11+Dex), **incluindo o `Goblin (Ixalan)`** - a chave `Goblin|PSX` daquele fix.
+  **DDL-0064 conferido ao vivo:** com o filtro padrão "Elf"→3 / "Human"→1 / "Goblin"→2; um clique
+  no chip →5 / →3 / →3. E as três Humans **vazias não aparecem nem com o filtro desligado**
+  (removidas de vez, não filtradas). O **Aven|PSA** aparece no filtro PADRÃO, confirmando o
+  amendment do DDL-0064.
+  **⇒ As 285 unidades da matriz estão `ui: ok`** (135 class + 150 species). A T1b rendeu
+  TC-0051/0052/0053/0054.
+  **Nota de harness:** o chip de filtro **CICLA** de estado a cada clique - um helper que o
+  clica a cada chamada acaba invertendo o filtro e "some" com espécies que deveriam aparecer
+  (foi o que fez o Aven parecer ausente). Clique uma vez e reaproveite o painel.
+  1147 testes, lint, sweep 285/285 `--strict`, mobile sem overflow, zero erros de console.
+  **NEXT: Stage T2** - curação do export + importações reais no Foundry (§5). Todas as 285 linhas
+  têm `export: todo`. O melhor gabarito são as fichas premade de nível 1/5/11 que o usuário
+  adicionou ao material de referência: **compare o advancement gerado com o do premade do mesmo
+  nível antes de marcar uma linha como `ok`** (ver a entrada de 2026-07-22 (5)). Vale começar
+  por `npm run sweep -- --emit-actors` para gerar um lote e fazer as importações numa sessão só.
 
 - **2026-07-26** - **T1b sessão 7: Bloco S-D CONCLUÍDO - 32 linhas `ui: ok`, zero bugs, nenhum
   código tocado.** Mesmo método de duas camadas do S-C (probe de cobertura total + passada ao

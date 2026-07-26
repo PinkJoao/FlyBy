@@ -210,8 +210,21 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   `testing/COVERAGE.md`. **T0 DONE (2026-07-15):** harness built; first full sweep green
   (256 rows, builder-side flawless); ten export/import round-trip gaps triaged as
   TC-0001…TC-0010 in `testing/ISSUES.md`. **T0 backlog BURNED DOWN (2026-07-16, DDL-0028):**
-  all ten fixed; sweep 256/256 with zero diffs in `--strict`; next step is **T1a** (UI
-  sessions per class).
+  all ten fixed; sweep 256/256 with zero diffs in `--strict`.
+  **T1a DONE (2026-07-22, DDL-0053):** as 135 linhas `class:*` (13 classes + todas as
+  subclasses) com `ui: ok`, em 13 sessões.
+  **T1b DONE (2026-07-26):** as **150 linhas `species:*`** (toda espécie, linhagem e sub-escolha)
+  com `ui: ok`, em 7 sessões, organizadas nos 5 blocos do TESTING-PLAN §4.5 (S-A núcleo 2024 →
+  S-B linhagens adaptadas por nós → S-C MPMM → S-D outros livros modernos → S-E cenário/legado).
+  **⇒ O STAGE T1 ESTÁ COMPLETO: builder-side certificado para as 285 unidades da matriz.**
+  Achados corrigidos ao longo da T1b: TC-0051 (dado upstream errado no Tiefling Abyssal),
+  TC-0052 (lore da edição errada em linhagem curada), TC-0053 (5 espécies com armadura natural
+  não implementada) e TC-0054 (texto do Tiefling Winged, pedido do usuário).
+  **Método que se firmou e vale para a T3:** um **probe descartável** sobre `autoBuild` +
+  oráculo (o livro, ou o que o dado declara) certifica a DERIVAÇÃO da família inteira em
+  minutos; a passada ao vivo fica para o que exige olho (arte, layout, fluxo). E **verifique a
+  suposição do probe antes de reportar** - vários "bugs" que ele acusou eram defeito do
+  instrumento. **Next step: T2** (curação do export + importações reais no Foundry).
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,

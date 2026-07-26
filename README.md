@@ -16,7 +16,7 @@ A character builder for **D&D 5e (2024 rules)**. Mobile-first, runs in the brows
 - **PDF character sheet export** - a printable, filled-in sheet (abilities, skills, features, spells, equipment), with one sheet per class for multiclass characters.
 - Game content comes from the 5e.tools community and is cached for offline use, so the app works without a backend and offline after first load.
 - **Play mode (Planned)** - a mobile-first, at-the-table companion for running a character: tap to roll skills/saves/attacks/damage, track HP and resources during a session.
-- **Testing & curation campaign (Work in Progress)** - an ongoing pass certifying the builder UI and Foundry export for every species, class and subclass, backed by an automated sweep harness.
+- **Testing & curation campaign (Work in Progress)** - certifying the builder UI and Foundry export for every species, class and subclass, backed by an automated sweep harness. **The builder-side pass is complete**: all 285 units (13 classes with every subclass, and every species with its lineages and sub-choices) have been verified in the running app. The Foundry-export pass is next.
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed, topic-by-topic development log, and
 [CLAUDE.md](CLAUDE.md) for architecture notes and the known, deliberately deferred backlog.

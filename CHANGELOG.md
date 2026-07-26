@@ -5122,3 +5122,48 @@ Ambos eram defeito do instrumento, não do app.
 
 Mobile 375px sem overflow, zero erros de console. Suíte (1147), lint e sweep (285/285 `--strict`)
 inalterados. **Restam 37 linhas `todo`, todas do Bloco S-E** (cenário/legado, atrás do filtro).
+
+## 92. Phase T - T1b sessão 8: Bloco S-E CONCLUÍDO ⇒ **STAGE T1 COMPLETO** (285 unidades)
+
+Fecha o último bloco de espécies e, com ele, a etapa T1 inteira. **Nenhum bug; nenhum código
+tocado.** Passada leve, como o plano definia para este bloco (confirmar que constroem, derivam e
+não vazam tag).
+
+**Probe nas 38 unidades de cenário/legado** (LFL + Plane Shift + Half-Orc PHB): todas constroem,
+derivam, o `autoBuild` converge, zero link morto, toda escolha com opções. Um detalhe confirma o
+TC-0053 de passagem: os goblins derivam **AC 10 contra 9** das demais - é o Grit (11+Dex)
+aplicando, **inclusive no `Goblin (Ixalan)`**, que era a chave `Goblin|PSX` que aquele fix
+adicionou.
+
+**DDL-0064 verificado ao vivo**, com o comportamento exato que o entry descreve:
+
+| busca | filtro padrão | um clique no chip |
+|---|---|---|
+| Elf | 3 | 5 (+Kaladesh, +Zendikar) |
+| Human | 1 | 3 (+Innistrad, +Keldon) |
+| Goblin | 2 | 3 (+PSZ) |
+
+E o ponto que mais importa: as três Humans **vazias** (Ixalan/Kaladesh/Zendikar) **não aparecem
+nem com o filtro desligado** - foram removidas de vez, não filtradas. O **Aven|PSA** aparece no
+filtro PADRÃO, confirmando o amendment do DDL-0064 (deixou de colidir quando o Aven|PSD saiu como
+redundante).
+
+---
+
+### 🏁 STAGE T1 COMPLETO
+
+Com este bloco, **as 285 unidades da matriz estão certificadas do lado do builder**: as **135
+linhas `class:*`** (T1a, 13 sessões, fechada em 2026-07-22) e as **150 linhas `species:*`** (T1b,
+7 sessões, fechada em 2026-07-26 nos 5 blocos do TESTING-PLAN §4.5). A T1b rendeu quatro
+correções: **TC-0051** (dado upstream errado), **TC-0052** (lore da edição errada em linhagem
+curada), **TC-0053** (5 espécies com armadura natural não implementada) e **TC-0054** (texto do
+Tiefling Winged, pedido do usuário).
+
+**Método que se firmou** (e que vale para a T3): um probe descartável sobre `autoBuild` + um
+oráculo independente certifica a DERIVAÇÃO da família inteira em minutos, e a passada ao vivo
+fica para o que exige olho - arte, layout, fluxo. Com a ressalva que a revisão do S-A2 fixou:
+**verifique a suposição do probe antes de reportar** - vários "bugs" que ele acusou nesta campanha
+eram defeito do instrumento (pool de magia por filtro, delimitador de texto, formato do derivado).
+
+1147 testes, lint, sweep 285/285 `--strict`, mobile sem overflow, zero erros de console.
+**Próxima etapa: T2** - curação do export + importações reais no Foundry.

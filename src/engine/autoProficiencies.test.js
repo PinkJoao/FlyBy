@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveGrantedProficiencies } from './autoProficiencies';
+import { deriveGrantedProficiencies, conditionalWeaponNames } from './autoProficiencies';
 import { createCharacter } from '../schema/character';
 
 const db = {
@@ -80,6 +80,32 @@ describe('deriveGrantedProficiencies', () => {
   });
 
   it('sem classe/espécie → tudo vazio', () => {
-    expect(deriveGrantedProficiencies(createCharacter(), db)).toEqual({ armor: [], weapons: [], grantedSkills: [], grantedTools: [] });
+    expect(deriveGrantedProficiencies(createCharacter(), db)).toEqual({ armor: [], weapons: [], weaponNames: [], grantedSkills: [], grantedTools: [] });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TC-0078: a regra CONDICIONAL de arma enumerada a partir do dado
+// ---------------------------------------------------------------------------
+describe('conditionalWeaponNames', () => {
+  const weaponDb = { 'items-base': { baseitem: [
+    { name: 'Club', weaponCategory: 'simple', property: [{ uid: 'L|XPHB' }] },
+    { name: 'Scimitar', weaponCategory: 'martial', property: [{ uid: 'L|XPHB' }, { uid: 'F|XPHB' }] },
+    { name: 'Rapier', weaponCategory: 'martial', property: [{ uid: 'F|XPHB' }] },
+    { name: 'Greatsword', weaponCategory: 'martial', property: [{ uid: 'H|XPHB' }] },
+    { name: 'Shield', armor: true },
+  ] } };
+  const withFilter = (fromFilter) => ({ startingProficiencies: { weaponProficiencies: [{ simple: true, all: { fromFilter } }] } });
+
+  it('Monge: só as MARCIAIS com a propriedade Light', () => {
+    expect(conditionalWeaponNames(withFilter('type=martial weapon|property=light'), weaponDb)).toEqual(['Scimitar']);
+  });
+  it('Ladino: as propriedades do filtro são ALTERNATIVAS (Finesse OU Light)', () => {
+    expect(conditionalWeaponNames(withFilter('type=martial weapon|property=light;finesse'), weaponDb))
+      .toEqual(['Scimitar', 'Rapier']);
+  });
+  it('classe sem regra condicional não enumera nada', () => {
+    expect(conditionalWeaponNames({ startingProficiencies: { weapons: ['simple', 'martial'] } }, weaponDb)).toEqual([]);
+    expect(conditionalWeaponNames(null, weaponDb)).toEqual([]);
   });
 });

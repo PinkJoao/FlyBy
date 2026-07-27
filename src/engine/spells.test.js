@@ -3,6 +3,7 @@ import {
   schoolName,
   allSpells,
   resolveSpellObj,
+  srdSpellNames,
   ordinalLevel,
   spellLevelLabel,
   castingTimeLabel,
@@ -119,6 +120,47 @@ describe('resolveSpellObj', () => {
   });
   it('inexistente → null', () => {
     expect(resolveSpellObj(db, 'Wish', 'XPHB')).toBeNull();
+  });
+
+  // TC-0079: o SRD tira o nome próprio do mago do título, então um ator vindo
+  // do Foundry pede "Hideous Laughter" pela magia que o livro chama de "Tasha's
+  // Hideous Laughter". Sem a rede, a magia PREPARADA some do export sem aviso.
+  describe('nome CURTO do SRD', () => {
+    const tasha = { name: "Tasha's Hideous Laughter", source: 'XPHB', level: 1, school: 'E' };
+    const bigby = { name: "Bigby's Hand", source: 'XPHB', level: 5, school: 'V' };
+    const jim = { name: "Jim's Magic Missile", source: 'AI', level: 1, school: 'V' };
+    const missile = { name: 'Magic Missile', source: 'XPHB', level: 1, school: 'V' };
+    const hunters = { name: "Hunter's Mark", source: 'XPHB', level: 1, school: 'D' };
+    const dragons = { name: "Dragon's Breath", source: 'XPHB', level: 2, school: 'T' };
+    const short = { 'spells-xphb': { spell: [tasha, bigby, missile, hunters, dragons] }, 'spells-phb': { spell: [jim] } };
+
+    it('acha pela regra do possessivo', () => {
+      expect(resolveSpellObj(short, 'Hideous Laughter', '')).toBe(tasha);
+    });
+    it('acha os 3 títulos que o SRD reescreveu inteiros', () => {
+      expect(resolveSpellObj(short, 'Arcane Hand', '')).toBe(bigby);
+    });
+    it('o nome exato SEMPRE vence a regra (Magic Missile != Jim\'s Magic Missile)', () => {
+      expect(resolveSpellObj(short, 'Magic Missile', '')).toBe(missile);
+    });
+    it('nome ambíguo não se adivinha', () => {
+      // "Mark" casaria Hunter's Mark; com dois candidatos, ninguém é escolhido.
+      const ambiguous = { 'spells-xphb': { spell: [hunters, { name: "Rogue's Mark", source: 'XPHB' }] } };
+      expect(resolveSpellObj(ambiguous, 'Mark', '')).toBeNull();
+    });
+  });
+});
+
+describe('srdSpellNames', () => {
+  it('nome do livro → nome curto do SRD', () => {
+    expect(srdSpellNames("Tasha's Hideous Laughter")).toEqual(['tasha\'s hideous laughter', 'hideous laughter']);
+  });
+  it('inclui o título reescrito pelo SRD', () => {
+    expect(srdSpellNames("Bigby's Hand")).toEqual(['bigby\'s hand', 'hand', 'arcane hand']);
+  });
+  it('nome sem possessivo devolve só ele mesmo', () => {
+    expect(srdSpellNames('Fireball')).toEqual(['fireball']);
+    expect(srdSpellNames('')).toEqual([]);
   });
 });
 

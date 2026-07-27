@@ -106,6 +106,10 @@ export function deriveCharacter(character, ctx = {}) {
     languages: collectLanguages(character, ctx.grantedLanguages ?? []),
     armor: dedupeCI(ctx.armor ?? []),
     weapons: dedupeCI(ctx.weapons ?? []),
+    // Armas individuais que uma regra CONDICIONAL concede. Não aparecem na ficha
+    // (lá vale a frase, em `weapons`); existem para o export enumerá-las, que é
+    // a única forma que o Foundry entende (TC-0078).
+    weaponNames: dedupeCI(ctx.weaponNames ?? []),
     classBreakdown,
   };
 }

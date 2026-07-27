@@ -5519,3 +5519,94 @@ premades oficiais TRAZEM essas activities (Martial Arts, Sacred Weapon, Repellin
 
 1193 testes (+9), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **361 → 257** achados
 (+23 esperadas). Decisões em DDL-0074.
+
+---
+
+## 98. Phase T - T2b: o que um ator EXTERNO perdia ao ser importado (257 → 190)
+
+Quinta leva do burn-down. O tema saiu da medição, não do plano: quatro das cinco correções são do
+lado do **IMPORT** - decisões que um ator vindo do Foundry trazia e que nós descartávamos em
+silêncio. Duas classes de achado foram a **zero** (`skills` e `tools`), e uma terceira também
+(`traits.weaponProf`).
+
+### TC-0079 - magia de nome próprio não resolvia e sumia do export
+
+O SRD tira o nome do mago do título (é Product Identity), então o sistema dnd5e escreve "Hideous
+Laughter" onde o 5etools transcreve o livro e mantém "Tasha's Hideous Laughter". `resolveSpellObj`
+devolvia `null`, e `buildSpellItems` pula a entrada sem `raw`: **uma magia preparada pelo jogador
+desaparecia sem aviso nenhum**.
+
+A regra é DERIVADA, não curada - "a magia cujo nome é `<alguém>'s <nome curto>`", aceita só quando
+o candidato é ÚNICO. Medida contra o pacote `spells24` do dnd5e: dos 16 casos, **13 saem pela
+regra**; os 3 restantes (Arcane Hand, Arcane Sword, Arcanist's Magic Aura) o SRD reescreveu por
+inteiro e viraram exceções, conferidas uma a uma por círculo e escola. O sentido inverso
+(`srdSpellNames`) faz o `compendiumSource` resolver, então a magia passa a ter procedência mesmo
+saindo com o nome do livro.
+
+**O nome exportado continua o do LIVRO** - somos um builder alimentado pelo 5etools, e quem carrega
+a identidade do documento é o `compendiumSource`, não a grafia. Para o comparador não acusar 26
+falsos positivos, o oráculo passou a reduzir os dois lados ao nome curto (`spellKey`).
+
+### TC-0081 - as magias de um talento não voltavam de um ator externo
+
+Um premade com Magic Initiate traz 2 cantrips + 1 magia de círculo como itens `spell` sempre
+preparados. O import os descarta - certo, concessão é derivável -, **mas a derivação não os
+recriava**, porque o talento chegava com `choices: {}`.
+
+`featSpellBag` reconstrói o sub-bag casando as magias do ator contra os MESMOS descritores que a UI
+usa (`parseChoices` + `spellChoosePredicate`), então nada ali sabe de talento específico. Quando há
+listas ALTERNATIVAS (Cleric/Druid/Wizard), vence a que explica mais magias da ficha.
+
+Duas afinações que a medição pediu, ambas lendo marcas que o próprio documento deixa:
+
+- **a magia de um talento carrega o ATRIBUTO dele e a FREQUÊNCIA dele**; a da classe herda os dois e
+  vem sem. É o que separa o Bless do domínio (sem `ability`, sem `uses`) do Command do Magic
+  Initiate (`wis`, 1/descanso) quando os dois cabem no mesmo filtro;
+- **uma magia que uma concessão FIXA já explica não é candidata** - sem esse corte, o Fire Bolt da
+  linhagem infernal do Tiefling ocupava um slot de escolha e o Mage Hand que o jogador escolheu
+  ficava de fora, perdido.
+
+Medido: das 81 magias `prepared: 2` que sumiam, **57 voltaram**. As 24 restantes são a mesma família
+com OUTRO dono (linhagem, subclasse, Magical Discoveries) - ver o hand-off.
+
+### TC-0061 - escolhas dentro de outros documentos (skills 39 → 0, tools 12 → 0)
+
+Três casos, e o terceiro revelou um bug maior que o enunciado:
+
+1. **Ferramentas iniciais da classe.** O premade titula o Trait "Tool Proficiencies"; o nosso
+   descritor se chama "Musical Instruments". `choiceTraitBag` casava só por título, então as 3 do
+   Bardo e a do Monge se perdiam. Agora há um índice de reserva por **(kind, nível)**, usado quando
+   o título não casa e só se for único ali - a mesma lição do TC-0056: um documento de fora escreve
+   o título que quiser.
+2. **Bonus Proficiencies de subclasse.** As 3 perícias do College of Lore vivem no item de
+   SUBCLASSE, que o import não lia. Passou a ler.
+3. **Traits dentro de um talento concedido.** O Skilled guarda os três picks numa Trait só, sem
+   título, misturando `tool:` e `skills:` - então cada chave é roteada pelo PRÓPRIO prefixo, e o
+   destino pode ser o descritor do kind exato ou um `mixed` que aceite aquele kind.
+
+**O achado maior, ao fazer (3):** o talento do **Versatile do Humano se perdia INTEIRO**. O
+`value.added` de um `ItemChoice` é ANINHADO POR NÍVEL (`{"0": {id: uuid}}`), e o código assumia a
+forma plana do `ItemGrant` - `byId.get("0")` não devolvia nada. Sonda nas 48 fichas: **as 12 que têm
+ItemChoice de raça usam a forma aninhada**, ou seja o caso plano assumido não existe em nenhuma.
+`addedItemIds` passou a ler as duas.
+
+### TC-0076/TC-0078 - a regra CONDICIONAL de arma, enumerada
+
+O Monge 2024 é proficiente em "Simple weapons and Martial weapons that have the Light property".
+Isso vira uma frase na ficha (o certo para o jogador ler), mas o Foundry só entende CÓDIGOS - e sem
+eles o Monge importado **não é proficiente com cimitarra**.
+
+Não precisou de curadoria: o 5etools guarda a mesma regra estruturada em
+`weaponProficiencies[].all.fromFilter`, o mesmo insumo do `weaponFilterAllows` (DDL-0033). A ficha
+continua mostrando a frase; só o export enumera (`derived.weaponNames`, campo à parte).
+
+De passagem, uma correção do INSTRUMENTO: o premade do Ranger lista `longbow`/`shortbow` ao lado de
+`sim`+`mar`, que já os cobrem. Quem tem os dois é proficiente com toda arma mundana, então os dois
+lados são reduzidos antes do diff - sem esconder o caso que importa, porque Monge e Ladino têm só
+`sim` e para eles cada arma marcial PRECISA estar enumerada.
+
+### Verificação
+
+1209 testes (+16), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **257 → 190** achados
+(+23 esperadas), e passada ao vivo (o card de Proficiências do Monge segue mostrando a FRASE, não as
+armas uma a uma; zero erros de console). Decisões em DDL-0075.

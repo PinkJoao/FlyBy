@@ -746,6 +746,10 @@ export function deriveFromDb(character, db) {
   const granted = {
     armor: [...auto.armor, ...feat.armor, ...sub.armor],
     weapons: [...auto.weapons, ...feat.weapons, ...sub.weapons, ...weaponProfPicks],
+    // Armas INDIVIDUAIS de uma regra condicional ("Martial weapons that have the
+    // Light property"): a ficha mostra a frase em `weapons`; só o export as
+    // enumera, porque o Foundry precisa de códigos (TC-0078).
+    weaponNames: auto.weaponNames ?? [],
     grantedSkills: [...auto.grantedSkills, ...feat.grantedSkills, ...sub.grantedSkills],
     grantedTools: [...auto.grantedTools, ...feat.grantedTools, ...sub.grantedTools],
     expertiseSkills: sub.expertiseSkills,

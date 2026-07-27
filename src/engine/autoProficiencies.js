@@ -41,14 +41,64 @@ function labelFrom(map, raw) {
 }
 
 /**
+ * Códigos de propriedade de arma por NOME, como o `fromFilter` os escreve.
+ * (O dado guarda o código - 'L', 'F' -, o filtro guarda a palavra.)
+ */
+const FILTER_PROPERTY = { light: 'L', finesse: 'F', heavy: 'H', thrown: 'T', versatile: 'V', reach: 'R' };
+
+/**
+ * Armas INDIVIDUAIS que uma regra CONDICIONAL de proficiência concede (TC-0078).
+ *
+ * O Monge 2024 é proficiente em "Simple weapons and Martial weapons that have
+ * the Light property"; o Ladino, em "Finesse or Light". Isso vira uma frase na
+ * ficha (que é o certo para o jogador ler), mas o Foundry só entende CÓDIGOS de
+ * arma - e sem eles o Monge importado não é proficiente com cimitarra.
+ *
+ * Não precisa de curadoria: o 5etools guarda a mesma regra em forma estruturada,
+ * em `weaponProficiencies[].all.fromFilter` ("type=martial weapon|property=light"),
+ * que é o mesmo insumo do `weaponFilterAllows` (DDL-0033). Uma classe futura com
+ * outra condição sai daqui sozinha; uma condição que o filtro não expresse não
+ * enumera nada (e a frase continua na ficha, como hoje).
+ *
+ * @param {object} classObj  classe resolvida
+ * @param {object} db
+ * @returns {string[]} nomes de arma ("Scimitar"), vazio quando não há condicional
+ */
+export function conditionalWeaponNames(classObj, db) {
+  const out = [];
+  for (const entry of classObj?.startingProficiencies?.weaponProficiencies ?? []) {
+    const filter = entry?.all?.fromFilter;
+    if (typeof filter !== 'string' || !filter) continue;
+    const parts = Object.fromEntries(
+      filter.split('|').map((p) => {
+        const [k, v] = p.split('=');
+        return [k.trim().toLowerCase(), (v ?? '').split(';').map((s) => s.trim().toLowerCase())];
+      }),
+    );
+    const wantCategory = parts.type?.find((t) => /simple|martial/.test(t))?.split(' ')[0] ?? null;
+    const wantProps = (parts.property ?? []).map((p) => FILTER_PROPERTY[p]).filter(Boolean);
+    for (const raw of db?.['items-base']?.baseitem ?? []) {
+      if (!raw?.weaponCategory) continue;
+      if (wantCategory && String(raw.weaponCategory).toLowerCase() !== wantCategory) continue;
+      const props = (raw.property ?? []).map((p) => String(p?.uid ?? p).split('|')[0]);
+      // O filtro lista as propriedades como ALTERNATIVAS ("Finesse or Light").
+      if (wantProps.length && !wantProps.some((c) => props.includes(c))) continue;
+      out.push(raw.name);
+    }
+  }
+  return [...new Set(out)];
+}
+
+/**
  * Proficiências fixas concedidas por classe + espécie.
  * @param {import('../schema/character').Character} character
  * @param {object} db
- * @returns {{armor:string[], weapons:string[], grantedSkills:string[], grantedTools:string[]}}
+ * @returns {{armor:string[], weapons:string[], weaponNames:string[], grantedSkills:string[], grantedTools:string[]}}
  */
 export function deriveGrantedProficiencies(character, db) {
   const armor = new Map(); // label normalizado → label (dedup preservando ordem)
   const weapons = new Map();
+  const weaponNames = new Map(); // armas individuais de uma regra condicional
   const tools = new Map();
   const skills = new Set();
 
@@ -65,6 +115,9 @@ export function deriveGrantedProficiencies(character, db) {
     if (!sp) continue;
     for (const a of sp.armor ?? []) addTo(armor, labelFrom(ARMOR_LABEL, a));
     for (const w of sp.weapons ?? []) addTo(weapons, labelFrom(WEAPON_LABEL, w));
+    // A ficha mostra a FRASE ("Martial weapons that have the Light property");
+    // o export precisa das armas uma a uma (TC-0078).
+    for (const n of conditionalWeaponNames(obj, db)) addTo(weaponNames, n);
     // Ferramentas: prefere o campo ESTRUTURADO (`{nome:true}` = grant fixo; tokens
     // `any*` são ESCOLHAS e viram seletores - ignorados aqui). Sem ele, cai na
     // prosa `tools`, pulando entradas de escolha ("...of your choice").
@@ -119,6 +172,7 @@ export function deriveGrantedProficiencies(character, db) {
   return {
     armor: [...armor.values()],
     weapons: [...weapons.values()],
+    weaponNames: [...weaponNames.values()],
     grantedSkills: [...skills],
     grantedTools: [...tools.values()],
   };

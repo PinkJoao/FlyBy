@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isFoundryActor, foundryToCharacter } from './foundryImport';
+import { isFoundryActor, foundryToCharacter, featSpellBag } from './foundryImport';
 
 // db mínimo p/ reverter chaves de weapon mastery.
 const db = {
@@ -382,5 +382,125 @@ describe('foundryToCharacter - forma dos premades oficiais', () => {
   it('moeda faz round-trip (o import já lia; o export zerava - TC-0055)', () => {
     const char = foundryToCharacter(premadeActor(), premadeDb);
     expect(char.currency).toMatchObject({ gp: 84, sp: 5, cp: 0 });
+  });
+
+  // TC-0061: o talento do Versatile do Humano vinha num ItemChoice cujo
+  // `value.added` é ANINHADO POR NÍVEL - lido como plano, sumia inteiro.
+  const humanActor = () => ({
+    name: 'Randal', type: 'character',
+    system: { abilities: {}, currency: {}, details: {} },
+    items: [
+      {
+        _id: 'R1', name: 'Human', type: 'race',
+        system: { advancement: {
+          c1: { _id: 'c1', type: 'ItemChoice', title: 'Versatile', value: { added: { 0: { FT2: 'Compendium.x.y.Item.z' } } } },
+        } },
+      },
+      {
+        _id: 'FT2', name: 'Skilled', type: 'feat',
+        system: { type: { value: 'feat' }, advancement: {
+          t1: { _id: 't1', type: 'Trait', title: '', level: 0,
+            value: { chosen: ['tool:art:mason', 'skills:ins', 'skills:med'] } },
+        } },
+      },
+    ],
+  });
+  const humanDb = {
+    ...premadeDb,
+    races: { race: [{ name: 'Human', source: 'XPHB' }] },
+    feats: { feat: [{
+      name: 'Skilled', source: 'XPHB', category: 'O',
+      skillToolLanguageProficiencies: [{ choose: [{ from: ['anySkill', 'anyTool'], count: 3 }] }],
+    }] },
+  };
+
+  it('talento escolhido num ItemChoice com `added` aninhado por nível é lido (TC-0061)', () => {
+    const char = foundryToCharacter(humanActor(), humanDb);
+    expect(char.species.choices['feat-0']?.picks).toEqual(['Skilled|XPHB']);
+  });
+
+  it('as escolhas DENTRO do talento voltam pelos Traits dele (TC-0061)', () => {
+    const char = foundryToCharacter(humanActor(), humanDb);
+    const sub = char.species.choices['feat-0']?.sub?.['Skilled|XPHB'] ?? {};
+    const picks = Object.values(sub).flatMap((e) => e.picks);
+    // Cada chave é roteada pelo PRÓPRIO prefixo: uma Trait só mistura os dois.
+    expect(picks).toEqual(expect.arrayContaining([
+      { kind: 'tool', value: "Mason's Tools" },
+      { kind: 'skill', value: 'ins' },
+      { kind: 'skill', value: 'med' },
+    ]));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TC-0081: escolhas de magia de um talento reconstruídas do próprio ator
+// ---------------------------------------------------------------------------
+describe('featSpellBag', () => {
+  const magicInitiate = {
+    name: 'Magic Initiate', source: 'XPHB', category: 'O',
+    additionalSpells: [
+      {
+        name: 'Cleric Spells',
+        ability: { choose: ['int', 'wis', 'cha'] },
+        known: { _: [{ choose: 'level=0|class=Cleric', count: 2 }] },
+        innate: { _: { daily: { 1: [{ choose: 'level=1|class=Cleric' }] } } },
+      },
+      {
+        name: 'Wizard Spells',
+        ability: { choose: ['int', 'wis', 'cha'] },
+        known: { _: [{ choose: 'level=0|class=Wizard', count: 2 }] },
+        innate: { _: { daily: { 1: [{ choose: 'level=1|class=Wizard' }] } } },
+      },
+    ],
+  };
+  const spell = (name, level, cls) => ({ name, source: 'XPHB', level, school: 'V', _cls: cls });
+  const spells = [
+    spell('Guidance', 0, 'Cleric'), spell('Sacred Flame', 0, 'Cleric'), spell('Bless', 1, 'Cleric'),
+    spell('Command', 1, 'Cleric'), spell('Mage Hand', 0, 'Wizard'), spell('Fire Bolt', 0, 'Wizard'),
+  ];
+  const spellDb = {
+    'spells-xphb': { spell: spells },
+    'spell-sources': {
+      XPHB: Object.fromEntries(spells.map((s) => [s.name, { class: [{ name: s._cls, source: 'XPHB' }] }])),
+    },
+  };
+  /** Item `spell` de ator: `prepared: 2` = concessão sempre preparada. */
+  const item = (name, { prepared = 2, ability = '', uses = '' } = {}) => ({
+    name, type: 'spell', system: { method: 'spell', prepared, ability, uses: { max: uses } },
+  });
+
+  it('reconstrói cantrips + magia de círculo e escolhe a LISTA que explica mais magias', () => {
+    const bag = featSpellBag(magicInitiate, [
+      item('Guidance', { ability: 'wis' }),
+      item('Sacred Flame', { ability: 'wis' }),
+      item('Bless', { ability: 'wis', uses: '1' }),
+    ], spellDb);
+    expect(bag['spellSet-0']).toEqual({ kind: 'spellSet', picks: ['Cleric Spells'] });
+    expect(bag['spell-0'].picks.sort()).toEqual(['Guidance|XPHB', 'Sacred Flame|XPHB']);
+    expect(bag['spell-1'].picks).toEqual(['Bless|XPHB']);
+    expect(bag['spellAbility-0']).toEqual({ kind: 'spellAbility', picks: ['wis'] });
+  });
+
+  it('prefere a magia com `uses` para a concessão de FREQUÊNCIA (Command do talento x Bless do domínio)', () => {
+    const bag = featSpellBag(magicInitiate, [
+      item('Guidance', { ability: 'wis' }),
+      item('Sacred Flame', { ability: 'wis' }),
+      item('Bless'), //            concessão do domínio: sem atributo e sem usos
+      item('Command', { ability: 'wis', uses: '1' }), // a do talento
+    ], spellDb);
+    expect(bag['spell-1'].picks).toEqual(['Command|XPHB']);
+  });
+
+  it('ignora a magia que uma concessão FIXA de outra origem já explica', () => {
+    const bag = featSpellBag(magicInitiate, [
+      item('Fire Bolt', { ability: 'cha' }), // linhagem infernal: concessão fixa
+      item('Mage Hand', { ability: 'cha' }),
+    ], spellDb, new Set(['fire bolt']));
+    expect(bag['spell-0'].picks).toEqual(['Mage Hand|XPHB']);
+  });
+
+  it('sem magia sempre-preparada não inventa escolha nenhuma', () => {
+    expect(featSpellBag(magicInitiate, [item('Guidance', { prepared: 1 })], spellDb)).toEqual({});
+    expect(featSpellBag({ name: 'Alert' }, [item('Guidance')], spellDb)).toEqual({});
   });
 });

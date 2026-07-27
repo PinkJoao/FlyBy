@@ -21,6 +21,8 @@
 // triar uma vez por classe de problema, em vez de linha a linha.
 // -----------------------------------------------------------------------------
 
+import { srdSpellNames } from '../../src/engine/spells';
+
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
 
@@ -93,14 +95,47 @@ const norm = (s) => String(s ?? '').trim().toLowerCase();
 /** Nome comparável de item: minúsculo, sem sufixo de repetição "(2)". */
 export const itemKey = (name) => norm(name).replace(/\s*\(\d+\)$/, '');
 
+/**
+ * Nome comparável de MAGIA. O SRD tira o nome próprio do mago do título (é
+ * Product Identity), então o premade diz "Hideous Laughter" onde nós, que
+ * transcrevemos o livro pelo 5etools, dizemos "Tasha's Hideous Laughter" - a
+ * MESMA magia, mesmo círculo e mesma escola (verificado um a um contra o pacote
+ * spells24 ao fechar o TC-0079). Comparar a grafia faria o oráculo acusar 26
+ * falsos positivos e esconder as ausências de verdade, então os dois lados são
+ * reduzidos ao nome curto.
+ *
+ * A redução é a MESMA dos dois lados, então ela nunca inventa uma coincidência:
+ * no máximo dois títulos diferentes cairiam na mesma chave (o "Jim's Magic
+ * Missile" de Acquisitions Inc. colide com "Magic Missile"), e aí vale a regra
+ * de homônimo do `itemsByType` - o primeiro vence. Nenhum premade traz o caso.
+ */
+export const spellKey = (name) => srdSpellNames(itemKey(name)).at(-1) ?? itemKey(name);
+
+const keyFor = (type, name) => (type === 'spell' ? spellKey(name) : itemKey(name));
+
 const setDiff = (a, b) => [...new Set(a)].filter((x) => !new Set(b).has(x)).sort();
+
+/**
+ * Proficiências de arma comparáveis. Quem tem `sim` E `mar` é proficiente com
+ * TODA arma mundana, então um nome individual ao lado dos dois é redundante -
+ * e é isso que o premade do Ranger faz (Quillathe traz `longbow`/`shortbow`
+ * além de `sim`+`mar`, e só a partir do nível 5). Reduzir os dois lados evita
+ * um falso "faltando" ali sem esconder o caso que importa: o Monge e o Ladino
+ * têm só `sim`, e para eles cada arma marcial da regra condicional PRECISA
+ * estar enumerada (TC-0078) - lá a redução não se aplica.
+ */
+const weaponProfSet = (list) => {
+  const v = [...new Set(list ?? [])];
+  return v.includes('sim') && v.includes('mar') ? v.filter((x) => ['sim', 'mar'].includes(x)) : v;
+};
 
 /** Itens agrupados por `type`, em mapas name→item (o 1º de nome repetido vence). */
 export function itemsByType(actor) {
   const out = {};
   for (const it of actor?.items ?? []) {
     const m = (out[it.type] ??= new Map());
-    if (!m.has(itemKey(it.name))) m.set(itemKey(it.name), it);
+    const k = keyFor(it.type, it.name);
+    if (!m.has(k)) m.set(k, it);
   }
   return out;
 }
@@ -171,7 +206,7 @@ function compareSystem(P, A, out) {
   const at = as.traits ?? {};
   cmp(out, 'traits.size', 'size', pt.size, at.size);
   cmpSet(out, 'traits.languages', 'value', pt.languages?.value, at.languages?.value);
-  cmpSet(out, 'traits.weaponProf', 'value', pt.weaponProf?.value, at.weaponProf?.value);
+  cmpSet(out, 'traits.weaponProf', 'value', weaponProfSet(pt.weaponProf?.value), weaponProfSet(at.weaponProf?.value));
   cmpSet(out, 'traits.mastery', 'value', pt.weaponProf?.mastery?.value, at.weaponProf?.mastery?.value);
   cmpSet(out, 'traits.armorProf', 'value', pt.armorProf?.value, at.armorProf?.value);
   for (const k of ['dr', 'di', 'dv', 'ci']) {

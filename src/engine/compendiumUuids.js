@@ -36,6 +36,7 @@ import {
   EQUIPMENT_TYPES,
   SUBCLASS_IDENTIFIERS,
 } from './compendiumUuidsData';
+import { srdSpellNames } from './spells';
 
 // Apóstrofo tipográfico → reto: o pack usa o reto, o 5etools mistura os dois
 // ("Explorer’s Pack" x "Explorer's Pack"). Normalizado dos DOIS lados (o
@@ -109,12 +110,19 @@ export function subclassFeatureUuid(classId, subclass, featureName) {
 /**
  * UUID de uma MAGIA no compêndio do dnd5e (magias concedidas por subclasse nos
  * níveis futuros - ex: as "Oath of Devotion Spells" do premade do Paladino).
+ * Uma magia de nome próprio é procurada também pelo nome CURTO do SRD
+ * ("Tasha's Hideous Laughter" → "Hideous Laughter", TC-0079): é o MESMO
+ * documento com o título despido do Product Identity, não um near-match - a
+ * regra de "nome exato ou nada" do bloco abaixo continua valendo para o resto.
  * @param {string} spellName
  * @returns {string|null}
  */
 export function spellUuid(spellName) {
-  const id = SPELL_IDS[norm(spellName)];
-  return id ? `${PACK_SPELLS}.${id}` : null;
+  for (const n of srdSpellNames(spellName)) {
+    const id = SPELL_IDS[norm(n)];
+    if (id) return `${PACK_SPELLS}.${id}`;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

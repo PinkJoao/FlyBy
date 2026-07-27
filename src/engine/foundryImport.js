@@ -26,6 +26,8 @@ import { optionalFeatureChoices, classLevelChoices, classToolChoices, subclassFe
 import { parseClass } from './classData';
 import { TRAIT_CHOICE_KINDS, choiceTraitTitle } from './foundryItems';
 import { parseChoices, collectAbilityPicks } from './choices';
+import { resolveSpellObj, spellChoosePredicate } from './spells';
+import { grantedSpells } from './grantedSpells';
 import { deriveHpBonus } from './hpBonuses';
 import { classGrantChoices } from './classFeatureGrants';
 
@@ -198,17 +200,199 @@ function resolveInventorySource(db, name) {
 /** Fonte de um item de TALENTO: a do próprio documento ou, se ele veio sem
  *  nenhuma (premades/Plutonium/homebrew), a do talento de mesmo nome no db. Sem
  *  isso o talento não re-resolve num export posterior - `findFeat` casa nome E
- *  fonte, então uma fonte vazia faz o item DESAPARECER do ator (TC-0057). */
+ *  fonte, então uma fonte vazia faz o item DESAPARECER do ator (TC-0057).
+ *  Usa `latestOnly` pelo mesmo motivo que `resolveInventorySource` acima: sem o
+ *  filtro de reprint o "Magic Initiate" de um ator 2024 casava a entrada PHB de
+ *  2014 (que é a primeira do array), e o talento resolvido na edição errada traz
+ *  outra estrutura de `additionalSpells` - ou seja, outras escolhas (TC-0081). */
 function featSource(item, db) {
   const own = itemSource(item);
   if (own || !db) return own;
-  const feat = (db.feats?.feat ?? []).find((f) => norm(f.name) === norm(item?.name));
+  const feat = latestOnly(db?.feats?.feat ?? []).find((f) => norm(f.name) === norm(item?.name));
   return feat?.source ?? '';
+}
+
+/** Talento resolvido no db por nome+fonte (a fonte já veio de `featSource`). */
+function findFeatObj(db, name, source) {
+  return (db?.feats?.feat ?? []).find((f) => norm(f.name) === norm(name) && norm(f.source) === norm(source)) ?? null;
 }
 
 /** "Nome|Fonte" de um item (formato dos picks de talento/optional feature). */
 function itemRef(item, db) {
   return `${item.name}|${featSource(item, db)}`;
+}
+
+/** Prefixo de uma chave de Trait → kind de escolha do nosso bag. */
+const TRAIT_KEY_KIND = { skills: 'skill', tool: 'tool', languages: 'language' };
+
+/**
+ * Sub-bag das escolhas de PROFICIÊNCIA de um talento, a partir dos Traits do
+ * próprio item de talento (TC-0061).
+ *
+ * O Skilled é o caso que obriga a fazer certo: ele concede "any combination of
+ * three skills or tools", e o premade guarda os três numa ÚNICA Trait sem
+ * título (`["tool:art:woodcarver", "skills:ins", "skills:prc"]`). Por isso cada
+ * chave é roteada pelo PRÓPRIO prefixo - a lição do TC-0056 - em vez de o Trait
+ * inteiro ser classificado pela primeira chave; e o descritor de destino pode
+ * ser o do kind exato ou um `mixed` que aceite aquele kind.
+ *
+ * @param {object} featObj   talento resolvido no db
+ * @param {object} featItem  item de talento do ator
+ * @param {object} db
+ * @returns {object} bag parcial
+ */
+function featTraitBag(featObj, featItem, db) {
+  const traits = advList(featItem).filter((a) => a.type === 'Trait' && (a.value?.chosen ?? []).length);
+  if (!traits.length || !featObj) return {};
+  const descriptors = parseChoices(featObj, { level: 20, bag: {} });
+  if (!descriptors.length) return {};
+
+  const out = {};
+  for (const t of traits) {
+    const granted = new Set(t.configuration?.grants ?? []);
+    for (const c of t.value.chosen) {
+      if (granted.has(c)) continue; // concessão do talento, não escolha do jogador
+      const kind = TRAIT_KEY_KIND[String(c).split(':')[0]];
+      if (!kind) continue;
+      const desc = descriptors.find((d) => d.kind === kind)
+        ?? descriptors.find((d) => d.kind === 'mixed' && [d.pool?.of].flat().includes(kind));
+      if (!desc) continue;
+      const value = kind === 'tool' ? toolKeyToName(c, db)
+        : kind === 'language' ? languageKeyToName(c, db)
+          : String(c).slice('skills:'.length);
+      if (!value) continue;
+      const entry = (out[desc.id] ??= { kind: desc.kind, picks: [] });
+      if (entry.picks.length >= (desc.count ?? 1)) continue;
+      entry.picks.push(desc.kind === 'mixed' ? { kind, value } : value);
+    }
+  }
+  return out;
+}
+
+/**
+ * Sub-bag COMPLETO de um talento. A nossa flag vence quando existe (são os ids
+ * exatos das decisões); sem ela - premade, Plutonium, homebrew - as escolhas são
+ * reconstruídas do próprio ator: proficiências pelos Traits do item de talento,
+ * magias pelas magias sempre-preparadas da ficha.
+ * @param {object} featItem  item de talento do ator
+ * @param {object[]} items   todos os itens do ator (para as magias)
+ * @param {object} db
+ * @param {Set<string>} [explained]  ver featSpellBag
+ * @returns {object} bag do talento
+ */
+function featChoiceBag(featItem, items, db, explained) {
+  const flag = featItem?.flags?.builder5e?.choices;
+  if (flag) return flag;
+  const featObj = findFeatObj(db, featItem?.name, featSource(featItem, db));
+  if (!featObj) return {};
+  return {
+    ...featTraitBag(featObj, featItem, db),
+    ...featSpellBag(featObj, items, db, explained),
+  };
+}
+
+/**
+ * Sub-bag das ESCOLHAS DE MAGIA de um talento, reconstruído a partir das magias
+ * do próprio ator (TC-0081).
+ *
+ * Um talento como Magic Initiate concede 2 cantrips + 1 magia de círculo, todas
+ * ESCOLHIDAS pelo jogador. No ator elas chegam como itens `spell` sempre
+ * preparados (`prepared: 2`), que o import descarta - corretamente, porque uma
+ * concessão é derivável -, mas a derivação só as recria se as escolhas
+ * estiverem no sub-bag do talento. Num ator SEM a nossa flag (premade/
+ * Plutonium) esse bag vem vazio, então as magias sumiam de vez.
+ *
+ * O casamento é contra os MESMOS descritores que a UI usa (`parseChoices` +
+ * `spellChoosePredicate`), então nada aqui sabe de talento específico: um
+ * talento novo com escolha de magia funciona sozinho. Quando o talento oferece
+ * LISTAS ALTERNATIVAS (`spellSet`: Cleric/Druid/Wizard), vence a que explica
+ * MAIS magias do ator - é a única evidência que o documento deixa.
+ *
+ * LIMITE CONHECIDO, aceito: uma magia que serve a duas origens (o cantrip de
+ * Mago da linhagem élfica e um cantrip de Mago do Magic Initiate) pode ser
+ * atribuída à origem errada. O conjunto de magias da ficha fica certo; só o
+ * rótulo de quem a concedeu pode trocar. É melhor que perdê-las todas, que é o
+ * comportamento sem isto.
+ *
+ * @param {object} featObj   talento resolvido no db (com `additionalSpells`)
+ * @param {object[]} spellItems  itens `spell` do ator
+ * @param {object} db
+ * @param {Set<string>} [explained]  nomes (minúsculos) que uma concessão FIXA de
+ *   outra origem já explica - ver o filtro abaixo
+ * @returns {object} bag parcial ({ [choiceId]: { kind, picks } })
+ */
+export function featSpellBag(featObj, spellItems, db, explained) {
+  if (!featObj?.additionalSpells?.length || !db) return {};
+  // Candidatas: as concessões (sempre preparadas). Uma magia de círculo do
+  // próprio conjurador chega `prepared: 1` e não entra aqui.
+  //
+  // Uma magia que uma concessão FIXA já explica (o Fire Bolt que a linhagem
+  // infernal do Tiefling dá de graça) NÃO é candidata: sem esse corte, ela
+  // ocupava um slot de escolha do talento - e a magia que o jogador realmente
+  // escolheu ficava de fora, perdida (o Mage Hand do Morthos).
+  const granted = [];
+  for (const it of spellItems ?? []) {
+    if (spellPreparation(it).prepared !== 2) continue;
+    if (explained?.has(norm(it.name))) continue;
+    const raw = resolveSpellObj(db, it.name, itemSource(it));
+    if (raw) granted.push({ raw, item: it });
+  }
+  if (!granted.length) return {};
+
+  /**
+   * Quanto a magia do ator PARECE a concessão que o descritor descreve. Duas
+   * marcas que o documento deixa, e que separam a concessão de um TALENTO da de
+   * uma classe/subclasse quando as duas cabem no mesmo filtro (o Bless do
+   * domínio x o Command do Magic Initiate, os dois de círculo 1 do Clérigo):
+   *   - a magia de um talento carrega o ATRIBUTO de conjuração dele; a da
+   *     classe herda o da classe e vem sem `ability`;
+   *   - uma frequência (`daily`/`rest`) vira `uses.max` no item; `known`/
+   *     `prepared` não têm uso próprio.
+   */
+  const score = (g, pool) => {
+    let n = g.item.system?.ability ? 2 : 0;
+    const expectsUses = !!pool?.castType && pool.castType !== 'will';
+    if (expectsUses === !!g.item.system?.uses?.max) n += 1;
+    return n;
+  };
+
+  /** Preenche os descritores de magia com as candidatas ainda livres. */
+  const fill = (seed) => {
+    const bag = { ...seed };
+    const used = new Set();
+    for (const d of parseChoices(featObj, { level: 20, bag })) {
+      if (d.kind !== 'spell') continue;
+      const eligible = spellChoosePredicate(d.pool, db);
+      const picks = granted
+        .filter((g) => !used.has(g.raw.name) && eligible(g.raw))
+        .sort((a, b) => score(b, d.pool) - score(a, d.pool))
+        .slice(0, d.count ?? 1)
+        .map((g) => {
+          used.add(g.raw.name);
+          return `${g.raw.name}|${g.raw.source}`;
+        });
+      if (picks.length) bag[d.id] = { kind: 'spell', picks };
+    }
+    return { bag, matched: used };
+  };
+
+  // Listas alternativas: escolhe a que explica mais magias do ator.
+  const setChoice = parseChoices(featObj, { level: 20, bag: {} }).find((c) => c.kind === 'spellSet');
+  let best = setChoice ? null : fill({});
+  for (const opt of setChoice?.pool?.options ?? []) {
+    const seed = { [setChoice.id]: { kind: 'spellSet', picks: [opt.value] } };
+    const attempt = fill(seed);
+    if (!best || attempt.matched.size > best.matched.size) best = attempt;
+  }
+  if (!best || !best.matched.size) return {};
+
+  // Atributo de conjuração: o ator o grava no próprio item da magia concedida.
+  const abilityChoice = parseChoices(featObj, { level: 20, bag: best.bag }).find((c) => c.kind === 'spellAbility');
+  if (abilityChoice && !best.bag[abilityChoice.id]) {
+    const ability = granted.find((g) => best.matched.has(g.raw.name) && g.item.system?.ability)?.item.system.ability;
+    if (ability) best.bag[abilityChoice.id] = { kind: 'spellAbility', picks: [ability] };
+  }
+  return best.bag;
 }
 
 /** Reverte uma chave de trait de FERRAMENTA ('tool:game:dice') no nome do 5etools
@@ -356,10 +540,21 @@ function featFixedBoosts(featItem) {
  * (título, nível) - `choiceTraitTitle` é a fonte única dos dois lados. O `kind`
  * desempata os homônimos (Deft Explorer emite um Trait de expertise e outro de
  * idioma no mesmo nível) e vem do `mode` + do prefixo das chaves escolhidas.
+ *
+ * Quando o TÍTULO não casa, cai num segundo índice por (kind, nível) - e só se
+ * ele for único ali. É a mesma lição do TC-0056: um documento de fora escreve o
+ * título que quiser ("Tool Proficiencies" onde o nosso descritor se chama
+ * "Musical Instruments"), então o título não pode ser a única chave. Sem essa
+ * rede, as ferramentas iniciais de TODA classe se perdiam ao importar um
+ * premade (as 3 do Bardo, a do Monge - TC-0061).
+ *
+ * Lê os Traits do item de CLASSE e do de SUBCLASSE: as Bonus Proficiencies do
+ * College of Lore vivem no segundo, e antes não eram lidas de lugar nenhum.
  * @returns {object} bag parcial ({ [choiceId]: { kind, picks } })
  */
-function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
-  const traits = advList(classItem).filter((a) => a.type === 'Trait' && (a.value?.chosen ?? []).length);
+function choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level) {
+  const traits = [...advList(classItem), ...advList(subclassItem)]
+    .filter((a) => a.type === 'Trait' && (a.value?.chosen ?? []).length);
   if (!traits.length || !classObj) return {};
   const parsed = parseClass(classObj);
   const descriptors = [
@@ -374,6 +569,13 @@ function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
 
   const key = (title, lvl, kind) => `${norm(title)}|${lvl ?? 1}|${kind}`;
   const byKey = new Map(descriptors.map((d) => [key(choiceTraitTitle(d), d.level, d.kind), d]));
+  // Índice de reserva por (kind, nível), usado só quando o título não casa e
+  // apenas se houver UM candidato - ambiguidade não se adivinha.
+  const byKindLevel = new Map();
+  for (const d of descriptors) {
+    const k = `${d.level ?? 1}|${d.kind}`;
+    byKindLevel.set(k, byKindLevel.has(k) ? null : d);
+  }
 
   const out = {};
   for (const t of traits) {
@@ -385,8 +587,8 @@ function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
       ? (t.configuration?.mode === 'expertise' ? 'expertise' : 'skill')
       : ({ tool: 'tool', languages: 'language' })[head];
     if (!kind) continue; // saves/weapon/armor: não são escolhas do nosso bag
-    const desc = byKey.get(key(t.title, t.level, kind));
-    if (!desc) continue;
+    const desc = byKey.get(key(t.title, t.level, kind)) ?? byKindLevel.get(`${t.level ?? 1}|${kind}`);
+    if (!desc || out[desc.id]) continue;
     // O que o Trait CONCEDE não é escolha do jogador (o premade põe grants e
     // choices no mesmo Trait: o Thieves' Cant concede o Cant e deixa escolher um
     // idioma) - só o resto entra no bag.
@@ -404,9 +606,25 @@ function choiceTraitBag(classItem, classObj, subclassObj, db, classId, level) {
   return out;
 }
 
-/** Item concedido por um ItemGrant (primeiro item da lista), resolvido pelo _id. */
+/**
+ * Ids dos itens em `value.added`, nas DUAS formas que o dnd5e usa: PLANA
+ * (`{itemId: uuid}`, o ItemGrant) e ANINHADA POR NÍVEL (`{"0": {itemId: uuid}}`,
+ * o ItemChoice). Ler só a plana fazia `byId.get("0")` devolver nada, e o talento
+ * do Versatile do Humano se perdia INTEIRO ao importar - nas 12 fichas premade
+ * com ItemChoice de raça, todas usam a forma aninhada (TC-0061).
+ */
+function addedItemIds(adv) {
+  const out = [];
+  for (const [k, v] of Object.entries(adv?.value?.added ?? {})) {
+    if (v && typeof v === 'object') out.push(...Object.keys(v));
+    else out.push(k);
+  }
+  return out;
+}
+
+/** Itens concedidos por um ItemGrant/ItemChoice, resolvidos pelo _id. */
 function grantedItems(adv, byId) {
-  return Object.keys(adv?.value?.added ?? {}).map((id) => byId.get(id)).filter(Boolean);
+  return addedItemIds(adv).map((id) => byId.get(id)).filter(Boolean);
 }
 
 /** É um talento ESCOLHÍVEL de verdade (existe em `feats.feat`)? Filtra os itens
@@ -571,7 +789,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
   // Escolhas de proficiência/expertise que viajam como Trait no nível delas
   // (nativo, DDL-0056). Só importa para atores SEM a nossa flag - a flag, logo
   // abaixo, sobrescreve com os ids exatos.
-  Object.assign(choices, choiceTraitBag(classItem, classObj, subclassObj, db, classId, level));
+  Object.assign(choices, choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level));
 
   // Escolhas SEM casa nativa no Foundry (tool@start/expertise/grants curados/
   // optional features/grants `sub:` de subclasse) voltam da flag do item de
@@ -645,6 +863,8 @@ export function foundryToCharacter(actor, db) {
 
   // Acumulador de TODOS os boosts de atributo (p/ reverter os scores base no fim).
   const boostAcc = Object.fromEntries(ABILITIES.map((a) => [a, 0]));
+  // Magias que uma concessão FIXA já explica (usado por featSpellBag, TC-0081).
+  const fixedGrantNames = new Set();
 
   // --- Espécie (+ sub-escolhas: Elf "Keen Senses", Human "Skillful"/"Versatile"…) ---
   // Ids fixos ('skill-0'/'feat-0'/…) casam com parseChoices(raceObj) porque nenhuma
@@ -662,13 +882,19 @@ export function foundryToCharacter(actor, db) {
     // as ferramentas de um feat) reapareciam como escolha da espécie (TC-0010).
     const raceObj = resolveRaceObj(db, char.species.id, char.species.source, char.species.lineage);
     const offered = new Set(raceObj ? parseChoices(raceObj).map((c) => c.kind) : []);
+    // Magias que a espécie concede SOZINHA (sem escolha) - computadas ANTES de
+    // ler os talentos, porque é o que impede uma delas de ser confundida com a
+    // escolha de um talento da própria espécie (Versatile → Magic Initiate).
+    for (const s of grantedSpells(raceObj?.additionalSpells, 20, {}).spells ?? []) {
+      fixedGrantNames.add(norm(s.name));
+    }
     // Sub-bag de um feat da espécie: viaja na flag do item do feat (TC-0002);
     // os aumentos de atributo ESCOLHIDOS lá dentro contam nos boosts.
     const featSub = (featItems) => {
       const sub = {};
       for (const f of featItems) {
-        const bag = f.flags?.builder5e?.choices;
-        if (!bag) continue;
+        const bag = featChoiceBag(f, items, db, fixedGrantNames);
+        if (!Object.keys(bag).length) continue;
         sub[itemRef(f, db)] = bag;
         for (const b of collectAbilityPicks(bag)) boostAcc[b.ability] += b.amount;
       }
@@ -708,10 +934,9 @@ export function foundryToCharacter(actor, db) {
           for (const f of feats) for (const b of featFixedBoosts(f)) boostAcc[b.ability] += b.amount;
         }
       } else if (adv.type === 'ItemChoice') {
-        // Forma dos premades reais (Human "Versatile"): `value.added` é FLAT
-        // ({itemId: uuid}, sem nível), ao contrário do Fighting Style da classe.
-        const addedId = Object.keys(adv.value?.added ?? {})[0];
-        const featItem = addedId ? byId.get(addedId) : null;
+        // Human "Versatile": o talento escolhido vem em `value.added`, que nos
+        // premades é ANINHADO POR NÍVEL - ver addedItemIds.
+        const featItem = grantedItems(adv, byId)[0] ?? null;
         if (featItem && isRealFeat(featItem, db)) {
           char.species.choices['feat-0'] = { kind: 'feat', picks: [itemRef(featItem, db)], sub: featSub([featItem]) };
           for (const b of featFixedBoosts(featItem)) boostAcc[b.ability] += b.amount;
@@ -756,9 +981,10 @@ export function foundryToCharacter(actor, db) {
       } else if (adv.type === 'ItemGrant') {
         const feat = grantedItems(adv, byId)[0];
         if (feat) {
-          // Sub-escolhas do talento de origem: flag do item (TC-0002); os
+          // Sub-escolhas do talento de origem: flag do item (TC-0002) ou, num
+          // ator externo, reconstruídas dele mesmo (TC-0061/TC-0081); os
           // aumentos ESCOLHIDOS lá dentro contam nos boosts reconstruídos.
-          const featChoices = feat.flags?.builder5e?.choices ?? {};
+          const featChoices = featChoiceBag(feat, items, db, fixedGrantNames);
           char.origin.originFeat = { id: feat.name, source: featSource(feat, db), subtype: 'origin', choices: featChoices };
           for (const b of featFixedBoosts(feat)) boostAcc[b.ability] += b.amount;
           for (const b of collectAbilityPicks(featChoices)) boostAcc[b.ability] += b.amount;

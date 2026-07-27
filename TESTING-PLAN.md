@@ -390,6 +390,52 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-27 (2)** - **T2b sessão 5: TC-0061, TC-0076, TC-0078, TC-0079 e o TC-0081 (metade)
+  fechados** (257 → **190** achados). **Três classes de achado foram a ZERO**: `skills` (39),
+  `tools` (12) e `traits.weaponProf` (11). 1209 testes (+16), lint, sweep 285/285 `--strict`, e
+  passada ao vivo. Decisões em DDL-0075, log em CHANGELOG §98.
+  **O tema saiu da MEDIÇÃO, não do plano.** O hand-off mandava começar pelo TC-0079 (magia de nome
+  próprio) e ele foi feito primeiro, mas classificar as 268 magias que sumiam **pela forma que elas
+  têm no premade** mostrou que o gargalo era o **IMPORT**, não o export: 185 são `prepared: 0`
+  (TC-0080, `needs-user-eyes`) e as outras eram decisões que descartávamos em silêncio. Quatro das
+  cinco correções acabaram sendo do lado do import.
+  **TC-0079:** a regra é DERIVADA (13 dos 16 casos), não curada - "a magia cujo nome é `<alguém>'s
+  <nome curto>`", com candidato ÚNICO. O nome EXPORTADO continua o do livro; quem carrega a
+  identidade é o `compendiumSource`, e o comparador é que foi corrigido (`spellKey`).
+  **TC-0081 (metade):** 57 das 81 magias de concessão voltaram. As marcas que o documento deixa
+  fazem o casamento: a magia de um TALENTO carrega o atributo e a frequência dele; uma que uma
+  concessão FIXA já explica não é candidata. Junto veio a metade (b) que o ledger suspeitava:
+  `featSource` não filtrava reprint e resolvia "Magic Initiate" na edição de **2014**.
+  **TC-0061:** três casos (ferramenta inicial da classe, Bonus Proficiencies de subclasse, Trait
+  dentro de um talento) - e o terceiro destravou o achado mais sério da sessão: **o talento do
+  Versatile do Humano se perdia INTEIRO**, porque o `value.added` de um `ItemChoice` é aninhado por
+  nível e o código assumia a forma plana.
+  **Três lições de método:**
+  1. **Classifique antes de corrigir.** Uma classe de achado grande quase nunca é uma coisa só: as
+     268 magias eram 4 problemas distintos, e o maior deles não era acionável.
+  2. **Conte quantas fichas usam cada forma antes de assumir uma.** O comentário do código afirmava
+     que o `added` plano era "a forma dos premades reais"; das 12 fichas com ItemChoice de raça,
+     **nenhuma** usa a plana.
+  3. **Quando a diferença é de GRAFIA e a identidade foi verificada, corrija o INSTRUMENTO.** Valeu
+     duas vezes (nome de magia; as armas redundantes do premade do Ranger). Falso positivo que fica
+     esconde o achado de verdade.
+  **Next action: T2b sessão 6.** As maiores classes restantes, na ordem sugerida:
+  1. **TC-0064 + TC-0065** (24 `advancement.race` + 20 `items.race` + 6 `traits.dr` = **50
+     achados, a maior fatia**): o item de espécie é magro (falta o Trait de resistência do
+     Dragonborn, o ScaleValue do sopro, o ItemGrant de nível 5) e a ancestralidade não volta no
+     import. Os 20 de `items.race` são o NOME ("elf, high" × "elf; high elf lineage") - decidir se
+     é caso de instrumento (como o TC-0079) ou de export. **ATENÇÃO: parte do TC-0064 é
+     `needs-user-eyes`** (um item por traço de espécie × effects no item de raça, DDL-0057).
+  2. **TC-0071** (25 `advancement.class.grants`) e **TC-0072** (15 `advancement.subclass`):
+     composição do ItemGrant por nível. O TC-0071 pede análise caso a caso antes de virar código.
+  3. **O resto do TC-0081** (24 magias): a MESMA máquina, com outro dono - `spellSet` de subclasse
+     (Circle of the Land, 16), cantrip de linhagem (4) e Magical Discoveries (4). O `featSpellBag`
+     serve quase inteiro; muda de onde vêm os descritores e para qual bag vão os picks.
+  4. **TC-0070** (18 `feat.activities`): cobertura de activities - caro e de valor funcional baixo,
+     já medido na sessão 4. Deixar por último.
+  5. **TC-0080** (33 `items.spell`, o grimório do Mago) segue **`needs-user-eyes`** - não decidir
+     sozinho.
+
 - **2026-07-27** - **T2b sessão 4: TC-0067, TC-0068, TC-0073 e TC-0074 fechados** (361 → **257**
   achados, +23 esperadas). 1193 testes (+9), lint, sweep 285/285 `--strict`. Decisões em DDL-0074,
   log em CHANGELOG §97.

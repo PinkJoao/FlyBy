@@ -1091,14 +1091,24 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0061 - Escolhas de proficiência dentro de OUTROS documentos não voltam de um ator externo
 
 - **Unidade:** 15 fichas (39 achados de `skills`, 12 de `tools`). **Severidade:** bug.
-  **Causa:** import. **Encontrado:** 2026-07-26. **Status:** open.
+  **Causa:** import. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-27 (DDL-0075).
 - Depois do TC-0056, o que sobra são os Traits de escolha que vivem em documentos que o import
   ainda não varre por prefixo: as **ferramentas iniciais da classe** (`tool:music:*` do Bardo,
   `tool:art:brewer` do Monge - hoje `tool@start` só existe na nossa flag, sem descritor nativo),
   as **Bonus Proficiencies de subclasse** (as 3 perícias do College of Lore) e os **Traits INTERNOS
   de um talento concedido** (as 3 perícias do Skilled que o Human ganha por Versatile).
-- Caminho: estender o `choiceTraitBag` (DDL-0056) a esses três casos, com o mesmo casamento por
-  descritor - e por prefixo de chave, não por título.
+- Fix, nos três: (1) `choiceTraitBag` ganhou um índice de reserva por **(kind, nível)**, usado
+  quando o TÍTULO não casa e só se houver um candidato - o premade titula "Tool Proficiencies" onde
+  o nosso descritor se chama "Musical Instruments"; (2) passou a ler também os Traits do item de
+  SUBCLASSE; (3) `featTraitBag` lê os Traits DENTRO do item de talento, roteando cada chave pelo
+  próprio prefixo (o Skilled mistura `tool:` e `skills:` numa Trait só, sem título) para um
+  descritor do kind exato ou um `mixed` que o aceite.
+- **Achado maior, destravado por (3): o talento do Versatile do Humano se perdia INTEIRO.** O
+  `value.added` de um `ItemChoice` é ANINHADO POR NÍVEL (`{"0": {id: uuid}}`) e o código assumia a
+  forma plana do `ItemGrant` - com um comentário afirmando que a plana era "a forma dos premades
+  reais". Sonda nas 48 fichas: **as 12 que têm ItemChoice de raça usam a aninhada**, ou seja a forma
+  assumida não existe em nenhuma. `addedItemIds` passou a ler as duas.
+- Verificado: `skills` de 39 → **0** e `tools` de 12 → **0**; 4 testes.
 
 ## TC-0062 - Chave de ScaleValue divergente do SRD; falta `max-prepared` e o `preparation.formula`
 
@@ -1346,7 +1356,8 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0076 - Proficiência de arma CONDICIONAL não é enumerada no export
 
 - **Unidade:** `class:monk/*`, `class:rogue/*`, `class:ranger/*` (parte de `traits.weaponProf`).
-  **Severidade:** bug. **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+  **Severidade:** bug. **Causa:** export. **Encontrado:** 2026-07-26.
+  **Status:** fixed@2026-07-27 (com o TC-0078, ver DDL-0075).
 - O Monge 2024 é proficiente em "Martial weapons that have the Light property" e o Ladino em
   "Finesse or Light"; o premade ENUMERA (`weapon:mar:scimitar`, `weapon:mar:shortsword`,
   `weapon:mar:handcrossbow`...). Nós exportamos só a categoria `sim`, então no Foundry o Monge não
@@ -1381,7 +1392,17 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0078 - Proficiências de arma INDIVIDUAIS do premade não são enumeradas (parte do TC-0076)
 
 - **Unidade:** `class:monk/*`, `class:rogue/*`, `class:ranger/*` (11 achados). **Severidade:** bug.
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open (é o TC-0076 medido de perto).
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-27 (DDL-0075; fecha
+  também o TC-0076, do qual este era a medida de perto).
+- **Fix:** `conditionalWeaponNames` (`engine/autoProficiencies.js`) enumera as armas do
+  `weaponProficiencies[].all.fromFilter`; elas viajam num campo À PARTE (`derived.weaponNames`) e só
+  o export as usa - na ficha continua valendo a FRASE, que é o que o livro diz. Sem curadoria: o
+  filtro é o mesmo insumo do `weaponFilterAllows` (DDL-0033), então uma classe nova sai sozinha.
+- **Metade que era do INSTRUMENTO:** os 3 achados do Ranger (Quillathe) não eram falta nossa - o
+  premade lista `longbow`/`shortbow` ao lado de `sim`+`mar`, que já os cobrem. O comparador passou a
+  reduzir os dois lados quando ambos os códigos estão presentes; Monge e Ladino têm só `sim`, então
+  para eles a enumeração continua sendo exigida.
+- Verificado: `traits.weaponProf` de 11 → **0**; 3 testes.
 - Com os supersets já classificados como ESPERADOS (o `EXPECTED` do harness), o que sobra em
   `traits.weaponProf` é só a direção que FALTA: o premade enumera as armas individuais que a regra
   condicional concede (Monge: `weapon:mar:handcrossbow/scimitar/shortsword`; Ladino: rapier/whip…;
@@ -1394,7 +1415,7 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 - **Unidade:** 4 fichas (Beiro, Morthos, Sefris, Zanna; ~9 magias, parte de `items.spell`).
   **Severidade:** bug (perda silenciosa de decisão do jogador). **Causa:** export.
-  **Encontrado:** 2026-07-27. **Status:** open.
+  **Encontrado:** 2026-07-27. **Status:** fixed@2026-07-27 (DDL-0075).
 - A edição 2024 tirou o nome do mago do título e o **dnd5e escreve o nome curto** ("Hideous
   Laughter", "Tiny Hut", "Arcane Hand", "Magnificent Mansion"), enquanto o **5etools mantém o longo
   mesmo em XPHB** ("Tasha's Hideous Laughter", "Leomund's Tiny Hut", "Bigby's Hand", "Mordenkainen's
@@ -1408,6 +1429,17 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   Bigby's, Mordenkainen's, Otiluke's, Evard's, Melf's, Nystul's, Drawmij's, Rary's).
 - `Eldritch Blast (Repelling)` do Sefris NÃO entra aqui: é uma variante ENCANTADA que o Foundry
   gera, não uma magia do compêndio.
+- **Fix:** a rede vive em `resolveSpellObj`, DEPOIS do casamento exato, e é DERIVADA - "a magia cujo
+  nome é `<alguém>'s <nome curto>`", aceita só com candidato ÚNICO (nome ambíguo não se adivinha; o
+  `Jim's Magic Missile` de Acquisitions Inc. é o caso que obriga o exato a vir primeiro). Medida
+  contra o pacote `spells24`: **13 dos 16 casos saem pela regra**; os 3 que o SRD reescreveu por
+  inteiro (Arcane Hand, Arcane Sword, Arcanist's Magic Aura) são exceções, conferidas uma a uma por
+  círculo e escola. `srdSpellNames` faz o sentido inverso, e com ele o `compendiumSource` resolve.
+- **O nome EXPORTADO continua o do LIVRO** (decisão, ver DDL-0075): a identidade do documento vai no
+  `compendiumSource`, não na grafia. Para o comparador não acusar 26 falsos positivos, `spellKey`
+  reduz os dois lados ao nome curto - correção do instrumento, não do export.
+- Verificado por sonda A/B: das 26 magias de nome próprio que sumiam, **as 15 `prepared: 1` (as
+  escolhidas pelo jogador) voltaram**; as 11 restantes são `prepared: 0`, ou seja TC-0080. 7 testes.
 
 ## TC-0080 - Magia CONHECIDA mas não preparada não tem lugar no nosso modelo
 
@@ -1426,7 +1458,9 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0081 - Magias do TALENTO DE ORIGEM se perdem ao importar um ator externo
 
 - **Unidade:** 12+ fichas (Akra, Beiro… parte de `items.spell`, ~84 magias `prepared: 2`).
-  **Severidade:** bug. **Causa:** import. **Encontrado:** 2026-07-27. **Status:** open.
+  **Severidade:** bug. **Causa:** import. **Encontrado:** 2026-07-27.
+  **Status:** fixed@2026-07-27 para o TALENTO (DDL-0075); as outras origens seguem abertas - ver o
+  fim da entrada.
 - Um premade com **Magic Initiate** traz as 2 cantrips + a magia de 1º círculo como itens `spell`
   com `prepared: 2` (e `uses` 1/descanso longo na de círculo). O import as descarta - corretamente,
   porque `prepared: 2` é concessão derivável -, **mas a derivação não as recria**: o talento entra
@@ -1438,3 +1472,23 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   2024 - conferir se o `featSource` do TC-0057 está escolhendo a edição certa.
 - Parte dos 84 é a mesma família por outra via: traços de linhagem cujo grant não deriva. Medir de
   novo depois de (a) antes de abrir mais frentes.
+- **Fix de (a):** `featChoiceBag` = `featTraitBag` (TC-0061) + `featSpellBag`. As magias do ator são
+  casadas contra os MESMOS descritores que a UI usa (`parseChoices` + `spellChoosePredicate`), então
+  nenhum talento é citado por nome; havendo listas ALTERNATIVAS, vence a que explica mais magias.
+  Duas afinações que a medição exigiu, ambas lendo marcas do próprio documento: a concessão de um
+  TALENTO carrega o atributo e a frequência dele (a da classe herda os dois e vem sem), e **uma
+  magia que uma concessão FIXA já explica não é candidata** - sem esse corte o Fire Bolt da linhagem
+  infernal ocupava um slot e o Mage Hand escolhido pelo jogador se perdia.
+- **(b) confirmado e corrigido:** `featSource` não aplicava `latestOnly`, então "Magic Initiate"
+  resolvia na entrada **PHB de 2014** (a primeira do array) num ator 2024 - e a estrutura de
+  `additionalSpells` difere entre edições, ou seja os descritores eram os errados. O irmão
+  `resolveInventorySource` já filtrava; era a metade que o TC-0057 esqueceu.
+- Verificado: das 81 magias `prepared: 2` que sumiam, **57 voltaram**. 5 testes.
+- **Aberto - as 24 restantes são a MESMA família com outro DONO**, e cada uma é uma frente própria:
+  · **subclasse (16, Aoth):** o `spellSet` do Circle of the Land (qual terreno) não é reconstruído,
+    então as magias sempre-preparadas do círculo não derivam;
+  · **espécie (4, Beiro):** o cantrip à escolha da linhagem élfica (`prestidigitation`);
+  · **bag de classe (4, Beiro):** as Magical Discoveries do College of Lore (`find familiar`,
+    `spirit guardians`).
+  Todas são `spell` chooses em bags que o import já monta - o casamento pode reusar `featSpellBag`
+  quase inteiro, mudando só de onde vêm os descritores e para qual bag vão os picks.

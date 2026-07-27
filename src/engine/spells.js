@@ -51,9 +51,52 @@ export function allSpells(db) {
   return latestOnly(out);
 }
 
+// ---------------------------------------------------------------------------
+// Nome CURTO x nome do LIVRO (TC-0079)
+// ---------------------------------------------------------------------------
+// O SRD tira o nome próprio do mago do título (é Product Identity), então o
+// sistema dnd5e escreve "Hideous Laughter" onde o 5etools transcreve o livro e
+// mantém "Tasha's Hideous Laughter" - inclusive nas entradas XPHB. Um ator vindo
+// do Foundry usa o nome curto, e sem esta rede a magia PREPARADA pelo jogador
+// não resolve e desaparece do export sem aviso nenhum.
+//
+// A regra é DERIVADA, não curada: "a magia cujo nome é `<alguém>'s <nome curto>`",
+// aceita só quando o candidato é ÚNICO (nome ambíguo não se adivinha). Medido
+// contra o pacote spells24 do dnd5e: 13 dos 16 casos saem por ela, e uma magia
+// de nome próprio nova passa a funcionar sozinha.
+
+/**
+ * Os 3 casos que a regra do possessivo NÃO alcança, porque o SRD reescreveu o
+ * título inteiro em vez de só remover o nome. Verificados um a um contra o
+ * pacote spells24 (mesmo círculo e mesma escola dos nossos):
+ *   Arcane Hand (5/evo) · Arcane Sword (7/evo) · Arcanist's Magic Aura (2/ill).
+ * Chaves e valores em minúsculas.
+ */
+const SPELL_SHORT_NAME_EXCEPTIONS = {
+  'arcane hand': "bigby's hand",
+  'arcane sword': "mordenkainen's sword",
+  "arcanist's magic aura": "nystul's magic aura",
+};
+
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Magia do catálogo que corresponde a um nome CURTO do SRD, ou null.
+ * @param {object[]} list  catálogo já deduplicado
+ * @param {string} lc      nome procurado, em minúsculas
+ */
+function bySrdShortName(list, lc) {
+  const exception = SPELL_SHORT_NAME_EXCEPTIONS[lc];
+  if (exception) return list.find((s) => s.name.toLowerCase() === exception) ?? null;
+  const re = new RegExp(`^\\S+['’]s ${escapeRegExp(lc)}$`, 'i');
+  const hits = list.filter((s) => re.test(s.name));
+  return hits.length === 1 ? hits[0] : null;
+}
+
 /**
  * Resolve uma magia por nome (+fonte, quando dada). Exato por nome+fonte
- * primeiro; senão a versão atual de mesmo nome (após dedup de reprint).
+ * primeiro; senão a versão atual de mesmo nome (após dedup de reprint); senão a
+ * rede de nome CURTO do SRD (ver o bloco acima).
  * A comparação é INSENSÍVEL a caixa: as magias concedidas vêm do 5etools em
  * minúsculas ("faerie fire|xphb"), enquanto o catálogo usa "Faerie Fire".
  * @param {object} db
@@ -70,7 +113,27 @@ export function resolveSpellObj(db, name, source) {
     const exact = list.find((s) => s.name.toLowerCase() === lc && s.source?.toLowerCase() === src);
     if (exact) return exact;
   }
-  return list.find((s) => s.name.toLowerCase() === lc) ?? null;
+  return list.find((s) => s.name.toLowerCase() === lc) ?? bySrdShortName(list, lc);
+}
+
+/**
+ * Os nomes pelos quais uma magia NOSSA pode ser procurada no compêndio do dnd5e,
+ * do mais específico para o mais genérico: o nome do livro, o nome sem o
+ * possessivo, e o título que o SRD reescreveu. É o sentido inverso de
+ * `bySrdShortName` e a razão de as duas metades morarem juntas (TC-0079).
+ * @param {string} name
+ * @returns {string[]} sempre com ao menos o próprio nome, em minúsculas
+ */
+export function srdSpellNames(name) {
+  const lc = (name ?? '').trim().toLowerCase();
+  if (!lc) return [];
+  const out = [lc];
+  const stripped = lc.replace(/^\S+['’]s /, '');
+  if (stripped !== lc) out.push(stripped);
+  for (const [short, ours] of Object.entries(SPELL_SHORT_NAME_EXCEPTIONS)) {
+    if (ours === lc) out.push(short);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

@@ -204,6 +204,13 @@ function buildTraits(derived, character, size) {
     if (code) weaponVals.push(code);
     else weaponCustom.push(String(w));
   }
+  // Uma regra CONDICIONAL ("Martial weapons that have the Light property") não
+  // tem código no dnd5e: sem enumerar, o Monge importado não seria proficiente
+  // com cimitarra. A frase continua em `custom`, para o jogador ler (TC-0078).
+  for (const n of derived.weaponNames ?? []) {
+    const code = weaponProfCode(n);
+    if (code) weaponVals.push(code);
+  }
   const armorVals = [];
   const armorCustom = [];
   for (const a of derived.armor ?? []) {

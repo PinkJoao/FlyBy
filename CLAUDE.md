@@ -248,6 +248,13 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   `engine/classFeatureGrants.js` (Druidic, Thieves' Cant + o idioma à escolha, Slippery Mind,
   Disciplined Survivor, e os capstones de +4 do Monge e do Bárbaro com teto 25). Total: 361 achados
   (+23 marcadas como ESPERADAS, com motivo - ver DDL-0073).
+  **T2b sessão 4 (2026-07-27): TC-0067, TC-0068, TC-0073 e TC-0074 fechados** (DDL-0074) - uma
+  concessão SEMPRE-PREPARADA volta a poder gastar espaço de magia (saía `innate`, que no dnd5e quer
+  dizer "sem espaço"); o pool de recurso (`uses`) passou a ser GERADO do SRD, terceiro uso do padrão
+  do TC-0066, com precedência **curado → SRD → overlay**; e as 35 referências `@spell[…]`/
+  `@creature[…]` que exportávamos quebradas foram a zero. Total: **257 achados**. A maior classe
+  restante (`items.spell`) foi diagnosticada e virou TC-0079/0080/0081 - o TC-0080 (grimório do
+  Mago) é `needs-user-eyes`.
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,
@@ -377,6 +384,74 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0074 - Concessão sempre-preparada gasta espaço; e o SRD é a fonte do que o dado do 5etools não tem
+**Date:** 2026-07-27
+**Resolve:** TC-0067, TC-0068, TC-0073 e TC-0074 (e a metade das REFERÊNCIAS do TC-0070).
+**Builds on:** DDL-0011 (as frequências curadas, que continuam intactas - muda o MÉTODO, não o
+`uses`), DDL-0055/TC-0066 (o padrão "gerar um registro do SRD em vez de curar à mão", aqui usado
+duas vezes), DDL-0057 (a precedência curado → overlay, que ganha um degrau no meio), DDL-0062 (cujos
+identificadores de ScaleValue este entry descobriu estarem sendo referenciados errado).
+
+**Context.** Quarta sessão do burn-down da T2. Os dois maiores alvos do hand-off eram magias
+concedidas saindo `innate` e features sem pool de recurso.
+
+**Decision - uma concessão SEMPRE-PREPARADA continua gastando espaço de magia.** O `method: 'innate'`
+do dnd5e significa conjuração inata, que NÃO usa espaço. Exportávamos assim toda concessão com
+frequência (linhagem élfica, legacies do Tiefling, Archfey, Magic Initiate), e isso tirava do jogador
+metade do que a regra dá. O texto do próprio SRD decide: *"You always have that spell prepared. You
+can cast it once without a spell slot… **You can also cast the spell using any spell slots you
+have**"*. Então `spell`/`pact` + `prepared: 2`, com o uso grátis no `uses`.
+- **O `innate` CRU do 5etools continua `innate`**, e o motivo é o mesmo do DDL-0011: quando o dado
+  não declara frequência, também não sabemos se gasta espaço - não afirmamos o que não sabemos.
+- **Num Warlock PURO a concessão DE CÍRCULO sai `pact`** (não há espaço comum para gastar), mas o
+  **cantrip da mesma linhagem não** - cantrip não gasta espaço. Promover os dois foi a 1ª tentativa,
+  e o comparador acusou Dancing Lights no mesmo minuto.
+
+**Decision - o pool de recurso (`uses`) é GERADO do SRD, e a precedência passa a ter três degraus:
+curado → SRD → overlay.** 14 features chegavam ao Foundry sem recurso nenhum para gastar. Em vez de
+14 linhas curadas, `npm run gen:uuids` emite `FEATURE_USES_BY_CLASS` e `FEATURE_USES_FLAT` (47 pools,
+`{max, recovery}`). **Duas tabelas porque o NOME colide**: "Channel Divinity" tem escala própria no
+Clérigo e no Paladino. O SRD entra na frente do overlay por ser o dado do PRÓPRIO sistema de destino,
+em 2024; o overlay é de terceiros e casa por edição estrita. O registro curado segue sendo o override.
+
+**Decision - uma referência `@scale` tem de casar com o IDENTIFICADOR exportado, e resolver não basta.**
+Achado colateral, mais grave que o enunciado do TC-0068: o DDL-0062 alinhou os identificadores de
+ScaleValue aos nomes curtos do SRD, mas o registro de `uses` seguia montando a referência com o slug
+do NOSSO título - `@scale.sorcerer.sorcery-points` e `@scale.monk.focus-points` não apontavam para
+nada. E um terceiro caso que uma sonda de "referência órfã" NÃO pegaria: `wild shape` apontava para
+`@scale.druid.wild-shape`, que EXISTE mas é a escala de **CR**, não a de usos - o Foundry mostraria
+1/4 usos de Wild Shape. **REGRA:** ao escrever uma referência `@scale`, use um `id` literal quando o
+SRD dá um nome curto próprio, e confirme que a escala apontada é a CERTA, não só que existe.
+
+**Decision - referência que não sabemos resolver não se exporta.** O overlay guarda tokens do
+conversor do Plutonium (`@spell[divine smite|xphb]`, `@creature[imp|xmm]`) que **não são uuids do
+Foundry**; exportávamos crus - 35 referências para o vazio nas 48 fichas. Agora `@spell[…]` resolve
+no registro do DDL-0055 e a activity com uma referência irresolúvel (invocação de CRIATURA: monstro
+está fora do nosso escopo, e sempre estará) é descartada INTEIRA. É o princípio que o módulo já
+aplicava aos links órfãos de effect, estendido às referências de documento.
+- **`enchant` FICA - medido, não deduzido.** A 1ª tentativa descartou essas activities junto (o
+  raciocínio era que os efeitos de encantamento são pulados na tradução, DDL-0031) e o comparador
+  subiu de 18 para 24: os premades oficiais TRAZEM Martial Arts, Sacred Weapon e Repelling Blast
+  assim. Fica registrada a questão de fundo, não reaberta: emitimos a activity sem os efeitos dela.
+
+**Decision - dois padrões honestos onde o ator só admite UM valor.** Um ator tem um tamanho só, então
+uma espécie com escolha S/M não feita (DDL-0017) exporta o **MAIOR** dos possíveis (era o primeiro do
+array, e um Humano premade voltava **Small**). E o `system.identifier` de subclasse virou a terceira
+tabela gerada do SRD (`SUBCLASS_IDENTIFIERS`): não é rótulo - o dnd5e o cita em fórmula
+(`@subclasses.hand.levels`) - e não sai do nome ("Warrior of the Open Hand" → `hand`). As 123
+subclasses fora do SRD seguem com o slug, que é o melhor que existe para elas.
+
+**Consequences.**
+- Um pool de recurso novo do SRD entra sozinho ao regerar; um que o SRD não publique continua sendo
+  uma linha curada. O mesmo vale para o identificador de subclasse.
+- A maior classe restante foi DIAGNOSTICADA nesta sessão e virou três entradas novas: **TC-0079**
+  (magia de nome próprio não resolve - o 5etools mantém "Tasha's Hideous Laughter" onde o dnd5e
+  escreve "Hideous Laughter", e a magia preparada do jogador some do export SEM AVISO), **TC-0080**
+  (o grimório do Mago não tem lugar no modelo - `needs-user-eyes`) e **TC-0081** (as magias do
+  talento de origem não voltam de um ator externo).
+- Verificado: 1193 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de **361 → 257**.
+  Ver CHANGELOG §97.
 
 ### DDL-0073 - Grant em PROSA de feature de CLASSE é um registro curado (irmão do SUBCLASS_GRANTS)
 **Date:** 2026-07-26

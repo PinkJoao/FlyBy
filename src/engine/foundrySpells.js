@@ -13,12 +13,16 @@
 //
 // COMO CADA ORIGEM MAPEIA:
 //   • classe leveled  → method 'spell'   (pact → 'pact'), prepared 1
-//   • concedida       → prepared 2 (sempre preparada; não conta no limite)
+//   • concedida       → prepared 2 (sempre preparada; não conta no limite), com o
+//     uso GRÁTIS em `uses` quando a concessão tem frequência (1/Long Rest…). O
+//     método continua 'spell'/'pact' de propósito: o RAW 2024 dessas concessões
+//     diz "you can ALSO cast the spell using any spell slots you have", e é assim
+//     que o premade oficial encoda Hellish Rebuke/Darkness/Shield (TC-0067).
 //   • Mystic Arcanum  → method 'atwill', prepared 0, uses 1/descanso longo.
 //     Não é chute: é exatamente o que o premade oficial de Warlock 17 (Sefris)
 //     faz com Create Undead / Forcecage / Dominate Monster / True Polymorph.
-//   • concessão inata → method 'innate' + uses (1/Day, 1/Long Rest…); 'will' vira
-//     'atwill' e 'ritual' vira 'ritual'.
+//   • 'will' → 'atwill'; 'ritual' → 'ritual'; `innate` CRU (o dado não declara a
+//     frequência) → 'innate', porque aí não sabemos se gasta espaço ou não.
 //
 // USOS ESCALADOS: `uses.max` do Foundry é uma FÓRMULA. Um "CHA×/dia" exporta
 // `@abilities.cha.mod`, não o número já cozido - o Foundry recalcula quando o
@@ -134,10 +138,18 @@ export function foundryUses(entry) {
  * @param {object} entry            entrada derivada (granted? castType? …)
  * @param {object} origin           origem da derivação
  * @param {boolean} isArcanum
+ * @param {{ pactOnly?: boolean }} [opts]  o personagem só tem espaços de PACTO
+ *   (Warlock puro): aí uma magia DE CÍRCULO concedida por raça/talento também é
+ *   lançada com eles, senão ficaria sem espaço algum para gastar. É o que o
+ *   premade do Warlock faz com Faerie Fire e Darkness da linhagem Drow - e note
+ *   que o CANTRIP da mesma linhagem (Dancing Lights) fica em 'spell', porque
+ *   cantrip não gasta espaço nenhum.
  */
-export function foundryPreparation(entry, origin, isArcanum) {
+export function foundryPreparation(entry, origin, isArcanum, opts = {}) {
   // Mystic Arcanum: sem espaço de magia, 1×/descanso longo (como o premade oficial).
   if (isArcanum) return { method: 'atwill', prepared: 0 };
+  const leveled = (entry?.raw?.level ?? 0) > 0;
+  const slotMethod = origin.isPact || (opts.pactOnly && leveled) ? 'pact' : 'spell';
 
   if (entry.granted) {
     switch (entry.castType) {
@@ -145,25 +157,29 @@ export function foundryPreparation(entry, origin, isArcanum) {
         return { method: 'atwill', prepared: 0 };
       case 'ritual':
         return { method: 'ritual', prepared: 0 };
-      case 'daily':
-      case 'rest':
-      case 'restLong':
       case 'innate':
-        // 'innate' cru = conjura sem espaço, frequência desconhecida (DDL-0011).
+        // 'innate' cru = conjura sem espaço, frequência DESCONHECIDA (DDL-0011):
+        // o dado não diz, então não afirmamos que ela também gasta espaço.
         return { method: 'innate', prepared: 0 };
       default:
-        // Concedida que GASTA espaço (Life Domain, Hex do Great Old One).
-        return { method: origin.isPact ? 'pact' : 'spell', prepared: 2 };
+        // Concedida com frequência conhecida (daily/rest/restLong/resource) ou sem
+        // nenhuma: SEMPRE PREPARADA. O uso grátis vive no `uses`, e o método segue
+        // 'spell'/'pact' porque o RAW 2024 deixa gastar espaço por cima dele
+        // ("You always have that spell prepared. You can cast it once without a
+        // spell slot… You can also cast the spell using any spell slots you have"
+        // - Fiendish Legacy, Magic Initiate, os traços raciais do MPMM). Exportar
+        // 'innate' aqui TIRAVA do jogador a possibilidade de gastar espaço (TC-0067).
+        return { method: slotMethod, prepared: 2 };
     }
   }
   // Escolha do jogador.
-  return { method: origin.isPact ? 'pact' : 'spell', prepared: 1 };
+  return { method: slotMethod, prepared: 1 };
 }
 
 /** Um Item `spell` do Foundry. */
-export function buildSpellItem(entry, origin, { isArcanum = false } = {}) {
+export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = false } = {}) {
   const raw = entry.raw;
-  const { method, prepared } = foundryPreparation(entry, origin, isArcanum);
+  const { method, prepared } = foundryPreparation(entry, origin, isArcanum, { pactOnly });
   const uses = isArcanum
     ? { max: '1', spent: 0, recovery: [{ period: 'lr', type: 'recoverAll' }] }
     : foundryUses(entry);
@@ -215,6 +231,11 @@ export function buildSpellItem(entry, origin, { isArcanum = false } = {}) {
  */
 export function buildSpellItems(derived) {
   const out = [];
+  const sc = derived?.spellcasting;
+  // Warlock puro: não há espaço de magia comum para uma concessão de raça/talento
+  // gastar, então ela também é lançada com o espaço de PACTO (ver foundryPreparation).
+  const pactOnly =
+    !Object.values(sc?.slots ?? {}).some((n) => n > 0) && (sc?.pactSlots?.slots ?? 0) > 0;
   for (const origin of derived?.spellcasting?.origins ?? []) {
     const arcanumNames = new Set((origin.arcanumSpells ?? []).map((s) => s.raw.name));
     const all = [
@@ -225,7 +246,7 @@ export function buildSpellItems(derived) {
     ];
     for (const entry of all) {
       if (!entry.raw) continue;
-      out.push(buildSpellItem(entry, origin, { isArcanum: arcanumNames.has(entry.raw.name) }));
+      out.push(buildSpellItem(entry, origin, { isArcanum: arcanumNames.has(entry.raw.name), pactOnly }));
     }
   }
   return out;

@@ -1205,21 +1205,48 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0067 - Magia concedida como sempre-preparada sai `innate` em vez de `spell`+`prepared:2`
 
 - **Unidade:** 12 fichas (26 `spell.method` + 25 `spell.prepared`). **Severidade:** bug.
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-27 (DDL-0074).
 - Detect Magic/Misty Step (linhagem élfica) e Hellish Rebuke/Darkness (legacy do Tiefling) saem
   como `method: 'innate'`, `prepared: 0`; o premade usa `method: 'spell'`, `prepared: 2` (sempre
   preparada) - o que o RAW 2024 diz ("you always have X prepared", MAIS um uso grátis por descanso).
   Com `innate` o jogador perde a possibilidade de gastar espaço de magia.
-- Conferir contra o DDL-0011 (as frequências curadas) antes de mexer: o `uses` continua valendo;
-  o que muda é o método + `prepared`.
+- **Confirmado no SRD antes de mexer** (`origins24/.../fiendish-legacy-infernal.yml`): "You always
+  have that spell prepared… **You can also cast the spell using any spell slots you have**". O `uses`
+  do DDL-0011 continua valendo - muda só o método + `prepared`.
+- Fix: em `foundryPreparation`, uma concessão com frequência CONHECIDA (daily/rest/restLong/resource)
+  ou sem nenhuma vira `spell`/`pact` + `prepared: 2`. Só o `innate` CRU (o dado não declara
+  frequência) segue `innate`, porque ali não sabemos se gasta espaço.
+- **Meia correção a mais:** num Warlock PURO não há espaço comum, então a concessão DE CÍRCULO de
+  raça/talento também sai `pact` (é o que o premade faz com Faerie Fire/Darkness da linhagem Drow).
+  O **cantrip** da mesma linhagem fica em `spell` - cantrip não gasta espaço, e promover os dois
+  fez o comparador acusar Dancing Lights na hora.
+- **Sobram 3 achados, nenhum acionável:** o `Contact Other Plane` da Sefris, que o PRÓPRIO premade
+  encoda diferente de todas as irmãs dela (`spell` onde as outras são `pact`), e uma `Greater
+  Restoration` que aparece DUAS vezes na ficha do Krusk (o comparador guarda a primeira).
 
 ## TC-0068 - `uses` faltando em features que o SRD rastreia
 
 - **Unidade:** 22 fichas (29 achados). **Severidade:** bug. **Causa:** export.
-  **Encontrado:** 2026-07-26. **Status:** open.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-27 (DDL-0074).
 - Exemplos: Draconic Flight, Divine Intervention, Wild Resurgence, Relentless Endurance. O
   premade traz `system.uses.max`; nós não - então não há recurso para gastar na ficha do Foundry.
-  Cruzar `foundryFeatureUses` + overlay (DDL-0057) com a lista completa do report.
+- Fix, no molde do TC-0066: `npm run gen:uuids` passou a emitir **`FEATURE_USES_BY_CLASS`** e
+  **`FEATURE_USES_FLAT`** (47 pools) do SRD do dnd5e; `featureUses` consulta na ordem
+  **curado → SRD → overlay**. Duas tabelas porque o NOME colide entre classes ("Channel Divinity"
+  tem escala própria no Clérigo e no Paladino).
+- **Achado colateral, mais sério que o enunciado: duas referências `@scale` curadas estavam
+  ÓRFÃS.** O TC-0062 alinhou os identificadores de ScaleValue aos nomes curtos do SRD, mas o
+  registro de `uses` seguia montando a referência com o slug do NOSSO título -
+  `@scale.sorcerer.sorcery-points` e `@scale.monk.focus-points` não apontavam para escala nenhuma.
+  E um terceiro caso que a sonda de "referência sem escala" NÃO pegaria: `wild shape` apontava para
+  `@scale.druid.wild-shape`, que existe mas é a escala de **CR**, não a de usos. As três ganharam um
+  campo `id` literal.
+- **Regra que fica:** a referência tem de casar com o IDENTIFICADOR exportado, nunca com o slug do
+  título; e uma referência que RESOLVE ainda pode apontar para a escala errada. A sonda útil compara
+  `@scale.<x>.<y>` emitido contra `identifier || slug(title)` dos ScaleValue do próprio ator.
+- **Pendência menor deixada aberta:** `@scale.circle-of-the-land.lands-aid` (6 achados invisíveis ao
+  comparador) - a fórmula vem do OVERLAY, que assume o identificador `circle-of-the-land`, enquanto o
+  SRD (e nós, desde o TC-0074) usamos `land`. Corrigir exigiria reescrever fórmula de terceiro.
 
 ## TC-0069 - `compendiumSource` ausente em toda OPTIONAL FEATURE
 
@@ -1235,11 +1262,29 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0070 - Cobertura de `activities` divergente nos DOIS sentidos
 
 - **Unidade:** 15 fichas (18 achados). **Severidade:** bug. **Causa:** export.
-  **Encontrado:** 2026-07-26. **Status:** open.
+  **Encontrado:** 2026-07-26. **Status:** open (a metade das REFERÊNCIAS QUEBRADAS foi fechada
+  em 2026-07-27, DDL-0074; a cobertura em si continua aberta).
 - Faltam nas nossas: Potent Spellcasting (`damage`), Aura of Protection (`utility`), Favored Enemy
   (`cast`), Cunning Strike (`save`+`utility`), Devious Strikes (`save`). Sobram nas nossas:
-  Paladin's Smite (`cast`), Agonizing Blast (`enchant`). Comparar com o overlay antes de curar -
-  algumas podem ser a mecânica 2014 do overlay num chassi 2024 (o casamento é edição-estrita).
+  Paladin's Smite (`cast`), Agonizing Blast (`enchant`).
+- **O que foi medido e fechado (2026-07-27): as REFERÊNCIAS.** O overlay guarda tokens do conversor
+  do Plutonium (`@spell[divine smite|xphb]`, `@creature[imp|xmm]`) que **não são uuids do Foundry**,
+  e nós os exportávamos crus - **35 referências apontando para o vazio nas 48 fichas**. Agora
+  `@spell[…]` resolve no uuid real do compêndio e a activity com uma referência irresolúvel (as
+  invocações de CRIATURA - monstro está fora do nosso escopo) é descartada inteira, o mesmo
+  princípio dos links órfãos. Sonda A/B: 35 → 0.
+- **`enchant` FICA, medido:** descartá-las junto (o raciocínio era que os efeitos de encantamento
+  são pulados na tradução, DDL-0031) subiu o comparador de 18 para 24 na hora - os premades TRAZEM
+  essas activities (Martial Arts, Sacred Weapon, Repelling Blast). Fica a questão de fundo, não
+  reaberta aqui: emitimos a activity de encantamento SEM os efeitos que ela aplica.
+- **O que resta é COBERTURA, e é caro:** as activities do SRD são documentos ricos que referenciam
+  Active Effects do próprio item por `_id` (Cunning Strike aponta para os efeitos de Poison/Daze).
+  Gerá-las do SRD exigiria copiar também os efeitos e suas referências cruzadas. Valor funcional
+  baixo (um botão de rolagem a menos; a feature e o texto seguem na ficha) - por isso ficou.
+- **`Paladin's Smite` (3, sentido inverso) é DEFENSÁVEL, não bug óbvio:** o SRD tem `activities: {}`
+  (em 2024 Divine Smite é MAGIA, e a ficha a lança pelo item de magia); o overlay dá um `cast` com
+  `uses` 1/descanso longo, que é literalmente o que o RAW 2024 concede. Não decidir sozinho se vale
+  emitir os dois - conferir antes se o uso grátis não fica CONTADO EM DOBRO (item de magia + activity).
 
 ## TC-0071 - Composição do ItemGrant por nível difere do premade (dois sentidos)
 
@@ -1261,19 +1306,28 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0073 - Tamanho exportado como Small quando a escolha S/M não foi feita
 
 - **Unidade:** 12 fichas (Human, Tiefling). **Severidade:** bug. **Causa:** export + import.
-  **Encontrado:** 2026-07-26. **Status:** open.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-27 (o lado do EXPORT; ver a nota abaixo).
 - Uma espécie com escolha de tamanho (DDL-0017) sem pick nenhum exporta o PRIMEIRO código
-  (`'S'` -> `sm`), então um Humano premade reimportado vira **Small**. Duas frentes: o import
-  devia recuperar a escolha do advancement `Size` (ou do `traits.size`) do ator, e o export
-  precisa de um default honesto (o maior) quando não há escolha.
+  (`'S'` -> `sm`), então um Humano premade reimportado vira **Small**.
+- Fix: `foundrySize` passa a devolver o MAIOR dos códigos possíveis. Um ator tem UM tamanho, então
+  a escolha não feita precisa de um padrão, e o maior é o que os premades trazem. 12 → 0.
+- **Metade deliberadamente NÃO feita:** o import continua sem RECUPERAR a escolha a partir do
+  `traits.size`/do advancement `Size` do ator. Não é o mesmo bug - o valor exportado agora está
+  certo -, e recuperar exigiria decidir se um tamanho igual ao padrão conta como decisão do jogador.
 
 ## TC-0074 - Cosméticos do export (rótulos e slugs)
 
 - **Unidade:** 12 fichas (`details.alignment`), 3 (`subclass.identifier`). **Severidade:** polish.
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-27 (DDL-0074).
 - `alignment`: escrevemos "True Neutral", o premade "Neutral". `identifier` de subclasse:
   `open-hand` x `hand` do premade - e identificador **é referenciado em fórmula**
   (`@subclasses.hand.levels`), então este pesa mais que um rótulo.
+- Fix do alinhamento: o mapa passou a escrever a grafia dos 48 premades (cada palavra capitalizada,
+  e o neutro puro é só "Neutral"). O import já aceitava as duas formas.
+- Fix do identificador: nova tabela GERADA `SUBCLASS_IDENTIFIERS` (`npm run gen:uuids`, do campo
+  `system.identifier` do SRD) consultada por `subclassIdentifier()`; `buildSubclassItem` a prefere
+  ao slug. Das 12 publicadas, só o Monge divergia ("Warrior of the Open Hand" → `hand`). As outras
+  123 subclasses seguem com o slug do shortName - não há identificador canônico para elas.
 
 ## TC-0075 - Proficiência de save do Slippery Mind (Ladino 15) não deriva
 
@@ -1335,3 +1389,52 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - O dado TEM o filtro (`weaponProficiencies[].all.fromFilter`), então dá para enumerar sem
   curadoria - é o mesmo insumo do `weaponFilterAllows` (DDL-0033). Ver TC-0076 para o contexto.
 
+
+## TC-0079 - Magia com NOME PRÓPRIO não resolve e some do export (Tasha's/Leomund's/Bigby's…)
+
+- **Unidade:** 4 fichas (Beiro, Morthos, Sefris, Zanna; ~9 magias, parte de `items.spell`).
+  **Severidade:** bug (perda silenciosa de decisão do jogador). **Causa:** export.
+  **Encontrado:** 2026-07-27. **Status:** open.
+- A edição 2024 tirou o nome do mago do título e o **dnd5e escreve o nome curto** ("Hideous
+  Laughter", "Tiny Hut", "Arcane Hand", "Magnificent Mansion"), enquanto o **5etools mantém o longo
+  mesmo em XPHB** ("Tasha's Hideous Laughter", "Leomund's Tiny Hut", "Bigby's Hand", "Mordenkainen's
+  Magnificent Mansion"). Sonda: `resolveSpellObj(db, 'Hideous Laughter', '')` → **NULL**.
+- **A magia É importada** (entra em `cls.spells`) e some no EXPORT, porque `buildSpellItems` pula a
+  entrada sem `raw`. Ou seja: uma magia preparada pelo jogador desaparece **sem aviso nenhum**.
+  Vale para qualquer ator vindo do Foundry, não só os premades.
+- Caminho sugerido: um pequeno mapa de ALIASES nome-curto → nome-5etools, aplicado como fallback
+  DEPOIS do casamento exato em `resolveSpellObj` (o mesmo formato da rede case-insensitive do
+  TC-0066). O conjunto é fechado e pequeno: as magias de nome próprio do PHB (Tasha's, Leomund's,
+  Bigby's, Mordenkainen's, Otiluke's, Evard's, Melf's, Nystul's, Drawmij's, Rary's).
+- `Eldritch Blast (Repelling)` do Sefris NÃO entra aqui: é uma variante ENCANTADA que o Foundry
+  gera, não uma magia do compêndio.
+
+## TC-0080 - Magia CONHECIDA mas não preparada não tem lugar no nosso modelo
+
+- **Unidade:** 38 fichas (189 magias - a maior fatia de `items.spell`). **Severidade:** decisão de
+  produto. **Causa:** modelo. **Encontrado:** 2026-07-27. **Status:** open, **`needs-user-eyes`**.
+- `ClassEntry.spells` guarda só as PREPARADAS (DDL-0008). O premade traz também as `prepared: 0` -
+  magias que o personagem tem à disposição mas não preparou hoje. Ao reimportar, elas somem.
+- **São dois casos diferentes, e só um é lacuna de verdade:**
+  - **Grimório do Mago** (Zanna L17 perde 36 magias): o livro de magias é conteúdo REAL e
+    permanente do personagem, e hoje não temos onde guardá-lo. Um Mago reimportado perde o livro.
+  - **Sugestões do premade** (o Clérigo, que prepara da lista inteira): o documento lista algumas
+    magias a mais para o jogador trocar. Não perder isso vale pouco.
+- Não decidir sozinho: modelar "conhecidas × preparadas" mexe no schema, na aba Spellbook e no
+  fluxo de preparar. O escopo mínimo defensável seria só o grimório do Mago.
+
+## TC-0081 - Magias do TALENTO DE ORIGEM se perdem ao importar um ator externo
+
+- **Unidade:** 12+ fichas (Akra, Beiro… parte de `items.spell`, ~84 magias `prepared: 2`).
+  **Severidade:** bug. **Causa:** import. **Encontrado:** 2026-07-27. **Status:** open.
+- Um premade com **Magic Initiate** traz as 2 cantrips + a magia de 1º círculo como itens `spell`
+  com `prepared: 2` (e `uses` 1/descanso longo na de círculo). O import as descarta - corretamente,
+  porque `prepared: 2` é concessão derivável -, **mas a derivação não as recria**: o talento entra
+  com `choices: {}` (sonda no Beiro L01: `originFeat = {id:'Magic Initiate', source:'PHB',
+  choices:{}}`), então as escolhas de magia dele nunca foram reconstruídas.
+- Duas frentes, e a segunda é suspeita à parte: (a) reconstruir o sub-bag do talento a partir dos
+  itens `spell` do ator, casando contra os MESMOS descritores que `grantedSpells` emite (o padrão do
+  `choiceTraitBag`, DDL-0056); (b) o talento resolveu como **`Magic Initiate|PHB`** (2014) num ator
+  2024 - conferir se o `featSource` do TC-0057 está escolhendo a edição certa.
+- Parte dos 84 é a mesma família por outra via: traços de linhagem cujo grant não deriva. Medir de
+  novo depois de (a) antes de abrir mais frentes.

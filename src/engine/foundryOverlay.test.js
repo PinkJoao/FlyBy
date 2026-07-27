@@ -275,6 +275,29 @@ describe('overlayMechanics - system, activities e o link por foundryId', () => {
   it('entrada nula devolve tudo vazio', () => {
     expect(overlayMechanics(null, 'X')).toEqual({ effects: [], activities: {}, system: {} });
   });
+
+  // TC-0070: `@spell[...]`/`@creature[...]` são tokens do conversor do Plutonium,
+  // não uuids do Foundry - emitidos crus, a activity aponta para lugar nenhum.
+  it('`@spell[...]` vira o uuid real do compêndio', () => {
+    const { activities } = overlayMechanics(
+      { activities: [{ type: 'cast', spell: { uuid: '@spell[divine smite|xphb]' } }] },
+      'X',
+    );
+    expect(Object.values(activities)[0].spell.uuid).toBe('Compendium.dnd5e.spells24.Item.phbsplDivineSmit');
+  });
+
+  it('activity com referência que não sabemos resolver é DESCARTADA inteira', () => {
+    const { activities } = overlayMechanics(
+      { activities: [{ type: 'summon', profiles: [{ uuid: '@creature[imp|xmm]' }] }, { type: 'utility' }] },
+      'X',
+    );
+    expect(Object.values(activities).map((a) => a.type)).toEqual(['utility']);
+  });
+
+  it('`enchant` FICA: os premades oficiais a trazem (Martial Arts, Repelling Blast)', () => {
+    const { activities } = overlayMechanics({ activities: [{ type: 'enchant' }] }, 'X');
+    expect(Object.values(activities)).toHaveLength(1);
+  });
 });
 
 describe('advancement do overlay (ScaleValue)', () => {

@@ -231,10 +231,12 @@ function buildTraits(derived, character, size) {
 }
 
 /** Código de alinhamento do builder → o texto livre que o Foundry guarda. */
+// Grafia dos premades oficiais: cada palavra capitalizada, e o neutro puro é só
+// "Neutral" (não "True Neutral") - TC-0074.
 const FOUNDRY_ALIGNMENT = {
-  LG: 'Lawful good', NG: 'Neutral good', CG: 'Chaotic good',
-  LN: 'Lawful neutral', N: 'True neutral', CN: 'Chaotic neutral',
-  LE: 'Lawful evil', NE: 'Neutral evil', CE: 'Chaotic evil',
+  LG: 'Lawful Good', NG: 'Neutral Good', CG: 'Chaotic Good',
+  LN: 'Lawful Neutral', N: 'Neutral', CN: 'Chaotic Neutral',
+  LE: 'Lawful Evil', NE: 'Neutral Evil', CE: 'Chaotic Evil',
 };
 
 /** Texto simples → parágrafos HTML (o Foundry guarda os campos ricos como HTML). */
@@ -381,7 +383,17 @@ export function buildFoundryActor(character, derived, opts = {}) {
   };
 }
 
-/** Converte o tamanho 5etools (['M']) em código Foundry ('med'). */
+/**
+ * Converte o tamanho 5etools (['M']) em código Foundry ('med'). Um ator tem UM
+ * tamanho, então uma espécie cuja escolha S/M ainda não foi feita (DDL-0017)
+ * precisa de um padrão: o MAIOR dos possíveis, que é o que o premade oficial de
+ * Humano/Tiefling traz. Pegar o primeiro do array devolvia Small (TC-0073).
+ */
 export function foundrySize(raceSizeArr) {
-  return SIZE_TO_FVTT[(raceSizeArr ?? [])[0]] ?? 'med';
+  const order = Object.keys(SIZE_TO_FVTT);
+  const largest = (raceSizeArr ?? [])
+    .filter((c) => c in SIZE_TO_FVTT)
+    .sort((a, b) => order.indexOf(a) - order.indexOf(b))
+    .at(-1);
+  return SIZE_TO_FVTT[largest] ?? 'med';
 }

@@ -2,7 +2,7 @@
 // são o gabarito dos premades OFICIAIS de nível 1/5 (Standard Premade Characters):
 // se um id mudar numa regeração, estes testes acusam.
 import { describe, it, expect } from 'vitest';
-import { classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid, classUuid, originUuid, featUuid, equipmentUuid } from './compendiumUuids';
+import { classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid, classUuid, originUuid, featUuid, equipmentUuid, subclassIdentifier } from './compendiumUuids';
 
 describe('compendiumUuids', () => {
   it('feature de classe: as duas que o premade do Barbarian concede no nível 2', () => {
@@ -43,6 +43,14 @@ describe('compendiumUuids', () => {
   it('apóstrofo tipográfico casa com o reto do pack', () => {
     expect(equipmentUuid('Explorer’s Pack')).toBe(equipmentUuid("Explorer's Pack"));
     expect(equipmentUuid('Explorer’s Pack')).toBeTruthy();
+  });
+
+  // TC-0074: o identificador é citado em fórmula (`@subclasses.hand.levels`), e
+  // não sai do nome - "Warrior of the Open Hand" tem identificador `hand`.
+  it('identificador canônico da subclasse; fora do SRD, null (o slug segue valendo)', () => {
+    expect(subclassIdentifier('monk', { name: 'Warrior of the Open Hand', shortName: 'Open Hand' })).toBe('hand');
+    expect(subclassIdentifier('barbarian', { name: 'Path of the Berserker', shortName: 'Berserker' })).toBe('berserker');
+    expect(subclassIdentifier('barbarian', { name: 'Path of the Giant' })).toBe(null);
   });
 
   it('conteúdo que o dnd5e não publica devolve null (não inventa uuid)', () => {

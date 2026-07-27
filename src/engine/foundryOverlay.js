@@ -26,6 +26,8 @@
 //     a metade HP do Draconic Resilience - a metade CA dele sobrevive).
 // -----------------------------------------------------------------------------
 
+import { spellUuid } from './compendiumUuids';
+
 const norm = (s) => (s ?? '').toString().trim().toLowerCase();
 
 // mode string do overlay → numérico do Foundry (CONST.ACTIVE_EFFECT_MODES).
@@ -177,17 +179,72 @@ function translateOverlaySystem(entry) {
 }
 
 /**
+ * Referência não resolvida do overlay: `@spell[nome|fonte]`, `@creature[…]`,
+ * `@item[…]`. É um TOKEN do conversor do Plutonium, não um uuid do Foundry - se
+ * chegar cru no ator, a activity aponta para documento nenhum.
+ */
+const PLACEHOLDER = /@(\w+)\[([^\]]*)\]/;
+
+/** Troca `@spell[nome|fonte]` pelo uuid real do compêndio, ou devolve null quando
+ *  não conhecemos o documento (aí a activity inteira é descartada). */
+function resolvePlaceholder(value) {
+  const m = PLACEHOLDER.exec(String(value ?? ''));
+  if (!m) return value;
+  if (m[1] !== 'spell') return null; // `@creature` (invocações): monstro não está no nosso escopo
+  return spellUuid(m[2].split('|')[0]) ?? null;
+}
+
+/** Toda string `@…[…]` da activity resolvida; null se alguma não resolver. */
+function resolveActivityRefs(act) {
+  const walk = (v) => {
+    if (typeof v === 'string') return PLACEHOLDER.test(v) ? resolvePlaceholder(v) : v;
+    if (Array.isArray(v)) {
+      const out = [];
+      for (const x of v) {
+        const r = walk(x);
+        if (r === null) return null;
+        out.push(r);
+      }
+      return out;
+    }
+    if (v && typeof v === 'object') {
+      const out = {};
+      for (const [k, x] of Object.entries(v)) {
+        const r = walk(x);
+        if (r === null) return null;
+        out[k] = r;
+      }
+      return out;
+    }
+    return v;
+  };
+  return walk(act);
+}
+
+/**
  * `activities` do overlay (ARRAY) no mapa indexado por `_id` que o dnd5e usa.
  * Cada activity recebe um `_id`; `effects[].foundryId` é resolvido no `_id` real
  * do Active Effect correspondente (links órfãos são descartados, não emitidos
  * quebrados).
+ *
+ * Uma activity é DESCARTADA inteira quando carrega uma referência `@…[…]` que
+ * não sabemos resolver (as invocações de criatura: monstro não faz parte do
+ * nosso compêndio) - mesmo princípio dos links órfãos, melhor não ter o botão do
+ * que ter um que aponta para o vazio.
+ *
+ * As de `type: 'enchant'` FICAM, ainda que os efeitos de encantamento delas
+ * sejam pulados acima: os premades oficiais as trazem (Martial Arts, Sacred
+ * Weapon, Repelling Blast), então descartá-las tira mecânica que o Foundry
+ * espera. Medido - foi o que a primeira tentativa deste fix errou.
  */
 function translateOverlayActivities(entry, effectIds) {
   const out = {};
   for (const act of entry?.activities ?? []) {
     if (!act?.type) continue;
+    const resolved = resolveActivityRefs(act);
+    if (!resolved) continue;
     const _id = overlayId();
-    const { effects, ...rest } = act;
+    const { effects, ...rest } = resolved;
     delete rest.foundryId; // apelido interno do overlay, não é campo do dnd5e
     const linked = (effects ?? [])
       .map((e) => (e?.foundryId ? effectIds.get(e.foundryId) : e?._id))

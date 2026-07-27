@@ -68,7 +68,9 @@ describe('alignmentCode', () => {
     expect(alignmentCode('True neutral')).toBe('N');
   });
 
-  it('aceita "Neutral" (forma curta dos exports antigos)', () => {
+  // "Neutral" é a forma que os premades oficiais usam - e desde o TC-0074 a
+  // nossa também; "True Neutral" continua aceito na volta.
+  it('aceita "Neutral" (a forma dos premades)', () => {
     expect(alignmentCode('Neutral')).toBe('N');
   });
 
@@ -83,7 +85,7 @@ describe('export dos campos biográficos', () => {
   const det = actor.system.details;
 
   it('o alinhamento sai por extenso (antes saía sempre vazio)', () => {
-    expect(det.alignment).toBe('Neutral good');
+    expect(det.alignment).toBe('Neutral Good');
   });
 
   it('a história vira `biography.value` em HTML', () => {

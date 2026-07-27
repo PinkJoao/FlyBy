@@ -124,12 +124,30 @@ describe('foundryPreparation - method + prepared', () => {
     expect(foundryPreparation({ granted: true, castType: null }, classOrigin, false)).toEqual({ method: 'spell', prepared: 2 });
   });
 
-  it('concedida inata/à vontade/ritual: método próprio, não preparada', () => {
-    expect(foundryPreparation({ granted: true, castType: 'daily' }, raceOrigin, false).method).toBe('innate');
-    expect(foundryPreparation({ granted: true, castType: 'restLong' }, raceOrigin, false).method).toBe('innate');
-    expect(foundryPreparation({ granted: true, castType: 'innate' }, raceOrigin, false).method).toBe('innate');
+  it('concedida à vontade/ritual: método próprio, não preparada', () => {
     expect(foundryPreparation({ granted: true, castType: 'will' }, raceOrigin, false).method).toBe('atwill');
     expect(foundryPreparation({ granted: true, castType: 'ritual' }, raceOrigin, false).method).toBe('ritual');
+  });
+
+  // TC-0067: o RAW dessas concessões diz "you can ALSO cast the spell using any
+  // spell slots you have", e o premade oficial as encoda como spell+2 (o uso
+  // grátis fica no `uses`). Exportar 'innate' tirava o espaço de magia do jogador.
+  it('concedida com frequência conhecida: sempre preparada, com espaço disponível', () => {
+    expect(foundryPreparation({ granted: true, castType: 'daily' }, raceOrigin, false)).toEqual({ method: 'spell', prepared: 2 });
+    expect(foundryPreparation({ granted: true, castType: 'restLong' }, raceOrigin, false)).toEqual({ method: 'spell', prepared: 2 });
+  });
+
+  it('concedida inata CRUA (frequência desconhecida no dado): innate', () => {
+    expect(foundryPreparation({ granted: true, castType: 'innate' }, raceOrigin, false).method).toBe('innate');
+  });
+
+  it('Warlock puro: a concessão DE CÍRCULO vira pact; o cantrip da mesma linhagem, não', () => {
+    const leveled = { granted: true, castType: 'restLong', raw: { level: 2 } };
+    const cantrip = { granted: true, castType: null, raw: { level: 0 } };
+    expect(foundryPreparation(leveled, raceOrigin, false, { pactOnly: true }).method).toBe('pact');
+    expect(foundryPreparation(cantrip, raceOrigin, false, { pactOnly: true }).method).toBe('spell');
+    // Sem pactOnly (há espaços comuns) nada muda.
+    expect(foundryPreparation(leveled, raceOrigin, false).method).toBe('spell');
   });
 });
 
@@ -222,8 +240,11 @@ describe('buildSpellItems - a partir da derivação (Warlock 13 Archfey)', () =>
     expect(byName['True Seeing'].uses.recovery[0].period).toBe('lr');
   });
 
+  // "You always have the Misty Step spell prepared. You can cast it without
+  // expending a spell slot a number of times equal to your Charisma modifier"
+  // → sempre preparada (gasta espaço de pacto) + a fórmula dos usos grátis.
   it('Misty Step (concedida + inata CHA/dia) exporta a fórmula, não o 4', () => {
-    expect(byName['Misty Step'].method).toBe('innate');
+    expect(byName['Misty Step']).toMatchObject({ method: 'pact', prepared: 2 });
     expect(byName['Misty Step'].uses.max).toBe('@abilities.cha.mod');
   });
 });

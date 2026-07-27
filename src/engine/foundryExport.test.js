@@ -86,6 +86,10 @@ describe('foundryExport - mapeamento e scaffold', () => {
     expect(foundrySize(['M'])).toBe('med');
     expect(foundrySize(['S'])).toBe('sm');
     expect(foundrySize(undefined)).toBe('med');
+    // Escolha S/M ainda não feita (DDL-0017): o ator tem UM tamanho, e o padrão
+    // honesto é o MAIOR - é o que o premade de Humano/Tiefling traz (TC-0073).
+    expect(foundrySize(['S', 'M'])).toBe('med');
+    expect(foundrySize(['M', 'S'])).toBe('med');
   });
 });
 

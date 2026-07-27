@@ -34,6 +34,7 @@ import {
   FEAT_IDS,
   EQUIPMENT_IDS,
   EQUIPMENT_TYPES,
+  SUBCLASS_IDENTIFIERS,
 } from './compendiumUuidsData';
 
 // Apóstrofo tipográfico → reto: o pack usa o reto, o 5etools mistura os dois
@@ -69,6 +70,22 @@ export function classFeatureUuid(classId, featureName) {
 export function subclassUuid(classId, subclass) {
   for (const k of subclassKeys(classId, subclass)) {
     if (SUBCLASS_IDS[k]) return `${PACK_CLASSES}.${SUBCLASS_IDS[k]}`;
+  }
+  return null;
+}
+
+/**
+ * `system.identifier` canônico de uma subclasse, quando o dnd5e a publica. Não é
+ * um rótulo: o sistema o referencia em fórmula (`@subclasses.hand.levels`), e ele
+ * é mais curto que o nome ("Warrior of the Open Hand" → `hand`), então o slug do
+ * nome não serve (TC-0074). Fora do SRD devolve null e o slug continua valendo.
+ * @param {string} classId
+ * @param {{name?: string, shortName?: string}} subclass
+ * @returns {string|null}
+ */
+export function subclassIdentifier(classId, subclass) {
+  for (const k of subclassKeys(classId, subclass)) {
+    if (SUBCLASS_IDENTIFIERS[k]) return SUBCLASS_IDENTIFIERS[k];
   }
   return null;
 }

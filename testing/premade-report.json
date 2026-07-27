@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T22:56:43.913Z",
+  "generatedAt": "2026-07-27T00:33:21.054Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -259,112 +259,6 @@
       ]
     },
     {
-      "cat": "feat.uses",
-      "count": 29,
-      "actors": [
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Krusk L01",
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Quillathe L17",
-        "Sefris L17",
-        "Zanna L17"
-      ],
-      "examples": [
-        {
-          "actor": "Akra L05",
-          "cat": "feat.uses",
-          "key": "draconic flight",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "feat.uses",
-          "key": "draconic flight",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "feat.uses",
-          "key": "divine intervention",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "actor": "Akra L17",
-          "cat": "feat.uses",
-          "key": "draconic flight",
-          "before": "has",
-          "after": "none"
-        }
-      ]
-    },
-    {
-      "cat": "spell.method",
-      "count": 26,
-      "actors": [
-        "Beiro L05",
-        "Beiro L11",
-        "Beiro L17",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Beiro L05",
-          "cat": "spell.method",
-          "key": "detect magic",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "actor": "Beiro L05",
-          "cat": "spell.method",
-          "key": "misty step",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "actor": "Beiro L11",
-          "cat": "spell.method",
-          "key": "detect magic",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "actor": "Beiro L11",
-          "cat": "spell.method",
-          "key": "misty step",
-          "before": "spell",
-          "after": "innate"
-        }
-      ]
-    },
-    {
       "cat": "advancement.class.grants",
       "count": 25,
       "actors": [
@@ -416,55 +310,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        }
-      ]
-    },
-    {
-      "cat": "spell.prepared",
-      "count": 25,
-      "actors": [
-        "Beiro L05",
-        "Beiro L11",
-        "Beiro L17",
-        "Krusk L17",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Beiro L05",
-          "cat": "spell.prepared",
-          "key": "detect magic",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "actor": "Beiro L05",
-          "cat": "spell.prepared",
-          "key": "misty step",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "actor": "Beiro L11",
-          "cat": "spell.prepared",
-          "key": "detect magic",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "actor": "Beiro L11",
-          "cat": "spell.prepared",
-          "key": "misty step",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -739,54 +584,6 @@
       ]
     },
     {
-      "cat": "details.alignment",
-      "count": 12,
-      "actors": [
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Riswynn L01",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17"
-      ],
-      "examples": [
-        {
-          "actor": "Aoth L01",
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
-          "actor": "Aoth L05",
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
-          "actor": "Aoth L11",
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
-          "actor": "Aoth L17",
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        }
-      ]
-    },
-    {
       "cat": "tools",
       "count": 12,
       "actors": [
@@ -839,54 +636,6 @@
             "woodcarver"
           ],
           "after": []
-        }
-      ]
-    },
-    {
-      "cat": "traits.size",
-      "count": 12,
-      "actors": [
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Morthos L01",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Randal L01",
-        "Randal L05",
-        "Randal L11",
-        "Randal L17"
-      ],
-      "examples": [
-        {
-          "actor": "Aoth L01",
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
-          "actor": "Aoth L05",
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
-          "actor": "Aoth L11",
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
-          "actor": "Aoth L17",
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
         }
       ]
     },
@@ -1004,34 +753,26 @@
       ]
     },
     {
-      "cat": "subclass.identifier",
-      "count": 3,
+      "cat": "spell.method",
+      "count": 2,
       "actors": [
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17"
+        "Sefris L11",
+        "Sefris L17"
       ],
       "examples": [
         {
-          "actor": "Perrin L05",
-          "cat": "subclass.identifier",
-          "key": "warrior of the open hand",
-          "before": "hand",
-          "after": "open-hand"
+          "actor": "Sefris L11",
+          "cat": "spell.method",
+          "key": "contact other plane",
+          "before": "spell",
+          "after": "pact"
         },
         {
-          "actor": "Perrin L11",
-          "cat": "subclass.identifier",
-          "key": "warrior of the open hand",
-          "before": "hand",
-          "after": "open-hand"
-        },
-        {
-          "actor": "Perrin L17",
-          "cat": "subclass.identifier",
-          "key": "warrior of the open hand",
-          "before": "hand",
-          "after": "open-hand"
+          "actor": "Sefris L17",
+          "cat": "spell.method",
+          "key": "contact other plane",
+          "before": "spell",
+          "after": "pact"
         }
       ]
     },
@@ -1068,6 +809,22 @@
           "key": "value",
           "before": 6500,
           "after": 85000
+        }
+      ]
+    },
+    {
+      "cat": "spell.prepared",
+      "count": 1,
+      "actors": [
+        "Krusk L17"
+      ],
+      "examples": [
+        {
+          "actor": "Krusk L17",
+          "cat": "spell.prepared",
+          "key": "greater restoration",
+          "before": 0,
+          "after": 1
         }
       ]
     }
@@ -1203,12 +960,6 @@
             "Trait@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "draconic flight",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -1285,24 +1036,12 @@
           "after": []
         },
         {
-          "cat": "feat.uses",
-          "key": "draconic flight",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.activities",
           "key": "blessed strikes: potent spellcasting",
           "before": [
             "damage"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "divine intervention",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -1379,24 +1118,12 @@
           "after": []
         },
         {
-          "cat": "feat.uses",
-          "key": "draconic flight",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.activities",
           "key": "blessed strikes: potent spellcasting",
           "before": [
             "damage"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "divine intervention",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -1426,12 +1153,6 @@
           "after": []
         },
         {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
@@ -1448,12 +1169,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -1503,12 +1218,6 @@
           "after": []
         },
         {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
@@ -1525,12 +1234,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -1568,12 +1271,6 @@
             "ItemGrant@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "wild resurgence",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -1603,12 +1300,6 @@
           "after": []
         },
         {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
@@ -1625,12 +1316,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -1670,12 +1355,6 @@
             "ItemGrant@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "wild resurgence",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -1705,12 +1384,6 @@
           "after": []
         },
         {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
           "cat": "traits.weaponProf",
           "key": "value",
           "before": [],
@@ -1727,12 +1400,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -1772,12 +1439,6 @@
             "ItemGrant@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "wild resurgence",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -1898,30 +1559,6 @@
           "after": [
             "elf; high elf lineage"
           ]
-        },
-        {
-          "cat": "spell.method",
-          "key": "detect magic",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "detect magic",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "misty step",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "misty step",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -2004,30 +1641,6 @@
           "after": [
             "elf; high elf lineage"
           ]
-        },
-        {
-          "cat": "spell.method",
-          "key": "detect magic",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "detect magic",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "misty step",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "misty step",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -2112,30 +1725,6 @@
           "after": [
             "elf; high elf lineage"
           ]
-        },
-        {
-          "cat": "spell.method",
-          "key": "detect magic",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "detect magic",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "misty step",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "misty step",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -2155,12 +1744,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        },
-        {
-          "cat": "feat.uses",
-          "key": "relentless endurance",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -2197,12 +1780,6 @@
             "ItemGrant@5"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "relentless endurance",
-          "before": "has",
-          "after": "none"
         },
         {
           "cat": "feat.activities",
@@ -2250,12 +1827,6 @@
             "ItemGrant@9"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "relentless endurance",
-          "before": "has",
-          "after": "none"
         },
         {
           "cat": "feat.activities",
@@ -2313,12 +1884,6 @@
             "ItemGrant@9"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "relentless endurance",
-          "before": "has",
-          "after": "none"
         },
         {
           "cat": "feat.activities",
@@ -2425,12 +1990,6 @@
             "ItemGrant@5"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "large form",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -2480,18 +2039,6 @@
             "ItemGrant@5"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "large form",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.uses",
-          "key": "relentless rage",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -2542,30 +2089,6 @@
             "ItemGrant@5"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "large form",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.uses",
-          "key": "relentless rage",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.uses",
-          "key": "intimidating presence",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.uses",
-          "key": "persistent rage",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -2574,12 +2097,6 @@
       "file": "fvtt-Actor-morthos-MorthosLv0100000",
       "official": true,
       "findings": [
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
         {
           "cat": "items.race",
           "key": "names",
@@ -2616,12 +2133,6 @@
       "file": "fvtt-Actor-morthos-MorthosLv0500000",
       "official": true,
       "findings": [
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
         {
           "cat": "items.race",
           "key": "names",
@@ -2670,36 +2181,6 @@
             "Trait@6"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "sorcerous restoration",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "spell.method",
-          "key": "hellish rebuke",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "hellish rebuke",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "darkness",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "darkness",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -2708,12 +2189,6 @@
       "file": "fvtt-Actor-morthos-MorthosLv1100000",
       "official": true,
       "findings": [
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
         {
           "cat": "traits.dr",
           "key": "value",
@@ -2776,36 +2251,6 @@
             "Trait@6"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "sorcerous restoration",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "spell.method",
-          "key": "hellish rebuke",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "hellish rebuke",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "darkness",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "darkness",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -2814,12 +2259,6 @@
       "file": "fvtt-Actor-morthos-MorthosLv1700000",
       "official": true,
       "findings": [
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
         {
           "cat": "traits.dr",
           "key": "value",
@@ -2892,42 +2331,6 @@
             "Trait@6"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "sorcerous restoration",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "feat.uses",
-          "key": "dragon wings",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "spell.method",
-          "key": "hellish rebuke",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "hellish rebuke",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "darkness",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "darkness",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -2953,12 +2356,6 @@
             "shortsword"
           ],
           "after": []
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -3027,12 +2424,6 @@
           "after": []
         },
         {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
           "cat": "items.feat",
           "key": "names",
           "before": [
@@ -3066,24 +2457,12 @@
           "after": 1
         },
         {
-          "cat": "subclass.identifier",
-          "key": "warrior of the open hand",
-          "before": "hand",
-          "after": "open-hand"
-        },
-        {
           "cat": "advancement.race",
           "key": "halfling",
           "before": [
             "ItemGrant@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "uncanny metabolism",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -3109,12 +2488,6 @@
             "shortsword"
           ],
           "after": []
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -3147,24 +2520,12 @@
           "after": 2
         },
         {
-          "cat": "subclass.identifier",
-          "key": "warrior of the open hand",
-          "before": "hand",
-          "after": "open-hand"
-        },
-        {
           "cat": "advancement.race",
           "key": "halfling",
           "before": [
             "ItemGrant@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "uncanny metabolism",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -3220,12 +2581,6 @@
           "after": []
         },
         {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
           "cat": "items.feat",
           "key": "names",
           "before": [
@@ -3256,24 +2611,12 @@
           "after": 2
         },
         {
-          "cat": "subclass.identifier",
-          "key": "warrior of the open hand",
-          "before": "hand",
-          "after": "open-hand"
-        },
-        {
           "cat": "advancement.race",
           "key": "halfling",
           "before": [
             "ItemGrant@0"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.uses",
-          "key": "uncanny metabolism",
-          "before": "has",
-          "after": "none"
         }
       ]
     },
@@ -3363,30 +2706,6 @@
             "cast"
           ],
           "after": []
-        },
-        {
-          "cat": "spell.method",
-          "key": "longstrider",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "longstrider",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "pass without trace",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "pass without trace",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -3442,30 +2761,6 @@
             "cast"
           ],
           "after": []
-        },
-        {
-          "cat": "spell.method",
-          "key": "longstrider",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "longstrider",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "pass without trace",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "pass without trace",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -3515,42 +2810,12 @@
           "after": []
         },
         {
-          "cat": "feat.uses",
-          "key": "nature's veil",
-          "before": "has",
-          "after": "none"
-        },
-        {
           "cat": "feat.activities",
           "key": "favored enemy",
           "before": [
             "cast"
           ],
           "after": []
-        },
-        {
-          "cat": "spell.method",
-          "key": "longstrider",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "longstrider",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "pass without trace",
-          "before": "spell",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "pass without trace",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -3576,12 +2841,6 @@
           "key": "per",
           "before": 1,
           "after": 0
-        },
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
         },
         {
           "cat": "items.feat",
@@ -3627,12 +2886,6 @@
           "key": "per",
           "before": 1,
           "after": 0
-        },
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
         },
         {
           "cat": "items.feat",
@@ -3688,12 +2941,6 @@
           "after": 0
         },
         {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
-        },
-        {
           "cat": "items.feat",
           "key": "names",
           "before": [
@@ -3746,12 +2993,6 @@
           "key": "per",
           "before": 1,
           "after": 0
-        },
-        {
-          "cat": "traits.size",
-          "key": "size",
-          "before": "med",
-          "after": "sm"
         },
         {
           "cat": "items.feat",
@@ -3828,12 +3069,6 @@
           "after": []
         },
         {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
           "cat": "items.feat",
           "key": "names",
           "before": [
@@ -3886,12 +3121,6 @@
             "whip"
           ],
           "after": []
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -3959,12 +3188,6 @@
           "after": 85000
         },
         {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
-        },
-        {
           "cat": "items.feat",
           "key": "names",
           "before": [
@@ -4025,12 +3248,6 @@
             "whip"
           ],
           "after": []
-        },
-        {
-          "cat": "details.alignment",
-          "key": "alignment",
-          "before": "neutral",
-          "after": "true neutral"
         },
         {
           "cat": "items.feat",
@@ -4202,30 +3419,6 @@
           "after": [
             "enchant"
           ]
-        },
-        {
-          "cat": "spell.method",
-          "key": "faerie fire",
-          "before": "pact",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "faerie fire",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "darkness",
-          "before": "pact",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "darkness",
-          "before": 2,
-          "after": 0
         }
       ]
     },
@@ -4292,30 +3485,6 @@
           "after": [
             "enchant"
           ]
-        },
-        {
-          "cat": "spell.method",
-          "key": "faerie fire",
-          "before": "pact",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "faerie fire",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "darkness",
-          "before": "pact",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "darkness",
-          "before": 2,
-          "after": 0
         },
         {
           "cat": "spell.method",
@@ -4389,36 +3558,6 @@
           "after": [
             "enchant"
           ]
-        },
-        {
-          "cat": "feat.uses",
-          "key": "hurl through hell",
-          "before": "has",
-          "after": "none"
-        },
-        {
-          "cat": "spell.method",
-          "key": "faerie fire",
-          "before": "pact",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "faerie fire",
-          "before": 2,
-          "after": 0
-        },
-        {
-          "cat": "spell.method",
-          "key": "darkness",
-          "before": "pact",
-          "after": "innate"
-        },
-        {
-          "cat": "spell.prepared",
-          "key": "darkness",
-          "before": 2,
-          "after": 0
         },
         {
           "cat": "spell.method",
@@ -4629,12 +3768,6 @@
           "after": [
             "gnome; rock gnome lineage"
           ]
-        },
-        {
-          "cat": "feat.uses",
-          "key": "overchannel",
-          "before": "has",
-          "after": "none"
         }
       ]
     }

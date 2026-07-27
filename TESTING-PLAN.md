@@ -390,6 +390,46 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-27** - **T2b sessão 4: TC-0067, TC-0068, TC-0073 e TC-0074 fechados** (361 → **257**
+  achados, +23 esperadas). 1193 testes (+9), lint, sweep 285/285 `--strict`. Decisões em DDL-0074,
+  log em CHANGELOG §97.
+  **TC-0067 (51 achados):** toda concessão sempre-preparada saía `method: 'innate'`, que no dnd5e
+  significa "não usa espaço de magia" - metade da regra ia embora. O texto do SRD decidiu: *"You
+  always have that spell prepared… **You can also cast the spell using any spell slots you have**"*.
+  Meia correção a mais, do premade do Warlock: num Warlock puro a concessão DE CÍRCULO sai `pact`,
+  mas o CANTRIP da mesma linhagem não (cantrip não gasta espaço) - promover os dois foi a 1ª
+  tentativa e o comparador acusou na hora.
+  **TC-0068 (29):** o pool de recurso passou a ser GERADO do SRD (`FEATURE_USES_BY_CLASS` /
+  `FEATURE_USES_FLAT`, 47 pools), 3º uso do padrão do TC-0066. Precedência agora **curado → SRD →
+  overlay**. Junto veio o achado mais sério da sessão: **duas referências `@scale` curadas estavam
+  órfãs** desde o TC-0062, e uma terceira RESOLVIA para a escala ERRADA (`wild-shape` é a de CR, não
+  a de usos).
+  **Higiene das referências do overlay:** exportávamos 35 tokens do Plutonium (`@spell[…]`,
+  `@creature[…]`) que não são uuids do Foundry. Agora `@spell` resolve e a activity irresolúvel é
+  descartada. **Sonda A/B: 35 → 0.**
+  **Três lições de método:**
+  1. **Meça a premissa, inclusive contra o comparador.** Descartar as activities `enchant` "porque
+     pulamos os efeitos de encantamento" parecia consistente e subiu o placar de 18 para 24 - os
+     premades TRAZEM essas activities. Rode a fatia (`--cat=`) depois de cada hipótese.
+  2. **Uma referência que RESOLVE ainda pode estar errada.** A sonda de "@scale sem ScaleValue" não
+     pegava o `wild-shape` (a chave existia - era a escala de CR). Confira o ALVO, não só a chave.
+  3. **Verifique o instrumento com um A/B.** O "0 tokens" só vale porque o mesmo probe deu 35 com o
+     fix removido via `git stash`.
+  **Next action: T2b sessão 5.** A maior classe (`items.spell`, 38) foi **diagnosticada nesta
+  sessão** e virou três entradas - comece por elas, na ordem:
+  1. **TC-0079** (~9, barato e de valor real): magia de nome próprio não resolve - o 5etools mantém
+     "Tasha's Hideous Laughter" onde o dnd5e escreve "Hideous Laughter", e a magia PREPARADA do
+     jogador some do export sem aviso. Mapa de aliases como fallback em `resolveSpellObj`.
+  2. **TC-0081** (~84): as magias do Magic Initiate não voltam de um ator externo (o talento chega
+     com `choices: {}`). Conferir de passagem se o `featSource` do TC-0057 não está resolvendo o
+     talento na edição de 2014.
+  3. **TC-0080** (189) é **`needs-user-eyes`**: o grimório do Mago não tem lugar no modelo. NÃO
+     decidir sozinho.
+  4. Depois: **TC-0064/0065** (24 + 6, item de espécie magro + ancestralidade que não volta) -
+     **parte do 0064 também é `needs-user-eyes`**; **TC-0078** (11, enumerar as armas da regra
+     condicional, o dado tem o filtro); **TC-0061** (39 `skills` + 12 `tools`, escolhas dentro de
+     outros documentos que o import não varre); **TC-0071/0072** (composição do ItemGrant).
+
 - **2026-07-26 (6)** - **T2b sessão 3: TC-0059, TC-0075 e TC-0077 fechados** (395 → **361**
   achados, +23 marcadas como ESPERADAS). Primeira leva da T2 que corrige a **FICHA** e não só o
   export. 1184 testes (+11), lint, sweep 285/285 `--strict`, e passada ao vivo no browser.

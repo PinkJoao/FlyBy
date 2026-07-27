@@ -36,7 +36,7 @@ import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { itemValue } from './magicItemPrice';
 import {
   classUuid, classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid,
-  originUuid, featUuid, equipmentUuid, equipmentFoundryType,
+  originUuid, featUuid, equipmentUuid, equipmentFoundryType, subclassIdentifier,
 } from './compendiumUuids';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
@@ -1462,7 +1462,8 @@ export function buildSpeciesTraitItems(raceObj, db) {
         source: sourceBlock(raceObj.source),
         requirements: '',
         properties: [],
-        uses: trait.system.uses ?? { max: '', spent: 0, recovery: [] },
+        // SRD antes do overlay, como nas features de classe (TC-0068).
+        uses: featureUses(trait.name) ?? trait.system.uses ?? { max: '', spent: 0, recovery: [] },
         prerequisites: { level: null, repeatable: false, items: [] },
         activities: trait.activities,
         advancement: {},
@@ -1650,7 +1651,10 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
 
 export function buildSubclassItem(subclass, classId, featureItems = [], opts = {}) {
   if (!subclass) return null;
-  const identifier = slugify(subclass.shortName ?? subclass.name);
+  // O identificador CANÔNICO do SRD vence o slug: o dnd5e o cita em fórmula
+  // (`@subclasses.hand.levels`) e ele não é derivável do nome (TC-0074). Fora do
+  // SRD (as outras 123 subclasses) o slug do shortName continua valendo.
+  const identifier = subclassIdentifier(classId, subclass) ?? slugify(subclass.shortName ?? subclass.name);
   return {
     _id: randomFoundryId(),
     name: subclass.name,

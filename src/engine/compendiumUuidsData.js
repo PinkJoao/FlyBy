@@ -251,6 +251,24 @@ export const SUBCLASS_IDS = {
   "wizard|evoker": "phbwzdEvoker0000",
 };
 
+/** `classId|nomeDaSubclasse` → `system.identifier` do SRD. Não é derivável do
+ *  nome ("Warrior of the Open Hand" → `hand`) e é referenciado em FÓRMULA pelo
+ *  dnd5e (`@subclasses.hand.levels`), então vale mais que um rótulo (TC-0074). */
+export const SUBCLASS_IDENTIFIERS = {
+  "barbarian|path of the berserker": "berserker",
+  "bard|college of lore": "lore",
+  "cleric|life domain": "life",
+  "druid|circle of the land": "land",
+  "fighter|champion": "champion",
+  "monk|warrior of the open hand": "hand",
+  "paladin|oath of devotion": "devotion",
+  "ranger|hunter": "hunter",
+  "rogue|thief": "thief",
+  "sorcerer|draconic sorcery": "draconic",
+  "warlock|fiend patron": "fiend",
+  "wizard|evoker": "evoker",
+};
+
 /** `classId|nomeDaSubclasse|nomeDaFeature` → _id (pacote classes24). */
 export const SUBCLASS_FEATURE_IDS = {
   "barbarian|path of the berserker|frenzy": "phbbrbFrenzy0000",
@@ -1888,4 +1906,63 @@ export const EQUIPMENT_TYPES = {
   "wooden staff": "weapon/simpleM",
   "wyvern poison": "consumable/poison",
   "yew wand": "equipment/trinket",
+};
+
+/** `classId|feature` → `system.uses` ({max, recovery}) do SRD. O POOL de um
+ *  recurso não é derivável do texto do 5etools; sem ele a ficha do Foundry não
+ *  tem o que gastar (TC-0068). Keyed por classe porque o nome colide
+ *  ("Channel Divinity" tem escala própria no Clérigo e no Paladino). */
+export const FEATURE_USES_BY_CLASS = {
+  "barbarian|intimidating presence": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "barbarian|persistent rage": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "barbarian|rage": {"max":"@scale.barbarian.rages","recovery":[{"period":"lr","type":"recoverAll"},{"period":"sr","type":"formula","formula":"1"}]},
+  "barbarian|relentless rage": {"max":"20","recovery":[{"period":"sr","type":"recoverAll"}]},
+  "bard|bardic inspiration": {"max":"max(1, @abilities.cha.mod)","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "cleric|channel divinity": {"max":"@scale.cleric.channel-divinity","recovery":[{"period":"lr","type":"recoverAll"},{"period":"sr","type":"formula","formula":"1"}]},
+  "cleric|divine intervention": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "druid|archdruid": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "druid|wild resurgence": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "druid|wild shape": {"max":"@scale.druid.wild-shape-uses","recovery":[{"period":"lr","type":"recoverAll"},{"period":"sr","type":"formula","formula":"1"}]},
+  "fighter|action surge": {"max":"@scale.fighter.action-surge","recovery":[{"period":"sr","type":"recoverAll"}]},
+  "fighter|indomitable": {"max":"@scale.fighter.indomitable","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "fighter|second wind": {"max":"@scale.fighter.second-wind","recovery":[{"period":"lr","type":"recoverAll"},{"period":"sr","type":"formula","formula":"1"}]},
+  "monk|monk's focus": {"max":"@scale.monk.focus","recovery":[{"period":"sr","type":"recoverAll"}]},
+  "monk|uncanny metabolism": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "monk|wholeness of body": {"max":"max(1,@abilities.wis.mod)","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "paladin|channel divinity": {"max":"@scale.paladin.channel-divinity","recovery":[{"period":"lr","type":"recoverAll"},{"period":"sr","type":"formula","formula":"1"}]},
+  "paladin|holy nimbus": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "paladin|lay on hands": {"max":"5 * @classes.paladin.levels","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "ranger|favored enemy": {"max":"@scale.ranger.favored-enemy","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "ranger|nature's veil": {"max":"(max(1,@abilities.wis.mod))","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "rogue|stroke of luck": {"max":"1","recovery":[{"period":"sr","type":"recoverAll"}]},
+  "sorcerer|dragon companion": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "sorcerer|dragon wings": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "sorcerer|font of magic": {"max":"@scale.sorcerer.points","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "sorcerer|innate sorcery": {"max":"2","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "sorcerer|sorcerous restoration": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "warlock|dark one's own luck": {"max":"(max(1,@abilities.cha.mod))","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "warlock|gift of the depths": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "warlock|gift of the protectors": {"max":"(max(1,@abilities.cha.mod))","recovery":[]},
+  "warlock|hurl through hell": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "warlock|magical cunning": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "wizard|arcane recovery": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "wizard|overchannel": {"max":"20","recovery":[{"period":"lr","type":"recoverAll"}]},
+};
+
+/** `traço de espécie ou talento` → `system.uses` do SRD (pacotes origins24 e
+ *  feats24, onde o nome não colide com o de uma classe). */
+export const FEATURE_USES_FLAT = {
+  "adrenaline rush": {"max":"@prof","recovery":[{"period":"sr","type":"recoverAll"}]},
+  "boon of fate": {"max":"1","recovery":[{"period":"sr","type":"recoverAll"},{"period":"initiative","type":"recoverAll"}]},
+  "breath weapon": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "cloud's jaunt": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "draconic flight": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "fire's burn": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "frost's chill": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "hill's tumble": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "large form": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "relentless endurance": {"max":"1","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "stone's endurance": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "stonecunning": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
+  "storm's thunder": {"max":"@prof","recovery":[{"period":"lr","type":"recoverAll"}]},
 };

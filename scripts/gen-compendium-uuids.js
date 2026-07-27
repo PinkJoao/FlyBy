@@ -53,7 +53,40 @@ function head(file) {
   const pick = (k) => txt.match(new RegExp(`^${k}: *(.+)$`, 'm'))?.[1]?.trim();
   const unquote = (s) => s?.replace(/^['"]|['"]$/g, '');
   const subtype = unquote(txt.match(/^ +type:\n +value: *(.*)$/m)?.[1]?.trim());
-  return { id: pick('_id'), name: unquote(pick('name')), type: pick('type'), subtype: subtype || '' };
+  // `system.identifier` de uma subclasse: o dnd5e o referencia em FÓRMULA
+  // (`@subclasses.hand.levels`), e ele é mais curto que o nome ("Warrior of the
+  // Open Hand" → `hand`), então não é derivável por slug (TC-0074).
+  const identifier = unquote(txt.match(/^ {2}identifier: *(.*)$/m)?.[1]?.trim());
+  return {
+    id: pick('_id'), name: unquote(pick('name')), type: pick('type'),
+    subtype: subtype || '', identifier: identifier || '', uses: uses(txt),
+  };
+}
+
+/**
+ * O bloco `system.uses` de um documento: `{max, recovery[]}`, ou null quando a
+ * feature não rastreia recurso. É a ÚNICA outra chave interna que lemos (TC-0068)
+ * - o pool de um recurso não é derivável do texto do 5etools, e sem ele a ficha
+ * do Foundry não tem o que gastar.
+ *
+ * A âncora são os DOIS espaços de `^  uses:` (ou seja, `system.uses`): um `uses`
+ * dentro de `activities:` fica em 6 espaços e não pode ser confundido com este.
+ */
+function uses(txt) {
+  const block = txt.match(/^ {2}uses:\n((?: {4,}[^\n]*\n)*)/m)?.[1];
+  if (!block) return null;
+  const max = block.match(/^ {4}max: *(.*)$/m)?.[1]?.trim().replace(/^['"]|['"]$/g, '');
+  if (!max) return null;
+  const recovery = [];
+  for (const line of block.split('\n')) {
+    const period = line.match(/^ +- period: *(\w+)/)?.[1];
+    if (period) recovery.push({ period });
+    else if (recovery.length) {
+      const m = line.match(/^ +(type|formula): *(.*)$/);
+      if (m) recovery.at(-1)[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
+    }
+  }
+  return { max, recovery };
 }
 
 if (!existsSync(PACKS)) {
@@ -64,8 +97,13 @@ if (!existsSync(PACKS)) {
 const classes = {}; //        'classId'                    → _id
 const classFeatures = {}; // 'classId|feature'            → _id
 const subclasses = {}; //    'classId|subclasse'          → _id
+const subclassIdentifiers = {}; // 'classId|subclasse'    → system.identifier
 const subclassFeatures = {}; // 'classId|subclasse|feature' → _id
 const spells = {}; //         'magia'                     → _id
+// Pool de recurso (TC-0068). Duas tabelas porque o NOME colide entre classes:
+// "Channel Divinity" tem escala própria no Clérigo e no Paladino.
+const usesByClass = {}; //   'classId|feature'            → {max, recovery}
+const usesFlat = {}; //      'traço ou talento'           → {max, recovery}
 
 const CLASSES_DIR = join(PACKS, 'classes24');
 for (const classDir of readdirSync(CLASSES_DIR)) {
@@ -80,9 +118,10 @@ for (const classDir of readdirSync(CLASSES_DIR)) {
   for (const sub of readdirSync(dir)) {
     if (sub === 'subclass-features' || !statSync(join(dir, sub)).isDirectory()) continue;
     for (const f of walk(join(dir, sub))) {
-      const { id, name, type } = head(f);
-      if (type !== 'feat' || !id || !name) continue; // 'weapon' (Unarmed Strike) mora no equipment24
-      classFeatures[`${classId}|${norm(name)}`] = id;
+      const h = head(f);
+      if (h.type !== 'feat' || !h.id || !h.name) continue; // 'weapon' (Unarmed Strike) mora no equipment24
+      classFeatures[`${classId}|${norm(h.name)}`] = h.id;
+      if (h.uses) usesByClass[`${classId}|${norm(h.name)}`] = h.uses;
     }
   }
 
@@ -97,6 +136,7 @@ for (const classDir of readdirSync(CLASSES_DIR)) {
     if (h.type !== 'subclass') continue;
     subs.push(h);
     subclasses[`${classId}|${norm(h.name)}`] = h.id;
+    if (h.identifier) subclassIdentifiers[`${classId}|${norm(h.name)}`] = h.identifier;
   }
 
   // Features de subclasse. O nome da PASTA não bate com o da subclasse
@@ -109,9 +149,11 @@ for (const classDir of readdirSync(CLASSES_DIR)) {
     continue;
   }
   for (const f of subFeatureFiles) {
-    const { id, name, type } = head(f);
-    if (type !== 'feat' || !id || !name) continue;
-    subclassFeatures[`${classId}|${norm(subs[0].name)}|${norm(name)}`] = id;
+    const h = head(f);
+    if (h.type !== 'feat' || !h.id || !h.name) continue;
+    subclassFeatures[`${classId}|${norm(subs[0].name)}|${norm(h.name)}`] = h.id;
+    // Uma feature de SUBCLASSE também rastreia recurso pela classe dona.
+    if (h.uses) usesByClass[`${classId}|${norm(h.name)}`] ??= h.uses;
   }
 }
 
@@ -137,12 +179,13 @@ const FLAT_PACKS = [
 ];
 for (const [key, dir, types] of FLAT_PACKS) {
   for (const f of walk(join(PACKS, dir))) {
-    const { id, name, type, subtype } = head(f);
+    const { id, name, type, subtype, uses: u } = head(f);
     if (!id || !name || !types.has(type)) continue;
     // Homônimos dentro do mesmo pacote: fica o PRIMEIRO (ordem alfabética de
     // arquivo), determinístico entre regerações.
     if (!flat[key][norm(name)]) flat[key][norm(name)] = id;
     if (key === 'equipment' && !equipmentTypes[norm(name)]) equipmentTypes[norm(name)] = `${type}/${subtype}`;
+    if (key !== 'equipment' && u) usesFlat[norm(name)] ??= u;
   }
 }
 
@@ -182,6 +225,11 @@ export const CLASS_FEATURE_IDS = ${literal(classFeatures)};
 /** \`classId|nomeDaSubclasse\` → _id (pacote classes24). */
 export const SUBCLASS_IDS = ${literal(subclasses)};
 
+/** \`classId|nomeDaSubclasse\` → \`system.identifier\` do SRD. Não é derivável do
+ *  nome ("Warrior of the Open Hand" → \`hand\`) e é referenciado em FÓRMULA pelo
+ *  dnd5e (\`@subclasses.hand.levels\`), então vale mais que um rótulo (TC-0074). */
+export const SUBCLASS_IDENTIFIERS = ${literal(subclassIdentifiers)};
+
 /** \`classId|nomeDaSubclasse|nomeDaFeature\` → _id (pacote classes24). */
 export const SUBCLASS_FEATURE_IDS = ${literal(subclassFeatures)};
 
@@ -201,6 +249,16 @@ export const EQUIPMENT_IDS = ${literal(flat.equipment)};
  *  classificação de inventário do dnd5e - o que decide se o item pode ser
  *  equipado ou consumido na ficha. Ver engine/compendiumUuids.js. */
 export const EQUIPMENT_TYPES = ${literal(equipmentTypes)};
+
+/** \`classId|feature\` → \`system.uses\` ({max, recovery}) do SRD. O POOL de um
+ *  recurso não é derivável do texto do 5etools; sem ele a ficha do Foundry não
+ *  tem o que gastar (TC-0068). Keyed por classe porque o nome colide
+ *  ("Channel Divinity" tem escala própria no Clérigo e no Paladino). */
+export const FEATURE_USES_BY_CLASS = ${literal(usesByClass)};
+
+/** \`traço de espécie ou talento\` → \`system.uses\` do SRD (pacotes origins24 e
+ *  feats24, onde o nome não colide com o de uma classe). */
+export const FEATURE_USES_FLAT = ${literal(usesFlat)};
 `;
 
 writeFileSync(OUT, out);
@@ -208,5 +266,6 @@ console.log(
   `compendiumUuidsData.js gerado: ${Object.keys(classFeatures).length} features de classe, `
   + `${Object.keys(subclasses).length} subclasses, ${Object.keys(subclassFeatures).length} features de subclasse, `
   + `${Object.keys(spells).length} magias, ${Object.keys(flat.origins).length} origens, `
-  + `${Object.keys(flat.feats).length} talentos, ${Object.keys(flat.equipment).length} equipamentos.`,
+  + `${Object.keys(flat.feats).length} talentos, ${Object.keys(flat.equipment).length} equipamentos, `
+  + `${Object.keys(usesByClass).length + Object.keys(usesFlat).length} pools de recurso.`,
 );

@@ -5444,3 +5444,78 @@ baked-feature-grant, capstone-asi-on-class-item`) e por inteiro no report - mesm
 de **395 → 361** achados (+23 esperadas). **Ao vivo:** um Rogue 1 mostra o seletor "Language 0/1" e
 o card LANGUAGES com Common · Thieves' Cant; no 15, SAVING THROWS passa a Dex/Int/**Wis/Cha**.
 Decisões em DDL-0073.
+
+---
+
+## 97. Phase T - T2b: as magias concedidas e o pool de recurso (TC-0067/0068 fechados; 361 → 257)
+
+Quarta leva do burn-down. Duas correções grandes vindas de medir o SRD do dnd5e, mais três alvos
+baratos (tamanho, alinhamento, identificador de subclasse) e a **higiene das referências** que o
+overlay nos fazia exportar quebradas.
+
+### TC-0067 - uma magia sempre-preparada não é "inata"
+
+Detect Magic e Misty Step (linhagem élfica), Hellish Rebuke e Darkness (legacy do Tiefling), Misty
+Step do Archfey: tudo saía `method: 'innate'`, `prepared: 0`. O premade usa `method: 'spell'`,
+`prepared: 2`, com o uso grátis no `uses` - e o texto do próprio SRD diz por quê:
+
+> "You always have that spell prepared. You can cast it once without a spell slot… **You can also
+> cast the spell using any spell slots you have** of the appropriate level."
+
+Ou seja, `innate` TIRAVA do jogador a possibilidade de gastar espaço. Agora só o `innate` CRU do
+5etools (aquele em que o dado não declara frequência nenhuma - DDL-0011) continua saindo `innate`,
+justamente porque ali não sabemos se gasta espaço.
+
+**Meia correção a mais, do premade do Warlock:** num Warlock PURO não existe espaço comum, então a
+concessão DE CÍRCULO da linhagem Drow também tem de sair como `pact` - senão fica sem espaço algum
+para gastar. O **cantrip** da mesma linhagem (Dancing Lights) fica em `spell`: cantrip não gasta
+espaço. A primeira tentativa promoveu os dois e o comparador acusou na hora.
+
+`spell.method` 26 → 2 e `spell.prepared` 25 → 1 (os dois restantes são quirk do premade: um
+`Contact Other Plane` que ele mesmo encoda diferente dos irmãos, e um nome de magia repetido).
+
+### TC-0068 - o pool de recurso vem do SRD, não de mais 14 linhas curadas
+
+14 features chegavam ao Foundry sem `system.uses` (Relentless Endurance, Draconic Flight, Wild
+Resurgence, Large Form, Divine Intervention, Uncanny Metabolism…), então não havia o que gastar na
+ficha. Em vez de curar caso a caso, `npm run gen:uuids` passou a emitir **`FEATURE_USES_BY_CLASS`**
+e **`FEATURE_USES_FLAT`** (47 pools) do SRD - mesmo padrão do `EQUIPMENT_TYPES` (TC-0066) e do
+registro de uuids (DDL-0055). Precedência: **curado → SRD → overlay**. `feat.uses` 29 → 0.
+
+**Achado colateral, este mais sério: duas referências `@scale` curadas estavam ÓRFÃS.** O TC-0062
+alinhou os identificadores de ScaleValue aos nomes curtos do SRD (`points`, `focus`), mas o registro
+de `uses` continuava montando a referência com o slug do NOSSO título - `@scale.sorcerer.sorcery-points`
+e `@scale.monk.focus-points` não apontavam para escala nenhuma. E um terceiro caso pior, que uma
+sonda de "referência sem escala" não pegaria: `wild shape` apontava para `@scale.druid.wild-shape`,
+que EXISTE mas é a escala de **CR**, não a de usos. As três entradas ganharam um campo `id` literal.
+**Regra que fica:** a referência tem de casar com o IDENTIFICADOR exportado, nunca com o slug do
+título - e uma referência que resolve ainda pode estar apontando para a escala errada.
+
+### Referências `@…[…]` do overlay: 35 apontavam para o vazio
+
+O overlay do 5etools guarda tokens do conversor do Plutonium (`@spell[divine smite|xphb]`,
+`@creature[imp|xmm]`) que **não são uuids do Foundry**. Exportávamos crus. Agora `@spell[…]` resolve
+no uuid real do compêndio, e a activity que carrega uma referência que não sabemos resolver (as
+invocações de criatura - monstro não faz parte do nosso escopo) é **descartada inteira**, o mesmo
+princípio dos links órfãos que o módulo já aplicava. Medido nos 48 atores: **35 tokens → 0**.
+
+As de `type: 'enchant'` FICAM. A primeira tentativa as descartou junto (o raciocínio era que os
+efeitos de encantamento são pulados na tradução) e o comparador subiu de 18 para 24 na hora: os
+premades oficiais TRAZEM essas activities (Martial Arts, Sacred Weapon, Repelling Blast).
+
+### Três alvos baratos
+
+- **TC-0073 (tamanho):** uma espécie com escolha S/M ainda não feita exportava o PRIMEIRO código do
+  array, então um Humano premade reimportado virava **Small**. O ator tem UM tamanho: o padrão
+  honesto é o MAIOR, que é o que o premade traz. 12 → 0.
+- **TC-0074 (alinhamento):** "True Neutral" → "Neutral", e cada palavra capitalizada, como os 48
+  premades escrevem. O import já aceitava as duas formas. 12 → 0.
+- **TC-0074 (identificador de subclasse):** `open-hand` × `hand`. Não é rótulo - o dnd5e o cita em
+  fórmula (`@subclasses.hand.levels`) - e não sai do nome, então virou mais uma tabela gerada do
+  SRD (`SUBCLASS_IDENTIFIERS`). As 12 subclasses publicadas usam o identificador canônico; as outras
+  123 seguem com o slug. 3 → 0.
+
+### Verificação
+
+1193 testes (+9), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **361 → 257** achados
+(+23 esperadas). Decisões em DDL-0074.

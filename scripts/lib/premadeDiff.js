@@ -129,13 +129,26 @@ const weaponProfSet = (list) => {
   return v.includes('sim') && v.includes('mar') ? v.filter((x) => ['sim', 'mar'].includes(x)) : v;
 };
 
-/** Itens agrupados por `type`, em mapas name→item (o 1º de nome repetido vence). */
+/** Estado de preparação de um item de magia (5.x: `prepared`; antigo: `preparation`). */
+const preparedOf = (it) => Number(it?.system?.prepared ?? (it?.system?.preparation?.prepared ? 1 : 0)) || 0;
+
+/**
+ * Itens agrupados por `type`, em mapas name→item. Em nome repetido vence o
+ * PRIMEIRO - exceto entre MAGIAS, onde vence a de maior `prepared`: uma mesma
+ * magia pode estar na ficha duas vezes (o Shield que o Beiro tem no repertório
+ * do Bardo e ganha de novo pelo Magic Initiate), e aí guardar a primeira faria o
+ * oráculo comparar cópias diferentes dos dois lados. A regra vale para os dois,
+ * e não esconde falta de verdade: se a cópia concedida não fosse emitida, o
+ * nosso máximo seria 0 contra o 2 do premade e o achado apareceria igual.
+ */
 export function itemsByType(actor) {
   const out = {};
   for (const it of actor?.items ?? []) {
     const m = (out[it.type] ??= new Map());
     const k = keyFor(it.type, it.name);
-    if (!m.has(k)) m.set(k, it);
+    const prev = m.get(k);
+    if (!prev) m.set(k, it);
+    else if (it.type === 'spell' && preparedOf(it) > preparedOf(prev)) m.set(k, it);
   }
   return out;
 }

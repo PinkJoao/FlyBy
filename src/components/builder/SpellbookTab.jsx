@@ -96,6 +96,9 @@ function spellsOf(origin) {
   return [
     ...origin.cantrips.map((s) => ({ ...s, granted: false })),
     ...origin.prepared.map((s) => ({ ...s, granted: false })),
+    // No repertório mas NÃO preparadas hoje: aparecem na lista com o toggle
+    // apagado (é o grimório do Mago).
+    ...(origin.unprepared ?? []).map((s) => ({ ...s, granted: false })),
     ...(origin.arcanumSpells ?? []).map((s) => ({ ...s, granted: false })),
     ...origin.alwaysPrepared,
   ].filter((s) => s.raw);
@@ -261,16 +264,18 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   // Contadores (R8/R12): só o que o JOGADOR escolheu conta contra os limites.
   const cantripCount = origin.cantrips.length;
   const preparedCount = origin.prepared.length;
+  // Conhecidas de círculo (preparadas + guardadas) - o tamanho do grimório.
+  const knownCount = preparedCount + (origin.unprepared?.length ?? 0);
   const cantripsFull = cantripCount >= origin.cantripLimit;
-  const preparedFull = preparedCount >= origin.prepareLimit;
   // Arcanum (Warlock): círculos destravados que ainda não têm magia escolhida.
   const arcana = origin.arcana ?? [];
   const freeArcanumLevels = new Set(arcana.filter((a) => !a.spell).map((a) => a.level));
   // Só origens de CLASSE preparam; racial/talento é tudo concedido.
   const canPrepare = origin.kind === 'class' && (origin.cantripLimit > 0 || origin.prepareLimit > 0);
-  // R11: desabilita quando não há mais ONDE encaixar magia nenhuma - cantrips,
-  // preparadas e arcanum todos cheios.
-  const prepareDisabled = cantripsFull && preparedFull && freeArcanumLevels.size === 0;
+  // R11: desabilita quando não há mais ONDE encaixar magia nenhuma. As
+  // PREPARADAS deixaram de contar aqui: cheias, a magia nova entra no
+  // repertório sem estar preparada - então ainda há onde encaixá-la.
+  const prepareDisabled = cantripsFull && origin.prepareLimit === 0 && freeArcanumLevels.size === 0;
 
   // Numa TROCA o balde da magia trocada conta como livre (ela vai sair no mesmo
   // update), senão o seletor abriria filtrado como se não houvesse espaço e o
@@ -350,6 +355,17 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
       over: preparedCount > origin.prepareLimit,
     });
   }
+  // Grimório: só quem tem repertório próprio (o Mago). É um PISO, não um teto -
+  // copiar magias de pergaminho é legítimo -, então passar do número apenas
+  // acende o contador, como qualquer over-limit (DDL-0026).
+  if (origin.knownLimit != null) {
+    stats.push({
+      key: 'known',
+      value: `${knownCount}/${origin.knownLimit}`,
+      label: 'Known',
+      over: knownCount > origin.knownLimit,
+    });
+  }
   if (arcana.length > 0) {
     stats.push({
       key: 'arcana',
@@ -381,14 +397,17 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
     if (from) {
       warnings.push(`You already have ${raw.name} from ${from}.`);
     }
+    // Sem espaço de PREPARAÇÃO não é motivo para avisar: a magia entra no
+    // repertório apenas NÃO preparada, e o jogador a prepara depois pelo toggle.
+    // É o padrão pedido - toda magia nova nasce preparada, a não ser que o
+    // limite já esteja cheio.
+    const asUnprepared = raw.level > 0 && raw.level <= origin.maxPrepareLevel && freePreparedFull;
     if (raw.level === 0) {
       if (freeCantripsFull) warnings.push(`You have no free cantrip slots (${cantripCount}/${origin.cantripLimit}).`);
     } else if (raw.level > origin.maxPrepareLevel) {
       if (!freeArcanumForPick.has(raw.level)) {
         warnings.push(`You have no spell slots (or free Mystic Arcanum) of the ${spellLevelLabel(raw.level).toLowerCase()}.`);
       }
-    } else if (freePreparedFull) {
-      warnings.push(`You have no free prepared-spell slots (${preparedCount}/${origin.prepareLimit}).`);
     }
     if (warnings.length > 0) {
       const ok = await confirm({
@@ -403,8 +422,22 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
     const base = (classEntry.spells ?? []).filter(
       (s) => !replacing || String(s.id ?? s.name).toLowerCase() !== replacing.raw.name.toLowerCase(),
     );
-    setSpells([...base, { id: raw.name, source: raw.source }]);
+    const ref = { id: raw.name, source: raw.source };
+    if (asUnprepared) ref.prepared = false;
+    setSpells([...base, ref]);
     closePicker();
+  };
+
+  /** Alterna o estado de preparação de uma magia do repertório. Passar do limite
+   *  é permitido (o contador acende, DDL-0026); despreparar libera o espaço. */
+  const togglePrepared = (entry) => {
+    if (!classEntry || entry.granted) return;
+    const name = entry.raw.name.toLowerCase();
+    setSpells((classEntry.spells ?? []).map((s) => (
+      String(s.id ?? s.name).toLowerCase() === name
+        ? { ...s, prepared: s.prepared === false }
+        : s
+    )));
   };
 
   /** Fecha o seletor e encerra qualquer troca em andamento. */
@@ -436,8 +469,13 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   // Círculos pré-marcados no filtro de Level: os baldes onde AINDA cabe magia
   // (a mesma visão que o exclude antigo impunha, agora como filtro comum).
   const pickerLevels = [];
+  // Cantrip continua respeitando o limite: ele não tem estado de preparação, e
+  // sem espaço não há onde encaixar mais um.
   if (origin.cantripLimit > 0 && !freeCantripsFull) pickerLevels.push('Cantrip');
-  if (origin.prepareLimit > 0 && !freePreparedFull) {
+  // As de CÍRCULO aparecem mesmo com as preparadas cheias: agora elas entram no
+  // repertório apenas não preparadas, então "cheio" deixou de ser um impedimento
+  // para adicionar - é o que torna possível engordar o grimório do Mago.
+  if (origin.prepareLimit > 0) {
     for (let l = 1; l <= origin.maxPrepareLevel; l++) pickerLevels.push(String(l));
   }
   for (const l of freeArcanumForPick) pickerLevels.push(String(l));
@@ -599,16 +637,24 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
               )}
               {!isCollapsed && (
                 <ul className={styles.list}>
-                  {list.map((entry) => (
-                    <SpellRow
-                      key={`${origin.key}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
-                      entry={entry}
-                      arcanum={!entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level)}
-                      thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
-                      onInfo={() => setInfoKey(entry.raw.name)}
-                      onReplace={classEntry && !entry.granted ? () => startReplace(entry) : null}
-                    />
-                  ))}
+                  {list.map((entry) => {
+                    const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
+                    // Só magia de CÍRCULO escolhida pelo jogador tem estado de
+                    // preparação: cantrip está sempre disponível, arcanum não
+                    // gasta espaço e concedida é sempre preparada.
+                    const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
+                    return (
+                      <SpellRow
+                        key={`${origin.key}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
+                        entry={entry}
+                        arcanum={isArc}
+                        thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
+                        onInfo={() => setInfoKey(entry.raw.name)}
+                        onReplace={classEntry && !entry.granted ? () => startReplace(entry) : null}
+                        onTogglePrepared={canPrepareThis ? () => togglePrepared(entry) : null}
+                      />
+                    );
+                  })}
                 </ul>
               )}
             </section>
@@ -673,6 +719,24 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   );
 }
 
+/** Toggle de preparação: só o radio (círculo que preenche quando ativo) - o
+ *  mesmo átomo do EquipToggle do inventário, para as duas abas se lerem igual. */
+function PreparedToggle({ prepared, onClick, name }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={prepared}
+      aria-label={prepared ? `Unprepare ${name}` : `Prepare ${name}`}
+      className={prepared ? `${styles.prepRadio} ${styles.prepRadioOn}` : styles.prepRadio}
+      onClick={onClick}
+      title={prepared ? `Prepared - tap to unprepare ${name}` : `Not prepared - tap to prepare ${name}`}
+    >
+      <span className={styles.prepDot} aria-hidden="true" />
+    </button>
+  );
+}
+
 /** Thumbnail da magia: arte do fluff quando existe, senão o glyph da escola. */
 function SpellThumb({ src, school, alt }) {
   const [broken, setBroken] = useState(false);
@@ -686,13 +750,17 @@ function SpellThumb({ src, school, alt }) {
   );
 }
 
-function SpellRow({ entry, arcanum, thumb, onInfo, onReplace }) {
+function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared }) {
   const raw = entry.raw;
   const meta = [schoolName(raw.school), castingTimeLabel(raw), rangeLabel(raw)].filter(Boolean);
   const cast = castTypeLabel(entry);
   const highlight = entry.granted || arcanum;
+  const unprepared = !!onTogglePrepared && entry.prepared === false;
+  const rowClass = [styles.row, highlight && styles.rowGranted, unprepared && styles.rowUnprepared]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <li className={highlight ? `${styles.row} ${styles.rowGranted}` : styles.row}>
+    <li className={rowClass}>
       <button type="button" className={styles.rowHit} onClick={onInfo} title={`About ${raw.name}`}>
         <SpellThumb src={thumb} school={raw.school} alt="" />
         <span className={styles.rowText}>
@@ -719,6 +787,12 @@ function SpellRow({ entry, arcanum, thumb, onInfo, onReplace }) {
       </button>
       <div className={styles.rowSide}>
         <span className={styles.rowLevel}>{ORDINAL_SHORT[raw.level] ?? raw.level}</span>
+        {/* Preparar/despreparar, no molde do toggle de equipar do inventário:
+            só o círculo, preenchido = preparada. Cantrip, arcanum e concedida
+            não têm estado de preparação, então não ganham o botão. */}
+        {onTogglePrepared && (
+          <PreparedToggle prepared={!unprepared} name={raw.name} onClick={onTogglePrepared} />
+        )}
         {/* Trocar a magia sem abrir a ficha - o espaço à direita do card estava
             livre (as concedidas não trocam, então não ganham o botão). */}
         {onReplace && (

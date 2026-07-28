@@ -86,7 +86,12 @@ export function decisionSummary(c) {
         level: x.level,
         subclass: x.subclassId ?? null,
         choices: normalizeBag(x.choices),
-        spells: (x.spells ?? []).map((s) => String(s.id).toLowerCase()).sort(),
+        // O estado de PREPARAÇÃO é decisão do jogador tanto quanto a magia em si
+        // (o grimório do Mago), então entra na chave - senão o round-trip fica
+        // cego para ele, que é exatamente o que aconteceu com a moeda (TC-0055).
+        spells: (x.spells ?? [])
+          .map((s) => `${String(s.id).toLowerCase()}${s.prepared === false ? ' [known]' : ''}`)
+          .sort(),
       })),
     inventory: (c.inventory ?? [])
       .map((i) => `${String(i.itemId).toLowerCase()} x${i.quantity}${i.equipped ? ' [eq]' : ''}`)

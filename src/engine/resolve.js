@@ -42,6 +42,8 @@ import {
   spellAttackBonus,
   cantripLimit,
   prepareLimit,
+  knownLimit,
+  isPreparedRef,
   arcanumLevels,
 } from './spellcasting';
 import { ABILITIES } from '../schema/character';
@@ -512,10 +514,17 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       // TC-0028). O bônus só vale quando a classe já conjura cantrips.
       cantripLimit: cantripLimit(info, cls.level) + (cantripLimit(info, cls.level) > 0 ? cantripLimitBonus(cls) : 0),
       prepareLimit: prepareLimit(info, cls.level),
-      // Preparadas pelo jogador, separadas por cantrip (nv 0) vs. círculo.
+      // Grimório: só quem tem repertório próprio (o Mago) - null nos demais.
+      knownLimit: knownLimit(info, cls.level),
+      // Escolhidas pelo jogador, separadas por cantrip (nv 0) vs. círculo.
+      // Um cantrip nunca é "não preparado" - ele está sempre disponível -, então
+      // a distinção só vale para as de círculo.
       cantrips: resolved.filter((s) => s.raw?.level === 0),
       // As de arcanum saem das preparadas (não consomem o limite).
-      prepared: leveled.filter((s) => !isArcanum(s)),
+      prepared: leveled.filter((s) => !isArcanum(s) && isPreparedRef(s)),
+      // CONHECIDAS mas não preparadas: contam no grimório, não no limite de
+      // preparação, e não podem ser conjuradas hoje.
+      unprepared: leveled.filter((s) => !isArcanum(s) && !isPreparedRef(s)),
       alwaysPrepared: granted,
       // Círculos de arcanum destravados + a magia escolhida em cada um (ou null).
       arcanumLevels: arcanaLevels,
@@ -681,7 +690,11 @@ export function reconcileClassSpells(oldCls, newCls, db) {
 
     // (2b) Contagens: remove as MAIS RECENTES (do fim) até caber no limite.
     const isCantrip = (r) => !r.granted && r.level === 0;
-    const isPrepared = (r) => !r.granted && r.level > 0 && !arcana.includes(r.level);
+    // Uma magia do repertório que NÃO está preparada não ocupa o limite de
+    // preparação, então não entra nesta poda (e também não é removida por ela:
+    // o grimório do Mago não encolhe - `knownLimit` é piso, não teto).
+    const isPrepared = (r) =>
+      !r.granted && r.level > 0 && !arcana.includes(r.level) && isPreparedRef(r.ref);
     const dropRecent = (pred, max) => {
       let count = resolved.reduce((n, r, i) => n + (pred(r) && !drop.has(i) ? 1 : 0), 0);
       for (let i = resolved.length - 1; i >= 0 && count > max; i--) {

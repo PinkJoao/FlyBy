@@ -10,6 +10,8 @@ import {
   casterInfo,
   cantripLimit,
   prepareLimit,
+  knownLimit,
+  isPreparedRef,
   isLeveledProgression,
   arcanumLevels,
   preparedElsewhere,
@@ -164,6 +166,29 @@ describe('casterInfo + limites', () => {
     const ek = casterInfo(fighter, eldritchKnight);
     expect(cantripLimit(ek, 3)).toBe(2);
     expect(prepareLimit(ek, 3)).toBe(3);
+  });
+
+  // O grimório: `spellsKnownProgressionFixed` é o DELTA por nível, ao contrário
+  // de `spellsKnownProgression` (que é o total) - por isso a soma acumulada.
+  it('knownLimit acumula o delta por nível (Mago: 6 e +2 por nível)', () => {
+    const book = casterInfo({ ...wizard, spellsKnownProgressionFixed: [6, 2, 2, 2, 2] }, null);
+    expect(knownLimit(book, 1)).toBe(6);
+    expect(knownLimit(book, 3)).toBe(10);
+    expect(knownLimit(book, 5)).toBe(14);
+  });
+  it('classe que prepara da lista inteira não tem grimório → null', () => {
+    expect(knownLimit(casterInfo(wizard, null), 5)).toBeNull();
+    expect(knownLimit(null, 5)).toBeNull();
+  });
+});
+
+describe('isPreparedRef - a bandeira só existe para dizer NÃO', () => {
+  it('ausente ou true = preparada (toda magia salva antes da distinção era)', () => {
+    expect(isPreparedRef({ id: 'Fireball' })).toBe(true);
+    expect(isPreparedRef({ id: 'Fireball', prepared: true })).toBe(true);
+  });
+  it('false = no repertório, não preparada', () => {
+    expect(isPreparedRef({ id: 'Fireball', prepared: false })).toBe(false);
   });
 });
 

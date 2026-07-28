@@ -1444,7 +1444,8 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0080 - Magia CONHECIDA mas não preparada não tem lugar no nosso modelo
 
 - **Unidade:** 38 fichas (189 magias - a maior fatia de `items.spell`). **Severidade:** decisão de
-  produto. **Causa:** modelo. **Encontrado:** 2026-07-27. **Status:** open, **`needs-user-eyes`**.
+  produto. **Causa:** modelo. **Encontrado:** 2026-07-27.
+  **Status:** fixed@2026-07-27 - **o usuário decidiu modelar** (DDL-0076).
 - `ClassEntry.spells` guarda só as PREPARADAS (DDL-0008). O premade traz também as `prepared: 0` -
   magias que o personagem tem à disposição mas não preparou hoje. Ao reimportar, elas somem.
 - **São dois casos diferentes, e só um é lacuna de verdade:**
@@ -1454,6 +1455,15 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
     magias a mais para o jogador trocar. Não perder isso vale pouco.
 - Não decidir sozinho: modelar "conhecidas × preparadas" mexe no schema, na aba Spellbook e no
   fluxo de preparar. O escopo mínimo defensável seria só o grimório do Mago.
+- **Decisão do usuário (2026-07-27): modelar, e para TODO conjurador.** `SpellRef.prepared`
+  (`false` = no repertório, não preparada; ausente = preparada, o que preserva tudo que já estava
+  salvo), um toggle por linha no molde do "equipar" do inventário, magia nova nasce PREPARADA a não
+  ser que o limite esteja cheio (aí entra despreparada), e um contador **Known** para quem tem
+  repertório próprio - `spellsKnownProgressionFixed`, que entre as 12 classes 2024 só o Mago tem.
+  Ver DDL-0076.
+- **Fica de fora, e é o certo:** as 35 magias `prepared: 0` da Riswynn (Ladino/Thief, sem conjuração
+  nenhuma) continuam sem voltar - não há origem que as segure, e o documento as lista como sugestão.
+  É a metade do TC-0080 que a própria entrada já classificava como de pouco valor.
 
 ## TC-0081 - Magias do TALENTO DE ORIGEM se perdem ao importar um ator externo
 
@@ -1484,11 +1494,33 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   `additionalSpells` difere entre edições, ou seja os descritores eram os errados. O irmão
   `resolveInventorySource` já filtrava; era a metade que o TC-0057 esqueceu.
 - Verificado: das 81 magias `prepared: 2` que sumiam, **57 voltaram**. 5 testes.
-- **Aberto - as 24 restantes são a MESMA família com outro DONO**, e cada uma é uma frente própria:
-  · **subclasse (16, Aoth):** o `spellSet` do Circle of the Land (qual terreno) não é reconstruído,
-    então as magias sempre-preparadas do círculo não derivam;
-  · **espécie (4, Beiro):** o cantrip à escolha da linhagem élfica (`prestidigitation`);
-  · **bag de classe (4, Beiro):** as Magical Discoveries do College of Lore (`find familiar`,
-    `spirit guardians`).
-  Todas são `spell` chooses em bags que o import já monta - o casamento pode reusar `featSpellBag`
-  quase inteiro, mudando só de onde vêm os descritores e para qual bag vão os picks.
+- **As 24 restantes eram a MESMA família com outro DONO, e foram fechadas em 2026-07-27** junto com
+  o resto: `featSpellBag` virou o genérico **`spellChoiceBag`**, parametrizado pelos descritores da
+  entidade dona, e ganhou três chamadores novos - espécie (o cantrip da linhagem élfica), classe e
+  subclasse (as Magical Discoveries do College of Lore e o terreno do Circle of the Land).
+- **O que o genérico precisou aprender:** uma lista alternativa pode não ter escolha NENHUMA - as
+  quatro do Circle of the Land são listas FIXAS de terreno -, e aí a única evidência de qual grupo o
+  jogador tomou são as próprias magias concedidas. Daí o `grantedFor`: o grupo vencedor é o que
+  explica mais magias da ficha somando escolhas casadas E concessões fixas. Sem nenhuma evidência,
+  não se adivinha grupo algum.
+- **Contra a dupla reivindicação:** o conjunto `explained` passou a ser MUTADO por cada chamada, na
+  ordem espécie → talento → classe → subclasse, então uma magia já atribuída não é candidata de
+  novo. E o filtro `accepts` corta, numa bag de classe, a magia que o ator atribui a OUTRA classe
+  (`sourceItem`).
+- **Resultado medido: as magias `prepared: 2` que sumiam foram de 81 a ZERO** nas 48 fichas.
+
+## TC-0082 - Wild Companion (Druida) deriva Find Familiar como SEMPRE PREPARADA
+
+- **Unidade:** `class:druid/*` (3 achados, Aoth L05/11/17). **Severidade:** polish.
+  **Causa:** leitura do dado. **Encontrado:** 2026-07-27 (apareceu ao fechar o TC-0081, que
+  destapou os extras do nosso lado). **Status:** open.
+- O `additionalSpells` do Druida XPHB traz `{prepared: {1: [speak with animals], 2: [find
+  familiar]}}`, e nós lemos o balde `prepared` como "sempre preparada". Mas a feature é o **Wild
+  Companion**, cujo texto diz outra coisa: *"you can expend a spell slot or a use of Wild Shape to
+  cast the Find Familiar spell"* - é permissão de CONJURAR, não uma magia preparada. O premade não
+  a lista, e o SRD do dnd5e não a concede como item.
+- Não é regressão e não afeta o Speak with Animals (esse é mesmo sempre preparado, nível 1).
+- Caminho, quando valer a pena: é curadoria de UMA entrada, no espírito do
+  `MISSING_ADDITIONAL_SPELLS`/`REGRADED_ADDITIONAL_SPELLS` (DDL-0038/0053) - um registro de
+  concessão a REMOVER, que hoje não existe. Antes de criar o mecanismo, varrer o dataset para ver
+  se há outros casos de "permissão de conjurar" codificada como `prepared`.

@@ -172,8 +172,10 @@ export function foundryPreparation(entry, origin, isArcanum, opts = {}) {
         return { method: slotMethod, prepared: 2 };
     }
   }
-  // Escolha do jogador.
-  return { method: slotMethod, prepared: 1 };
+  // Escolha do jogador: `prepared: 0` quando ela está no repertório mas NÃO
+  // preparada hoje (o grimório do Mago - é assim que o premade a encoda). Um
+  // cantrip nunca é despreparado, então a bandeira só vale de círculo pra cima.
+  return { method: slotMethod, prepared: leveled && entry.prepared === false ? 0 : 1 };
 }
 
 /** Um Item `spell` do Foundry. */
@@ -241,6 +243,9 @@ export function buildSpellItems(derived) {
     const all = [
       ...origin.cantrips,
       ...origin.prepared,
+      // As CONHECIDAS mas não preparadas também são itens do ator (com
+      // `prepared: 0`): elas estão no grimório, só não estão preparadas hoje.
+      ...(origin.unprepared ?? []),
       ...(origin.arcanumSpells ?? []),
       ...origin.alwaysPrepared,
     ];

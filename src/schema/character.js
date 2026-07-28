@@ -159,10 +159,22 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  * @property {Record<number, number|'max'>} hitPoints  Por nível: rolado ou "max".
  * @property {Object} choices   Choice-bag da classe (perícias, ASI/talento, etc.),
  *   lido pelo engine como qualquer outra escolha (ver engine/choices).
- * @property {ContentRef[]} spells  Magias PREPARADAS pelo jogador nesta classe
- *   (cantrips escolhidos + magias de círculo). Só a DECISÃO; slots/limites/DC são
+ * @property {SpellRef[]} spells  Magias que o jogador ESCOLHEU nesta classe
+ *   (cantrips + magias de círculo). Só a DECISÃO; slots/limites/DC são
  *   derivados (engine/spellcasting). Magias concedidas (subclasse/raça/talento)
  *   NÃO ficam aqui - são derivadas e sempre preparadas (Fase B2, DDL-0008).
+ */
+
+/**
+ * Referência a uma magia escolhida: um ContentRef com o estado de PREPARAÇÃO.
+ * @typedef {Object} SpellRef
+ * @property {string} id      nome da magia
+ * @property {string} source  livro
+ * @property {boolean} [prepared]  `false` = está no repertório mas NÃO preparada
+ *   hoje (o grimório do Mago; ver `knownLimit`). Ausente ou `true` = preparada -
+ *   é o padrão porque toda magia guardada antes desta distinção existir era, por
+ *   definição, preparada. Um CANTRIP nunca é despreparado (está sempre
+ *   disponível), então a bandeira só tem efeito nas de círculo.
  */
 
 /**

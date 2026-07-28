@@ -263,6 +263,12 @@ licensing problems** (ship code only; never bundle game data or Plutonium; see D
   que o próprio ator deixa; o título de um Trait deixou de ser chave única; e o **talento do
   Versatile do Humano, que se perdia INTEIRO** por causa de uma forma de `value.added` que nenhuma
   das 48 fichas usa. Total: **190 achados**.
+  **T2b sessão 6 (2026-07-27): TC-0081 FECHADO e TC-0080 MODELADO** (DDL-0076) - `featSpellBag`
+  virou o genérico `spellChoiceBag` e ganhou espécie/classe/subclasse como donos, levando a ZERO as
+  magias de concessão que sumiam (eram 81). E a distinção **conhecida x preparada** virou modelo, a
+  pedido do usuário: uma bandeira no ref (`prepared: false`), toggle por linha no molde do "equipar"
+  do inventário, magia nova nascendo preparada (cheio → despreparada) e contador **Known** para quem
+  tem repertório próprio (só o Mago, em 2024). Total: **170 achados**.
 - **Phase C — play mode / on-the-go** (mobile-first, **separate interface** — see DDL-0004).
   **Now comes AFTER the wizard and PDF export (DDL-0006).** C1 add mutable play-state to the
   schema (current/temp HP, spent hit dice, spell slots, resources, conditions, death saves,
@@ -392,6 +398,66 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0076 - CONHECIDA x PREPARADA é uma bandeira na decisão, não um segundo armazenamento
+**Date:** 2026-07-27
+**Resolve:** TC-0080 (era `needs-user-eyes`; **decisão do usuário**) e o resto do TC-0081.
+**Builds on:** DDL-0008 (o `ClassEntry.spells` como DECISÃO, que este entry estende sem trocar de
+forma), DDL-0026 (liberdade com aviso - passar do limite acende o contador, nunca bloqueia),
+DDL-0010 (o arcanum, que continua fora da distinção), DDL-0075 (a máquina de reconstrução que aqui
+vira genérica).
+
+**Context.** O TC-0080 mediu 189 magias `prepared: 0` que sumiam ao importar um ator - entre elas o
+GRIMÓRIO inteiro de um Mago de nível 17. A entrada ficou marcada `needs-user-eyes` porque modelar
+"conhecida x preparada" mexe no schema, na aba e no fluxo de preparar. O usuário decidiu modelar, e
+pediu junto o toggle de preparação (no molde do "equipar" do inventário), o padrão de "nasce
+preparada a não ser que o limite esteja cheio" e um contador de conhecidas para o Mago.
+
+**Decision - a distinção é UMA BANDEIRA no ref que já existe, e ela só sabe dizer NÃO.**
+`SpellRef.prepared === false` = está no repertório mas não preparada hoje; ausente ou `true` =
+preparada. Escolhido assim porque **toda magia salva antes desta distinção era, por definição,
+preparada** - então nenhuma migração, nenhum bump de schema, e um personagem antigo deriva idêntico.
+`isPreparedRef` (engine/spellcasting) é a fonte única da convenção.
+- **A derivação SEPARA, não reinterpreta:** `origin.prepared` continua sendo o que está preparado
+  (todo consumidor antigo segue valendo) e ganha o irmão `origin.unprepared`. Quem quiser "tudo que
+  o jogador escolheu" soma os dois.
+- **Um CANTRIP nunca é despreparado** (está sempre disponível) e um **arcanum** também não (não
+  gasta espaço): os dois ficam fora da distinção, na derivação, na UI e no import.
+
+**Decision - o limite de CONHECIDAS sai do dado, e só existe para quem tem repertório próprio.**
+`spellsKnownProgressionFixed` é o campo que o 5etools usa para o grimório, e entre as 12 classes de
+2024 **só o Mago o tem** (as demais preparam da lista inteira, então "conhecida" não é conceito para
+elas) - por isso `knownLimit` devolve `null` nelas e o card nem aparece. **Cuidado que o campo
+exige:** ele é o DELTA por nível (`[6,2,2,…]`), ao contrário do `spellsKnownProgression` (que é o
+total), então o limite é a soma acumulada - 6 no nível 1, +2 por nível.
+- **É PISO, não teto:** o Mago também copia magias de pergaminho, então passar do número é legítimo
+  e a UI apenas acende o contador, como qualquer over-limit.
+
+**Decision - o padrão ao adicionar é PREPARADA; cheio, entra despreparada.** Sem espaço de
+preparação a magia deixa de ser motivo de aviso: ela entra no repertório e o jogador a prepara
+depois pelo toggle. Duas consequências que isso obriga, e que a passada ao vivo pegou:
+- o seletor **deixa de esconder os círculos** quando as preparadas estão cheias (o filtro
+  pré-marcado de Level existia para mostrar "onde ainda cabe", e agora sempre cabe);
+- o botão "+ Prepare spell" **deixa de desabilitar** por preparadas cheias - só cantrip e arcanum,
+  que de fato não têm para onde ir.
+
+**Decision - o toggle é o MESMO átomo do inventário.** `PreparedToggle` é o `EquipToggle` da aba de
+itens: só o círculo, preenchido = preparada, sem legenda. A linha despreparada recua para o segundo
+plano (`.rowUnprepared`), então o que está pronto para hoje se lê de relance.
+
+**Decision - o export usa `prepared: 0`, que é o que o premade já fazia.** Nenhuma invenção: era
+exatamente a forma que o TC-0080 media como perdida. E o `decisionSummary` do sweep passou a
+carregar a bandeira - a regra do TC-0055 vale para ela como para a moeda: **campo de decisão que não
+está no oráculo deixa o round-trip cego**.
+
+**Consequences.**
+- O grimório de um Mago vindo do Foundry volta inteiro; o Ladino sem conjuração continua sem as
+  35 magias soltas do documento dele (não há origem que as segure - a metade do TC-0080 que a
+  própria entrada classificava como de pouco valor).
+- Um conjurador futuro com repertório próprio ganha o contador de graça (é o campo do dado).
+- Verificado: 1218 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de **190 → 170**, e ao
+  vivo num Mago 2 (Known 0/8 → 6/8; a 6ª magia entrando despreparada com Prepared parado em 5/5; o
+  toggle levando a 6/5 em VERMELHO e voltando; mobile 375px sem overflow). Ver CHANGELOG §99.
 
 ### DDL-0075 - Um ator EXTERNO tem de ser lido pelas marcas que ele deixa, não pela forma que o NOSSO export usa
 **Date:** 2026-07-27

@@ -27,7 +27,7 @@ import { parseClass } from './classData';
 import { TRAIT_CHOICE_KINDS, choiceTraitTitle } from './foundryItems';
 import { parseChoices, collectAbilityPicks } from './choices';
 import { resolveSpellObj, spellChoosePredicate } from './spells';
-import { grantedSpells } from './grantedSpells';
+import { grantedSpells, additionalSpellChoices } from './grantedSpells';
 import { deriveHpBonus } from './hpBonuses';
 import { classGrantChoices } from './classFeatureGrants';
 
@@ -67,9 +67,9 @@ export function spellSourceClass(item) {
  * concessão derivável da raça/subclasse/talento (que NÃO se armazena)?
  *
  * - `prepared: 2` = sempre preparada → concedida.
- * - `prepared: 0` numa magia de círculo = está na lista mas NÃO preparada → não
- *   é uma preparação do jogador e não deve contar contra o limite. (Cantrips
- *   ficam: são sempre "preparados", e às vezes vêm com `prepared: 0`/`1`.)
+ * - `prepared: 0` numa magia de círculo = está no repertório mas NÃO preparada
+ *   hoje. É uma decisão do jogador (o grimório do Mago), então VOLTA com
+ *   `prepared: false` e fora da contagem de preparadas (TC-0080).
  * - `innate`/`ritual` = conjuração grátis concedida por um traço.
  * - `atwill` é ambíguo: é o que o premade oficial usa para o **Mystic Arcanum**
  *   (com `uses` 1/descanso longo) e também para magias raciais à vontade. Só o
@@ -81,8 +81,6 @@ export function isPlayerChosenSpell(item) {
   if (method === 'innate' || method === 'ritual') return false;
   if (method === 'atwill') return !!item?.system?.uses?.max; // arcanum
   if (method !== 'spell' && method !== 'pact' && method !== '') return false;
-  const level = Number(item?.system?.level ?? 0);
-  if (level > 0 && prepared === 0) return false; // círculo conhecido, não preparado
   return true;
 }
 
@@ -99,7 +97,16 @@ export function importSpellsByClass(items) {
     if (item.type !== 'spell' || !isPlayerChosenSpell(item)) continue;
     const key = spellSourceClass(item);
     const list = out.get(key) ?? [];
-    list.push({ id: item.name, source: itemSource(item) });
+    // Uma de círculo com `prepared: 0` está no repertório mas não preparada.
+    // NÃO se aplica a: cantrip (está sempre disponível) nem ao Mystic Arcanum,
+    // que o premade encoda como `atwill` + `prepared: 0` justamente por não
+    // gastar espaço - despreparar um arcanum não é uma coisa que exista.
+    const { method, prepared } = spellPreparation(item);
+    const leveled = Number(item?.system?.level ?? 0) > 0;
+    const slotted = method === 'spell' || method === 'pact' || method === '';
+    const ref = { id: item.name, source: itemSource(item) };
+    if (leveled && slotted && prepared === 0) ref.prepared = false;
+    list.push(ref);
     out.set(key, list);
   }
   return out;
@@ -314,15 +321,22 @@ function featChoiceBag(featItem, items, db, explained) {
  * rótulo de quem a concedeu pode trocar. É melhor que perdê-las todas, que é o
  * comportamento sem isto.
  *
- * @param {object} featObj   talento resolvido no db (com `additionalSpells`)
+ * @param {object} owner
+ * @param {(bag: object) => object[]} owner.descriptorsFor  descritores de escolha
+ *   da ENTIDADE dona, dado o bag parcial (o grupo ativo depende do `spellSet`)
+ * @param {(bag: object) => string[]} [owner.grantedFor]  nomes que a entidade
+ *   concede SEM escolha naquele bag - a única evidência quando a lista
+ *   alternativa não tem `{choose}` nenhum (ver a escolha do spellSet abaixo)
+ * @param {(item: object) => boolean} [owner.accepts]  filtro extra de candidata
  * @param {object[]} spellItems  itens `spell` do ator
  * @param {object} db
- * @param {Set<string>} [explained]  nomes (minúsculos) que uma concessão FIXA de
- *   outra origem já explica - ver o filtro abaixo
+ * @param {Set<string>} [explained]  nomes (minúsculos) já explicados por outra
+ *   origem. MUTADO: o que esta chamada reivindicar entra aqui, para a próxima
+ *   origem não reivindicar de novo.
  * @returns {object} bag parcial ({ [choiceId]: { kind, picks } })
  */
-export function featSpellBag(featObj, spellItems, db, explained) {
-  if (!featObj?.additionalSpells?.length || !db) return {};
+export function spellChoiceBag({ descriptorsFor, grantedFor, accepts }, spellItems, db, explained) {
+  if (!db) return {};
   // Candidatas: as concessões (sempre preparadas). Uma magia de círculo do
   // próprio conjurador chega `prepared: 1` e não entra aqui.
   //
@@ -334,6 +348,7 @@ export function featSpellBag(featObj, spellItems, db, explained) {
   for (const it of spellItems ?? []) {
     if (spellPreparation(it).prepared !== 2) continue;
     if (explained?.has(norm(it.name))) continue;
+    if (accepts && !accepts(it)) continue;
     const raw = resolveSpellObj(db, it.name, itemSource(it));
     if (raw) granted.push({ raw, item: it });
   }
@@ -360,7 +375,7 @@ export function featSpellBag(featObj, spellItems, db, explained) {
   const fill = (seed) => {
     const bag = { ...seed };
     const used = new Set();
-    for (const d of parseChoices(featObj, { level: 20, bag })) {
+    for (const d of descriptorsFor(bag)) {
       if (d.kind !== 'spell') continue;
       const eligible = spellChoosePredicate(d.pool, db);
       const picks = granted
@@ -376,23 +391,55 @@ export function featSpellBag(featObj, spellItems, db, explained) {
     return { bag, matched: used };
   };
 
-  // Listas alternativas: escolhe a que explica mais magias do ator.
-  const setChoice = parseChoices(featObj, { level: 20, bag: {} }).find((c) => c.kind === 'spellSet');
+  // Nomes que o ator TEM sempre preparados (incluindo os já reivindicados por
+  // outra origem): é contra isto que uma lista de concessões FIXAS é medida.
+  const onSheet = new Set((spellItems ?? []).filter((it) => spellPreparation(it).prepared === 2).map((it) => norm(it.name)));
+
+  /** Quantas concessões FIXAS daquele grupo o ator realmente tem. */
+  const fixedHits = (seed) => (grantedFor?.(seed) ?? []).filter((n) => onSheet.has(norm(n))).length;
+
+  // Listas alternativas: vence a que explica mais magias do ator. A evidência é
+  // a soma das escolhas casadas com as concessões fixas do grupo - o Circle of
+  // the Land não tem `{choose}` nenhum, só quatro listas FIXAS de terreno, e
+  // sem contar as fixas nenhuma delas se distinguiria das outras.
+  const setChoice = descriptorsFor({}).find((c) => c.kind === 'spellSet');
   let best = setChoice ? null : fill({});
+  let bestScore = best ? best.matched.size : -1;
   for (const opt of setChoice?.pool?.options ?? []) {
     const seed = { [setChoice.id]: { kind: 'spellSet', picks: [opt.value] } };
     const attempt = fill(seed);
-    if (!best || attempt.matched.size > best.matched.size) best = attempt;
+    const score2 = attempt.matched.size + fixedHits(seed);
+    if (score2 > bestScore) {
+      best = attempt;
+      bestScore = score2;
+    }
   }
-  if (!best || !best.matched.size) return {};
+  // Sem NENHUMA evidência não se adivinha um grupo.
+  if (!best || bestScore <= 0) return {};
 
   // Atributo de conjuração: o ator o grava no próprio item da magia concedida.
-  const abilityChoice = parseChoices(featObj, { level: 20, bag: best.bag }).find((c) => c.kind === 'spellAbility');
+  const abilityChoice = descriptorsFor(best.bag).find((c) => c.kind === 'spellAbility');
   if (abilityChoice && !best.bag[abilityChoice.id]) {
     const ability = granted.find((g) => best.matched.has(g.raw.name) && g.item.system?.ability)?.item.system.ability;
     if (ability) best.bag[abilityChoice.id] = { kind: 'spellAbility', picks: [ability] };
   }
+  for (const n of best.matched) explained?.add(norm(n));
   return best.bag;
+}
+
+/** `spellChoiceBag` de uma entidade com `additionalSpells` cujas escolhas saem
+ *  de `parseChoices` (talento ou espécie). */
+function entitySpellBag(entity, spellItems, db, explained) {
+  if (!entity?.additionalSpells?.length) return {};
+  return spellChoiceBag({
+    descriptorsFor: (bag) => parseChoices(entity, { level: 20, bag }),
+    grantedFor: (bag) => grantedSpells(entity.additionalSpells, 20, { bag }).spells.map((s) => s.name),
+  }, spellItems, db, explained);
+}
+
+/** `spellChoiceBag` para um TALENTO. */
+export function featSpellBag(featObj, spellItems, db, explained) {
+  return entitySpellBag(featObj, spellItems, db, explained);
 }
 
 /** Reverte uma chave de trait de FERRAMENTA ('tool:game:dice') no nome do 5etools
@@ -701,7 +748,7 @@ function featureOptionChoiceBag(db, classId, classObj, subclassObj, level, featI
  * Reconstrói UMA classe (choice-bag + HP + subclasse) a partir do item de classe.
  * Acumula os boosts de atributo (ASI/feats) em `boostAcc` p/ reverter os scores base.
  */
-function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
+function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fixedGrantNames) {
   const classId = classItem.system?.identifier ?? norm(classItem.name);
   const level = classItem.system?.levels ?? 1;
   const choices = {};
@@ -791,10 +838,30 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc) {
   // abaixo, sobrescreve com os ids exatos.
   Object.assign(choices, choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level));
 
+  // Escolhas de MAGIA da classe e da subclasse (o terreno do Circle of the Land,
+  // as Magical Discoveries do College of Lore): mesma reconstrução dos talentos,
+  // com os descritores de cada uma (TC-0081). Uma magia atribuída a OUTRA classe
+  // não é candidata - `sourceItem` é a pista que o ator dá.
+  const classFlag = classItem.flags?.builder5e?.choices;
+  if (!classFlag) {
+    const mine = (it) => {
+      const owner = spellSourceClass(it);
+      return !owner || owner === norm(classId);
+    };
+    const spellItems = (actor.items ?? []).filter((i) => i.type === 'spell');
+    for (const [obj, prefix] of [[classObj, 'class:'], [subclassObj, 'sub:']]) {
+      if (!obj?.additionalSpells?.length) continue;
+      Object.assign(choices, spellChoiceBag({
+        descriptorsFor: (bag) => additionalSpellChoices(obj.additionalSpells, level, bag, prefix),
+        grantedFor: (bag) => grantedSpells(obj.additionalSpells, level, { bag, idPrefix: prefix }).spells.map((s) => s.name),
+        accepts: mine,
+      }, spellItems, db, fixedGrantNames));
+    }
+  }
+
   // Escolhas SEM casa nativa no Foundry (tool@start/expertise/grants curados/
   // optional features/grants `sub:` de subclasse) voltam da flag do item de
   // classe (DDL-0028; TC-0004/0005/0006). A flag vence: são as decisões exatas.
-  const classFlag = classItem.flags?.builder5e?.choices;
   if (classFlag) {
     Object.assign(choices, classFlag);
     for (const b of collectAbilityPicks(classFlag)) boostAcc[b.ability] += b.amount;
@@ -946,6 +1013,12 @@ export function foundryToCharacter(actor, db) {
     // Escolhas sem casa nativa (spellAbility/size/mixed) voltam da flag do item
     // de raça (DDL-0028; TC-0009 e o antigo waiver do tamanho).
     const raceFlag = raceItem.flags?.builder5e?.choices;
+    // Escolhas de MAGIA da espécie (o cantrip à escolha da linhagem élfica):
+    // mesma reconstrução dos talentos, com os descritores da raça (TC-0081).
+    // Só para ator SEM a nossa flag - com ela, os ids exatos vêm logo abaixo.
+    if (raceObj && !raceFlag) {
+      Object.assign(char.species.choices, entitySpellBag(raceObj, items, db, fixedGrantNames));
+    }
     if (raceFlag) Object.assign(char.species.choices, raceFlag);
   }
 
@@ -999,7 +1072,7 @@ export function foundryToCharacter(actor, db) {
   char.classes = classItems.map((ci) => {
     const cid = ci.system?.identifier ?? norm(ci.name);
     const sub = subclassItems.find((s) => norm(s.system?.classIdentifier) === norm(cid));
-    return parseClassEntry(ci, sub, actor, byId, db, boostAcc);
+    return parseClassEntry(ci, sub, actor, byId, db, boostAcc, fixedGrantNames);
   });
   if (char.classes.length === 0) char.classes = createCharacter().classes; // nunca vazio (não quebra a UI)
   else if (!char.classes.some((c) => c.isOriginalClass)) char.classes[0].isOriginalClass = true;

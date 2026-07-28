@@ -5610,3 +5610,63 @@ lados são reduzidos antes do diff - sem esconder o caso que importa, porque Mon
 1209 testes (+16), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **257 → 190** achados
 (+23 esperadas), e passada ao vivo (o card de Proficiências do Monge segue mostrando a FRASE, não as
 armas uma a uma; zero erros de console). Decisões em DDL-0075.
+
+---
+
+## 99. Phase T - conhecida x preparada, e o resto do TC-0081 (190 → 170)
+
+Duas frentes numa sessão: fechar as 24 magias que ainda se perdiam ao importar um ator externo, e
+modelar a distinção **conhecida x preparada** que o TC-0080 tinha deixado como decisão do usuário.
+
+### O resto do TC-0081: um genérico no lugar do específico
+
+As 24 restantes eram a mesma família com outro DONO. `featSpellBag` virou **`spellChoiceBag`**,
+parametrizado pelos descritores da entidade, e ganhou três chamadores: espécie (o cantrip à escolha
+da linhagem élfica), classe e subclasse (as Magical Discoveries do College of Lore, o terreno do
+Circle of the Land).
+
+Duas coisas que o genérico precisou aprender:
+
+- **uma lista alternativa pode não ter escolha nenhuma.** As quatro do Circle of the Land são listas
+  FIXAS de terreno; a única evidência de qual o jogador tomou são as magias concedidas que a ficha
+  tem. Daí o `grantedFor`: vence o grupo que explica mais magias somando escolhas casadas E
+  concessões fixas. Sem evidência alguma, nenhum grupo é escolhido.
+- **ninguém reivindica a mesma magia duas vezes.** O conjunto `explained` passou a ser MUTADO por
+  cada chamada, na ordem espécie → talento → classe → subclasse; e numa bag de classe, uma magia que
+  o ator atribui a OUTRA classe (`sourceItem`) nem é candidata.
+
+Medido: as magias `prepared: 2` que sumiam foram de **81 a zero** nas 48 fichas.
+
+### Conhecida x preparada (TC-0080, decisão do usuário)
+
+A distinção é **uma bandeira no ref que já existe**: `SpellRef.prepared === false` = no repertório,
+não preparada. Ausente = preparada - o que faz toda ficha antiga derivar idêntica, sem migração e
+sem bump de schema.
+
+- **A derivação separa em vez de reinterpretar:** `origin.prepared` continua sendo o que está
+  preparado e ganha o irmão `origin.unprepared`, então nenhum consumidor antigo mudou de sentido.
+- **Cantrip e arcanum ficam de fora** - um está sempre disponível, o outro não gasta espaço.
+- **O limite de conhecidas sai do dado:** `spellsKnownProgressionFixed`, que entre as 12 classes de
+  2024 só o Mago tem. Cuidado do campo: ele é o DELTA por nível (`[6,2,2,…]`), não o total, então o
+  limite é a soma acumulada. E é PISO, não teto (o Mago copia de pergaminho), então passar do número
+  só acende o contador.
+- **Toggle no molde do inventário:** `PreparedToggle` é o mesmo átomo do "equipar" - só o círculo,
+  preenchido = preparada -, e a linha despreparada recua para o segundo plano.
+- **Padrão ao adicionar: preparada; cheio, despreparada.** Isso obrigou dois ajustes que a passada
+  ao vivo pegou: o seletor parou de esconder os círculos quando as preparadas enchem (o filtro
+  existia para mostrar "onde cabe", e agora sempre cabe), e o botão "+ Prepare spell" parou de
+  desabilitar por preparadas cheias.
+- **Export/import:** `prepared: 0` nos dois sentidos - a forma que o próprio premade usa. A bandeira
+  entrou no `decisionSummary` do sweep, pela regra do TC-0055 (campo de decisão fora do oráculo
+  deixa o round-trip cego).
+
+O que continua fora, e é o certo: as 35 magias soltas da Riswynn (Ladino/Thief, sem conjuração) não
+têm origem que as segure.
+
+### Verificação
+
+1218 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de **190 → 170**, e ao vivo num Mago
+2: Known 0/8 → 6/8, a 6ª magia entrando despreparada com Prepared parado em 5/5, o toggle levando a
+6/5 em vermelho e voltando, mobile 375px sem overflow, zero erros de console. Decisões em DDL-0076.
+Achado novo de passagem: **TC-0082** (o Find Familiar do Wild Companion, que o dado codifica como
+sempre-preparada mas o texto trata como permissão de conjurar).

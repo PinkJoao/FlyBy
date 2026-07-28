@@ -223,8 +223,20 @@ export function casterInfo(classObj, subclassObj) {
     source: holder.source,
     cantripProgression: o.cantripProgression ?? null,
     preparedSpellsProgression: o.preparedSpellsProgression ?? null,
+    // Grimório: quantas magias a classe ACRESCENTA por nível (ver knownLimit).
+    spellsKnownAdded: o.spellsKnownProgressionFixed ?? null,
     spellcaster: o,
   };
+}
+
+/**
+ * A magia escolhida está PREPARADA? Fonte única da convenção do schema: a
+ * bandeira só existe para dizer NÃO, então ausente/`true` = preparada (é o que
+ * toda magia guardada antes da distinção era). Ver `SpellRef`.
+ * @param {{prepared?: boolean}} ref
+ */
+export function isPreparedRef(ref) {
+  return ref?.prepared !== false;
 }
 
 /** Quantos cantrips esta origem conhece no nível dado (0 se não tiver). */
@@ -235,6 +247,30 @@ export function cantripLimit(info, level) {
 /** Quantas magias (de círculo) esta origem prepara no nível dado (R8). */
 export function prepareLimit(info, level) {
   return atLevel(info?.preparedSpellsProgression, level);
+}
+
+/**
+ * Quantas magias de círculo a classe tem no LIVRO no nível dado, ou `null` para
+ * quem não guarda um conjunto próprio.
+ *
+ * A distinção CONHECIDA x PREPARADA só existe para quem tem um repertório
+ * separado da lista da classe - em 2024 isso é o grimório do Mago, e o dado o
+ * marca com `spellsKnownProgressionFixed`, o único campo do gênero entre as 12
+ * classes (as demais preparam da lista inteira, então "conhecida" não é um
+ * conceito para elas). O campo é o DELTA por nível (`[6,2,2,…]`: 6 no nível 1,
+ * +2 a cada nível), diferente de `spellsKnownProgression`, que é o total - por
+ * isso a soma acumulada.
+ *
+ * É um piso, não um teto: o Mago também copia magias de pergaminhos, então
+ * passar do número é legítimo e a UI apenas sinaliza (a liberdade do DDL-0026).
+ * @param {object|null} info  saída de casterInfo
+ * @param {number} level      nível NA CLASSE
+ * @returns {number|null}
+ */
+export function knownLimit(info, level) {
+  const added = info?.spellsKnownAdded;
+  if (!Array.isArray(added) || !added.length) return null;
+  return added.slice(0, Math.max(0, level)).reduce((n, v) => n + (Number(v) || 0), 0);
 }
 
 /**

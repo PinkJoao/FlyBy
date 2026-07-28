@@ -390,6 +390,34 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-27 (3)** - **T2b sessão 6: TC-0081 FECHADO e TC-0080 MODELADO** (190 → **170**).
+  1218 testes (+9), lint, sweep 285/285 `--strict`, passada ao vivo. Decisões em DDL-0076, log em
+  CHANGELOG §99.
+  **TC-0081 (as 24 restantes):** eram a mesma família com outro DONO. `featSpellBag` virou o
+  genérico `spellChoiceBag`, com três chamadores novos (espécie, classe, subclasse). Duas coisas que
+  ele precisou aprender: uma lista alternativa pode não ter escolha NENHUMA (as quatro do Circle of
+  the Land são listas fixas de terreno - a evidência então são as concessões fixas que a ficha tem),
+  e o conjunto `explained` passou a ser MUTADO para ninguém reivindicar a mesma magia duas vezes.
+  **Medido: as `prepared: 2` que sumiam foram de 81 a ZERO.**
+  **TC-0080 (decisão do usuário: modelar):** `SpellRef.prepared === false` = no repertório, não
+  preparada; ausente = preparada, o que faz toda ficha antiga derivar idêntica sem migração. Toggle
+  por linha no molde do "equipar" do inventário, magia nova nasce preparada (cheio → despreparada) e
+  contador **Known** para quem tem repertório próprio - `spellsKnownProgressionFixed`, que entre as
+  12 classes 2024 só o Mago tem, e que é DELTA por nível, não total.
+  **Lição de método (custou tempo):** **não use `git stash` para um A/B enquanto os relatórios
+  gerados estão sujos** - o `stash pop` falha no merge de `testing/*.json` e o trabalho fica na
+  stash. Para medir "antes x depois", prefira uma sonda que leia o report já gravado, ou faça o
+  commit antes.
+  **Next action: T2b sessão 7.** As maiores classes restantes, na ordem:
+  1. **TC-0064 + TC-0065** (24 `advancement.race` + 20 `items.race` + 6 `traits.dr` = **50 achados,
+     a maior fatia**): item de espécie magro e ancestralidade que não volta. Os 20 de `items.race`
+     são o NOME ("elf, high" × "elf; high elf lineage") - decidir se é instrumento (como o
+     `spellKey` do TC-0079) ou export. **Parte do TC-0064 é `needs-user-eyes`.**
+  2. **TC-0071** (25 `advancement.class.grants`) e **TC-0072** (15 `advancement.subclass`).
+  3. **TC-0070** (18 `feat.activities`) - caro, valor funcional baixo; por último.
+  4. **TC-0082** (3, novo): o Find Familiar do Wild Companion sai como sempre-preparada. Barato, mas
+     pede uma varredura antes (é o primeiro caso de "concessão a REMOVER" do dataset).
+
 - **2026-07-27 (2)** - **T2b sessão 5: TC-0061, TC-0076, TC-0078, TC-0079 e o TC-0081 (metade)
   fechados** (257 → **190** achados). **Três classes de achado foram a ZERO**: `skills` (39),
   `tools` (12) e `traits.weaponProf` (11). 1209 testes (+16), lint, sweep 285/285 `--strict`, e

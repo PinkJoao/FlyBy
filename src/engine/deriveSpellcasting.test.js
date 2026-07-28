@@ -507,3 +507,44 @@ describe('deriveSpellcasting - espécie SEM entrada no overlay', () => {
     expect(race.uses).toEqual([{ name: 'Gust of Wind', label: 'No Spell Slot', note: null }]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// CONHECIDA x PREPARADA (o grimório do Mago) - TC-0080
+// ---------------------------------------------------------------------------
+describe('deriveSpellcasting - conhecidas x preparadas', () => {
+  const bookWizard = { ...wizardClass, spellsKnownProgressionFixed: [6, 2, 2, 2, 2] };
+  const dbBook = { ...db, 'class-wizard': { class: [bookWizard], subclass: [] } };
+  const build = (spells) => {
+    const ch = createCharacter();
+    ch.classes = [{ ...createClassEntry(true), classId: 'wizard', source: 'XPHB', level: 5, spells }];
+    return deriveSpellcasting(ch, dbBook, derivedCtx).origins[0];
+  };
+
+  it('separa preparadas de conhecidas-não-preparadas', () => {
+    const o = build([
+      { id: 'Fireball', source: 'XPHB' },
+      { id: 'Mage Armor', source: 'XPHB', prepared: false },
+    ]);
+    expect(o.prepared.map((s) => s.raw.name)).toEqual(['Fireball']);
+    expect(o.unprepared.map((s) => s.raw.name)).toEqual(['Mage Armor']);
+  });
+
+  it('a bandeira ausente conta como PREPARADA (compatível com o que já existia)', () => {
+    const o = build([{ id: 'Fireball', source: 'XPHB' }, { id: 'Mage Armor', source: 'XPHB' }]);
+    expect(o.prepared).toHaveLength(2);
+    expect(o.unprepared).toHaveLength(0);
+  });
+
+  it('um CANTRIP nunca é despreparado - a bandeira não o tira dos cantrips', () => {
+    const o = build([{ id: 'Fire Bolt', source: 'XPHB', prepared: false }]);
+    expect(o.cantrips.map((s) => s.raw.name)).toEqual(['Fire Bolt']);
+    expect(o.unprepared).toHaveLength(0);
+  });
+
+  it('knownLimit sai do grimório; quem prepara da lista inteira fica null', () => {
+    expect(build([]).knownLimit).toBe(14); // 6 + 2×4
+    const ch = createCharacter();
+    ch.classes = [{ ...createClassEntry(true), classId: 'wizard', source: 'XPHB', level: 5, spells: [] }];
+    expect(deriveSpellcasting(ch, db, derivedCtx).origins[0].knownLimit).toBeNull();
+  });
+});

@@ -291,7 +291,8 @@ describe('foundryImport - magias de volta ao builder', () => {
     const innate = { system: { method: 'innate', prepared: 0, uses: { max: '1' } } };
     const racialAtWill = { system: { method: 'atwill', prepared: 0, uses: { max: '' } } };
     const arcanum = { system: { method: 'atwill', prepared: 0, uses: { max: '1' } } };
-    // Magia de círculo conhecida mas NÃO preparada (prepared:0) - não conta.
+    // Magia de círculo no repertório mas NÃO preparada: É decisão do jogador
+    // (o grimório do Mago), volta marcada `prepared: false` (TC-0080).
     const unprepared = { system: { method: 'spell', prepared: 0, level: 2 } };
     // Cantrip (level 0) fica, mesmo com prepared:0.
     const cantrip = { system: { method: 'spell', prepared: 0, level: 0 } };
@@ -300,8 +301,23 @@ describe('foundryImport - magias de volta ao builder', () => {
     expect(isPlayerChosenSpell(innate)).toBe(false);
     expect(isPlayerChosenSpell(racialAtWill)).toBe(false);
     expect(isPlayerChosenSpell(arcanum)).toBe(true); // arcanum É uma escolha
-    expect(isPlayerChosenSpell(unprepared)).toBe(false);
+    expect(isPlayerChosenSpell(unprepared)).toBe(true);
     expect(isPlayerChosenSpell(cantrip)).toBe(true);
+  });
+
+  it('a bandeira `prepared: false` só marca magia de CÍRCULO com espaço', () => {
+    const spells = (items) => importSpellsByClass(items).get(null) ?? [];
+    const mk = (name, system) => ({ name, type: 'spell', system });
+    const got = spells([
+      mk('Fireball', { method: 'spell', prepared: 1, level: 3 }),
+      mk('Web', { method: 'spell', prepared: 0, level: 2 }), //     no grimório
+      mk('Fire Bolt', { method: 'spell', prepared: 0, level: 0 }), // cantrip
+      mk('Power Word Kill', { method: 'atwill', prepared: 0, level: 9, uses: { max: '1' } }), // arcanum
+    ]);
+    expect(got.find((s) => s.id === 'Fireball')?.prepared).toBeUndefined();
+    expect(got.find((s) => s.id === 'Web')?.prepared).toBe(false);
+    expect(got.find((s) => s.id === 'Fire Bolt')?.prepared).toBeUndefined();
+    expect(got.find((s) => s.id === 'Power Word Kill')?.prepared).toBeUndefined();
   });
 
   it('agrupa por classe; magias sem dono ficam na chave null', () => {

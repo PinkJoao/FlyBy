@@ -164,3 +164,27 @@ describe('curatedAdditionalSpells - correção de NÍVEL (TC-0044)', () => {
     expect(grantedSpells(raw, 3).spells.map((s) => s.name)).toContain('speak with animals');
   });
 });
+
+describe('curatedAdditionalSpells - concessão que a REGRA não dá (TC-0082)', () => {
+  // Forma real do Druida XPHB: o Find Familiar do nível 2 está no balde
+  // `prepared`, mas o Wild Companion só PERMITE conjurá-lo (gastando espaço de
+  // magia ou um uso de Wild Shape) - não o deixa sempre preparado.
+  const druid = {
+    name: 'Druid',
+    source: 'XPHB',
+    additionalSpells: [{ prepared: { 1: ['speak with animals|xphb'], 2: ['find familiar|xphb'] } }],
+  };
+
+  it('tira a magia do balde e poda o nível vazio', () => {
+    const out = curatedAdditionalSpells(druid);
+    expect(out[0].prepared[2]).toBeUndefined();
+    expect(out[0].prepared[1]).toEqual(['speak with animals|xphb']); // o resto fica
+    expect(druid.additionalSpells[0].prepared[2]).toBeDefined(); // nunca muta o dado
+  });
+
+  it('a magia deixa de ser concedida em qualquer nível', () => {
+    const names = grantedSpells(curatedAdditionalSpells(druid), 20).spells.map((s) => s.name);
+    expect(names).toContain('speak with animals');
+    expect(names).not.toContain('find familiar');
+  });
+});

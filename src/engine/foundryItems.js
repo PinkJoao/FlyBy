@@ -488,6 +488,23 @@ function primaryAbilityBlock(classObj) {
 // Features que NÃO viram item (são passos de advancement na própria classe).
 const NON_ITEM_FEATURES = new Set(['ability score improvement', 'epic boon']);
 
+/**
+ * É só um CATÁLOGO de optional features ("Metamagic Options", "Eldritch
+ * Invocation Options")? O 5etools lista as opções numa "feature" própria, mas ela
+ * não concede nada - quem concede é a feature-mãe, e cada opção escolhida já vira
+ * item por conta própria. Emiti-la punha na ficha do Foundry uma feature que
+ * nenhum ator oficial tem. Derivado da FORMA (um bloco `options` cujas entradas
+ * são refs de optional feature), não de uma lista de nomes.
+ */
+function isOptionCatalog(feature) {
+  return (feature?.entries ?? []).some(
+    (e) =>
+      e?.type === 'options'
+      && (e.entries ?? []).length > 0
+      && (e.entries ?? []).every((o) => o?.type === 'refOptionalfeature'),
+  );
+}
+
 /** Resolve os refs de classFeatures até o nível em objetos {name, level, source, entries}.
  * DEDUPA por nome (mantém a 1ª/mais baixa ocorrência): o 5etools re-lista a mesma
  * feature nos níveis em que ela MELHORA (ex: Indomitable 9/13/17), mas o Foundry
@@ -506,7 +523,7 @@ function resolveClassFeatures(db, classId, classObj, level) {
     if (NON_ITEM_FEATURES.has(norm(r.name))) continue; // ASI/Epic Boon = advancement
     if (seen.has(norm(r.name))) continue; // já emitida num nível anterior
     const f = idx.get(`${norm(r.name)}|${r.level}`);
-    if (f) {
+    if (f && !isOptionCatalog(f)) {
       seen.add(norm(r.name));
       out.push({ name: f.name, level: f.level, source: f.source ?? classObj.source, entries: f.entries ?? [], classId });
     }
@@ -793,7 +810,15 @@ export function buildClassFutureGrants(classEntry, classObj, db) {
     .filter((f) => f.level > level)
     .map((f) => ({ level: f.level, uuid: classFeatureUuid(classId, f.name) }));
   entries.push(...relistedFeatureGrants(classId, classObj, level));
-  return futureItemGrants(entries, 'Class Features');
+  return [
+    ...futureItemGrants(entries, 'Class Features'),
+    // Magias que a própria CLASSE concede por nível (o Divine Smite do Paladino
+    // no 2, o Find Steed no 5): só os níveis FUTUROS, que é onde a escada faz
+    // diferença - sem ela, subir de nível dentro do Foundry não concede a magia.
+    // Nos níveis já alcançados o SRD não tem passo (o Paladino é a única classe
+    // publicada em que ele existe), e o item de magia já está no ator.
+    ...spellGrantLadder(curatedAdditionalSpells(classObj), 'Class Features', null, level + 1),
+  ];
 }
 
 /**
@@ -1417,9 +1442,10 @@ export function buildSubclassFutureGrants(subclass, classId, db, level, spellIds
  * @param {object[]|null} additional  `additionalSpells` já curado
  * @param {string} title
  * @param {Map<string,string>|null} spellIds  nome normalizado → _id do item embutido
+ * @param {number} [from]  primeiro nível a emitir (1 = a escada inteira)
  * @returns {object[]} entradas de advancement ItemGrant
  */
-function spellGrantLadder(additional, title, spellIds) {
+function spellGrantLadder(additional, title, spellIds, from = 1) {
   if (!additional) return [];
   const namesAt = (l) => new Set(grantedSpells(additional, l).spells.map((s) => s.name));
   const entries = [];
@@ -1427,7 +1453,7 @@ function spellGrantLadder(additional, title, spellIds) {
   for (let l = 1; l <= MAX_LEVEL; l += 1) {
     const now = namesAt(l);
     for (const name of now) {
-      if (prev.has(name)) continue;
+      if (prev.has(name) || l < from) continue;
       entries.push({ level: l, uuid: spellUuid(name), addedId: spellIds?.get(norm(name)) ?? null });
     }
     prev = now;

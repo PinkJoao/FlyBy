@@ -147,6 +147,28 @@ export const REGRADED_ADDITIONAL_SPELLS = {
   ],
 };
 
+/**
+ * O INVERSO do registro acima: concessões que o dado declara e que a REGRA não
+ * concede. O 5etools guarda no balde `prepared` uma magia que a feature apenas
+ * PERMITE conjurar, e nós a líamos como "sempre preparada" - a ficha ganhava uma
+ * magia a mais, e o export a mandava para o Foundry (TC-0082).
+ *
+ * A varredura que fechou este registro (refazer antes de acrescentar uma entrada):
+ * cruzar toda magia de balde `prepared`/`known` com o texto da própria entidade
+ * procurando "…to cast {@spell X}". Dá 10 candidatos, e 9 são falsos positivos -
+ * a magia é concedida por OUTRA via e a frase só oferece um jeito alternativo de
+ * conjurá-la (o War God's Blessing gasta Channel Divinity para lançar um Shield
+ * of Faith que o domínio já dá; os talentos de Magic Initiate idem). Sobra UMA.
+ * @type {Record<string, string[]>}
+ */
+export const REMOVED_ADDITIONAL_SPELLS = {
+  // Wild Companion (Druida 2): "you can expend a spell slot or a use of Wild
+  // Shape to cast the Find Familiar spell" - é PERMISSÃO de conjurar, não uma
+  // magia preparada. O premade não a lista e o SRD do dnd5e não a concede como
+  // item. O Speak with Animals do nível 1 fica: esse é concedido mesmo.
+  'Druid|XPHB': ['find familiar'],
+};
+
 /** @type {Record<string, object>} */
 export const MISSING_ADDITIONAL_SPELLS = {
   // Channeler (L3): "You know the Guidance cantrip. It has a range of 60 feet
@@ -217,6 +239,28 @@ function applyRegrades(groups, regrades) {
   });
 }
 
+/** O nome nu de uma ref de magia ("find familiar|xphb#c" → "find familiar"). */
+const refName = (s) => String(s).toLowerCase().split('|')[0].split('#')[0].trim();
+
+/** Tira as magias curadas como NÃO-concedidas (TC-0082) de todos os baldes,
+ * em qualquer profundidade (o balde inato aninha por frequência). */
+function stripSpells(node, wanted) {
+  if (Array.isArray(node)) return node.filter((s) => !(typeof s === 'string' && wanted.has(refName(s))));
+  if (node && typeof node === 'object') {
+    return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, stripSpells(v, wanted)]));
+  }
+  return node;
+}
+
+function applyRemovals(groups, spells) {
+  const wanted = new Set(spells.map((s) => refName(s)));
+  return groups.map((group) =>
+    Object.fromEntries(
+      Object.entries(group).map(([bucket, byLevel]) => [bucket, pruneEmpty(stripSpells(byLevel, wanted)) ?? {}]),
+    ),
+  );
+}
+
 /**
  * `additionalSpells` da entidade + as concessões curadas que o dado omite,
  * fundidas no primeiro grupo (bucket a bucket, nível a nível), + as correções de
@@ -229,9 +273,11 @@ export function curatedAdditionalSpells(entity) {
   const key = overlayKey(entity);
   const extra = MISSING_ADDITIONAL_SPELLS[key];
   const regrades = REGRADED_ADDITIONAL_SPELLS[key];
-  if (!extra && !regrades) return entity?.additionalSpells;
+  const removed = REMOVED_ADDITIONAL_SPELLS[key];
+  if (!extra && !regrades && !removed) return entity?.additionalSpells;
   let groups = entity?.additionalSpells ?? [];
   if (regrades) groups = applyRegrades(groups, regrades);
+  if (removed) groups = applyRemovals(groups, removed);
   if (!extra) return groups;
   const first = { ...(groups[0] ?? {}) };
   for (const [bucket, byLevel] of Object.entries(extra)) {

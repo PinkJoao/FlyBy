@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T03:31:08.529Z",
+  "generatedAt": "2026-07-29T03:38:06.020Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -22,9 +22,12 @@
   "aggregate": [
     {
       "cat": "advancement.class.grants",
-      "count": 25,
+      "count": 22,
       "actors": [
-        "Krusk L01",
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
         "Krusk L05",
         "Krusk L11",
         "Krusk L17",
@@ -32,46 +35,41 @@
         "Merric L05",
         "Merric L11",
         "Merric L17",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
         "Perrin L01",
         "Perrin L05",
         "Perrin L11",
         "Perrin L17",
         "Sefris L01",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
+        "Sefris L05"
       ],
       "examples": [
         {
-          "actor": "Krusk L01",
+          "actor": "Beiro L01",
           "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
         },
         {
-          "actor": "Krusk L01",
+          "actor": "Beiro L05",
           "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
         },
         {
-          "actor": "Krusk L05",
+          "actor": "Beiro L11",
           "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
         },
         {
-          "actor": "Krusk L05",
+          "actor": "Beiro L17",
           "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
         }
       ]
     },
@@ -130,67 +128,6 @@
           "key": "draconic flight",
           "before": [
             "utility"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
-      "cat": "items.feat",
-      "count": 17,
-      "actors": [
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Randal L11",
-        "Randal L17",
-        "Sefris L01",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Merric L01",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L05",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L11",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L17",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
           ],
           "after": []
         }
@@ -258,11 +195,8 @@
     },
     {
       "cat": "items.spell",
-      "count": 14,
+      "count": 11,
       "actors": [
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
         "Merric L11",
         "Merric L17",
         "Perrin L11",
@@ -277,38 +211,92 @@
       ],
       "examples": [
         {
-          "actor": "Aoth L05",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [],
-          "after": [
-            "find familiar"
-          ]
-        },
-        {
-          "actor": "Aoth L11",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [],
-          "after": [
-            "find familiar"
-          ]
-        },
-        {
-          "actor": "Aoth L17",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [],
-          "after": [
-            "find familiar"
-          ]
-        },
-        {
           "actor": "Merric L11",
           "cat": "items.spell",
           "key": "names",
           "before": [
             "enlarge/reduce"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L17",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "enlarge/reduce"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Perrin L11",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "fireball"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Perrin L17",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "fireball"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "items.feat",
+      "count": 10,
+      "actors": [
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Perrin L01",
+        "Perrin L05",
+        "Perrin L11",
+        "Perrin L17",
+        "Randal L11",
+        "Randal L17"
+      ],
+      "examples": [
+        {
+          "actor": "Merric L01",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L05",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L11",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L17",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "cloud's jaunt"
           ],
           "after": []
         }
@@ -697,14 +685,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [],
-          "after": [
-            "find familiar"
-          ]
         }
       ]
     },
@@ -730,14 +710,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [],
-          "after": [
-            "find familiar"
-          ]
         }
       ]
     },
@@ -763,14 +735,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [],
-          "after": [
-            "find familiar"
-          ]
         }
       ]
     },
@@ -779,6 +743,12 @@
       "file": "fvtt-Actor-beiro-BeiroLv010000000",
       "official": true,
       "findings": [
+        {
+          "cat": "advancement.class.grants",
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
+        },
         {
           "cat": "advancement.race",
           "key": "elf, high",
@@ -795,6 +765,12 @@
       "official": true,
       "findings": [
         {
+          "cat": "advancement.class.grants",
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
+        },
+        {
           "cat": "advancement.race",
           "key": "elf, high",
           "before": [
@@ -809,6 +785,12 @@
       "file": "fvtt-Actor-beiro-BeiroLv110000000",
       "official": true,
       "findings": [
+        {
+          "cat": "advancement.class.grants",
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
+        },
         {
           "cat": "advancement.race",
           "key": "elf, high",
@@ -825,6 +807,12 @@
       "official": true,
       "findings": [
         {
+          "cat": "advancement.class.grants",
+          "key": "bard Class Features@20",
+          "before": 1,
+          "after": 3
+        },
+        {
           "cat": "advancement.race",
           "key": "elf, high",
           "before": [
@@ -838,20 +826,7 @@
       "actor": "Krusk L01",
       "file": "fvtt-Actor-krusk-KruskLv010000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Krusk L05",
@@ -1142,20 +1117,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "metamagic options"
-          ]
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "sorcerer Class Features@2",
-          "before": 2,
-          "after": 3
-        },
-        {
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
@@ -1189,20 +1150,6 @@
           "after": []
         },
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "metamagic options"
-          ]
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "sorcerer Class Features@2",
-          "before": 2,
-          "after": 3
-        },
-        {
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
@@ -1234,20 +1181,6 @@
             "poison"
           ],
           "after": []
-        },
-        {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "metamagic options"
-          ]
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "sorcerer Class Features@2",
-          "before": 2,
-          "after": 3
         },
         {
           "cat": "advancement.subclass",
@@ -1736,18 +1669,10 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "eldritch invocation options"
-          ]
-        },
-        {
           "cat": "advancement.class.grants",
-          "key": "warlock Class Features@1",
-          "before": 2,
-          "after": 3
+          "key": "warlock Class Features@9",
+          "before": 1,
+          "after": 2
         }
       ]
     },
@@ -1757,18 +1682,10 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "eldritch invocation options"
-          ]
-        },
-        {
           "cat": "advancement.class.grants",
-          "key": "warlock Class Features@1",
-          "before": 2,
-          "after": 3
+          "key": "warlock Class Features@9",
+          "before": 1,
+          "after": 2
         },
         {
           "cat": "feat.activities",
@@ -1786,26 +1703,12 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "eldritch invocation options"
-          ]
-        },
-        {
           "cat": "items.spell",
           "key": "names",
           "before": [
             "eldritch blast (repelling)"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "warlock Class Features@1",
-          "before": 2,
-          "after": 3
         },
         {
           "cat": "feat.activities",
@@ -1829,26 +1732,12 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [],
-          "after": [
-            "eldritch invocation options"
-          ]
-        },
-        {
           "cat": "items.spell",
           "key": "names",
           "before": [
             "eldritch blast (repelling)"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "warlock Class Features@1",
-          "before": 2,
-          "after": 3
         },
         {
           "cat": "feat.activities",

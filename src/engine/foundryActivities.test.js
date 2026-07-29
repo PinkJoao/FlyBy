@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { featureActivities } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics } from './foundryActivities';
 
 /** Única activity de uma feature (objeto indexado por _id → o valor). */
 function only(acts) {
@@ -124,5 +124,36 @@ describe('featureActivities', () => {
     const rec = Object.values(featureActivities('Arcane Recovery', 'wizard'))[0];
     expect(rec).toMatchObject({ name: 'Recover' });
     expect(rec.activation.type).toBe('shortRest');
+  });
+});
+
+describe('srdFeatureMechanics - a cobertura gerada do SRD (TC-0070)', () => {
+  it('features de classe: a activity vem com o TIPO que o SRD publica', () => {
+    expect(Object.values(srdFeatureMechanics('Stunning Strike', 'monk').activities).map((a) => a.type))
+      .toEqual(['save']);
+    expect(Object.values(srdFeatureMechanics('Favored Enemy', 'ranger').activities).map((a) => a.type))
+      .toEqual(['cast']);
+  });
+
+  it('traços de espécie entram pelo mapa plano (sem classe)', () => {
+    const breath = srdFeatureMechanics('Breath Weapon');
+    expect(Object.values(breath.activities).length).toBeGreaterThan(0);
+    expect(srdFeatureMechanics('Draconic Flight').activities).toBeTruthy();
+  });
+
+  it('os effects vêm junto - e são só os REFERENCIADOS por alguma activity', () => {
+    const m = srdFeatureMechanics('Cunning Strike', 'rogue');
+    const referenced = new Set(
+      Object.values(m.activities).flatMap((a) => (a.effects ?? []).map((e) => e._id)),
+    );
+    expect(referenced.size).toBeGreaterThan(0);
+    // Nenhum effect órfão, e nenhuma referência sem effect (a lição do TC-0068).
+    expect(m.effects.every((e) => referenced.has(e._id))).toBe(true);
+    expect([...referenced].every((id) => m.effects.some((e) => e._id === id))).toBe(true);
+  });
+
+  it('feature fora do SRD devolve null (o chamador cai no overlay)', () => {
+    expect(srdFeatureMechanics('Feature Que Nao Existe', 'monk')).toBeNull();
+    expect(srdFeatureMechanics('')).toBeNull();
   });
 });

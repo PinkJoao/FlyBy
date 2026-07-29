@@ -11,6 +11,8 @@
 // Estruturas extraídas dos exports premade oficiais.
 // -----------------------------------------------------------------------------
 
+import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT } from './srdActivitiesData';
+
 const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 function fid() {
   let s = '';
@@ -275,4 +277,27 @@ export function featureActivities(name, classId, opts) {
   const make = FEATURE_ACTIVITIES[String(name ?? '').trim().toLowerCase()];
   if (!make) return {};
   return Object.fromEntries(make(classId, opts).map((a) => [a._id, a]));
+}
+
+/**
+ * Mecânica de rolagem publicada pelo SRD para uma feature: `{activities, effects}`.
+ * As duas vêm JUNTAS de propósito - uma activity referencia os effects do próprio
+ * item por `_id`, e emitir só a activity deixaria a referência apontando para o
+ * vazio (a lição do TC-0068/DDL-0074). Nada é derivável do 5etools aqui: uma
+ * activity é a mecânica do SISTEMA DE DESTINO, então o SRD é a fonte (TC-0070).
+ *
+ * Precedência de quem chama: **curado → SRD → overlay**, a mesma do `featureUses`
+ * (TC-0068). O registro curado acima segue sendo o ponto de override.
+ * @param {string} name     nome da feature
+ * @param {string} [classId]  identifier da classe (features de classe/subclasse)
+ * @returns {{activities: Record<string, object>, effects: object[]}|null}
+ */
+export function srdFeatureMechanics(name, classId) {
+  const key = String(name ?? '').trim().toLowerCase().replace(/’/g, "'");
+  if (!key) return null;
+  const entry =
+    (classId ? SRD_ACTIVITIES_BY_CLASS[`${String(classId).trim().toLowerCase()}|${key}`] : null)
+    ?? SRD_ACTIVITIES_FLAT[key];
+  if (!entry) return null;
+  return { activities: entry.activities ?? {}, effects: entry.effects ?? [] };
 }

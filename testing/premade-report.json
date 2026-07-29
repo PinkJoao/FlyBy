@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T03:38:06.020Z",
+  "generatedAt": "2026-07-29T03:50:42.780Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -70,66 +70,6 @@
           "key": "bard Class Features@20",
           "before": 1,
           "after": 3
-        }
-      ]
-    },
-    {
-      "cat": "feat.activities",
-      "count": 21,
-      "actors": [
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17",
-        "Quillathe L01",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Akra L05",
-          "cat": "feat.activities",
-          "key": "draconic flight",
-          "before": [
-            "utility"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "feat.activities",
-          "key": "draconic flight",
-          "before": [
-            "utility"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Akra L11",
-          "cat": "feat.activities",
-          "key": "blessed strikes: potent spellcasting",
-          "before": [
-            "damage"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Akra L17",
-          "cat": "feat.activities",
-          "key": "draconic flight",
-          "before": [
-            "utility"
-          ],
-          "after": []
         }
       ]
     },
@@ -353,6 +293,56 @@
       ]
     },
     {
+      "cat": "feat.activities",
+      "count": 6,
+      "actors": [
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Sefris L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Krusk L05",
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        },
+        {
+          "actor": "Krusk L11",
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        },
+        {
+          "actor": "Krusk L17",
+          "cat": "feat.activities",
+          "key": "paladin's smite",
+          "before": [],
+          "after": [
+            "cast"
+          ]
+        },
+        {
+          "actor": "Sefris L05",
+          "cat": "feat.activities",
+          "key": "agonizing blast",
+          "before": [],
+          "after": [
+            "enchant"
+          ]
+        }
+      ]
+    },
+    {
       "cat": "items.race",
       "count": 4,
       "actors": [
@@ -545,14 +535,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "feat.activities",
-          "key": "draconic flight",
-          "before": [
-            "utility"
-          ],
-          "after": []
         }
       ]
     },
@@ -578,22 +560,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "feat.activities",
-          "key": "draconic flight",
-          "before": [
-            "utility"
-          ],
-          "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "blessed strikes: potent spellcasting",
-          "before": [
-            "damage"
-          ],
-          "after": []
         }
       ]
     },
@@ -619,22 +585,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "feat.activities",
-          "key": "draconic flight",
-          "before": [
-            "utility"
-          ],
-          "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "blessed strikes: potent spellcasting",
-          "before": [
-            "damage"
-          ],
-          "after": []
         }
       ]
     },
@@ -879,14 +829,6 @@
           "after": [
             "cast"
           ]
-        },
-        {
-          "cat": "feat.activities",
-          "key": "aura of protection",
-          "before": [
-            "utility"
-          ],
-          "after": []
         }
       ]
     },
@@ -914,14 +856,6 @@
           "after": [
             "cast"
           ]
-        },
-        {
-          "cat": "feat.activities",
-          "key": "aura of protection",
-          "before": [
-            "utility"
-          ],
-          "after": []
         }
       ]
     },
@@ -1396,16 +1330,7 @@
       "actor": "Quillathe L01",
       "file": "fvtt-Actor-quillathe-QuillatheLv01000",
       "official": true,
-      "findings": [
-        {
-          "cat": "feat.activities",
-          "key": "favored enemy",
-          "before": [
-            "cast"
-          ],
-          "after": []
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Quillathe L05",
@@ -1419,14 +1344,6 @@
             "detect poison and disease"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "favored enemy",
-          "before": [
-            "cast"
-          ],
-          "after": []
         }
       ]
     },
@@ -1434,31 +1351,13 @@
       "actor": "Quillathe L11",
       "file": "fvtt-Actor-quillathe-QuillatheLv11000",
       "official": true,
-      "findings": [
-        {
-          "cat": "feat.activities",
-          "key": "favored enemy",
-          "before": [
-            "cast"
-          ],
-          "after": []
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Quillathe L17",
       "file": "fvtt-Actor-quillathe-QuillatheLv17000",
       "official": true,
-      "findings": [
-        {
-          "cat": "feat.activities",
-          "key": "favored enemy",
-          "before": [
-            "cast"
-          ],
-          "after": []
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Randal L01",
@@ -1553,15 +1452,6 @@
             "magic missile"
           ],
           "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "cunning strike",
-          "before": [
-            "save",
-            "utility"
-          ],
-          "after": []
         }
       ]
     },
@@ -1584,15 +1474,6 @@
             "freedom of movement",
             "grease",
             "magic missile"
-          ],
-          "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "cunning strike",
-          "before": [
-            "save",
-            "utility"
           ],
           "after": []
         }
@@ -1641,23 +1522,6 @@
             "unseen servant",
             "wall of force",
             "web"
-          ],
-          "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "cunning strike",
-          "before": [
-            "save",
-            "utility"
-          ],
-          "after": []
-        },
-        {
-          "cat": "feat.activities",
-          "key": "devious strikes",
-          "before": [
-            "save"
           ],
           "after": []
         }

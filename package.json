@@ -14,7 +14,8 @@
     "sweep": "vite-node scripts/sweep.js",
     "t2": "vite-node scripts/compare-premades.js",
     "gen:uuids": "vite-node scripts/gen-compendium-uuids.js",
-    "gen:sources": "vite-node scripts/gen-source-names.js"
+    "gen:sources": "vite-node scripts/gen-source-names.js",
+    "gen:srd": "vite-node scripts/gen-srd-activities.js"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",

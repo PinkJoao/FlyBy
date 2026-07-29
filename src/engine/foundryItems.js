@@ -28,7 +28,7 @@ import {
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses } from './foundryFeatureUses';
-import { featureActivities } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick } from './speciesData';
@@ -595,10 +595,21 @@ export function buildFeatureItem(feature, db = null) {
       : overlayClassFeatureEntry(db, overlayRef))
     : null;
   const overlay = overlayMechanics(overlayEntry, feature.name);
-  if (!changes && !targetEffect && db) effects.push(...overlay.effects);
 
   const curatedUses = featureUses(feature.name, feature.classId);
   const curatedActivities = featureActivities(feature.name, feature.classId, { targetEffectId });
+  // Activities: curado → SRD → overlay (a precedência do `featureUses`, TC-0068).
+  const srd = Object.keys(curatedActivities).length ? null : srdFeatureMechanics(feature.name, feature.classId);
+  const activities = Object.keys(curatedActivities).length
+    ? curatedActivities
+    : (srd?.activities ?? overlay.activities);
+  // Os effects acompanham QUEM DEU as activities, e a escolha é tudo-ou-nada: os
+  // do SRD são referenciados por `_id` pelas activities dele (separá-los deixaria
+  // a referência no vazio), e somá-los aos do overlay aplicaria o mesmo efeito
+  // duas vezes - foi assim que "Cunning Action: Hiding" saiu em dobro. Um effect
+  // CURADO continua vencendo tudo (regra tudo-ou-nada do DDL-0031).
+  if (!changes && !targetEffect && db) effects.push(...(srd?.effects.length ? srd.effects : overlay.effects));
+  else if (srd?.effects.length) effects.push(...srd.effects.filter((e) => !effects.some((x) => norm(x.name) === norm(e.name))));
 
   return {
     _id: randomFoundryId(),
@@ -614,7 +625,7 @@ export function buildFeatureItem(feature, db = null) {
       properties: [],
       uses: curatedUses ?? overlay.system.uses ?? { max: '', spent: 0, recovery: [] },
       prerequisites: { level: null, repeatable: false, items: [] },
-      activities: Object.keys(curatedActivities).length ? curatedActivities : overlay.activities,
+      activities,
       advancement: {},
       ...overlaySystemExtras(overlay.system),
       enchant: {},
@@ -1609,6 +1620,9 @@ export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
   return speciesTraitEntries(raceObj).filter((e) => traitLevel(e) <= level).map((entry) => {
     const m = mechanics.get(norm(entry.name));
     const name = traitName(entry);
+    // Curado → SRD → overlay, como nas features de classe (TC-0070). O SRD é
+    // quem tem a activity do Breath Weapon, do Draconic Flight, do Healing Hands…
+    const srd = srdFeatureMechanics(name);
     return {
       _id: randomFoundryId(),
       name,
@@ -1624,13 +1638,13 @@ export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
         // SRD antes do overlay, como nas features de classe (TC-0068).
         uses: featureUses(name) ?? featureUses(entry.name) ?? m?.system?.uses ?? { max: '', spent: 0, recovery: [] },
         prerequisites: { level: null, repeatable: false, items: [] },
-        activities: retargetScaleRefs(m?.activities ?? {}, speciesIdentifier(raceObj)),
+        activities: retargetScaleRefs(srd?.activities ?? m?.activities ?? {}, speciesIdentifier(raceObj)),
         advancement: {},
         enchant: {},
         crewed: false,
         ...overlaySystemExtras(m?.system ?? {}),
       },
-      effects: m?.effects ?? [],
+      effects: srd?.activities && srd.effects.length ? srd.effects : (m?.effects ?? []),
       flags: { builder5e: { level: traitLevel(entry) } },
       _stats: itemStats(originUuid(name)),
     };

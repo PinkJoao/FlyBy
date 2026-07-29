@@ -58,4 +58,22 @@ describe('itemEntity', () => {
     const c = itemEntity.card(cloak);
     expect(c.rarity).toEqual({ label: 'Uncommon', color: '#3fa14b' });
   });
+
+  it('raridade de DUAS palavras casa a opção do filtro (era "Very rare")', () => {
+    // O `cap` genérico só sobe a 1a letra, então "very rare" não casava com a
+    // opção "Very Rare" e o chip nunca achava nenhum dos 732 itens.
+    const staff = { name: 'Staff of Power', source: 'XDMG', rarity: 'very rare' };
+    const option = itemEntity.filters.find((f) => f.id === 'rarity').options;
+    expect(itemEntity.precompute(staff).filterValues.rarity).toEqual(['Very Rare']);
+    expect(option).toContain('Very Rare');
+    expect(itemEntity.card(staff).rarity.label).toBe('Very Rare');
+  });
+
+  it('toda opção de raridade é um valor que o precompute realmente emite', () => {
+    // Guarda contra a divergência acima voltar por outra raridade.
+    for (const label of itemEntity.filters.find((f) => f.id === 'rarity').options) {
+      const raw = label === 'None' ? {} : { rarity: label.toLowerCase() };
+      expect(itemEntity.precompute({ name: 'x', source: 'X', ...raw }).filterValues.rarity).toEqual([label]);
+    }
+  });
 });

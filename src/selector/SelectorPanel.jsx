@@ -146,15 +146,44 @@ export default function SelectorPanel({
 
   // Each filter's options as {value,label}. Derived filters take values from the
   // data (value === label); fixed filters carry their own labels.
+  //
+  // Uma opção que NENHUM item do catálogo carrega é REMOVIDA (não é a mesma coisa
+  // que o chip desabilitado abaixo: aquele é "zero AGORA, dado o que está
+  // marcado"; este é "zero SEMPRE"). Só atinge as opções FIXAS - as derivadas
+  // saem dos dados e nunca nascem mortas. Ex: espécie não tem nenhuma Tiny nem
+  // Large em edição alguma, e classe nenhuma tem Constitution como atributo
+  // primário. Contado sobre `items` cru, sem busca e sem filtro, porque a
+  // pergunta é sobre o catálogo, não sobre a tela.
   const filterOptions = useMemo(() => {
+    const declared = {};
+    for (const f of entity.filters) {
+      declared[f.id] = f.derive
+        ? deriveOptions(items, f.id).map((v) => ({ value: v, label: v }))
+        : (f.options ?? []).map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+    }
+    // Catálogo vazio (db ainda carregando) não é evidência de nada: poda nenhuma.
+    if (items.length === 0) return declared;
+
+    const total = facetCounts(items, { filterIds: entity.filters.map((f) => f.id) });
     const out = {};
     for (const f of entity.filters) {
-      if (f.derive) {
-        out[f.id] = deriveOptions(items, f.id).map((v) => ({ value: v, label: v }));
-      } else {
-        out[f.id] = (f.options ?? []).map((o) =>
-          typeof o === 'string' ? { value: o, label: o } : o
-        );
+      out[f.id] = declared[f.id].filter((o) => total[f.id][o.value]);
+
+      // Rede de segurança (só em dev): uma opção fixa morta AO LADO de um valor
+      // emitido que nenhuma opção cobre é a assinatura de um valor DIGITADO
+      // ERRADO, não de uma opção legitimamente inútil - e a poda a esconderia em
+      // silêncio. Foi exatamente o caso de "Very Rare" x "Very rare" no item.
+      if (import.meta.env?.DEV && out[f.id].length < declared[f.id].length) {
+        const covered = new Set(declared[f.id].map((o) => o.value));
+        const uncovered = Object.keys(total[f.id]).filter((v) => !covered.has(v));
+        if (uncovered.length) {
+          const dead = declared[f.id].filter((o) => !total[f.id][o.value]).map((o) => o.value);
+          console.warn(
+            `[SelectorPanel] ${entity.type}/${f.id}: opção sem nenhum item (${dead.join(', ')}) ` +
+              `enquanto o filtro emite valor sem opção (${uncovered.join(', ')}). ` +
+              'Provável divergência entre o valor declarado e o do precompute.',
+          );
+        }
       }
     }
     return out;
@@ -271,9 +300,15 @@ export default function SelectorPanel({
   // Grupos de filtro visíveis: a busca casa o nome da OPÇÃO ou o do GRUPO (digitar
   // "school" mostra o grupo inteiro). Uma opção ATIVA nunca some - senão o usuário
   // perderia de vista um filtro que está mudando o resultado.
+  // Um grupo sem opção nenhuma some (não só ao buscar): pode ter ficado vazio
+  // pela poda acima, e um cabeçalho sem chips é só ruído.
   const fq = filterQuery.trim().toLowerCase();
   const visibleGroups = useMemo(() => {
-    if (!fq) return entity.filters.map((f) => ({ f, opts: filterOptions[f.id] }));
+    if (!fq) {
+      return entity.filters
+        .map((f) => ({ f, opts: filterOptions[f.id] }))
+        .filter((g) => g.opts.length > 0);
+    }
     return entity.filters
       .map((f) => {
         const groupHit = f.header.toLowerCase().includes(fq);

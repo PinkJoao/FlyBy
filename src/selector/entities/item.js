@@ -50,8 +50,23 @@ function stripSrc(s) {
   return typeof s === 'string' ? s.split('|')[0] : s?.uid?.split('|')[0] ?? s;
 }
 
+/** Rótulo de cada raridade do 5etools. O `cap` genérico NÃO serve para as de
+ * duas palavras: "very rare" virava "Very rare", que não casava com a opção de
+ * filtro "Very Rare" - o chip existia e nunca achava nada (732 itens). Valores
+ * fora do mapa (`unknown`, `unknown (magic)`, `varies`) caem no `cap`. */
+const RARITY_LABEL = {
+  none: 'None',
+  common: 'Common',
+  uncommon: 'Uncommon',
+  rare: 'Rare',
+  'very rare': 'Very Rare',
+  legendary: 'Legendary',
+  artifact: 'Artifact',
+};
+
 function rarityLabel(raw) {
-  return cap(raw?.rarity ?? 'none');
+  const r = raw?.rarity ?? 'none';
+  return RARITY_LABEL[r] ?? cap(r);
 }
 
 /** Definição de uma propriedade de arma no db (`items-base.itemProperty`). */

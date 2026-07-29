@@ -5710,3 +5710,51 @@ inofensivo.
 Verificado: 1224 testes (+6 em `filterModel.test.js`), lint, e ao vivo no seletor de espécies
 (desktop 1280px e mobile 375px, o mesmo comportamento na gaveta, sem overflow e zero erros de
 console).
+
+---
+
+## 101. Selector: opção que nunca alcança nada é REMOVIDA (e o bug que a remoção ia esconder)
+
+Segundo passo do §100, pedido do usuário: além de desabilitar o que está zerado AGORA, sumir com o
+que está zerado SEMPRE. Não existe espécie jogável Tiny nem Large em edição nenhuma, então os dois
+chips eram peso morto permanente.
+
+### A regra, e por que ela é diferente da anterior
+
+Uma opção cujo valor NENHUM item do catálogo carrega é removida da lista. Contada sobre `items`
+cru - **sem busca e sem filtro** - porque a pergunta é sobre o CATÁLOGO, não sobre a tela. As duas
+regras convivem e a diferença aparece ao vivo no seletor de espécies:
+
+- **Tiny / Large / Blindsight somem** (zero no dataset inteiro, conferido inclusive no `races.json`
+  cru, sem `latestOnly`: `{M: 125, S: 49, V: 1}`);
+- **PSD / PSI continuam apagados, não sumidos**: existem, e estão fora só porque o filtro "Setting
+  Variant" vem pré-marcado (DDL-0064). Removê-los tornaria inalcançável algo que um clique em Clear
+  devolve.
+
+Só atinge as opções FIXAS - as derivadas saem dos dados e nunca nascem mortas. Catálogo vazio (db
+carregando) não poda nada. Um grupo que fique sem nenhuma opção some inteiro.
+
+Outras podas medidas: **classe / Primary Ability perde Constitution** (nenhuma classe a tem como
+primária) enquanto **Saving Throws mantém** (quatro classes têm) - a regra é por filtro, não por
+nome de valor.
+
+### O achado: "Very Rare" nunca funcionou
+
+A sonda que mediu o que estava morto acusou **"Very Rare" com zero itens na loja** - o que não podia
+ser verdade. O `cap()` genérico do `item.js` só sobe a PRIMEIRA letra, então o precompute emitia
+`"Very rare"` e a opção declarada era `"Very Rare"`: **o chip existia, e nunca achou nenhum dos 732
+itens.** O rótulo exibido no card e na linha de meta também saía errado.
+
+Corrigido com um mapa `RARITY_LABEL` (as raridades de uma palavra continuam pelo `cap`; valores fora
+do mapa - `unknown`, `unknown (magic)`, `varies` - também). Ao vivo: marcar Very Rare vai de 0 para
+**732 resultados**.
+
+**Isso é o que a poda ia esconder**, e é a razão da rede de segurança: em DEV, quando uma opção fixa
+morta convive com um valor EMITIDO que nenhuma opção cobre, o painel avisa no console. Essa
+combinação é a assinatura de um valor digitado errado, não de uma opção legitimamente inútil - Tiny
+e Large não disparam nada, porque ali não há valor órfão do outro lado.
+
+Fica anotado, não corrigido (não é regressão, e o rótulo é decisão de produto): **301 itens têm
+raridade sem chip nenhum** - `unknown` (38), `unknown (magic)` (255) e `varies` (8).
+
+Verificado: 1226 testes (+2), lint, sweep 285/285 `--strict`, e ao vivo (espécie, classe e loja).

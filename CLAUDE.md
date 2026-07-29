@@ -399,6 +399,44 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0078 - Zero AGORA desabilita; zero SEMPRE remove - e a poda precisa de uma rede contra valor digitado errado
+**Date:** 2026-07-28
+**Estende o DDL-0077** (mesma sessão, segundo pedido do usuário): a mesma contagem serve às duas
+regras, com BASES diferentes. **Builds on:** DDL-0064/0026 (o filtro pré-marcado e removível, que é
+exatamente o que a base desta regra não pode enxergar).
+
+**Context.** Fechada a parte do desabilitar, o usuário apontou o caso permanente: não existe espécie
+jogável Tiny nem Large, então esses chips não deviam existir. É outra regra - não "zero dado o que
+está marcado", e sim "zero em qualquer configuração".
+
+**Decision - a base da poda é o CATÁLOGO CRU, sem busca e sem filtro.** Uma opção que nenhum item de
+`entity.list(db)` carrega é removida; o resto é apenas desabilitado. **A base NÃO pode ser a tela**,
+e o motivo é o DDL-0064: as fontes PSD/PSI estão zeradas na abertura do seletor de espécies só
+porque o filtro "Setting Variant" vem pré-marcado - podá-las tornaria inalcançável algo que um
+clique em Clear devolve. Elas ficam apagadas; Tiny/Large somem.
+- **Só as opções FIXAS podem morrer** - uma derivada sai dos dados e nunca nasce morta.
+- **Catálogo vazio (db carregando) não é evidência de nada:** poda nenhuma, ou o painel abriria sem
+  filtro algum.
+- **A regra é por FILTRO, não por nome de valor:** o Primary Ability da classe perde Constitution
+  (nenhuma classe a tem como primária) e o Saving Throws a mantém (quatro classes têm).
+
+**Decision - a poda tem uma rede de segurança em DEV, porque ela ESCONDE bug de digitação.** A sonda
+que mediu o que estava morto acusou "Very Rare" com zero itens na loja, o que não podia ser verdade:
+o `cap()` do `item.js` só sobe a primeira letra, então o precompute emitia `"Very rare"` e a opção
+declarada era `"Very Rare"` - **o chip existia e nunca achou nenhum dos 732 itens**, e o rótulo saía
+errado no card. A poda teria feito o chip sumir e ninguém mais notaria.
+Então: quando uma opção fixa morta convive com um valor EMITIDO que nenhuma opção cobre, o painel
+avisa no console (só em dev). **Essa combinação é a assinatura da divergência**; uma opção
+legitimamente inútil não tem valor órfão do outro lado, e por isso Tiny/Large não fazem barulho.
+**REGRA para quem declarar uma opção fixa nova: o valor tem de ser IDÊNTICO ao que o `precompute`
+emite** - não é o rótulo que casa, é o valor.
+
+**Consequences.**
+- Anotado e NÃO corrigido (não é regressão, e o rótulo é decisão de produto): 301 itens têm raridade
+  sem chip nenhum - `unknown` (38), `unknown (magic)` (255), `varies` (8).
+- Verificado: 1226 testes (+2), lint, sweep 285/285 `--strict`, e ao vivo nos três seletores.
+  Ver CHANGELOG §101.
+
 ### DDL-0077 - Opção de filtro que não alcança resultado é DESABILITADA, e a conta ignora o próprio filtro
 **Date:** 2026-07-28
 **Builds on:** DDL-0026 (o `SelectorPanel` como layout único de todo seletor - por isso isto vale de

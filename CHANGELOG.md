@@ -5670,3 +5670,43 @@ têm origem que as segure.
 6/5 em vermelho e voltando, mobile 375px sem overflow, zero erros de console. Decisões em DDL-0076.
 Achado novo de passagem: **TC-0082** (o Find Familiar do Wild Companion, que o dado codifica como
 sempre-preparada mas o texto trata como permissão de conjurar).
+
+---
+
+## 100. Selector: chip de filtro que não leva a lugar nenhum fica DESABILITADO
+
+Melhoria de usabilidade pedida pelo usuário, portada do GLIS (outro app dele, cujo catálogo nasceu
+do `filterModel.js` daqui e devolveu a ideia). Ao marcar um filtro, as opções dos OUTROS grupos que
+já não alcançam nenhum resultado ficam apagadas e inertes, em vez de virarem um clique que esvazia a
+lista. O exemplo do pedido, verificado ao vivo: no seletor de espécies, marcar **Size: Small** apaga
+**Speed: Swim** (nenhuma espécie Small tem natação), junto com Powerful Build, Aberration e 11 fontes.
+
+### A contagem
+
+`facetCounts(items, {query, filterState, filterIds})` (`selector/filterModel.js`, puro) devolve
+`{ [filtro]: { [opção]: n } }` = quantos resultados restariam se aquela opção fosse marcada.
+
+- **A contagem de um filtro ignora o estado DELE MESMO** e aplica todos os OUTROS - é exatamente o
+  que o clique produz. Se ela se contasse, marcar "Small" zeraria as outras opções de tamanho e o
+  grupo viraria um beco sem saída; dá para marcar Small E Medium, porque dentro de um filtro o
+  include é OR.
+- **Uma opção ATIVA nunca desabilita**, senão não haveria como desmarcar o filtro que zerou a lista.
+  Verificado ao vivo: Small percorre include → exclude → off e a lista volta a 75.
+- **Custo:** uma passada só sobre os itens. Para cada item conta em QUANTOS filtros ativos ele
+  reprova - 0 entra na base de todos, 1 entra só na do filtro que reprovou, 2+ em nenhuma - em vez
+  de refiltrar a lista por filtro (o caminho direto seria filtros × opções × itens). Medido no
+  browser: 7 ms no pior caso sintético (7700 itens × 6 filtros, o tamanho do glossário), 5 ms na
+  forma da loja (4700 × 10). E roda só ao REFINAR: as dependências do memo são
+  `(items, query, filterState, entity.filters)`, nenhuma delas recriada a cada render, então passar
+  o mouse por um card não recalcula nada.
+
+### Limite deliberado
+
+A conta NÃO considera o `exclude` do painel (o predicado que esconde o que já está na ficha): em
+vários chamadores ele é uma closure recriada a cada render, e depender dele faria a conta refazer-se
+a cada hover. O preço é uma opção que sobrevive habilitada levando só a itens já possuídos - raro e
+inofensivo.
+
+Verificado: 1224 testes (+6 em `filterModel.test.js`), lint, e ao vivo no seletor de espécies
+(desktop 1280px e mobile 375px, o mesmo comportamento na gaveta, sem overflow e zero erros de
+console).

@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { applyFilters, deriveOptions, cycleOption } from './filterModel';
+import { applyFilters, deriveOptions, cycleOption, facetCounts } from './filterModel';
 import DetailView from '../components/common/DetailView';
 import BackButton from '../components/common/BackButton';
 import useTutorialStore, { maybeStartTutorial } from '../store/tutorialStore';
@@ -163,6 +163,20 @@ export default function SelectorPanel({
   const filtered = useMemo(
     () => applyFilters(items, { query, filterState }),
     [items, query, filterState]
+  );
+
+  // Quantos resultados cada opção ainda alcança (ver `facetCounts`): uma opção
+  // que não alcança nenhum vira um chip DESABILITADO, em vez de um clique que
+  // esvazia a lista. Depende só de (items, query, filterState) - nada que mude a
+  // cada render, senão a conta refaria a cada hover num card.
+  const counts = useMemo(
+    () =>
+      facetCounts(items, {
+        query,
+        filterState,
+        filterIds: entity.filters.map((f) => f.id),
+      }),
+    [items, query, filterState, entity.filters],
   );
   // Esconde o que já está na ficha (dedup), via predicado opcional.
   const results = useMemo(
@@ -415,13 +429,18 @@ export default function SelectorPanel({
                   <div className={styles.chips}>
                     {opts.map((opt) => {
                       const mode = filterState[f.id]?.[opt.value];
+                      // Uma opção ATIVA nunca desabilita - senão o usuário não
+                      // teria como desmarcar o filtro que zerou os resultados.
+                      const empty = !mode && !counts[f.id]?.[opt.value];
                       return (
                         <button
                           key={opt.value}
                           type="button"
                           className={`${styles.chip} ${
                             mode === 'include' ? styles.inc : mode === 'exclude' ? styles.exc : ''
-                          }`}
+                          } ${empty ? styles.chipEmpty : ''}`}
+                          disabled={empty}
+                          title={empty ? 'No results with the current filters' : undefined}
                           onClick={() => toggle(f.id, opt.value)}
                         >
                           {opt.label}

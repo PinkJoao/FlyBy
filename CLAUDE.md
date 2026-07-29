@@ -399,6 +399,47 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0077 - Opção de filtro que não alcança resultado é DESABILITADA, e a conta ignora o próprio filtro
+**Date:** 2026-07-28
+**Builds on:** DDL-0026 (o `SelectorPanel` como layout único de todo seletor - por isso isto vale de
+uma vez para espécie, classe, magia, item, loja, glossário e talento), DDL-0064/0040 (os filtros
+pré-marcados, que agora estreitam a base dos outros grupos desde a abertura do painel).
+
+**Context.** Pedido do usuário, portado do **GLIS** (outro app dele, cujo catálogo nasceu do
+`filterModel.js` daqui). Marcar um filtro deixava todos os outros chips clicáveis, inclusive os que
+levariam a zero resultado: no seletor de espécies, marcar Size **Small** e depois Speed **Swim** dá
+lista vazia, sem nada na tela dizendo que aquilo não existe.
+
+**Decision - a contagem de um filtro IGNORA o estado dele mesmo e aplica todos os OUTROS.** É o que
+`facetCounts` (`selector/filterModel.js`, puro) devolve: quantos resultados restariam se a opção
+fosse marcada - exatamente o que o clique produz. **Se ela se contasse, o grupo viraria um beco sem
+saída:** marcar "Small" zeraria todas as outras opções de tamanho, quando marcar Small E Medium é
+legítimo (dentro de um filtro o include é OR). Contagem 0 → chip apagado e `disabled`.
+- **Uma opção ATIVA nunca desabilita.** Sem essa guarda, o filtro que zerou a lista não teria como
+  ser desmarcado. Vale para os dois modos: um include e um exclude seguem percorrendo o ciclo.
+- **O chip fica VISÍVEL, não some.** Ele continua dizendo o que EXISTE naquele grupo; sumir mudaria
+  o layout a cada clique e esconderia a informação que a mudança veio dar.
+
+**Decision - a conta é uma passada só sobre os itens, contando REPROVAÇÕES.** Para cada item,
+quantos filtros ATIVOS ele reprova: 0 → entra na base de todos os grupos; 1 → só na do grupo que
+reprovou; 2+ → em nenhuma. O caminho direto (refiltrar a lista inteira por filtro, e depois por
+opção, que é o que o GLIS faz) seria filtros × opções × itens - viável lá, com centenas de
+registros, mas aqui os catálogos vão a 7700. Medido no browser: **7 ms** no pior caso sintético
+(7700 × 6 filtros) contra ~1,1 M de operações do caminho direto.
+- **REGRA de dependência, e o motivo de o `exclude` ficar de fora:** o memo depende só de
+  `(items, query, filterState, entity.filters)`, nada recriado a cada render. O `exclude` do painel
+  (o predicado de dedup do que já está na ficha) é, em vários chamadores, uma closure inline - pô-lo
+  nas dependências faria a conta refazer-se **a cada hover num card**, porque hover é `setState`.
+  Preço aceito: uma opção que sobrevive habilitada levando só a itens já possuídos. Quem acrescentar
+  um insumo a esta conta deve conferir se ele é estável entre renders.
+
+**Consequences.**
+- Todo seletor ganhou o comportamento sem nenhuma fiação nova, e uma entity futura também - a conta
+  sai de `entity.filters` + do `precompute`, que toda entity já tem.
+- A busca textual entra na base: com "fire" digitado, um grupo pode apagar opções que voltariam sem
+  a busca. É a mesma semântica de faceta, e desejável.
+- Verificado: 1224 testes (+6), lint, e ao vivo (desktop e mobile 375px). Ver CHANGELOG §100.
+
 ### DDL-0076 - CONHECIDA x PREPARADA é uma bandeira na decisão, não um segundo armazenamento
 **Date:** 2026-07-27
 **Resolve:** TC-0080 (era `needs-user-eyes`; **decisão do usuário**) e o resto do TC-0081.

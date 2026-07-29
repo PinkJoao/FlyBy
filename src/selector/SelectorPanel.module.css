@@ -334,6 +334,18 @@
   border-color: #e05050;
 }
 
+/* Opção que não alcança mais nenhum resultado com os filtros atuais: fica
+ * visível (mostra o que EXISTE naquele grupo) mas inerte. Nunca é aplicada a
+ * uma opção ativa - ver o comentário no SelectorPanel. */
+.chipEmpty {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.chipEmpty:hover {
+  filter: none;
+  border-color: var(--border);
+}
+
 /* ---- Resultados ---- */
 .results {
   overflow-y: auto;

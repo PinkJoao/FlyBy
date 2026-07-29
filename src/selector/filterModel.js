@@ -83,6 +83,68 @@ export function applyFilters(items, { query = '', filterState = {} } = {}) {
 }
 
 /**
+ * Quantos resultados restariam se cada opção fosse marcada. É o que permite
+ * DESABILITAR um chip que não leva a lugar nenhum (uma espécie Small com natação,
+ * quando já não sobrou nenhuma).
+ *
+ * ⭐ A contagem de um filtro ignora de propósito o estado DELE MESMO, e aplica
+ * todos os OUTROS: é exatamente o que o clique produz. Se ela se contasse,
+ * marcar "Small" zeraria todas as outras opções de tamanho e o grupo viraria um
+ * beco sem saída - dá para incluir Small E Medium, porque dentro de um filtro o
+ * include é OR.
+ *
+ * A contagem NÃO considera o `exclude` do painel (o predicado de dedup do que já
+ * está na ficha): ele é uma closure recriada a cada render em vários chamadores,
+ * e depender dele faria a conta refazer-se a cada hover. O custo é uma opção que
+ * sobrevive habilitada levando só a itens já possuídos - raro e inofensivo.
+ *
+ * @param {Array} items itens pré-computados
+ * @param {Object} opts
+ * @param {string} [opts.query]
+ * @param {Record<string, Record<string,'include'|'exclude'>>} [opts.filterState]
+ * @param {string[]} [opts.filterIds] quais filtros contar
+ * @returns {Record<string, Record<string, number>>} `{ [filtro]: { [opção]: n } }`
+ */
+export function facetCounts(items, { query = '', filterState = {}, filterIds = [] } = {}) {
+  const q = query.trim().toLowerCase();
+
+  const active = [];
+  for (const [filterId, optionState] of Object.entries(filterState)) {
+    const split = splitState(optionState);
+    if (split.include.length || split.exclude.length) active.push([filterId, split]);
+  }
+
+  const counts = {};
+  for (const id of filterIds) counts[id] = {};
+
+  for (const item of items) {
+    if (q && !item.searchText.includes(q)) continue;
+
+    // Um item entra na base de um filtro quando não reprova em nenhum OUTRO
+    // filtro ativo. Basta então saber QUANTOS ele reprova (e qual, se for um só):
+    // 0 → entra na base de todos; 1 → só na do filtro que reprovou; 2+ → nenhuma.
+    let failedId = null;
+    let failed = 0;
+    for (const [filterId, split] of active) {
+      if (!passesFilter(item.filterValues[filterId], split)) {
+        failed += 1;
+        if (failed > 1) break;
+        failedId = filterId;
+      }
+    }
+    if (failed > 1) continue;
+
+    for (const id of filterIds) {
+      if (failed === 1 && failedId !== id) continue;
+      const bucket = counts[id];
+      for (const v of item.filterValues[id] ?? []) bucket[v] = (bucket[v] ?? 0) + 1;
+    }
+  }
+
+  return counts;
+}
+
+/**
  * Coleta as opções distintas de um filtro a partir dos itens pré-computados
  * (para filtros cujas opções vêm dos próprios dados).
  * @param {Array} items

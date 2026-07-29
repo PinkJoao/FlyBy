@@ -15,7 +15,7 @@ import { resolveCopies } from '../selector/copy';
 import { deriveCharacter } from './index';
 import { parseSpecies, raceLineages, speciesCatalog } from './speciesData';
 import { normalizeLegacySpecies } from './legacySpeciesRules';
-import { withLineageUmbrella } from './legacyHalflingLineages';
+import { withLineageUmbrella } from './legacySwapLineages';
 import { collectOwned, collectFeatIds } from './proficiency';
 import { fixedAbilityBoosts, spellAbilityPick } from './choices';
 import { deriveGrantedProficiencies } from './autoProficiencies';

@@ -505,7 +505,7 @@ describe('featSpellBag', () => {
   });
 });
 
-describe('aviso de magia sem origem no import (5.3)', () => {
+describe('magia sem origem: guardada e avisada (5.3 / B4)', () => {
   const actor = (classId, spells) => ({
     type: 'character',
     name: 'T',
@@ -519,21 +519,27 @@ describe('aviso de magia sem origem no import (5.3)', () => {
     ],
   });
 
-  it('avisa quando nenhuma classe da ficha sabe conjurar as magias listadas', () => {
+  it('guarda no balde de carga e avisa, em vez de descartar', () => {
     const out = {};
-    foundryToCharacter(actor('Rogue', ['Magic Missile', 'Shield']), null, out);
+    const c = foundryToCharacter(actor('Rogue', ['Magic Missile', 'Shield']), null, out);
+    // LOSSLESS: as magias ficam com o personagem (o re-export as devolve)…
+    expect(c.unassignedSpells.map((r) => r.id)).toEqual(['Magic Missile', 'Shield']);
+    // …e SAEM da classe, que não sabe conjurar - senão a derivação as ignoraria
+    // e o export as perderia de novo.
+    expect(c.classes.every((cl) => (cl.spells ?? []).length === 0)).toBe(true);
     expect(out.warnings).toHaveLength(1);
     expect(out.warnings[0]).toContain('2 spells');
-    expect(out.warnings[0]).toContain('not imported');
+    expect(out.warnings[0]).toContain('exported back');
   });
 
   it('sem canal de aviso, o import segue igual (o canal é opcional)', () => {
     expect(() => foundryToCharacter(actor('Rogue', ['Shield']), null)).not.toThrow();
   });
 
-  it('nenhuma magia listada = nenhum aviso', () => {
+  it('nenhuma magia listada = nenhum aviso e balde vazio', () => {
     const out = {};
-    foundryToCharacter(actor('Rogue', []), null, out);
+    const c = foundryToCharacter(actor('Rogue', []), null, out);
     expect(out.warnings).toBeUndefined();
+    expect(c.unassignedSpells).toEqual([]);
   });
 });

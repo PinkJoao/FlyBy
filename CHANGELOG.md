@@ -5883,3 +5883,53 @@ um Bárbaro e um Fighter criados do zero saindo com o item de ataque desarmado).
 **Achado colateral, NÃO corrigido:** o `BuilderInner` viola a ordem dos Hooks (erro de console ao
 abrir a ficha). Confirmado por A/B como **pré-existente**, não regressão desta sessão. Registrado
 como TC-0083.
+
+---
+
+## 105. Revisão dos adiados, leva 3: as decisões B (43 → 35)
+
+As cinco decisões que faltavam no `DEFERRED-REVIEW.md`, resolvidas pelo usuário.
+
+**B1 - os chips de meta duplicados: MANTER, com uma razão melhor que a minha.** Eu tinha tratado a
+prosa redundante de "Creature Type"/"Size"/"Speed" (95 entradas do dado) como ruído. Não é: **muitas
+dessas prosas detalham o funcionamento CORRETO da feature** - a limitação do voo à armadura leve
+(média no Tiefling Winged) está no TEXTO, não no chip -, servem de lembrete do traço para jogadores
+novos, e o chip continua útil como referência rápida para quem já conhece a regra. As duas
+apresentações têm função diferente. Encerrado, não é mais pendência.
+
+**B2 - o `swap` do Dwarf: FEITO.** O módulo `legacyHalflingLineages.js` virou o genérico
+**`legacySwapLineages.js`**, com um registro `SWAP_LINEAGES` de duas entradas. O "Dwarf Lineage"
+oferece **Hill** e **Mountain**, cada uma TROCANDO o Dwarven Toughness que a base 2024 absorveu do
+Hill - exatamente a forma do DDL-0063, incluindo a regra de que o conjunto tem de conter a opção que
+reproduz a base.
+
+**Duas armadilhas que isso destapou, e valem como regra:**
+1. **Um `swap` move a MECÂNICA junto com o traço.** O Dwarven Toughness (+1 HP/nível) vive num
+   registro keyed por nome de raça RESOLVIDA (`hpBonuses`); ao virar linhagem, a chave `Dwarf|XPHB`
+   deixou de casar e **nenhum** Dwarf ganhava o HP. Quem acrescentar uma espécie ao `SWAP_LINEAGES`
+   tem de migrar a chave para a opção que carrega o traço.
+2. **Assinatura derivada larga dá falso positivo - foi a SEGUNDA vez.** O gerador marcava "o
+   documento do SRD guarda a linhagem dentro de si" com um `- dr:` em qualquer lugar do YAML; a
+   resistência a veneno do Dwarven Resilience é um **grant fixo**, não escolha, então o Dwarf entrava
+   e a linhagem que NÓS criamos herdava o nome e a procedência do documento publicado - o near-match
+   que o DDL-0056 proíbe. Agora o `dr:` tem de estar sob `pool:`.
+   **O sweep pegou as duas na mesma rodada** (137 linhas vermelhas).
+
+**B3 - o polimento do PDF: ADIADO** (a ficha digital já cumpre o papel da impressa). Quando voltar, o
+overflow vem primeiro: é a única parte que pode inutilizar a folha.
+
+**B4 - magias sem origem: LOSSLESS FEITO.** Novo campo aditivo `character.unassignedSpells` (balde de
+CARGA, sem bump de schema): o que um ator importado trazia e nenhuma classe da ficha sabe conjurar
+fica guardado e **volta ao Foundry no re-export**. Não aparece na Spellbook nem conta em limite
+nenhum, porque não tem origem. Medido no premade da Riswynn L17: 34 magias entram, 34 saem, e o balde
+é estável num segundo ciclo. A atribuição de origem pelo jogador ficou agendada (B4b) - o balde já
+guarda `SpellRef`, a mesma forma do `ClassEntry.spells`, então atribuir será MOVER o ref.
+
+**B5 - criação em nível alto: manter como está**, e as menções foram removidas da documentação
+(CLAUDE.md "Explicitly OUT OF SCOPE" e TESTING-PLAN).
+
+Verificado: 1263 testes (+4), lint, sweep **286/286** `--strict` (uma linha nova: Hill e Mountain no
+lugar do Dwarf base), `npm run t2` de 43 → **35** (+93 nomeados), e ao vivo - o preview do Dwarf
+mostra "Dwarf Lineage" com Hill e Mountain, sem erro de console novo. A pane do browser não compôs
+frames neste ambiente (mesma limitação do DDL-0066), então a passada visual foi por `read_page` e
+pelos mesmos code paths da UI.

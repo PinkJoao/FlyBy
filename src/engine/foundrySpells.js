@@ -31,6 +31,7 @@
 
 import { randomFoundryId, itemStats, sourceBlock, slugify, entriesToHtml } from './foundryItems';
 import { spellUuid } from './compendiumUuids';
+import { resolveSpellObj } from './spells';
 
 /** Escola do 5etools (letra) → código do dnd5e. */
 export const FOUNDRY_SCHOOL = {
@@ -149,7 +150,8 @@ export function foundryPreparation(entry, origin, isArcanum, opts = {}) {
   // Mystic Arcanum: sem espaço de magia, 1×/descanso longo (como o premade oficial).
   if (isArcanum) return { method: 'atwill', prepared: 0 };
   const leveled = (entry?.raw?.level ?? 0) > 0;
-  const slotMethod = origin.isPact || (opts.pactOnly && leveled) ? 'pact' : 'spell';
+  // `origin` null = magia do balde de carga (sem origem; ver buildUnassignedSpellItems).
+  const slotMethod = origin?.isPact || (opts.pactOnly && leveled) ? 'pact' : 'spell';
 
   if (entry.granted) {
     switch (entry.castType) {
@@ -206,9 +208,9 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
     prepared,
     // Origens de classe conjuram pelo atributo da classe (o Foundry resolve pelo
     // `sourceItem`); racial/talento carregam o próprio atributo.
-    ability: origin.kind === 'class' ? '' : (origin.ability ?? ''),
+    ability: !origin || origin.kind === 'class' ? '' : (origin.ability ?? ''),
   };
-  if (origin.kind === 'class' && origin.classId) system.sourceItem = `class:${origin.classId}`;
+  if (origin?.kind === 'class' && origin.classId) system.sourceItem = `class:${origin.classId}`;
 
   return {
     _id: randomFoundryId(),
@@ -253,6 +255,28 @@ export function buildSpellItems(derived) {
       if (!entry.raw) continue;
       out.push(buildSpellItem(entry, origin, { isArcanum: arcanumNames.has(entry.raw.name), pactOnly }));
     }
+  }
+  return out;
+}
+
+/**
+ * Itens de magia do balde de CARGA (`character.unassignedSpells`): o que um ator
+ * importado trazia e nenhuma classe da ficha sabe conjurar. Sem origem não há
+ * atributo, DC nem modo de preparação a derivar, então saem como magias
+ * PREPARADAS simples - é o suficiente para o Foundry não perder o documento, que
+ * é o único objetivo deste balde (ver o schema e DEFERRED-REVIEW B4).
+ * @param {import('../schema/character').Character} character
+ * @param {object} db
+ * @returns {object[]} itens Foundry (type 'spell')
+ */
+export function buildUnassignedSpellItems(character, db) {
+  const out = [];
+  for (const ref of character?.unassignedSpells ?? []) {
+    const raw = resolveSpellObj(db, ref?.id, ref?.source);
+    if (!raw) continue;
+    // A bandeira de preparação viaja: uma magia do balde que estava no repertório
+    // sem estar preparada (`prepared: 0` no ator de origem) volta assim.
+    out.push(buildSpellItem({ raw, prepared: ref.prepared }, null));
   }
   return out;
 }

@@ -14,7 +14,7 @@
 // -----------------------------------------------------------------------------
 
 import { migrateLegacyTiefling } from '../engine/legacyFiendishLegacies';
-import { migrateHalflingSpecies } from '../engine/legacyHalflingLineages';
+import { migrateSwapSpecies } from '../engine/legacySwapLineages';
 
 /** Versão atual do schema. Incremente ao mudar a forma + adicione um migrate.
  * v2 (2026-07-09): `ClassEntry.spells` - magias preparadas pelo jogador por
@@ -212,6 +212,14 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  * @property {number} hpBonus   Ajuste MANUAL do HP máximo (± no mini-card), somado
  *   ao HP derivado. Exporta como `attributes.hp.bonuses.overall` no Foundry.
  * @property {Currency} currency
+ * @property {SpellRef[]} unassignedSpells  Magias que um ator IMPORTADO trazia e
+ *   nenhuma classe da ficha sabe conjurar (o premade da Riswynn, uma Ladina, lista
+ *   35 como sugestão). Ficam guardadas para o re-export não PERDER conteúdo, mas
+ *   não têm origem: não aparecem na aba Spellbook nem contam em limite nenhum.
+ *   É um balde de CARGA, não uma decisão do jogador - a regra de leitura é
+ *   exatamente essa, e quem acrescentar um consumidor precisa respeitá-la.
+ *   Pendência conhecida (DEFERRED-REVIEW B4): deixar o jogador ATRIBUIR uma
+ *   origem a elas, a partir das possibilidades que a ficha oferece.
  * @property {InventoryItem[]} inventory
  */
 
@@ -327,6 +335,7 @@ export function createCharacter(opts = {}) {
     // somado quando ela é escolhida (ver engine/startingGold + Builder), sem
     // sobrescrever uma carteira já mexida.
     currency: { pp: 0, gp: 50, ep: 0, sp: 0, cp: 0 },
+    unassignedSpells: [],
     inventory: [],
   };
 }
@@ -361,7 +370,7 @@ export function migrate(raw) {
     //  - DDL-0063: "Halfling (Ghostwise)" → Halfling XPHB + linhagem, e um
     //    Halfling XPHB SEM linhagem → Lightfoot (que reproduz a base de então,
     //    com o Naturally Stealthy intacto).
-    species: migrateHalflingSpecies(migrateLegacyTiefling(raw.species ?? null)),
+    species: migrateSwapSpecies(migrateLegacyTiefling(raw.species ?? null)),
     origin: { ...base.origin, ...(raw.origin ?? {}) },
     // v1→v2: cada classe ganha `spells: []` se não tiver (Fase B2).
     classes: Array.isArray(raw.classes)
@@ -369,6 +378,9 @@ export function migrate(raw) {
       : [],
     hpBonus: typeof raw.hpBonus === 'number' ? raw.hpBonus : 0,
     currency: { ...base.currency, ...(raw.currency ?? {}) },
+    // Campo ADITIVO (sem bump de schema): uma ficha salva antes dele simplesmente
+    // não tem carga nenhuma, e deriva idêntica.
+    unassignedSpells: Array.isArray(raw.unassignedSpells) ? raw.unassignedSpells : [],
     inventory: Array.isArray(raw.inventory) ? raw.inventory : [],
   };
 }

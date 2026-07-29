@@ -109,7 +109,7 @@ export const LEGACY_SUBRACES = Object.freeze([
   // uma irmã nele daria esse traço de graça. Hoje elas são LINHAGENS de uma nova
   // forma, `swap`: o guarda-chuva "Halfling Lineage" tira o traço absorvido da
   // base e o transforma em UMA das opções, de modo que cada linhagem TROCA em vez
-  // de somar - ver `engine/legacyHalflingLineages.js`.
+  // de somar - ver `engine/legacySwapLineages.js`.
   //
   // Isso NÃO afrouxa a regra do `as` acima: `'species'` continua sendo a resposta
   // para uma fusão CRUA em que a base 2024 dá algo a mais. O `swap` é uma quarta

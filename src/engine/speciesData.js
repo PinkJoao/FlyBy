@@ -15,7 +15,7 @@ import { skillCode } from './classData';
 import { parseChoices } from './choices';
 import { legacySubracesFor, legacyStandaloneRefs, LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { legacyLegacyVersions } from './legacyFiendishLegacies';
-import { halflingLineageVersions, withLineageUmbrella, lineageUmbrellaName } from './legacyHalflingLineages';
+import { swapLineageVersions, withLineageUmbrella, lineageUmbrellaName } from './legacySwapLineages';
 import { mergedLineageVersions } from './mergedLineages';
 import { isEmptySubrace } from './settingSpecies';
 import { resolveOtherLanguage } from './speciesLanguages';
@@ -322,8 +322,10 @@ export function subraceVersions(db, race) {
  */
 export function raceLineages(db, race) {
   const legacy = legacyLegacyVersions(db, race).map((v) => buildVariant(race, v));
-  const halflingBase = withLineageUmbrella(db, race);
-  const halfling = halflingLineageVersions(db, race).map((v) => buildVariant(halflingBase, v));
+  // Linhagens de SWAP (Halfling, Dwarf): o guarda-chuva tem de entrar na base
+  // ANTES do buildVariant, senão o `replaceArr` das versões não acha o alvo.
+  const swapBase = withLineageUmbrella(db, race);
+  const swap = swapLineageVersions(db, race).map((v) => buildVariant(swapBase, v));
   // Linhagens de uma REIMPRESSÃO de cenário (LFL) fundidas na base mainstream:
   // o Elf|XPHB ganha Lorwyn/Shadowmoor, o Fairy|MPMM ganha as duas linhagens
   // Lorwyn (DDL-0066). Numa espécie SEM `_versions` nativas (Fairy) elas são
@@ -336,7 +338,7 @@ export function raceLineages(db, race) {
     if (optional) built._legacy = true;
     return built;
   });
-  return [...expandRaceVersions(race), ...legacy, ...halfling, ...merged, ...subraceVersions(db, race)];
+  return [...expandRaceVersions(race), ...legacy, ...swap, ...merged, ...subraceVersions(db, race)];
 }
 
 /**

@@ -316,13 +316,9 @@ not rediscover these; remove an item (and note where it was done) when it ships.
 
 ### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
 
-Two long-standing backlog items were **cancelled by the user**, not deferred. They are recorded
-here so a future session does not "discover the gap" and re-add them:
+Long-standing backlog items **cancelled by the user**, not deferred. They are recorded here so a
+future session does not "discover the gap" and re-add them:
 
-- **Creating a character directly at a high level.** FlyBy will not have it. A character is built
-  at level 1 and levelled up through the app (or the Foundry side, DDL-0055/0056). The old
-  DDL-0013 D2 note about the high-level create guide reusing the level-1 step order is therefore
-  moot — there is no such flow to order.
 - **Sidekick classes and UA content** (Mystic…). Not supported. This is why they are absent from
   every curated registry (subclassGrants, featureOptions, hpBonuses) and from the sweep matrix —
   that absence is the decision, not an oversight.
@@ -398,6 +394,76 @@ any other data file.
 ADR-style. Newest first. Each entry: **date — title**, then Context / Decision /
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
+
+### DDL-0080 - O SRD é REFERÊNCIA, não autoridade; e um `swap` move a mecânica junto com o traço
+**Date:** 2026-07-29
+**Contexto:** a revisão dos itens adiados por conveniência (`DEFERRED-REVIEW.md`), em três levas.
+**Builds on:** DDL-0063 (a forma `as: 'swap'`, que ganha o segundo alvo), DDL-0073 (a distinção
+`DELIBERATE` × `EXPECTED`, que passa a ser o instrumento da divergência deliberada), DDL-0056 (a
+regra do near-match, que uma assinatura larga quase violou), DDL-0035 (que tornou obsoleto o motivo
+de o `{@table}` ser inerte).
+
+**Decision - o princípio que rege a fidelidade ao SRD (fixado pelo usuário).** *Não precisamos seguir
+o SRD se isso penalizar o usuário ou o funcionamento correto do app e da ficha exportada no Foundry.*
+Onde ele é apenas convenção, convergir é opcional; onde segui-lo deixa o jogador pior, **divergimos**.
+- **Primeiro caso aplicado:** o item "Unarmed Strike". O SRD o concede só ao Bárbaro e ao Monge, mas a
+  regra 2024 diz que TODA criatura pode fazer um Ataque Desarmado - e sem o item, um Mago que perdeu o
+  cajado chega ao Foundry sem botão nenhum de ataque.
+- **COROLÁRIO obrigatório, aprendido no mesmo dia: divergir sem NOMEAR faz o placar SUBIR.** O
+  Unarmed Strike universal acrescentou 40 achados e inflou outra entrada `EXPECTED` de 6 para 46,
+  porque o passo novo se misturava ao ItemGrant oficial. Toda divergência deliberada precisa de DUAS
+  coisas: uma FORMA que não se passe pela do SRD (um título de advancement próprio) e uma entrada
+  `EXPECTED` com o motivo escrito. Sem as duas, ela contamina o oráculo.
+- **E o inverso também vale:** antes de nomear uma divergência como esperada, confira se o predicado
+  não esconde um bug real. O de "convenção de nível de raça" teria engolido uma lacuna verdadeira (a
+  magia ESCOLHIDA da linhagem fora da escada de concessão), que foi corrigida primeiro.
+
+**Decision - um `swap` de linhagem move a MECÂNICA junto com o traço (o Dwarf).** O módulo virou
+genérico (`engine/legacySwapLineages.js`, registro `SWAP_LINEAGES`) e o Dwarf entrou com Hill/
+Mountain. O que a implementação ensinou, e que é **obrigatório para uma entrada futura**:
+- **Varra os registros curados keyed por nome de raça RESOLVIDA.** O Dwarven Toughness (+1 HP/nível)
+  vive no `hpBonuses` sob a chave `Dwarf|XPHB`; ao virar linhagem, a chave deixou de casar e
+  **nenhum** Dwarf ganhava o HP. A chave tem de migrar para a opção que carrega o traço.
+- **Eleve o campo ESTRUTURADO da opção.** A mecânica inteira do Mountain é `armorProficiencies`, não
+  prosa: sem entrar no `LIFTED_FIELDS`, a linhagem viraria só texto.
+- **O sweep é quem pega isso.** As duas falhas apareceram na mesma rodada, em 137 linhas.
+
+**Decision - uma assinatura DERIVADA tem de ser estreita (segunda ocorrência).** O gerador marcava "o
+documento do SRD guarda a linhagem dentro de si" com um `- dr:` em qualquer lugar do YAML. A
+resistência a veneno do Dwarven Resilience é um **grant fixo**, não uma escolha, então o Dwarf entrava
+na lista e a linhagem que NÓS criamos herdava o nome e a procedência do documento publicado - o
+Foundry ofereceria "atualizar do compêndio" e trocaria a linhagem escolhida pela base. O `dr:` agora
+precisa estar sob `pool:`. É a mesma lição do `ItemChoice` do Humano (DDL-0079): **medir a assinatura
+contra os dois lados, o que deve casar e o que NÃO deve.**
+
+**Decision - conteúdo que o modelo não sabe explicar é CARGA, não descarte.** Um ator externo pode
+listar magias que nenhuma classe da ficha sabe conjurar (35 no premade da Riswynn). Elas somiam em
+silêncio; agora vão para `character.unassignedSpells` - campo ADITIVO (sem bump de schema; ficha
+antiga nasce com o balde vazio e deriva idêntica) - e **voltam ao Foundry no re-export**.
+- **A regra de leitura é estreita e tem de ser respeitada:** o balde é carga, não decisão. Não aparece
+  na Spellbook, não conta em limite nenhum. Quem acrescentar um consumidor precisa manter isso.
+- **Mais o AVISO no import.** Perder conteúdo é ruim; perder em SILÊNCIO é o que era inaceitável.
+- Guarda `SpellRef`, a mesma forma do `ClassEntry.spells`, de propósito: deixar o jogador ATRIBUIR uma
+  origem (agendado como B4b) será MOVER o ref de um array para o outro.
+
+**Decision - redundância na ficha pode ser FUNÇÃO, não ruído (do usuário).** Eu propus esconder os
+chips de meta onde existe um traço de prosa homônimo (95 entradas). O usuário manteve, e a razão
+corrige a minha premissa: **muitas dessas prosas detalham o funcionamento correto da feature** - a
+limitação do voo à armadura leve (média no Tiefling Winged) está no TEXTO, não no chip -, servem de
+lembrete para jogadores novos, e o chip é referência rápida para veteranos. As duas apresentações têm
+função diferente; esconder qualquer uma perde informação. **Encerrado, não reabrir.**
+
+**Consequences.**
+- Uma classe nova ganha o Ataque Desarmado sozinha; uma espécie nova de `swap` é uma entrada de
+  registro (mais a varredura de chaves acima).
+- Fechados também: `{@table}` inline vira link (226 das 230 tags do conteúdo que exibimos resolvem),
+  as três raridades sem chip da loja (301 itens inalcançáveis), o pseudo-idioma `other` (registro de
+  22 espécies; "Other" era a única escolha do app que não dizia o que era) e o boon da ancestralidade
+  do Goliath como documento à parte.
+- **Escopo removido da documentação a pedido do usuário:** a criação direta em nível alto deixou de
+  ser mencionada (era uma entrada em "Explicitly OUT OF SCOPE").
+- Verificado ao fim das três levas: 1263 testes, lint, sweep **286/286** `--strict`, `npm run t2` de
+  71 → **35** (+93 nomeados como esperados). Ver CHANGELOG §103-105 e `DEFERRED-REVIEW.md`.
 
 ### DDL-0079 - O SRD é a fonte quando a informação é do SISTEMA DE DESTINO; e o que ele publica decide a FORMA do documento
 **Date:** 2026-07-29
@@ -3088,7 +3154,7 @@ Stensia PSI). Plus: record compendium UUIDs and E5 PDF polish as tracked known p
   header; becomes real work only if a legacy toggle ever ships.
 - **KNOWN DEFERRED BACKLOG (tracked, deliberately later)** — see the roadmap subsection added
   in §4: real compendium UUIDs; E5 PDF polish; sidekick/UA classes; the optional foundry-*.json
-  overlay adoption (DDL-0009); high-level-create guide ordering; legacy-content toggle.
+  overlay adoption (DDL-0009); legacy-content toggle.
 
 **Consequences.**
 - A new subrace in the data Just Works (it becomes a lineage row + sweep row automatically);

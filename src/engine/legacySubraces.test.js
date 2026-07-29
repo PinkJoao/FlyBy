@@ -40,7 +40,7 @@ describe('LEGACY_SUBRACES (registro curado, DDL-0058/0059/0060)', () => {
     expect(lineages.map((e) => e.subrace)).toEqual(['Pallid|EGW']);
     expect(lineages[0].supersedes).toEqual(['Elven Lineage']);
     // Só o Keldon: Ghostwise e Lotusden saíram daqui em 2026-07-23, para a forma
-    // `swap` (DDL-0063) - ver legacyHalflingLineages.js.
+    // `swap` (DDL-0063) - ver legacySwapLineages.js.
     expect(LEGACY_SUBRACES.filter((e) => e.as === 'species').map((e) => e.subrace)).toEqual(['Keldon|PSD']);
   });
 

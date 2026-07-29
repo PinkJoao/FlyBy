@@ -33,9 +33,22 @@ const FEAT_HP = {
   'boon of fortitude': { flat: 40 },
 };
 
-/** `Nome|FONTE` da raça RESOLVIDA (linhagem inclusa) → taxa por nível. */
+/**
+ * `Nome|FONTE` da raça RESOLVIDA (linhagem inclusa) → taxa por nível.
+ *
+ * A chave é a raça RESOLVIDA, então uma espécie cujo traço virou opção de
+ * linhagem precisa da chave DA OPÇÃO. É o caso do Dwarf: desde o `swap` do
+ * DDL-0063 o "Dwarven Toughness" não é mais um traço de toda a espécie - ele é a
+ * opção *Hill*, e o *Mountain* troca-o pelo Dwarven Armor Training. Deixar só
+ * `Dwarf|XPHB` daria o bônus a ninguém (nenhum Dwarf fica sem linhagem depois da
+ * migração); dar aos dois daria HP de graça ao Mountain.
+ *
+ * REGRA para quem acrescentar uma espécie ao `SWAP_LINEAGES`: se o traço absorvido
+ * tiver mecânica em algum registro curado keyed por nome de raça (este, o
+ * `NATURAL_ARMOR`…), a chave tem de migrar para a linhagem junto.
+ */
 const RACE_HP_PER_LEVEL = {
-  'Dwarf|XPHB': 1,
+  'Dwarf; Hill Lineage|PHB': 1,
   'Dwarf (Kaladesh)|PSK': 1,
 };
 

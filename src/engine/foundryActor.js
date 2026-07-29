@@ -39,7 +39,7 @@ import {
   classFluffHtml,
   subclassFluffHtml,
 } from './foundryItems';
-import { buildSpellItems, buildSpellSlots } from './foundrySpells';
+import { buildSpellItems, buildSpellSlots, buildUnassignedSpellItems } from './foundrySpells';
 
 /**
  * Monta o ator Foundry completo a partir do personagem + compêndio.
@@ -65,7 +65,10 @@ export function assembleFoundryActor(character, db) {
   // de concessão (raça/subclasse) precisam apontar, no nível JÁ alcançado, para o
   // item de magia embutido que saiu dali (`value.added`, TC-0072). Eles entram na
   // lista no fim, junto do inventário, para a ordem do arquivo não mudar.
-  const spellItems = buildSpellItems(derived);
+  // Junto do balde de CARGA: as magias que um ator importado trazia e nenhuma
+  // classe da ficha sabe conjurar. Sem origem, mas devolvidas ao Foundry para o
+  // round-trip não perder conteúdo (schema `unassignedSpells`).
+  const spellItems = [...buildSpellItems(derived), ...buildUnassignedSpellItems(character, db)];
   const spellIds = new Map(spellItems.map((s) => [(s.name ?? '').trim().toLowerCase(), s._id]));
 
   // Espécie (com a linhagem já resolvida), background e talento de origem. O item

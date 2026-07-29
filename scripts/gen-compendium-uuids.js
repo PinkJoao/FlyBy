@@ -68,7 +68,16 @@ function head(file) {
     // uma espécie que é UMA só, com a variante interna, das que têm linhagens só
     // porque NÓS as acrescentamos (DDL-0063) - essas não podem herdar a
     // procedência do documento publicado. Ver SPECIES_SELF_LINEAGE.
-    selfLineage: /^ +restriction:\n +type: race$/m.test(txt) || /^ +- dr:/m.test(txt),
+    //
+    // O `dr:` TEM de estar sob `pool:`, não sob `grants:`. Foi a SEGUNDA vez que
+    // uma assinatura larga deu falso positivo aqui: aceitando `- dr:` em qualquer
+    // lugar, o Dwarf entrava (a resistência a veneno do Dwarven Resilience é um
+    // GRANT fixo, não uma escolha), e a linhagem que NÓS criamos para ele
+    // (DDL-0063) passava a herdar o nome e a procedência do documento publicado -
+    // exatamente o near-match que o DDL-0056 proíbe.
+    selfLineage:
+      /^ +restriction:\n +type: race$/m.test(txt)
+      || /^ +pool:\n +- dr:/m.test(txt),
   };
 }
 

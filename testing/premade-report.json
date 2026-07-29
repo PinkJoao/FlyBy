@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T17:13:33.190Z",
+  "generatedAt": "2026-07-29T21:55:13.347Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -19,8 +19,8 @@
       "why": "O aumento de atributo do capstone (Primal Champion, Body and Mind) vira um AbilityScoreImprovement no item de CLASSE. O próprio SRD usa as duas formas - no Monge ele está no item de classe (como o nosso), no Bárbaro no item da FEATURE -, então o passo a mais no item de classe do Bárbaro é escolha de forma, não lacuna."
     },
     {
-      "id": "curated-halfling-lineage",
-      "why": "O guarda-chuva \"Halfling Lineage\" é acréscimo NOSSO (DDL-0063): o livro 2024 absorveu o Naturally Stealthy do Lightfoot na base, e nós o devolvemos como escolha. O documento do dnd5e não tem essa linhagem, então o item sai com o nome do 5etools e sem procedência - apontar para o \"Halfling\" publicado faria o Foundry oferecer \"atualizar do compêndio\" e trocar a linhagem escolhida pela base."
+      "id": "curated-swap-lineage",
+      "why": "Os guarda-chuvas \"Halfling Lineage\" e \"Dwarf Lineage\" são acréscimo NOSSO (DDL-0063): o livro 2024 absorveu na base o traço de UMA das sub-raças 2014 (Naturally Stealthy do Lightfoot, Dwarven Toughness do Hill) e deixou as outras de fora; nós o devolvemos como escolha. O documento do dnd5e não tem essa linhagem, então o item sai com o nosso nome e sem procedência - apontar para o \"Halfling\"/\"Dwarf\" publicado faria o Foundry oferecer \"atualizar do compêndio\" e trocar a linhagem escolhida pela base."
     },
     {
       "id": "race-grant-level-convention",
@@ -36,61 +36,6 @@
     }
   ],
   "aggregate": [
-    {
-      "cat": "items.spell",
-      "count": 11,
-      "actors": [
-        "Merric L11",
-        "Merric L17",
-        "Perrin L11",
-        "Perrin L17",
-        "Quillathe L05",
-        "Randal L17",
-        "Riswynn L05",
-        "Riswynn L11",
-        "Riswynn L17",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Merric L11",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "enlarge/reduce"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L17",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "enlarge/reduce"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Perrin L11",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "fireball"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Perrin L17",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "fireball"
-          ],
-          "after": []
-        }
-      ]
-    },
     {
       "cat": "advancement.class.grants",
       "count": 8,
@@ -275,6 +220,44 @@
           "key": "goliath",
           "before": [
             "ItemChoice@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "items.spell",
+      "count": 3,
+      "actors": [
+        "Quillathe L05",
+        "Sefris L11",
+        "Sefris L17"
+      ],
+      "examples": [
+        {
+          "actor": "Quillathe L05",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "detect poison and disease"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Sefris L11",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "eldritch blast (repelling)"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Sefris L17",
+          "cat": "items.spell",
+          "key": "names",
+          "before": [
+            "eldritch blast (repelling)"
           ],
           "after": []
         }
@@ -940,14 +923,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "enlarge/reduce"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class",
           "key": "barbarian",
           "before": [],
@@ -971,14 +946,6 @@
       "file": "fvtt-Actor-merric-MerricLv17000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "enlarge/reduce"
-          ],
-          "after": []
-        },
         {
           "cat": "advancement.class",
           "key": "barbarian",
@@ -1161,7 +1128,7 @@
           "after": [
             "halfling; lightfoot lineage"
           ],
-          "expected": "curated-halfling-lineage"
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.feat",
@@ -1170,7 +1137,7 @@
           "after": [
             "halfling lineage (lightfoot)"
           ],
-          "expected": "curated-halfling-lineage"
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "advancement.class.grants",
@@ -1194,7 +1161,7 @@
           "after": [
             "halfling; lightfoot lineage"
           ],
-          "expected": "curated-halfling-lineage"
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.feat",
@@ -1203,7 +1170,7 @@
           "after": [
             "halfling lineage (lightfoot)"
           ],
-          "expected": "curated-halfling-lineage"
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "advancement.class.grants",
@@ -1227,7 +1194,7 @@
           "after": [
             "halfling; lightfoot lineage"
           ],
-          "expected": "curated-halfling-lineage"
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.feat",
@@ -1237,15 +1204,7 @@
             "halfling lineage (lightfoot)",
             "self-restoration"
           ],
-          "expected": "curated-halfling-lineage"
-        },
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "fireball"
-          ],
-          "after": []
+          "expected": "curated-swap-lineage"
         }
       ]
     },
@@ -1291,7 +1250,7 @@
           "after": [
             "halfling; lightfoot lineage"
           ],
-          "expected": "curated-halfling-lineage"
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.feat",
@@ -1301,15 +1260,7 @@
             "halfling lineage (lightfoot)",
             "self-restoration"
           ],
-          "expected": "curated-halfling-lineage"
-        },
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "fireball"
-          ],
-          "after": []
+          "expected": "curated-swap-lineage"
         }
       ]
     },
@@ -1471,14 +1422,6 @@
           "after": []
         },
         {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "fireball"
-          ],
-          "after": []
-        },
-        {
           "cat": "items.gear",
           "key": "names",
           "before": [],
@@ -1503,6 +1446,26 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.race",
+          "key": "names",
+          "before": [
+            "dwarf"
+          ],
+          "after": [
+            "dwarf; hill lineage"
+          ],
+          "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [],
+          "after": [
+            "dwarf lineage (hill)"
+          ],
+          "expected": "curated-swap-lineage"
+        },
+        {
           "cat": "items.gear",
           "key": "names",
           "before": [],
@@ -1519,12 +1482,24 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.spell",
+          "cat": "items.race",
           "key": "names",
           "before": [
-            "magic missile"
+            "dwarf"
           ],
-          "after": []
+          "after": [
+            "dwarf; hill lineage"
+          ],
+          "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [],
+          "after": [
+            "dwarf lineage (hill)"
+          ],
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.gear",
@@ -1549,15 +1524,24 @@
           "after": 85000
         },
         {
-          "cat": "items.spell",
+          "cat": "items.race",
           "key": "names",
           "before": [
-            "fireball",
-            "freedom of movement",
-            "grease",
-            "magic missile"
+            "dwarf"
           ],
-          "after": []
+          "after": [
+            "dwarf; hill lineage"
+          ],
+          "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [],
+          "after": [
+            "dwarf lineage (hill)"
+          ],
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.gear",
@@ -1576,45 +1560,24 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.spell",
+          "cat": "items.race",
           "key": "names",
           "before": [
-            "comprehend languages",
-            "create or destroy water",
-            "detect magic",
-            "detect thoughts",
-            "dimension door",
-            "disguise self",
-            "enlarge/reduce",
-            "find familiar",
-            "fireball",
-            "fly",
-            "fog cloud",
-            "freedom of movement",
-            "gaseous form",
-            "goodberry",
-            "grease",
-            "heroism",
-            "jump",
-            "locate object",
-            "longstrider",
-            "mage armor",
-            "magic missile",
-            "mirror image",
-            "prayer of healing",
-            "private sanctum",
-            "protection from evil and good",
-            "resilient sphere",
-            "revivify",
-            "see invisibility",
-            "shield",
-            "suggestion",
-            "tiny hut",
-            "unseen servant",
-            "wall of force",
-            "web"
+            "dwarf"
           ],
-          "after": []
+          "after": [
+            "dwarf; hill lineage"
+          ],
+          "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.feat",
+          "key": "names",
+          "before": [],
+          "after": [
+            "dwarf lineage (hill)"
+          ],
+          "expected": "curated-swap-lineage"
         },
         {
           "cat": "items.gear",

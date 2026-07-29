@@ -11,7 +11,21 @@ const db = {
       { name: 'Alert', source: 'XPHB' },
     ],
   },
-  races: { race: [{ name: 'Dwarf', source: 'XPHB' }, { name: 'Human', source: 'XPHB' }] },
+  races: {
+    race: [
+      {
+        name: 'Dwarf',
+        source: 'XPHB',
+        entries: [{ type: 'entries', name: 'Dwarven Toughness', entries: ['+1 HP por nível'] }],
+      },
+      { name: 'Human', source: 'XPHB' },
+    ],
+    subrace: [
+      { name: 'Mountain', source: 'PHB', raceName: 'Dwarf', raceSource: 'PHB',
+        armorProficiencies: [{ light: true, medium: true }],
+        entries: [{ type: 'entries', name: 'Dwarven Armor Training', entries: ['leve e média'] }] },
+    ],
+  },
   'class-sorcerer': {
     subclass: [
       { name: 'Draconic Sorcery', shortName: 'Draconic', source: 'XPHB', subclassFeatures: [] },
@@ -52,10 +66,15 @@ describe('deriveHpBonus', () => {
     expect(deriveHpBonus(c, db).total).toBe(0);
   });
 
-  it('Dwarven Toughness (Dwarf XPHB): +1 por nível; outra raça não', () => {
+  it('Dwarven Toughness: +1 por nível na linhagem HILL, não na Mountain', () => {
+    // Desde o `swap` do DDL-0063 o traço não é da espécie inteira: ele é a opção
+    // *Hill*, e o *Mountain* troca-o pelo Dwarven Armor Training. A chave do
+    // registro é a raça RESOLVIDA, então tem de ser a da LINHAGEM.
     const c = base(7);
-    c.species = { id: 'dwarf', source: 'XPHB', choices: {} };
+    c.species = { id: 'dwarf', source: 'XPHB', lineage: 'Dwarf; Hill Lineage', choices: {} };
     expect(deriveHpBonus(c, db)).toEqual({ total: 7, perLevelRate: 1, flat: 0 });
+    c.species = { id: 'dwarf', source: 'XPHB', lineage: 'Dwarf; Mountain Lineage', choices: {} };
+    expect(deriveHpBonus(c, db).total).toBe(0);
     c.species = { id: 'human', source: 'XPHB', choices: {} };
     expect(deriveHpBonus(c, db).total).toBe(0);
   });

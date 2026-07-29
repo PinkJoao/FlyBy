@@ -1188,21 +1188,33 @@ export function foundryToCharacter(actor, db, out = null) {
     target.spells = [...target.spells, ...orphans];
   }
   // Magia que o ator lista mas nenhuma classe do personagem sabe conjurar (o
-  // premade da Riswynn, uma Ladina, traz 35 como SUGESTÃO). Ela não tem origem
-  // que a segure no nosso modelo, então some - e sumir CALADO é a parte ruim.
-  // Ver DEFERRED-REVIEW §5.3: a forma elaborada (guardar as magias sem origem)
-  // fica pendente; o aviso é a metade que custa nada e resolve a surpresa.
+  // premade da Riswynn, uma Ladina, traz 35 como SUGESTÃO). Ela não tem origem que
+  // a segure na derivação, e deixá-la numa classe não-conjuradora a fazia
+  // desaparecer no re-export - em SILÊNCIO, que era a parte ruim.
+  //
+  // Vai para o balde de CARGA `unassignedSpells` (schema): o re-export a devolve
+  // ao Foundry, mas ela não aparece na Spellbook nem conta em limite nenhum,
+  // porque não tem origem. Mais o AVISO, para o jogador saber que existe.
   const canCast = (c) =>
     !!casterInfo(
       c.classId ? resolveClassObj(db, c.classId, c.source) : null,
       c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null,
     );
-  const lost = char.classes.reduce((n, c) => n + (canCast(c) ? 0 : (c.spells?.length ?? 0)), 0);
-  if (lost > 0 && out) {
+  const stranded = [];
+  for (const cls of char.classes) {
+    if (canCast(cls) || !(cls.spells?.length > 0)) continue;
+    stranded.push(...cls.spells);
+    cls.spells = [];
+  }
+  char.unassignedSpells = stranded;
+  if (stranded.length && out) {
+    const n = stranded.length;
     out.warnings = [
       ...(out.warnings ?? []),
-      `${lost} ${lost === 1 ? 'spell was' : 'spells were'} listed on this actor but no class on the sheet can cast `
-      + `${lost === 1 ? 'it' : 'them'}, so ${lost === 1 ? 'it was' : 'they were'} not imported.`,
+      `${n} ${n === 1 ? 'spell' : 'spells'} on this actor ${n === 1 ? 'has' : 'have'} no spellcasting origin on `
+      + `the sheet (no class here can cast ${n === 1 ? 'it' : 'them'}). ${n === 1 ? 'It is' : 'They are'} kept `
+      + `with the character and will be exported back, but ${n === 1 ? 'it does' : 'they do'} not appear in the `
+      + 'Spellbook.',
     ];
   }
 

@@ -90,20 +90,29 @@ export const EXPECTED = [
       && (f.before ?? []).length === 0,
   },
   {
-    id: 'curated-halfling-lineage',
+    id: 'curated-swap-lineage',
     why:
-      'O guarda-chuva "Halfling Lineage" é acréscimo NOSSO (DDL-0063): o livro 2024 absorveu o '
-      + 'Naturally Stealthy do Lightfoot na base, e nós o devolvemos como escolha. O documento do '
-      + 'dnd5e não tem essa linhagem, então o item sai com o nome do 5etools e sem procedência - '
-      + 'apontar para o "Halfling" publicado faria o Foundry oferecer "atualizar do compêndio" e '
-      + 'trocar a linhagem escolhida pela base.',
-    test: (f) =>
-      (f.cat === 'items.race'
-        && (f.before ?? []).includes('halfling')
-        && (f.after ?? []).some((n) => String(n).startsWith('halfling;')))
-      // O traço da linhagem também é nosso: onde o premade tem "Naturally
-      // Stealthy" (o traço que a base 2024 absorveu), nós temos o guarda-chuva.
-      || (f.cat === 'items.feat' && (f.after ?? []).some((n) => String(n).startsWith('halfling lineage'))),
+      'Os guarda-chuvas "Halfling Lineage" e "Dwarf Lineage" são acréscimo NOSSO (DDL-0063): o livro '
+      + '2024 absorveu na base o traço de UMA das sub-raças 2014 (Naturally Stealthy do Lightfoot, '
+      + 'Dwarven Toughness do Hill) e deixou as outras de fora; nós o devolvemos como escolha. O '
+      + 'documento do dnd5e não tem essa linhagem, então o item sai com o nosso nome e sem '
+      + 'procedência - apontar para o "Halfling"/"Dwarf" publicado faria o Foundry oferecer '
+      + '"atualizar do compêndio" e trocar a linhagem escolhida pela base.',
+    test: (f) => {
+      const swaps = ['halfling', 'dwarf'];
+      // O item de RAÇA: o premade tem a espécie nua, nós a linhagem.
+      if (f.cat === 'items.race') {
+        return swaps.some(
+          (base) => (f.before ?? []).includes(base) && (f.after ?? []).some((n) => String(n).startsWith(`${base};`)),
+        );
+      }
+      // E o TRAÇO: onde o premade tem o traço que a base absorveu, nós temos o
+      // guarda-chuva ("Halfling Lineage (Lightfoot)", "Dwarf Lineage (Hill)").
+      return (
+        f.cat === 'items.feat'
+        && (f.after ?? []).some((n) => swaps.some((base) => String(n).startsWith(`${base} lineage`)))
+      );
+    },
   },
   {
     id: 'race-grant-level-convention',

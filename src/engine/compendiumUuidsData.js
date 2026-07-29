@@ -762,11 +762,7 @@ export const SPECIES_NAMES = [
  *  "atualizar do compêndio" e trocaria a linhagem escolhida pela base. */
 export const SPECIES_SELF_LINEAGE = [
   "Dragonborn",
-  "Dwarf",
-  "Goliath",
-  "Tiefling, Abyssal",
-  "Tiefling, Chthonic",
-  "Tiefling, Infernal"
+  "Goliath"
 ];
 
 /** Nomes de TODO documento do origins24 (espécies, traços de espécie, origens),

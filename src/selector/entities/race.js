@@ -11,7 +11,7 @@ import { latestOnly } from '../reprints';
 import { resolveCopies } from '../copy';
 import { legacyStandaloneSpecies } from '../../engine/speciesData';
 import { withLegacyTable } from '../../engine/legacyFiendishLegacies';
-import { withLineageUmbrella } from '../../engine/legacyHalflingLineages';
+import { withLineageUmbrella } from '../../engine/legacySwapLineages';
 import { isRemovedSpecies, isSettingVariant, imageDonorFor } from '../../engine/settingSpecies';
 import { isFoldedSpecies, lineageImagePath } from '../../engine/mergedLineages';
 import { lineageLabel } from '../../engine/speciesData';

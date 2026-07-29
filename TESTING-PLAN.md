@@ -965,9 +965,8 @@ on the user's machines).
   274/274 `--strict`, 48 premades importados+re-exportados ok.
   **Impacto na campanha:** as fichas premade de nível 1/5/11 que o usuário adicionou ao material de
   referência são agora um gabarito muito melhor para a **T2** - compare o advancement gerado com o
-  do premade do mesmo nível antes de marcar uma linha como `ok`. **Backlog: "criar em nível alto" e
-  "sidekick/UA" foram CANCELADOS pelo usuário** (ver CLAUDE.md §4, "Explicitly OUT OF SCOPE") - não
-  são mais pendências. **Next action: stage T1b - SPECIES + lineages** (inalterado).
+  do premade do mesmo nível antes de marcar uma linha como `ok`. **Backlog: "sidekick/UA" foi
+  CANCELADO pelo usuário** (ver CLAUDE.md §4, "Explicitly OUT OF SCOPE") - não é mais pendência. **Next action: stage T1b - SPECIES + lineages** (inalterado).
 
 - **2026-07-22 (4)** - **TC-0043 FIXED (DDL-0054) - the ledger has NO open items.** By user
   decision, with the scope widened by them from "warlock patrons" to **every list-widening
@@ -1355,7 +1354,7 @@ on the user's machines).
   +1@6/11/17, `weaponFilter` RAW-faithful, native dnd5e weaponProf ids on export). Grants
   inside featureoption OPTIONS verified UNREACHABLE (Totem Warrior is reprint-hidden) -
   documented, not built. Known deferred backlog now lives in CLAUDE.md §4 (UUIDs, E5 polish,
-  sidekicks/UA, overlay adoption, high-level create, legacy toggle). 842 tests, lint, sweep
+  sidekicks/UA, overlay adoption, legacy toggle). 842 tests, lint, sweep
   274/274 `--strict`, live pass (Genasi Air + Kensei pickers).
   **Next action: T1a session 2 - BARBARIAN + its 10 subclasses** (then Bard).
 

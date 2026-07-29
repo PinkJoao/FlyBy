@@ -733,6 +733,101 @@ export const ORIGIN_IDS = {
   "versatile": "phbsptVersatile0",
 };
 
+/** Nomes das ESPÉCIES publicadas (documentos `race` do origins24), na grafia do
+ *  dnd5e - "Elf, High" onde o 5etools diz "Elf; High Elf Lineage". Ver
+ *  engine/compendiumUuids.js `srdSpeciesName`. */
+export const SPECIES_NAMES = [
+  "Dragonborn",
+  "Dwarf",
+  "Elf, Drow",
+  "Elf, High",
+  "Elf, Wood",
+  "Gnome, Forest",
+  "Gnome, Rock",
+  "Goliath",
+  "Halfling",
+  "Human",
+  "Orc",
+  "Tiefling, Abyssal",
+  "Tiefling, Chthonic",
+  "Tiefling, Infernal"
+];
+
+/** Espécies cujo documento do SRD guarda a LINHAGEM dentro de si (um passo
+ *  `ItemChoice`, ou um `Trait` com pool de escolha): ali "Dragonborn" é a
+ *  espécie INTEIRA, ancestralidade inclusa, então uma linhagem nossa pode herdar
+ *  o nome e a procedência do documento. Onde o SRD não faz isso, as nossas
+ *  linhagens são acréscimo curado (o guarda-chuva do Halfling, DDL-0063) e
+ *  apontar para o documento publicado seria um near-match - o Foundry ofereceria
+ *  "atualizar do compêndio" e trocaria a linhagem escolhida pela base. */
+export const SPECIES_SELF_LINEAGE = [
+  "Dragonborn",
+  "Dwarf",
+  "Goliath",
+  "Tiefling, Abyssal",
+  "Tiefling, Chthonic",
+  "Tiefling, Infernal"
+];
+
+/** Nomes de TODO documento do origins24 (espécies, traços de espécie, origens),
+ *  na grafia do dnd5e. Ver engine/compendiumUuids.js `srdOriginName`. */
+export const ORIGIN_NAMES = [
+  "Acolyte",
+  "Adrenaline Rush",
+  "Brave",
+  "Breath Weapon",
+  "Cloud's Jaunt",
+  "Criminal",
+  "Draconic Flight",
+  "Dragonborn",
+  "Dwarf",
+  "Dwarven Resilience",
+  "Dwarven Toughness",
+  "Elf, Drow",
+  "Elf, High",
+  "Elf, Wood",
+  "Elven Lineage, Drow",
+  "Elven Lineage, High Elf",
+  "Elven Lineage, Wood Elf",
+  "Fey Ancestry",
+  "Fiendish Legacy, Abyssal",
+  "Fiendish Legacy, Chthonic",
+  "Fiendish Legacy, Infernal",
+  "Fire's Burn",
+  "Frost's Chill",
+  "Giant Ancestry",
+  "Gnome, Forest",
+  "Gnome, Rock",
+  "Gnomish Cunning",
+  "Gnomish Lineage, Forest",
+  "Gnomish Lineage, Rock",
+  "Goliath",
+  "Halfling",
+  "Halfling Nimbleness",
+  "Hill's Tumble",
+  "Human",
+  "Keen Senses",
+  "Large Form",
+  "Luck",
+  "Naturally Stealthy",
+  "Orc",
+  "Otherworldly Presence",
+  "Powerful Build",
+  "Relentless Endurance",
+  "Resourceful",
+  "Sage",
+  "Skillful",
+  "Soldier",
+  "Stone's Endurance",
+  "Stonecunning",
+  "Storm's Thunder",
+  "Tiefling, Abyssal",
+  "Tiefling, Chthonic",
+  "Tiefling, Infernal",
+  "Trance",
+  "Versatile"
+];
+
 /** `nomeDoTalento` → _id (pacote feats24). */
 export const FEAT_IDS = {
   "ability score improvement": "phbftAbilityScor",

@@ -64,9 +64,11 @@ export function assembleFoundryActor(character, db) {
   // do talento de origem é ligado ao background por um ItemGrant; o(s) talento(s)
   // de sub-escolha da ESPÉCIE (ex: Human "Versatile") são ligados ao item de espécie.
   const speciesFeatItems = buildSpeciesFeatItems(character, db);
-  // Traços com ação/recurso próprio (Breath Weapon…) viram itens, como nos
-  // premades; os que só têm Active Effect continuam no próprio item de raça.
-  const speciesTraitItems = raceObj ? buildSpeciesTraitItems(raceObj, db) : [];
+  // Um item por traço de espécie, como nos atores oficiais (TC-0064). Só os
+  // traços JÁ alcançados são embutidos - os de nível maior viram a receita de
+  // compêndio no advancement do item de raça.
+  const totalLevel = (character?.classes ?? []).reduce((sum, c) => sum + (c.level || 0), 0) || 1;
+  const speciesTraitItems = raceObj ? buildSpeciesTraitItems(raceObj, db, totalLevel) : [];
   const speciesItem = raceObj ? buildSpeciesItem(character, raceObj, db, speciesFeatItems, speciesTraitItems) : null;
   if (speciesItem) items.push(speciesItem, ...speciesFeatItems, ...speciesTraitItems);
   const originFeatItem = buildOriginFeatItem(character, db);

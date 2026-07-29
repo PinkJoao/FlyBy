@@ -35,6 +35,9 @@ import {
   EQUIPMENT_IDS,
   EQUIPMENT_TYPES,
   SUBCLASS_IDENTIFIERS,
+  SPECIES_NAMES,
+  SPECIES_SELF_LINEAGE,
+  ORIGIN_NAMES,
 } from './compendiumUuidsData';
 import { srdSpellNames } from './spells';
 
@@ -144,6 +147,79 @@ function flatUuid(map, pack, name) {
 /** Espécie, traço de espécie ou background (pacote origins24). */
 export function originUuid(name) {
   return flatUuid(ORIGIN_IDS, PACK_ORIGINS, name);
+}
+
+/**
+ * O nome que o dnd5e dá à MESMA espécie. As duas edições escrevem a linhagem de
+ * formas diferentes - o SRD usa vírgula e a palavra-chave ("Elf, High"), o
+ * 5etools funde a frase inteira ("Elf; High Elf Lineage") -, então o item de raça
+ * exportado saía com um nome que nenhum documento publicado tem: sem procedência
+ * de compêndio, e diferente do que o jogador vê num ator oficial.
+ *
+ * A ponte é DERIVADA, não curada (a lista de nomes é gerada do SRD):
+ *  1. nome idêntico → ele mesmo;
+ *  2. mesma base + a palavra-chave do sufixo do SRD contida no nosso sufixo
+ *     ("High" ⊂ "High Elf Lineage"); ambíguo (duas casando) → nada;
+ *  3. a base NUA, mas só quando o documento do SRD guarda a linhagem dentro de
+ *     si (`SPECIES_SELF_LINEAGE`): "Dragonborn" é a espécie inteira, com a
+ *     ancestralidade como escolha interna, então o de prata é aquele documento.
+ *     Onde não é o caso, as nossas linhagens são acréscimo curado (o Halfling do
+ *     DDL-0063) e herdar o nome apontaria para o documento errado.
+ * Sem casamento devolve null, e o chamador fica com o nome do 5etools.
+ * @param {object|null} raceObj  raça RESOLVIDA (linhagem inclusa)
+ * @returns {string|null}
+ */
+export function srdSpeciesName(raceObj) {
+  const name = raceObj?.name;
+  if (!name) return null;
+  const exact = SPECIES_NAMES.find((n) => norm(n) === norm(name));
+  if (exact) return exact;
+  const base = raceObj._baseName ?? name;
+  if (norm(base) === norm(name)) return null; // sem linhagem: só o casamento exato vale
+  const suffixed = suffixMatch(SPECIES_NAMES, base, name);
+  if (suffixed !== undefined) return suffixed;
+  const bare = SPECIES_NAMES.find((n) => norm(n) === norm(base));
+  return bare && SPECIES_SELF_LINEAGE.includes(bare) ? bare : null;
+}
+
+/**
+ * Nome do pool cuja PALAVRA-CHAVE de sufixo (o que vem depois da vírgula) está
+ * contida no nome que temos: "Elven Lineage, High Elf" casa "Elven Lineage
+ * (High Elf)", "Gnomish Lineage, Rock" casa "Gnomish Lineage (Rock Gnome)".
+ * `undefined` = nenhum candidato com vírgula; `null` = ambíguo (não se adivinha).
+ */
+function suffixMatch(pool, base, name) {
+  const b = norm(base);
+  const suffix = norm(name).slice(b.length);
+  const matches = pool
+    .filter((n) => norm(n).startsWith(`${b},`))
+    .filter((n) => suffix.includes(norm(n).slice(b.length + 1).trim()));
+  if (matches.length === 1) return matches[0];
+  return matches.length ? null : undefined;
+}
+
+/**
+ * O nome que o dnd5e dá ao MESMO traço de espécie. Mesma divergência de grafia do
+ * `srdSpeciesName`: o SRD escreve "Elven Lineage, High Elf" onde o 5etools diz
+ * "Elven Lineage (High Elf)", e "Giant Ancestry" onde nós dizemos "Giant Ancestry
+ * (Cloud)". Casa por nome exato, depois pela palavra-chave do sufixo, depois pela
+ * base nua. Sem casamento devolve null - e para uma espécie que o SRD PUBLICA
+ * isso quer dizer que o traço não é um documento lá (o Dragonborn não tem um item
+ * "Damage Resistance": aquilo vive num passo de advancement), então não vale
+ * emitir um item por ele.
+ * @param {string} name  nome do traço no 5etools
+ * @returns {string|null}
+ */
+export function srdOriginName(name) {
+  if (!name) return null;
+  const n = norm(name);
+  const exact = ORIGIN_NAMES.find((x) => norm(x) === n);
+  if (exact) return exact;
+  const base = n.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  if (base === n) return null;
+  const suffixed = suffixMatch(ORIGIN_NAMES, base, n);
+  if (suffixed !== undefined) return suffixed;
+  return ORIGIN_NAMES.find((x) => norm(x) === base) ?? null;
 }
 
 /** Talento (pacote feats24). */

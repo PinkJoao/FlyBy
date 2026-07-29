@@ -347,6 +347,25 @@ export function overlaySubclassAdvancement(db, { className, shortName, source })
   return translateOverlayAdvancement(entry);
 }
 
+/**
+ * Advancements ScaleValue do overlay para o item de RAÇA - hoje só o dado do
+ * Breath Weapon do Dragonborn (`identifier: 'breath'`, 1d10 → 4d10). Sem ele a
+ * activity do sopro referencia uma escala que não existe e o Foundry rola ZERO
+ * dano (a mesma classe de referência órfã do TC-0068). O lookup segue a regra
+ * do `overlayRaceTraits`: nome resolvido primeiro, nome BASE como rede.
+ * @param {object} db
+ * @param {object} raceObj  raça 5etools RESOLVIDA
+ */
+export function overlayRaceAdvancement(db, raceObj) {
+  if (!raceObj) return [];
+  const list = db?.['foundry-races']?.race ?? [];
+  const src = norm(raceObj.source);
+  const entry =
+    list.find((e) => norm(e.name) === norm(raceObj.name) && norm(e.source) === src)
+    ?? list.find((e) => norm(e.name) === norm(raceObj._baseName ?? raceObj.name) && norm(e.source) === src);
+  return translateOverlayAdvancement(entry);
+}
+
 /** Active Effects do overlay p/ um TALENTO (nome+fonte exatos). */
 export function overlayFeatEffects(db, name, source) {
   const entry = overlayFeatEntry(db, name, source);
@@ -392,11 +411,13 @@ export function overlaySubclassFeatureEffects(db, ref) {
  * @param {object} raceObj  raça 5etools RESOLVIDA (linhagem inclusa)
  * @returns {object[]} Active Effects p/ `item.effects` do item de raça
  */
-export function overlayRaceEffects(db, raceObj) {
+export function overlayRaceEffects(db, raceObj, itemizedNames = null) {
   // Traços que ganham ITEM próprio levam a mecânica inteira com eles (effects
   // inclusive) - senão o efeito sairia em dobro, no item de raça e no do traço.
+  // Quem decide quais são é o chamador (buildSpeciesTraitItems); sem a lista,
+  // vale o critério antigo (só os que têm ação/recurso).
   return overlayRaceTraits(db, raceObj)
-    .filter((t) => !t.ownItem)
+    .filter((t) => (itemizedNames ? !itemizedNames.has(norm(t.name)) : !t.ownItem))
     .flatMap((t) => t.effects);
 }
 

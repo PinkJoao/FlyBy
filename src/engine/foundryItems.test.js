@@ -542,7 +542,9 @@ describe('buildSpeciesItem', () => {
   it('monta item type race com identifier da BASE, size, movimento e darkvision', () => {
     const item = buildSpeciesItem(null, drow);
     expect(item.type).toBe('race');
-    expect(item.name).toBe('Elf; Drow Lineage');
+    // Nome do documento do dnd5e, não o nome fundido do 5etools (é a MESMA
+    // espécie; casar o nome dá procedência de compêndio ao item).
+    expect(item.name).toBe('Elf, Drow');
     expect(item.system.identifier).toBe('elf'); // identifier estável da linhagem base
     expect(item.system.type).toEqual({ value: 'humanoid', custom: '', subtype: 'Elf' });
     expect(item.system.movement.walk).toBe('30');
@@ -606,7 +608,10 @@ describe('buildSpeciesItem', () => {
     const character = { species: { choices: { 'language-0': { kind: 'language', picks: ['Elvish'] } } } };
     const item = buildSpeciesItem(character, drow, langDb);
     expect(advList(item).find((a) => a.title === 'Languages').value.chosen).toEqual(['languages:standard:elvish']);
-    expect(item.flags).toEqual({});
+    // Nenhuma escolha residual - só a linhagem, que o nome do SRD ("Elf, Drow")
+    // não distingue e por isso viaja na flag.
+    expect(item.flags.builder5e.choices).toBeUndefined();
+    expect(item.flags.builder5e.lineage).toBe('Elf; Drow Lineage');
   });
 });
 

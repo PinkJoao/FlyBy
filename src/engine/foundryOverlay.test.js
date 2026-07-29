@@ -227,11 +227,14 @@ describe('integração com foundryItems (precedência curado > overlay)', () => 
     expect(item.effects[0].changes[0]).toMatchObject({ key: 'flags.dnd5e.initiativeAlert', mode: 5, value: 'true' });
   });
 
-  it('item de raça carrega os effects dos traços', () => {
+  it('o effect de um traço vai no ITEM do traço, não no item de raça (TC-0064)', () => {
     const halfling = { name: 'Halfling', source: 'XPHB', size: ['S'], speed: 30, entries: [{ name: 'Luck', entries: [] }] };
-    const item = buildSpeciesItem(null, halfling, db);
-    expect(item.effects).toHaveLength(1);
-    expect(item.effects[0].transfer).toBe(true);
+    // Todo traço vira item próprio agora, então o item de raça fica sem effects.
+    expect(buildSpeciesItem(null, halfling, db).effects).toEqual([]);
+    const [luck] = buildSpeciesTraitItems(halfling, db);
+    expect(luck.name).toBe('Luck');
+    expect(luck.effects).toHaveLength(1);
+    expect(luck.effects[0].transfer).toBe(true);
   });
 });
 
@@ -331,22 +334,27 @@ describe('traços de espécie com mecânica própria', () => {
     // Só Active Effect → fica no item de RAÇA (sem item próprio).
     { name: 'Luck', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.halflingLucky', mode: 'OVERRIDE', value: true }] }] },
     // Tem activity → precisa de item próprio (uma ação só existe num item).
-    { name: 'Second Chance', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', system: { 'uses.max': '1' }, activities: [{ type: 'utility' }] },
+    { name: 'Brave', source: 'XPHB', raceName: 'Halfling', raceSource: 'XPHB', system: { 'uses.max': '1' }, activities: [{ type: 'utility' }] },
   ] } };
-  const halfling = { name: 'Halfling', source: 'XPHB', entries: [{ name: 'Luck', entries: ['sorte'] }, { name: 'Second Chance', entries: ['de novo'] }] };
+  const halfling = { name: 'Halfling', source: 'XPHB', entries: [{ name: 'Luck', entries: ['sorte'] }, { name: 'Brave', entries: ['de novo'] }] };
 
   it('separa os traços que precisam de item dos que não precisam', () => {
     const traits = overlayRaceTraits(raceDb, halfling);
-    expect(traits.map((t) => [t.name, t.ownItem])).toEqual([['Luck', false], ['Second Chance', true]]);
+    expect(traits.map((t) => [t.name, t.ownItem])).toEqual([['Luck', false], ['Brave', true]]);
   });
 
   it('o item de raça NÃO leva o effect de um traço que virou item (não duplica)', () => {
+    // Sem a lista de itemizados vale o critério antigo (só quem tem ação/recurso).
     expect(overlayRaceEffects(raceDb, halfling).map((e) => e.name)).toEqual(['Luck']);
+    // Com ela - TODO traço vira item hoje (TC-0064) - nada sobra no item de raça.
+    expect(overlayRaceEffects(raceDb, halfling, new Set(['luck', 'brave']))).toEqual([]);
   });
 
-  it('buildSpeciesTraitItems monta o item no formato dos premades (feat/race)', () => {
-    const [item] = buildSpeciesTraitItems(halfling, raceDb);
-    expect(item.name).toBe('Second Chance');
+  it('buildSpeciesTraitItems monta um item por TRAÇO, no formato dos premades', () => {
+    const items = buildSpeciesTraitItems(halfling, raceDb);
+    expect(items.map((i) => i.name)).toEqual(['Luck', 'Brave']);
+    const item = items[1];
+    expect(item.name).toBe('Brave');
     expect(item.type).toBe('feat');
     expect(item.system.type).toEqual({ value: 'race', subtype: '' });
     expect(item.system.uses.max).toBe('1');
@@ -354,7 +362,7 @@ describe('traços de espécie com mecânica própria', () => {
     expect(item.flags.builder5e.level).toBe(0);
   });
 
-  it('raça sem entrada no overlay não gera item nenhum', () => {
+  it('raça sem traço nenhum não gera item', () => {
     expect(buildSpeciesTraitItems({ name: 'Nao Existe', source: 'XPHB', entries: [] }, raceDb)).toEqual([]);
   });
 });

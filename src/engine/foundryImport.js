@@ -492,6 +492,82 @@ function resolveLineageName(db, baseName, source, rawLineagePart) {
   return match ? match.name : full;
 }
 
+/** Todos os nomes de entry de um bloco de prosa 5etools, RECURSIVAMENTE (um
+ * benefício de linhagem costuma ser um `item` dentro de uma `list` dentro do
+ * traço-guarda-chuva: "Cloud's Jaunt" mora dentro de "Giant Ancestry (Cloud)"). */
+function entryNames(entries, out = new Set()) {
+  for (const e of entries ?? []) {
+    if (!e || typeof e !== 'object') continue;
+    if (e.name) out.add(norm(e.name));
+    entryNames(e.entries, out);
+    entryNames(e.items, out);
+  }
+  return out;
+}
+
+/**
+ * MARCAS de cada linhagem: os nomes que ela NÃO divide com todas as irmãs. É o
+ * que discrimina uma linhagem da outra na prosa - "Cloud's Jaunt" só existe na
+ * ancestralidade de nuvem, enquanto "Breath Weapon" existe nas dez do Dragonborn
+ * e por isso não é marca de nenhuma.
+ * @returns {Array<{lineage: object, marks: Set<string>}>}
+ */
+function lineageMarks(db, baseRace) {
+  const lineages = raceLineages(db, baseRace);
+  const nameSets = lineages.map((v) => entryNames(v.entries));
+  return lineages.map((lineage, i) => ({
+    lineage,
+    marks: new Set([...nameSets[i]].filter((n) => !nameSets.every((s) => s.has(n)))),
+  }));
+}
+
+/**
+ * Deduz a LINHAGEM de um ator externo cujo item de raça não a diz no nome.
+ * O dnd5e não guarda a ancestralidade como nome: o premado do Dragonborn chama-se
+ * só "Dragonborn" e a escolha vive num `Trait` de resistência (`chosen: ['dr:cold']`),
+ * a do Goliath num `ItemChoice` cujo item concedido é "Cloud's Jaunt". Sem isto a
+ * ficha reimportada perdia ancestralidade, resistência, tipo de dano do sopro e o
+ * traço de nível 5 (TC-0065).
+ *
+ * Dois sinais, ambos DERIVADOS do dado (nenhuma tabela curada):
+ *  - **nomes**: os itens de traço de raça do ator (e os concedidos pelo item de
+ *    raça) casados contra as MARCAS de cada linhagem (ver `lineageMarks`);
+ *  - **resistência**: os `dr:*` escolhidos num Trait do item de raça, contra o
+ *    campo `resist` da linhagem.
+ * Um empate entre linhagens que satisfazem tudo é MECANICAMENTE indistinto (o
+ * Dragonborn de prata e o de gelo são os dois `cold`, com o mesmo sopro e os
+ * mesmos traços), então vence a primeira - o conjunto fica certo, só o rótulo é
+ * que pode trocar, como no `spellChoiceBag` (DDL-0075). Sem sinal nenhum,
+ * devolve null: não se adivinha linhagem.
+ */
+function inferLineage(db, baseRace, raceItem, items, byId) {
+  const candidates = lineageMarks(db, baseRace);
+  if (candidates.length < 2) return null;
+
+  const actorNames = new Set(
+    items.filter((i) => i.type === 'feat' && norm(i.system?.type?.value) === 'race').map((i) => norm(i.name)),
+  );
+  const resists = new Set();
+  for (const adv of advList(raceItem)) {
+    if (adv.type === 'ItemGrant' || adv.type === 'ItemChoice') {
+      for (const it of grantedItems(adv, byId)) actorNames.add(norm(it.name));
+    } else if (adv.type === 'Trait') {
+      for (const key of adv.value?.chosen ?? []) if (key.startsWith('dr:')) resists.add(key.slice(3));
+    }
+  }
+  if (!actorNames.size && !resists.size) return null;
+
+  const scored = candidates
+    .filter(({ lineage }) => [...resists].every((d) => (lineage.resist ?? []).includes(d)))
+    .map((c) => ({ ...c, score: [...c.marks].filter((m) => actorNames.has(m)).length }));
+  if (!scored.length) return null;
+  const best = Math.max(...scored.map((c) => c.score));
+  // Sem nenhuma marca casada, só a resistência sustenta o palpite - e ela precisa
+  // existir, senão qualquer linhagem "empataria" com zero evidência.
+  if (best === 0 && !resists.size) return null;
+  return scored.find((c) => c.score === best).lineage.name;
+}
+
 /** Resolve o nome de um item de raça por CASAMENTO EXATO contra o compêndio:
  * primeiro os nomes de raça base (que podem legitimamente conter parênteses e
  * ponto-e-vírgula - "Human (Ixalan)", "Dragonborn (Gem)"), depois os nomes de
@@ -679,6 +755,12 @@ function grantedItems(adv, byId) {
  * (ex: Human "Resourceful"/"Skillful"/"Versatile" - traços inerentes, não talentos
  * de 5etools), que não devem virar um pick de feat no choice-bag. */
 function isRealFeat(item, db) {
+  // Um item de subtipo `race` é um TRAÇO da espécie, nunca um talento escolhido -
+  // mesmo quando o nome coincide com um do compêndio (o Stensia concede um traço
+  // chamado "Tough", o Kor um "Lucky"). Desde que todo traço vira item (TC-0064)
+  // isso deixou de ser hipotético: sem a guarda, cada um deles reaparecia como
+  // uma escolha de talento da espécie ao reimportar.
+  if (norm(item?.system?.type?.value) === 'race') return false;
   return (db?.feats?.feat ?? []).some((f) => norm(f.name) === norm(item?.name));
 }
 
@@ -942,6 +1024,17 @@ export function foundryToCharacter(actor, db) {
   // Proficiencies" como o nosso próprio export).
   const raceItem = items.find((i) => i.type === 'race');
   char.species = parseSpecies(raceItem, db);
+  if (raceItem && char.species && !char.species.lineage) {
+    // O nome não disse a linhagem (o documento do dnd5e nomeia a espécie INTEIRA:
+    // "Dragonborn" cobre as dez ancestralidades). No NOSSO export ela vem exata na
+    // flag; num ator externo, das marcas que ele deixa - ver inferLineage (TC-0065).
+    const base = findBaseRace(db, char.species.id, char.species.source);
+    const flagged = raceItem.flags?.builder5e?.lineage;
+    if (base) {
+      char.species.lineage = (flagged && raceLineages(db, base).some((v) => v.name === flagged) ? flagged : null)
+        ?? inferLineage(db, base, raceItem, items, byId);
+    }
+  }
   if (raceItem && char.species) {
     // Kinds de escolha que a RAÇA realmente oferece (parseChoices do objeto
     // resolvido): o back-fill dos Traits só cria uma entrada quando a raça tem

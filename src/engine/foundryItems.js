@@ -19,6 +19,7 @@ import { effectChangesFor, targetEffectFor } from './foundryEffects';
 import {
   overlayRaceEffects,
   overlayRaceTraits,
+  overlayRaceAdvancement,
   overlaySubclassAdvancement,
   overlayFeatEntry,
   overlayOptionalFeatureEntry,
@@ -31,12 +32,13 @@ import { featureActivities } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick } from './speciesData';
+import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts } from './choices';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { itemValue } from './magicItemPrice';
 import {
   classUuid, classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid,
-  originUuid, featUuid, equipmentUuid, equipmentFoundryType, subclassIdentifier,
+  originUuid, featUuid, equipmentUuid, equipmentFoundryType, subclassIdentifier, srdSpeciesName, srdOriginName,
 } from './compendiumUuids';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
@@ -1445,39 +1447,127 @@ function movementBlock(speed) {
  * @param {object} db
  * @returns {object[]} itens Foundry (type 'feat', subtype de raça)
  */
-export function buildSpeciesTraitItems(raceObj, db) {
-  const out = [];
-  for (const trait of overlayRaceTraits(db, raceObj)) {
-    if (!trait.ownItem) continue;
-    const entry = (raceObj.entries ?? []).find((e) => norm(e?.name) === norm(trait.name));
-    out.push({
+/**
+ * Traços da espécie EXPRESSOS NATIVAMENTE em outro campo do item de raça, e por
+ * isso sem item próprio (é o que os atores oficiais fazem: nenhum deles tem um
+ * item "Darkvision"). Não é curadoria de conteúdo - é a lista dos campos que o
+ * nosso próprio `buildSpeciesItem` já preenche.
+ */
+const NATIVE_TRAIT_NAMES = new Set(['darkvision', 'creature type', 'size', 'speed']);
+
+/**
+ * O traço é ganho num nível acima do 1? O dado 2024 não tem campo para isso - diz
+ * na PROSA, em duas fórmulas fixas ("When you reach character level 5, …" no
+ * Draconic Flight, "Starting at character level 5, …" no Large Form). A frase tem
+ * de ABRIR o traço: no meio do texto ela costuma gatilhar um benefício SOLTO
+ * (a linhagem élfica ganha uma magia no 3, mas o traço em si é do nível 1), e ler
+ * a menção solta punha a linhagem inteira num ItemGrant@3. Sem a frase, nível 0.
+ */
+function traitLevel(entry) {
+  const first = (entry?.entries ?? []).find((e) => typeof e === 'string') ?? '';
+  const m = first.match(/^(?:when you reach|starting at) (?:character )?level (\d+)/i);
+  return m ? Number(m[1]) : 0;
+}
+
+/**
+ * Entradas de traço da espécie que viram ITEM próprio no Foundry: as entries
+ * NOMEADAS da raça resolvida, menos as expressas nativamente em outro campo
+ * (`NATIVE_TRAIT_NAMES`) e menos as seções de prosa legada (Age/Alignment/…).
+ * @param {object} raceObj  raça 5etools RESOLVIDA
+ * @returns {object[]} entries do 5etools
+ */
+export function speciesTraitEntries(raceObj) {
+  // Numa espécie que o dnd5e PUBLICA, o SRD é a resposta sobre quais traços são
+  // documentos: o Dragonborn não tem um item "Damage Resistance" nem "Draconic
+  // Ancestry" (aquilo vive em passos de advancement), e emiti-los deixaria a
+  // ficha do Foundry com features que nenhum ator oficial tem. Fora do SRD não
+  // há essa resposta, então vale todo traço.
+  const published = !!srdSpeciesName(raceObj);
+  return (raceObj?.entries ?? []).filter(
+    (e) =>
+      e?.name
+      && !NATIVE_TRAIT_NAMES.has(norm(e.name))
+      && !LEGACY_PROSE_SECTIONS.has(e.name)
+      && (!published || srdOriginName(e.name)),
+  );
+}
+
+/** Nome do traço no documento exportado: o do dnd5e quando existe (ver
+ * `srdOriginName`), senão o do 5etools. */
+const traitName = (entry) => srdOriginName(entry?.name) ?? entry?.name;
+
+/** `system.identifier` do item de raça (o que uma referência `@scale` do item
+ * cita). É o nome BASE, não o da linhagem: um Dragonborn de prata e um de gelo
+ * são o mesmo `dragonborn`, como nos atores oficiais. */
+const speciesIdentifier = (raceObj) => slugify(raceObj?._baseName ?? raceObj?.name ?? '');
+
+/**
+ * Reescreve o dono de toda referência `@scale` do overlay para o identificador do
+ * NOSSO item de raça. O overlay veio de um conversor que slugifica o nome inteiro
+ * da linhagem (`@scale.dragonborn-silver.breath`), enquanto o nosso item - como o
+ * dos atores oficiais - se identifica pela base (`dragonborn`), então a fórmula
+ * chegava ao Foundry apontando para uma escala inexistente: o sopro rolava ZERO.
+ * Mesma regra que o TC-0068 fixou para as classes - a referência tem de casar com
+ * o identificador EXPORTADO, nunca com o slug de quem escreveu a fórmula.
+ */
+function retargetScaleRefs(value, identifier) {
+  if (typeof value === 'string') return value.replace(/@scale\.[\w-]+\./g, `@scale.${identifier}.`);
+  if (Array.isArray(value)) return value.map((v) => retargetScaleRefs(v, identifier));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, retargetScaleRefs(v, identifier)]));
+  }
+  return value;
+}
+
+/**
+ * Um item de FEATURE por TRAÇO de espécie - a forma dos atores oficiais: type
+ * 'feat' com `system.type.value: 'race'`, ligado ao item de raça por um
+ * ItemGrant. Antes só os traços com ação/recurso ganhavam item (DDL-0057) e o
+ * resto ficava como Active Effect no item de raça: funcionava, mas no Foundry o
+ * jogador não VIA "Fey Ancestry"/"Trance"/"Powerful Build" listados entre suas
+ * features (TC-0064; decisão do usuário 2026-07-28).
+ *
+ * A mecânica do overlay (effects, activities, uses) viaja COM o traço, e por
+ * isso sai do item de raça - senão um efeito transferido aplicaria em dobro.
+ * `flags.builder5e.level` carrega o nível em que o traço é ganho, para o item de
+ * raça pendurá-lo no ItemGrant certo (Draconic Flight/Large Form no 5, não no 1).
+ * @param {object} raceObj  raça 5etools RESOLVIDA
+ * @param {object} db
+ * @param {number} [level]  nível TOTAL do personagem: um traço de nível maior
+ *   não é embutido (ele vira a receita de compêndio do item de raça).
+ * @returns {object[]} itens Foundry (type 'feat', subtype de raça)
+ */
+export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
+  const mechanics = new Map(overlayRaceTraits(db, raceObj).map((t) => [norm(t.name), t]));
+  return speciesTraitEntries(raceObj).filter((e) => traitLevel(e) <= level).map((entry) => {
+    const m = mechanics.get(norm(entry.name));
+    const name = traitName(entry);
+    return {
       _id: randomFoundryId(),
-      name: trait.name,
+      name,
       type: 'feat',
       img: 'icons/svg/item-bag.svg',
       system: {
         type: { value: 'race', subtype: '' },
-        identifier: slugify(trait.name),
-        description: { value: entriesToHtml(entry?.entries ?? []), chat: '' },
+        identifier: slugify(name),
+        description: { value: entriesToHtml(entry.entries ?? []), chat: '' },
         source: sourceBlock(raceObj.source),
         requirements: '',
         properties: [],
         // SRD antes do overlay, como nas features de classe (TC-0068).
-        uses: featureUses(trait.name) ?? trait.system.uses ?? { max: '', spent: 0, recovery: [] },
+        uses: featureUses(name) ?? featureUses(entry.name) ?? m?.system?.uses ?? { max: '', spent: 0, recovery: [] },
         prerequisites: { level: null, repeatable: false, items: [] },
-        activities: trait.activities,
+        activities: retargetScaleRefs(m?.activities ?? {}, speciesIdentifier(raceObj)),
         advancement: {},
         enchant: {},
         crewed: false,
-        ...overlaySystemExtras(trait.system),
+        ...overlaySystemExtras(m?.system ?? {}),
       },
-      effects: trait.effects,
-      // level 0 = o que os premades usam no ItemGrant do item de raça.
-      flags: { builder5e: { level: 0 } },
-      _stats: itemStats(originUuid(trait.name)),
-    });
-  }
-  return out;
+      effects: m?.effects ?? [],
+      flags: { builder5e: { level: traitLevel(entry) } },
+      _stats: itemStats(originUuid(name)),
+    };
+  });
 }
 
 export function buildSpeciesFeatItems(character, db) {
@@ -1522,7 +1612,8 @@ export function buildSpeciesFeatItems(character, db) {
  */
 function speciesEffects(db, raceObj) {
   const nat = naturalArmorFor(raceObj);
-  const overlay = overlayRaceEffects(db, raceObj);
+  const itemized = new Set(speciesTraitEntries(raceObj).map((e) => norm(e.name)));
+  const overlay = overlayRaceEffects(db, raceObj, itemized);
   if (!nat) return overlay;
   // Descarta effects do overlay que tocam a CA (a armadura natural curada os cobre)
   // e os que ficarem vazios; mantém os demais changes de um mesmo effect.
@@ -1559,7 +1650,18 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
 
   const advancement = [
     { _id: randomFoundryId(), type: 'Size', configuration: { sizes: [sizeCode] }, level: 0, title: '', hint: '', value: { size: sizeCode }, flags: {} },
+    // ScaleValue do overlay (o dado do Breath Weapon): é o alvo das referências
+    // `@scale` das activities dos traços - sem ele o sopro rola zero.
+    ...overlayRaceAdvancement(db, raceObj).map((a) => ({ _id: randomFoundryId(), level: 0, hint: '', value: {}, flags: {}, ...a })),
   ];
+
+  // Resistência a dano FIXA da espécie/linhagem (Dragonborn, Dwarven Resilience,
+  // a legacy do Tiefling): o dnd5e a modela como um passo Trait no item de raça,
+  // e é assim que o Foundry sabe de onde ela veio. Continuamos assando o valor em
+  // `traits.dr` do ator (é o que a nossa ficha usa), então o passo é redundante em
+  // runtime - mas sem ele o item de raça não explica a resistência que concede.
+  const resists = (raceObj.resist ?? []).filter((r) => typeof r === 'string');
+  if (resists.length) advancement.push(traitAdv('Damage Resistance', resists.map((r) => `dr:${norm(r)}`)));
 
   const speciesChoices = character?.species?.choices;
 
@@ -1599,9 +1701,17 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
 
   // ItemGrant do(s) talento(s) escolhido(s) pela espécie (ex: Human "Versatile").
   if (featItems.length) advancement.push(...itemGrantAdvancements(featItems, 'Species Feat'));
-  // ItemGrant dos traços que viraram item próprio (Breath Weapon…) - o mesmo
-  // formato dos premades (nível 0, uuid relativo ao item embutido).
-  if (traitItems.length) advancement.push(...itemGrantAdvancements(traitItems, 'Species Traits'));
+  // ItemGrant dos traços (um item por traço, TC-0064). Os já alcançados apontam
+  // para o item EMBUTIDO (uuid relativo); os de nível futuro - Draconic Flight e
+  // Large Form, ganhos no 5 - viram a RECEITA do compêndio com `value` vazio, do
+  // mesmo jeito que as escadas de classe: assim o traço não fica ativo antes da
+  // hora e o Foundry o concede ao chegar no nível.
+  const traitsTitle = `${baseName} Traits`;
+  if (traitItems.length) advancement.push(...itemGrantAdvancements(traitItems, traitsTitle));
+  const futureTraits = speciesTraitEntries(raceObj)
+    .map((e) => ({ level: traitLevel(e), uuid: originUuid(traitName(e)) }))
+    .filter((t) => t.level > level);
+  advancement.push(...futureItemGrants(futureTraits, traitsTitle));
 
   // Escolhas da espécie SEM casa nativa no Foundry viajam na flag do item de
   // raça (DDL-0028): o atributo de conjuração racial escolhido (TC-0009), o
@@ -1619,9 +1729,23 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
     residual[id] = entry;
   }
 
+  // Nome do documento do dnd5e quando existe ("Elf, High" no lugar do nosso
+  // "Elf; High Elf Lineage"): é a MESMA espécie, e casar o nome é o que dá
+  // procedência de compêndio ao item de raça. A ficha do FlyBy segue mostrando o
+  // nome do livro - isto vale só para o arquivo exportado.
+  const srdName = srdSpeciesName(raceObj);
+  // …mas o nome do SRD é o da espécie INTEIRA ("Dragonborn" cobre as dez
+  // ancestralidades), então ele sozinho perderia a linhagem escolhida. Ela viaja
+  // na flag, que é a regra do DDL-0028 para o que o Foundry não tem onde guardar:
+  // um ator externo continua sendo lido pelas marcas que deixa (`inferLineage`),
+  // e o NOSSO round-trip volta exato.
+  const flags = {};
+  if (Object.keys(residual).length) flags.choices = residual;
+  if (srdName && norm(srdName) !== norm(raceObj.name)) flags.lineage = raceObj.name;
+
   return {
     _id: randomFoundryId(),
-    name: raceObj.name,
+    name: srdName ?? raceObj.name,
     type: 'race',
     img: 'icons/svg/item-bag.svg',
     system: {
@@ -1644,8 +1768,8 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
     // (fonte única, sheet + export); suprimimos o efeito de CA do overlay para
     // essa raça, senão o Autognome AAG (coberto pelo overlay) somaria em dobro.
     effects: speciesEffects(db, raceObj),
-    flags: Object.keys(residual).length ? { builder5e: { choices: residual } } : {},
-    _stats: itemStats(originUuid(raceObj?.name)),
+    flags: Object.keys(flags).length ? { builder5e: flags } : {},
+    _stats: itemStats(originUuid(srdName ?? raceObj?.name)),
   };
 }
 

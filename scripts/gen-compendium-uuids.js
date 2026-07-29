@@ -60,6 +60,15 @@ function head(file) {
   return {
     id: pick('_id'), name: unquote(pick('name')), type: pick('type'),
     subtype: subtype || '', identifier: identifier || '', uses: uses(txt),
+    // O documento guarda a LINHAGEM dentro de si? Duas assinaturas, e as duas
+    // precisam ser ESTREITAS: um `ItemChoice` restrito a itens de RAÇA (a Giant
+    // Ancestry do Goliath - o Versatile do Humano também é um ItemChoice, mas
+    // restrito a talento de ORIGEM, e não é linhagem), ou um `Trait` cujo pool
+    // escolhe uma RESISTÊNCIA (a ancestralidade do Dragonborn). É o que separa
+    // uma espécie que é UMA só, com a variante interna, das que têm linhagens só
+    // porque NÓS as acrescentamos (DDL-0063) - essas não podem herdar a
+    // procedência do documento publicado. Ver SPECIES_SELF_LINEAGE.
+    selfLineage: /^ +restriction:\n +type: race$/m.test(txt) || /^ +- dr:/m.test(txt),
   };
 }
 
@@ -172,6 +181,17 @@ const flat = { origins: {}, feats: {}, equipment: {} };
 // "adventuring gear" vira loot, equipment OU consumable, item a item), e é o
 // tipo que decide se dá para equipar/consumir na ficha do Foundry.
 const equipmentTypes = {};
+// Nomes das ESPÉCIES publicadas (só os documentos `race` do origins24). O dnd5e
+// nomeia a linhagem com vírgula ("Elf, High") onde o 5etools funde a frase
+// inteira ("Elf; High Elf Lineage"); é o MESMO documento, e casar o nome é o que
+// dá procedência à espécie no export.
+const speciesNames = [];
+const speciesSelfLineage = [];
+// Nomes (na grafia do dnd5e) de TODO documento do origins24: espécies, traços de
+// espécie e backgrounds. É o que permite renomear "Elven Lineage (High Elf)" para
+// o "Elven Lineage, High Elf" publicado - e saber que "Damage Resistance" não é
+// documento nenhum lá.
+const originNames = [];
 const FLAT_PACKS = [
   ['origins', 'origins24', new Set(['race', 'feat', 'background'])],
   ['feats', 'feats24', new Set(['feat'])],
@@ -179,11 +199,14 @@ const FLAT_PACKS = [
 ];
 for (const [key, dir, types] of FLAT_PACKS) {
   for (const f of walk(join(PACKS, dir))) {
-    const { id, name, type, subtype, uses: u } = head(f);
+    const { id, name, type, subtype, uses: u, selfLineage } = head(f);
     if (!id || !name || !types.has(type)) continue;
+    if (key === 'origins' && type === 'race' && selfLineage && !speciesSelfLineage.includes(name)) speciesSelfLineage.push(name);
+    if (key === 'origins' && !originNames.includes(name)) originNames.push(name);
     // Homônimos dentro do mesmo pacote: fica o PRIMEIRO (ordem alfabética de
     // arquivo), determinístico entre regerações.
     if (!flat[key][norm(name)]) flat[key][norm(name)] = id;
+    if (key === 'origins' && type === 'race' && !speciesNames.includes(name)) speciesNames.push(name);
     if (key === 'equipment' && !equipmentTypes[norm(name)]) equipmentTypes[norm(name)] = `${type}/${subtype}`;
     if (key !== 'equipment' && u) usesFlat[norm(name)] ??= u;
   }
@@ -238,6 +261,24 @@ export const SPELL_IDS = ${literal(spells)};
 
 /** \`nome\` → _id (pacote origins24: espécies, seus traços e backgrounds). */
 export const ORIGIN_IDS = ${literal(flat.origins)};
+
+/** Nomes das ESPÉCIES publicadas (documentos \`race\` do origins24), na grafia do
+ *  dnd5e - "Elf, High" onde o 5etools diz "Elf; High Elf Lineage". Ver
+ *  engine/compendiumUuids.js \`srdSpeciesName\`. */
+export const SPECIES_NAMES = ${JSON.stringify([...speciesNames].sort(), null, 2)};
+
+/** Espécies cujo documento do SRD guarda a LINHAGEM dentro de si (um passo
+ *  \`ItemChoice\`, ou um \`Trait\` com pool de escolha): ali "Dragonborn" é a
+ *  espécie INTEIRA, ancestralidade inclusa, então uma linhagem nossa pode herdar
+ *  o nome e a procedência do documento. Onde o SRD não faz isso, as nossas
+ *  linhagens são acréscimo curado (o guarda-chuva do Halfling, DDL-0063) e
+ *  apontar para o documento publicado seria um near-match - o Foundry ofereceria
+ *  "atualizar do compêndio" e trocaria a linhagem escolhida pela base. */
+export const SPECIES_SELF_LINEAGE = ${JSON.stringify([...speciesSelfLineage].sort(), null, 2)};
+
+/** Nomes de TODO documento do origins24 (espécies, traços de espécie, origens),
+ *  na grafia do dnd5e. Ver engine/compendiumUuids.js \`srdOriginName\`. */
+export const ORIGIN_NAMES = ${JSON.stringify([...originNames].sort(), null, 2)};
 
 /** \`nomeDoTalento\` → _id (pacote feats24). */
 export const FEAT_IDS = ${literal(flat.feats)};

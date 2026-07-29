@@ -33,7 +33,7 @@ import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick } from './speciesData';
 import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
-import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts } from './choices';
+import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts, parseChoices } from './choices';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { itemValue } from './magicItemPrice';
 import {
@@ -300,27 +300,39 @@ const MAX_LEVEL = 20;
  * Níveis cujos uuids são todos desconhecidos (conteúdo fora do SRD que o dnd5e
  * publica) simplesmente não geram passo: melhor não ter a escada do que ter um
  * ItemGrant apontando para um documento inexistente.
- * @param {Array<{level: number, uuid: string}>} entries
+ * Um nível JÁ alcançado pode vir junto: aí a entrada traz o `_id` do item
+ * EMBUTIDO correspondente (`addedId`) e o passo sai com `value.added` preenchido -
+ * exatamente o que os premades fazem com as magias de subclasse já concedidas
+ * (`configuration.items` aponta pro compêndio, `value.added` diz qual item do ator
+ * saiu dali). Sem o passo, o Foundry não sabe que aquele nível já foi resolvido.
+ * @param {Array<{level: number, uuid: string, addedId?: string}>} entries
  * @param {string} title
+ * @param {object|null} [spell]  bloco `configuration.spell` (grants de MAGIA)
  * @returns {object[]} entradas de advancement (já com `_id`)
  */
-function futureItemGrants(entries, title) {
+function futureItemGrants(entries, title, spell = null) {
+  // `value: {}` num nível ainda não alcançado (a forma dos premades); com itens
+  // já concedidos, o mapa `added` id-do-item → uuid de origem.
+  const added = (map) => {
+    const pairs = [...map].filter(([, id]) => id).map(([uuid, id]) => [id, uuid]);
+    return pairs.length ? { added: Object.fromEntries(pairs) } : {};
+  };
   const byLevel = new Map();
   for (const e of entries) {
     if (!e.uuid) continue;
-    if (!byLevel.has(e.level)) byLevel.set(e.level, []);
-    const list = byLevel.get(e.level);
-    if (!list.includes(e.uuid)) list.push(e.uuid); // dedup (a mesma magia em 2 grupos)
+    if (!byLevel.has(e.level)) byLevel.set(e.level, new Map());
+    const map = byLevel.get(e.level);
+    if (!map.has(e.uuid)) map.set(e.uuid, e.addedId ?? null); // dedup (a mesma magia em 2 grupos)
   }
   return [...byLevel.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([level, uuids]) => ({
+    .map(([level, map]) => ({
       _id: randomFoundryId(),
       type: 'ItemGrant',
       level,
       title,
-      configuration: { items: uuids.map((uuid) => ({ uuid, optional: false })), optional: false, spell: null },
-      value: {},
+      configuration: { items: [...map.keys()].map((uuid) => ({ uuid, optional: false })), optional: false, spell },
+      value: added(map),
     }));
 }
 
@@ -1383,32 +1395,46 @@ export function buildSubclassFeatureItems(subclass, classId, db, level) {
  * @param {number} level  nível ATUAL da classe
  * @returns {object[]} entradas de advancement ItemGrant
  */
-export function buildSubclassFutureGrants(subclass, classId, db, level) {
+export function buildSubclassFutureGrants(subclass, classId, db, level, spellIds = null) {
   if (!subclass) return [];
   const features = resolveSubclassFeatures(subclass, classId, db, { min: level + 1, max: MAX_LEVEL })
     .map((f) => ({ level: f.level, uuid: subclassFeatureUuid(classId, subclass, f.name) }));
 
-  // Magias concedidas por nível: `grantedSpells` devolve o ACUMULADO até o nível,
-  // então o delta de cada nível é a diferença para o nível anterior. Passa pelo
-  // registro curado (TC-0026/TC-0044) para ver o mesmo que a derivação vê.
-  const additional = curatedAdditionalSpells(subclass);
-  const spells = [];
-  if (additional) {
-    const namesAt = (l) => new Set(grantedSpells(additional, l).spells.map((s) => s.name));
-    let prev = namesAt(level);
-    for (let l = level + 1; l <= MAX_LEVEL; l += 1) {
-      const now = namesAt(l);
-      for (const name of now) {
-        if (!prev.has(name)) spells.push({ level: l, uuid: spellUuid(name) });
-      }
-      prev = now;
-    }
-  }
-
   return [
     ...futureItemGrants(features, 'Subclass Features'),
-    ...futureItemGrants(spells, `${subclass.name} Spells`),
+    ...spellGrantLadder(curatedAdditionalSpells(subclass), `${subclass.name} Spells`, spellIds),
   ];
+}
+
+/**
+ * Escada de ItemGrant das MAGIAS que uma origem concede por nível, do 1 ao 20 -
+ * não só os níveis futuros. Um nível JÁ alcançado também tem seu passo, com
+ * `value.added` apontando para o item de magia embutido: é assim nos premades, e
+ * sem ele o Foundry não registra de onde veio a magia que o personagem já tem
+ * (TC-0072). `grantedSpells` devolve o ACUMULADO até o nível, então o delta de
+ * cada nível é a diferença para o anterior; passa pelo registro curado
+ * (TC-0026/TC-0044) para ver o mesmo que a derivação vê.
+ * @param {object[]|null} additional  `additionalSpells` já curado
+ * @param {string} title
+ * @param {Map<string,string>|null} spellIds  nome normalizado → _id do item embutido
+ * @returns {object[]} entradas de advancement ItemGrant
+ */
+function spellGrantLadder(additional, title, spellIds) {
+  if (!additional) return [];
+  const namesAt = (l) => new Set(grantedSpells(additional, l).spells.map((s) => s.name));
+  const entries = [];
+  let prev = new Set();
+  for (let l = 1; l <= MAX_LEVEL; l += 1) {
+    const now = namesAt(l);
+    for (const name of now) {
+      if (prev.has(name)) continue;
+      entries.push({ level: l, uuid: spellUuid(name), addedId: spellIds?.get(norm(name)) ?? null });
+    }
+    prev = now;
+  }
+  // O bloco `spell` marca o passo como concessão de MAGIA (é o que faz o Foundry
+  // criar o item como magia, e não como feature).
+  return futureItemGrants(entries, title, { ability: [], uses: { max: '', per: '', requireSlot: false }, prepared: 2 });
 }
 
 /**
@@ -1495,6 +1521,21 @@ export function speciesTraitEntries(raceObj) {
 /** Nome do traço no documento exportado: o do dnd5e quando existe (ver
  * `srdOriginName`), senão o do 5etools. */
 const traitName = (entry) => srdOriginName(entry?.name) ?? entry?.name;
+
+/**
+ * Rótulo da LINHAGEM para o título dos passos que ela concede ("High Elf Traits",
+ * "Rock Gnome Traits" - a convenção dos atores oficiais). Sai do parêntese do
+ * traço-guarda-chuva da linhagem ("Elven Lineage (High Elf)"); sem linhagem, o
+ * nome BASE da espécie.
+ */
+function lineageLabel(raceObj) {
+  const base = raceObj?._baseName ?? raceObj?.name ?? '';
+  for (const e of raceObj?.entries ?? []) {
+    const paren = e?.name?.match(/\(([^)]+)\)\s*$/)?.[1];
+    if (paren) return paren;
+  }
+  return base;
+}
 
 /** `system.identifier` do item de raça (o que uma referência `@scale` do item
  * cita). É o nome BASE, não o da linhagem: um Dragonborn de prata e um de gelo
@@ -1637,7 +1678,7 @@ function speciesEffects(db, raceObj) {
   return [natEffect, ...pruned];
 }
 
-export function buildSpeciesItem(character, raceObj, db = null, featItems = [], traitItems = []) {
+export function buildSpeciesItem(character, raceObj, db = null, featItems = [], traitItems = [], spellIds = null) {
   if (!raceObj) return null;
   // Tamanho EFETIVO: escolha do jogador (raças Small/Medium) e nível (Verdan).
   const level = (character?.classes ?? []).reduce((sum, c) => sum + (c.level || 0), 0) || 1;
@@ -1699,8 +1740,38 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   const knownLanguages = languages.filter((l) => isKnownLanguage(db, l));
   if (knownLanguages.length) advancement.push(traitAdv('Languages', knownLanguages.map((l) => languageTraitKey(db, l))));
 
-  // ItemGrant do(s) talento(s) escolhido(s) pela espécie (ex: Human "Versatile").
-  if (featItems.length) advancement.push(...itemGrantAdvancements(featItems, 'Species Feat'));
+  // Talento ESCOLHIDO pela espécie (Human "Versatile"): um ItemChoice, não um
+  // ItemGrant - é uma escolha sobre um pool, e é assim que o dnd5e a modela (sem
+  // isso o Foundry não sabe que há uma decisão ali, e no level-up não oferece
+  // troca). O pool sai da categoria do próprio descritor, restrito ao que o SRD
+  // publica; sem pool conhecido continua valendo o ItemGrant.
+  const featChoice = (parseChoices(raceObj, { level, bag: speciesChoices }) ?? []).find((c) => c.kind === 'feat');
+  const featPool = featChoice
+    ? (db?.feats?.feat ?? [])
+      .filter((f) => (featChoice.pool?.category ?? []).includes(f.category))
+      .map((f) => featUuid(f.name))
+      .filter(Boolean)
+    : [];
+  const featPoolUnique = [...new Set(featPool)];
+  if (featItems.length && featPoolUnique.length) {
+    advancement.push({
+      _id: randomFoundryId(),
+      type: 'ItemChoice',
+      level: 0,
+      title: featChoice.label ?? 'Species Feat',
+      configuration: {
+        choices: { 0: { count: featChoice.count ?? 1, replacement: false } },
+        allowDrops: true,
+        type: 'feat',
+        pool: featPoolUnique.map((uuid) => ({ uuid })),
+        spell: null,
+        restriction: { type: 'feat', subtype: 'origin' },
+      },
+      value: { added: { 0: Object.fromEntries(featItems.map((i) => [i._id, `.${i._id}`])) }, replaced: {} },
+    });
+  } else if (featItems.length) {
+    advancement.push(...itemGrantAdvancements(featItems, 'Species Feat'));
+  }
   // ItemGrant dos traços (um item por traço, TC-0064). Os já alcançados apontam
   // para o item EMBUTIDO (uuid relativo); os de nível futuro - Draconic Flight e
   // Large Form, ganhos no 5 - viram a RECEITA do compêndio com `value` vazio, do
@@ -1712,6 +1783,9 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
     .map((e) => ({ level: traitLevel(e), uuid: originUuid(traitName(e)) }))
     .filter((t) => t.level > level);
   advancement.push(...futureItemGrants(futureTraits, traitsTitle));
+  // Magias da linhagem (o cantrip da linhagem élfica no 1, Detect Magic no 3,
+  // Misty Step no 5): a mesma escada de concessão da subclasse.
+  advancement.push(...spellGrantLadder(curatedAdditionalSpells(raceObj), `${lineageLabel(raceObj)} Traits`, spellIds));
 
   // Escolhas da espécie SEM casa nativa no Foundry viajam na flag do item de
   // raça (DDL-0028): o atributo de conjuração racial escolhido (TC-0009), o

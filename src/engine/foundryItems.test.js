@@ -451,13 +451,19 @@ describe('escada de níveis futuros (ItemGrant de compêndio)', () => {
     const features = grants.filter((g) => g.title === 'Subclass Features');
     expect(features.map((g) => g.level)).toEqual([7]);
     expect(features[0].configuration.items[0].uuid).toBe('Compendium.dnd5e.classes24.Item.phbpdnDevotionAu');
-    // Magias: só o DELTA do nível 5 (as do 3 já são itens embutidos).
+    // Magias: a escada cobre TODOS os níveis, inclusive os já alcançados - é o
+    // que os premades trazem, e é o que diz ao Foundry de onde veio a magia que
+    // o personagem já tem (TC-0072).
     const spells = grants.filter((g) => g.title === 'Oath of Devotion Spells');
-    expect(spells.map((g) => g.level)).toEqual([5]);
-    expect(spells[0].configuration.items.map((i) => i.uuid).sort()).toEqual([
+    expect(spells.map((g) => g.level)).toEqual([3, 5]);
+    expect(spells[1].configuration.items.map((i) => i.uuid).sort()).toEqual([
       'Compendium.dnd5e.spells24.Item.phbsplAid0000000',
       'Compendium.dnd5e.spells24.Item.phbsplZoneofTrut',
     ]);
+    // Nível já alcançado: `value.added` liga ao item de magia EMBUTIDO.
+    const withIds = buildSubclassFutureGrants(sub, 'paladin', db, 3, new Map([['shield of faith', 'abc123']]));
+    const reached = withIds.find((g) => g.title === 'Oath of Devotion Spells' && g.level === 3);
+    expect(reached.value.added).toEqual({ abc123: 'Compendium.dnd5e.spells24.Item.phbsplShieldofFa' });
   });
 
   it('feature RE-LISTADA num nível maior usa o segundo item do dnd5e ("<Nome> (2)")', () => {

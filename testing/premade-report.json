@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T03:25:44.478Z",
+  "generatedAt": "2026-07-29T03:31:08.529Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -20,86 +20,6 @@
     }
   ],
   "aggregate": [
-    {
-      "cat": "advancement.race",
-      "count": 28,
-      "actors": [
-        "Aoth L01",
-        "Aoth L05",
-        "Aoth L11",
-        "Aoth L17",
-        "Beiro L01",
-        "Beiro L05",
-        "Beiro L11",
-        "Beiro L17",
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Morthos L01",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Quillathe L01",
-        "Quillathe L05",
-        "Quillathe L11",
-        "Quillathe L17",
-        "Randal L01",
-        "Randal L05",
-        "Randal L11",
-        "Randal L17",
-        "Sefris L01",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Aoth L01",
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
-        },
-        {
-          "actor": "Aoth L05",
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
-        },
-        {
-          "actor": "Aoth L11",
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
-        },
-        {
-          "actor": "Aoth L17",
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
-        }
-      ]
-    },
     {
       "cat": "advancement.class.grants",
       "count": 25,
@@ -277,63 +197,60 @@
       ]
     },
     {
-      "cat": "advancement.subclass",
-      "count": 15,
+      "cat": "advancement.race",
+      "count": 16,
       "actors": [
-        "Akra L05",
-        "Akra L11",
-        "Akra L17",
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17",
+        "Beiro L01",
+        "Beiro L05",
+        "Beiro L11",
+        "Beiro L17",
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17",
+        "Morthos L01",
         "Morthos L05",
         "Morthos L11",
         "Morthos L17",
-        "Randal L05",
-        "Randal L11",
-        "Randal L17",
-        "Sefris L05",
-        "Sefris L11",
-        "Sefris L17"
+        "Zanna L01",
+        "Zanna L05",
+        "Zanna L11",
+        "Zanna L17"
       ],
       "examples": [
         {
-          "actor": "Akra L05",
-          "cat": "advancement.subclass",
-          "key": "life domain",
+          "actor": "Beiro L01",
+          "cat": "advancement.race",
+          "key": "elf, high",
           "before": [
-            "ItemGrant@5"
+            "ItemGrant@1"
           ],
           "after": []
         },
         {
-          "actor": "Akra L11",
-          "cat": "advancement.subclass",
-          "key": "life domain",
+          "actor": "Beiro L05",
+          "cat": "advancement.race",
+          "key": "elf, high",
           "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9"
+            "ItemGrant@1"
           ],
           "after": []
         },
         {
-          "actor": "Akra L17",
-          "cat": "advancement.subclass",
-          "key": "life domain",
+          "actor": "Beiro L11",
+          "cat": "advancement.race",
+          "key": "elf, high",
           "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9"
+            "ItemGrant@1"
           ],
           "after": []
         },
         {
-          "actor": "Krusk L05",
-          "cat": "advancement.subclass",
-          "key": "oath of devotion",
+          "actor": "Beiro L17",
+          "cat": "advancement.race",
+          "key": "elf, high",
           "before": [
-            "ItemGrant@5"
+            "ItemGrant@1"
           ],
           "after": []
         }
@@ -392,6 +309,56 @@
           "key": "names",
           "before": [
             "enlarge/reduce"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "advancement.subclass",
+      "count": 6,
+      "actors": [
+        "Morthos L05",
+        "Morthos L11",
+        "Morthos L17",
+        "Randal L05",
+        "Randal L11",
+        "Randal L17"
+      ],
+      "examples": [
+        {
+          "actor": "Morthos L05",
+          "cat": "advancement.subclass",
+          "key": "draconic sorcery",
+          "before": [
+            "Trait@6"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Morthos L11",
+          "cat": "advancement.subclass",
+          "key": "draconic sorcery",
+          "before": [
+            "Trait@6"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Morthos L17",
+          "cat": "advancement.subclass",
+          "key": "draconic sorcery",
+          "before": [
+            "Trait@6"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Randal L05",
+          "cat": "advancement.subclass",
+          "key": "champion",
+          "before": [
+            "ItemChoice@0"
           ],
           "after": []
         }
@@ -592,14 +559,6 @@
           "expected": "baked-feature-grant"
         },
         {
-          "cat": "advancement.subclass",
-          "key": "life domain",
-          "before": [
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "draconic flight",
           "before": [
@@ -631,16 +590,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "life domain",
-          "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9"
-          ],
-          "after": []
         },
         {
           "cat": "feat.activities",
@@ -684,16 +633,6 @@
           "expected": "baked-feature-grant"
         },
         {
-          "cat": "advancement.subclass",
-          "key": "life domain",
-          "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "draconic flight",
           "before": [
@@ -733,16 +672,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
         }
       ]
     },
@@ -775,16 +704,6 @@
           "before": [],
           "after": [
             "find familiar"
-          ]
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
           ]
         }
       ]
@@ -819,16 +738,6 @@
           "after": [
             "find familiar"
           ]
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
         }
       ]
     },
@@ -862,16 +771,6 @@
           "after": [
             "find familiar"
           ]
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
         }
       ]
     },
@@ -884,9 +783,7 @@
           "cat": "advancement.race",
           "key": "elf, high",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
+            "ItemGrant@1"
           ],
           "after": []
         }
@@ -901,9 +798,7 @@
           "cat": "advancement.race",
           "key": "elf, high",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
+            "ItemGrant@1"
           ],
           "after": []
         }
@@ -918,9 +813,7 @@
           "cat": "advancement.race",
           "key": "elf, high",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
+            "ItemGrant@1"
           ],
           "after": []
         }
@@ -935,9 +828,7 @@
           "cat": "advancement.race",
           "key": "elf, high",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
+            "ItemGrant@1"
           ],
           "after": []
         }
@@ -980,14 +871,6 @@
           "after": 2
         },
         {
-          "cat": "advancement.subclass",
-          "key": "oath of devotion",
-          "before": [
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "paladin's smite",
           "before": [],
@@ -1013,15 +896,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "oath of devotion",
-          "before": [
-            "ItemGrant@5",
-            "ItemGrant@9"
-          ],
-          "after": []
         },
         {
           "cat": "feat.activities",
@@ -1057,17 +931,6 @@
           "key": "paladin Class Features@5",
           "before": 3,
           "after": 2
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "oath of devotion",
-          "before": [
-            "ItemGrant@13",
-            "ItemGrant@17",
-            "ItemGrant@5",
-            "ItemGrant@9"
-          ],
-          "after": []
         },
         {
           "cat": "feat.activities",
@@ -1265,9 +1128,6 @@
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5",
             "Trait@1"
           ],
           "after": [
@@ -1299,7 +1159,6 @@
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
-            "ItemGrant@5",
             "Trait@6"
           ],
           "after": []
@@ -1308,9 +1167,6 @@
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5",
             "Trait@1"
           ],
           "after": [
@@ -1350,9 +1206,6 @@
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9",
             "Trait@6"
           ],
           "after": []
@@ -1361,9 +1214,6 @@
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5",
             "Trait@1"
           ],
           "after": [
@@ -1403,9 +1253,6 @@
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9",
             "Trait@6"
           ],
           "after": []
@@ -1414,9 +1261,6 @@
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5",
             "Trait@1"
           ],
           "after": [
@@ -1621,16 +1465,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "advancement.race",
-          "key": "elf, wood",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "favored enemy",
           "before": [
@@ -1654,16 +1488,6 @@
           "after": []
         },
         {
-          "cat": "advancement.race",
-          "key": "elf, wood",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "favored enemy",
           "before": [
@@ -1678,16 +1502,6 @@
       "file": "fvtt-Actor-quillathe-QuillatheLv11000",
       "official": true,
       "findings": [
-        {
-          "cat": "advancement.race",
-          "key": "elf, wood",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
         {
           "cat": "feat.activities",
           "key": "favored enemy",
@@ -1704,16 +1518,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "advancement.race",
-          "key": "elf, wood",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "favored enemy",
           "before": [
@@ -1727,18 +1531,7 @@
       "actor": "Randal L01",
       "file": "fvtt-Actor-randal-RandalLv01000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Randal L05",
@@ -1752,16 +1545,6 @@
             "ItemChoice@0"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
         }
       ]
     },
@@ -1785,16 +1568,6 @@
             "ItemChoice@0"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
         }
       ]
     },
@@ -1826,16 +1599,6 @@
             "ItemChoice@0"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.race",
-          "key": "human",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": [
-            "ItemGrant@1"
-          ]
         }
       ]
     },
@@ -1985,16 +1748,6 @@
           "key": "warlock Class Features@1",
           "before": 2,
           "after": 3
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, drow",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
         }
       ]
     },
@@ -2016,24 +1769,6 @@
           "key": "warlock Class Features@1",
           "before": 2,
           "after": 3
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "fiend patron",
-          "before": [
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, drow",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
         },
         {
           "cat": "feat.activities",
@@ -2071,26 +1806,6 @@
           "key": "warlock Class Features@1",
           "before": 2,
           "after": 3
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "fiend patron",
-          "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, drow",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
         },
         {
           "cat": "feat.activities",
@@ -2136,26 +1851,6 @@
           "after": 3
         },
         {
-          "cat": "advancement.subclass",
-          "key": "fiend patron",
-          "before": [
-            "ItemGrant@5",
-            "ItemGrant@7",
-            "ItemGrant@9"
-          ],
-          "after": []
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, drow",
-          "before": [
-            "ItemGrant@1",
-            "ItemGrant@3",
-            "ItemGrant@5"
-          ],
-          "after": []
-        },
-        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
@@ -2175,25 +1870,61 @@
       "actor": "Zanna L01",
       "file": "fvtt-Actor-zanna-ZannaLv010000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "advancement.race",
+          "key": "gnome, rock",
+          "before": [],
+          "after": [
+            "ItemGrant@1"
+          ]
+        }
+      ]
     },
     {
       "actor": "Zanna L05",
       "file": "fvtt-Actor-zanna-ZannaLv050000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "advancement.race",
+          "key": "gnome, rock",
+          "before": [],
+          "after": [
+            "ItemGrant@1"
+          ]
+        }
+      ]
     },
     {
       "actor": "Zanna L11",
       "file": "fvtt-Actor-zanna-ZannaLv110000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "advancement.race",
+          "key": "gnome, rock",
+          "before": [],
+          "after": [
+            "ItemGrant@1"
+          ]
+        }
+      ]
     },
     {
       "actor": "Zanna L17",
       "file": "fvtt-Actor-zanna-ZannaLv170000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "advancement.race",
+          "key": "gnome, rock",
+          "before": [],
+          "after": [
+            "ItemGrant@1"
+          ]
+        }
+      ]
     }
   ]
 }

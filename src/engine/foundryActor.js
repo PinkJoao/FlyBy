@@ -60,6 +60,13 @@ export function assembleFoundryActor(character, db) {
 
   const items = [];
 
+  // Os itens de MAGIA são montados ANTES dos documentos de progressão: as escadas
+  // de concessão (raça/subclasse) precisam apontar, no nível JÁ alcançado, para o
+  // item de magia embutido que saiu dali (`value.added`, TC-0072). Eles entram na
+  // lista no fim, junto do inventário, para a ordem do arquivo não mudar.
+  const spellItems = buildSpellItems(derived);
+  const spellIds = new Map(spellItems.map((s) => [(s.name ?? '').trim().toLowerCase(), s._id]));
+
   // Espécie (com a linhagem já resolvida), background e talento de origem. O item
   // do talento de origem é ligado ao background por um ItemGrant; o(s) talento(s)
   // de sub-escolha da ESPÉCIE (ex: Human "Versatile") são ligados ao item de espécie.
@@ -69,7 +76,7 @@ export function assembleFoundryActor(character, db) {
   // compêndio no advancement do item de raça.
   const totalLevel = (character?.classes ?? []).reduce((sum, c) => sum + (c.level || 0), 0) || 1;
   const speciesTraitItems = raceObj ? buildSpeciesTraitItems(raceObj, db, totalLevel) : [];
-  const speciesItem = raceObj ? buildSpeciesItem(character, raceObj, db, speciesFeatItems, speciesTraitItems) : null;
+  const speciesItem = raceObj ? buildSpeciesItem(character, raceObj, db, speciesFeatItems, speciesTraitItems, spellIds) : null;
   if (speciesItem) items.push(speciesItem, ...speciesFeatItems, ...speciesTraitItems);
   const originFeatItem = buildOriginFeatItem(character, db);
   const bgItem = buildBackgroundItem(character, originFeatItem, db);
@@ -119,7 +126,7 @@ export function assembleFoundryActor(character, db) {
       const subItem = buildSubclassItem(subObj, cls.classId, subFeatureItems, {
         description: subclassFluffHtml(db, cls.classId, subObj),
         db,
-        futureGrants: buildSubclassFutureGrants(subObj, cls.classId, db, cls.level),
+        futureGrants: buildSubclassFutureGrants(subObj, cls.classId, db, cls.level, spellIds),
         choiceTraits: buildSubclassChoiceTraits(subObj, cls.classId, cls, classObj, db),
         itemChoices: buildItemChoiceAdvancements(cls, classObj, subObj, db, optionItems, { scope: 'subclass' }),
       });
@@ -141,7 +148,7 @@ export function assembleFoundryActor(character, db) {
 
   // Magias: um Item `spell` por magia POR ORIGEM (preparadas, concedidas,
   // arcanum) + os espaços de magia do ator (o Foundry deriva os máximos).
-  items.push(...buildSpellItems(derived));
+  items.push(...spellItems);
   system.spells = buildSpellSlots(derived);
 
   // Referências do ator aos itens (por _id) - como no export real.

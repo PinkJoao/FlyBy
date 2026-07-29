@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-07-29T21:55:13.347Z",
+  "generatedAt": "2026-07-29T23:43:56.855Z",
   "deliberate": [
     "background item name (custom origins only)",
+    "the class-granted \"Unarmed Strike\" (we grant it to EVERY class - see DDL-0080)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
     "prose (description/biography HTML)",
     "session state (hp.value, spell slots value, uses.spent, death, exhaustion)",
-    "container items (packs are one item)",
     "senses/movement (derived by Foundry from effects)",
     "spellcasting progression artificer == half (identical in the dnd5e config)"
   ],
@@ -21,6 +21,18 @@
     {
       "id": "curated-swap-lineage",
       "why": "Os guarda-chuvas \"Halfling Lineage\" e \"Dwarf Lineage\" são acréscimo NOSSO (DDL-0063): o livro 2024 absorveu na base o traço de UMA das sub-raças 2014 (Naturally Stealthy do Lightfoot, Dwarven Toughness do Hill) e deixou as outras de fora; nós o devolvemos como escolha. O documento do dnd5e não tem essa linhagem, então o item sai com o nosso nome e sem procedência - apontar para o \"Halfling\"/\"Dwarf\" publicado faria o Foundry oferecer \"atualizar do compêndio\" e trocar a linhagem escolhida pela base."
+    },
+    {
+      "id": "pack-contents-from-data",
+      "why": "O conteúdo de um pack sai do `packContents` do 5etools, que segue o livro. O premade é CURADO à mão e omite itens: o Explorer's Pack do Aoth vem sem as 10 tochas que o PHB 2024 lista. Seguir o premade tiraria do jogador equipamento que ele comprou."
+    },
+    {
+      "id": "srd-item-name-variant",
+      "why": "O SRD publica DOIS documentos para a mesma lanterna (\"Bullseye Lantern\" e \"Lantern, Bullseye\"); usamos a grafia do 5etools, que resolve para um uuid real - não há link perdido, só uma escolha entre dois nomes que existem."
+    },
+    {
+      "id": "invocation-spell-copy",
+      "why": "O premade do Warlock emite uma CÓPIA do cantrip por invocação que o modifica (\"Eldritch Blast (Repelling)\"), além do original. No nosso modelo a invocação é uma feature própria (item de optional feature) e o cantrip é UM só - que é a forma do livro. Emitir a cópia significaria inventar um documento de magia por invocação, e o jogador teria duas linhas do mesmo cantrip na Spellbook."
     },
     {
       "id": "race-grant-level-convention",
@@ -78,56 +90,6 @@
       ]
     },
     {
-      "cat": "advancement.subclass",
-      "count": 6,
-      "actors": [
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Randal L05",
-        "Randal L11",
-        "Randal L17"
-      ],
-      "examples": [
-        {
-          "actor": "Morthos L05",
-          "cat": "advancement.subclass",
-          "key": "draconic sorcery",
-          "before": [
-            "Trait@6"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Morthos L11",
-          "cat": "advancement.subclass",
-          "key": "draconic sorcery",
-          "before": [
-            "Trait@6"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Morthos L17",
-          "cat": "advancement.subclass",
-          "key": "draconic sorcery",
-          "before": [
-            "Trait@6"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Randal L05",
-          "cat": "advancement.subclass",
-          "key": "champion",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
       "cat": "feat.activities",
       "count": 6,
       "actors": [
@@ -178,120 +140,6 @@
       ]
     },
     {
-      "cat": "advancement.race",
-      "count": 4,
-      "actors": [
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17"
-      ],
-      "examples": [
-        {
-          "actor": "Merric L01",
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L05",
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L11",
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L17",
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
-      "cat": "items.spell",
-      "count": 3,
-      "actors": [
-        "Quillathe L05",
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Quillathe L05",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "detect poison and disease"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Sefris L11",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "eldritch blast (repelling)"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Sefris L17",
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "eldritch blast (repelling)"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
-      "cat": "items.feat",
-      "count": 2,
-      "actors": [
-        "Randal L11",
-        "Randal L17"
-      ],
-      "examples": [
-        {
-          "actor": "Randal L11",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "great weapon fighting"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Randal L17",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "great weapon fighting"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
       "cat": "spell.method",
       "count": 2,
       "actors": [
@@ -312,34 +160,6 @@
           "key": "contact other plane",
           "before": "spell",
           "after": "pact"
-        }
-      ]
-    },
-    {
-      "cat": "traits.dr",
-      "count": 2,
-      "actors": [
-        "Morthos L11",
-        "Morthos L17"
-      ],
-      "examples": [
-        {
-          "actor": "Morthos L11",
-          "cat": "traits.dr",
-          "key": "value",
-          "before": [
-            "poison"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Morthos L17",
-          "cat": "traits.dr",
-          "key": "value",
-          "before": [
-            "poison"
-          ],
-          "after": []
         }
       ]
     },
@@ -403,15 +223,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -437,15 +248,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -471,15 +273,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -505,15 +298,6 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -539,15 +323,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -573,15 +348,6 @@
             "med"
           ],
           "expected": "baked-feature-grant"
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -613,9 +379,9 @@
           "key": "names",
           "before": [],
           "after": [
-            "unarmed strike"
+            "torch"
           ],
-          "expected": "universal-unarmed-strike"
+          "expected": "pack-contents-from-data"
         }
       ]
     },
@@ -647,9 +413,9 @@
           "key": "names",
           "before": [],
           "after": [
-            "unarmed strike"
+            "torch"
           ],
-          "expected": "universal-unarmed-strike"
+          "expected": "pack-contents-from-data"
         }
       ]
     },
@@ -661,11 +427,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, bullseye"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "bullseye lantern"
+          ],
+          "expected": "srd-item-name-variant"
         },
         {
           "cat": "advancement.class.grants",
@@ -684,11 +452,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, bullseye"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "bullseye lantern"
+          ],
+          "expected": "srd-item-name-variant"
         },
         {
           "cat": "advancement.class.grants",
@@ -707,11 +477,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, bullseye"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "bullseye lantern"
+          ],
+          "expected": "srd-item-name-variant"
         },
         {
           "cat": "advancement.class.grants",
@@ -730,11 +502,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, bullseye"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "bullseye lantern"
+          ],
+          "expected": "srd-item-name-variant"
         },
         {
           "cat": "advancement.class.grants",
@@ -749,32 +523,13 @@
       "actor": "Krusk L01",
       "file": "fvtt-Actor-krusk-KruskLv010000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Krusk L05",
       "file": "fvtt-Actor-krusk-KruskLv050000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -803,15 +558,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
           "before": 3,
@@ -838,15 +584,6 @@
       "file": "fvtt-Actor-krusk-KruskLv170000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -882,14 +619,6 @@
             "AbilityScoreImprovement@20"
           ],
           "expected": "capstone-asi-on-class-item"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -906,14 +635,6 @@
             "AbilityScoreImprovement@20"
           ],
           "expected": "capstone-asi-on-class-item"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -930,14 +651,6 @@
             "AbilityScoreImprovement@20"
           ],
           "expected": "capstone-asi-on-class-item"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -955,14 +668,6 @@
           "after": [
             "AbilityScoreImprovement@20"
           ]
-        },
-        {
-          "cat": "advancement.race",
-          "key": "goliath",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
         }
       ]
     },
@@ -971,15 +676,6 @@
       "file": "fvtt-Actor-morthos-MorthosLv0100000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
@@ -999,23 +695,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "draconic sorcery",
-          "before": [
-            "Trait@6"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
@@ -1034,31 +713,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "traits.dr",
-          "key": "value",
-          "before": [
-            "poison"
-          ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "draconic sorcery",
-          "before": [
-            "Trait@6"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
@@ -1076,31 +730,6 @@
       "file": "fvtt-Actor-morthos-MorthosLv1700000",
       "official": true,
       "findings": [
-        {
-          "cat": "traits.dr",
-          "key": "value",
-          "before": [
-            "poison"
-          ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "draconic sorcery",
-          "before": [
-            "Trait@6"
-          ],
-          "after": []
-        },
         {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
@@ -1268,177 +897,49 @@
       "actor": "Quillathe L01",
       "file": "fvtt-Actor-quillathe-QuillatheLv01000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Quillathe L05",
       "file": "fvtt-Actor-quillathe-QuillatheLv05000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.spell",
-          "key": "names",
-          "before": [
-            "detect poison and disease"
-          ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Quillathe L11",
       "file": "fvtt-Actor-quillathe-QuillatheLv11000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Quillathe L17",
       "file": "fvtt-Actor-quillathe-QuillatheLv17000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Randal L01",
       "file": "fvtt-Actor-randal-RandalLv01000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Randal L05",
       "file": "fvtt-Actor-randal-RandalLv05000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "champion",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Randal L11",
       "file": "fvtt-Actor-randal-RandalLv11000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "great weapon fighting"
-          ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "champion",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Randal L17",
       "file": "fvtt-Actor-randal-RandalLv17000000",
       "official": true,
-      "findings": [
-        {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "great weapon fighting"
-          ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
-          "cat": "advancement.subclass",
-          "key": "champion",
-          "before": [
-            "ItemChoice@0"
-          ],
-          "after": []
-        }
-      ]
+      "findings": []
     },
     {
       "actor": "Riswynn L01",
@@ -1468,11 +969,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, hooded"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "hooded lantern"
+          ],
+          "expected": "srd-item-name-variant"
         }
       ]
     },
@@ -1504,11 +1007,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, hooded"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "hooded lantern"
+          ],
+          "expected": "srd-item-name-variant"
         }
       ]
     },
@@ -1546,11 +1051,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, hooded"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "hooded lantern"
+          ],
+          "expected": "srd-item-name-variant"
         }
       ]
     },
@@ -1582,11 +1089,13 @@
         {
           "cat": "items.gear",
           "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
+          "before": [
+            "lantern, hooded"
           ],
-          "expected": "universal-unarmed-strike"
+          "after": [
+            "hooded lantern"
+          ],
+          "expected": "srd-item-name-variant"
         }
       ]
     },
@@ -1595,15 +1104,6 @@
       "file": "fvtt-Actor-sefris-SefrisLv01000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
@@ -1618,15 +1118,6 @@
       "file": "fvtt-Actor-sefris-SefrisLv05000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
@@ -1655,16 +1146,8 @@
           "before": [
             "eldritch blast (repelling)"
           ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
+          "after": [],
+          "expected": "invocation-spell-copy"
         },
         {
           "cat": "feat.activities",
@@ -1693,16 +1176,8 @@
           "before": [
             "eldritch blast (repelling)"
           ],
-          "after": []
-        },
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
+          "after": [],
+          "expected": "invocation-spell-copy"
         },
         {
           "cat": "feat.activities",
@@ -1726,15 +1201,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
@@ -1750,15 +1216,6 @@
       "file": "fvtt-Actor-zanna-ZannaLv050000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.race",
           "key": "gnome, rock",
@@ -1776,15 +1233,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
-        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
@@ -1800,15 +1248,6 @@
       "file": "fvtt-Actor-zanna-ZannaLv170000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.gear",
-          "key": "names",
-          "before": [],
-          "after": [
-            "unarmed strike"
-          ],
-          "expected": "universal-unarmed-strike"
-        },
         {
           "cat": "advancement.race",
           "key": "gnome, rock",

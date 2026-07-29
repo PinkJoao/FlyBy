@@ -965,8 +965,8 @@ on the user's machines).
   274/274 `--strict`, 48 premades importados+re-exportados ok.
   **Impacto na campanha:** as fichas premade de nível 1/5/11 que o usuário adicionou ao material de
   referência são agora um gabarito muito melhor para a **T2** - compare o advancement gerado com o
-  do premade do mesmo nível antes de marcar uma linha como `ok`. **Backlog: "sidekick/UA" foi
-  CANCELADO pelo usuário** (ver CLAUDE.md §4, "Explicitly OUT OF SCOPE") - não é mais pendência. **Next action: stage T1b - SPECIES + lineages** (inalterado).
+  do premade do mesmo nível antes de marcar uma linha como `ok`. **Backlog: "sidekick/UA" está fora de
+  escopo por design** - não é pendência. **Next action: stage T1b - SPECIES + lineages** (inalterado).
 
 - **2026-07-22 (4)** - **TC-0043 FIXED (DDL-0054) - the ledger has NO open items.** By user
   decision, with the scope widened by them from "warlock patrons" to **every list-widening

@@ -23,6 +23,21 @@ const db = {
     class: [{ name: 'Sorcerer', source: 'XPHB', proficiency: ['con', 'cha'], startingProficiencies: {} }],
     subclass: [{ name: 'Storm Sorcery', shortName: 'Storm', source: 'XGE', subclassFeatures: [] }],
   },
+  'class-warlock': {
+    class: [{ name: 'Warlock', source: 'XPHB', proficiency: ['wis', 'cha'], startingProficiencies: {} }],
+    subclass: [
+      { name: 'Celestial Patron', shortName: 'Celestial', source: 'XPHB', subclassFeatures: [] },
+      { name: 'The Celestial', shortName: 'Celestial', source: 'XGE', subclassFeatures: [] },
+      { name: 'Fiend Patron', shortName: 'Fiend', source: 'XPHB', subclassFeatures: [] },
+    ],
+  },
+  'class-cleric': {
+    class: [{ name: 'Cleric', source: 'XPHB', proficiency: ['wis', 'cha'], startingProficiencies: {} }],
+    subclass: [
+      { name: 'War Domain', shortName: 'War', source: 'XPHB', subclassFeatures: [] },
+      { name: 'War Domain', shortName: 'War', source: 'PHB', subclassFeatures: [] },
+    ],
+  },
   races: { race: [] },
   feats: { feat: [] },
 };
@@ -71,6 +86,29 @@ describe('deriveSubclassGrants (TC-0012)', () => {
     const groups = subclassGrantGroups('artificer', subObj, 3);
     expect(groups.every((g) => !g.source || g.source === 'TCE')).toBe(true);
     expect(groups.some((g) => (g.tools ?? []).includes('Herbalism Kit'))).toBe(false);
+  });
+});
+
+describe('resistência PERMANENTE de feature de subclasse (2026-07-29)', () => {
+  const resistOf = (classId, subclassId, level, subclassSource) =>
+    deriveSubclassGrants(mk(classId, subclassId, level, { subclassSource }), db).resist;
+
+  it('concede a partir do nível da feature, não antes', () => {
+    expect(resistOf('warlock', 'Celestial', 5, 'XPHB')).toEqual([]);
+    expect(resistOf('warlock', 'Celestial', 6, 'XPHB')).toEqual(['radiant']);
+  });
+
+  it('vale nas DUAS edições da subclasse (o texto é o mesmo)', () => {
+    expect(resistOf('warlock', 'Celestial', 6, 'XGE')).toEqual(['radiant']);
+  });
+
+  it('Avatar of Battle: só a versão XPHB deriva (a PHB é condicional a ataque não-mágico)', () => {
+    expect(resistOf('cleric', 'War', 17, 'XPHB')).toEqual(['bludgeoning', 'piercing', 'slashing']);
+    expect(resistOf('cleric', 'War', 17, 'PHB')).toEqual([]);
+  });
+
+  it('resistência RE-ESCOLHIDA a cada descanso NÃO deriva (Fiendish Resilience)', () => {
+    expect(resistOf('warlock', 'Fiend', 10, 'XPHB')).toEqual([]);
   });
 });
 

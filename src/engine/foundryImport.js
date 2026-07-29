@@ -20,6 +20,7 @@ import { raceLineages, speciesCatalog } from './speciesData';
 import { isFoldedSpecies } from './mergedLineages';
 import { latestOnly } from '../selector/reprints';
 import { specificVariants } from './magicVariants';
+import { resolveItemObj } from './items';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from './resolve';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
 import { optionalFeatureChoices, classLevelChoices, classToolChoices, subclassFeatureChoices } from './classFeatureChoices';
@@ -58,10 +59,18 @@ export function spellPreparation(item) {
 }
 
 /** Identificador da classe dona da magia ("class:warlock" → "warlock"), ou null. */
+export const SPELL_OWNED_BY_ITEM = '__owned-by-item__';
+
 export function spellSourceClass(item) {
   const src = item?.system?.sourceItem ?? item?.system?.sourceClass ?? '';
   if (typeof src !== 'string' || !src) return null;
-  return norm(src.startsWith('class:') ? src.slice('class:'.length) : src);
+  if (src.startsWith('class:')) return norm(src.slice('class:'.length));
+  // Dono que NÃO é classe: a magia pertence a um ITEM (o premade da Quillathe traz
+  // um `consumable:spell-scroll`). Antes isso virava uma chave que nenhum
+  // consumidor lia, e a magia sumia em silêncio - o mesmo defeito do B4, por outra
+  // porta. Vai para o balde de carga, que é onde mora o que o modelo não explica.
+  if (/^[a-z]+:/.test(src)) return SPELL_OWNED_BY_ITEM;
+  return norm(src);
 }
 
 /**
@@ -172,7 +181,10 @@ function itemSource(item) {
 }
 
 /** Tipos de Item físico do Foundry que viram entradas de inventário do builder. */
-const PHYSICAL_ITEM_TYPES = new Set(['weapon', 'equipment', 'tool', 'consumable', 'loot']);
+// `container` entra: um PACK é exportado como contêiner + conteúdo (C4), e sem
+// ler o contêiner o pack se PERDIA na reimportação - a ficha voltava com os 6
+// itens soltos e sem o pack. Os conteúdos DELE são recolhidos (ver abaixo).
+const PHYSICAL_ITEM_TYPES = new Set(['weapon', 'equipment', 'tool', 'consumable', 'loot', 'container']);
 
 /** Snapshot dos dados do próprio Item do Foundry, p/ um item que NÃO existe no
  * catálogo 5etools (componente de magia, homebrew, scroll nomeado). Guarda só o
@@ -710,7 +722,7 @@ function choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, clas
     const head = String(chosen[0]).split(':')[0];
     const kind = head === 'skills'
       ? (t.configuration?.mode === 'expertise' ? 'expertise' : 'skill')
-      : ({ tool: 'tool', languages: 'language' })[head];
+      : ({ tool: 'tool', languages: 'language', dr: 'resist' })[head];
     if (!kind) continue; // saves/weapon/armor: não são escolhas do nosso bag
     const desc = byKey.get(key(t.title, t.level, kind)) ?? byKindLevel.get(`${t.level ?? 1}|${kind}`);
     if (!desc || out[desc.id]) continue;
@@ -723,6 +735,9 @@ function choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, clas
       .map((c) => {
         if (kind === 'tool') return toolKeyToName(c, db);
         if (kind === 'language') return languageKeyToName(c, db);
+        // `dr:<tipo>` - o pick é o tipo cru, como a escolha estruturada de
+        // raça/talento grava (Elemental Affinity).
+        if (kind === 'resist') return String(c).slice('dr:'.length);
         return String(c).slice('skills:'.length);
       })
       .filter(Boolean);
@@ -829,6 +844,39 @@ function featureOptionChoiceBag(db, classId, classObj, subclassObj, level, featI
 }
 
 /**
+ * Escolha de TALENTO feita por uma feature de SUBCLASSE (hoje só o "Additional
+ * Fighting Style" do Champion, @7). Ela viaja como um `ItemChoice` de tipo feat
+ * no item de SUBCLASSE - não no de classe, então o leitor do `feat@<nível>` não a
+ * vê -, e o id do bag é `sub:feat@…`, montado pelos MESMOS descritores que o
+ * export usou. Sem isto, um Champion vindo de um ator externo perdia o segundo
+ * Fighting Style em silêncio.
+ */
+function subclassFeatChoiceBag(subclassItem, db, classId, classObj, subclassObj, level, byId) {
+  if (!subclassItem || !subclassObj || !classObj) return {};
+  const descriptors = subclassFeatureChoices(db, classId, subclassObj, level, parseClass(classObj)?.skillChoice?.from ?? [])
+    .filter((d) => d.kind === 'feat');
+  if (!descriptors.length) return {};
+  const bag = {};
+  for (const adv of advList(subclassItem)) {
+    if (adv.type !== 'ItemChoice' || adv.configuration?.type !== 'feat') continue;
+    for (const id of addedItemIds(adv)) {
+      const featItem = byId.get(id);
+      if (!featItem) continue;
+      // Casa o descritor pelo NÍVEL do passo (a chave de `choices`, que é onde o
+      // dnd5e guarda o nível de um ItemChoice) e, na falta, pelo título.
+      const levels = Object.keys(adv.configuration?.choices ?? {}).map(Number);
+      const desc = descriptors.find((d) => levels.includes(d.level ?? 1))
+        ?? descriptors.find((d) => norm(d.feature?.name ?? d.label) === norm(adv.title));
+      if (!desc || bag[desc.id]) continue;
+      const featBag = featItem.flags?.builder5e?.choices;
+      const ref = itemRef(featItem, db);
+      bag[desc.id] = { kind: 'feat', picks: [ref], sub: featBag ? { [ref]: featBag } : {} };
+    }
+  }
+  return bag;
+}
+
+/**
  * Reconstrói UMA classe (choice-bag + HP + subclasse) a partir do item de classe.
  * Acumula os boosts de atributo (ASI/feats) em `boostAcc` p/ reverter os scores base.
  */
@@ -916,6 +964,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
   const subclassObj = subShort ? resolveSubclassObj(db, classId, subShort, itemSource(subclassItem)) : null;
   const featItems = (actor.items ?? []).filter((i) => i.type === 'feat');
   Object.assign(choices, featureOptionChoiceBag(db, classId, classObj, subclassObj, level, featItems));
+  Object.assign(choices, subclassFeatChoiceBag(subclassItem, db, classId, classObj, subclassObj, level, byId));
 
   // Escolhas de proficiência/expertise que viajam como Trait no nível delas
   // (nativo, DDL-0056). Só importa para atores SEM a nossa flag - a flag, logo
@@ -1206,6 +1255,10 @@ export function foundryToCharacter(actor, db, out = null) {
     stranded.push(...cls.spells);
     cls.spells = [];
   }
+  // E as que pertencem a um ITEM (a magia de um pergaminho): não são decisão de
+  // conjuração de classe nenhuma, e o nosso modelo não guarda magia DENTRO de
+  // item - então são carga pelo mesmo motivo.
+  stranded.push(...(spellsByClass.get(SPELL_OWNED_BY_ITEM) ?? []));
   char.unassignedSpells = stranded;
   if (stranded.length && out) {
     const n = stranded.length;
@@ -1251,8 +1304,28 @@ export function foundryToCharacter(actor, db, out = null) {
   const classGranted = new Set(
     (char.classes ?? []).flatMap((c) => classWeaponGrants(c.classId).map((g) => norm(g.name))),
   );
+  // Conteúdo de um PACK: recolhido de volta na entrada única do pack (DDL-0013 -
+  // o nosso modelo compra um pack como um item só). Só de um contêiner que É um
+  // pack conhecido: itens que o jogador organizou dentro de uma bolsa qualquer no
+  // Foundry continuam entrando como entradas soltas, senão o import os perderia.
+  const packIds = new Set(
+    items
+      .filter(
+        (it) =>
+          it.type === 'container'
+          // `resolveInventorySource` devolve a FONTE (string), não o objeto - o
+          // item tem de ser resolvido para se saber se ele tem `packContents`.
+          && !!resolveItemObj(db, it.name, resolveInventorySource(db, it.name))?.packContents,
+      )
+      .map((it) => it._id),
+  );
   char.inventory = items
-    .filter((it) => PHYSICAL_ITEM_TYPES.has(it.type) && !classGranted.has(norm(it.name)))
+    .filter(
+      (it) =>
+        PHYSICAL_ITEM_TYPES.has(it.type)
+        && !classGranted.has(norm(it.name))
+        && !packIds.has(it.system?.container),
+    )
     .map((it) => {
       // `resolveInventorySource` acha a fonte pelo NOME; null = o item não existe
       // no catálogo 5etools, então guardamos um snapshot dos dados do Foundry.

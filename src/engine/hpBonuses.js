@@ -47,7 +47,7 @@ const FEAT_HP = {
  * tiver mecânica em algum registro curado keyed por nome de raça (este, o
  * `NATURAL_ARMOR`…), a chave tem de migrar para a linhagem junto.
  */
-const RACE_HP_PER_LEVEL = {
+export const RACE_HP_PER_LEVEL = {
   'Dwarf; Hill Lineage|PHB': 1,
   'Dwarf (Kaladesh)|PSK': 1,
 };

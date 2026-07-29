@@ -5933,3 +5933,101 @@ lugar do Dwarf base), `npm run t2` de 43 → **35** (+93 nomeados), e ao vivo - 
 mostra "Dwarf Lineage" com Hill e Mountain, sem erro de console novo. A pane do browser não compôs
 frames neste ambiente (mesma limitação do DDL-0066), então a passada visual foi por `read_page` e
 pelos mesmos code paths da UI.
+
+---
+
+## 106. Revisão dos adiados, leva 4: C0, C4, as sugestões e a família das resistências (35 → 18)
+
+Quarta e última leva da revisão aberta em `DEFERRED-REVIEW.md`. Fecha os dois itens C que ainda
+tinham resolução pendente, as duas sugestões que dava para fazer antes do T2d, e o TC-0083 - que
+**não era bug**. Ver DDL-0080 (mesma entrada das levas 1-3).
+
+**C0 - a ancestralidade volta a ser uma ESCOLHA aos olhos do Foundry.** Uma espécie com linhagem
+resolvida guarda só o traço escolhido, então o item de raça saía sem nenhum `ItemChoice` - o Foundry
+recebia o boon do Goliath como se fosse concessão fixa e não oferecia trocá-lo. `ancestryBoonPool`
+(`engine/foundryItems.js`) monta o pool dos seis boons a partir do traço-guarda-chuva da espécie
+BASE, e o passo só é emitido quando **pelo menos dois** uuids resolvem (com um só, não há escolha a
+oferecer). Sai um `ItemChoice@0` com `restriction: {type:'race'}` e `value.added` apontando para o
+item embutido do boon escolhido. A classe `advancement.race` foi a **zero**.
+
+**C4 - um pack agora é CONTÊINER + conteúdo, nos dois sentidos.** `unpackContainer` desdobra a
+entrada única do inventário em um item `container` mais os itens de dentro, tudo derivado do
+`packContents` do 5etools (20 packs o declaram). Três cuidados que a medição impôs:
+- **o peso do contêiner é o peso do RECIPIENTE**, não o total do pack: o Foundry SOMA o conteúdo, e
+  usar o total contava tudo duas vezes;
+- **o preço fica só no contêiner** (`price: 0` nos filhos), pela mesma razão;
+- **o import recolhe de volta numa entrada só**, pulando os filhos por `system.container` e o
+  contêiner por ele ter `packContents` - a decisão do DDL-0013 (o pack é um item) fica intacta.
+Idêntico ao premade da Akra: 5 lb, 33 gp, 6 conteúdos.
+
+**O que abrir o comparador revelou.** `container` estava na lista `DELIBERATE` (o comparador nem
+olhava), e tirá-lo de lá expôs **55 achados reais**: Bag of Holding, Backpack e Pouch saíam como
+`equipment`, e por isso **não guardavam nada** no Foundry. `RECLASSIFIABLE` ganhou `container` e o
+tipo passa a vir do `equipment24` como qualquer outro. **Regra que fica: uma entrada em `DELIBERATE`
+protege uma decisão e ao mesmo tempo CEGA o oráculo - revise-a quando a decisão mudar.**
+
+**§5.2 - as 3 magias que faltavam eram DUAS causas distintas**, como a sugestão previa:
+- uma magia de **PERGAMINHO** (`sourceItem` apontando para um `consumable`) caía num balde de classe
+  que ninguém lia. É o mesmo defeito do B4 por outra porta: agora é roteada para a carga
+  (`SPELL_OWNED_BY_ITEM` em `spellSourceClass`), então volta ao Foundry no re-export;
+- a **cópia do cantrip por invocação** é convenção do premade (a invocação, no nosso modelo, é uma
+  feature; o cantrip é um só). Nomeada `invocation-spell-copy`.
+
+**§5.4 - `npm run check:keys`, a rede contra chave morta.** `scripts/check-species-keys.js` cruza os
+6 registros curados keyed por `Nome|FONTE` de espécie com o catálogo RESOLVIDO (espécies + toda
+linhagem) e acusa chave que não casa nada. Nasceu da armadilha da leva 3 (o `Dwarf|XPHB` do
+`RACE_HP_PER_LEVEL` parou de casar quando o Dwarf ganhou linhagem, e **nenhum** Dwarf ganhava mais o
++1 HP/nível). Hoje: 0 chaves mortas.
+**A sonda deu um falso positivo antes de acertar**, e o instrumento é que estava errado: o
+`naturalArmorFor` também tenta `<baseName>|<fonte da variante>` (é como o Goblin de Ixalan herda o
+Grit), então essa forma precisa entrar no pool. **Descartar o defeito do instrumento é o primeiro
+passo, sempre.**
+
+**TC-0083 (ordem dos Hooks no `BuilderInner`) - `wontfix`, não era bug.** Era resíduo de HMR: eu
+havia editado o `useCharacterImport` momentos antes das duas medições. O A/B definitivo, em **ABA
+NOVA**, mostra as duas versões do arquivo carregando limpas. O `useCallback` que eu tinha removido
+"para consertar" foi restaurado. **Regra: `location.reload()` na mesma aba não descarta artefato de
+HMR** - num projeto com o React Compiler o grafo de módulos sobrevive ao reload. Abra uma aba nova
+antes de tratar um aviso de ordem de hooks como bug.
+
+**Uma família REAL que a varredura destapou: resistência a dano de feature de subclasse.** Ao
+conferir os achados restantes, dois deles (`traits.dr` + metade de `advancement.subclass`) não eram
+quirk nem espera de T2d: **um Sorcerer Draconic 6, um Warlock Celestial 6 ou um Cleric War 17 não
+tinham resistência nenhuma na ficha.** A varredura das 37 features de fonte atual que citam
+`{@variantrule Resistance|Immunity}` separa quatro grupos, e só o primeiro deriva - o critério inteiro
+está no cabeçalho do `engine/subclassGrants.js`:
+- **permanente e FIXA** (6 casos) -> campo `resist` novo no `SUBCLASS_GRANTS`, consumido pelo
+  `deriveDamageTraits`: Avatar of Battle, Guarded Mind, Psychic Defenses, Radiant Soul, Thought
+  Shield, Necrotic Husk;
+- **permanente À ESCOLHA** (1 caso) -> Elemental Affinity vira uma escolha kind `resist` no
+  `SUBCLASS_FEATURE_GRANTS`, com o pool fechado dos cinco tipos dracônicos. O kind já existia (a
+  escolha estruturada de raça/talento o usa), então UI, completude, autoBuild e derivação vieram de
+  graça;
+- **RE-ESCOLHIDA a cada descanso** -> não é decisão de build, é estado de sessão: Fiendish
+  Resilience, Dread Allegiance, Nature's Ward. Fica na prosa até a Phase C ter play-state;
+- **condicional a uma aura/forma/reação, ou não sobre um TIPO de dano** -> prosa, pela mesma regra que
+  o `damageTraits` já aplicava. Inclui a versão PHB do Avatar of Battle ("from nonmagical attacks"),
+  que é um `bypasses` do Foundry - por isso aquela entrada casa a fonte.
+No EXPORT a escolha vira um `Trait` no nível da feature com pool `dr:<tipo>` (o padrão do DDL-0056
+estendido), e o import lê `dr:` de volta. **Regra que fica: antes de cadastrar o caso que apareceu,
+varra o dataset** - foi o que separou 7 casos acionáveis de 30 que pareciam iguais.
+
+**E o segundo Fighting Style do Champion voltou.** O premade encoda a escolha como um `ItemChoice` de
+tipo feat no item de SUBCLASSE (nível na chave de `choices`, não no campo `level`); nós não emitíamos
+o passo e o import não o lia, então **um Champion vindo de um ator externo perdia o estilo em
+silêncio**. O `buildItemChoiceAdvancements` ganhou um terceiro caso (pool de talentos, `restriction`
+de feat, índice de itens à parte para um talento homônimo de uma optional feature não se confundir) e
+o import ganhou o `subclassFeatChoiceBag`, que casa o passo pelo NÍVEL da chave e, na falta, pelo
+título.
+
+**Documentação.** `DEFERRED-REVIEW.md` foi reestruturado a pedido do usuário: PENDENTE / RESOLVIDO /
+DECIDIDO POR DESIGN / FORA DO ALCANCE, cada item em uma seção só (a versão anterior misturava
+resolvido com pendente, especialmente no C7). Saíram as menções ativas às três decisões que na
+prática são de design: os chips de meta redundantes (que o usuário decidiu MANTER - a prosa detalha o
+funcionamento correto da feature, como a limitação do voo à armadura leve), o nome do item de
+background e as classes sidekick/UA. As entradas históricas do DDL log ficam como estão.
+
+Verificado: 1274 testes (+11), lint, `npm run check:keys` (0 mortas), sweep **286/286** `--strict`,
+`npm run t2` de 35 → **18** (+65 nomeados como esperados), e ao vivo (o pack no inventário, o A/B do
+TC-0083 em aba nova, a resistência derivando ponta a ponta na ficha e no ator). **Três classes de
+achado foram a zero** (`traits.dr`, `advancement.subclass`, `items.feat`).

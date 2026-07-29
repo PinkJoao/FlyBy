@@ -39,17 +39,17 @@ const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
  *   links/creditos; comparar texto seria ruído puro.
  * - **Estado de sessão:** `hp.value`, `spellN.value`, `uses.spent`, `death`,
  *   `exhaustion`, `inspiration` - o export nasce "descansado" de propósito.
- * - **Itens `container`.** Nosso modelo compra um pack como UM item (DDL-0013),
- *   então "Explorer's Pack" não se desdobra em contêiner + conteúdo.
+ * - (nada mais sobre `container`: desde 2026-07-29 um pack É exportado como
+ *   contêiner + conteúdo, como nos atores oficiais - ver C4 do DEFERRED-REVIEW.)
  * - **`attributes.senses` / `movement`.** O Foundry DERIVA de Active Effects; os
  *   dois lados guardam null.
  */
 export const DELIBERATE = [
   'background item name (custom origins only)',
+  'the class-granted "Unarmed Strike" (we grant it to EVERY class - see DDL-0080)',
   'document identity (_id/_stats/img/sort/ownership/folder/flags)',
   'prose (description/biography HTML)',
   'session state (hp.value, spell slots value, uses.spent, death, exhaustion)',
-  'container items (packs are one item)',
   'senses/movement (derived by Foundry from effects)',
   'spellcasting progression artificer == half (identical in the dnd5e config)',
 ];
@@ -113,6 +113,47 @@ export const EXPECTED = [
         && (f.after ?? []).some((n) => swaps.some((base) => String(n).startsWith(`${base} lineage`)))
       );
     },
+  },
+  {
+    id: 'pack-contents-from-data',
+    why:
+      'O conteúdo de um pack sai do `packContents` do 5etools, que segue o livro. O premade é '
+      + "CURADO à mão e omite itens: o Explorer's Pack do Aoth vem sem as 10 tochas que o PHB 2024 "
+      + 'lista. Seguir o premade tiraria do jogador equipamento que ele comprou.',
+    test: (f) =>
+      f.cat === 'items.gear'
+      && (f.before ?? []).length === 0
+      && (f.after ?? []).length > 0,
+  },
+  {
+    id: 'srd-item-name-variant',
+    why:
+      'O SRD publica DOIS documentos para a mesma lanterna ("Bullseye Lantern" e "Lantern, '
+      + 'Bullseye"); usamos a grafia do 5etools, que resolve para um uuid real - não há link perdido, '
+      + 'só uma escolha entre dois nomes que existem.',
+    test: (f) => {
+      if (f.cat !== 'items.gear') return false;
+      // O mesmo item com as duas metades do nome invertidas ("lantern, hooded" x
+      // "hooded lantern"): as palavras coincidem, a ordem não.
+      const words = (n) => String(n).toLowerCase().split(/[,\s]+/).filter(Boolean).sort().join(' ');
+      const b = (f.before ?? []).map(words);
+      const a = (f.after ?? []).map(words);
+      return b.length > 0 && a.length > 0 && b.every((x) => a.includes(x)) && a.every((x) => b.includes(x));
+    },
+  },
+  {
+    id: 'invocation-spell-copy',
+    why:
+      'O premade do Warlock emite uma CÓPIA do cantrip por invocação que o modifica ("Eldritch Blast '
+      + '(Repelling)"), além do original. No nosso modelo a invocação é uma feature própria (item de '
+      + 'optional feature) e o cantrip é UM só - que é a forma do livro. Emitir a cópia significaria '
+      + 'inventar um documento de magia por invocação, e o jogador teria duas linhas do mesmo cantrip '
+      + 'na Spellbook.',
+    test: (f) =>
+      f.cat === 'items.spell'
+      && (f.after ?? []).length === 0
+      && (f.before ?? []).length > 0
+      && (f.before ?? []).every((n) => /\(.+\)$/.test(String(n))),
   },
   {
     id: 'race-grant-level-convention',
@@ -332,9 +373,10 @@ function compareItems(P, A, out) {
   const pByType = itemsByType(P);
   const aByType = itemsByType(A);
 
-  // 1) Presença por tipo, ignorando `container` (deliberado) e tratando o
-  //    inventário como UM conjunto (a classificação exata é o item 2).
-  const types = new Set([...Object.keys(pByType), ...Object.keys(aByType)].filter((t) => t !== 'container'));
+  // 1) Presença por tipo, tratando o inventário como UM conjunto (a classificação
+  //    exata é o item 2). O `container` entra no conjunto de inventário desde que
+  //    um pack passou a ser exportado como contêiner + conteúdo (C4).
+  const types = new Set([...Object.keys(pByType), ...Object.keys(aByType)]);
   for (const t of types) {
     if (GEAR_TYPES.includes(t)) continue;
     const pn = [...(pByType[t]?.keys() ?? [])];
@@ -348,9 +390,11 @@ function compareItems(P, A, out) {
   }
 
   // 2) Inventário: um conjunto só (nome), mais a classificação de TIPO por item.
-  //    `container` fica FORA (pack = um item só no nosso modelo, ver DELIBERATE).
+  //    O `container` conta como inventário (um pack é contêiner + conteúdo, C4).
+  //    O "Unarmed Strike" NÃO: é concessão de CLASSE (o advancement o emite), e
+  //    nós o damos a toda classe de propósito - ver DELIBERATE.
   const gearNames = (byType) =>
-    GEAR_TYPES.filter((t) => t !== 'container').flatMap((t) => [...(byType[t]?.keys() ?? [])]);
+    GEAR_TYPES.flatMap((t) => [...(byType[t]?.keys() ?? [])]).filter((n) => n !== 'unarmed strike');
   const pGear = gearNames(pByType);
   const aGear = gearNames(aByType);
   cmpSet(out, 'items.gear', 'names', pGear, aGear);

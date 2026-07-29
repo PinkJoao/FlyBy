@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems, speciesTraitEntries } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems, speciesTraitEntries, buildInventoryItems } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -803,5 +803,49 @@ describe('speciesTraitEntries - o benefício aninhado da ancestralidade (A4)', (
       entries: [{ name: 'Guarda-chuva', entries: [{ type: 'list', items: [{ type: 'item', name: 'Beneficio Que Nao Existe', entries: ['...'] }] }] }],
     };
     expect(speciesTraitEntries(race).map((e) => e.name)).toEqual(['Guarda-chuva']);
+  });
+});
+
+describe('pack como CONTÊINER + conteúdo (C4)', () => {
+  // Recorte real: o Priest's Pack XPHB e o que ele contém.
+  const db = {
+    items: {
+      item: [
+        {
+          name: "Priest's Pack", source: 'XPHB', type: 'G|XPHB', weight: 29, value: 3300,
+          packContents: ['backpack|xphb', 'blanket|xphb', { item: 'rations|xphb', quantity: 7 }],
+        },
+        { name: 'Backpack', source: 'XPHB', type: 'G|XPHB', weight: 5, value: 200 },
+        { name: 'Blanket', source: 'XPHB', type: 'G|XPHB', weight: 3, value: 50 },
+        { name: 'Rations', source: 'XPHB', type: 'G|XPHB', weight: 2, value: 50 },
+      ],
+    },
+  };
+  const char = { inventory: [{ uid: 'u', itemId: "Priest's Pack", source: 'XPHB', quantity: 1 }] };
+
+  it('emite um `container` + os conteúdos apontando para ele', () => {
+    const items = buildInventoryItems(char, db);
+    const container = items.find((i) => i.type === 'container');
+    expect(container.name).toBe("Priest's Pack");
+    const inside = items.filter((i) => i.system.container === container._id);
+    expect(inside.map((i) => i.name).sort()).toEqual(['Blanket', 'Rations']);
+    expect(inside.find((i) => i.name === 'Rations').system.quantity).toBe(7);
+  });
+
+  it('o peso é o do RECIPIENTE, não o total do pack (senão o Foundry conta em dobro)', () => {
+    const items = buildInventoryItems(char, db);
+    const container = items.find((i) => i.type === 'container');
+    // A Backpack (5 lb) é o recipiente; o pack inteiro pesa 29 no dado.
+    expect(container.system.weight.value).toBe(5);
+    // E o preço fica só no contêiner, pelo mesmo motivo.
+    expect(container.system.price.value).toBe(33);
+    for (const i of items.filter((x) => x.system.container)) expect(i.system.price.value).toBe(0);
+  });
+
+  it('item sem `packContents` continua sendo um item só', () => {
+    const plain = { inventory: [{ uid: 'u', itemId: 'Blanket', source: 'XPHB', quantity: 1 }] };
+    const items = buildInventoryItems(plain, db);
+    expect(items).toHaveLength(1);
+    expect(items[0].type).not.toBe('container');
   });
 });

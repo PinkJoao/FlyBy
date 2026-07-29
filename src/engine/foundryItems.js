@@ -31,7 +31,7 @@ import { featureUses } from './foundryFeatureUses';
 import { featureActivities, srdFeatureMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
-import { effectiveSizeCodes, sizePick } from './speciesData';
+import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
 import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts, parseChoices } from './choices';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
@@ -711,7 +711,7 @@ export function buildClassWeaponItems(classEntry, classObj) {
 // (ids exatos); estes Traits existem para o lado Foundry.
 
 /** Kinds de escolha que têm um Trait correspondente no dnd5e. */
-export const TRAIT_CHOICE_KINDS = new Set(['skill', 'expertise', 'tool', 'language']);
+export const TRAIT_CHOICE_KINDS = new Set(['skill', 'expertise', 'tool', 'language', 'resist']);
 
 /** Título do Trait de um descritor - o NOME DA FEATURE, como nos premades.
  * Exportado porque o IMPORT casa o Trait de volta no descritor por este título
@@ -731,6 +731,11 @@ function traitChoiceConfig(desc, db) {
       return { mode: 'default', pool: desc.from?.length ? desc.from.map((c) => `skills:${c}`) : ['skills:*'] };
     case 'language':
       return { mode: 'default', pool: ['languages:standard:*', 'languages:exotic:*'] };
+    // Resistência a dano PERMANENTE à escolha (Elemental Affinity). É a forma que
+    // o premade usa: um Trait no nível da feature, pool `dr:<tipo>`. Sem ele, o
+    // Foundry não sabe que houve escolha e o import não a recupera.
+    case 'resist':
+      return { mode: 'default', pool: (desc.pool?.options ?? []).map((o) => `dr:${o.value}`) };
     case 'tool': {
       if (desc.pool?.type === 'list') {
         return { mode: 'default', pool: (desc.pool.options ?? []).map((o) => toolTraitKey(db, o.value)) };
@@ -753,6 +758,8 @@ function traitChoiceValues(desc, picks, db) {
       return picks.map((p) => languageTraitKey(db, p));
     case 'tool':
       return picks.map((p) => toolTraitKey(db, p));
+    case 'resist':
+      return picks.map((p) => `dr:${String(p).toLowerCase()}`);
     default:
       return [];
   }
@@ -1089,7 +1096,7 @@ export function buildItemChoiceAdvancements(classEntry, classObj, subObj, db, op
   const itemByName = new Map(optionItems.map((i) => [norm(i.name), i]));
   const out = [];
 
-  const push = (title, level, count, poolNames, restriction, uuidOf) => {
+  const push = (title, level, count, poolNames, restriction, uuidOf, index = itemByName) => {
     const pool = poolNames.map((n) => uuidOf(n)).filter(Boolean).map((uuid) => ({ uuid }));
     if (!pool.length) return;
     const choices = {};
@@ -1097,7 +1104,7 @@ export function buildItemChoiceAdvancements(classEntry, classObj, subObj, db, op
     const added = {};
     for (const [lvl, names] of Object.entries(count)) {
       for (const n of names) {
-        const item = itemByName.get(norm(n));
+        const item = index.get(norm(n));
         if (item) added[lvl] = { ...(added[lvl] ?? {}), [item._id]: `.${item._id}` };
       }
     }
@@ -1171,6 +1178,34 @@ export function buildItemChoiceAdvancements(classEntry, classObj, subObj, db, op
     push(ch.label, byLevel, pickedByLevel, list.map((f) => f.name), { type: 'class', subtype, list: [] }, (n) =>
       classFeatureUuid(classId, n),
     );
+  }
+
+  // 3) Escolha de TALENTO por uma feature de subclasse - hoje só o "Additional
+  //    Fighting Style" do Champion (@7). O pool são TALENTOS (feats24), não
+  //    features de classe, então o uuid e a `restriction` são outros; a forma é a
+  //    do premade do Randal (ItemChoice sem `level`, o nível vive na chave de
+  //    `choices`). Sem este passo o estilo escolhido não voltava ao importar um
+  //    ator externo, e o jogador perdia o segundo Fighting Style.
+  if (scope === 'subclass') {
+    for (const ch of subclassFeatureChoices(db, classId, subObj, MAX_LEVEL, parseClass(classObj)?.skillChoice?.from ?? [])) {
+      if (ch.kind !== 'feat') continue;
+      const cats = [ch.pool?.category].flat().filter(Boolean);
+      const list = latestOnly(db?.feats?.feat ?? []).filter((f) => cats.includes(f.category));
+      const picked = (classEntry.choices?.[ch.id]?.picks ?? []).map((p) => String(p).split('|')[0]);
+      const subtype = cats.includes('FS') ? 'fightingStyle' : '';
+      // O item do talento escolhido vem dos `featItems` (os itens de talento do
+      // personagem), não dos `optionItems` - um índice à parte, para um talento
+      // homônimo de uma optional feature não se confundir nos casos 1 e 2.
+      push(
+        ch.feature?.name ?? ch.label,
+        { [ch.level ?? 1]: ch.count ?? 1 },
+        { [ch.level ?? 1]: picked },
+        list.map((f) => f.name),
+        { type: 'feat', subtype, list: [] },
+        (n) => featUuid(n),
+        new Map((opts.featItems ?? []).map((i) => [norm(i.name), i])),
+      );
+    }
   }
   return out;
 }
@@ -1636,6 +1671,46 @@ function nestedBoonEntry(entry) {
   return srdOriginName(named[0].name) ? named[0] : null;
 }
 
+/**
+ * O POOL de benefícios entre os quais a ancestralidade escolhe - os seis boons do
+ * Goliath. Sai da espécie BASE: a linhagem resolvida guarda só o benefício
+ * escolhido (é o que `nestedBoonEntry` acha), enquanto o traço-guarda-chuva da
+ * base lista todos, com o sufixo de qualificação ("Cloud's Jaunt (Cloud Giant)")
+ * que o `srdOriginName` remove.
+ *
+ * Sem o pool o passo vira um ItemGrant (concessão fixa) e o Foundry não sabe que
+ * ali houve uma ESCOLHA - não oferece trocá-la. Com ele, vira o `ItemChoice` que
+ * os atores oficiais têm (C0/§5.1 do DEFERRED-REVIEW).
+ * @param {object} db
+ * @param {object} raceObj  raça RESOLVIDA (a linhagem)
+ * @returns {string[]} uuids de compêndio, ou vazio
+ */
+function ancestryBoonPool(db, raceObj) {
+  const baseName = raceObj?._baseName;
+  if (!db || !baseName || baseName === raceObj.name) return [];
+  const base = speciesCatalog(db).find(
+    (r) => norm(r.name) === norm(baseName) && norm(r.source) === norm(raceObj._baseSource ?? raceObj.source),
+  );
+  if (!base) return [];
+  for (const entry of base.entries ?? []) {
+    const named = [];
+    const walk = (nodes) => {
+      for (const n of nodes ?? []) {
+        if (!n || typeof n !== 'object') continue;
+        if (n.name) named.push(n.name);
+        walk(n.entries);
+        walk(n.items);
+      }
+    };
+    walk(entry?.entries);
+    // O guarda-chuva certo é o que lista VÁRIOS benefícios publicados - o mesmo
+    // corte do `nestedBoonEntry`, do outro lado (lá é exatamente um, aqui é 2+).
+    const uuids = named.map((n) => originUuid(srdOriginName(n) ?? n)).filter(Boolean);
+    if (uuids.length >= 2) return [...new Set(uuids)];
+  }
+  return [];
+}
+
 /** Nome do traço no documento exportado: o do dnd5e quando existe (ver
  * `srdOriginName`), senão o do 5etools. */
 const traitName = (entry) => srdOriginName(entry?.name) ?? entry?.name;
@@ -1903,10 +1978,36 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   const plainTraits = traitItems.filter((i) => !isBoon(i));
   const boonItems = traitItems.filter(isBoon);
   if (plainTraits.length) advancement.push(...itemGrantAdvancements(plainTraits, traitsTitle));
-  // O benefício da ancestralidade ("Cloud's Jaunt") em passo PRÓPRIO: no SRD ele
-  // vem de um `ItemChoice`, e somá-lo ao ItemGrant dos traços faria o passo
-  // oficial parecer conceder um item a mais do que concede.
-  if (boonItems.length) advancement.push(...itemGrantAdvancements(boonItems, lineageLabel(raceObj)));
+  // O benefício da ancestralidade ("Cloud's Jaunt") em passo PRÓPRIO - e como
+  // `ItemChoice` quando dá para montar o POOL das alternativas, que é a forma dos
+  // atores oficiais: assim o Foundry sabe que houve uma ESCOLHA ali e oferece
+  // trocá-la. Sem pool (espécie fora do SRD) cai no ItemGrant, que concede a
+  // mesma coisa sem registrar a decisão.
+  if (boonItems.length) {
+    const pool = ancestryBoonPool(db, raceObj);
+    if (pool.length) {
+      advancement.push({
+        _id: randomFoundryId(),
+        type: 'ItemChoice',
+        level: 0,
+        title: lineageLabel(raceObj),
+        configuration: {
+          choices: { 0: { count: boonItems.length, replacement: false } },
+          allowDrops: false,
+          type: 'feat',
+          pool: pool.map((uuid) => ({ uuid })),
+          spell: null,
+          restriction: { type: 'race' },
+        },
+        value: {
+          added: { 0: Object.fromEntries(boonItems.map((i) => [i._id, i._stats?.compendiumSource ?? `.${i._id}`])) },
+          replaced: {},
+        },
+      });
+    } else {
+      advancement.push(...itemGrantAdvancements(boonItems, lineageLabel(raceObj)));
+    }
+  }
   const futureTraits = speciesTraitEntries(raceObj)
     .map((e) => ({ level: traitLevel(e), uuid: originUuid(traitName(e)) }))
     .filter((t) => t.level > level);
@@ -2320,7 +2421,10 @@ export function buildInventoryItems(character, db) {
     // foco de conjuração - o "Staff" (e o "Wooden Staff") tem dano e categoria de
     // arma no dado, é só o `type` que diz SCF. Promovemos só quando o dado tem
     // dano, então a ficha de arma nunca é inventada.
-    const RECLASSIFIABLE = ['equipment', 'consumable', 'loot'];
+    // `container` entra no trio desde que o comparador passou a olhar contêineres
+    // (C4): o SRD classifica assim a Bag of Holding, a Backpack, a Pouch… e sem
+    // isso elas saíam como `equipment`, sem poder guardar nada no Foundry.
+    const RECLASSIFIABLE = ['equipment', 'consumable', 'loot', 'container'];
     const srd = raw ? equipmentFoundryType(raw.name) : null;
     const useSrd =
       srd
@@ -2383,6 +2487,13 @@ export function buildInventoryItems(character, db) {
       system.type = { value: typeValue, baseItem: toolId(raw?.name ?? entry.itemId) };
       system.ability = '';
       system.proficient = null;
+    } else if (fType === 'container') {
+      // Contêiner não tem `type` (não é subtipo de nada) e ganha os campos que o
+      // DataModel dele espera: capacidade e a bolsa de moedas.
+      system.capacity = { weight: { value: null, units: 'lb' }, volume: { units: 'cubicFoot' } };
+      system.currency = { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 };
+      system.identifier = slugify(raw?.name ?? entry.itemId);
+      system.equipped = !!entry.equipped;
     } else {
       // consumable / loot
       system.type = { value: typeValue, subtype: '' };
@@ -2391,7 +2502,7 @@ export function buildInventoryItems(character, db) {
     const name = entry.customName || raw?.name || entry.itemId;
     const img = inventoryImg(entry, info.group);
     const bonusEffect = itemBonusEffect(name, img, raw);
-    out.push({
+    const item = {
       _id: randomFoundryId(),
       name,
       type: fType,
@@ -2402,7 +2513,87 @@ export function buildInventoryItems(character, db) {
       sort: 0,
       flags: {},
       _stats: itemStats(entry.customName ? null : equipmentUuid(name)),
-    });
+    };
+    // Um PACK vira contêiner + conteúdo (a forma dos atores oficiais). Se não der
+    // para desdobrar, segue como um item só - o comportamento antigo.
+    const unpacked = unpackContainer(item, raw, db);
+    if (unpacked) out.push(...unpacked);
+    else out.push(item);
   }
   return out;
+}
+
+/**
+ * Desdobra um PACK no par contêiner + conteúdo, que é como os atores oficiais o
+ * trazem: o "Priest's Pack" da Akra é um `container` com 6 itens dentro, cada um
+ * com `system.container` apontando para ele.
+ *
+ * Tudo DERIVADO do `packContents` do 5etools (20 packs o têm) - nada inventado:
+ *  - a MOCHILA vem de dentro do próprio pack. `packContents` inclui um item que o
+ *    SRD classifica como `container` (o Backpack), e é ELE que carrega o peso do
+ *    recipiente; o resto vai dentro. Sem isso, o peso do pack (29 lb, o TOTAL)
+ *    somaria com o dos conteúdos e o Foundry contaria tudo em dobro.
+ *  - o PREÇO fica no contêiner (é o preço do pack), e os conteúdos saem sem preço,
+ *    para a soma da ficha não dobrar pelo mesmo motivo.
+ *
+ * O nosso modelo continua comprando o pack como UMA entrada de inventário
+ * (DDL-0013); o desdobramento é só do lado do arquivo exportado, e o import o
+ * recolhe de volta (ver `foundryImport`, C4 do DEFERRED-REVIEW).
+ * @param {object} item  o item já montado do pack
+ * @param {object|null} raw  o item 5etools resolvido
+ * @param {object} db
+ * @returns {object[]|null} contêiner + conteúdos, ou null se não for um pack
+ */
+function unpackContainer(item, raw, db) {
+  const contents = raw?.packContents;
+  if (!Array.isArray(contents) || contents.length === 0) return null;
+
+  const resolved = [];
+  for (const c of contents) {
+    // Três formas no dado: "uid", {item, quantity} e {special: "texto"} (que não
+    // é item nenhum - fica fora, como já ficava).
+    const uid = typeof c === 'string' ? c : c?.item;
+    if (!uid) continue;
+    const [cName, cSource] = String(uid).split('|');
+    // O uid do `packContents` traz a fonte em MINÚSCULAS ("backpack|xphb"), e o
+    // casamento de fonte do `resolveItemObj` é sensível a caixa - sem o upper,
+    // NENHUM conteúdo resolvia e o pack nunca se desdobrava.
+    const obj = resolveItemObj(db, cName, (cSource ?? '').toUpperCase());
+    if (obj) resolved.push({ obj, quantity: (typeof c === 'object' ? c.quantity : 1) ?? 1 });
+  }
+  if (!resolved.length) return null;
+
+  // A mochila do pack: o conteúdo que o SRD classifica como `container`.
+  const bagIndex = resolved.findIndex((r) => equipmentFoundryType(r.obj.name)?.type === 'container');
+  const bag = bagIndex >= 0 ? resolved[bagIndex] : null;
+  const inside = resolved.filter((_, i) => i !== bagIndex);
+
+  const container = {
+    ...item,
+    type: 'container',
+    system: {
+      ...item.system,
+      // Peso do RECIPIENTE, não do pack: os conteúdos carregam o deles.
+      weight: { value: bag?.obj?.weight ?? 0, units: 'lb' },
+      capacity: { weight: { value: null, units: 'lb' }, volume: { units: 'cubicFoot' } },
+      identifier: slugify(item.name),
+      currency: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
+      quantity: 1,
+    },
+  };
+  delete container.system.type;
+
+  const children = inside.map(({ obj, quantity }) => {
+    const child = buildInventoryItems(
+      { inventory: [{ uid: '', itemId: obj.name, source: obj.source, quantity, equipped: false, attuned: false }] },
+      db,
+    )[0];
+    if (!child) return null;
+    // Dentro do contêiner, e sem preço (o do pack já está no contêiner).
+    child.system.container = container._id;
+    child.system.price = foundryPrice(0);
+    return child;
+  }).filter(Boolean);
+
+  return [container, ...children];
 }

@@ -33,7 +33,7 @@
  */
 
 /** `Nome|FONTE` da raça RESOLVIDA → padrão de armadura natural. */
-const NATURAL_ARMOR = {
+export const NATURAL_ARMOR = {
   'Tortle|MPMM': { type: 'flat', ac: 17, label: 'Natural Armor' },
   'Autognome|AAG': { type: 'unarmored', base: 13, ability: 'dex', label: 'Armored Casing' },
   'Warforged|EFA': { type: 'bonus', bonus: 1, label: 'Integrated Protection' },

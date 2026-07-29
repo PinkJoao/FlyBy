@@ -14,6 +14,9 @@
 //   armor/weapons/tools/languages  - rótulos (como autoProficiencies)
 //   skills/expertiseSkills/saves   - códigos (skill codes / abreviações de
 //                                    atributo); expertiseSkills marca nível 2
+//   resist                         - tipos de dano (minúsculos), resistência
+//                                    PERMANENTE do personagem. Ver a varredura
+//                                    abaixo antes de acrescentar uma entrada.
 // Campos CONDICIONAIS ("if you already have…") viram ESCOLHAS geradas ao vivo
 // por subclassConditionalChoices (precisa do personagem):
 //   conditionalArtisanTool: true   - 1 ferramenta de artesão por tool do grant
@@ -31,6 +34,27 @@
 // Totem Warrior é reprint-oculto pelo Wild Heart XPHB) - se um dia houver um
 // toggle de conteúdo legacy, isso exigiria sub-escolhas em featureoptions.
 // Classes sidekick e UA (Mystic) não são curadas.
+//
+// RESISTÊNCIA A DANO (campo `resist`, acrescentado 2026-07-29). A varredura das
+// 37 features de classe/subclasse de fonte atual que citam `{@variantrule
+// Resistance|Immunity}` separa quatro grupos, e só o PRIMEIRO deriva:
+//
+//  1. PERMANENTE E FIXA -> este registro (6 casos, todos abaixo).
+//  2. PERMANENTE À ESCOLHA -> uma escolha kind 'resist' em SUBCLASS_FEATURE_GRANTS
+//     (classFeatureChoices.js). Único caso: Elemental Affinity (Draconic).
+//  3. RE-ESCOLHIDA A CADA DESCANSO -> **não** é decisão de build, é estado de
+//     sessão: Fiendish Resilience (Fiend @10, "whenever you finish a Short or
+//     Long Rest"), Dread Allegiance (Scion of the Three @3), Nature's Ward
+//     (Land @10, segue a terra escolhida no descanso). Fica na prosa até a
+//     Phase C ter play-state.
+//  4. CONDICIONAL a uma aura/forma/reação, ou não sobre um TIPO de dano ->
+//     prosa, pela mesma regra do damageTraits: Aura of Warding/Elemental
+//     Shielding (só dentro da aura), Spell Resistance do Abjurer ("damage of
+//     spells", não é tipo), e tudo que depende de Rage/Wild Shape/Form of Dread.
+//
+// A versão PHB do Avatar of Battle ("from nonmagical attacks") também fica na
+// prosa: é um `bypasses` do Foundry, que o nosso modelo de traço plano não
+// expressa - por isso a entrada casa `source: 'XPHB'`.
 // -----------------------------------------------------------------------------
 
 import { resolveSubclassObj, resolveClassObj, resolveRaceObj } from './resolve';
@@ -76,7 +100,13 @@ export const SUBCLASS_GRANTS = {
   'cleric|life': [{ level: 1, source: 'PHB', feature: 'Bonus Proficiency', armor: [HEAVY] }],
   'cleric|nature': [{ level: 1, source: 'PHB', feature: 'Bonus Proficiency', armor: [HEAVY] }],
   'cleric|tempest': [{ level: 1, source: 'PHB', feature: 'Bonus Proficiencies', armor: [HEAVY], weapons: [MARTIAL] }],
-  'cleric|war': [{ level: 1, source: 'PHB', feature: 'Bonus Proficiencies', armor: [HEAVY], weapons: [MARTIAL] }],
+  'cleric|war': [
+    { level: 1, source: 'PHB', feature: 'Bonus Proficiencies', armor: [HEAVY], weapons: [MARTIAL] },
+    // "You gain Resistance to Bludgeoning, Piercing, and Slashing damage."
+    // (XPHB; a versão PHB restringe a "nonmagical attacks", condicional que
+    // fica na prosa - por isso a entrada casa a fonte.)
+    { level: 17, source: 'XPHB', feature: 'Avatar of Battle', resist: ['bludgeoning', 'piercing', 'slashing'] },
+  ],
   'cleric|solidarity (psa)': [{ level: 1, feature: 'Bonus Proficiency', armor: [HEAVY] }],
   'cleric|strength (psa)': [{ level: 1, feature: 'Bonus Proficiency', armor: [HEAVY] }],
   'cleric|zeal (psa)': [{ level: 1, feature: 'Bonus Proficiencies', armor: [HEAVY], weapons: [MARTIAL] }],
@@ -97,6 +127,8 @@ export const SUBCLASS_GRANTS = {
     { level: 7, feature: 'Royal Envoy', skills: ['per'], expertiseSkills: ['per'], conditionalSkillAlt: ['ani', 'ins', 'itm', 'prf'] },
   ],
   'fighter|rune knight': [{ level: 3, feature: 'Bonus Proficiencies', tools: ["Smith's Tools"], languages: ['Giant'] }],
+  // As duas versões (TCE e XPHB) concedem a resistência sem condição.
+  'fighter|psi warrior': [{ level: 10, feature: 'Guarded Mind', resist: ['psychic'] }],
   'monk|mercy': [{ level: 3, feature: 'Implements of Mercy', skills: ['ins', 'med'], tools: ['Herbalism Kit'] }],
   'monk|drunken master': [{ level: 3, feature: 'Bonus Proficiencies', skills: ['prf'], tools: ["Brewer's Supplies"] }],
   'ranger|gloom stalker': [
@@ -116,6 +148,12 @@ export const SUBCLASS_GRANTS = {
   // Shepherd). Nível 3: no chassi 2024 a umbrella "Storm Sorcery" é reapontada
   // para o nível 3, e a subclasse não é escolhível antes disso.
   'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages: ['Primordial'] }],
+  'sorcerer|aberrant': [{ level: 6, feature: 'Psychic Defenses', resist: ['psychic'] }],
+  'warlock|celestial': [{ level: 6, feature: 'Radiant Soul', resist: ['radiant'] }],
+  'warlock|great old one': [{ level: 10, feature: 'Thought Shield', resist: ['psychic'] }],
+  // A IMUNIDADE do mesmo traço é condicional (só usando o Form of Dread) e fica
+  // na prosa; a resistência é permanente nas duas versões (VRGR e RHW).
+  'warlock|undead': [{ level: 10, feature: 'Necrotic Husk', resist: ['necrotic'] }],
   'warlock|hexblade': [{ level: 1, feature: 'Hex Warrior', armor: [MEDIUM, SHIELDS], weapons: [MARTIAL] }],
   'wizard|bladesinging': [
     { level: 2, feature: 'Training in War and Song', armor: [LIGHT], skills: ['prf'] },
@@ -143,7 +181,7 @@ export function subclassGrantGroups(classId, subclassObj, level) {
  *            languages:string[], saves:string[]}}
  */
 export function deriveSubclassGrants(character, db) {
-  const out = { armor: [], weapons: [], grantedSkills: [], expertiseSkills: [], grantedTools: [], languages: [], saves: [] };
+  const out = { armor: [], weapons: [], grantedSkills: [], expertiseSkills: [], grantedTools: [], languages: [], saves: [], resist: [] };
   for (const cls of character?.classes ?? []) {
     if (!cls.classId || !cls.subclassId) continue;
     const subObj = resolveSubclassObj(db, cls.classId, cls.subclassId, cls.subclassSource);
@@ -155,6 +193,7 @@ export function deriveSubclassGrants(character, db) {
       out.grantedTools.push(...(g.tools ?? []));
       out.languages.push(...(g.languages ?? []));
       out.saves.push(...(g.saves ?? []));
+      out.resist.push(...(g.resist ?? []));
     }
   }
   return out;

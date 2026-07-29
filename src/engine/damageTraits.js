@@ -11,7 +11,11 @@
 //     choice-bags (espécie, talento de origem, sub-bags de feat em slots de
 //     classe) - o lado escolhido do mesmo campo (`{choose:{from,count}}`,
 //     ex: Boon of Energy Resistance), parseado por engine/choices.
-//  3. ITENS equipados - `resist`/`immune`/`vulnerable` do item resolvido
+//  3. GRANTS de SUBCLASSE em prosa (subclassGrants) - resistência PERMANENTE e
+//     FIXA concedida por uma feature de subclasse (Radiant Soul, Thought Shield,
+//     Guarded Mind…). O registro documenta por que as re-escolhidas a cada
+//     descanso e as condicionais a uma aura/forma NÃO entram.
+//  4. ITENS equipados - `resist`/`immune`/`vulnerable` do item resolvido
 //     (Armor of Resistance, variantes geradas), contando só quando equipado e,
 //     se o item exige sintonização, sintonizado.
 //
@@ -23,6 +27,7 @@
 import { resolveRaceObj, resolveFeat } from './resolve';
 import { collectChoicePicks } from './choices';
 import { collectFeatIds } from './proficiency';
+import { deriveSubclassGrants } from './subclassGrants';
 
 /** Os três campos estruturados, na ordem de exibição. */
 export const DAMAGE_TRAIT_KINDS = ['resist', 'immune', 'vulnerable'];
@@ -76,6 +81,7 @@ export function deriveDamageTraits(character, db, inventoryEntries = []) {
   const feats = collectFeatIds(character ?? {})
     .map((id) => resolveFeat(db, id))
     .filter(Boolean);
+  const subclassResist = deriveSubclassGrants(character, db).resist;
   const activeItems = inventoryEntries.filter(
     (e) => e?.raw && e.equipped && (!e.required || e.attuned),
   );
@@ -84,6 +90,9 @@ export function deriveDamageTraits(character, db, inventoryEntries = []) {
     const add = adder(kind, out[kind]);
     fixedFromField(race?.[kind], add);
     for (const feat of feats) fixedFromField(feat[kind], add);
+    // Só `resist` hoje: nenhuma feature de subclasse concede imunidade ou
+    // vulnerabilidade PERMANENTE (a varredura está no cabeçalho do registro).
+    if (kind === 'resist') for (const v of subclassResist) add(v);
     chosenPicks(character, kind, add);
     const addItem = adder(kind, out.fromItems[kind]);
     for (const e of activeItems) fixedFromField(e.raw[kind], addItem);

@@ -310,24 +310,9 @@ not rediscover these; remove an item (and note where it was done) when it ships.
 5. ~~**Sub-raças ABSORVIDAS pela base 2024 (`as: 'swap'`)**~~ — **DONE 2026-07-23 (DDL-0063,
    CHANGELOG §71)**, no escopo que o usuário fixou: **só o Halfling**. O guarda-chuva "Halfling
    Lineage" traz Lightfoot/Stout/Ghostwise/Lotusden, cada opção TROCANDO o traço que a base 2024
-   absorveu. O **Dwarf (Hill/Mountain) ficou de fora por decisão** — não é pendência; ver a §
-   "Explicitly OUT OF SCOPE". O censo das 98 sub-raças que sustenta tudo isso está em
-   **`SPECIES-FAMILIES-PLAN.md`** e **não deve ser refeito**.
-
-### Explicitly OUT OF SCOPE (decided 2026-07-22 — do not re-open as pendencies)
-
-Long-standing backlog items **cancelled by the user**, not deferred. They are recorded here so a
-future session does not "discover the gap" and re-add them:
-
-- **Sidekick classes and UA content** (Mystic…). Not supported. This is why they are absent from
-  every curated registry (subclassGrants, featureOptions, hpBonuses) and from the sweep matrix —
-  that absence is the decision, not an oversight.
-- **O `swap` do DWARF (Hill/Mountain)** — decidido 2026-07-23. O Dwarf tem o padrão de absorção
-  IDÊNTICO ao do Halfling (Dwarf XPHB = Dwarf 2014 + o Dwarven Toughness do *Hill*, e o *Mountain*
-  ficou fora com o Dwarven Armor Training), e a forma `as: 'swap'` do DDL-0063 resolveria os dois
-  do mesmo jeito. O usuário optou por **só o Halfling**: o objetivo era centralizar as opções mais
-  relevantes e confusas, não varrer o dataset. Uma sessão futura não deve reabrir isso como lacuna
-  — se voltar, volta por pedido, e é um segundo alvo em `engine/legacyHalflingLineages.js`.
+   absorveu. O **Dwarf (Hill/Mountain) entrou em 2026-07-29** (DDL-0080), pelo mesmo mecanismo - o
+   módulo virou o genérico `engine/legacySwapLineages.js`. O censo das 98 sub-raças que sustenta
+   tudo isso está em **`SPECIES-FAMILIES-PLAN.md`** e **não deve ser refeito**.
 
 ---
 
@@ -453,17 +438,65 @@ limitação do voo à armadura leve (média no Tiefling Winged) está no TEXTO, 
 lembrete para jogadores novos, e o chip é referência rápida para veteranos. As duas apresentações têm
 função diferente; esconder qualquer uma perde informação. **Encerrado, não reabrir.**
 
+**Decision (leva 4) - uma entrada em `DELIBERATE` protege uma decisão e ao mesmo tempo CEGA o
+oráculo.** O tipo `container` estava na lista de ignorados porque o nosso modelo exportava um pack
+como item único (DDL-0013). Ao desdobrá-lo (contêiner + conteúdo, derivado do `packContents` do
+5etools), tirar a entrada de lá expôs **55 achados reais**: Bag of Holding, Backpack e Pouch saíam
+como `equipment` e por isso **não guardavam nada** no Foundry. **Revise as entradas de `DELIBERATE`
+sempre que a decisão que elas protegem mudar.** Três cuidados que a medição impôs, e que valem para
+qualquer contêiner: o peso é o do RECIPIENTE (o Foundry soma o conteúdo), o preço fica só no
+contêiner, e o import recolhe numa entrada só - a decisão do DDL-0013 fica intacta.
+- **E o premade não é sempre a referência melhor:** o Explorer's Pack dele vem sem as 10 tochas que o
+  livro lista. O nosso conteúdo sai do dado; nomeado `pack-contents-from-data`.
+
+**Decision (leva 4) - uma ESCOLHA de linhagem tem de sobreviver ao export mesmo quando a espécie
+resolvida guarda só o escolhido.** O item de raça saía sem `ItemChoice`, então o Foundry recebia o
+boon da ancestralidade como concessão fixa e não oferecia trocá-lo. `ancestryBoonPool` monta o pool a
+partir do traço-guarda-chuva da espécie BASE e só emite o passo quando **pelo menos dois** uuids
+resolvem - com um só não há escolha a oferecer.
+
+**Decision (leva 4) - antes de cadastrar o caso que APARECEU, varra o dataset (3ª ocorrência da
+regra do DDL-0073).** Dois achados do comparador não eram quirk nem espera de T2d: um Sorcerer
+Draconic 6, um Warlock Celestial 6 e um Cleric War 17 **não tinham resistência nenhuma na ficha**. A
+varredura das 37 features de fonte atual que citam `{@variantrule Resistance|Immunity}` separou
+quatro grupos, e só o primeiro deriva - o critério inteiro vive no cabeçalho do `subclassGrants.js`:
+permanente e FIXA (6 casos, campo `resist` novo no registro), permanente À ESCOLHA (1 caso, kind
+`resist` que já existia), **RE-ESCOLHIDA a cada descanso** (Fiendish Resilience, Dread Allegiance,
+Nature's Ward - é estado de SESSÃO, não decisão de build; espera a Phase C) e condicional a uma
+aura/forma/reação ou não sobre um TIPO de dano (prosa, incluindo a versão PHB do Avatar of Battle,
+que é um `bypasses` do Foundry). Sem a varredura eu teria cadastrado 1 e deixado 6 quebrados, ou
+cadastrado 30 e inventado resistências que a regra não dá.
+- **No export a escolha é um `Trait` no nível da feature com pool `dr:<tipo>`** - o padrão do
+  DDL-0056 estendido a um kind novo, e o import lê `dr:` de volta.
+
+**Decision (leva 4) - uma escolha de TALENTO pode morar no item de SUBCLASSE.** O segundo Fighting
+Style do Champion viaja num `ItemChoice` de tipo feat no item de subclasse, com o nível na chave de
+`choices` (não no campo `level`). Não emitíamos o passo e o import não o lia, então **um Champion
+vindo de um ator externo perdia o estilo em silêncio**. O índice de itens desse caso é SEPARADO do
+dos itens de opção, para um talento homônimo de uma optional feature não se confundir.
+
+**Decision (leva 4) - antes de tratar um aviso de ordem de Hooks como bug, abra uma ABA NOVA.** O
+TC-0083 foi fechado como `wontfix`: era resíduo de HMR, e eu havia editado o módulo momentos antes das
+duas medições. **`location.reload()` na mesma aba não descarta artefato de HMR** - num projeto com o
+React Compiler o grafo de módulos sobrevive ao reload. O A/B em aba nova mostra as duas versões
+carregando limpas; o `useCallback` que eu tinha removido "para consertar" foi restaurado.
+
 **Consequences.**
 - Uma classe nova ganha o Ataque Desarmado sozinha; uma espécie nova de `swap` é uma entrada de
-  registro (mais a varredura de chaves acima).
+  registro - e a varredura de chaves virou **`npm run check:keys`**, uma sonda permanente que cruza os
+  6 registros curados keyed por espécie com o catálogo RESOLVIDO e sai com código 1 se alguma chave
+  não casa nada. Vale rodá-la ao mexer em espécie.
 - Fechados também: `{@table}` inline vira link (226 das 230 tags do conteúdo que exibimos resolvem),
   as três raridades sem chip da loja (301 itens inalcançáveis), o pseudo-idioma `other` (registro de
   22 espécies; "Other" era a única escolha do app que não dizia o que era) e o boon da ancestralidade
   do Goliath como documento à parte.
 - **Escopo removido da documentação a pedido do usuário:** a criação direta em nível alto deixou de
   ser mencionada (era uma entrada em "Explicitly OUT OF SCOPE").
-- Verificado ao fim das três levas: 1263 testes, lint, sweep **286/286** `--strict`, `npm run t2` de
-  71 → **35** (+93 nomeados como esperados). Ver CHANGELOG §103-105 e `DEFERRED-REVIEW.md`.
+- Verificado ao fim das quatro levas: 1274 testes, lint, `npm run check:keys` (0 mortas), sweep
+  **286/286** `--strict`, `npm run t2` de 71 → **18** (+65 nomeados como esperados), com `traits.dr`,
+  `advancement.subclass` e `items.feat` a ZERO. Ver CHANGELOG
+  §103-106 e `DEFERRED-REVIEW.md`, reestruturado em PENDENTE / RESOLVIDO / DECIDIDO POR DESIGN / FORA
+  DO ALCANCE (só a §2 pede ação).
 
 ### DDL-0079 - O SRD é a fonte quando a informação é do SISTEMA DE DESTINO; e o que ele publica decide a FORMA do documento
 **Date:** 2026-07-29
@@ -3153,8 +3186,8 @@ Stensia PSI). Plus: record compendium UUIDs and E5 PDF polish as tracked known p
   additions) — which is reprint-hidden behind Wild Heart XPHB. Recorded in subclassGrants.js's
   header; becomes real work only if a legacy toggle ever ships.
 - **KNOWN DEFERRED BACKLOG (tracked, deliberately later)** — see the roadmap subsection added
-  in §4: real compendium UUIDs; E5 PDF polish; sidekick/UA classes; the optional foundry-*.json
-  overlay adoption (DDL-0009); legacy-content toggle.
+  in §4: real compendium UUIDs; E5 PDF polish; the optional foundry-*.json overlay adoption
+  (DDL-0009); legacy-content toggle.
 
 **Consequences.**
 - A new subrace in the data Just Works (it becomes a lineage row + sweep row automatically);

@@ -137,9 +137,19 @@ describe('premadeDiff', () => {
     expect(cats).toContain('traits.languages');
   });
 
-  it('itens `container` são ignorados (pack = um item só no nosso modelo)', () => {
+  it('itens `container` CONTAM como inventário (um pack é contêiner + conteúdo)', () => {
+    // Antes de 2026-07-29 o `container` era ignorado, porque o nosso modelo
+    // exportava um pack como item único. Desde o C4 ele é desdobrado, então um
+    // contêiner que falta é achado de verdade.
     const premade = actor({ items: [{ _id: '1', name: "Explorer's Pack", type: 'container', system: {} }] });
-    expect(comparePremade(premade, actor())).toEqual([]);
+    expect(comparePremade(premade, actor())).toEqual([
+      { cat: 'items.gear', key: 'names', before: ["explorer's pack"], after: [] },
+    ]);
+  });
+
+  it('o "Unarmed Strike" fica FORA do conjunto de inventário (é concessão de classe)', () => {
+    const ours = actor({ items: [{ _id: '9', name: 'Unarmed Strike', type: 'weapon', system: {} }] });
+    expect(comparePremade(actor(), ours)).toEqual([]);
   });
 
   it('classifica DIVERGÊNCIA DE TIPO de item de inventário à parte da ausência', () => {

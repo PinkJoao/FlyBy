@@ -147,6 +147,23 @@ describe('subclassFeatureChoices', () => {
     expect(skill).toMatchObject({ count: 1, from: ['acr', 'ath', 'his'] });
   });
 
+  it('Elemental Affinity (Draconic) é uma escolha de RESISTÊNCIA de lista fechada', () => {
+    const dbDrac = {
+      'class-sorcerer': {
+        subclassFeature: [
+          { name: 'Elemental Affinity', source: 'XPHB', className: 'Sorcerer', classSource: 'XPHB', subclassShortName: 'Draconic', subclassSource: 'XPHB', level: 6, entries: ['x'] },
+        ],
+      },
+    };
+    const drac = { shortName: 'Draconic', source: 'XPHB', subclassFeatures: [] };
+    expect(subclassFeatureChoices(dbDrac, 'sorcerer', drac, 5)).toHaveLength(0);
+    const out = subclassFeatureChoices(dbDrac, 'sorcerer', drac, 6);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ kind: 'resist', count: 1, level: 6 });
+    expect(out[0].pool.options.map((o) => o.value)).toEqual(['acid', 'cold', 'fire', 'lightning', 'poison']);
+    expect(out[0].pool.options[0].label).toBe('Acid');
+  });
+
   it('gates by level and prunes below it', () => {
     expect(subclassFeatureChoices(db, 'bard', bardLore, 2)).toHaveLength(0);
     expect(subclassFeatureChoices(null, 'bard', null, 3)).toEqual([]);

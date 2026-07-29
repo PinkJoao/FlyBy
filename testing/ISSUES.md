@@ -1562,27 +1562,43 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 - **TC-0082** (Wild Companion): novo registro `REMOVED_ADDITIONAL_SPELLS`. A varredura que fecha o
   registro está no cabeçalho dele - 10 candidatos, 9 falsos positivos.
 
-## O que RESTA no comparador (71), e o que é cada coisa
+## O que RESTA no comparador (18), e o que é cada coisa
 
-Nenhum destes é regressão; ficam registrados para a próxima sessão decidir se valem trabalho.
+Atualizado 2026-07-29 ao fim das quatro levas de `DEFERRED-REVIEW.md` (71 -> 18). Nenhum destes é
+regressão. **Três classes de achado foram a ZERO nesta última leva** (`traits.dr`,
+`advancement.subclass`, `items.feat`), e duas delas eram bug de verdade, não convenção:
 
-- **16 `advancement.class.grants`** - o "Unarmed Strike" acima (8) e a composição de alguns passos
-  do Paladino (o SRD põe a magia concedida no MESMO passo das features; nós num passo irmão).
-- **16 `advancement.race`** - convenções de nível que o próprio SRD não segue igual: o passo de
-  concessão de nível 1 é `@0` no Gnome e `@1` no Elfo; a resistência da legacy do Tiefling é
-  `Trait@1` e a do Dragonborn `Trait@0`. Sem regra derivável.
-- **11 `items.spell`** - o resto do TC-0080 que a própria entrada deixou de fora (as 35 magias
-  `prepared: 0` da Riswynn, uma Ladina sem conjuração: não há origem que as segure).
-- **10 `items.feat`** - o "Cloud's Jaunt" do Goliath (o SRD separa o boon escolhido num item; nós o
-  temos dentro do traço "Giant Ancestry" mesclado) e o Fighting Style do Randal.
-- **6 `advancement.subclass`**, **6 `feat.activities`**, **2 `spell.method`** (quirk do premade da
-  Sefris, já anotado no TC-0067), **2 `traits.dr`**, **1 `advancement.class`**, **1 `details.xp`**
-  (quirk do premade do Riswynn L11).
+- **`traits.dr` + metade de `advancement.subclass`** eram a **família das resistências de subclasse**:
+  um Sorcerer Draconic 6, um Warlock Celestial 6 e um Cleric War 17 não tinham resistência nenhuma na
+  ficha. Fechado por varredura das 37 features que citam `{@variantrule Resistance|Immunity}` (6 casos
+  fixos + 1 à escolha derivam; os demais são estado de sessão ou condicionais em prosa) - o critério
+  está no cabeçalho do `engine/subclassGrants.js`.
+- **`items.feat` + a outra metade de `advancement.subclass`** eram o **2º Fighting Style do Champion**,
+  que viajava num `ItemChoice` no item de SUBCLASSE que não emitíamos nem líamos: um Champion vindo de
+  um ator externo perdia o estilo em silêncio.
+
+O que sobrou, com a causa:
+
+- **8 `advancement.class.grants`** - composição de alguns passos do Paladino: o SRD põe a magia
+  concedida no MESMO passo das features do nível ALCANÇADO; nós só emitimos a escada de magia nos
+  níveis futuros (decisão medida no DDL-0079 - emiti-la nos alcançados piorou o comparador em toda
+  classe). O item de magia está no ator de qualquer forma.
+- **6 `feat.activities`** - activities que temos A MAIS (Paladin's Smite, Agonizing Blast). Tirá-las
+  perde um botão que o RAW concede; **pergunta para o T2d**: o uso grátis do Smite fica contado em
+  dobro?
+- **2 `spell.method`** - quirk do premade da Sefris (o documento encoda uma magia dela diferente de
+  todas as irmãs), já anotado no TC-0067.
+- **1 `advancement.class`** - a forma do capstone do Bárbaro (o SRD publica em duas).
+- **1 `details.xp`** - quirk do premade do Riswynn L11 (o XP não bate com o nível da própria ficha).
+
+Mais **65 divergências NOMEADAS** em `EXPECTED` (o comparador olha, acha, e sabe por que a nossa
+saída está certa) - em quatro delas a nossa saída é melhor que a do SRD. A lista e os motivos estão
+em `scripts/lib/premadeDiff.js` e na §4.3 do `DEFERRED-REVIEW.md`.
 
 ## TC-0083 - `BuilderInner` viola a ordem dos Hooks (erro de console ao abrir a ficha)
 
-- **Unidade:** toda ficha. **Severidade:** bug (potencial). **Causa:** UI.
-  **Encontrado:** 2026-07-29, ao verificar A5 ao vivo. **Status:** open.
+- **Unidade:** toda ficha. **Severidade:** NÃO É BUG (artefato de dev). **Causa:** HMR.
+  **Encontrado:** 2026-07-29. **Status:** wontfix@2026-07-29 - investigado e descartado.
 - O console acusa `React has detected a change in the order of Hooks called by BuilderInner` ao
   abrir um personagem. A divergência é no hook **30**, que alterna entre `useRef` e `useCallback`
   entre renders; os 29 anteriores são idênticos.
@@ -1594,5 +1610,20 @@ Nenhum destes é regressão; ficam registrados para a próxima sessão decidir s
   `useCallback` virando `useRef` entre renders é a assinatura do **React Compiler** compilando o
   módulo de duas formas (`useMemoCache` é um `useRef`), o que costuma indicar duas instâncias do
   mesmo módulo no grafo ou uma fronteira de compilação inconsistente.
-- Nenhum sintoma funcional observado até agora (a ficha e o import funcionam), mas violação de
-  Rules of Hooks é bug latente: vale investigar antes da Fase C.
+- **INVESTIGADO E DESCARTADO em 2026-07-29. É resíduo de HMR, não violação de regra.** A pista que
+  fechou o caso: bisecção mostrou que remover `useCharacterImport()` do `BuilderInner` faz o erro
+  desaparecer - mas o A/B DEFINITIVO foi outro. Numa **aba nova** (não um reload da mesma aba), o
+  Builder carrega **sem erro nenhum**, e isso vale para as DUAS versões do hook: a com `useCallback`
+  e a sem. Ou seja, não há divergência de ordem num grafo de módulos limpo.
+- **O que produzia o erro:** eu havia acabado de EDITAR `useCharacterImport.js` nas duas vezes em que
+  o vi. O Vite troca o módulo a quente, e o render seguinte compara sua lista de hooks com a do render
+  anterior, feito com a versão ANTIGA do arquivo - daí a divergência numa posição só. O detalhe que
+  denuncia: depois de eu tirar os dois `useCallback`, o erro passou a dizer `previous: useCallback` /
+  `next: useRef`, ou seja o "anterior" era literalmente o código que eu tinha acabado de apagar.
+- **REGRA que fica:** `location.reload()` na mesma aba **não** basta para descartar artefato de HMR
+  num projeto com o React Compiler - o grafo de módulos sobrevive. Abra uma ABA NOVA antes de tratar
+  um aviso de ordem de hooks como bug.
+- **Correção também descartada:** eu havia removido os `useCallback` do hook achando que era o fix.
+  Não era, e a remoção perderia identidade estável para os consumidores - o arquivo ficou como estava.
+- **Nota de honestidade:** o resumo anterior desta entrada chamou isso de "bug latente". A parte de
+  "não é regressão desta sessão" estava certa; a de "bug" não.

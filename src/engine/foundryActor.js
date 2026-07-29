@@ -136,7 +136,12 @@ export function assembleFoundryActor(character, db) {
         db,
         futureGrants: buildSubclassFutureGrants(subObj, cls.classId, db, cls.level, spellIds),
         choiceTraits: buildSubclassChoiceTraits(subObj, cls.classId, cls, classObj, db),
-        itemChoices: buildItemChoiceAdvancements(cls, classObj, subObj, db, optionItems, { scope: 'subclass' }),
+        itemChoices: buildItemChoiceAdvancements(cls, classObj, subObj, db, optionItems, {
+          scope: 'subclass',
+          // O ItemChoice de TALENTO da subclasse (o Fighting Style extra do
+          // Champion) liga ao item de talento embutido, não a um item de opção.
+          featItems: chosenFeatItems,
+        }),
       });
       items.push(subItem, ...subFeatureItems);
       // Liga o passo `Subclass` do advancement da classe à subclasse EMBUTIDA.

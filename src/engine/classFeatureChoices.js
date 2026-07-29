@@ -120,6 +120,13 @@ const SUBCLASS_FEATURE_GRANTS = {
     { kind: 'weaponProf', count: 1, tag: 'l11', level: 11, label: 'Kensei Weapon (Level 11)', weaponFilter: { noProps: ['H', 'S'], allow: ['Longbow'] } },
     { kind: 'weaponProf', count: 1, tag: 'l17', level: 17, label: 'Kensei Weapon (Level 17)', weaponFilter: { noProps: ['H', 'S'], allow: ['Longbow'] } },
   ],
+  // Sorcerer Draconic XPHB L6: "Choose one of those types: Acid, Cold, Fire,
+  // Lightning, or Poison. You have Resistance to that damage type" - resistência
+  // PERMANENTE (não se re-escolhe), então é decisão de build. É a única do grupo
+  // 2 da varredura documentada em subclassGrants.js.
+  'draconic|elemental affinity': [
+    { kind: 'resist', count: 1, from: ['acid', 'cold', 'fire', 'lightning', 'poison'] },
+  ],
   'mastermind|master of intrigue': [
     { kind: 'tool', count: 1, category: 'GS' },
     { kind: 'language', count: 2 },
@@ -127,7 +134,10 @@ const SUBCLASS_FEATURE_GRANTS = {
   'bladesinger|training in war and song': [{ kind: 'skill', count: 1, from: ['acr', 'ath', 'prf', 'per'] }], // Wizard FRHoF
 };
 
-const KIND_LABEL = { skill: 'Skill', tool: 'Tool', language: 'Language', expertise: 'Expertise', feat: 'Feat', weaponProf: 'Weapon' };
+const KIND_LABEL = { skill: 'Skill', tool: 'Tool', language: 'Language', expertise: 'Expertise', feat: 'Feat', weaponProf: 'Weapon', resist: 'Damage Resistance' };
+
+/** Rótulo de um tipo de dano (palavra única - não é o titleCase geral). */
+const capWord = (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
 
 /** Resolve o `from` de um grant em códigos de perícia (ou null = qualquer). */
 function resolveFrom(from, classSkills) {
@@ -193,6 +203,16 @@ function grantChoices(grants, { featureName, keyTag, classSkills, idPrefix = '',
       // Pool misto (Cavalier/Samurai: perícia da lista OU idioma). `fromByKind`
       // restringe as opções de um dos tipos (a UI e o autoBuild o aplicam).
       out.push({ ...base, kind: 'mixed', fromByKind: g.fromByKind ?? undefined, pool: { type: 'any', of: g.of ?? ['skill', 'language'] } });
+    } else if (g.kind === 'resist') {
+      // Resistência a dano PERMANENTE à escolha (Elemental Affinity). Mesma
+      // forma de pool que o `{choose}` estruturado de raça/talento produz em
+      // parseChoices, então a UI, a completude, o autoBuild e o
+      // deriveDamageTraits já sabem lidar com ela.
+      out.push({
+        ...base,
+        kind: 'resist',
+        pool: { type: 'list', options: (g.from ?? []).map((v) => ({ value: v, label: capWord(v) })) },
+      });
     } else if (g.kind === 'weaponProf') {
       // Proficiência de ARMA INDIVIDUAL (Kensei). `weaponFilter` restringe o
       // seletor (melee/ranged, sem propriedades H/S, exceções) - ver

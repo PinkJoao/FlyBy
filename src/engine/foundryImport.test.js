@@ -543,3 +543,65 @@ describe('magia sem origem: guardada e avisada (5.3 / B4)', () => {
     expect(c.unassignedSpells).toEqual([]);
   });
 });
+
+// -----------------------------------------------------------------------------
+// Resistência de subclasse e escolha de talento de subclasse (2026-07-29)
+// -----------------------------------------------------------------------------
+describe('escolhas de subclasse que viajam no item de SUBCLASSE', () => {
+  const dbSub = {
+    ...db,
+    'class-sorcerer': {
+      class: [{ name: 'Sorcerer', source: 'XPHB', hd: { faces: 6 }, proficiency: ['con', 'cha'], startingProficiencies: {}, classFeatures: [] }],
+      subclass: [{ name: 'Draconic Sorcery', shortName: 'Draconic', source: 'XPHB', classSource: 'XPHB', subclassFeatures: [] }],
+      subclassFeature: [
+        { name: 'Elemental Affinity', source: 'XPHB', className: 'Sorcerer', classSource: 'XPHB', subclassShortName: 'Draconic', subclassSource: 'XPHB', level: 6, entries: ['x'] },
+      ],
+    },
+    'class-fighter': {
+      class: [{ name: 'Fighter', source: 'XPHB', hd: { faces: 10 }, proficiency: ['str', 'con'], startingProficiencies: {}, classFeatures: [] }],
+      subclass: [{ name: 'Champion', shortName: 'Champion', source: 'XPHB', classSource: 'XPHB', subclassFeatures: [] }],
+      subclassFeature: [
+        { name: 'Additional Fighting Style', source: 'XPHB', className: 'Fighter', classSource: 'XPHB', subclassShortName: 'Champion', subclassSource: 'XPHB', level: 7, entries: ['x'] },
+      ],
+    },
+    feats: { feat: [
+      { name: 'Alert', source: 'XPHB', category: 'O' },
+      { name: 'Great Weapon Fighting', source: 'XPHB', category: 'FS' },
+    ] },
+  };
+
+  const actor = (classItem, subItem, extra = []) => ({
+    name: 'X', type: 'character',
+    system: { abilities: {}, attributes: {}, details: {}, traits: {}, currency: {}, skills: {}, tools: {}, spells: {} },
+    items: [classItem, subItem, ...extra],
+  });
+
+  it('lê a resistência ESCOLHIDA de um Trait `dr:` no item de subclasse', () => {
+    const char = foundryToCharacter(actor(
+      { _id: 'c1', name: 'Sorcerer', type: 'class', system: { identifier: 'sorcerer', levels: 6, advancement: {} } },
+      { _id: 's1', name: 'Draconic Sorcery', type: 'subclass', system: { identifier: 'draconic', classIdentifier: 'sorcerer', advancement: {
+        a: { type: 'Trait', level: 6, title: 'Elemental Affinity', configuration: { mode: 'default', grants: [], choices: [{ count: 1, pool: ['dr:acid', 'dr:fire'] }] }, value: { chosen: ['dr:fire'] } },
+      } } },
+    ), dbSub);
+    const bag = char.classes[0].choices;
+    const key = Object.keys(bag).find((k) => k.includes('elemental affinity'));
+    expect(bag[key]).toEqual({ kind: 'resist', picks: ['fire'] });
+  });
+
+  it('lê o talento de um ItemChoice de feat no item de subclasse (Champion @7)', () => {
+    const char = foundryToCharacter(actor(
+      { _id: 'c1', name: 'Fighter', type: 'class', system: { identifier: 'fighter', levels: 7, advancement: {} } },
+      { _id: 's1', name: 'Champion', type: 'subclass', system: { identifier: 'champion', classIdentifier: 'fighter', advancement: {
+        a: {
+          type: 'ItemChoice', title: 'Additional Fighting Style',
+          configuration: { type: 'feat', choices: { 7: { count: 1 } }, pool: [] },
+          value: { added: { 7: { f1: 'Compendium.dnd5e.feats24.Item.phbfstGreatWeapo' } } },
+        },
+      } } },
+      [{ _id: 'f1', name: 'Great Weapon Fighting', type: 'feat', system: { type: { value: 'feat', subtype: 'fightingStyle' }, source: { custom: '' } } }],
+    ), dbSub);
+    const bag = char.classes[0].choices;
+    const key = Object.keys(bag).find((k) => k.includes('additional fighting style'));
+    expect(bag[key]?.picks?.[0]).toMatch(/^Great Weapon Fighting/);
+  });
+});

@@ -399,6 +399,98 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0079 - O SRD é a fonte quando a informação é do SISTEMA DE DESTINO; e o que ele publica decide a FORMA do documento
+**Date:** 2026-07-29
+**Fecha:** TC-0064, TC-0065, TC-0070, TC-0072, TC-0082 e a parte acionável do TC-0071 - **todas as
+entradas abertas do ledger**. **Builds on:** DDL-0055 (o registro gerado do SRD), DDL-0057 (a
+precedência curado → overlay, que ganha um degrau), DDL-0074 (a regra "referência tem de casar com
+o identificador EXPORTADO", aplicada aqui a `@scale` de raça), DDL-0028 (nativo onde há slot, flag
+onde não há), DDL-0063 (o guarda-chuva curado do Halfling, que este entry preserva de propósito).
+
+**Context.** Sétima sessão do burn-down da T2. Três decisões de produto foram tomadas pelo usuário
+na abertura (adotar um item por traço de espécie; implementar a cobertura de activities; usar o nome
+do SRD no item de raça), e o resto saiu da medição.
+
+**Decision - o que o SRD PUBLICA decide quais traços viram documento.** Um item por traço de espécie
+(a forma dos atores oficiais) tem um limite: o Dragonborn não tem item "Damage Resistance" nem
+"Draconic Ancestry" - aquilo vive em passos de advancement. A regra é **estreita e derivada**: numa
+espécie que o dnd5e publica, só vira item o traço que tem documento no `origins24`; fora do SRD não
+há essa resposta e vale todo traço. Emitir o que o SRD não tem poria na ficha do Foundry features
+que nenhum ator oficial tem.
+- **O nível do traço sai da PROSA**, nas duas fórmulas fixas do dado 2024 ("When you reach character
+  level 5" / "Starting at character level 5"), e a frase tem de **ABRIR** o traço. **REGRA que custou
+  uma passada:** no meio do texto a mesma frase gatilha um benefício SOLTO (a linhagem élfica ganha
+  uma magia no 3, mas o traço é do nível 1), e ler a menção solta punha a linhagem inteira num
+  `ItemGrant@3`.
+- **Traço de nível futuro não é embutido** - vira a receita de compêndio, como as escadas de classe.
+  Antes, Draconic Flight e Large Form chegavam ATIVOS num personagem de nível 1.
+
+**Decision - o nome do documento é o do dnd5e, e a linhagem viaja na flag.** "Elf, High" no lugar de
+"Elf; High Elf Lineage"; "Elven Lineage, High Elf" no lugar de "Elven Lineage (High Elf)". É o MESMO
+documento, e casar o nome é o que dá `compendiumSource` à espécie e aos traços. A ponte é derivada
+(nome exato → palavra-chave do sufixo → base nua), e a base nua **só vale quando o documento do SRD
+guarda a linhagem dentro de si** (`SPECIES_SELF_LINEAGE`, gerado de duas assinaturas ESTREITAS: um
+`ItemChoice` restrito a itens de raça, ou um `Trait` com pool de resistência).
+- **Por que a assinatura tem de ser estreita:** a primeira versão aceitava qualquer `ItemChoice`, e
+  o Humano tem um (o talento do Versatile). Resultado: o `Human (Keldon)|PSD` - espécie legada
+  curada - exportava como "Human" e voltava do import como um humano comum. **O sweep pegou no
+  minuto seguinte**; é a segunda vez na campanha que ele guarda o burn-down (DDL-0073).
+- **O nome do SRD cobre a espécie INTEIRA** ("Dragonborn" são as dez ancestralidades), então ele
+  sozinho perderia a linhagem escolhida: ela vai em `flags.builder5e.lineage`, a regra do DDL-0028.
+- **O Halfling fica de fora por decisão** (DDL-0063): o guarda-chuva é NOSSO, o dnd5e não publica
+  essa linhagem, e herdar o nome faria o Foundry oferecer "atualizar do compêndio" e trocar a
+  linhagem escolhida pela base. Virou uma entrada `EXPECTED` com esse motivo.
+
+**Decision - ler um ator externo pela FORMA, não pelo nome (TC-0065).** O documento do dnd5e não diz
+a ancestralidade no nome; ela está no Trait de resistência (`dr:cold`) e no `ItemChoice` do Goliath.
+`inferLineage` cruza dois sinais derivados: as MARCAS de cada linhagem (os nomes de entry que ela não
+divide com as irmãs - "Cloud's Jaunt" só existe na de nuvem) e a resistência. **Empate entre
+linhagens mecanicamente idênticas** (o Dragonborn de prata e o de gelo são os dois `cold`, com o
+mesmo sopro e os mesmos traços) resolve pela primeira: o conjunto fica certo e só o rótulo pode
+trocar - o mesmo limite aceito no `spellChoiceBag` (DDL-0075).
+
+**Decision - activities GERADAS do SRD, com os effects junto e tudo-ou-nada por tier (TC-0070).**
+Das 133 features do SRD com activity, 13 eram curadas à mão - o overlay cobre pouco e casa por
+edição estrita. `npm run gen:srd` emite `srdActivitiesData.js`; a precedência passa a ser
+**curado → SRD → overlay**, o terceiro uso do padrão do TC-0066.
+- **As activities e os effects saem JUNTOS, obrigatoriamente:** uma activity referencia os effects do
+  próprio item por `_id`. Emitir uma sem os outros é o defeito que o DDL-0074 mandou nunca repetir.
+- **E a escolha é tudo-ou-nada POR TIER:** somar os effects do SRD aos do overlay fez "Cunning
+  Action: Hiding" sair em dobro. A sonda que fecha isto varre as 48 fichas contando effect duplicado
+  e referência órfã - as duas a zero.
+- **Sem dependência nova:** `scripts/lib/yamlLite.js` cobre o subconjunto de YAML dos packs, medido
+  nos 336 arquivos (nenhum usa âncora dentro de um bloco de activities). Se o formato sair desse
+  subconjunto, o certo é trocar por uma biblioteca - não remendar o parser.
+
+**Decision - uma escada de concessão existe em TODO nível, não só nos futuros (TC-0072).** O passo do
+nível já alcançado traz `configuration.items` apontando para o compêndio e `value.added` para o item
+EMBUTIDO que saiu dali - é assim nos premades, e é o que diz ao Foundry que aquele nível já foi
+resolvido. Vale para subclasse e linhagem. **Para a CLASSE, só os níveis futuros**, e o motivo é
+medido: o SRD só tem esses passos no Paladino, e emiti-los nos níveis alcançados de toda classe
+piorou o comparador. Nos futuros eles ficam, porque é lá que fazem diferença (sem eles, subir de
+nível dentro do Foundry não concede a magia) - e isso virou uma entrada `EXPECTED`.
+
+**Decision - concessão que a REGRA não dá é um registro curado (TC-0082).** `REMOVED_ADDITIONAL_SPELLS`,
+o inverso do `MISSING_ADDITIONAL_SPELLS`: o 5etools guarda no balde `prepared` uma magia que a
+feature apenas PERMITE conjurar. **A varredura que fecha o registro está no cabeçalho dele** e deve
+ser refeita antes de acrescentar uma entrada: cruzar toda magia de balde `prepared`/`known` com o
+texto da própria entidade procurando "…to cast {@spell X}" dá 10 candidatos, e **9 são falsos
+positivos** - a magia é concedida por outra via e a frase só oferece um jeito alternativo de
+conjurá-la. Sobra o Find Familiar do Wild Companion.
+
+**Decision - "Metamagic Options" é CATÁLOGO, não feature.** Detectado pela FORMA (um bloco `options`
+cujas entradas são refs de optional feature), nunca por uma lista de nomes.
+
+**Consequences.**
+- Uma espécie nova ganha itens de traço, nível e procedência sozinha; uma feature nova do SRD ganha
+  activity ao regerar. As curadorias criadas são UMA (o Find Familiar) e uma lista gerada.
+- **Fica de fora, e é decisão de modelo:** o premade concede um item "Unarmed Strike" no nível 1 do
+  Bárbaro e do Monge. Não existe no dado do 5etools - é convenção do dnd5e - e emiti-lo seria
+  INVENTAR um documento. Registrado no TC-0071, sem impacto de regra.
+- Verificado: 1238 testes (+12), lint, sweep 285/285 `--strict`, `npm run t2` de **170 → 71** (+33
+  nomeadas como esperadas), e a sonda das 48 fichas com zero effect duplicado e zero referência
+  órfã. Ver CHANGELOG §102.
+
 ### DDL-0078 - Zero AGORA desabilita; zero SEMPRE remove - e a poda precisa de uma rede contra valor digitado errado
 **Date:** 2026-07-28
 **Estende o DDL-0077** (mesma sessão, segundo pedido do usuário): a mesma contagem serve às duas

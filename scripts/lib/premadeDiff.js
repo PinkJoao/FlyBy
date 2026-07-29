@@ -89,6 +89,33 @@ export const EXPECTED = [
       && f.after.some((x) => String(x).startsWith('AbilityScoreImprovement@20'))
       && (f.before ?? []).length === 0,
   },
+  {
+    id: 'curated-halfling-lineage',
+    why:
+      'O guarda-chuva "Halfling Lineage" é acréscimo NOSSO (DDL-0063): o livro 2024 absorveu o '
+      + 'Naturally Stealthy do Lightfoot na base, e nós o devolvemos como escolha. O documento do '
+      + 'dnd5e não tem essa linhagem, então o item sai com o nome do 5etools e sem procedência - '
+      + 'apontar para o "Halfling" publicado faria o Foundry oferecer "atualizar do compêndio" e '
+      + 'trocar a linhagem escolhida pela base.',
+    test: (f) =>
+      f.cat === 'items.race'
+      && (f.before ?? []).includes('halfling')
+      && (f.after ?? []).some((n) => String(n).startsWith('halfling;')),
+  },
+  {
+    id: 'class-spell-ladder',
+    why:
+      'A escada de ItemGrant das magias que a CLASSE concede por nível: nós a emitimos para os '
+      + 'níveis futuros de toda classe, o SRD só a tem no Paladino. Sem ela, subir de nível dentro '
+      + 'do Foundry não concede a magia (o Power Word Heal do Bardo 20, o Contact Other Plane do '
+      + 'Warlock 9). O passo a mais concede exatamente o que a classe concede - é cobertura, '
+      + 'não divergência de regra.',
+    test: (f) =>
+      f.cat === 'advancement.class.grants'
+      && typeof f.before === 'number'
+      && typeof f.after === 'number'
+      && f.after > f.before,
+  },
 ];
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();

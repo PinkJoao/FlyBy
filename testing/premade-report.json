@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T03:50:42.780Z",
+  "generatedAt": "2026-07-29T03:55:35.530Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -17,17 +17,21 @@
     {
       "id": "capstone-asi-on-class-item",
       "why": "O aumento de atributo do capstone (Primal Champion, Body and Mind) vira um AbilityScoreImprovement no item de CLASSE. O próprio SRD usa as duas formas - no Monge ele está no item de classe (como o nosso), no Bárbaro no item da FEATURE -, então o passo a mais no item de classe do Bárbaro é escolha de forma, não lacuna."
+    },
+    {
+      "id": "curated-halfling-lineage",
+      "why": "O guarda-chuva \"Halfling Lineage\" é acréscimo NOSSO (DDL-0063): o livro 2024 absorveu o Naturally Stealthy do Lightfoot na base, e nós o devolvemos como escolha. O documento do dnd5e não tem essa linhagem, então o item sai com o nome do 5etools e sem procedência - apontar para o \"Halfling\" publicado faria o Foundry oferecer \"atualizar do compêndio\" e trocar a linhagem escolhida pela base."
+    },
+    {
+      "id": "class-spell-ladder",
+      "why": "A escada de ItemGrant das magias que a CLASSE concede por nível: nós a emitimos para os níveis futuros de toda classe, o SRD só a tem no Paladino. Sem ela, subir de nível dentro do Foundry não concede a magia (o Power Word Heal do Bardo 20, o Contact Other Plane do Warlock 9). O passo a mais concede exatamente o que a classe concede - é cobertura, não divergência de regra."
     }
   ],
   "aggregate": [
     {
       "cat": "advancement.class.grants",
-      "count": 22,
+      "count": 16,
       "actors": [
-        "Beiro L01",
-        "Beiro L05",
-        "Beiro L11",
-        "Beiro L17",
         "Krusk L05",
         "Krusk L11",
         "Krusk L17",
@@ -38,38 +42,36 @@
         "Perrin L01",
         "Perrin L05",
         "Perrin L11",
-        "Perrin L17",
-        "Sefris L01",
-        "Sefris L05"
+        "Perrin L17"
       ],
       "examples": [
         {
-          "actor": "Beiro L01",
+          "actor": "Krusk L05",
           "cat": "advancement.class.grants",
-          "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
         },
         {
-          "actor": "Beiro L05",
+          "actor": "Krusk L05",
           "cat": "advancement.class.grants",
-          "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
         },
         {
-          "actor": "Beiro L11",
+          "actor": "Krusk L11",
           "cat": "advancement.class.grants",
-          "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
         },
         {
-          "actor": "Beiro L17",
+          "actor": "Krusk L11",
           "cat": "advancement.class.grants",
-          "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
         }
       ]
     },
@@ -338,62 +340,6 @@
           "before": [],
           "after": [
             "enchant"
-          ]
-        }
-      ]
-    },
-    {
-      "cat": "items.race",
-      "count": 4,
-      "actors": [
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17"
-      ],
-      "examples": [
-        {
-          "actor": "Perrin L01",
-          "cat": "items.race",
-          "key": "names",
-          "before": [
-            "halfling"
-          ],
-          "after": [
-            "halfling; lightfoot lineage"
-          ]
-        },
-        {
-          "actor": "Perrin L05",
-          "cat": "items.race",
-          "key": "names",
-          "before": [
-            "halfling"
-          ],
-          "after": [
-            "halfling; lightfoot lineage"
-          ]
-        },
-        {
-          "actor": "Perrin L11",
-          "cat": "items.race",
-          "key": "names",
-          "before": [
-            "halfling"
-          ],
-          "after": [
-            "halfling; lightfoot lineage"
-          ]
-        },
-        {
-          "actor": "Perrin L17",
-          "cat": "items.race",
-          "key": "names",
-          "before": [
-            "halfling"
-          ],
-          "after": [
-            "halfling; lightfoot lineage"
           ]
         }
       ]
@@ -697,7 +643,8 @@
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
-          "after": 3
+          "after": 3,
+          "expected": "class-spell-ladder"
         },
         {
           "cat": "advancement.race",
@@ -718,7 +665,8 @@
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
-          "after": 3
+          "after": 3,
+          "expected": "class-spell-ladder"
         },
         {
           "cat": "advancement.race",
@@ -739,7 +687,8 @@
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
-          "after": 3
+          "after": 3,
+          "expected": "class-spell-ladder"
         },
         {
           "cat": "advancement.race",
@@ -760,7 +709,8 @@
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
-          "after": 3
+          "after": 3,
+          "expected": "class-spell-ladder"
         },
         {
           "cat": "advancement.race",
@@ -1149,7 +1099,8 @@
           ],
           "after": [
             "halfling; lightfoot lineage"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "items.feat",
@@ -1188,7 +1139,8 @@
           ],
           "after": [
             "halfling; lightfoot lineage"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "items.feat",
@@ -1227,7 +1179,8 @@
           ],
           "after": [
             "halfling; lightfoot lineage"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "items.feat",
@@ -1297,7 +1250,8 @@
           ],
           "after": [
             "halfling; lightfoot lineage"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "items.feat",
@@ -1536,7 +1490,8 @@
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
           "before": 1,
-          "after": 2
+          "after": 2,
+          "expected": "class-spell-ladder"
         }
       ]
     },
@@ -1549,7 +1504,8 @@
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
           "before": 1,
-          "after": 2
+          "after": 2,
+          "expected": "class-spell-ladder"
         },
         {
           "cat": "feat.activities",

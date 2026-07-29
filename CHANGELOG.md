@@ -5758,3 +5758,49 @@ Fica anotado, não corrigido (não é regressão, e o rótulo é decisão de pro
 raridade sem chip nenhum** - `unknown` (38), `unknown (magic)` (255) e `varies` (8).
 
 Verificado: 1226 testes (+2), lint, sweep 285/285 `--strict`, e ao vivo (espécie, classe e loja).
+
+---
+
+## 102. Phase T - T2b sessão 7: o item de ESPÉCIE, as escadas de concessão e as activities do SRD (170 → 71)
+
+Sessão de burn-down que fechou **todas as pendências `TC-` abertas** do ledger: TC-0064, TC-0065,
+TC-0070, TC-0071 (a parte acionável), TC-0072 e TC-0082. Decisões em **DDL-0079**.
+
+**O item de ESPÉCIE ganhou a forma que o dnd5e usa (TC-0064, decisão do usuário).** Antes só um
+traço com ação ou recurso virava item e o resto ficava como Active Effect no item de raça: no
+Foundry o jogador não VIA "Fey Ancestry", "Trance" ou "Powerful Build" entre as features. Agora
+**todo traço vira um item**, com o nível lido da prosa (`"When you reach character level 5"` /
+`"Starting at character level 5"`, as duas fórmulas do dado) - então **Draconic Flight e Large Form
+deixaram de ser concedidos no nível 1** e viram a receita de compêndio do nível 5. Junto vieram o
+**ScaleValue do Breath Weapon** (a activity do sopro referenciava `@scale.dragonborn-silver.breath`,
+que não existia - o dano rolava ZERO) e o Trait de resistência.
+
+**O nome do documento passou a ser o do dnd5e** ("Elf, High" no lugar de "Elf; High Elf Lineage";
+"Elven Lineage, High Elf" no lugar de "Elven Lineage (High Elf)"), o que também destravou o
+`compendiumSource` da espécie e dos traços. A ficha do FlyBy continua mostrando o nome do livro.
+
+**A ancestralidade volta de um ator externo (TC-0065).** O documento do dnd5e nomeia a espécie
+inteira, então "Dragonborn" não diz a cor: ela vive no Trait de resistência (`dr:cold`) e, no
+Goliath, no `ItemChoice`. `inferLineage` lê essas marcas; o NOSSO export leva a linhagem exata numa
+flag (DDL-0028).
+
+**As escadas de concessão cobrem os níveis JÁ alcançados (TC-0072)**, com `value.added` apontando
+para o item de magia embutido - é o que diz ao Foundry de onde veio a magia que o personagem já
+tem. Vale para subclasse e linhagem; para a classe, só os níveis futuros (é lá que ela faz
+diferença, e o SRD não tem o passo).
+
+**Activities geradas do SRD (TC-0070, decisão do usuário).** Das 133 features do SRD com activity,
+13 eram curadas à mão. `npm run gen:srd` extrai as activities **e os Active Effects que elas
+referenciam por `_id`** - nunca separados. Precedência curado → SRD → overlay, **tudo-ou-nada por
+tier** (somar os dois fazia "Cunning Action: Hiding" sair em dobro). O parser
+(`scripts/lib/yamlLite.js`, 6 testes) cobre o subconjunto de YAML dos packs, medido nos 336
+arquivos, em vez de uma dependência nova só para o gerador.
+
+**Menores:** "Metamagic Options"/"Eldritch Invocation Options" são CATÁLOGO de optional features e
+deixaram de virar item (detectado pela forma, não por nome); o talento escolhido pela espécie virou
+`ItemChoice`; e o **Find Familiar do Wild Companion deixou de ser concedido** - a feature permite
+conjurá-lo, não o deixa preparado (TC-0082, novo registro `REMOVED_ADDITIONAL_SPELLS`).
+
+Verificado: 1238 testes (+12), lint, sweep 285/285 `--strict`, `npm run t2` de **170 → 71** achados
+(+33 nomeadas como esperadas), e uma sonda sobre as 48 fichas confirmando **zero** referência de
+effect órfã e **zero** effect duplicado.

@@ -1165,7 +1165,8 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0064 - Item de espécie muito mais magro que o do premade
 
 - **Unidade:** 24 fichas (`advancement.race`). **Severidade:** bug + 1 decisão de produto.
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open (parte `needs-user-eyes`).
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-29 (DDL-0079; a parte
+  `needs-user-eyes` foi DECIDIDA pelo usuário - adotar a forma do premade).
 - Falta no nosso item de raça: o **Trait de escolha de resistência** do Dragonborn 2024
   (`dr:cold` - é assim que o dnd5e modela a ancestralidade), o **ScaleValue do Breath Weapon**
   (`breath`), o **ItemGrant de nível 5** (Draconic Flight / Large Form) e o título convencional
@@ -1178,7 +1179,7 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0065 - Ancestralidade do Dragonborn/Goliath não volta de um ator externo
 
 - **Unidade:** `species:Dragonborn|XPHB/*`, `species:Goliath|XPHB/*` (6 achados de `traits.dr`).
-  **Severidade:** bug. **Causa:** import. **Encontrado:** 2026-07-26. **Status:** open.
+  **Severidade:** bug. **Causa:** import. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-29 (DDL-0079).
 - No premade o item de raça chama-se só "Dragonborn" e a ancestralidade está num **Trait de
   escolha de resistência** (`chosen: ['dr:cold']`) - não no nome. Nosso import resolve o nome e
   fica com `lineage: null`, então a ficha reimportada perde ancestralidade, resistência, tipo de
@@ -1272,8 +1273,8 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0070 - Cobertura de `activities` divergente nos DOIS sentidos
 
 - **Unidade:** 15 fichas (18 achados). **Severidade:** bug. **Causa:** export.
-  **Encontrado:** 2026-07-26. **Status:** open (a metade das REFERÊNCIAS QUEBRADAS foi fechada
-  em 2026-07-27, DDL-0074; a cobertura em si continua aberta).
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-29 (DDL-0079; as REFERÊNCIAS QUEBRADAS já
+  tinham fechado em 2026-07-27, DDL-0074).
 - Faltam nas nossas: Potent Spellcasting (`damage`), Aura of Protection (`utility`), Favored Enemy
   (`cast`), Cunning Strike (`save`+`utility`), Devious Strikes (`save`). Sobram nas nossas:
   Paladin's Smite (`cast`), Agonizing Blast (`enchant`).
@@ -1299,7 +1300,8 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0071 - Composição do ItemGrant por nível difere do premade (dois sentidos)
 
 - **Unidade:** 19 fichas (25 achados). **Severidade:** polish/bug (a investigar).
-  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** open.
+  **Causa:** export. **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-29 (DDL-0079), menos o
+  item "Unarmed Strike" - ver o fim da entrada.
 - Ex: `paladin Class Features@2` concede 3 no premade e 2 nas nossas; `sorcerer Class Features@2`
   o contrário (2 x 3). Pode ser agrupamento diferente (o premade separa em passos com títulos
   distintos) ou feature realmente ausente - **checar caso a caso** antes de tratar como bug.
@@ -1307,7 +1309,7 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 ## TC-0072 - Escada de magias da subclasse só cobre os níveis FUTUROS
 
 - **Unidade:** 15 fichas (`advancement.subclass`). **Severidade:** polish. **Causa:** export.
-  **Encontrado:** 2026-07-26. **Status:** open.
+  **Encontrado:** 2026-07-26. **Status:** fixed@2026-07-29 (DDL-0079).
 - O premade traz o `ItemGrant` de "<Subclasse> Spells" em TODOS os níveis (os alcançados com
   `value.added` preenchido); nós emitimos só os futuros - as magias dos níveis já alcançados vão
   embutidas, sem o passo correspondente. Mesma questão para o `Trait@6` do Draconic Sorcery e o
@@ -1513,7 +1515,7 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
 
 - **Unidade:** `class:druid/*` (3 achados, Aoth L05/11/17). **Severidade:** polish.
   **Causa:** leitura do dado. **Encontrado:** 2026-07-27 (apareceu ao fechar o TC-0081, que
-  destapou os extras do nosso lado). **Status:** open.
+  destapou os extras do nosso lado). **Status:** fixed@2026-07-29 (DDL-0079).
 - O `additionalSpells` do Druida XPHB traz `{prepared: {1: [speak with animals], 2: [find
   familiar]}}`, e nós lemos o balde `prepared` como "sempre preparada". Mas a feature é o **Wild
   Companion**, cujo texto diz outra coisa: *"you can expend a spell slot or a use of Wild Shape to
@@ -1524,3 +1526,55 @@ Severity: `blocker` (wrong sheet / crash) · `bug` (data loss or wrong behavior)
   `MISSING_ADDITIONAL_SPELLS`/`REGRADED_ADDITIONAL_SPELLS` (DDL-0038/0053) - um registro de
   concessão a REMOVER, que hoje não existe. Antes de criar o mecanismo, varrer o dataset para ver
   se há outros casos de "permissão de conjurar" codificada como `prepared`.
+
+---
+
+> **2026-07-29 (T2b sessão 7)** - burn-down que fechou **todas as entradas abertas do ledger**:
+> TC-0064, TC-0065, TC-0070, TC-0071 (a parte acionável), TC-0072 e TC-0082. `npm run t2` de
+> **170 → 71** achados, com 33 nomeados como ESPERADOS. Decisões em DDL-0079, log em CHANGELOG
+> §102. As notas de fechamento de cada entrada estão abaixo, junto do que ficou de fora e por quê.
+
+## Fechamento da sessão 7 - o que cada entrada ganhou
+
+- **TC-0064** (item de espécie magro): um item por TRAÇO (a `needs-user-eyes` foi decidida pelo
+  usuário: adotar a forma do premade), nível lido da prosa (Draconic Flight/Large Form saem do
+  nível 1 e viram receita de compêndio do 5), ScaleValue do Breath Weapon (a activity do sopro
+  referenciava uma escala inexistente e rolava ZERO), Trait de resistência, e o nome do documento
+  do dnd5e - que também destrava o `compendiumSource`.
+- **TC-0065** (ancestralidade perdida no import): `inferLineage` lê as marcas que o ator deixa - o
+  Trait `dr:*` do Dragonborn, o `ItemChoice` do Goliath, e os nomes de traço exclusivos de cada
+  linhagem. Empate entre linhagens mecanicamente idênticas (prata × gelo, as duas `cold`) resolve
+  pela primeira: o conjunto fica certo, só o rótulo pode trocar. O NOSSO export leva a linhagem
+  exata numa flag.
+- **TC-0070** (cobertura de activities): gerada do SRD (`npm run gen:srd`), com os effects que as
+  activities referenciam por `_id`. **Sobram 6 achados, e nenhum é lacuna nossa**: `Paladin's
+  Smite` (3) e `Agonizing Blast` (3) são activities que NÓS temos e o premade não - a entrada já
+  as classificava como defensáveis.
+- **TC-0071** (composição do ItemGrant de classe): fechadas as duas causas acionáveis - o catálogo
+  de optional features ("Metamagic Options") deixou de virar item, e as magias que a classe concede
+  entraram na escada dos níveis futuros. **Fica de fora, e é decisão de modelo:** o premade concede
+  um item **"Unarmed Strike"** no nível 1 do Bárbaro e do Monge (`equipment24`/`classes24`). Não
+  existe no dado do 5etools - é convenção do dnd5e - e emiti-lo seria INVENTAR um documento. 8
+  achados, sem impacto de regra.
+- **TC-0072** (escada da subclasse): cobre todos os níveis, com `value.added` ligando ao item de
+  magia embutido. Restam 6 achados de outra natureza (o `Trait@6` do Draconic Sorcery e o
+  `ItemChoice@0` do Champion), anotados abaixo.
+- **TC-0082** (Wild Companion): novo registro `REMOVED_ADDITIONAL_SPELLS`. A varredura que fecha o
+  registro está no cabeçalho dele - 10 candidatos, 9 falsos positivos.
+
+## O que RESTA no comparador (71), e o que é cada coisa
+
+Nenhum destes é regressão; ficam registrados para a próxima sessão decidir se valem trabalho.
+
+- **16 `advancement.class.grants`** - o "Unarmed Strike" acima (8) e a composição de alguns passos
+  do Paladino (o SRD põe a magia concedida no MESMO passo das features; nós num passo irmão).
+- **16 `advancement.race`** - convenções de nível que o próprio SRD não segue igual: o passo de
+  concessão de nível 1 é `@0` no Gnome e `@1` no Elfo; a resistência da legacy do Tiefling é
+  `Trait@1` e a do Dragonborn `Trait@0`. Sem regra derivável.
+- **11 `items.spell`** - o resto do TC-0080 que a própria entrada deixou de fora (as 35 magias
+  `prepared: 0` da Riswynn, uma Ladina sem conjuração: não há origem que as segure).
+- **10 `items.feat`** - o "Cloud's Jaunt" do Goliath (o SRD separa o boon escolhido num item; nós o
+  temos dentro do traço "Giant Ancestry" mesclado) e o Fighting Style do Randal.
+- **6 `advancement.subclass`**, **6 `feat.activities`**, **2 `spell.method`** (quirk do premade da
+  Sefris, já anotado no TC-0067), **2 `traits.dr`**, **1 `advancement.class`**, **1 `details.xp`**
+  (quirk do premade do Riswynn L11).

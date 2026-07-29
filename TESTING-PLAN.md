@@ -390,6 +390,34 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-29** - **T2b sessão 7: o LEDGER FICOU SEM PENDÊNCIA ABERTA** (170 → **71** achados,
+  +33 nomeadas como esperadas). Fechados TC-0064, TC-0065, TC-0070, TC-0072, TC-0082 e a parte
+  acionável do TC-0071. 1238 testes (+12), lint, sweep 285/285 `--strict`. Decisões em DDL-0079, log
+  em CHANGELOG §102.
+  **Três decisões de PRODUTO na abertura, todas do usuário:** adotar um item por traço de espécie
+  (a `needs-user-eyes` do TC-0064), implementar a cobertura de activities (TC-0070) e usar o nome do
+  SRD no item de raça.
+  **O achado funcional da sessão:** a activity do sopro do Dragonborn referenciava
+  `@scale.dragonborn-silver.breath`, que não existia - o sopro **rolava ZERO dano** no Foundry. E
+  Draconic Flight / Large Form chegavam ATIVOS num personagem de nível 1.
+  **Quatro lições de método:**
+  1. **O que o SRD publica decide a FORMA do documento.** "Um item por traço" só funciona com o
+     corte "…dos traços que o SRD publica": o Dragonborn não tem item "Damage Resistance".
+  2. **Uma assinatura derivada tem de ser ESTREITA.** Aceitar qualquer `ItemChoice` como "o
+     documento guarda a linhagem" fez o Human (Keldon) exportar como "Human" - o sweep pegou no
+     minuto seguinte. **Rode `npm run sweep -- --strict` depois de cada mudança de export/import.**
+  3. **Activities e effects saem JUNTOS, e tudo-ou-nada por tier.** Somar SRD + overlay fez o mesmo
+     efeito sair em dobro; a sonda que fecha isso conta effect duplicado E referência órfã.
+  4. **Meça antes de generalizar.** A escada de magias da classe parecia certa para todas; o
+     comparador mostrou que o SRD só a tem no Paladino, e emiti-la nos níveis já alcançados piorou
+     o placar. Ficou nos níveis FUTUROS, que é onde ela muda o comportamento.
+  **Next action: T2c/T2d, ou marcar `export: ok` nas linhas do COVERAGE.** Os 71 achados restantes
+  estão triados no fim de `testing/ISSUES.md`, com o que é lacuna nossa e o que é diferença de
+  modelo. Nenhum bloqueia: o maior grupo isolado é o item **"Unarmed Strike"** (8), que é convenção
+  do dnd5e sem contraparte no dado do 5etools. O passo que só o usuário pode dar é o **T2d** -
+  `npm run sweep -- --emit-actors` e a importação real no Foundry, o único jeito de ver o runtime
+  (as activities novas, o sopro rolando dano, o traço de nível 5 chegando no nível certo).
+
 - **2026-07-27 (3)** - **T2b sessão 6: TC-0081 FECHADO e TC-0080 MODELADO** (190 → **170**).
   1218 testes (+9), lint, sweep 285/285 `--strict`, passada ao vivo. Decisões em DDL-0076, log em
   CHANGELOG §99.

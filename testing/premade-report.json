@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T15:48:14.710Z",
+  "generatedAt": "2026-07-29T17:13:33.190Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -23,71 +23,19 @@
       "why": "O guarda-chuva \"Halfling Lineage\" é acréscimo NOSSO (DDL-0063): o livro 2024 absorveu o Naturally Stealthy do Lightfoot na base, e nós o devolvemos como escolha. O documento do dnd5e não tem essa linhagem, então o item sai com o nome do 5etools e sem procedência - apontar para o \"Halfling\" publicado faria o Foundry oferecer \"atualizar do compêndio\" e trocar a linhagem escolhida pela base."
     },
     {
+      "id": "race-grant-level-convention",
+      "why": "O SRD não é consistente consigo mesmo sobre em QUE nível pendurar uma concessão de criação: o passo de nível 1 é `@0` no Gnome e `@1` no Elfo, e a resistência da linhagem é `Trait@0` no Dragonborn e `Trait@1` no Tiefling. Não há regra derivável, e o Foundry concede a mesma coisa nos dois casos (é tudo criação de personagem). Nossa convenção - nível 0 para o que vem na criação, o nível real para o resto - é mais coerente, e acertar a do SRD exigiria uma tabela por espécie: dívida de curadoria crescente para zero efeito."
+    },
+    {
+      "id": "universal-unarmed-strike",
+      "why": "O SRD concede o item \"Unarmed Strike\" só ao Bárbaro e ao Monge, cujas features o citam. Mas a regra 2024 diz que TODA criatura pode fazer um Ataque Desarmado, e sem o item um Mago que perdeu o cajado chega ao Foundry sem botão nenhum de ataque - seguir o SRD aqui penalizaria o jogador. Concedemos a TODA classe, com a cópia genérica do equipment24 e num passo de advancement de título próprio, para não se passar pela escada oficial."
+    },
+    {
       "id": "class-spell-ladder",
       "why": "A escada de ItemGrant das magias que a CLASSE concede por nível: nós a emitimos para os níveis futuros de toda classe, o SRD só a tem no Paladino. Sem ela, subir de nível dentro do Foundry não concede a magia (o Power Word Heal do Bardo 20, o Contact Other Plane do Warlock 9). O passo a mais concede exatamente o que a classe concede - é cobertura, não divergência de regra."
     }
   ],
   "aggregate": [
-    {
-      "cat": "advancement.race",
-      "count": 16,
-      "actors": [
-        "Beiro L01",
-        "Beiro L05",
-        "Beiro L11",
-        "Beiro L17",
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Morthos L01",
-        "Morthos L05",
-        "Morthos L11",
-        "Morthos L17",
-        "Zanna L01",
-        "Zanna L05",
-        "Zanna L11",
-        "Zanna L17"
-      ],
-      "examples": [
-        {
-          "actor": "Beiro L01",
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Beiro L05",
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Beiro L11",
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Beiro L17",
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
-        }
-      ]
-    },
     {
       "cat": "items.spell",
       "count": 11,
@@ -138,60 +86,6 @@
           "key": "names",
           "before": [
             "fireball"
-          ],
-          "after": []
-        }
-      ]
-    },
-    {
-      "cat": "items.feat",
-      "count": 10,
-      "actors": [
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17",
-        "Randal L11",
-        "Randal L17"
-      ],
-      "examples": [
-        {
-          "actor": "Merric L01",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L05",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L11",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
-          "actor": "Merric L17",
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
           ],
           "after": []
         }
@@ -339,6 +233,82 @@
       ]
     },
     {
+      "cat": "advancement.race",
+      "count": 4,
+      "actors": [
+        "Merric L01",
+        "Merric L05",
+        "Merric L11",
+        "Merric L17"
+      ],
+      "examples": [
+        {
+          "actor": "Merric L01",
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L05",
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L11",
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Merric L17",
+          "cat": "advancement.race",
+          "key": "goliath",
+          "before": [
+            "ItemChoice@0"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
+      "cat": "items.feat",
+      "count": 2,
+      "actors": [
+        "Randal L11",
+        "Randal L17"
+      ],
+      "examples": [
+        {
+          "actor": "Randal L11",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "great weapon fighting"
+          ],
+          "after": []
+        },
+        {
+          "actor": "Randal L17",
+          "cat": "items.feat",
+          "key": "names",
+          "before": [
+            "great weapon fighting"
+          ],
+          "after": []
+        }
+      ]
+    },
+    {
       "cat": "spell.method",
       "count": 2,
       "actors": [
@@ -450,6 +420,15 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -475,6 +454,15 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -500,6 +488,15 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -525,6 +522,15 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -550,6 +556,15 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -575,6 +590,15 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -600,6 +624,15 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -625,6 +658,15 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -634,19 +676,20 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
           "after": 3,
           "expected": "class-spell-ladder"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
         }
       ]
     },
@@ -656,19 +699,20 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
           "after": 3,
           "expected": "class-spell-ladder"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
         }
       ]
     },
@@ -678,19 +722,20 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
           "after": 3,
           "expected": "class-spell-ladder"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
         }
       ]
     },
@@ -700,19 +745,20 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
           "before": 1,
           "after": 3,
           "expected": "class-spell-ladder"
-        },
-        {
-          "cat": "advancement.race",
-          "key": "elf, high",
-          "before": [
-            "ItemGrant@1"
-          ],
-          "after": []
         }
       ]
     },
@@ -720,13 +766,32 @@
       "actor": "Krusk L01",
       "file": "fvtt-Actor-krusk-KruskLv010000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        }
+      ]
     },
     {
       "actor": "Krusk L05",
       "file": "fvtt-Actor-krusk-KruskLv050000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -755,6 +820,15 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
           "before": 3,
@@ -781,6 +855,15 @@
       "file": "fvtt-Actor-krusk-KruskLv170000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -809,14 +892,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class",
           "key": "barbarian",
           "before": [],
@@ -841,14 +916,6 @@
       "official": true,
       "findings": [
         {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
-        {
           "cat": "advancement.class",
           "key": "barbarian",
           "before": [],
@@ -872,14 +939,6 @@
       "file": "fvtt-Actor-merric-MerricLv11000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
         {
           "cat": "items.spell",
           "key": "names",
@@ -912,14 +971,6 @@
       "file": "fvtt-Actor-merric-MerricLv17000000",
       "official": true,
       "findings": [
-        {
-          "cat": "items.feat",
-          "key": "names",
-          "before": [
-            "cloud's jaunt"
-          ],
-          "after": []
-        },
         {
           "cat": "items.spell",
           "key": "names",
@@ -954,6 +1005,15 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
@@ -961,7 +1021,8 @@
           ],
           "after": [
             "Trait@0"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -970,6 +1031,15 @@
       "file": "fvtt-Actor-morthos-MorthosLv0500000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
         {
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
@@ -986,7 +1056,8 @@
           ],
           "after": [
             "Trait@0"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -1004,6 +1075,15 @@
           "after": []
         },
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
@@ -1019,7 +1099,8 @@
           ],
           "after": [
             "Trait@0"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -1037,6 +1118,15 @@
           "after": []
         },
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.subclass",
           "key": "draconic sorcery",
           "before": [
@@ -1052,7 +1142,8 @@
           ],
           "after": [
             "Trait@0"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -1075,12 +1166,11 @@
         {
           "cat": "items.feat",
           "key": "names",
-          "before": [
-            "naturally stealthy"
-          ],
+          "before": [],
           "after": [
             "halfling lineage (lightfoot)"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "advancement.class.grants",
@@ -1109,12 +1199,11 @@
         {
           "cat": "items.feat",
           "key": "names",
-          "before": [
-            "naturally stealthy"
-          ],
+          "before": [],
           "after": [
             "halfling lineage (lightfoot)"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "advancement.class.grants",
@@ -1143,13 +1232,12 @@
         {
           "cat": "items.feat",
           "key": "names",
-          "before": [
-            "naturally stealthy"
-          ],
+          "before": [],
           "after": [
             "halfling lineage (lightfoot)",
             "self-restoration"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "items.spell",
@@ -1208,13 +1296,12 @@
         {
           "cat": "items.feat",
           "key": "names",
-          "before": [
-            "naturally stealthy"
-          ],
+          "before": [],
           "after": [
             "halfling lineage (lightfoot)",
             "self-restoration"
-          ]
+          ],
+          "expected": "curated-halfling-lineage"
         },
         {
           "cat": "items.spell",
@@ -1230,7 +1317,17 @@
       "actor": "Quillathe L01",
       "file": "fvtt-Actor-quillathe-QuillatheLv01000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        }
+      ]
     },
     {
       "actor": "Quillathe L05",
@@ -1244,6 +1341,15 @@
             "detect poison and disease"
           ],
           "after": []
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -1251,25 +1357,64 @@
       "actor": "Quillathe L11",
       "file": "fvtt-Actor-quillathe-QuillatheLv11000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        }
+      ]
     },
     {
       "actor": "Quillathe L17",
       "file": "fvtt-Actor-quillathe-QuillatheLv17000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        }
+      ]
     },
     {
       "actor": "Randal L01",
       "file": "fvtt-Actor-randal-RandalLv01000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        }
+      ]
     },
     {
       "actor": "Randal L05",
       "file": "fvtt-Actor-randal-RandalLv05000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
         {
           "cat": "advancement.subclass",
           "key": "champion",
@@ -1292,6 +1437,15 @@
             "great weapon fighting"
           ],
           "after": []
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         },
         {
           "cat": "advancement.subclass",
@@ -1325,6 +1479,15 @@
           "after": []
         },
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.subclass",
           "key": "champion",
           "before": [
@@ -1338,7 +1501,17 @@
       "actor": "Riswynn L01",
       "file": "fvtt-Actor-riswynn-RiswynnLv0100000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        }
+      ]
     },
     {
       "actor": "Riswynn L05",
@@ -1352,6 +1525,15 @@
             "magic missile"
           ],
           "after": []
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -1376,6 +1558,15 @@
             "magic missile"
           ],
           "after": []
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -1424,6 +1615,15 @@
             "web"
           ],
           "after": []
+        },
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
         }
       ]
     },
@@ -1432,6 +1632,15 @@
       "file": "fvtt-Actor-sefris-SefrisLv01000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
@@ -1446,6 +1655,15 @@
       "file": "fvtt-Actor-sefris-SefrisLv05000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
@@ -1477,6 +1695,15 @@
           "after": []
         },
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
@@ -1506,6 +1733,15 @@
           "after": []
         },
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
@@ -1527,12 +1763,22 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
           "after": [
             "ItemGrant@1"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -1542,12 +1788,22 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
           "after": [
             "ItemGrant@1"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -1557,12 +1813,22 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
           "after": [
             "ItemGrant@1"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     },
@@ -1572,12 +1838,22 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.gear",
+          "key": "names",
+          "before": [],
+          "after": [
+            "unarmed strike"
+          ],
+          "expected": "universal-unarmed-strike"
+        },
+        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
           "after": [
             "ItemGrant@1"
-          ]
+          ],
+          "expected": "race-grant-level-convention"
         }
       ]
     }

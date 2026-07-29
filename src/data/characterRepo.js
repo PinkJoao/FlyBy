@@ -76,12 +76,14 @@ export async function duplicateCharacter(id) {
  * Gera um id novo para não colidir com um existente.
  * @param {unknown} raw
  * @param {object} [db5e]  compêndio 5etools (p/ reverter chaves na conversão)
+ * @param {{warnings?: string[]}} [out]  canal de avisos da conversão (o que o
+ *   ator trazia e o nosso modelo não guarda) - o chamador os mostra ao jogador.
  * @returns {Promise<import('../schema/character').Character>}
  */
-export async function importCharacter(raw, db5e) {
+export async function importCharacter(raw, db5e, out = null) {
   if (!raw || typeof raw !== 'object') throw new Error('Invalid character file.');
   // Ator do Foundry → converte nas decisões do builder (foundryImport).
-  const source = isFoundryActor(raw) ? foundryToCharacter(raw, db5e) : raw;
+  const source = isFoundryActor(raw) ? foundryToCharacter(raw, db5e, out) : raw;
   const migrated = migrate(source);
   const now = new Date().toISOString();
   const imported = {

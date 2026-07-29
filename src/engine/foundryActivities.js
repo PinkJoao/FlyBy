@@ -11,7 +11,7 @@
 // Estruturas extraídas dos exports premade oficiais.
 // -----------------------------------------------------------------------------
 
-import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS } from './srdActivitiesData';
+import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS, SRD_COMMON_WEAPON_GRANTS } from './srdActivitiesData';
 
 const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 function fid() {
@@ -280,13 +280,26 @@ export function featureActivities(name, classId, opts) {
 }
 
 /**
- * Itens de inventário que o advancement de uma classe concede, do SRD (hoje só o
- * "Unarmed Strike" do Bárbaro e do Monge). Ver `SRD_CLASS_WEAPON_GRANTS`.
+ * Itens de inventário que a classe concede: os do SRD quando ela os publica
+ * (Bárbaro e Monge), senão a versão GENÉRICA do mesmo item.
+ *
+ * **Divergimos do SRD aqui, de propósito.** Ele dá o "Unarmed Strike" só às duas
+ * classes cujas features o citam, mas a regra 2024 diz que TODA criatura pode
+ * fazer um Ataque Desarmado - e sem o item, um Mago que perdeu o cajado chega ao
+ * Foundry sem botão nenhum de ataque. O princípio: o SRD é referência, não
+ * autoridade; onde segui-lo penaliza o jogador, divergimos e NOMEAMOS a
+ * divergência no comparador.
  * @param {string} classId
  * @returns {Array<{name: string, uuid: string, level: number, system: object}>}
  */
 export function classWeaponGrants(classId) {
-  return SRD_CLASS_WEAPON_GRANTS[String(classId ?? '').trim().toLowerCase()] ?? [];
+  const own = SRD_CLASS_WEAPON_GRANTS[String(classId ?? '').trim().toLowerCase()];
+  // `srd` marca de onde veio: o passo do Bárbaro/Monge entra no MESMO ItemGrant
+  // "Class Features" do SRD (é o que o premade faz), enquanto o nosso acréscimo
+  // universal ganha título próprio - assim ele não se mistura com a escada oficial
+  // e o comparador consegue nomeá-lo em vez de contá-lo como divergência solta.
+  if (own) return own.map((g) => ({ ...g, srd: true }));
+  return SRD_COMMON_WEAPON_GRANTS.map((g) => ({ ...g, srd: false }));
 }
 
 /**

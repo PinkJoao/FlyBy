@@ -28,6 +28,7 @@ import { TRAIT_CHOICE_KINDS, choiceTraitTitle } from './foundryItems';
 import { parseChoices, collectAbilityPicks } from './choices';
 import { resolveSpellObj, spellChoosePredicate } from './spells';
 import { grantedSpells, additionalSpellChoices } from './grantedSpells';
+import { casterInfo } from './spellcasting';
 import { deriveHpBonus } from './hpBonuses';
 import { classWeaponGrants } from './foundryActivities';
 import { classGrantChoices } from './classFeatureGrants';
@@ -981,9 +982,12 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
  * Converte um ATOR do Foundry no Character do builder (decisões).
  * @param {object} actor  documento de Actor (type 'character')
  * @param {object} [db]   compêndio 5etools (p/ reverter chaves; opcional)
+ * @param {{warnings?: string[]}} [out]  canal de AVISOS: o que o ator trazia e o
+ *   nosso modelo não consegue guardar. Não é erro - o import segue -, mas o
+ *   jogador precisa saber, em vez de descobrir que perdeu conteúdo depois.
  * @returns {import('../schema/character').Character}
  */
-export function foundryToCharacter(actor, db) {
+export function foundryToCharacter(actor, db, out = null) {
   const char = createCharacter({ name: actor?.name || 'Imported Character' });
   if (actor?.img) char.meta.portrait = actor.img;
 
@@ -1182,6 +1186,24 @@ export function foundryToCharacter(actor, db) {
   if (orphans?.length) {
     const target = char.classes.find((c) => c.isOriginalClass) ?? char.classes[0];
     target.spells = [...target.spells, ...orphans];
+  }
+  // Magia que o ator lista mas nenhuma classe do personagem sabe conjurar (o
+  // premade da Riswynn, uma Ladina, traz 35 como SUGESTÃO). Ela não tem origem
+  // que a segure no nosso modelo, então some - e sumir CALADO é a parte ruim.
+  // Ver DEFERRED-REVIEW §5.3: a forma elaborada (guardar as magias sem origem)
+  // fica pendente; o aviso é a metade que custa nada e resolve a surpresa.
+  const canCast = (c) =>
+    !!casterInfo(
+      c.classId ? resolveClassObj(db, c.classId, c.source) : null,
+      c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null,
+    );
+  const lost = char.classes.reduce((n, c) => n + (canCast(c) ? 0 : (c.spells?.length ?? 0)), 0);
+  if (lost > 0 && out) {
+    out.warnings = [
+      ...(out.warnings ?? []),
+      `${lost} ${lost === 1 ? 'spell was' : 'spells were'} listed on this actor but no class on the sheet can cast `
+      + `${lost === 1 ? 'it' : 'them'}, so ${lost === 1 ? 'it was' : 'they were'} not imported.`,
+    ];
   }
 
   // --- Scores BASE ---

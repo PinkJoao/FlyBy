@@ -79,15 +79,22 @@ const flat = {};
 // Itens de INVENTÁRIO que o documento da classe concede por advancement (hoje só
 // o "Unarmed Strike" do Bárbaro e do Monge). Ver SRD_CLASS_WEAPON_GRANTS.
 const weaponGrants = {};
+// Os mesmos itens, na cópia GENÉRICA do equipment24, para conceder a toda classe
+// (ver SRD_COMMON_WEAPON_GRANTS). Keyed por nome para deduplicar.
+const commonByName = {};
 let files = 0;
 
 /** `_id` → documento, para saber se um uuid de ItemGrant aponta para um ITEM de
  * inventário ou para uma feature, e para copiar a ficha do item quando for. */
 const docs = new Map();
+/** `_id`s do equipment24 - a cópia do item que não pertence a classe nenhuma. */
+const genericIds = new Set();
 for (const dir of ['classes24', 'equipment24']) {
   for (const f of walk(join(PACKS, dir))) {
     const doc = parseYaml(readFileSync(f, 'utf8'));
-    if (doc._id && doc.type) docs.set(doc._id, doc);
+    if (!doc._id || !doc.type) continue;
+    docs.set(doc._id, doc);
+    if (dir === 'equipment24') genericIds.add(doc._id);
   }
 }
 
@@ -125,12 +132,20 @@ for (const classDir of readdirSync(join(PACKS, 'classes24'))) {
           const item = docs.get(id);
           if (!item || item.type !== 'weapon') continue;
           // A ficha do item vem do PRÓPRIO documento do SRD - nada é inventado.
-          (weaponGrants[classId] ??= []).push({
-            name: item.name,
-            uuid: it.uuid,
-            level: adv.level ?? 1,
-            system: prune(item.system) ?? {},
-          });
+          const grant = { name: item.name, uuid: it.uuid, level: adv.level ?? 1, system: prune(item.system) ?? {} };
+          (weaponGrants[classId] ??= []).push(grant);
+          // A versão genérica (a do equipment24) serve a qualquer classe.
+          const generic = [...docs.values()].find(
+            (d) => d.type === 'weapon' && d.name === item.name && genericIds.has(d._id),
+          );
+          if (generic) {
+            commonByName[norm(item.name)] ??= {
+              name: generic.name,
+              uuid: `Compendium.dnd5e.equipment24.Item.${generic._id}`,
+              level: adv.level ?? 1,
+              system: prune(generic.system) ?? {},
+            };
+          }
         }
       }
       continue;
@@ -168,13 +183,18 @@ export const SRD_ACTIVITIES_BY_CLASS = ${literal(byClass)};
 export const SRD_ACTIVITIES_FLAT = ${literal(flat)};
 
 /** \`classId\` → itens de INVENTÁRIO que o advancement da classe concede
- *  (\`{name, uuid, level, system}\`). Hoje só o "Unarmed Strike" do Bárbaro e do
- *  Monge, que é o que dá o botão de ataque desarmado na ficha do Foundry - sem
- *  ele um Monge criado no app chega lá sem a arma principal da classe. A ficha do
- *  item é copiada do próprio documento do SRD; o uuid também, porque nem o nome
- *  nem a pasta bastam (o Bárbaro aponta para a cópia do equipment24 e o Monge
- *  para a do classes24). */
+ *  (\`{name, uuid, level, system}\`). O SRD só o faz no Bárbaro e no Monge, cujas
+ *  features citam o Ataque Desarmado. A ficha do item é copiada do próprio
+ *  documento do SRD; o uuid também, porque nem o nome nem a pasta bastam (o
+ *  Bárbaro aponta para a cópia do equipment24 e o Monge para a do classes24). */
 export const SRD_CLASS_WEAPON_GRANTS = ${literal(weaponGrants)};
+
+/** Itens concedidos a QUALQUER classe. O SRD não faz isso, mas a regra 2024 diz
+ *  que toda criatura pode fazer um Ataque Desarmado, e sem o item o personagem
+ *  chega ao Foundry sem botão nenhum de ataque quando está desarmado - seguir o
+ *  SRD aqui penalizaria o jogador. Usa a cópia GENÉRICA do \`equipment24\`, que é
+ *  a que não pertence a classe nenhuma. */
+export const SRD_COMMON_WEAPON_GRANTS = ${JSON.stringify(Object.values(commonByName))};
 `;
 
 writeFileSync(OUT, out);

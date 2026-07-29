@@ -1578,3 +1578,21 @@ Nenhum destes é regressão; ficam registrados para a próxima sessão decidir s
 - **6 `advancement.subclass`**, **6 `feat.activities`**, **2 `spell.method`** (quirk do premade da
   Sefris, já anotado no TC-0067), **2 `traits.dr`**, **1 `advancement.class`**, **1 `details.xp`**
   (quirk do premade do Riswynn L11).
+
+## TC-0083 - `BuilderInner` viola a ordem dos Hooks (erro de console ao abrir a ficha)
+
+- **Unidade:** toda ficha. **Severidade:** bug (potencial). **Causa:** UI.
+  **Encontrado:** 2026-07-29, ao verificar A5 ao vivo. **Status:** open.
+- O console acusa `React has detected a change in the order of Hooks called by BuilderInner` ao
+  abrir um personagem. A divergência é no hook **30**, que alterna entre `useRef` e `useCallback`
+  entre renders; os 29 anteriores são idênticos.
+- **NÃO é regressão desta sessão** - confirmado por A/B: revertendo `useCharacterImport.js` (o
+  único arquivo de UI que a sessão tocou) o erro continua idêntico, e ele também aparece num
+  reload limpo, então não é artefato de HMR.
+- **Pista:** as posições 26-30 correspondem ao `useCharacterImport` (useCharacterStore →
+  `useSyncExternalStore`+`useDebugValue`, useData → `useContext`, `useRef`, `useCallback`). Um
+  `useCallback` virando `useRef` entre renders é a assinatura do **React Compiler** compilando o
+  módulo de duas formas (`useMemoCache` é um `useRef`), o que costuma indicar duas instâncias do
+  mesmo módulo no grafo ou uma fronteira de compilação inconsistente.
+- Nenhum sintoma funcional observado até agora (a ficha e o import funcionam), mas violação de
+  Rules of Hooks é bug latente: vale investigar antes da Fase C.

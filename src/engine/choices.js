@@ -17,6 +17,7 @@
 // -----------------------------------------------------------------------------
 
 import { skillCode } from './classData';
+import { resolveOtherLanguage } from './speciesLanguages';
 import { additionalSpellChoices } from './grantedSpells';
 
 /**
@@ -77,7 +78,7 @@ const PROF_COUNT_TOKENS = {
  * unidas por "or" - ver render.js _summariseProfs), não cumulativas: a primeira
  * que render um choice vence (Human (Ixalan): 2× {anyStandard:1} = 1 idioma).
  */
-function parseProfField(field, kind, push) {
+function parseProfField(field, kind, push, mapValue = (v) => v) {
   let done = false;
   const pushOnce = (c) => { done = true; push(c); };
   for (const entry of field ?? []) {
@@ -89,7 +90,7 @@ function parseProfField(field, kind, push) {
         kind,
         count,
         label: count > 1 ? `Choose ${count} ${noun(kind, count)}` : `Choose a ${noun(kind, 1)}`,
-        pool: { type: 'list', options: (entry.choose.from ?? []).map((v) => toOption(kind, v)) },
+        pool: { type: 'list', options: (entry.choose.from ?? []).map((v) => toOption(kind, mapValue(v))) },
       });
     } else if (entry.any != null) {
       pushOnce({
@@ -350,7 +351,11 @@ export function parseChoices(entity, { level = Infinity, bag = null } = {}) {
   parseAbilityField(entity?.ability, push);
   parseProfField(entity?.skillProficiencies, 'skill', push);
   parseProfField(entity?.toolProficiencies, 'tool', push);
-  parseProfField(entity?.languageProficiencies, 'language', push);
+  // O pseudo-idioma `other` vira o idioma REAL da espécie antes de virar OPÇÃO:
+  // "Other" era a única escolha do app que não dizia o que era (TC-0050). Só o
+  // Simic Hybrid tem `other` dentro de um `choose`; nas outras 21 espécies ele é
+  // grant fixo e a tradução acontece na derivação (engine/speciesData).
+  parseProfField(entity?.languageProficiencies, 'language', push, (v) => resolveOtherLanguage(entity, v));
   parseStlField(entity?.skillToolLanguageProficiencies, push);
   parseDamageField(entity?.resist, 'resist', push);
   parseDamageField(entity?.immune, 'immune', push);

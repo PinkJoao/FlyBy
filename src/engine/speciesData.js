@@ -18,6 +18,7 @@ import { legacyLegacyVersions } from './legacyFiendishLegacies';
 import { halflingLineageVersions, withLineageUmbrella, lineageUmbrellaName } from './legacyHalflingLineages';
 import { mergedLineageVersions } from './mergedLineages';
 import { isEmptySubrace } from './settingSpecies';
+import { resolveOtherLanguage } from './speciesLanguages';
 
 /** Aplica ops de `_mod` a um array (replaceArr/appendArr/insertArr/removeArr). */
 function applyArrMods(arr, ops) {
@@ -719,7 +720,9 @@ export function parseSpecies(raceObj) {
     speed: parseSpeed(raceObj.speed),
     darkvision: raceObj.darkvision ?? null,
     skills: parseProfBlock(raceObj.skillProficiencies, skillCode),
-    languages: parseProfBlock(raceObj.languageProficiencies, (s) => s),
+    // O pseudo-idioma `other` vira o idioma REAL da espécie (TC-0050): sem isso,
+    // 21 espécies mostram literalmente "Other" no card de Idiomas.
+    languages: parseProfBlock(raceObj.languageProficiencies, (s) => resolveOtherLanguage(raceObj, s)),
     resist: raceObj.resist ?? [],
     traitTags: raceObj.traitTags ?? [],
     creatureTypes: raceObj.creatureTypes ?? [],

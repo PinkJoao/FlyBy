@@ -504,3 +504,36 @@ describe('featSpellBag', () => {
     expect(featSpellBag({ name: 'Alert' }, [item('Guidance')], spellDb)).toEqual({});
   });
 });
+
+describe('aviso de magia sem origem no import (5.3)', () => {
+  const actor = (classId, spells) => ({
+    type: 'character',
+    name: 'T',
+    system: { abilities: {}, details: {}, attributes: {} },
+    items: [
+      { _id: 'c1', type: 'class', name: classId, system: { identifier: classId.toLowerCase(), levels: 5 } },
+      ...spells.map((n, i) => ({
+        _id: `s${i}`, type: 'spell', name: n,
+        system: { level: 1, method: 'spell', prepared: 1 },
+      })),
+    ],
+  });
+
+  it('avisa quando nenhuma classe da ficha sabe conjurar as magias listadas', () => {
+    const out = {};
+    foundryToCharacter(actor('Rogue', ['Magic Missile', 'Shield']), null, out);
+    expect(out.warnings).toHaveLength(1);
+    expect(out.warnings[0]).toContain('2 spells');
+    expect(out.warnings[0]).toContain('not imported');
+  });
+
+  it('sem canal de aviso, o import segue igual (o canal é opcional)', () => {
+    expect(() => foundryToCharacter(actor('Rogue', ['Shield']), null)).not.toThrow();
+  });
+
+  it('nenhuma magia listada = nenhum aviso', () => {
+    const out = {};
+    foundryToCharacter(actor('Rogue', []), null, out);
+    expect(out.warnings).toBeUndefined();
+  });
+});

@@ -59,9 +59,10 @@ const useCharacterStore = create((set, get) => ({
   /**
    * @param {unknown} raw  JSON importado (ator do Foundry; ver foundryImport).
    * @param {object} [db5e]  compêndio 5etools (p/ reverter chaves na conversão).
+   * @param {{warnings?: string[]}} [out]  canal de avisos da conversão.
    */
-  importJson: async (raw, db5e) => {
-    const imported = await repo.importCharacter(raw, db5e);
+  importJson: async (raw, db5e, out) => {
+    const imported = await repo.importCharacter(raw, db5e, out);
     set({ characters: [imported, ...get().characters] });
     return imported;
   },

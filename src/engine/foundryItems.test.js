@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems, speciesTraitEntries } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -718,7 +718,7 @@ describe('buildItemChoiceAdvancements', () => {
   });
 });
 
-describe('buildClassWeaponItems - o Unarmed Strike do Bárbaro e do Monge (A1)', () => {
+describe('buildClassWeaponItems - o Unarmed Strike (A1 + 5.1)', () => {
   it('a classe que o SRD publica ganha o item, com a activity de ATAQUE', () => {
     const [item] = buildClassWeaponItems({ level: 5 }, { name: 'Monk' });
     expect(item.name).toBe('Unarmed Strike');
@@ -733,8 +733,18 @@ describe('buildClassWeaponItems - o Unarmed Strike do Bárbaro e do Monge (A1)',
       .toContain('equipment24');
   });
 
-  it('classe sem item concedido não ganha nada', () => {
-    expect(buildClassWeaponItems({ level: 20 }, { name: 'Fighter' })).toEqual([]);
+  it('classe FORA do SRD ganha a cópia genérica, em passo de título próprio', () => {
+    // Divergimos do SRD de propósito: a regra 2024 diz que toda criatura pode
+    // fazer um Ataque Desarmado, e sem o item o personagem chega ao Foundry sem
+    // botão nenhum de ataque quando está desarmado.
+    const [item] = buildClassWeaponItems({ level: 20 }, { name: 'Fighter' });
+    expect(item.name).toBe('Unarmed Strike');
+    expect(item._stats.compendiumSource).toContain('equipment24');
+    expect(item.flags.builder5e.srdGranted).toBe(false);
+    const cls = buildClassItem({ classId: 'fighter', level: 1 }, { name: 'Fighter', source: 'XPHB', hd: { faces: 10 } }, [], {}, { weaponItems: [item] });
+    // Título PRÓPRIO: o passo é nosso, não a escada oficial da classe.
+    expect(advList(cls).find((a) => a.type === 'ItemGrant' && a.title === 'Unarmed Strike')).toBeTruthy();
+    expect(buildClassWeaponItems({ level: 1 }, { name: 'Monk' })[0].flags.builder5e.srdGranted).toBe(true);
   });
 
   it('o item entra pelo advancement da classe, ligado por value.added', () => {
@@ -745,5 +755,53 @@ describe('buildClassWeaponItems - o Unarmed Strike do Bárbaro e do Monge (A1)',
     );
     expect(grant.level).toBe(1);
     expect(grant.value.added[weaponItems[0]._id]).toBe(weaponItems[0]._stats.compendiumSource);
+  });
+});
+
+describe('speciesTraitEntries - o benefício aninhado da ancestralidade (A4)', () => {
+  // Forma real do Goliath: o boon escolhido mora numa lista DENTRO do traço
+  // guarda-chuva, e o SRD publica os dois como documentos separados.
+  const goliath = {
+    name: 'Goliath; Cloud Giant Ancestry',
+    _baseName: 'Goliath',
+    source: 'XPHB',
+    entries: [
+      {
+        name: 'Giant Ancestry (Cloud)',
+        entries: ['You are descended from Giants.', { type: 'list', items: [{ type: 'item', name: "Cloud's Jaunt", entries: ['...'] }] }],
+      },
+      { name: 'Powerful Build', entries: ['...'] },
+    ],
+  };
+
+  it('o boon vira uma entrada própria, marcada para o passo separado', () => {
+    const names = speciesTraitEntries(goliath).map((e) => e.name);
+    expect(names).toEqual(['Giant Ancestry (Cloud)', "Cloud's Jaunt", 'Powerful Build']);
+    expect(speciesTraitEntries(goliath).find((e) => e.name === "Cloud's Jaunt")._boon).toBe(true);
+  });
+
+  it('a regra é ESTREITA: vários sub-itens nomeados não produzem boon', () => {
+    // É o caso da BASE do Goliath, que lista os seis benefícios no mesmo traço.
+    const base = {
+      name: 'Goliath',
+      source: 'XPHB',
+      entries: [{
+        name: 'Giant Ancestry',
+        entries: [{ type: 'list', items: [
+          { type: 'item', name: "Cloud's Jaunt (Cloud Giant)", entries: ['...'] },
+          { type: 'item', name: "Fire's Burn (Fire Giant)", entries: ['...'] },
+        ] }],
+      }],
+    };
+    expect(speciesTraitEntries(base).map((e) => e.name)).toEqual(['Giant Ancestry']);
+  });
+
+  it('e o nome tem de existir no SRD (senão não é documento lá)', () => {
+    const race = {
+      name: 'Especie Inventada',
+      source: 'XXX',
+      entries: [{ name: 'Guarda-chuva', entries: [{ type: 'list', items: [{ type: 'item', name: 'Beneficio Que Nao Existe', entries: ['...'] }] }] }],
+    };
+    expect(speciesTraitEntries(race).map((e) => e.name)).toEqual(['Guarda-chuva']);
   });
 });

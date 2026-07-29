@@ -5834,3 +5834,52 @@ do card) e no `RARITY_OPTIONS`; nenhuma vira badge colorido, que continua só pa
 Verificado: 1247 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de 71 → **63**, e ao vivo
 no browser (o chip "Unknown (Magic)" devolvendo os 255 itens; o link "minor beneficial" do Axe of
 the Dwarvish Lords abrindo a tabela d100, com os links de condição vivos dentro dela).
+
+---
+
+## 104. Revisão dos adiados, leva 2: os aprovados restantes e as sugestões (63 → 43)
+
+Segunda leva do `DEFERRED-REVIEW.md`, sob o princípio que o usuário fixou: **o SRD é referência, não
+autoridade** - onde segui-lo penaliza o usuário ou o funcionamento da ficha exportada, divergimos, e
+o comparador NOMEIA a divergência em vez de escondê-la.
+
+**A5 - o pseudo-idioma `other`.** O 5etools usa a chave `other` quando o idioma é o próprio do
+cenário, e a ficha mostrava literalmente "Other" - no card de Idiomas de 21 espécies e como OPÇÃO do
+seletor do Simic Hybrid, a única escolha do app que não dizia o que era. Novo registro curado
+`engine/speciesLanguages.js` (22 entradas). **A varredura correta não é sobre `races.race`:** a
+primeira passada fez isso e ficou incompleta em três entradas, porque `other` também vem de
+`races.subrace` (o Keldon) e de reimpressões por `_copy` (Minotaur|MOT). O cabeçalho do módulo manda
+varrer o CATÁLOGO RESOLVIDO. O **Human (Ixalan) fica de fora de propósito**: lá o idioma depende da
+origem nacional do personagem, então não há resposta única, e "Other" é a degradação honesta.
+
+**A4 - o boon da ancestralidade como item próprio.** "Cloud's Jaunt" vira documento à parte, por uma
+regra ESTREITA: o traço tem de ter exatamente UM sub-item nomeado E o nome tem de existir no
+`origins24` (a base do Goliath lista os seis no mesmo traço, e por isso não casa). Entra num passo de
+advancement próprio, para não inflar a contagem do passo oficial.
+
+**5.1 - Unarmed Strike para TODA classe.** A primeira divergência deliberada do SRD sob o princípio
+acima: ele concede o item só ao Bárbaro e ao Monge, mas a regra 2024 diz que toda criatura pode fazer
+um Ataque Desarmado, e sem o item um Mago desarmado chega ao Foundry sem botão nenhum de ataque.
+
+**5.2 - as convenções de nível viram `EXPECTED`.** O SRD não tem regra (`@0` no Gnome, `@1` no Elfo).
+**Antes de nomeá-las, fechei uma lacuna REAL que o predicado esconderia:** a magia ESCOLHIDA da
+linhagem (o cantrip do Alto Elfo) não entrava na escada de concessão porque o `bag` não era passado
+ao `grantedSpells`.
+
+**5.3 - aviso de magia sem origem no import.** Um ator externo pode listar magias que nenhuma classe
+da ficha sabe conjurar (35 no premade da Riswynn); elas somem, e sumir CALADO era a parte ruim. O
+import agora avisa. A forma elaborada (guardar o conteúdo) fica pendente como B4 no
+`DEFERRED-REVIEW.md`.
+
+**A lição da leva:** divergir do SRD sem NOMEAR a divergência faz o placar SUBIR. O Unarmed Strike
+universal acrescentou 40 achados de `items.gear` e inflou o `class-spell-ladder` de 6 para 46, porque
+o passo novo se misturava ao ItemGrant oficial. A correção foi dupla - título de advancement próprio
+para o que é nosso, e uma entrada `EXPECTED` com o motivo escrito.
+
+Verificado: 1259 testes (+12), lint, sweep 285/285 `--strict`, `npm run t2` de 63 → **43** (+85
+nomeados), e ao vivo (o seletor de idioma do Simic Hybrid mostrando "Elvish" e "Vedalken"; um Monge,
+um Bárbaro e um Fighter criados do zero saindo com o item de ataque desarmado).
+
+**Achado colateral, NÃO corrigido:** o `BuilderInner` viola a ordem dos Hooks (erro de console ao
+abrir a ficha). Confirmado por A/B como **pré-existente**, não regressão desta sessão. Registrado
+como TC-0083.

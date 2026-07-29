@@ -426,18 +426,21 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   });
 
   advancement.push(...itemGrantAdvancements(featureItems, 'Class Features'));
-  // Itens de inventário concedidos pela classe (o Unarmed Strike do Bárbaro e do
-  // Monge). Como nos premades: `configuration.items` aponta para o COMPÊNDIO e
-  // `value.added` liga ao item embutido que saiu dali.
+  // Itens de inventário concedidos pela classe (o Unarmed Strike). Como nos
+  // premades: `configuration.items` aponta para o COMPÊNDIO e `value.added` liga
+  // ao item embutido que saiu dali.
+  // O que o SRD publica (Bárbaro/Monge) entra no MESMO passo "Class Features" do
+  // premade; o nosso acréscimo universal (ver `classWeaponGrants`) ganha título
+  // próprio, para não se passar pela escada oficial.
+  const weaponEntry = (i) => ({
+    level: i.flags?.builder5e?.level ?? 1,
+    uuid: i._stats?.compendiumSource,
+    addedId: i._id,
+  });
+  const weaponItems = opts.weaponItems ?? [];
   advancement.push(
-    ...futureItemGrants(
-      (opts.weaponItems ?? []).map((i) => ({
-        level: i.flags?.builder5e?.level ?? 1,
-        uuid: i._stats?.compendiumSource,
-        addedId: i._id,
-      })),
-      'Class Features',
-    ),
+    ...futureItemGrants(weaponItems.filter((i) => i.flags?.builder5e?.srdGranted).map(weaponEntry), 'Class Features'),
+    ...futureItemGrants(weaponItems.filter((i) => !i.flags?.builder5e?.srdGranted).map(weaponEntry), 'Unarmed Strike'),
   );
   // Receita dos níveis ainda não alcançados (uuids de compêndio) - é o que faz o
   // level-up DENTRO do Foundry conceder as features novas.
@@ -691,7 +694,7 @@ export function buildClassWeaponItems(classEntry, classObj) {
       img: 'icons/svg/sword.svg',
       system: { ...g.system, equipped: false, quantity: 1 },
       effects: [],
-      flags: { builder5e: { level: g.level ?? 1, classGranted: true } },
+      flags: { builder5e: { level: g.level ?? 1, classGranted: true, srdGranted: !!g.srd } },
       _stats: itemStats(g.uuid),
     }));
 }
@@ -1498,9 +1501,12 @@ export function buildSubclassFutureGrants(subclass, classId, db, level, spellIds
  * @param {number} [from]  primeiro nível a emitir (1 = a escada inteira)
  * @returns {object[]} entradas de advancement ItemGrant
  */
-function spellGrantLadder(additional, title, spellIds, from = 1) {
+function spellGrantLadder(additional, title, spellIds, from = 1, bag = null) {
   if (!additional) return [];
-  const namesAt = (l) => new Set(grantedSpells(additional, l).spells.map((s) => s.name));
+  // O `bag` faz as magias ESCOLHIDAS entrarem na escada (o cantrip à escolha da
+  // linhagem élfica): sem ele, o nível 1 do Elfo não gerava passo nenhum e o
+  // Foundry não sabia que a linhagem concedeu aquela magia.
+  const namesAt = (l) => new Set(grantedSpells(additional, l, { bag }).spells.map((s) => s.name));
   const entries = [];
   let prev = new Set();
   for (let l = 1; l <= MAX_LEVEL; l += 1) {
@@ -1588,13 +1594,46 @@ export function speciesTraitEntries(raceObj) {
   // ficha do Foundry com features que nenhum ator oficial tem. Fora do SRD não
   // há essa resposta, então vale todo traço.
   const published = !!srdSpeciesName(raceObj);
-  return (raceObj?.entries ?? []).filter(
-    (e) =>
-      e?.name
-      && !NATIVE_TRAIT_NAMES.has(norm(e.name))
-      && !LEGACY_PROSE_SECTIONS.has(e.name)
-      && (!published || srdOriginName(e.name)),
-  );
+  const out = [];
+  for (const e of raceObj?.entries ?? []) {
+    if (!e?.name || NATIVE_TRAIT_NAMES.has(norm(e.name)) || LEGACY_PROSE_SECTIONS.has(e.name)) continue;
+    if (published && !srdOriginName(e.name)) continue;
+    out.push(e);
+    const boon = nestedBoonEntry(e);
+    // `_boon` roteia o item para um passo de advancement PRÓPRIO: no SRD ele vem
+    // de um `ItemChoice` (a escolha da ancestralidade), não do ItemGrant dos
+    // traços, e misturá-lo lá inflaria a contagem do passo oficial.
+    if (boon) out.push({ ...boon, _boon: true });
+  }
+  return out;
+}
+
+/**
+ * O BENEFÍCIO nomeado que vive DENTRO de um traço-guarda-chuva e que o dnd5e
+ * publica como documento à parte: o "Cloud's Jaunt" mora dentro do "Giant
+ * Ancestry (Cloud)" do Goliath, e o SRD emite os dois como itens separados.
+ *
+ * A regra é ESTREITA de propósito: o traço tem de ter EXATAMENTE UM item de lista
+ * nomeado, e esse nome tem de existir no `origins24`. A base do Goliath tem os
+ * seis boons na mesma lista (e por isso não casa); um traço com vários sub-itens
+ * nomeados também não. Sem as duas condições, uma espécie futura ganharia itens
+ * que o SRD não tem.
+ * @param {object} entry  entry de traço do 5etools
+ * @returns {object|null} a entry do benefício, ou null
+ */
+function nestedBoonEntry(entry) {
+  const named = [];
+  const walk = (nodes) => {
+    for (const n of nodes ?? []) {
+      if (!n || typeof n !== 'object') continue;
+      if (n.name) named.push(n);
+      walk(n.entries);
+      walk(n.items);
+    }
+  };
+  walk(entry?.entries);
+  if (named.length !== 1) return null;
+  return srdOriginName(named[0].name) ? named[0] : null;
 }
 
 /** Nome do traço no documento exportado: o do dnd5e quando existe (ver
@@ -1687,7 +1726,7 @@ export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
         ...overlaySystemExtras(m?.system ?? {}),
       },
       effects: srd?.activities && srd.effects.length ? srd.effects : (m?.effects ?? []),
-      flags: { builder5e: { level: traitLevel(entry) } },
+      flags: { builder5e: { level: traitLevel(entry), boon: !!entry._boon } },
       _stats: itemStats(originUuid(name)),
     };
   });
@@ -1860,14 +1899,23 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   // mesmo jeito que as escadas de classe: assim o traço não fica ativo antes da
   // hora e o Foundry o concede ao chegar no nível.
   const traitsTitle = `${baseName} Traits`;
-  if (traitItems.length) advancement.push(...itemGrantAdvancements(traitItems, traitsTitle));
+  const isBoon = (i) => !!i.flags?.builder5e?.boon;
+  const plainTraits = traitItems.filter((i) => !isBoon(i));
+  const boonItems = traitItems.filter(isBoon);
+  if (plainTraits.length) advancement.push(...itemGrantAdvancements(plainTraits, traitsTitle));
+  // O benefício da ancestralidade ("Cloud's Jaunt") em passo PRÓPRIO: no SRD ele
+  // vem de um `ItemChoice`, e somá-lo ao ItemGrant dos traços faria o passo
+  // oficial parecer conceder um item a mais do que concede.
+  if (boonItems.length) advancement.push(...itemGrantAdvancements(boonItems, lineageLabel(raceObj)));
   const futureTraits = speciesTraitEntries(raceObj)
     .map((e) => ({ level: traitLevel(e), uuid: originUuid(traitName(e)) }))
     .filter((t) => t.level > level);
   advancement.push(...futureItemGrants(futureTraits, traitsTitle));
   // Magias da linhagem (o cantrip da linhagem élfica no 1, Detect Magic no 3,
   // Misty Step no 5): a mesma escada de concessão da subclasse.
-  advancement.push(...spellGrantLadder(curatedAdditionalSpells(raceObj), `${lineageLabel(raceObj)} Traits`, spellIds));
+  advancement.push(
+    ...spellGrantLadder(curatedAdditionalSpells(raceObj), `${lineageLabel(raceObj)} Traits`, spellIds, 1, speciesChoices),
+  );
 
   // Escolhas da espécie SEM casa nativa no Foundry viajam na flag do item de
   // raça (DDL-0028): o atributo de conjuração racial escolhido (TC-0009), o

@@ -98,9 +98,48 @@ export const EXPECTED = [
       + 'apontar para o "Halfling" publicado faria o Foundry oferecer "atualizar do compêndio" e '
       + 'trocar a linhagem escolhida pela base.',
     test: (f) =>
-      f.cat === 'items.race'
-      && (f.before ?? []).includes('halfling')
-      && (f.after ?? []).some((n) => String(n).startsWith('halfling;')),
+      (f.cat === 'items.race'
+        && (f.before ?? []).includes('halfling')
+        && (f.after ?? []).some((n) => String(n).startsWith('halfling;')))
+      // O traço da linhagem também é nosso: onde o premade tem "Naturally
+      // Stealthy" (o traço que a base 2024 absorveu), nós temos o guarda-chuva.
+      || (f.cat === 'items.feat' && (f.after ?? []).some((n) => String(n).startsWith('halfling lineage'))),
+  },
+  {
+    id: 'race-grant-level-convention',
+    why:
+      'O SRD não é consistente consigo mesmo sobre em QUE nível pendurar uma concessão de criação: '
+      + 'o passo de nível 1 é `@0` no Gnome e `@1` no Elfo, e a resistência da linhagem é `Trait@0` '
+      + 'no Dragonborn e `Trait@1` no Tiefling. Não há regra derivável, e o Foundry concede a mesma '
+      + 'coisa nos dois casos (é tudo criação de personagem). Nossa convenção - nível 0 para o que '
+      + 'vem na criação, o nível real para o resto - é mais coerente, e acertar a do SRD exigiria '
+      + 'uma tabela por espécie: dívida de curadoria crescente para zero efeito.',
+    test: (f) => {
+      if (f.cat !== 'advancement.race') return false;
+      const before = f.before ?? [];
+      const after = f.after ?? [];
+      const type = (s) => String(s).split('@')[0];
+      // (a) o MESMO passo, em níveis 0/1 diferentes.
+      if (before.length === 1 && after.length === 1 && type(before[0]) === type(after[0])) {
+        return [before[0], after[0]].every((s) => /@[01]$/.test(s));
+      }
+      // (b) um passo de concessão a MAIS do nosso lado, no nível 1 (o SRD o pôs
+      //     no 0, onde os dois lados já têm um passo - por isso nada falta).
+      return before.length === 0 && after.length === 1 && /^ItemGrant@1$/.test(after[0]);
+    },
+  },
+  {
+    id: 'universal-unarmed-strike',
+    why:
+      'O SRD concede o item "Unarmed Strike" só ao Bárbaro e ao Monge, cujas features o citam. Mas '
+      + 'a regra 2024 diz que TODA criatura pode fazer um Ataque Desarmado, e sem o item um Mago que '
+      + 'perdeu o cajado chega ao Foundry sem botão nenhum de ataque - seguir o SRD aqui penalizaria '
+      + 'o jogador. Concedemos a TODA classe, com a cópia genérica do equipment24 e num passo de '
+      + 'advancement de título próprio, para não se passar pela escada oficial.',
+    test: (f) =>
+      f.cat === 'items.gear'
+      && (f.before ?? []).length === 0
+      && JSON.stringify(f.after ?? []) === JSON.stringify(['unarmed strike']),
   },
   {
     id: 'class-spell-ladder',

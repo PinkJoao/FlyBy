@@ -5804,3 +5804,33 @@ conjurá-lo, não o deixa preparado (TC-0082, novo registro `REMOVED_ADDITIONAL_
 Verificado: 1238 testes (+12), lint, sweep 285/285 `--strict`, `npm run t2` de **170 → 71** achados
 (+33 nomeadas como esperadas), e uma sonda sobre as 48 fichas confirmando **zero** referência de
 effect órfã e **zero** effect duplicado.
+
+---
+
+## 103. Revisão dos adiados: os três aprovados automaticamente (63 achados)
+
+Depois do levantamento em `DEFERRED-REVIEW.md`, os itens **sem malefício algum** foram
+implementados por regra do usuário.
+
+**A1 - o item "Unarmed Strike" do Bárbaro e do Monge.** É o que dá o botão de ataque desarmado na
+ficha do Foundry, e um Monge criado no FlyBy chegava lá **sem a arma principal da classe inteira**.
+O comparador não denunciava porque as fichas premade já trazem o item (entrava pelo import e voltava
+no export) - só um personagem criado do zero sofria. A premissa antiga do TC-0071 ("emiti-lo seria
+inventar um documento") estava ERRADA: o item existe no `equipment24` do dnd5e. `npm run gen:srd`
+passou a emitir `SRD_CLASS_WEAPON_GRANTS` lendo o ItemGrant do PRÓPRIO documento da classe - a única
+fonte que diz qual uuid usar, porque o Bárbaro aponta para a cópia do `equipment24` e o Monge para a
+do `classes24`. O import o ignora como inventário (a derivação o recria da classe).
+
+**A2 - `{@table}` inline deixou de ser inerte.** O motivo de estar inerte era o risco de link morto,
+e ele caiu no DDL-0035, quando as ~2300 tabelas do gendata passaram a ser carregadas. `lookupTable`
+indexa por `nome|fonte`; o `TableLink` abre a tabela no popup de regra e degrada para texto simples
+quando não resolve. Alcance medido: **230 tags no conteúdo que exibimos, 226 resolvem** - a maior
+parte em descrição de item mágico.
+
+**A3 - as raridades sem chip.** `unknown`, `unknown (magic)` e `varies` não tinham opção no filtro,
+e por isso **301 itens eram inalcançáveis**. Entraram no `RARITY_LABEL` (o que também limpa o rótulo
+do card) e no `RARITY_OPTIONS`; nenhuma vira badge colorido, que continua só para os tiers reais.
+
+Verificado: 1247 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de 71 → **63**, e ao vivo
+no browser (o chip "Unknown (Magic)" devolvendo os 255 itens; o link "minor beneficial" do Axe of
+the Dwarvish Lords abrindo a tabela d100, com os links de condição vivos dentro dela).

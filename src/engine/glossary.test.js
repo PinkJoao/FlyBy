@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGlossary, glossaryFor, glossaryEntries, glossaryTables, lookupRule, parseTagContent, ruleCategoryLabel, ruleFilterCategories } from './glossary';
+import { buildGlossary, glossaryFor, glossaryEntries, glossaryTables, lookupRule, lookupTable, parseTagContent, ruleCategoryLabel, ruleFilterCategories } from './glossary';
 
 // db mínimo com os formatos reais dos arquivos do 5etools (fixtures reduzidas).
 const db = {
@@ -230,5 +230,35 @@ describe('glossaryFor', () => {
     const a = glossaryFor(db);
     expect(glossaryFor(db)).toBe(a);
     expect(glossaryFor(null)).toBeNull();
+  });
+});
+
+describe('lookupTable - a tag {@table} inline (A2)', () => {
+  const db = {
+    'gendata-tables': {
+      table: [
+        { name: 'Skill List; Skills', caption: 'Skills', source: 'XPHB', rows: [['Acrobatics', 'Dex']] },
+        { name: 'Skill List; Skills', caption: 'Skills', source: 'PHB', rows: [['Acrobatics', 'Dex']] },
+        { name: 'Sem Linhas', source: 'XPHB', rows: [] },
+      ],
+    },
+  };
+
+  it('casa pelo nome COMPOSTO do gendata, com a fonte pedida', () => {
+    const hit = lookupTable(db, 'Skill List; Skills', 'PHB');
+    expect(hit.source).toBe('PHB');
+    expect(hit.name).toBe('Skills'); // exibe o caption, não o nome composto
+    expect(hit.entries[0].type).toBe('table'); // renderiza pelo renderTable
+  });
+
+  it('sem fonte, cai na primeira homônima (a prosa nem sempre cita a fonte)', () => {
+    expect(lookupTable(db, 'Skill List; Skills').source).toBe('XPHB');
+  });
+
+  it('degrada para null: tabela ausente, sem linhas, ou db vazio', () => {
+    expect(lookupTable(db, 'Nao Existe')).toBeNull();
+    expect(lookupTable(db, 'Sem Linhas')).toBeNull();
+    expect(lookupTable({}, 'Skill List; Skills')).toBeNull();
+    expect(lookupTable(db, '')).toBeNull();
   });
 });

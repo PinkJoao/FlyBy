@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems } from './foundryItems';
 
 // db mínimo de talentos p/ os testes de feat.
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
@@ -715,5 +715,35 @@ describe('buildItemChoiceAdvancements', () => {
   it('sem opção com uuid conhecido, nenhum passo é emitido (escada vazia é pior que nenhuma)', () => {
     const unknown = { name: 'Zzz', source: 'XPHB', classFeatures: ['Divine Order|Cleric|XPHB|1'] };
     expect(buildItemChoiceAdvancements({ ...entry([]), classId: 'zzz' }, unknown, null, db, [])).toEqual([]);
+  });
+});
+
+describe('buildClassWeaponItems - o Unarmed Strike do Bárbaro e do Monge (A1)', () => {
+  it('a classe que o SRD publica ganha o item, com a activity de ATAQUE', () => {
+    const [item] = buildClassWeaponItems({ level: 5 }, { name: 'Monk' });
+    expect(item.name).toBe('Unarmed Strike');
+    expect(item.type).toBe('weapon');
+    expect(item.system.type.value).toBe('natural');
+    // É a activity que dá o botão de ataque na ficha do Foundry.
+    expect(Object.values(item.system.activities).map((a) => a.type)).toContain('attack');
+    // Procedência: o Monge aponta para a cópia do classes24, o Bárbaro para a do
+    // equipment24 - por isso o uuid vem do documento da classe, não do nome.
+    expect(item._stats.compendiumSource).toContain('classes24');
+    expect(buildClassWeaponItems({ level: 1 }, { name: 'Barbarian' })[0]._stats.compendiumSource)
+      .toContain('equipment24');
+  });
+
+  it('classe sem item concedido não ganha nada', () => {
+    expect(buildClassWeaponItems({ level: 20 }, { name: 'Fighter' })).toEqual([]);
+  });
+
+  it('o item entra pelo advancement da classe, ligado por value.added', () => {
+    const weaponItems = buildClassWeaponItems({ level: 1 }, { name: 'Monk' });
+    const cls = buildClassItem({ classId: 'monk', level: 1 }, { name: 'Monk', source: 'XPHB', hd: { faces: 8 } }, [], {}, { weaponItems });
+    const grant = advList(cls).find(
+      (a) => a.type === 'ItemGrant' && Object.values(a.value?.added ?? {}).some((u) => String(u).includes('UnarmedStr')),
+    );
+    expect(grant.level).toBe(1);
+    expect(grant.value.added[weaponItems[0]._id]).toBe(weaponItems[0]._stats.compendiumSource);
   });
 });

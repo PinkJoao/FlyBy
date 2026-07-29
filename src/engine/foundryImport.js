@@ -29,6 +29,7 @@ import { parseChoices, collectAbilityPicks } from './choices';
 import { resolveSpellObj, spellChoosePredicate } from './spells';
 import { grantedSpells, additionalSpellChoices } from './grantedSpells';
 import { deriveHpBonus } from './hpBonuses';
+import { classWeaponGrants } from './foundryActivities';
 import { classGrantChoices } from './classFeatureGrants';
 
 const norm = (s) => (s ?? '').toString().trim().toLowerCase();
@@ -1210,8 +1211,14 @@ export function foundryToCharacter(actor, db) {
   // A fonte 5etools é re-resolvida pelo NOME (o item do Foundry não a carrega),
   // p/ o item reencontrar sua arte/stats no compêndio. Uma img custom (data:/URL,
   // não um ícone `icons/...` do Foundry) é preservada em customImg.
+  // Um item que a CLASSE concede (o Unarmed Strike do Bárbaro/Monge) não é
+  // decisão de inventário: a derivação o recria a partir da classe, então lê-lo
+  // aqui o duplicaria no re-export. Mesmo princípio das magias sempre-preparadas.
+  const classGranted = new Set(
+    (char.classes ?? []).flatMap((c) => classWeaponGrants(c.classId).map((g) => norm(g.name))),
+  );
   char.inventory = items
-    .filter((it) => PHYSICAL_ITEM_TYPES.has(it.type))
+    .filter((it) => PHYSICAL_ITEM_TYPES.has(it.type) && !classGranted.has(norm(it.name)))
     .map((it) => {
       // `resolveInventorySource` acha a fonte pelo NOME; null = o item não existe
       // no catálogo 5etools, então guardamos um snapshot dos dados do Foundry.

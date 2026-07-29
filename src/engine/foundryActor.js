@@ -17,6 +17,7 @@ import { effectiveSizeCodes, sizePick } from './speciesData';
 import {
   buildClassItem,
   buildClassFeatureItems,
+  buildClassWeaponItems,
   buildClassFutureGrants,
   buildSubclassFutureGrants,
   buildClassChoiceTraits,
@@ -97,7 +98,11 @@ export function assembleFoundryActor(character, db) {
     // subclasse porque as escadas de ItemChoice apontam para eles no `value.added`
     // (TC-0063) - sem isso o Foundry perguntaria de novo o que já foi escolhido.
     const optionItems = [...buildFeatureOptionItems(cls, classObj, subObj, db), ...buildOptionalFeatureItems(cls, db)];
+    // Itens de inventário da classe (Unarmed Strike): entram como Items de verdade
+    // e o advancement da classe os referencia.
+    const weaponItems = buildClassWeaponItems(cls, classObj);
     const classItem = buildClassItem(cls, classObj, featureItems, asiByLevel, {
+      weaponItems,
       description: classFluffHtml(db, cls.classId, cls.source),
       traitValues: buildClassTraitValues(cls, db),
       fightingStyles,
@@ -118,7 +123,7 @@ export function assembleFoundryActor(character, db) {
     }
     // Sub-features escolhidas ("Divine Order: Thaumaturge") e optional features
     // (invocations, metamagic…) - itens próprios, como nos premades reais.
-    items.push(classItem, ...featureItems, ...chosenFeatItems, ...optionItems);
+    items.push(classItem, ...featureItems, ...chosenFeatItems, ...optionItems, ...weaponItems);
     if (cls.isOriginalClass || !originalClassId) originalClassId = classItem._id;
 
     if (subObj) {

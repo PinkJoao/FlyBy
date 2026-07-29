@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T03:55:35.530Z",
+  "generatedAt": "2026-07-29T15:48:14.710Z",
   "deliberate": [
     "background item name (custom origins only)",
     "document identity (_id/_stats/img/sort/ownership/folder/flags)",
@@ -28,53 +28,6 @@
     }
   ],
   "aggregate": [
-    {
-      "cat": "advancement.class.grants",
-      "count": 16,
-      "actors": [
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17",
-        "Merric L01",
-        "Merric L05",
-        "Merric L11",
-        "Merric L17",
-        "Perrin L01",
-        "Perrin L05",
-        "Perrin L11",
-        "Perrin L17"
-      ],
-      "examples": [
-        {
-          "actor": "Krusk L05",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "actor": "Krusk L05",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "actor": "Krusk L11",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "actor": "Krusk L11",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
-        }
-      ]
-    },
     {
       "cat": "advancement.race",
       "count": 16,
@@ -241,6 +194,47 @@
             "cloud's jaunt"
           ],
           "after": []
+        }
+      ]
+    },
+    {
+      "cat": "advancement.class.grants",
+      "count": 8,
+      "actors": [
+        "Krusk L05",
+        "Krusk L11",
+        "Krusk L17",
+        "Perrin L01",
+        "Perrin L05"
+      ],
+      "examples": [
+        {
+          "actor": "Krusk L05",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "actor": "Krusk L05",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "actor": "Krusk L11",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@2",
+          "before": 3,
+          "after": 2
+        },
+        {
+          "actor": "Krusk L11",
+          "cat": "advancement.class.grants",
+          "key": "paladin Class Features@5",
+          "before": 3,
+          "after": 2
         }
       ]
     },
@@ -832,12 +826,6 @@
           "expected": "capstone-asi-on-class-item"
         },
         {
-          "cat": "advancement.class.grants",
-          "key": "barbarian Class Features@1",
-          "before": 4,
-          "after": 3
-        },
-        {
           "cat": "advancement.race",
           "key": "goliath",
           "before": [
@@ -868,12 +856,6 @@
             "AbilityScoreImprovement@20"
           ],
           "expected": "capstone-asi-on-class-item"
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "barbarian Class Features@1",
-          "before": 4,
-          "after": 3
         },
         {
           "cat": "advancement.race",
@@ -916,12 +898,6 @@
           "expected": "capstone-asi-on-class-item"
         },
         {
-          "cat": "advancement.class.grants",
-          "key": "barbarian Class Features@1",
-          "before": 4,
-          "after": 3
-        },
-        {
           "cat": "advancement.race",
           "key": "goliath",
           "before": [
@@ -961,12 +937,6 @@
           "after": [
             "AbilityScoreImprovement@20"
           ]
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "barbarian Class Features@1",
-          "before": 4,
-          "after": 3
         },
         {
           "cat": "advancement.race",
@@ -1114,12 +1084,6 @@
         },
         {
           "cat": "advancement.class.grants",
-          "key": "monk Class Features@1",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "cat": "advancement.class.grants",
           "key": "monk Class Features@10",
           "before": 2,
           "after": 1
@@ -1151,12 +1115,6 @@
           "after": [
             "halfling lineage (lightfoot)"
           ]
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "monk Class Features@1",
-          "before": 3,
-          "after": 2
         },
         {
           "cat": "advancement.class.grants",
@@ -1200,12 +1158,6 @@
             "fireball"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "monk Class Features@1",
-          "before": 3,
-          "after": 2
         }
       ]
     },
@@ -1271,12 +1223,6 @@
             "fireball"
           ],
           "after": []
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "monk Class Features@1",
-          "before": 3,
-          "after": 2
         }
       ]
     },

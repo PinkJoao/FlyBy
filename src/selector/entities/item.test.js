@@ -77,3 +77,25 @@ describe('itemEntity', () => {
     }
   });
 });
+
+describe('filtro de Raridade - os valores não-tier do dado (A3)', () => {
+  const rarityFilter = itemEntity.filters.find((f) => f.id === 'rarity');
+
+  it('as três raridades não-tier têm chip, com o valor IDÊNTICO ao emitido', () => {
+    // A regra do DDL-0078: o que casa é o VALOR, não o rótulo. Sem estas opções,
+    // 301 itens ficavam inalcançáveis pelo filtro.
+    for (const raw of ['unknown', 'unknown (magic)', 'varies']) {
+      const emitted = itemEntity.precompute({ name: 'X', rarity: raw }).filterValues.rarity[0];
+      expect(rarityFilter.options).toContain(emitted);
+    }
+  });
+
+  it('o rótulo sai legível, não a grafia crua do dado', () => {
+    expect(itemEntity.precompute({ name: 'X', rarity: 'unknown (magic)' }).filterValues.rarity)
+      .toEqual(['Unknown (Magic)']);
+  });
+
+  it('não vira badge de raridade no card (só os tiers reais recebem)', () => {
+    expect(itemEntity.card({ name: 'X', rarity: 'varies' }).rarity).toBeNull();
+  });
+});

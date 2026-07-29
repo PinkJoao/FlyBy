@@ -9,7 +9,7 @@
 
 import { useContext } from 'react';
 import { DataContext } from '../../data/dataContext';
-import { glossaryFor, lookupRule, parseTagContent, GLOSSARY_TAGS } from '../../engine/glossary';
+import { glossaryFor, lookupRule, lookupTable, parseTagContent, GLOSSARY_TAGS } from '../../engine/glossary';
 import { lookupEntityLink, isEntityTag, entityTagDisplay } from './entityLinks';
 import { imgUrl } from './media';
 import { showImageViewer } from '../../store/imageViewerStore';
@@ -80,12 +80,15 @@ function renderTag(tag, content, key) {
     // respeita a gramática de pipes própria de cada uma.
     case 'quickref':
       return <span key={key}>{content.split('|')[4]?.trim() || display}</span>;
-    // {@table Nome|Fonte|display}: inerte (tabelas moram em book/gendata), mas o
-    // display do 3º pipe deve valer - "three {@table Skill List; Skills|XPHB|
-    // skills}" imprime "skills", não o nome da tabela. NÃO generalizar para o
-    // default: {@filter} tem display no 1º segmento e filtros nos seguintes.
-    case 'creature':
+    // {@table Nome|Fonte|display} abre a tabela no popup de regra. O display do
+    // 3º pipe vale - "three {@table Skill List; Skills|XPHB|skills}" imprime
+    // "skills", não o nome da tabela. NÃO generalizar para o default: {@filter}
+    // tem display no 1º segmento e filtros nos seguintes.
     case 'table':
+      return <TableLink key={key} content={content} />;
+    // Sem alvo no db: o bestiário não é baixado (links de sabor não pagam o
+    // maior arquivo do 5etools). Inerte, com o display correto.
+    case 'creature':
       return (
         <span key={key} className={styles.ref}>
           {renderInline(parseTagContent(content).display, key)}
@@ -144,6 +147,18 @@ function RuleLink({ tag, content }) {
     return <span className={styles.ref}>{renderInline(parseTagContent(content).display, 'rl')}</span>;
   }
   return <TapLink display={hit.display} onOpen={() => showRulePopup(hit.entry)} />;
+}
+
+// --- TableLink: {@table} tappável, abrindo a tabela no popup de regra --------
+// Todas as ~2300 tabelas do gendata são carregadas desde o DDL-0035, então não
+// há mais o risco de link morto que mantinha a tag inerte; e o que não resolver
+// degrada para texto simples, como qualquer outra tag.
+function TableLink({ content }) {
+  const ctx = useContext(DataContext);
+  const { name, source, display } = parseTagContent(content);
+  const hit = ctx?.db ? lookupTable(ctx.db, name, source) : null;
+  if (!hit) return <span className={styles.ref}>{renderInline(display, 'tl')}</span>;
+  return <TapLink display={display} onOpen={() => showRulePopup(hit)} />;
 }
 
 // --- EntityLink: menção de entidade tappável ({@spell}, {@item}, {@feat}…) ---

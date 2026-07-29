@@ -11,7 +11,7 @@
 // Estruturas extraídas dos exports premade oficiais.
 // -----------------------------------------------------------------------------
 
-import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT } from './srdActivitiesData';
+import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS } from './srdActivitiesData';
 
 const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 function fid() {
@@ -277,6 +277,16 @@ export function featureActivities(name, classId, opts) {
   const make = FEATURE_ACTIVITIES[String(name ?? '').trim().toLowerCase()];
   if (!make) return {};
   return Object.fromEntries(make(classId, opts).map((a) => [a._id, a]));
+}
+
+/**
+ * Itens de inventário que o advancement de uma classe concede, do SRD (hoje só o
+ * "Unarmed Strike" do Bárbaro e do Monge). Ver `SRD_CLASS_WEAPON_GRANTS`.
+ * @param {string} classId
+ * @returns {Array<{name: string, uuid: string, level: number, system: object}>}
+ */
+export function classWeaponGrants(classId) {
+  return SRD_CLASS_WEAPON_GRANTS[String(classId ?? '').trim().toLowerCase()] ?? [];
 }
 
 /**

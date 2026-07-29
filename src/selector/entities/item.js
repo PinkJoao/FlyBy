@@ -13,7 +13,13 @@ import { itemTypeInfo, attunementInfo } from '../../engine/items';
 import { itemValue, isValueDerived } from '../../engine/magicItemPrice';
 import { specificVariants } from '../../engine/magicVariants';
 
-const RARITY_OPTIONS = ['None', 'Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary', 'Artifact'];
+// Os tiers, e depois os três valores não-tier do dado (ver RARITY_LABEL). Cada
+// opção tem de ser IDÊNTICA ao que `rarityLabel` emite - é o valor que casa, não
+// o rótulo (DDL-0078).
+const RARITY_OPTIONS = [
+  'None', 'Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary', 'Artifact',
+  'Unknown', 'Unknown (Magic)', 'Varies',
+];
 
 /** Cores da escala de raridade (mesma convenção da aba de Inventário). */
 const RARITY_COLOR = {
@@ -62,6 +68,13 @@ const RARITY_LABEL = {
   'very rare': 'Very Rare',
   legendary: 'Legendary',
   artifact: 'Artifact',
+  // Os três valores que o dado usa quando a raridade não é um tier: sem eles, 301
+  // itens ficavam INALCANÇÁVEIS pelo filtro (a rede de segurança do DDL-0078 os
+  // acusava como "valor emitido sem chip"). Mapeados aqui para o rótulo sair
+  // legível e para a opção do filtro casar o valor EMITIDO ao pé da letra.
+  unknown: 'Unknown',
+  'unknown (magic)': 'Unknown (Magic)',
+  varies: 'Varies',
 };
 
 function rarityLabel(raw) {

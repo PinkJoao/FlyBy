@@ -214,8 +214,8 @@ export function glossaryEntries(db) {
  * shape das regras (`{ type:'table', name, source, entries }`), com o corpo
  * sendo a própria tabela (`type:'table'` → renderTable no EntryContent). O NOME
  * exibido é o `caption` (limpo: "Skills"), não o `name` composto do gendata
- * ("Skill List; Skills"). Nada de resolução de tag `{@table}` aqui - essas
- * seguem inertes (tabelas fora do SRD nem são carregadas).
+ * ("Skill List; Skills"). Para a resolução de uma tag `{@table}` inline, ver
+ * `lookupTable` - essa varre TODAS as tabelas, não só as do SRD.
  */
 export function glossaryTables(db) {
   const out = [];
@@ -230,6 +230,49 @@ export function glossaryTables(db) {
     });
   }
   return out;
+}
+
+/**
+ * Índice de TODAS as tabelas do gendata (não só as do SRD), keyed `nome|fonte` e
+ * `nome`. É o alvo de uma tag `{@table Skill List; Skills|XPHB|skills}`, cujo 1º
+ * segmento é o `name` COMPOSTO do gendata - o mesmo que o arquivo guarda, então
+ * o casamento é direto.
+ */
+const tableCache = new WeakMap();
+const norm = (s) => String(s ?? '').trim().toLowerCase();
+function tableIndex(db) {
+  if (!db || typeof db !== 'object') return null;
+  if (tableCache.has(db)) return tableCache.get(db);
+  const idx = new Map();
+  for (const t of db['gendata-tables']?.table ?? []) {
+    if (!t.name || !t.rows?.length) continue;
+    const key = norm(t.name);
+    idx.set(`${key}|${norm(t.source)}`, t);
+    if (!idx.has(key)) idx.set(key, t); // homônimas: a primeira vence
+  }
+  tableCache.set(db, idx);
+  return idx;
+}
+
+/**
+ * Resolve uma tag `{@table}` numa entrada de glossário (mesmo shape das regras,
+ * então o popup a renderiza sem nada de novo). Fonte exata primeiro, nome puro
+ * como rede - a prosa às vezes cita a tabela sem fonte.
+ *
+ * As ~2300 tabelas do gendata são carregadas desde o DDL-0035; o que fazia a tag
+ * ficar inerte era o risco de link morto, e ele deixou de existir: ou a tabela
+ * está no db, ou o chamador cai no texto simples, como qualquer outra tag.
+ * @param {object} db
+ * @param {string} name
+ * @param {string} [source]
+ * @returns {object|null} entrada de glossário `{type:'table', name, source, entries}`
+ */
+export function lookupTable(db, name, source) {
+  const idx = tableIndex(db);
+  if (!idx || !name) return null;
+  const t = (source && idx.get(`${norm(name)}|${norm(source)}`)) || idx.get(norm(name));
+  if (!t) return null;
+  return { type: 'table', name: t.caption || t.name, source: t.source, entries: [{ ...t, type: 'table' }] };
 }
 
 // --- Memoização por db (o db é imutável durante a sessão) --------------------

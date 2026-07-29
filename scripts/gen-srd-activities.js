@@ -76,7 +76,20 @@ if (!existsSync(PACKS)) {
 // da classe) e `feature` (traços de espécie e talentos do origins24).
 const byClass = {};
 const flat = {};
+// Itens de INVENTÁRIO que o documento da classe concede por advancement (hoje só
+// o "Unarmed Strike" do Bárbaro e do Monge). Ver SRD_CLASS_WEAPON_GRANTS.
+const weaponGrants = {};
 let files = 0;
+
+/** `_id` → documento, para saber se um uuid de ItemGrant aponta para um ITEM de
+ * inventário ou para uma feature, e para copiar a ficha do item quando for. */
+const docs = new Map();
+for (const dir of ['classes24', 'equipment24']) {
+  for (const f of walk(join(PACKS, dir))) {
+    const doc = parseYaml(readFileSync(f, 'utf8'));
+    if (doc._id && doc.type) docs.set(doc._id, doc);
+  }
+}
 
 const record = (bucket, key, doc) => {
   const activities = prune(doc.system?.activities ?? {});
@@ -100,6 +113,28 @@ for (const classDir of readdirSync(join(PACKS, 'classes24'))) {
   const classId = norm(classDir);
   for (const f of walk(dir)) {
     const doc = parseYaml(readFileSync(f, 'utf8'));
+    if (doc.type === 'class') {
+      // Itens de INVENTÁRIO concedidos pelo advancement da classe. É a única
+      // fonte que diz QUAL uuid usar: o Bárbaro aponta para a cópia do
+      // `equipment24` e o Monge para a do `classes24`, então nem o nome nem a
+      // pasta bastam.
+      for (const adv of Object.values(doc.system?.advancement ?? {})) {
+        if (adv?.type !== 'ItemGrant') continue;
+        for (const it of adv.configuration?.items ?? []) {
+          const id = String(it?.uuid ?? '').split('.').pop();
+          const item = docs.get(id);
+          if (!item || item.type !== 'weapon') continue;
+          // A ficha do item vem do PRÓPRIO documento do SRD - nada é inventado.
+          (weaponGrants[classId] ??= []).push({
+            name: item.name,
+            uuid: it.uuid,
+            level: adv.level ?? 1,
+            system: prune(item.system) ?? {},
+          });
+        }
+      }
+      continue;
+    }
     if (doc.type !== 'feat' || !doc.name) continue;
     files += record(byClass, `${classId}|${norm(doc.name)}`, doc) ? 1 : 0;
   }
@@ -131,6 +166,15 @@ export const SRD_ACTIVITIES_BY_CLASS = ${literal(byClass)};
 
 /** \`nomeDoTraço\` → \`{activities, effects?}\` (pacote origins24). */
 export const SRD_ACTIVITIES_FLAT = ${literal(flat)};
+
+/** \`classId\` → itens de INVENTÁRIO que o advancement da classe concede
+ *  (\`{name, uuid, level, system}\`). Hoje só o "Unarmed Strike" do Bárbaro e do
+ *  Monge, que é o que dá o botão de ataque desarmado na ficha do Foundry - sem
+ *  ele um Monge criado no app chega lá sem a arma principal da classe. A ficha do
+ *  item é copiada do próprio documento do SRD; o uuid também, porque nem o nome
+ *  nem a pasta bastam (o Bárbaro aponta para a cópia do equipment24 e o Monge
+ *  para a do classes24). */
+export const SRD_CLASS_WEAPON_GRANTS = ${literal(weaponGrants)};
 `;
 
 writeFileSync(OUT, out);

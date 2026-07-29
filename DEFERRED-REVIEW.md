@@ -66,9 +66,9 @@ Ordenado por aprovação e depois por criticidade. Os detalhes de cada linha est
 
 | # | Item | Aprovação | Criticidade | Esforço | Escala | Quem sente |
 |---|---|---|---|---|---|---|
-| A1 | Item "Unarmed Strike" no Bárbaro e no Monge | **AUTO** | ALTA | LOCALIZADO | derivada | Foundry |
-| A2 | `{@table}` inline vira link no glossário | **AUTO** | MÉDIA | LOCALIZADO | derivada | ficha |
-| A3 | Raridades sem chip na loja (`unknown`, `varies`) | **AUTO** | MÉDIA | TRIVIAL | derivada | ficha |
+| A1 | Item "Unarmed Strike" no Bárbaro e no Monge | ✅ **FEITO** | ALTA | LOCALIZADO | derivada | Foundry |
+| A2 | `{@table}` inline vira link no glossário | ✅ **FEITO** | MÉDIA | LOCALIZADO | derivada | ficha |
+| A3 | Raridades sem chip na loja (`unknown`, `varies`) | ✅ **FEITO** | MÉDIA | TRIVIAL | derivada | ficha |
 | A4 | Boon do Goliath como item próprio ("Cloud's Jaunt") | **SIM** | BAIXA | LOCALIZADO | derivada | Foundry |
 | A5 | Idioma `other` mostrando "Other" no seletor | **SIM** | MÉDIA | LOCALIZADO | curada (3 casos) | ficha |
 | B1 | Traços de prosa duplicando os chips (95 espécies) | **DECIDIR** | MÉDIA | LOCALIZADO | derivada | ficha |
@@ -90,9 +90,10 @@ Ordenado por aprovação e depois por criticidade. Os detalhes de cada linha est
 | D5 | Quirks dos próprios premades (`spell.method`, `details.xp`) | **IMPOSSÍVEL** | NULA | - | - | comparador |
 | D6 | Prosa, identidade de documento, estado de sessão, `senses`/`movement`, `artificer`==`half` | **NÃO** | NULA | - | - | ninguém |
 
-**Contagem:** 3 aprovados automaticamente, 2 aprovados, 5 a decidir, 8 mantidos, 5 fora do nosso
-alcance. Os 71 achados do comparador se distribuem assim: **18 são acionáveis** (A1 8, A4 10) e os
-outros 53 caem em NÃO/IMPOSSÍVEL.
+**Contagem:** 3 aprovados automaticamente (**os três já implementados em 2026-07-29**), 2 aprovados,
+5 a decidir, 8 mantidos, 5 fora do nosso alcance. O comparador saiu de 71 para **63 achados**: o A1
+fechou os 8 do "Unarmed Strike"; restam os 10 do A4 (aprovado, ainda não feito) e os 53 que caem em
+NÃO/IMPOSSÍVEL - para esses, a seção 5 traz sugestões de melhoria.
 
 ---
 
@@ -115,10 +116,18 @@ outros 53 caem em NÃO/IMPOSSÍVEL.
   que é a arma principal da classe inteira. Hoje isso passa despercebido no comparador porque as
   fichas premade que testamos JÁ TRAZEM o item (ele entra pelo import e volta no export); um
   personagem criado do zero no app não tem essa sorte.
-- **Esforço: LOCALIZADO.** Um passo no `buildClassFutureGrants`/`itemGrantAdvancements` da classe,
-  mais o item em si para um personagem novo.
-- **Ponto de atenção.** Decidir se o item vai EMBUTIDO no ator (como o premade faz) ou só como
-  receita de compêndio. Embutido é o que dá o botão sem depender do compêndio estar instalado.
+- **Esforço: LOCALIZADO.** Um passo no advancement da classe, mais o item em si.
+- ✅ **FEITO em 2026-07-29.** `npm run gen:srd` passou a emitir `SRD_CLASS_WEAPON_GRANTS` lendo o
+  ItemGrant do PRÓPRIO documento da classe - é a única fonte que diz qual uuid usar, porque o
+  Bárbaro aponta para a cópia do `equipment24` e o Monge para a do `classes24` (nem o nome nem a
+  pasta bastam). A ficha do item também é copiada do documento do SRD: **nada é inventado**.
+  · O item vai EMBUTIDO (é o que dá o botão sem depender do compêndio instalado) e o advancement o
+    referencia por `value.added`, como no premade.
+  · O import passou a IGNORÁ-LO como inventário: a derivação o recria da classe, então lê-lo o
+    duplicaria no re-export (mesmo princípio das magias sempre-preparadas).
+  · Verificado num Monge 5 e num Bárbaro 1 construídos do zero: item `weapon/natural` com activity
+    de `attack`, concedido no nível 1, com a procedência certa. Um Fighter continua sem - é o que o
+    SRD faz, e a seção 5.1 registra a pergunta que só um import real responde.
 
 #### A2. `{@table}` inline continua inerte no texto
 
@@ -129,9 +138,16 @@ outros 53 caem em NÃO/IMPOSSÍVEL.
   o DDL-0035, então o alvo ou existe no db ou não, e o `RuleLink` já degrada para texto simples
   quando o lookup falha (é o comportamento padrão dele desde o DDL-0020). Não há como criar link
   morto.
-- **Criticidade: MÉDIA.** É exatamente o público do recurso: o jogador novo lendo uma feature que
-  cita uma tabela de regra e não consegue abri-la.
+- **Criticidade: MÉDIA** - e MAIOR do que eu estimei. Medi o alcance real: **230 tags `{@table}` no
+  conteúdo que exibimos, das quais 226 resolvem** (98%). A maior parte está em descrição de item
+  mágico (203), o resto no glossário de regras. As 4 que não resolvem moram em arquivos de livro
+  que não baixamos, e viram texto simples.
 - **Esforço: LOCALIZADO.** Uma entrada no `renderTag`, no mesmo mecanismo dos outros tags.
+- ✅ **FEITO em 2026-07-29.** `lookupTable` (engine/glossary) indexa TODAS as tabelas do gendata por
+  `nome|fonte`, com o nome puro como rede; o `TableLink` abre a tabela no popup de regra, e degrada
+  para texto simples quando não resolve. Verificado ao vivo no "Axe of the Dwarvish Lords": o link
+  "minor beneficial" abre a tabela d100 inteira, e os links DENTRO dela (Poisoned, Charmed,
+  Frightened) continuam vivos.
 
 #### A3. Raridades sem chip na loja
 
@@ -143,9 +159,13 @@ outros 53 caem em NÃO/IMPOSSÍVEL.
 - **Criticidade: MÉDIA.** Filtrar por raridade é o jeito natural de navegar uma loja com 7700
   itens, e hoje ela mente por omissão.
 - **Esforço: TRIVIAL.** As opções são declaradas num lugar só.
-- **A parte que é escolha sua, e é pequena:** o RÓTULO. "Unknown (magic)" é a grafia do dado;
-  "Mágico, raridade desconhecida" seria mais legível. **REGRA do DDL-0078:** o VALOR tem de ser
-  idêntico ao que o `precompute` emite; só o rótulo é livre.
+- ✅ **FEITO em 2026-07-29.** As três entraram no `RARITY_LABEL` (o que também limpa o rótulo do
+  card: "Unknown (magic)" → "Unknown (Magic)") e no `RARITY_OPTIONS`. Nenhuma vira badge colorido no
+  card - só os tiers reais recebem. Verificado ao vivo: o chip "Unknown (Magic)" devolve **255
+  itens**, exatamente o número que a sonda do DDL-0078 tinha medido.
+- **Se quiser um rótulo diferente** ("Mágico, raridade desconhecida"), é um valor no `RARITY_LABEL`.
+  **REGRA do DDL-0078:** o rótulo é livre, mas a opção do filtro tem de casar o que o `precompute`
+  emite - as duas saem do mesmo mapa agora, então mudar um muda o outro.
 
 #### A4. O boon do Goliath como item próprio ("Cloud's Jaunt")
 
@@ -336,19 +356,121 @@ lista existe para que ninguém as trate como tal.
 
 ---
 
+---
+
+## 5. Sugestões para os 53 achados que ficam
+
+> **Princípio que rege esta seção (fixado pelo usuário, 2026-07-29):** *não precisamos seguir o SRD
+> se isso penalizar o usuário ou o funcionamento correto do app e da ficha exportada no Foundry.*
+>
+> Isso muda a régua. Até aqui, "o premade faz assim" era argumento suficiente para os dois lados:
+> divergir era achado, convergir era acerto. Agora o SRD é **referência, não autoridade**. Onde ele
+> é apenas uma convenção, convergir é opcional; onde ele deixa o jogador pior, **divergir é o certo**
+> - e o comparador deve NOMEAR a divergência (`EXPECTED`), não escondê-la.
+>
+> Cada sugestão abaixo diz o que ganharia o usuário. Nenhuma está aprovada: são candidatas.
+
+### 5.1 O caso mais forte: quem NÃO tem ataque desarmado no Foundry
+
+O A1 seguiu o SRD e concedeu o Unarmed Strike só ao Bárbaro e ao Monge, que são as duas classes cujo
+documento oficial o publica. Mas a regra 2024 é clara: **qualquer criatura pode fazer um Ataque
+Desarmado.** Um Mago que perdeu o cajado, ou um Ladino desarmado, chega ao Foundry sem botão nenhum
+de ataque.
+
+- **Sugestão:** conceder o item a TODA classe, não só às duas.
+- **O que falta para decidir:** saber se o dnd5e oferece o ataque desarmado por outro caminho
+  (uma ação nativa da ficha) quando o item não existe. **Não dá para responder isso sem um import
+  real** - é a primeira coisa a checar no T2d. Se não oferecer, esta vira a mudança de maior impacto
+  prático da lista inteira; se oferecer, o SRD está certo e ficamos como estamos.
+- **Custo se for aprovada:** TRIVIAL (tirar o filtro por classe). O malefício é emitir um item que
+  nenhum ator oficial tem - aceitável se o alternativa é o jogador sem ataque.
+
+### 5.2 Convenções de nível do `advancement.race` (16 achados) - divergir e NOMEAR
+
+O SRD põe o passo de concessão de nível 1 em `@0` no Gnome e em `@1` no Elfo, e a resistência em
+`Trait@0` no Dragonborn e `Trait@1` no Tiefling. **Não há regra**, é inconsistência do próprio
+conteúdo oficial.
+
+- **Sugestão:** parar de tratar isso como achado. Nossa convenção (nível 0 para o que vem na criação,
+  o nível real para o resto) é **mais coerente que a do SRD**, e o Foundry concede igual nos dois
+  casos. Vira uma entrada `EXPECTED` com o motivo escrito.
+- **Ganho:** o relatório da T2 deixa de carregar 16 achados que ninguém vai corrigir, e a próxima
+  sessão não perde tempo redescobrindo que não há padrão. **Custo: nenhum.**
+- **Esta é a mudança que eu faria primeiro entre as cinco desta seção.**
+
+### 5.3 As 11 magias `prepared: 0` da Riswynn - uma alternativa barata ao B4
+
+O B4 (modelar magias sem origem) é ESTRUTURAL e eu recomendei não. Mas há um meio-termo que não
+mexe no schema:
+
+- **Sugestão:** ao importar um ator, guardar as magias sem origem no `custom` snapshot que o
+  inventário já usa para item fora do catálogo, e re-emiti-las no export sem tentar derivá-las.
+- **Ganho para o usuário:** reimportar um ator externo deixa de PERDER conteúdo em silêncio, que é a
+  parte ruim. Elas não apareceriam na aba Spellbook (não têm origem), mas voltariam ao Foundry.
+- **Custo:** LOCALIZADO em vez de ESTRUTURAL. O malefício é um campo de "carga" que não é decisão do
+  jogador - precisa de uma regra clara de quando é lido, senão vira depósito.
+- **Alternativa mais honesta ainda:** avisar no import ("N magias deste ator não têm origem e não
+  foram importadas") em vez de perdê-las caladamente. Custo TRIVIAL, e resolve a parte que de fato
+  penaliza: a surpresa.
+
+### 5.4 As 6 activities que temos A MAIS - o princípio já nos dá razão
+
+`Paladin's Smite` (o `cast` do overlay) e `Agonizing Blast` (`enchant`). O SRD tem `activities: {}`
+para o primeiro; nós damos o botão que o RAW 2024 concede.
+
+- **Sugestão:** manter, e promover de "achado" para `EXPECTED`. Sob o princípio novo isso deixa de
+  ser divergência a explicar e passa a ser **decisão deliberada a favor do jogador**.
+- **A ressalva que continua valendo, e é a única coisa a checar no T2d:** confirmar que o uso grátis
+  do Smite não fica CONTADO EM DOBRO (o item de magia + a activity). Se estiver, o certo é remover a
+  activity - aí seria o nosso extra que penaliza.
+
+### 5.5 O "Cloud's Jaunt" e os 10 achados de `items.feat` (o A4, já aprovado)
+
+Sem novidade de princípio: o A4 está aprovado e pendente. Vale registrar por que ele é de baixa
+prioridade **mesmo sob a régua nova**: o jogador já TEM o boon (está no texto do traço "Giant
+Ancestry" que exportamos). O que muda é ele virar uma feature separada e clicável. Não há penalidade,
+só organização.
+
+### 5.6 Os que continuam sem ação, e agora com um motivo mais forte
+
+O princípio novo não muda nada aqui, mas explica melhor:
+
+- **`@scale.barbarian.rage` quebrado (D1).** "Consertar" divergiria do documento oficial numa
+  referência que o ator oficial também tem quebrada. Se algum dia isso IMPEDIR o Persistent Rage de
+  funcionar no Foundry, o princípio manda consertar - e aí é uma linha. **Vale checar no T2d.**
+- **Quirks dos premades (D5).** O XP do Riswynn L11 não bate com o nível da própria ficha oficial.
+  Copiar o erro seria seguir o SRD contra o usuário.
+- **Nome do background (C3), pack como um item (C4), `EXPECTED` (C7).** São diferenças do NOSSO
+  modelo, tomadas a favor do fluxo do app. O princípio as reforça.
+
+### 5.7 Resumo das sugestões
+
+| # | Sugestão | Ganho | Custo | Depende de |
+|---|---|---|---|---|
+| 5.1 | Unarmed Strike para TODA classe | Ninguém fica sem ataque no Foundry | TRIVIAL | um import real (T2d) |
+| 5.2 | Convenções de nível viram `EXPECTED` | -16 achados de ruído permanente | TRIVIAL | nada |
+| 5.3 | Avisar (ou carregar) as magias sem origem | O import para de perder conteúdo calado | TRIVIAL / LOCALIZADO | sua escolha entre as duas formas |
+| 5.4 | Activities extras viram `EXPECTED` | -6 achados; decisão a favor do jogador | TRIVIAL | conferir o Smite em dobro (T2d) |
+| 5.5 | A4 (Cloud's Jaunt) | Organização da ficha | LOCALIZADO | nada (já aprovado) |
+
+**Três das cinco custam minutos e não dependem de nada** (5.2, 5.4, e a forma barata da 5.3).
+Juntas tirariam **22 dos 53** achados restantes do relatório - não escondendo, mas nomeando com o
+motivo, que é a diferença que o DDL-0073 fixou entre `DELIBERATE` e `EXPECTED`.
+
+---
+
 ## 4. O que eu recomendo fazer agora
 
-Uma sessão fecha os cinco aprovados, e a ordem abaixo é por **criticidade primeiro**, não por
-tamanho.
+**Os três aprovados automaticamente foram implementados em 2026-07-29** (A1, A2, A3 - ver os
+detalhes na seção 3). O comparador foi de 71 para 63 achados, e o ganho que não aparece no placar é
+o A1: um Monge criado no app agora chega ao Foundry com o ataque desarmado.
 
-1. **A1 - Unarmed Strike** (ALTA). É a única desta lista que tira uma capacidade do jogador: um
-   Monge criado no FlyBy chega ao Foundry sem o ataque desarmado. Fecha 8 dos 71 achados.
-2. **A3 - raridades sem chip** (MÉDIA, TRIVIAL). 301 itens voltam a ser filtráveis por um custo de
-   minutos. Precisa só do seu aval no rótulo.
-3. **A2 - `{@table}` inline** (MÉDIA). O motivo de estar inerte não existe mais desde o DDL-0035.
-4. **A5 - idioma `other`** (MÉDIA). Ou o registro curado, ou o rótulo genérico honesto.
-5. **A4 - boon do Goliath** (BAIXA). Fecha 10 achados, mas é o único dos cinco que não muda nada
-   para quem joga.
+**Sobram dois aprovados, ainda não feitos:**
+
+1. **A5 - idioma `other`** (MÉDIA). Ou o registro curado, ou o rótulo genérico honesto ("Outro
+   idioma (ver a espécie)"), que não exige curadoria nenhuma.
+2. **A4 - boon do Goliath** (BAIXA). Fecha 10 achados, mas é o único que não muda nada para quem
+   joga - o boon já está no texto do traço que exportamos.
 
 **As cinco decisões que preciso de você** (B1 a B5), em ordem de impacto:
 

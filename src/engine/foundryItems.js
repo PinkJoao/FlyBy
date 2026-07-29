@@ -28,7 +28,7 @@ import {
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses } from './foundryFeatureUses';
-import { featureActivities, srdFeatureMechanics } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick } from './speciesData';
@@ -426,6 +426,19 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
   });
 
   advancement.push(...itemGrantAdvancements(featureItems, 'Class Features'));
+  // Itens de inventário concedidos pela classe (o Unarmed Strike do Bárbaro e do
+  // Monge). Como nos premades: `configuration.items` aponta para o COMPÊNDIO e
+  // `value.added` liga ao item embutido que saiu dali.
+  advancement.push(
+    ...futureItemGrants(
+      (opts.weaponItems ?? []).map((i) => ({
+        level: i.flags?.builder5e?.level ?? 1,
+        uuid: i._stats?.compendiumSource,
+        addedId: i._id,
+      })),
+      'Class Features',
+    ),
+  );
   // Receita dos níveis ainda não alcançados (uuids de compêndio) - é o que faz o
   // level-up DENTRO do Foundry conceder as features novas.
   advancement.push(...(opts.futureGrants ?? []));
@@ -652,6 +665,35 @@ export function buildFeatureItem(feature, db = null) {
 export function buildClassFeatureItems(classEntry, classObj, db) {
   const classId = norm(classObj?.name);
   return resolveClassFeatures(db, classId, classObj, classEntry.level || 1).map((f) => buildFeatureItem(f, db));
+}
+
+/**
+ * Itens de INVENTÁRIO que a própria CLASSE concede - hoje só o "Unarmed Strike"
+ * do Bárbaro e do Monge. É o item que carrega o ATAQUE DESARMADO na ficha do
+ * Foundry: sem ele, um Monge criado no FlyBy chega lá sem a arma principal da
+ * classe inteira (o comparador não denunciava porque as fichas premade já trazem
+ * o item, que entrava pelo import e voltava no export).
+ *
+ * A ficha do item e o uuid vêm do SRD (`SRD_CLASS_WEAPON_GRANTS`), gerados: nada
+ * é inventado, e uma classe futura que conceda um item entra sozinha.
+ * @param {import('../schema/character').ClassEntry} classEntry
+ * @param {object} classObj
+ * @returns {object[]} itens Foundry (type 'weapon')
+ */
+export function buildClassWeaponItems(classEntry, classObj) {
+  const level = classEntry?.level || 1;
+  return classWeaponGrants(norm(classObj?.name))
+    .filter((g) => (g.level ?? 1) <= level)
+    .map((g) => ({
+      _id: randomFoundryId(),
+      name: g.name,
+      type: 'weapon',
+      img: 'icons/svg/sword.svg',
+      system: { ...g.system, equipped: false, quantity: 1 },
+      effects: [],
+      flags: { builder5e: { level: g.level ?? 1, classGranted: true } },
+      _stats: itemStats(g.uuid),
+    }));
 }
 
 // ---------------------------------------------------------------------------

@@ -409,7 +409,7 @@ that is non-trivial (matrix enumeration, waiver diffing) is unit-tested normally
 | **T2d** real Foundry imports | ⏳ **blocked on the user** (see below) |
 | **T3** feats/spells/items | later; re-plan then |
 
-**Last measured:** 1305 tests · lint clean · `npm run sweep -- --strict` **286/286**
+**Last measured:** 1312 tests · lint clean · `npm run sweep -- --strict` **286/286**
 · `npm run t2` **16** findings (+113 named as expected) · `check:keys` and
 `check:uuids` clean.
 
@@ -445,6 +445,24 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
 5. Does a pack arrive as a container with its contents, and does carried weight match?
 
 ### Last session
+
+- **2026-07-30 (4)** - **P2 fechado, fora da T2: magias sem origem ganham sub-aba e
+  podem receber uma classe.** 1312 testes (+7), lint, sweep 286/286 `--strict`,
+  `t2` estavel em 16. Decisoes em DDL-0084, log em CHANGELOG §111.
+
+  **A licao repete a do TC-0086, e vale como regra:** o modelo estava certo e os
+  testes passavam, mas a passada ao vivo achou DUAS perdas de conteudo que nenhum
+  teste teria pego. (1) A ficha da Riswynn traz a MESMA magia duas vezes, e o
+  filtro por `id+source` removeria as duas ao atribuir uma - no exato campo que
+  existe para nao perder conteudo. Agora tudo opera por indice. (2) O card de
+  numeros renderizou "2/0 Prepared" em vermelho para um balde que nao conta em
+  limite nenhum, porque o gate cobria so o DC e nao o bloco inteiro.
+
+  **E uma terceira, de documentacao:** o texto do aviso de import dizia "they do
+  not appear in the Spellbook", que a mudanca tornou falso. Toda feature que muda
+  o que o usuario ve precisa varrer as strings que descrevem o comportamento
+  antigo.
+
 
 - **2026-07-30 (3)** - **Survey of what was still open, and the two things it
   found.** 1305 tests (+1), lint, sweep 286/286 `--strict`, `t2` 18 -> **16**,

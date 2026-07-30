@@ -4718,3 +4718,57 @@ nada visível: o export continua válido e o sweep continua verde. É a mesma fo
 
 **`npm run t2` 18 -> 16.** Verificado: 1305 testes (+1), lint, sweep 286/286 `--strict`,
 `check:keys` e `check:uuids` limpos.
+
+## 111. Magias sem origem ganham sub-aba e podem receber uma classe (P2)
+
+Fecha o P2 do backlog. A metade lossless já existia desde o DDL-0080: magias que um
+ator importado trazia e nenhuma classe da ficha sabe conjurar iam para
+`character.unassignedSpells`, o import avisava e o re-export as devolvia ao Foundry.
+Faltava a outra metade, e a falta era grande: **nenhum componente lia o campo.** Na
+prática o jogador via um alerta e depois as magias sumiam da interface. A ficha da
+Riswynn L17 (uma Ladina com 35 magias de sugestão) abria a Spellbook dizendo
+"This character has no spellcasting".
+
+**A sub-aba "Unassigned"** aparece só quando o balde tem conteúdo, ao lado das
+origens de verdade. A Spellbook já é um alternador de origens, e a carga precisa da
+mesma navegação do resto (busca, agrupamento, popup com o texto completo) - um
+banner ou duplicaria essa UI ou esconderia as magias.
+
+**Ela não tem contador nenhum, e esse é o ponto.** A regra do schema é que carga não
+conta em limite algum. A primeira versão montou a origem com `prepareLimit: 0` e o
+card renderizou **"2/0 Prepared" em vermelho** - a ficha parecia acima do limite por
+causa de magias que não ocupam espaço, exatamente a mentira que a regra proíbe. O
+gate precisa cobrir o BLOCO inteiro de números, não só o DC. A sub-aba se explica com
+uma nota.
+
+**Atribuir é liberdade com aviso.** O diálogo oferece todas as classes conjuradoras e
+confirma (nunca impede) quando a magia está fora da lista da escolhida. Mais um aviso
+que o fluxo de preparar não precisava: se a classe **já concede** a magia, atribuir
+não muda nada - sem ele o clique virava no-op silencioso, porque a derivação dedupa
+contra a concessão e a aba da classe ficava idêntica. Sem classe conjuradora na ficha
+o botão fica DESABILITADO com o motivo no title (DDL-0077), nunca escondido.
+**Descartar** existe porque um balde em que só se entra é armadilha; o diálogo diz que
+a magia deixa de voltar ao Foundry.
+
+**Duas coisas que só a passada ao vivo pegou**, e as duas eram perda de conteúdo:
+
+1. **A Riswynn traz duas Magic Missile.** A primeira versão filtrava o balde por
+   `id+source`, então atribuir uma **removeria as duas** - no exato campo que existe
+   para não perder conteúdo. Tudo passou a operar por `cargoIndex`, inclusive a key do
+   React, que acusava chave duplicada no console. Medido depois do fix: descartar uma
+   leva 35 → 34 linhas e Magic Missile 2 → 1.
+2. **O texto do aviso de import** dizia "they do not appear in the Spellbook", que esta
+   mudança tornou falso. Reescrito. Toda feature que muda o que o usuário vê tem de
+   varrer as strings que descrevem o comportamento antigo.
+
+As duas operações são PURAS e moram em `engine/unassignedSpells.js`
+(`assignCargoSpell`, `discardCargoSpell`), com teste - a regra é de modelo, não de UI.
+Cada uma é um ÚNICO save: `unassignedSpells` e `classes[].spells` mudam juntos ou não
+mudam (dois setters em sequência se pisariam). Decisões no DDL-0084.
+
+Verificado ao vivo (375px e desktop, sem overflow, zero erro de console): Quillathe L05
+(Ranger, 2 na carga) - atribuir Detect Poison and Disease leva PREPARED de 6/6 para
+**7/6 em vermelho**, ou seja, a magia passou a contar de verdade; Hunter's Mark avisa
+"Ranger already grants it, so assigning it here changes nothing". Riswynn L17 (Ladina,
+35 na carga) - só a sub-aba de carga, `+` desabilitado, nota na variante certa.
+1312 testes (+7), lint, sweep 286/286 `--strict`.

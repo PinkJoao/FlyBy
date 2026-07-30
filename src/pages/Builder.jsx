@@ -30,6 +30,7 @@ import { buildFixupSteps, firstClassWithFixup } from '../components/wizard/fixup
 import { guidancePendencies, guidanceActive } from '../components/wizard/guidancePendencies';
 import { deriveFromDb, resolveClassObj, resolveSubclassObj, reconcileClassSpells } from '../engine/resolve';
 import { cleanupClassEntry } from '../engine/classFeatureChoices';
+import { assignCargoSpell, discardCargoSpell } from '../engine/unassignedSpells';
 import StatsHeader from '../components/builder/StatsHeader';
 import ProficienciesCard from '../components/builder/ProficienciesCard';
 import BackgroundTab from '../components/builder/BackgroundTab';
@@ -324,6 +325,12 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   const setClassSpells = (uid, spells) =>
     save({ ...character, classes: character.classes.map((c) => (c.uid === uid ? { ...c, spells } : c)) });
 
+  // Balde de CARGA: as duas operações são puras e moram no engine
+  // (`engine/unassignedSpells`), com teste - a regra de o que é decisão e o que
+  // é carga é de modelo, não de UI. Cada uma é um ÚNICO save().
+  const assignUnassignedSpell = (uid, index) => save(assignCargoSpell(character, uid, index));
+  const discardUnassignedSpell = (index) => save(discardCargoSpell(character, index));
+
   const setInventory = (inventory) => save({ ...character, inventory });
   const setCurrency = (currency) => save({ ...character, currency });
   // Comprar na loja muda inventário E moeda de uma vez - um ÚNICO save() (não
@@ -524,7 +531,14 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
           />
         )}
         {activeTab === 'Spellbook' && (
-          <SpellbookTab character={character} db={db} derived={derived} onChangeSpells={setClassSpells} />
+          <SpellbookTab
+            character={character}
+            db={db}
+            derived={derived}
+            onChangeSpells={setClassSpells}
+            onAssignUnassigned={assignUnassignedSpell}
+            onDiscardUnassigned={discardUnassignedSpell}
+          />
         )}
         {activeTab === 'Biography' && <BiographyTab character={character} db={db} onChange={setIdentity} />}
       </div>

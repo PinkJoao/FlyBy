@@ -32,13 +32,14 @@
 import { useMemo, useState } from 'react';
 import DetailView from '../common/DetailView';
 import SelectorPanel from '../../selector/SelectorPanel';
-import { confirm } from '../common/dialog';
+import { confirm, ask } from '../common/dialog';
 import { imgUrl } from '../common/media';
 import spellEntity, { makeSpellEntity } from '../../selector/entities/spell';
 import { TUT } from '../../tutorial/anchors';
 import { castTypeLabel } from '../../engine/grantedSpells';
 import { preparedElsewhere } from '../../engine/spellcasting';
 import {
+  resolveSpellObj,
   classSpellList,
   schoolName,
   spellLevelLabel,
@@ -53,7 +54,10 @@ import {
 import styles from './SpellbookTab.module.css';
 
 /** Ícone da sub-aba por tipo de origem. */
-const ORIGIN_ICONS = { class: '📖', race: '🧬', feat: '⭐' };
+const ORIGIN_ICONS = { class: '📖', race: '🧬', feat: '⭐', unassigned: '📦' };
+
+/** Chave da sub-aba do balde de CARGA (`character.unassignedSpells`). */
+const CARGO_KEY = 'unassigned';
 
 /** Glyph de fallback do thumbnail, por escola. */
 const SCHOOL_GLYPHS = {
@@ -154,8 +158,48 @@ function groupRows(list, groupBy) {
   return order.map((key) => [key, map.get(key)]);
 }
 
-export default function SpellbookTab({ character, db, derived, onChangeSpells }) {
-  const origins = derived.spellcasting?.origins ?? [];
+export default function SpellbookTab({
+  character, db, derived, onChangeSpells, onAssignUnassigned, onDiscardUnassigned,
+}) {
+  // `?? []` cria um array novo a cada render, o que faria os useMemo abaixo
+  // recalcularem sempre - memoiza a própria lista.
+  const realOrigins = useMemo(() => derived.spellcasting?.origins ?? [], [derived]);
+  // Balde de CARGA: magias que um ator importado trazia e nenhuma classe da ficha
+  // sabe conjurar (schema `unassignedSpells`). Vira uma sub-aba PRÓPRIA, presente
+  // só quando tem conteúdo, para o jogador poder ver e dar origem a elas.
+  //
+  // A regra do balde não muda por existir UI: continua sendo CARGA, não decisão.
+  // Por isso esta origem não tem DC, slots, limites nem contadores - ela não
+  // conta em lugar nenhum enquanto a magia não receber uma origem de verdade.
+  const cargoOrigin = useMemo(() => {
+    const refs = character.unassignedSpells ?? [];
+    if (refs.length === 0) return null;
+    // `cargoIndex` e a posicao no array do schema. O balde pode ter a MESMA
+    // magia duas vezes (a Riswynn L17 traz duas Magic Missile), entao tudo que
+    // mexe numa entrada usa o indice - casar por nome+fonte tiraria as duas.
+    const resolved = refs
+      .map((ref, i) => ({ ...ref, cargoIndex: i, raw: resolveSpellObj(db, ref.id ?? ref.name, ref.source) }))
+      .filter((s) => s.raw);
+    if (resolved.length === 0) return null;
+    return {
+      key: CARGO_KEY,
+      kind: CARGO_KEY,
+      label: 'Unassigned',
+      uid: null,
+      ability: null,
+      cantrips: [],
+      prepared: resolved,
+      alwaysPrepared: [],
+      cantripLimit: 0,
+      prepareLimit: 0,
+      maxPrepareLevel: 0,
+    };
+  }, [character.unassignedSpells, db]);
+
+  const origins = useMemo(
+    () => (cargoOrigin ? [...realOrigins, cargoOrigin] : realOrigins),
+    [realOrigins, cargoOrigin],
+  );
   const [originKey, setOriginKey] = useState(null);
   const [category, setCategory] = useState('all'); // 'all' | número do círculo
   const [query, setQuery] = useState('');
@@ -169,8 +213,17 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   // mantém a original - por isso não removemos antes de escolher a substituta.
   const [replacing, setReplacing] = useState(null);
 
-  // A origem escolhida pode sumir (troca de classe/espécie) → cai na primeira.
+  // A origem escolhida pode sumir (troca de classe/espécie, ou o balde esvaziar)
+  // → cai na primeira.
   const origin = origins.find((o) => o.key === originKey) ?? origins[0];
+  const isCargo = origin?.kind === CARGO_KEY;
+  // Quem pode RECEBER uma magia do balde: só origem de CLASSE, que é a única com
+  // escolhas do jogador (`ClassEntry.spells`). Raça/talento é tudo concedido pela
+  // derivação, e não há onde guardar uma decisão ali.
+  const assignTargets = useMemo(
+    () => realOrigins.filter((o) => o.kind === 'class' && o.uid),
+    [realOrigins],
+  );
 
   // Ambos varrem o mapa reverso inteiro - memoiza (hooks antes de qualquer
   // return; sem origem, `spellListClass` é undefined).
@@ -331,47 +384,55 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
   const resourceLabel = Object.keys(origin.slots ?? {}).length || origin.pactSlots ? 'Spell Slots' : 'Uses';
 
   // UM card de números: DC, ataque e os contadores.
+  // O balde de CARGA não tem nenhum: ele não conta em limite algum (é a regra do
+  // schema), então mostrar "Prepared 35/0" em vermelho seria mentir sobre o
+  // estado da ficha. A sub-aba dele se explica com uma nota, não com números.
   const stats = [];
-  if (origin.ability) {
-    stats.push({ key: 'dc', value: origin.saveDc, label: 'Save DC' });
-    stats.push({ key: 'atk', value: signed(origin.attackBonus), label: 'Attack' });
-  }
-  // Limite 0 com picks órfãos (a classe deixou de conjurar, p.ex. trocando de
-  // Eldritch Knight para outra subclasse) ainda mostra o contador - em vermelho,
-  // como qualquer over-limit (a liberdade DDL-0026 sinalizada, nunca escondida).
-  if (origin.cantripLimit > 0 || cantripCount > 0) {
-    stats.push({
-      key: 'cantrips',
-      value: `${cantripCount}/${origin.cantripLimit}`,
-      label: 'Cantrips',
-      over: cantripCount > origin.cantripLimit,
-    });
-  }
-  if (origin.prepareLimit > 0 || preparedCount > 0) {
-    stats.push({
-      key: 'prepared',
-      value: `${preparedCount}/${origin.prepareLimit}`,
-      label: 'Prepared',
-      over: preparedCount > origin.prepareLimit,
-    });
-  }
-  // Grimório: só quem tem repertório próprio (o Mago). É um PISO, não um teto -
-  // copiar magias de pergaminho é legítimo -, então passar do número apenas
-  // acende o contador, como qualquer over-limit (DDL-0026).
-  if (origin.knownLimit != null) {
-    stats.push({
-      key: 'known',
-      value: `${knownCount}/${origin.knownLimit}`,
-      label: 'Known',
-      over: knownCount > origin.knownLimit,
-    });
-  }
-  if (arcana.length > 0) {
-    stats.push({
-      key: 'arcana',
-      value: `${arcana.length - freeArcanumLevels.size}/${arcana.length}`,
-      label: 'Arcanum',
-    });
+  // O balde de CARGA não entra em NENHUM contador: "2/0 Prepared" em vermelho
+  // diria que a ficha está acima do limite, quando essas magias não ocupam
+  // espaço nenhum. Todo o bloco é pulado, não só o DC.
+  if (!isCargo) {
+    if (origin.ability) {
+      stats.push({ key: 'dc', value: origin.saveDc, label: 'Save DC' });
+      stats.push({ key: 'atk', value: signed(origin.attackBonus), label: 'Attack' });
+    }
+    // Limite 0 com picks órfãos (a classe deixou de conjurar, p.ex. trocando de
+    // Eldritch Knight para outra subclasse) ainda mostra o contador - em vermelho,
+    // como qualquer over-limit (a liberdade DDL-0026 sinalizada, nunca escondida).
+    if (origin.cantripLimit > 0 || cantripCount > 0) {
+      stats.push({
+        key: 'cantrips',
+        value: `${cantripCount}/${origin.cantripLimit}`,
+        label: 'Cantrips',
+        over: cantripCount > origin.cantripLimit,
+      });
+    }
+    if (origin.prepareLimit > 0 || preparedCount > 0) {
+      stats.push({
+        key: 'prepared',
+        value: `${preparedCount}/${origin.prepareLimit}`,
+        label: 'Prepared',
+        over: preparedCount > origin.prepareLimit,
+      });
+    }
+    // Grimório: só quem tem repertório próprio (o Mago). É um PISO, não um teto -
+    // copiar magias de pergaminho é legítimo -, então passar do número apenas
+    // acende o contador, como qualquer over-limit (DDL-0026).
+    if (origin.knownLimit != null) {
+      stats.push({
+        key: 'known',
+        value: `${knownCount}/${origin.knownLimit}`,
+        label: 'Known',
+        over: knownCount > origin.knownLimit,
+      });
+    }
+    if (arcana.length > 0) {
+      stats.push({
+        key: 'arcana',
+        value: `${arcana.length - freeArcanumLevels.size}/${arcana.length}`,
+        label: 'Arcanum',
+      });
+    }
   }
 
   // --- Preparar / remover (só origens de classe) -----------------------------
@@ -438,6 +499,80 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
         ? { ...s, prepared: s.prepared === false }
         : s
     )));
+  };
+
+  /** Dá ORIGEM a uma magia do balde de carga. Liberdade com aviso (DDL-0026): o
+   *  diálogo oferece TODAS as classes conjuradoras, e só avisa quando a magia não
+   *  está na lista da escolhida - nunca esconde a opção. */
+  const assignSpell = async (entry) => {
+    if (assignTargets.length === 0) return;
+    let uid = assignTargets[0].uid;
+    if (assignTargets.length > 1) {
+      const { action, values } = await ask({
+        title: `Assign ${entry.raw.name}`,
+        message: 'Which class casts it? It becomes a normal choice of that class, counting against its limits.',
+        fields: [{
+          type: 'select',
+          name: 'uid',
+          label: 'Origin',
+          options: assignTargets.map((o) => ({ label: o.label, value: o.uid })),
+          default: uid,
+        }],
+        actions: [
+          { label: 'Cancel', value: false },
+          { label: 'Assign', value: true, tone: 'primary', autoFocus: true },
+        ],
+      });
+      if (!action) return;
+      uid = values.uid;
+    }
+    const target = assignTargets.find((o) => o.uid === uid);
+    const name = entry.raw.name.toLowerCase();
+    const warnings = [];
+    // A classe JÁ TEM a magia (concedida pela subclasse, ou já escolhida)? Sem
+    // este aviso o clique vira um no-op silencioso: a derivação dedupa contra a
+    // concessão, a magia some do balde e nada muda na aba da classe. O jogador
+    // precisa saber que não vai ganhar nada com isso - é o mesmo aviso que o
+    // fluxo de preparar já dá (TC-0031).
+    const owned = spellsOf(target).find((s) => s.raw?.name.toLowerCase() === name);
+    if (owned) {
+      warnings.push(
+        owned.granted
+          ? `${target.label} already grants ${entry.raw.name}, so assigning it here changes nothing.`
+          : `${entry.raw.name} is already among ${target.label}'s spells.`,
+      );
+    }
+    // O aviso de fora-da-lista usa a lista DA CLASSE ESCOLHIDA, não a da origem
+    // aberta (que aqui é o balde e não tem lista nenhuma).
+    const targetList = classSpellList(db, target.spellListClass);
+    const onList = targetList.has(name) || (target.expandedSpells?.has?.(name) ?? false);
+    if (!onList) {
+      warnings.push(`${entry.raw.name} is not on the ${target.spellListClass} spell list.`);
+    }
+    if (warnings.length > 0) {
+      const ok = await confirm({
+        title: 'Assign this spell?',
+        message: `${warnings.join(' ')} Assign it anyway?`,
+        confirmLabel: 'Assign anyway',
+      });
+      if (!ok) return;
+    }
+    onAssignUnassigned?.(uid, entry.cargoIndex);
+    setInfoKey(null);
+  };
+
+  /** Descarta uma magia da carga. É a única saída além de atribuir, então o
+   *  diálogo diz o que se perde: ela para de voltar ao Foundry no re-export. */
+  const discardSpell = async (entry) => {
+    const ok = await confirm({
+      title: `Discard ${entry.raw.name}?`,
+      message: 'It will no longer be exported back to Foundry. This cannot be undone.',
+      confirmLabel: 'Discard',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    onDiscardUnassigned?.(entry.cargoIndex);
+    setInfoKey(null);
   };
 
   /** Fecha o seletor e encerra qualquer troca em andamento. */
@@ -545,6 +680,20 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
         ))}
       </nav>
 
+      {/* A carga se explica com uma NOTA, não com números: ela não conta em
+          limite nenhum, e o jogador precisa saber de onde ela veio e o que pode
+          fazer com ela. Quando não há classe conjuradora para receber, a nota diz
+          isso em vez de deixar um botão morto (DDL-0077/0078). */}
+      {isCargo && (
+        <p className={styles.cargoNote}>
+          These spells came with an imported actor and no class on this sheet can cast them. They are
+          kept and exported back to Foundry, but they have no origin, so they count against no limit.
+          {assignTargets.length > 0
+            ? ' Assign one to a spellcasting class to make it a normal spell of that class.'
+            : ' Add a spellcasting class to be able to assign them.'}
+        </p>
+      )}
+
       {/* Busca + "Prepare spell" numa linha (mesmo padrão de busca + Shop). */}
       <div className={styles.controls} data-tour={TUT.TAB_SPELL_CONTROLS}>
         <div className={styles.searchBox}>
@@ -645,13 +794,15 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
                     const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
                     return (
                       <SpellRow
-                        key={`${origin.key}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
+                        key={`${origin.key}|${entry.cargoIndex ?? entry.raw.name}|${entry.castMode ?? 'pick'}`}
                         entry={entry}
                         arcanum={isArc}
                         thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
                         onInfo={() => setInfoKey(entry.raw.name)}
                         onReplace={classEntry && !entry.granted ? () => startReplace(entry) : null}
                         onTogglePrepared={canPrepareThis ? () => togglePrepared(entry) : null}
+                        onAssign={isCargo ? () => assignSpell(entry) : null}
+                        assignDisabled={isCargo && assignTargets.length === 0}
                       />
                     );
                   })}
@@ -673,7 +824,27 @@ export default function SpellbookTab({ character, db, derived, onChangeSpells })
             <div className={styles.infoScroll}>
               <DetailView entity={spellEntity} raw={infoEntry.raw} db={db} capImage />
             </div>
-            {infoEntry.granted ? (
+            {isCargo ? (
+              <div className={styles.infoFooter}>
+                <span className={styles.infoNote}>
+                  {assignTargets.length > 0
+                    ? 'No origin yet. Assign it to a class to start using it.'
+                    : 'No origin, and no spellcasting class to assign it to.'}
+                </span>
+                <button
+                  type="button"
+                  className={styles.changeBtn}
+                  onClick={() => assignSpell(infoEntry)}
+                  disabled={assignTargets.length === 0}
+                  title={assignTargets.length === 0 ? 'This sheet has no spellcasting class.' : undefined}
+                >
+                  Assign…
+                </button>
+                <button type="button" className={styles.removeBtn} onClick={() => discardSpell(infoEntry)}>
+                  Discard
+                </button>
+              </div>
+            ) : infoEntry.granted ? (
               <div className={styles.infoFooter}>
                 <span className={styles.grantedChip}>Always Prepared</span>
                 <span className={styles.infoNote}>
@@ -750,7 +921,7 @@ function SpellThumb({ src, school, alt }) {
   );
 }
 
-function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared }) {
+function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, onAssign, assignDisabled }) {
   const raw = entry.raw;
   const meta = [schoolName(raw.school), castingTimeLabel(raw), rangeLabel(raw)].filter(Boolean);
   const cast = castTypeLabel(entry);
@@ -804,6 +975,21 @@ function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared }
             aria-label={`Replace ${raw.name}`}
           >
             ⇄
+          </button>
+        )}
+        {/* Carga: dar ORIGEM sem abrir a ficha. Desabilitado (nao escondido)
+            quando a ficha nao tem classe conjuradora - a opcao existe, so nao
+            alcanca nada agora, e o title diz por que (DDL-0077). */}
+        {onAssign && (
+          <button
+            type="button"
+            className={styles.assignBtn}
+            onClick={onAssign}
+            disabled={assignDisabled}
+            title={assignDisabled ? 'This sheet has no spellcasting class.' : `Assign ${raw.name} to a class`}
+            aria-label={`Assign ${raw.name} to a class`}
+          >
+            +
           </button>
         )}
       </div>

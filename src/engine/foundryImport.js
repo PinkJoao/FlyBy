@@ -1276,8 +1276,9 @@ export function foundryToCharacter(rawActor, db, out = null) {
       ...(out.warnings ?? []),
       `${n} ${n === 1 ? 'spell' : 'spells'} on this actor ${n === 1 ? 'has' : 'have'} no spellcasting origin on `
       + `the sheet (no class here can cast ${n === 1 ? 'it' : 'them'}). ${n === 1 ? 'It is' : 'They are'} kept `
-      + `with the character and will be exported back, but ${n === 1 ? 'it does' : 'they do'} not appear in the `
-      + 'Spellbook.',
+      + `with the character and will be exported back, and ${n === 1 ? 'appears' : 'appear'} under `
+      + `"Unassigned" in the Spellbook, where you can give ${n === 1 ? 'it' : 'them'} an origin. Until then `
+      + `${n === 1 ? 'it counts' : 'they count'} against no limit.`,
     ];
   }
 

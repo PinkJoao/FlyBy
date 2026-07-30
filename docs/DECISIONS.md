@@ -11,6 +11,58 @@
 
 ---
 
+### DDL-0084 - Carga ganha SUB-ABA propria, sem contador nenhum; e balde com repetidos se opera por INDICE
+**Date:** 2026-07-30
+
+**Implementa e FECHA** o item P2 do backlog (a metade lossless veio no DDL-0080).
+
+**O problema.** `character.unassignedSpells` guardava as magias que um ator
+importado trazia e nenhuma classe da ficha sabe conjurar. O import avisava e o
+re-export as devolvia, mas **nenhum componente lia o campo**: na pratica o jogador
+via um alerta e depois as magias sumiam da interface. A ficha da Riswynn L17 (uma
+Ladina com 35 magias de sugestao) abria a Spellbook dizendo "This character has no
+spellcasting".
+
+**Decisao 1 - o balde e uma ORIGEM na aba, nao um banner.** A Spellbook ja e um
+alternador de origens, e a carga precisa da mesma navegacao que o resto (busca,
+agrupamento, popup de detalhe). Um banner ou duplicaria essa UI ou esconderia as
+magias. A sub-aba "Unassigned" so existe quando o balde tem conteudo.
+
+**Decisao 2 - e ela NAO TEM CONTADOR NENHUM.** Este e o ponto que quase se perdeu.
+A regra do schema e que carga nao conta em limite nenhum; a primeira versao
+montou a origem-pseudo com `prepareLimit: 0` e o card renderizou **"2/0 Prepared"
+em vermelho**, ou seja, exatamente a mentira que a regra proibe - a ficha parecia
+acima do limite por causa de magias que nao ocupam espaco. O gate tem de cobrir o
+BLOCO inteiro de stats, nao so o DC. A sub-aba se explica com uma NOTA.
+
+**Decisao 3 - atribuir e liberdade com aviso.** O dialogo oferece todas as classes
+conjuradoras, e confirma (nunca impede) quando a magia esta fora da lista da
+classe escolhida. Um aviso a mais que o fluxo de preparar ja tinha: se a classe
+**ja concede** a magia, atribuir nao muda nada - sem esse aviso o clique era um
+no-op silencioso (a derivacao dedupa contra a concessao, a magia sumia do balde e
+a aba da classe ficava igual). Sem classe conjuradora na ficha, o botao fica
+DESABILITADO com o motivo no title (DDL-0077), nunca escondido.
+
+**Decisao 4 - descartar existe.** Um balde em que so se pode entrar e uma
+armadilha: sem saida, a magia que o jogador nao quer em classe nenhuma fica presa
+para sempre. O dialogo diz o que se perde (ela deixa de voltar ao Foundry).
+
+**Decisao 5 - operar por INDICE, nunca por nome+fonte.** Descoberto na passada ao
+vivo: a Riswynn traz **duas Magic Missile**. A primeira versao filtrava o balde
+por `id+source`, entao atribuir uma **removeria as duas** - perda de conteudo no
+exato campo que existe para nao perder conteudo. Tudo passou a carregar
+`cargoIndex`, inclusive a key do React (que acusava chave duplicada no console).
+
+**Onde mora.** As duas operacoes sao PURAS e ficam em `engine/unassignedSpells.js`
+(`assignCargoSpell`, `discardCargoSpell`), com teste - a regra e de modelo, nao de
+UI. O componente so decide o dialogo. Cada operacao e um UNICO save: os dois
+campos (`unassignedSpells` e `classes[].spells`) mudam juntos ou nao mudam.
+
+**Efeito colateral obrigatorio:** o texto do aviso de import dizia "they do not
+appear in the Spellbook", que esta mudanca tornou falso. Foi reescrito. Toda
+feature que muda o que o usuario ve tem de varrer as strings que descrevem o
+comportamento antigo.
+
 ### DDL-0083 - Um achado que SOME conforme o nivel sobe nao e quirk do premade; e lacuna da arvore de fontes nao e "o SRD nao publica"
 **Date:** 2026-07-30
 

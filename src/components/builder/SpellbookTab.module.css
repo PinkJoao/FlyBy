@@ -763,6 +763,53 @@
   color: var(--accent);
 }
 
+/* Dar origem a uma magia da CARGA. Mesmo átomo do .swapBtn (o app se lê igual),
+   com o acento por padrão: aqui a ação é o ponto da sub-aba, não um extra. */
+.assignBtn {
+  appearance: none;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.assignBtn:hover:not(:disabled) {
+  background: var(--accent-bg, var(--bg));
+  border-color: var(--accent);
+}
+
+/* Sem classe conjuradora não há para onde atribuir: o botão fica visível e
+   DESABILITADO (a opção existe, só não alcança nada agora - DDL-0077). */
+.assignBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Nota da sub-aba de carga: ela não tem cards de estado (não conta em limite
+   nenhum), então é o texto que explica o que são essas magias. */
+.cargoNote {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--surface, var(--bg));
+  opacity: 0.85;
+}
+
 @media (max-width: 760px) {
   .infoOverlay {
     padding: 0;

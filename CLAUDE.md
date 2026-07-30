@@ -131,7 +131,7 @@ documents all four subfolders, their licences and what each is good for.
 | **Usage tutorial** (coach-marks) | done (F1-F4) |
 | **Phase T campaign** | T0 done · T1 done (**286/286** units certified) · **T2 in progress** |
 
-**Current numbers:** 1305 tests · sweep **286/286** in `--strict` · `npm run t2`
+**Current numbers:** 1312 tests · sweep **286/286** in `--strict` · `npm run t2`
 at **16** findings (from 1023 at the T2 opening), plus 113 differences named as
 expected across 10 deliberate divergences. `check:keys` and `check:uuids` clean.
 
@@ -157,12 +157,6 @@ expected across 10 deliberate divergences. `check:keys` and `check:uuids` clean.
   user 2026-07-29: *"o PDF não é nossa prioridade pois a ficha digital já cumpre o
   papel"*. **When it comes back, overflow goes first** - it is the only part that
   can ruin the sheet, and a level 17 character is exactly where printing is used.
-- **Assign an origin to unassigned spells.** The lossless half is done: spells an
-  imported actor carried that no class on the sheet can cast live in
-  `character.unassignedSpells` and return to Foundry on re-export. The next step is
-  letting the player pick an origin. It is UI work, not modelling: the bucket holds
-  `SpellRef`, so assigning is moving the ref between arrays. **The rule to keep:
-  the bucket is CARGO, not a decision** - it counts against no limit.
 - **Real compendium UUIDs for content the SRD does not publish** (Artificer,
   non-SRD subclasses, generated magic variants, merged lineages, curated legacy
   species). By design, not an oversight: pointing at a near-match would make Foundry
@@ -327,7 +321,11 @@ buried in an entry.
   owner of the data. `ChoiceList` and `SelectorPanel` are the choke points; a
   feature added there reaches every tab and wizard step for free.
 - **Content the model cannot explain is CARGO, not garbage.** Losing content is
-  bad; losing it **silently** is unacceptable. Keep it, warn, and re-emit it.
+  bad; losing it **silently** is unacceptable. Keep it, warn, and re-emit it. Cargo
+  stays cargo once it is on screen: `unassignedSpells` has its own Spellbook
+  sub-tab with **no counter of any kind**, because it counts against no limit
+  until the player gives it an origin. And a bucket can hold the same entry
+  twice, so every operation on it goes **by index**, never by matching name.
 
 ### 6.4 Product and UX
 
@@ -393,6 +391,7 @@ DDL-0031 "effects only" scope (by **0057**), DDL-0058 (planning; implemented by
 **0059**), DDL-0059/0060 (refined by **0061** and **0063**), DDL-0064 LFL treatment
 (revised by **0066**), DDL-0080 §3.1 resistance sweep (widened by **0081**).
 
+- **DDL-0084** (2026-07-30) - Carga ganha SUB-ABA própria, sem contador nenhum; e balde com repetidos se opera por ÍNDICE
 - **DDL-0083** (2026-07-30) - Um achado que SOME conforme o nível sobe não é quirk do premade; e lacuna da árvore de fontes não é "o SRD não publica"
 - **DDL-0082** (2026-07-30) - Contêiner é UM campo de parentesco; e "guardado" é um estado que a DERIVAÇÃO decide
 - **DDL-0081** (2026-07-30) - Uma varredura filtrada por TAG mente; e uma concessão pode depender de outra escolha

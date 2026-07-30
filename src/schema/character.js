@@ -220,11 +220,14 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  * @property {SpellRef[]} unassignedSpells  Magias que um ator IMPORTADO trazia e
  *   nenhuma classe da ficha sabe conjurar (o premade da Riswynn, uma Ladina, lista
  *   35 como sugestão). Ficam guardadas para o re-export não PERDER conteúdo, mas
- *   não têm origem: não aparecem na aba Spellbook nem contam em limite nenhum.
- *   É um balde de CARGA, não uma decisão do jogador - a regra de leitura é
- *   exatamente essa, e quem acrescentar um consumidor precisa respeitá-la.
- *   Pendência conhecida (CLAUDE.md §4, backlog): deixar o jogador ATRIBUIR uma
- *   origem a elas, a partir das possibilidades que a ficha oferece.
+ *   não têm origem: **não contam em limite nenhum**. É um balde de CARGA, não uma
+ *   decisão do jogador - a regra de leitura é exatamente essa, e quem acrescentar
+ *   um consumidor precisa respeitá-la.
+ *   A Spellbook mostra o balde numa sub-aba PRÓPRIA ("Unassigned"), sem contador
+ *   nenhum, de onde o jogador pode dar origem a uma magia (ela vira `spells` da
+ *   classe escolhida e passa a contar) ou descartá-la. As duas operações são
+ *   puras e vivem em `engine/unassignedSpells` - por ÍNDICE, porque o balde pode
+ *   ter a mesma magia duas vezes.
  * @property {InventoryItem[]} inventory
  */
 

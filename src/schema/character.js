@@ -193,6 +193,11 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  * @property {boolean} attuned
  * @property {string} [customName]
  * @property {string|null} [customImg]  imagem custom (data-URL ou URL) - sobrepõe a arte do 5etools
+ * @property {string|null} [container]  uid da entrada de CONTÊINER que guarda este
+ *   item (mochila, bolsa, Bag of Holding). Mesma forma do `system.container` do
+ *   Foundry, então o export/import é direto. Campo ADITIVO, sem bump de schema:
+ *   ausente/null = item solto, e uma ficha antiga deriva idêntica.
+ *   Ver engine/containers.js.
  */
 
 /**

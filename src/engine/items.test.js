@@ -139,6 +139,75 @@ describe('deriveInventory', () => {
   });
 });
 
+describe('deriveInventory - contêineres', () => {
+  // Os nomes são reais porque a classificação vem do SRD (engine/containers),
+  // não do db de fixture - é justamente o que faz o registro valer sem curadoria.
+  const backpack = { name: 'Backpack', source: 'XPHB', type: 'G|XPHB', weight: 5 };
+  const bagOfHolding = { name: 'Bag of Holding', source: 'XDMG', wondrous: true, rarity: 'uncommon', weight: 5 };
+  const cdb = {
+    'items-base': { baseitem: [backpack] },
+    items: { item: [bagOfHolding, rations] },
+  };
+  const inv = (...entries) => ({ inventory: entries });
+  const entry = (uid, itemId, source, extra = {}) =>
+    ({ ...createInventoryItem(itemId, source), uid, ...extra });
+
+  it('marca o contêiner e traz a capacidade publicada', () => {
+    const { entries } = deriveInventory(inv(entry('bp', 'Backpack', 'XPHB')), cdb);
+    expect(entries[0].isContainer).toBe(true);
+    expect(entries[0].containerProps.capacity).toEqual({ type: 'weight', value: 30 });
+  });
+
+  it('conteúdo de contêiner MUNDANO conta no peso carregado', () => {
+    const { totalWeight } = deriveInventory(
+      inv(entry('bp', 'Backpack', 'XPHB'), entry('r', 'Rations', 'XPHB', { quantity: 10, container: 'bp' })),
+      cdb,
+    );
+    expect(totalWeight).toBe(5 + 20); // mochila + 10 rações × 2lb
+  });
+
+  it('conteúdo de contêiner WEIGHTLESS não conta, mas a bolsa sim (RAW)', () => {
+    const { entries, totalWeight } = deriveInventory(
+      inv(entry('b', 'Bag of Holding', 'XDMG'), entry('r', 'Rations', 'XPHB', { quantity: 10, container: 'b' })),
+      cdb,
+    );
+    expect(totalWeight).toBe(5);
+    expect(entries[1].weightCounts).toBe(false);
+    // A linha guardada mantém o próprio peso (a tela do contêiner o mostra) -
+    // o que muda é ela não entrar no TOTAL.
+    expect(entries[1].lineWeight).toBe(20);
+  });
+
+  it('contentsWeight é o peso do que está dentro, mesmo quando não conta no total', () => {
+    const { entries } = deriveInventory(
+      inv(entry('b', 'Bag of Holding', 'XDMG'), entry('r', 'Rations', 'XPHB', { quantity: 10, container: 'b' })),
+      cdb,
+    );
+    expect(entries[0].contentsWeight).toBe(20);
+  });
+
+  it('uma ficha sem nenhum contêiner deriva o mesmo peso de antes', () => {
+    const { totalWeight } = deriveInventory(
+      inv(entry('bp', 'Backpack', 'XPHB'), entry('r', 'Rations', 'XPHB', { quantity: 10 })),
+      cdb,
+    );
+    expect(totalWeight).toBe(25);
+  });
+
+  it('item GUARDADO não conta como equipado (não entra na CA nem aparece em uso)', () => {
+    const { entries } = deriveInventory(
+      inv(
+        entry('bp', 'Backpack', 'XPHB'),
+        entry('r', 'Rations', 'XPHB', { container: 'bp', equipped: true }),
+      ),
+      cdb,
+    );
+    // A regra vale para QUALQUER origem do dado (inclusive um ator importado):
+    // é a derivação que decide "em uso", não só o fluxo de guardar da UI.
+    expect(entries[1].equipped).toBe(false);
+  });
+});
+
 describe('carryingCapacity', () => {
   it('Força × 15 lb (regra núcleo 2024)', () => {
     expect(carryingCapacity(10)).toBe(150);

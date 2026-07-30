@@ -93,9 +93,18 @@ export function decisionSummary(c) {
           .map((s) => `${String(s.id).toLowerCase()}${s.prepared === false ? ' [known]' : ''}`)
           .sort(),
       })),
-    inventory: (c.inventory ?? [])
-      .map((i) => `${String(i.itemId).toLowerCase()} x${i.quantity}${i.equipped ? ' [eq]' : ''}`)
-      .sort(),
+    // O que está DENTRO de que contêiner é decisão do jogador, então entra na
+    // chave (TC-0055). Pelo NOME do pai, não pelo uid: o uid é regerado no
+    // import, e comparar uid daria diff em toda linha.
+    inventory: (() => {
+      const nameByUid = new Map((c.inventory ?? []).map((i) => [i.uid, String(i.itemId).toLowerCase()]));
+      return (c.inventory ?? [])
+        .map((i) => {
+          const parent = i.container ? nameByUid.get(i.container) : null;
+          return `${String(i.itemId).toLowerCase()} x${i.quantity}${i.equipped ? ' [eq]' : ''}${parent ? ` in ${parent}` : ''}`;
+        })
+        .sort();
+    })(),
     // A moeda é decisão do jogador (compras/gasto) e faltava aqui: o export a
     // zerava e o oráculo não via nada, porque não comparava o campo (TC-0055).
     currency: { ...(c.currency ?? {}) },

@@ -40,7 +40,16 @@ function gpText(copper) {
   return `${(copper / 100).toLocaleString()} gp`;
 }
 
-export default function EquipmentShop({ character, db, onPurchase }) {
+/**
+ * @param {object} props
+ * @param {string} [props.containerUid]  quando a loja é aberta de DENTRO de um
+ *   contêiner, o que for comprado já nasce guardado nele. Vai na própria entrada
+ *   (não num argumento à parte) para o merge de stacks do Builder poder comparar
+ *   o destino - senão comprar corda com a mochila aberta empilharia na corda
+ *   solta que já existia.
+ * @param {string} [props.label]  texto do botão (padrão "Shop").
+ */
+export default function EquipmentShop({ character, db, onPurchase, containerUid = null, label = 'Shop' }) {
   // Valor em cobre: preço listado OU derivado (crafting) de item mágico.
   const valueOf = (raw) => itemValue(raw, db);
   // Custo total em cobre de `qty` unidades (0 se sem preço nem derivação).
@@ -90,7 +99,11 @@ export default function EquipmentShop({ character, db, onPurchase }) {
       });
       if (!ok) return false;
     }
-    const items = entries.map((e) => ({ ...createInventoryItem(e.raw.name, e.raw.source), quantity: e.qty }));
+    const items = entries.map((e) => ({
+      ...createInventoryItem(e.raw.name, e.raw.source),
+      quantity: e.qty,
+      container: containerUid,
+    }));
     onPurchase(items, fromCopper(Math.max(0, balance - cost)));
     return true;
   };
@@ -233,7 +246,7 @@ export default function EquipmentShop({ character, db, onPurchase }) {
   return (
     <>
       <button type="button" className={styles.shopBtn} onClick={() => setOpen(true)}>
-        <span aria-hidden="true">🛒</span> Shop
+        <span aria-hidden="true">🛒</span> {label}
       </button>
       {open && (
         <SelectorPanel

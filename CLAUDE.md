@@ -380,6 +380,66 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0082 - Contêiner é UM campo de parentesco; e "guardado" é um estado que a DERIVAÇÃO decide
+**Date:** 2026-07-30
+**Implementa e FECHA** o item P3 do `DEFERRED-REVIEW.md`. **Builds on:** DDL-0013 (o pack é UMA
+entrada de inventário - preservado), a leva 4/C4 (o desdobramento de pack no export, com que este
+convive), TC-0066 (o padrão "gerar um registro do SRD em vez de curar"), TC-0055 (todo campo de
+decisão entra no `decisionSummary`), DDL-0026 (liberdade com aviso - a capacidade informa, não
+bloqueia).
+
+**Context.** O usuário pediu contêineres funcionando como um "mini inventário simplificado" na
+própria tela de detalhe do item, e fixou a regra de peso: *"vamos seguir as regras do jogo, como de
+costume"*.
+
+**Decision - o modelo é UM campo, e ele é o do Foundry.** `InventoryItem.container` = o `uid` de
+outra entrada, espelhando `system.container`. Escolhido assim porque torna export e import diretos
+(sem tradução) e porque é **aditivo**: uma ficha antiga não tem ninguém dentro de nada e deriva
+idêntica, sem bump de schema nem migração - o mesmo movimento do `unassignedSpells`.
+- **Aninhamento sai de graça** e não foi proibido: o Handy Haversack do próprio SRD tem três bolsas
+  dentro. A UI não precisou de nada para isso - um contêiner dentro de outro é só mais uma linha,
+  e tocá-la abre a tela DELE.
+
+**Decision - o que é contêiner, a capacidade e o `weightless` saem do SRD.** `CONTAINER_PROPS`
+(gerado, 36 itens) junta-se ao `EQUIPMENT_TYPES`: é o **terceiro** uso do padrão do TC-0066. Nenhum
+dos dois fatos é derivável do 5etools - que a Bag of Holding "weighs 5 pounds, regardless of its
+contents" está só na prosa dela. Zero curadoria; um contêiner novo entra ao regerar.
+
+**Decision - a regra de peso é do RAW e vale para a CADEIA de pais.** O conteúdo de um contêiner
+`weightless` não conta; o de um mundano conta; o do PRÓPRIO contêiner conta sempre. Como contêineres
+aninham, um item não conta quando QUALQUER ancestral é weightless - não basta olhar o pai direto.
+Guardas obrigatórias: pai inexistente degrada para item solto (nunca some), e um ciclo vindo de dado
+corrompido não trava (teto de profundidade).
+
+**Decision - "guardado não está em uso", e a regra vive na DERIVAÇÃO.** Foi um defeito encontrado ao
+vivo: uma arma equipada continuava equipada dentro da mochila, contando para a ficha. Corrigido em
+DOIS lugares de propósito - o fluxo de guardar desequipa, E `deriveInventory` devolve
+`equipped: !!entry.equipped && !entry.container`. **Só a UI não bastaria:** um ator importado pode
+chegar com essa combinação, e é a derivação que decide o que está em uso (CA, atunement, destaque da
+linha). O campo CRU fica intacto, então o export re-emite o que veio e o round-trip não perde nada.
+- **Tirar de lá NÃO reequipa sozinho** - equipar é decisão do jogador.
+
+**Decision - remover um contêiner SOLTA o conteúdo.** `orphanContents`, e a confirmação diz quantos
+itens voltam. Apagar junto seria destrutivo e nada o anunciaria.
+
+**Decision - a tela é deliberadamente MENOS do que a aba** (o pedido do usuário, e a razão de ser do
+recurso): sem agrupamento, sem ordenação configurável (alfabética), sem busca, sem equipar. O que
+ela mantém é a LINHA - thumbnail, meta, raridade, peso, stepper -, e para isso os helpers de
+apresentação saíram para `inventoryDisplay.js`: uma linha guardada não pode se ler diferente da mesma
+linha solta. Guardar e tirar aceitam vários de uma vez pelo mesmo `ItemPickerModal` (o que muda é a
+lista de origem e o rótulo).
+
+**Consequences.**
+- No export o contêiner leva `capacity` + `weightlessContents`, então **o Foundry aplica a mesma
+  regra de peso que a nossa ficha** em vez de duas contas diferentes. Os filhos levam
+  `system.container` (numa segunda passada - o pai pode vir depois do filho na lista), e o import o
+  lê de volta. O desdobramento de PACK convive intacto: o pack segue sendo UMA entrada (DDL-0013).
+- **A capacidade INFORMA, não bloqueia** (56/30 lb aparece): é a liberdade do DDL-0026.
+- Verificado: 1304 testes (+23), lint, `check:keys`, sweep **286/286** `--strict`, `npm run t2`
+  estável em **18**, e ao vivo - guardar/tirar em lote, o aninhamento levando o carregado de 66 a
+  **5 lb** e de volta, a tela de um item guardado sem Equip, zero erro de console e sem overflow a
+  375px. Ver CHANGELOG §108.
+
 ### DDL-0081 - Uma varredura filtrada por TAG mente; e uma concessão pode depender de outra escolha
 **Date:** 2026-07-30
 **Builds on:** DDL-0080 §3.1 (a varredura das resistências, que este entry mostra ter sido ESTREITA

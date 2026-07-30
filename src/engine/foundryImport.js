@@ -1329,29 +1329,40 @@ export function foundryToCharacter(rawActor, db, out = null) {
       )
       .map((it) => it._id),
   );
-  char.inventory = items
-    .filter(
-      (it) =>
-        PHYSICAL_ITEM_TYPES.has(it.type)
-        && !classGranted.has(norm(it.name))
-        && !packIds.has(it.system?.container),
-    )
-    .map((it) => {
-      // `resolveInventorySource` acha a fonte pelo NOME; null = o item não existe
-      // no catálogo 5etools, então guardamos um snapshot dos dados do Foundry.
-      const source = resolveInventorySource(db, it.name);
-      const entry = {
-        uid: makeId(),
-        itemId: it.name,
-        source: source ?? itemSource(it),
-        quantity: it.system?.quantity ?? 1,
-        equipped: !!it.system?.equipped,
-        attuned: !!it.system?.attuned,
-      };
-      if (it.img && /^(data:|https?:)/.test(it.img)) entry.customImg = it.img;
-      if (!source) entry.custom = customSnapshot(it);
-      return entry;
-    });
+  const kept = items.filter(
+    (it) =>
+      PHYSICAL_ITEM_TYPES.has(it.type)
+      && !classGranted.has(norm(it.name))
+      && !packIds.has(it.system?.container),
+  );
+  // `_id` do Item do Foundry → uid da nossa entrada, para reconstruir o vínculo
+  // pai-filho depois (um item pode aparecer antes do contêiner dele na lista).
+  const uidByItemId = new Map();
+  char.inventory = kept.map((it) => {
+    // `resolveInventorySource` acha a fonte pelo NOME; null = o item não existe
+    // no catálogo 5etools, então guardamos um snapshot dos dados do Foundry.
+    const source = resolveInventorySource(db, it.name);
+    const entry = {
+      uid: makeId(),
+      itemId: it.name,
+      source: source ?? itemSource(it),
+      quantity: it.system?.quantity ?? 1,
+      equipped: !!it.system?.equipped,
+      attuned: !!it.system?.attuned,
+    };
+    if (it.img && /^(data:|https?:)/.test(it.img)) entry.customImg = it.img;
+    if (!source) entry.custom = customSnapshot(it);
+    uidByItemId.set(it._id, entry.uid);
+    return entry;
+  });
+  // O que está DENTRO de um contêiner que não é pack volta guardado, em vez de
+  // virar item solto: `system.container` é exatamente o nosso campo `container`.
+  // Um pai que não sobreviveu ao filtro (um pack, ou um item concedido pela
+  // classe) deixa o filho solto - nunca apontando para o vazio.
+  kept.forEach((it, i) => {
+    const parentUid = it.system?.container ? uidByItemId.get(it.system.container) : null;
+    if (parentUid) char.inventory[i].container = parentUid;
+  });
 
   // --- Moeda (mesma forma nos dois lados: pp/gp/ep/sp/cp) ---
   const cur = actor.system?.currency ?? {};

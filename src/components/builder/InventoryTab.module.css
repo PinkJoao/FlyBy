@@ -788,3 +788,227 @@
     border: none;
   }
 }
+
+/* --- Contêiner: o mini-inventário dentro da tela do item ------------------- */
+/* Fica DENTRO do `.infoScroll`, abaixo da descrição do item, e reusa `.list` /
+ * `.row` da lista principal - uma linha guardada tem de se ler igual a uma
+ * linha solta. O que muda é só o que foi tirado (agrupamento, ordenação,
+ * busca, equipar). */
+.contents {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.contentsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.contentsTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #9aa0a6);
+}
+
+.contentsWeight {
+  font-size: 12px;
+  color: var(--text-muted, #9aa0a6);
+  font-variant-numeric: tabular-nums;
+}
+
+.contentsEmpty {
+  margin: 0;
+  padding: 14px 4px;
+  font-size: 13px;
+  color: var(--text-muted, #9aa0a6);
+}
+
+.contentsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.contentsBtn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.contentsBtn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.contentsBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- Multi-seleção de itens (guardar / tirar do contêiner) ----------------- */
+/* z-index acima do overlay de detalhe (que é 1000), porque ela abre POR CIMA
+ * dele - o contêiner continua visível por baixo. */
+.pickerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 1100;
+  padding: 16px;
+}
+
+.pickerPanel {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  max-height: min(680px, 90vh);
+  background: var(--bg-card, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pickerTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pickerAll {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  align-self: flex-start;
+  margin: 10px 16px 0;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted, #9aa0a6);
+  cursor: pointer;
+}
+
+.pickerAll:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.pickerList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.pickerRow {
+  font: inherit;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pickerRow:hover {
+  background: var(--bg-soft);
+}
+
+.pickerRowOn {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.pickerBox {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.pickerBoxOn {
+  border-color: var(--accent);
+}
+
+.pickerQty {
+  font-weight: 500;
+  color: var(--text-muted, #9aa0a6);
+}
+
+.pickerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.pickerCancel,
+.pickerConfirm {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pickerCancel:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.pickerConfirm {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.pickerConfirm:disabled {
+  opacity: 0.45;
+  cursor: default;
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+}

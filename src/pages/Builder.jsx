@@ -336,7 +336,10 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     let inventory = [...character.inventory];
     for (const item of items) {
       const i = inventory.findIndex(
-        (it) => it.itemId === item.itemId && it.source === item.source && !it.equipped && !it.attuned,
+        (it) => it.itemId === item.itemId && it.source === item.source && !it.equipped && !it.attuned
+          // Um stack só absorve outro no MESMO destino: comprar corda com a
+          // mochila aberta não pode empilhar na corda que estava solta.
+          && (it.container ?? null) === (item.container ?? null),
       );
       if (i === -1) {
         inventory.push(item);

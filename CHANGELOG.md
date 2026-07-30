@@ -6113,3 +6113,61 @@ Verificado: 1281 testes (+9), lint, sweep **286/286** `--strict`, `npm run t2` e
 achados (+113 esperados, agora incluindo `basic-actions`), e ao vivo num Warlock 6 Genie: DAMAGE
 RESISTANCES mostra **Fire** com Efreeti e **Cold** ao trocar para Marid, sem erro de console e sem
 overflow a 375px.
+
+---
+
+## 108. Contêineres: mochilas e bolsas como mini-inventário (P3)
+
+Terceiro dos itens que o usuário abriu na revisão dos adiados, e o único que mexia em schema,
+derivação, UI e nos dois sentidos do export ao mesmo tempo. Decisões em DDL-0082.
+
+**O modelo é UM campo.** `InventoryItem.container` guarda o `uid` de OUTRA entrada - a mesma forma
+do `system.container` do Foundry, o que torna o export e o import diretos. **Aditivo, sem bump de
+schema:** uma ficha salva antes disto não tem ninguém dentro de nada e deriva idêntica.
+
+**O que é contêiner, e o que pesa, saem do SRD.** `npm run gen:uuids` passou a emitir
+`CONTAINER_PROPS` (36 itens) com `weightless` + `capacity`, do mesmo `equipment24` que já dava o
+`EQUIPMENT_TYPES` (3º uso do padrão do TC-0066). Nenhum dos dois é derivável do 5etools: que a Bag
+of Holding "weighs 5 pounds, regardless of its contents" está só na PROSA dela. Zero curadoria.
+
+**A regra de peso é o RAW, e vale para a CADEIA** (`engine/containers.js`): o conteúdo de um
+contêiner `weightless` não conta no peso carregado; o de um mundano conta; o peso do próprio
+contêiner conta sempre. Como um contêiner cabe dentro de outro, a pergunta é sobre os ancestrais -
+um item não conta se QUALQUER ancestral for weightless. Medido ao vivo: um Backpack carregado
+(61 lb com Chain Mail e Dagger dentro) posto na Bag of Holding levou o carregado de **66 para 5 lb**,
+e tirá-lo de lá devolveu os 66.
+
+**A UI é um mini-inventário na tela do próprio item** (o que o usuário pediu): a tela de detalhe de
+um contêiner ganha uma seção CONTENTS com as mesmas linhas da aba (thumbnail, meta "Martial Weapon •
+Heavy", badge de raridade, peso, stepper de quantidade) e **deliberadamente sem** agrupamento,
+ordenação configurável (é alfabética), busca ou botão de equipar. Tocar numa linha abre a tela de
+detalhe daquele item normalmente, **sem a opção de equipar**. Três botões: "+ Put items in",
+"Take items out" e a loja - que compra JÁ para dentro do contêiner aberto.
+- **Guardar e tirar aceitam VÁRIOS de uma vez** (`ItemPickerModal.jsx`, com "Select all"). É o mesmo
+  componente dos dois lados: muda a lista de origem e o rótulo.
+- Os helpers de apresentação saíram para `inventoryDisplay.js`, para uma linha guardada nunca
+  divergir da mesma linha solta.
+
+**Três invariantes que a implementação teve de garantir**, duas delas descobertas ao vivo:
+- **guardar DESEQUIPA.** A Dagger equipada continuava equipada dentro da mochila (a linha aparecia
+  destacada). A regra vive nos DOIS lugares: o fluxo de guardar a aplica, e a DERIVAÇÃO também
+  (`equipped: !!entry.equipped && !entry.container`), para valer igual num ator importado que já
+  viesse assim. Tirar de lá não reequipa sozinho - equipar é decisão do jogador;
+- **remover um contêiner SOLTA o conteúdo**, nunca o apaga (`orphanContents`), e a confirmação diz
+  quantos itens voltam;
+- **nada entra dentro de si mesmo** (`wouldCycle`), e um ciclo vindo de dado corrompido não trava a
+  derivação (teto de profundidade).
+
+**Export/import.** O contêiner sai como `type: 'container'` com a `capacity` publicada e, quando é o
+caso, `properties: ['weightlessContents']` - que faz o Foundry aplicar a MESMA regra de peso da nossa
+ficha. Os filhos levam `system.container` apontando para o `_id` do pai (uma segunda passada, porque
+o pai pode vir depois do filho na lista). No import, `system.container` volta a ser o nosso campo, em
+vez de o conteúdo virar item solto como antes. O desdobramento de PACK (leva 4, C4) convive intacto:
+o pack continua sendo UMA entrada nossa. Medido: ciclo completo com 0 diffs e peso preservado.
+
+**O `decisionSummary` do sweep ganhou o vínculo** (a regra do TC-0055: campo de decisão que não está
+lá deixa o round-trip cego). Pelo NOME do pai, não pelo uid - o uid é regerado no import.
+
+Verificado: 1304 testes (+23), lint, `npm run check:keys`, sweep **286/286** `--strict`, `npm run t2`
+estável em **18**, e ao vivo (guardar/tirar em lote, aninhamento, a regra de peso, a tela de um item
+guardado sem Equip, zero erro de console, sem overflow a 375px).

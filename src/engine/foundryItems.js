@@ -35,6 +35,7 @@ import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
 import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts, parseChoices } from './choices';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
+import { containerProps } from './containers';
 import { itemValue } from './magicItemPrice';
 import {
   classUuid, classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid,
@@ -2399,6 +2400,10 @@ function customToFoundryItem(entry) {
  */
 export function buildInventoryItems(character, db) {
   const out = [];
+  // uid da ENTRADA → `_id` do Item que a representa. O vínculo pai-filho só pode
+  // ser escrito depois que todos existem (o pai pode vir depois do filho na
+  // lista), então a ligação é uma segunda passada.
+  const itemIdByUid = new Map();
   for (const entry of character?.inventory ?? []) {
     const raw = resolveItemObj(db, entry.itemId, entry.source);
     // Item CUSTOM (sem entrada no catálogo): re-emite o Item do Foundry a partir
@@ -2489,8 +2494,16 @@ export function buildInventoryItems(character, db) {
       system.proficient = null;
     } else if (fType === 'container') {
       // Contêiner não tem `type` (não é subtipo de nada) e ganha os campos que o
-      // DataModel dele espera: capacidade e a bolsa de moedas.
-      system.capacity = { weight: { value: null, units: 'lb' }, volume: { units: 'cubicFoot' } };
+      // DataModel dele espera: capacidade e a bolsa de moedas. Capacidade e
+      // `weightlessContents` saem do SRD (CONTAINER_PROPS) - nenhum dos dois é
+      // derivável do 5etools, e é `weightlessContents` que faz o Foundry aplicar
+      // a mesma regra de peso que a nossa ficha aplica (engine/containers).
+      const props = containerProps(raw?.name ?? entry.itemId);
+      system.capacity = props?.capacity?.type === 'weight'
+        ? { weight: { value: props.capacity.value, units: 'lb' }, volume: { units: 'cubicFoot' } }
+        : { weight: { value: null, units: 'lb' }, volume: { units: 'cubicFoot' } };
+      if (props?.capacity?.type === 'items') system.capacity.count = props.capacity.value;
+      if (props?.weightless) system.properties = ['weightlessContents'];
       system.currency = { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 };
       system.identifier = slugify(raw?.name ?? entry.itemId);
       system.equipped = !!entry.equipped;
@@ -2519,6 +2532,21 @@ export function buildInventoryItems(character, db) {
     const unpacked = unpackContainer(item, raw, db);
     if (unpacked) out.push(...unpacked);
     else out.push(item);
+    // O Item que REPRESENTA a entrada: num pack desdobrado é o contêiner (o
+    // primeiro), senão o próprio item.
+    if (entry.uid) itemIdByUid.set(entry.uid, (unpacked ? unpacked[0] : item)._id);
+  }
+
+  // Segunda passada: quem está guardado aponta para o Item do contêiner. Um
+  // `container` órfão (o pai não está mais no inventário) fica solto, como a
+  // derivação já o trata.
+  for (const entry of character?.inventory ?? []) {
+    if (!entry.container || !entry.uid) continue;
+    const childId = itemIdByUid.get(entry.uid);
+    const parentId = itemIdByUid.get(entry.container);
+    if (!childId || !parentId) continue;
+    const child = out.find((i) => i._id === childId);
+    if (child) child.system.container = parentId;
   }
   return out;
 }

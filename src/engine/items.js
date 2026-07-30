@@ -9,6 +9,7 @@
 
 import { latestOnly } from '../selector/reprints';
 import { resolveVariantObj } from './magicVariants';
+import { isContainerName, containerProps, weightContext } from './containers';
 
 /** Código de tipo (5etools `type`, ex: "M|XPHB") → { grupo, rótulo }. Cobre
  * todos os tipos de item do 5e.tools (armas, armaduras, ferramentas,
@@ -160,7 +161,6 @@ export function resolveItemObj(db, itemId, source) {
  */
 export function deriveInventory(character, db) {
   const entries = [];
-  let totalWeight = 0;
   let attunedCount = 0;
   for (const entry of character?.inventory ?? []) {
     const raw = resolveItemObj(db, entry.itemId, entry.source);
@@ -174,11 +174,11 @@ export function deriveInventory(character, db) {
     const qty = entry.quantity ?? 1;
     const unitWeight = raw?.weight ?? custom?.weight ?? 0;
     const lineWeight = unitWeight * qty;
-    totalWeight += lineWeight;
     if (entry.attuned) attunedCount += 1;
     const rarity = raw
       ? (raw.rarity && raw.rarity !== 'none' ? raw.rarity : null)
       : (custom ? (RARITY_WORD[custom.rarity] ?? null) : null);
+    const name = raw?.name ?? entry.itemId;
     entries.push({
       ...entry,
       raw,
@@ -186,9 +186,35 @@ export function deriveInventory(character, db) {
       rarity,
       ...info,
       ...attune,
+      // GUARDADO não está EM USO: um item dentro da mochila não conta para CA
+      // nem aparece equipado na ficha. A regra vive aqui, e não só na UI, para
+      // valer também para um ator importado que já viesse assim - o campo CRU
+      // fica intacto (o export re-emite o que veio).
+      equipped: !!entry.equipped && !entry.container,
       unitWeight,
       lineWeight,
+      // Contêiner: o que é um sai do SRD (engine/containers), não de curadoria.
+      isContainer: isContainerName(name, custom),
+      containerProps: containerProps(name),
     });
+  }
+
+  // Peso carregado: o conteúdo de um contêiner WEIGHTLESS não conta (RAW). A
+  // conta é feita depois de montar todas as entradas porque ela depende da cadeia
+  // de pais, que só existe com a lista inteira em mãos.
+  const { counts } = weightContext(entries, (e) => e.raw?.name ?? e.itemId);
+  let totalWeight = 0;
+  for (const e of entries) {
+    e.weightCounts = counts(e);
+    if (e.weightCounts) totalWeight += e.lineWeight;
+  }
+  // Peso do conteúdo de cada contêiner (só p/ exibir na tela dele - a barra de
+  // carga já usa o `totalWeight` acima).
+  for (const e of entries) {
+    if (!e.isContainer) continue;
+    e.contentsWeight = entries
+      .filter((c) => c.container === e.uid)
+      .reduce((sum, c) => sum + c.lineWeight, 0);
   }
   return { entries, totalWeight, attunedCount };
 }

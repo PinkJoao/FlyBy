@@ -107,6 +107,26 @@ function uses(txt) {
   return { max, recovery };
 }
 
+/**
+ * Propriedades de um documento `container`: `{weightless, capacity}`.
+ *
+ * `weightless` = a propriedade `weightlessContents` do dnd5e, que é o que diz
+ * "the bag weighs 5 pounds, regardless of its contents" em forma estruturada.
+ * São 10 documentos (Bag of Holding/Devouring, Handy Haversack + as 3 bolsas
+ * dele, Efficient Quiver + os 3 compartimentos dele).
+ *
+ * `capacity` = `{type, value}` (`weight` em lb ou `count` em itens). Um contêiner
+ * sem capacidade declarada devolve null - não inventamos um limite.
+ */
+function container(txt) {
+  const weightless = /^ +- weightlessContents$/m.test(txt);
+  const block = txt.match(/^ {2}capacity:\n((?: {4,}[^\n]*\n)*)/m)?.[1] ?? '';
+  const type = block.match(/^ {4}type: *(.*)$/m)?.[1]?.trim().replace(/^['"]|['"]$/g, '');
+  const value = Number(block.match(/^ {4}value: *(.*)$/m)?.[1]?.trim());
+  const capacity = type && Number.isFinite(value) && value > 0 ? { type, value } : null;
+  return { weightless, capacity };
+}
+
 if (!existsSync(PACKS)) {
   console.error(`Pack do dnd5e não encontrado em ${PACKS}\nColoque o "DnD Source Material" na raiz do projeto (DDL-0037).`);
   process.exit(1);
@@ -190,6 +210,12 @@ const flat = { origins: {}, feats: {}, equipment: {} };
 // "adventuring gear" vira loot, equipment OU consumable, item a item), e é o
 // tipo que decide se dá para equipar/consumir na ficha do Foundry.
 const equipmentTypes = {};
+// Propriedades de CONTÊINER (`nome` → {weightless, capacity}). Nenhuma das duas
+// é derivável do 5etools: que a Bag of Holding "weighs 5 pounds regardless of its
+// contents" está só na PROSA dela, e a capacidade idem. O dnd5e as declara
+// estruturadas (`properties: [weightlessContents]` e `system.capacity`), então
+// saem daqui pelo mesmo padrão do EQUIPMENT_TYPES.
+const containerProps = {};
 // Nomes das ESPÉCIES publicadas (só os documentos `race` do origins24). O dnd5e
 // nomeia a linhagem com vírgula ("Elf, High") onde o 5etools funde a frase
 // inteira ("Elf; High Elf Lineage"); é o MESMO documento, e casar o nome é o que
@@ -217,6 +243,9 @@ for (const [key, dir, types] of FLAT_PACKS) {
     if (!flat[key][norm(name)]) flat[key][norm(name)] = id;
     if (key === 'origins' && type === 'race' && !speciesNames.includes(name)) speciesNames.push(name);
     if (key === 'equipment' && !equipmentTypes[norm(name)]) equipmentTypes[norm(name)] = `${type}/${subtype}`;
+    if (key === 'equipment' && type === 'container' && !containerProps[norm(name)]) {
+      containerProps[norm(name)] = container(readFileSync(f, 'utf8'));
+    }
     if (key !== 'equipment' && u) usesFlat[norm(name)] ??= u;
   }
 }
@@ -299,6 +328,12 @@ export const EQUIPMENT_IDS = ${literal(flat.equipment)};
  *  classificação de inventário do dnd5e - o que decide se o item pode ser
  *  equipado ou consumido na ficha. Ver engine/compendiumUuids.js. */
 export const EQUIPMENT_TYPES = ${literal(equipmentTypes)};
+
+/** \`nomeDoItem\` → \`{weightless, capacity}\` dos itens de tipo \`container\`.
+ *  Nenhum dos dois é derivável do 5etools: que a Bag of Holding pesa o mesmo
+ *  "regardless of its contents" está só na PROSA. O peso carregado segue o RAW -
+ *  o conteúdo de um contêiner \`weightless\` não conta. Ver engine/containers.js. */
+export const CONTAINER_PROPS = ${literal(containerProps)};
 
 /** \`classId|feature\` → \`system.uses\` ({max, recovery}) do SRD. O POOL de um
  *  recurso não é derivável do texto do 5etools; sem ele a ficha do Foundry não

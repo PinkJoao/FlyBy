@@ -1670,3 +1670,18 @@ em `scripts/lib/premadeDiff.js` e na §4.3 do `DEFERRED-REVIEW.md`.
   peças que o corolário exige: marca própria (`flags.builder5e.basicAction`, sem `compendiumSource`)
   e a entrada `EXPECTED` `basic-actions` sobre uma classe de achado própria (`items.basicAction`).
 - **Fora de escopo, e é decisão:** as ações de outras fontes (PHB 2014, DMG, XGE) não saem.
+
+---
+
+## TC-0086 - Item guardado num contêiner continuava EQUIPADO
+
+- **Unidade:** aba de Inventário / derivação. **Severidade:** bug (a ficha contava para CA uma
+  armadura dentro da mochila). **Encontrado:** 2026-07-30, na passada ao vivo dos contêineres.
+  **Status:** fixed@2026-07-30 (DDL-0082, CHANGELOG §108).
+- Guardar uma Dagger equipada na mochila mantinha `equipped: true`: a linha aparecia destacada
+  dentro do contêiner, e uma ARMADURA guardada continuaria somando CA.
+- **Fix em DOIS lugares, de propósito:** o fluxo de guardar desequipa, E `deriveInventory` devolve
+  `equipped: !!entry.equipped && !entry.container`. Só a UI não bastaria - um ator importado pode
+  chegar com essa combinação, e quem decide "em uso" é a derivação. O campo CRU fica intacto, então
+  o export re-emite o que veio e o round-trip não perde nada.
+- Tirar do contêiner NÃO reequipa sozinho: equipar é decisão do jogador.

@@ -54,28 +54,6 @@ jogador perde.
 |---|---|---|---|---|---|
 | P1 | Polimento do PDF (E5) | **ADIADO** | MÉDIA | MODERADO | derivada |
 | P2 | Deixar o jogador ATRIBUIR origem às magias do balde | **DEPOIS** | BAIXA | MODERADO | derivada |
-| P3 | Contêineres (mochilas/bolsas) na aba de Inventário | **APROVADO, a desenhar** | MÉDIA | ESTRUTURAL | derivada |
-
-### P3. Contêineres no inventário
-
-- **Aprovado pelo usuário em 2026-07-30**, com a regra de peso fixada: *"vamos seguir as regras do
-  jogo, como de costume"* - ou seja, o conteúdo de um contêiner MÁGICO (Bag of Holding, Handy
-  Haversack) não conta no peso carregado; o de um mundano conta. A **forma na UI fica para decidir
-  depois**, numa conversa própria.
-- **O que já existe:** o EXPORT desdobra um *pack* em contêiner + conteúdo (leva 4, C4), e o import
-  o recolhe. A classificação vem de graça: o `EQUIPMENT_TYPES` gerado do `equipment24` marca
-  **36 itens** como `container` (backpack, pouch, sack, chest, quiver, Bag of Holding…), então não há
-  curadoria a fazer.
-- **O que falta:** o builder não tem o conceito. A entrada de inventário é plana
-  (`{uid, itemId, source, quantity, equipped, attuned}`), sem referência de pai, então o jogador não
-  consegue guardar nada dentro de nada.
-- **A forma que encaixa:** um campo opcional `container: <uid>` na entrada, espelhando o
-  `system.container` do Foundry. **Aditivo, sem bump de schema** - o mesmo movimento do
-  `unassignedSpells`.
-- **Onde toca:** schema (aditivo), derivação (`deriveInventory` soma `unitWeight × qty` plano, e
-  precisa do roll-up com a regra do mágico), UI da InventoryTab (aninhamento + um controle de mover
-  para dentro) e os dois sentidos do export - onde o desdobramento de pack terá de conviver com
-  contêiner de verdade.
 
 ### P1. Polimento do PDF (E5) - adiado, mas na mira
 
@@ -102,6 +80,14 @@ jogador perde.
 ---
 
 ## 3. RESOLVIDO
+
+### Leva 5 - o que o usuário pediu depois da revisão (CHANGELOG §107-108)
+
+| Item | Resultado |
+|---|---|
+| **Resistências de subclasse** (TC-0084) | A suspeita do usuário sobre o Genie era real, e eram **11 subclasses**, não uma. A varredura da leva 4 filtrou por TAG e por fonte atual e viu 37 features; por PROSA, em qualquer fonte, são 96. Campos novos `immune` e `resistBy` (o tipo vindo de outra escolha já feita). DDL-0081. |
+| **Ações básicas no export** (TC-0085) | As 18 ações do XPHB viram itens, derivadas de `actions.json`. 2ª divergência deliberada do SRD, com marca própria e a entrada `EXPECTED` `basic-actions`. DDL-0081. |
+| **P3 Contêineres** | Um campo `container` (aditivo), a regra de peso do RAW valendo pela cadeia de pais, o mini-inventário na tela do item com guardar/tirar em lote, e `capacity`/`weightlessContents` no export - o Foundry passa a aplicar a mesma conta de peso. DDL-0082. |
 
 ### Leva 1 - os aprovados automaticamente (CHANGELOG §103)
 

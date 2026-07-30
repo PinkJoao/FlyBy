@@ -1999,6 +1999,49 @@ export const EQUIPMENT_TYPES = {
   "yew wand": "equipment/trinket",
 };
 
+/** `nomeDoItem` → `{weightless, capacity}` dos itens de tipo `container`.
+ *  Nenhum dos dois é derivável do 5etools: que a Bag of Holding pesa o mesmo
+ *  "regardless of its contents" está só na PROSA. O peso carregado segue o RAW -
+ *  o conteúdo de um contêiner `weightless` não conta. Ver engine/containers.js. */
+export const CONTAINER_PROPS = {
+  "backpack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "bag of devouring": {"weightless":true,"capacity":null},
+  "bag of holding": {"weightless":true,"capacity":{"type":"weight","value":500}},
+  "barrel": {"weightless":false,"capacity":{"type":"weight","value":333.6}},
+  "basket": {"weightless":false,"capacity":{"type":"weight","value":40}},
+  "bottle, glass": {"weightless":false,"capacity":null},
+  "bucket": {"weightless":false,"capacity":null},
+  "burglar's pack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "case, crossbow bolt": {"weightless":false,"capacity":null},
+  "case, map or scroll": {"weightless":false,"capacity":null},
+  "central pouch": {"weightless":true,"capacity":null},
+  "chest": {"weightless":false,"capacity":{"type":"weight","value":360}},
+  "component pouch": {"weightless":false,"capacity":null},
+  "diplomat's pack": {"weightless":false,"capacity":{"type":"weight","value":360}},
+  "dungeoneer's pack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "efficient quiver": {"weightless":true,"capacity":{"type":"items","value":3}},
+  "entertainer's pack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "explorer's pack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "flask": {"weightless":false,"capacity":null},
+  "folding boat": {"weightless":false,"capacity":null},
+  "handy haversack": {"weightless":true,"capacity":null},
+  "jug": {"weightless":false,"capacity":{"type":"weight","value":8.4}},
+  "left pouch": {"weightless":true,"capacity":null},
+  "long compartment": {"weightless":true,"capacity":null},
+  "map or scroll case": {"weightless":false,"capacity":null},
+  "midsize compartment": {"weightless":true,"capacity":null},
+  "pot, iron": {"weightless":false,"capacity":{"type":"weight","value":8.4}},
+  "pouch": {"weightless":false,"capacity":{"type":"weight","value":6}},
+  "priest's pack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "quiver": {"weightless":false,"capacity":null},
+  "right pouch": {"weightless":true,"capacity":null},
+  "sack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "scholar's pack": {"weightless":false,"capacity":{"type":"weight","value":30}},
+  "short compartment": {"weightless":true,"capacity":null},
+  "vial": {"weightless":false,"capacity":{"type":"weight","value":0.25}},
+  "waterskin": {"weightless":false,"capacity":{"type":"weight","value":4}},
+};
+
 /** `classId|feature` → `system.uses` ({max, recovery}) do SRD. O POOL de um
  *  recurso não é derivável do texto do 5etools; sem ele a ficha do Foundry não
  *  tem o que gastar (TC-0068). Keyed por classe porque o nome colide

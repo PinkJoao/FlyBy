@@ -390,6 +390,18 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-30 (2)** - **Fora da T2: CONTÊINERES (P3 do `DEFERRED-REVIEW.md`), o último dos três
+  pedidos.** 1304 testes (+23), lint, sweep 286/286 `--strict`, `npm run t2` estável em 18.
+  Decisões em DDL-0082, log em CHANGELOG §108.
+  Um campo `container` (aditivo, sem migração), a regra de peso do RAW valendo pela CADEIA de pais,
+  o mini-inventário na tela do próprio item com guardar/tirar em lote, e `capacity`/
+  `weightlessContents` no export - o Foundry passa a fazer a mesma conta de peso que a ficha.
+  **A lição da sessão veio da passada ao vivo (TC-0086):** o modelo estava certo e os testes
+  passavam, mas uma arma equipada continuava equipada DENTRO da mochila - defeito que só apareceu
+  clicando. E a correção certa não era na UI: quem decide "em uso" é a **derivação**, senão um ator
+  importado com essa combinação escaparia da regra. **Regra que fica: um invariante de estado se
+  impõe na derivação; o fluxo de UI é conveniência, não a garantia.**
+
 - **2026-07-30** - **Fora da T2: a família das resistências de subclasse (TC-0084) e as ações
   básicas no export (TC-0085).** Dois pedidos do usuário; decisões em DDL-0081, log em CHANGELOG
   §107. 1281 testes (+9), lint, sweep 286/286 `--strict`, `npm run t2` estável em **18** (+113

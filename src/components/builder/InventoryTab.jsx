@@ -16,116 +16,27 @@
 
 import { useRef, useState } from 'react';
 import { GROUP_ORDER } from '../../engine/items';
+import { contentsOf, orphanContents, wouldCycle } from '../../engine/containers';
 import { unmetAttunement, ATTUNEMENT_MAX } from '../../engine/attunement';
 import DetailView from '../common/DetailView';
 import Stepper from '../common/Stepper';
 import { confirm } from '../common/dialog';
 import { fileToPortrait } from '../common/imageFile';
 import { itemValue } from '../../engine/magicItemPrice';
-import { imgUrl } from '../common/media';
 import itemEntity from '../../selector/entities/item';
 import { TUT } from '../../tutorial/anchors';
 import CurrencyCard from './CurrencyCard';
 import EquipmentShop from './EquipmentShop';
+import ItemPickerModal from './ItemPickerModal';
+import {
+  RARITY_COLOR, GROUP_ICONS, cap, rarityRank, nameOf, metaParts, thumbOf,
+} from './inventoryDisplay';
 import styles from './InventoryTab.module.css';
 
 // Grupos em que "equipar" faz sentido (arma/armadura/foco/ferramenta/instrumento
 // - coisas que se veste ou empunha). O resto (poções, engenho, tesouro…) não
 // mostra o botão de equipar.
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
-
-const RARITY_ORDER = ['artifact', 'legendary', 'very rare', 'rare', 'uncommon', 'common', 'none'];
-
-/** Cores da escala de raridade (convenção D&D: verde/azul/roxo/laranja/dourado). */
-const RARITY_COLOR = {
-  uncommon: '#3fa14b',
-  rare: '#4a90d9',
-  'very rare': '#a45ee5',
-  legendary: '#e08a2e',
-  artifact: '#c9a227',
-};
-
-/** Ícone (emoji) por grupo - usado nas sub-abas e como fallback do thumbnail. */
-const GROUP_ICONS = {
-  all: '📦',
-  weapon: '⚔️',
-  armor: '🛡️',
-  spellcastingFocus: '🔮',
-  ammunition: '🏹',
-  tool: '🛠️',
-  instrument: '🎵',
-  gear: '🎒',
-  food: '🍖',
-  wondrous: '✨',
-  ring: '💍',
-  wand: '🪄',
-  rod: '🔱',
-  potion: '🧪',
-  scroll: '📜',
-  treasure: '💎',
-  other: '❔',
-};
-
-/** Rótulos das propriedades de arma do 5e.tools (`property: ["H", "2H|XPHB"…]`). */
-const WEAPON_PROPS = {
-  A: 'Ammunition',
-  AF: 'Ammunition',
-  BF: 'Burst Fire',
-  F: 'Finesse',
-  H: 'Heavy',
-  L: 'Light',
-  LD: 'Loading',
-  R: 'Reach',
-  RLD: 'Reload',
-  S: 'Special',
-  T: 'Thrown',
-  V: 'Versatile',
-  '2H': 'Two-Handed',
-};
-
-function cap(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-}
-
-function rarityRank(rarity) {
-  const i = RARITY_ORDER.indexOf(rarity ?? 'none');
-  return i === -1 ? RARITY_ORDER.length : i;
-}
-
-function nameOf(entry) {
-  return entry.customName || entry.raw?.name || entry.itemId;
-}
-
-/** Partes da linha de tipo: "Martial Weapon • Heavy • Two-Handed",
- * "Light Armor", "Wondrous Item"… */
-function metaParts(entry) {
-  if (entry.raw && entry.group === 'weapon') {
-    const parts = [`${cap(entry.category ?? '')} Weapon`.trim()];
-    for (const p of entry.raw.property ?? []) {
-      const code = typeof p === 'string' ? p.split('|')[0] : p?.uid?.split('|')[0];
-      if (WEAPON_PROPS[code]) parts.push(WEAPON_PROPS[code]);
-    }
-    return parts;
-  }
-  if (entry.raw && entry.group === 'armor' && entry.armorSlot) {
-    return [entry.armorSlot === 'shield' ? 'Shield' : `${cap(entry.armorSlot)} Armor`];
-  }
-  // Sem objeto do 5etools E sem snapshot custom (entrada legada): sem meta.
-  if (!entry.raw && !entry.isCustom) return [];
-  // groupLabel é plural (nome da aba) - singulariza pro rótulo do item.
-  const label = entry.groupLabel?.replace(/ Items$/, ' Item').replace(/([a-rt-z])s$/, '$1');
-  return label ? [label] : [];
-}
-
-/** URL do thumbnail (arte do fluff do 5e.tools), ou null → glyph do grupo. */
-function thumbOf(entry, db) {
-  // Imagem custom do usuário (data-URL ou URL) tem prioridade - vale até p/
-  // itens não-resolvidos (sem arte do 5etools).
-  if (entry.customImg) return entry.customImg;
-  if (!entry.raw) return null;
-  const fluff = itemEntity.fluff(entry.raw, db);
-  return imgUrl(fluff?.images?.[0]?.href);
-}
 
 /** Agrupa uma lista já ordenada por uma chave; `null` = sem sub-agrupamento
  * (uma única seção sem título). Preserva a ordem de primeira aparição. */
@@ -183,6 +94,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const [infoUid, setInfoUid] = useState(null); // uid do item com o detalhe aberto
   const [collapsed, setCollapsed] = useState(() => new Set()); // seções fechadas
   const [imgModalOpen, setImgModalOpen] = useState(false); // escolher imagem do item
+  const [picker, setPicker] = useState(null); // 'stow' | 'takeOut' - multi-seleção
   const imgFileRef = useRef(null);
 
   const entries = derived.inventory ?? [];
@@ -190,6 +102,10 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   // Sempre a versão ATUAL da entrada (a derivação recomputa a cada mudança);
   // se o item for removido, some de `entries` e o overlay fecha sozinho.
   const infoEntry = infoUid ? entries.find((e) => e.uid === infoUid) : null;
+  // A lista principal mostra só o que está SOLTO: o que está guardado aparece
+  // dentro da tela do próprio contêiner.
+  const loose = entries.filter((e) => !e.container);
+  const contents = infoEntry?.isContainer ? contentsOf(entries, infoEntry.uid) : [];
 
   const selectGroup = (g) => {
     setActiveGroup(g);
@@ -198,21 +114,42 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
   // Abas presentes = grupos que o personagem de fato tem algo, na ordem canônica.
   const presentGroups = GROUP_ORDER
-    .map((g) => ({ key: g, label: entries.find((e) => e.group === g)?.groupLabel }))
+    .map((g) => ({ key: g, label: loose.find((e) => e.group === g)?.groupLabel }))
     .filter((g) => g.label);
 
   const updateEntry = (uid, patch) =>
     onChange(character.inventory.map((it) => (it.uid === uid ? { ...it, ...patch } : it)));
   const removeEntry = async (entry) => {
     const qty = entry.quantity > 1 ? ` ×${entry.quantity}` : '';
+    // Remover um contêiner NÃO apaga o que estava dentro: o conteúdo volta a ser
+    // item solto. Perder o conteúdo junto seria destrutivo e nada o anunciaria.
+    const inside = contentsOf(entries, entry.uid).length;
+    const note = inside
+      ? ` Its ${inside === 1 ? 'item' : `${inside} items`} will go back to the inventory.`
+      : '';
     const ok = await confirm({
       title: 'Remove item',
-      message: `Remove ${nameOf(entry)}${qty} from the inventory?`,
+      message: `Remove ${nameOf(entry)}${qty} from the inventory?${note}`,
       confirmLabel: 'Remove',
       danger: true,
     });
     if (!ok) return;
-    onChange(character.inventory.filter((it) => it.uid !== entry.uid));
+    onChange(orphanContents(character.inventory, [entry.uid]).filter((it) => it.uid !== entry.uid));
+  };
+
+  /** Move entradas para dentro de um contêiner (ou para fora, com `null`).
+   * Guardar DESEQUIPA: um item dentro da mochila não está em uso, e é por isso
+   * que a linha dele nem mostra o botão de equipar. Tirar de lá NÃO reequipa
+   * sozinho - equipar é decisão do jogador. */
+  const moveInto = (uids, targetUid) => {
+    const set = new Set(uids);
+    onChange(
+      character.inventory.map((it) =>
+        (set.has(it.uid) && !wouldCycle(character.inventory, it.uid, targetUid)
+          ? { ...it, container: targetUid, equipped: targetUid ? false : it.equipped }
+          : it)),
+    );
+    setPicker(null);
   };
 
   const toggleEquip = (entry) => updateEntry(entry.uid, { equipped: !entry.equipped });
@@ -253,7 +190,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
     setImgModalOpen(false);
   };
 
-  let visible = activeGroup === 'all' ? entries : entries.filter((e) => e.group === activeGroup);
+  let visible = activeGroup === 'all' ? loose : loose.filter((e) => e.group === activeGroup);
   const q = query.trim().toLowerCase();
   if (q) visible = visible.filter((e) => nameOf(e).toLowerCase().includes(q));
 
@@ -388,7 +325,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
         </label>
       </div>
 
-      {entries.length === 0 ? (
+      {loose.length === 0 ? (
         <p className={styles.empty}>No items yet. Visit the shop to add gear.</p>
       ) : sorted.length === 0 ? (
         <p className={styles.empty}>No items match your search.</p>
@@ -460,6 +397,64 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                   “{nameOf(infoEntry)}” could not be resolved against the loaded item data.
                 </p>
               )}
+
+              {/* Contêiner: um mini-inventário. Deliberadamente mais simples que
+                * a aba - sem agrupamento, sem ordenação configurável (alfabética),
+                * sem busca e sem equipar (o que está guardado não está em uso). */}
+              {infoEntry.isContainer && (
+                <section className={styles.contents}>
+                  <div className={styles.contentsHead}>
+                    <h4 className={styles.contentsTitle}>Contents</h4>
+                    <span className={styles.contentsWeight}>
+                      {Math.round((infoEntry.contentsWeight ?? 0) * 100) / 100}
+                      {infoEntry.containerProps?.capacity?.type === 'weight'
+                        ? ` / ${infoEntry.containerProps.capacity.value}` : ''} lb
+                    </span>
+                  </div>
+
+                  {contents.length === 0 ? (
+                    <p className={styles.contentsEmpty}>Empty. Put something in it below.</p>
+                  ) : (
+                    <ul className={styles.list}>
+                      {[...contents]
+                        .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
+                        .map((entry) => (
+                          <ItemRow
+                            key={entry.uid}
+                            entry={entry}
+                            thumb={thumbOf(entry, db)}
+                            hideEquip
+                            onInfo={() => setInfoUid(entry.uid)}
+                            onQty={(qty) => updateEntry(entry.uid, { quantity: Math.max(1, qty) })}
+                            onRemove={() => removeEntry(entry)}
+                          />
+                        ))}
+                    </ul>
+                  )}
+
+                  <div className={styles.contentsActions}>
+                    <button type="button" className={styles.contentsBtn} onClick={() => setPicker('stow')}>
+                      Load ↓
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.contentsBtn}
+                      disabled={contents.length === 0}
+                      onClick={() => setPicker('takeOut')}
+                    >
+                      Unload ↑
+                    </button>
+                    {/* A loja compra JÁ para dentro deste contêiner. */}
+                    <EquipmentShop
+                      character={character}
+                      db={db}
+                      onPurchase={onPurchase}
+                      containerUid={infoEntry.uid}
+                      label="Shop"
+                    />
+                  </div>
+                </section>
+              )}
             </div>
             {/* Rodapé no mesmo espírito do preview da loja: contador à ESQUERDA
               * (zerar = remover), valor total + equipar/atunar à DIREITA. */}
@@ -487,7 +482,9 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                     </div>
                   );
                 })()}
-                {EQUIPPABLE_GROUPS.has(infoEntry.group) && (
+                {/* Guardado num contêiner não se equipa: para usar, tire de lá
+                  * primeiro (é o que o botão "Take items out" faz). */}
+                {EQUIPPABLE_GROUPS.has(infoEntry.group) && !infoEntry.container && (
                   <button
                     type="button"
                     className={infoEntry.equipped ? `${styles.infoBtn} ${styles.infoBtnActive}` : styles.infoBtn}
@@ -518,6 +515,32 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
               onUseUrl={setItemImgUrl}
               onRemove={clearItemImg}
               onClose={() => setImgModalOpen(false)}
+            />
+          )}
+
+          {/* Guardar / tirar VÁRIOS de uma vez. O candidato a guardar é o que
+            * está solto e não é o próprio contêiner; `wouldCycle` ainda barra
+            * pôr um contêiner dentro de si mesmo por outro caminho. */}
+          {picker === 'stow' && (
+            <ItemPickerModal
+              title={`Put items in ${nameOf(infoEntry)}`}
+              entries={loose.filter((e) => e.uid !== infoEntry.uid)}
+              confirmLabel="Put in"
+              emptyText="Nothing loose in the inventory to put in."
+              db={db}
+              onConfirm={(uids) => moveInto(uids, infoEntry.uid)}
+              onClose={() => setPicker(null)}
+            />
+          )}
+          {picker === 'takeOut' && (
+            <ItemPickerModal
+              title={`Take items out of ${nameOf(infoEntry)}`}
+              entries={contents}
+              confirmLabel="Take out"
+              emptyText="This container is empty."
+              db={db}
+              onConfirm={(uids) => moveInto(uids, null)}
+              onClose={() => setPicker(null)}
             />
           )}
         </div>
@@ -624,8 +647,8 @@ function CustomDetail({ entry, name, meta }) {
   );
 }
 
-function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove }) {
-  const canEquip = EQUIPPABLE_GROUPS.has(entry.group);
+function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEquip = false }) {
+  const canEquip = !hideEquip && EQUIPPABLE_GROUPS.has(entry.group);
   const rarity = entry.rarity ?? null;
   const rarityColor = rarity ? RARITY_COLOR[rarity] : null;
   const meta = metaParts(entry);

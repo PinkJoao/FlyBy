@@ -289,3 +289,53 @@ describe('classificação de inventário contra o SRD (TC-0066)', () => {
     expect(items.map((i) => i.type)).toEqual(['weapon', 'equipment', 'tool']);
   });
 });
+
+describe('contêineres: o vínculo pai-filho atravessa export e import', () => {
+  const cdb = {
+    'items-base': {
+      baseitem: [
+        { name: 'Backpack', source: 'XPHB', type: 'G|XPHB', weight: 5, value: 200 },
+        { name: 'Rope', source: 'XPHB', type: 'G|XPHB', weight: 10, value: 100 },
+      ],
+    },
+    items: {
+      item: [{ name: 'Bag of Holding', source: 'XDMG', wondrous: true, rarity: 'uncommon', weight: 5 }],
+    },
+    'fluff-items': { itemFluff: [] },
+  };
+  const char = {
+    inventory: [
+      { uid: 'bp', itemId: 'Backpack', source: 'XPHB', quantity: 1 },
+      { uid: 'r', itemId: 'Rope', source: 'XPHB', quantity: 1, container: 'bp' },
+      { uid: 'b', itemId: 'Bag of Holding', source: 'XDMG', quantity: 1 },
+    ],
+  };
+  const items = buildInventoryItems(char, cdb);
+
+  it('o contêiner sai como type `container`, com a capacidade do SRD', () => {
+    const bp = byName(items, 'Backpack');
+    expect(bp.type).toBe('container');
+    expect(bp.system.capacity.weight).toEqual({ value: 30, units: 'lb' });
+  });
+
+  it('`weightlessContents` é emitido só para quem o SRD marca', () => {
+    expect(byName(items, 'Bag of Holding').system.properties).toEqual(['weightlessContents']);
+    expect(byName(items, 'Backpack').system.properties).toEqual([]);
+  });
+
+  it('o filho aponta para o `_id` do contêiner', () => {
+    expect(byName(items, 'Rope').system.container).toBe(byName(items, 'Backpack')._id);
+  });
+
+  it('o import reconstrói o vínculo (e o uid é NOVO, então casa por _id)', () => {
+    const back = foundryToCharacter({ items }, cdb);
+    const bp = back.inventory.find((e) => e.itemId === 'Backpack');
+    const rope = back.inventory.find((e) => e.itemId === 'Rope');
+    expect(rope.container).toBe(bp.uid);
+    expect(back.inventory.find((e) => e.itemId === 'Bag of Holding').container).toBeUndefined();
+  });
+
+  it('item solto continua sem contêiner nenhum nos dois sentidos', () => {
+    expect(byName(items, 'Bag of Holding').system.container).toBeNull();
+  });
+});

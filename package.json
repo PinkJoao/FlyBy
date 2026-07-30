@@ -16,7 +16,8 @@
     "gen:uuids": "vite-node scripts/gen-compendium-uuids.js",
     "gen:sources": "vite-node scripts/gen-source-names.js",
     "gen:srd": "vite-node scripts/gen-srd-activities.js",
-    "check:keys": "vite-node scripts/check-species-keys.js"
+    "check:keys": "vite-node scripts/check-species-keys.js",
+    "check:uuids": "vite-node scripts/check-compendium-uuids.js"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",

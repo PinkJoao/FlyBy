@@ -131,3 +131,4 @@ and the traps each one left behind. The table is the index.
 | TC-0084 | 11 subclasses alcançáveis não derivam a resistência/imunidade que a feature concede | fixed@2026-07-30 (DDL-0081, CHANGELOG §107) |
 | TC-0085 | O ator exportado não tem nenhuma ação básica (Dash, Hide, Help, Study…) | fixed@2026-07-30 (DDL-0081, CHANGELOG §107) |
 | TC-0086 | Item guardado num contêiner continuava EQUIPADO | fixed@2026-07-30 (DDL-0082, CHANGELOG §108) |
+| TC-0087 | Monge perde Self-Restoration ao subir de nível DENTRO do Foundry (escada @10 sem uuid) | fixed@2026-07-30 (DDL-0083, CHANGELOG §110) |

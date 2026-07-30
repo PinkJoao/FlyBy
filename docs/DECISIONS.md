@@ -11,6 +11,58 @@
 
 ---
 
+### DDL-0083 - Um achado que SOME conforme o nivel sobe nao e quirk do premade; e lacuna da arvore de fontes nao e "o SRD nao publica"
+**Date:** 2026-07-30
+
+**Contexto.** O levantamento do que ainda estava aberto releu os 18 achados do
+`npm run t2`. A nota de triagem dizia que os 8 `advancement.class.grants` eram todos
+"a composicao do ItemGrant do Paladino, ja medida no DDL-0079". Dois nao eram: eram
+um caso de MONGE (`monk Class Features@10: premade=2 ours=1`).
+
+**O sinal que a triagem tinha na mao e nao leu.** O achado do Monge aparecia em
+L01 e L05 e sumia em L11 e L17. Um defeito do documento premade nao muda de
+comportamento conforme o nivel do personagem - o premade e o mesmo documento. O
+padrao so tem uma explicacao: o que diverge e a escada de niveis FUTUROS, que so
+existe acima do nivel atual. Nos niveis ja alcancados a feature vira item local e
+o passo fica correto.
+
+**A causa.** `buildClassFutureGrants` monta cada passo com `classFeatureUuid`. Sem
+uuid, a entrada e DROPADA - em silencio. O `Self-Restoration` do Monge (@10) nao
+tem arquivo em `packs/_source/classes24/monk/class-features/`, entao o gerador
+nunca o viu. Efeito real: um Monge exportado abaixo do nivel 10 e subido DENTRO do
+Foundry nao recebia a feature.
+
+**A distincao que decide o tratamento.** Ha dois motivos diferentes para um uuid
+faltar, e eles pedem respostas opostas:
+
+- **O SRD nao publica o conteudo** (Artificer, as 123 subclasses fora do SRD,
+  variantes magicas geradas). Aqui NAO ter uuid e a decisao certa (DDL-0056):
+  apontar para um near-match faria o Foundry substituir o conteudo do jogador.
+- **O documento EXISTE e a nossa arvore de fontes nao traz o arquivo.** Os atores
+  premade oficiais referenciam `phbmnkSelfrestor`, entao o uuid e real. Preencher
+  e fidelidade, nao invencao.
+
+**Decisao.**
+1. `SOURCE_GAPS` em `scripts/gen-compendium-uuids.js`: mapa explicito das lacunas
+   da arvore de fontes, com o motivo. O gerador AVISA se a entrada virar redundante
+   (o dnd5e publicou o arquivo), para ela nao apodrecer.
+2. **`npm run check:uuids`** (`scripts/check-compendium-uuids.js`) e a rede
+   permanente: cruza todo uuid de `classes24` que os 48 premades referenciam contra
+   o registro. Um id que eles usem e nos nao conhecamos e uma escada furada.
+   Ausencia legitima e NOMEADA no proprio script (`EXPECTED_ABSENT`): o
+   `phbmnkUnarmedStr` e arma, nao feature.
+3. Teste de regressao no `foundryItems.test.js`: o passo @10 do Monge leva as duas
+   features.
+
+**Por que a rede e mais importante que o fix.** Este defeito custou uma feature de
+classe e sobreviveu a T1 inteira, ao sweep e a sete sessoes de T2b, porque a falta
+de uuid nao quebra nada visivel: o export continua valido, o sweep continua verde,
+e o efeito so aparece quando alguem sobe de nivel dentro do Foundry. E a mesma
+forma do `check:keys` (DDL-0080): transformar uma armadilha silenciosa numa sonda
+que falha alto.
+
+**Resultado.** `npm run t2` 18 -> 16.
+
 ### DDL-0082 - Contêiner é UM campo de parentesco; e "guardado" é um estado que a DERIVAÇÃO decide
 **Date:** 2026-07-30
 **Implementa e FECHA** o item P3 do `docs/archive/deferred-review.md`. **Builds on:** DDL-0013 (o pack é UMA

@@ -5,7 +5,7 @@
 > survive regeneration; row key = the Unit cell). Conventions: `todo`, `ok`,
 > `issues (TC-xxxx)`, `needs-user-eyes`. See TESTING-PLAN.md.
 
-Last sweep: 2026-07-30T17:55:42.366Z · base seed 1 · 286 rows
+Last sweep: 2026-07-30T19:06:59.975Z · base seed 1 · 286 rows
 
 ## Classes × subclasses (135)
 
@@ -182,8 +182,8 @@ Last sweep: 2026-07-30T17:55:42.366Z · base seed 1 · 286 rows
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Sapphire)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Thunder (as 5 distintas) + o voo no texto. |
 | `species:Dragonborn (Gem)\|FTD/Dragonborn (Gem; Topaz)` | ok | - | ok | todo | S-D: probe (dado->derivacao, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + UI ao vivo (meta/escolhas/preview, sem tag crua). resist Necrotic (as 5 distintas) + o voo no texto. |
 | `species:Duergar\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): dv 120; resist poison; 2 magias. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
-| `species:Dwarf\|XPHB/Dwarf; Hill Lineage` | ok | - | todo | todo |  |
-| `species:Dwarf\|XPHB/Dwarf; Mountain Lineage` | ok | - | todo | todo |  |
+| `species:Dwarf\|XPHB/Dwarf; Hill Lineage` | ok | - | ok | todo | swap DDL-0080 conferido ao vivo 2026-07-30: guarda-chuva "Dwarf Lineage" no preview, Dwarven Toughness deriva (HP 33->39 @6, +1/nivel) |
+| `species:Dwarf\|XPHB/Dwarf; Mountain Lineage` | ok | - | ok | todo | swap DDL-0080 conferido ao vivo 2026-07-30: Dwarven Armor Training deriva (ARMOR: Light+Medium); Toughness AUSENTE (HP 33) - a troca e exclusiva |
 | `species:Dwarf (Kaladesh)\|PSK` | ok | - | ok | todo | S-E (passada leve, conforme o plano): probe (constroi, deriva, autoBuild converge, sem NaN, ZERO link morto, toda escolha com opcoes) + filtro DDL-0064 conferido ao vivo. resist poison; speed 25; escolha de ferramenta. |
 | `species:Eladrin\|MPMM` | ok | - | ok | todo | S-C: DERIVACAO certificada 2026-07-25 por probe exaustivo (dado->derivacao, autoBuild converge, sem NaN): dv 60; 6 tracos. UI conferida ao vivo (meta/escolhas/preview) + probe de preview (todo traço com texto, ZERO link morto, toda escolha com opções). |
 | `species:Elf\|XPHB/Elf; Drow Lineage` | ok | - | ok | todo | S-A1: Darkvision 120 + Dancing Lights (Cha) na Spellbook; Keen Senses skill + spellcasting ability (adiada) |

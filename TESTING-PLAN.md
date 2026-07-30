@@ -21,7 +21,7 @@ Then repeat the process for feats, spells and items.
 - **T1 — Species / classes / subclasses, builder usability.** Every species
   (incl. every lineage/`_versions` and every species sub-choice), every class,
   every subclass, all their features: the UI must offer every required selector/
-  input/preview, and the derivation must be right. ✅ **done 2026-07-26.**
+  input/preview, and the derivation must be right. ✅ **done** (286/286).
 - **T2 — Foundry export for those same units. ← current focus.**
 - **T3 — Feats, spells, items** (same machinery, new units). **Explicitly out of
   scope for now** — do not drift into it beyond fixing what T2 trips over.
@@ -402,25 +402,35 @@ that is non-trivial (matrix enumeration, waiver diffing) is unit-tested normally
 |---|---|
 | **T0** harness | ✅ done 2026-07-15; backlog (TC-0001…TC-0010) burned down 2026-07-16 |
 | **T1a** classes | ✅ done 2026-07-22 - 135 `class:*` rows `ui: ok`, 13 sessions |
-| **T1b** species | ✅ done 2026-07-26 - 150 `species:*` rows `ui: ok`, 7 sessions in the 5 blocks of §4.5 |
+| **T1b** species | ✅ done - 150 `species:*` rows `ui: ok`, 7 sessions in the 5 blocks of §4.5. The 2 Dwarf swap rows, born after the 2026-07-26 close, were certified 2026-07-30: **286/286** |
 | **T2a** export oracle | ✅ done 2026-07-26 - `npm run t2` built; first run 1023 findings in 27 classes |
-| **T2b** burn-down | 🔄 **in progress** - 1023 → **18** over 7 sessions plus the deferred-review levas |
+| **T2b** burn-down | 🔄 **in progress** - 1023 → **16** over 8 sessions plus the deferred-review levas |
 | **T2c** user decisions | pending: rows flagged `needs-user-eyes` |
 | **T2d** real Foundry imports | ⏳ **blocked on the user** (see below) |
 | **T3** feats/spells/items | later; re-plan then |
 
-**Last measured:** 1304 tests · lint clean · `npm run sweep -- --strict` **286/286**
-· `npm run t2` **18** findings (+113 named as expected) · `npm run check:keys` clean.
+**Last measured:** 1305 tests · lint clean · `npm run sweep -- --strict` **286/286**
+· `npm run t2` **16** findings (+113 named as expected) · `check:keys` and
+`check:uuids` clean.
 
 **No `export: ok` row has been marked yet** - the criterion is in §5.2, and it is
 deliberately stricter than "I did not spot anything".
 
-### What the remaining 18 findings are
+### What the remaining 16 findings are
 
-Analysed one by one on 2026-07-30 and none is an unknown: the 6 extra activities
-waiting on T2d, two premade quirks (Sefris's `spell.method`, Riswynn's `details.xp`),
-the Barbarian capstone's form, and the composition of the Paladin's `ItemGrant`.
-The full triage is `docs/archive/deferred-review.md`.
+| N | Category | What it is |
+|---:|---|---|
+| 6 | `feat.activities` | activities we emit and the SRD does not (Paladin's Smite, Agonizing Blast). **Waits on T2d question 2** |
+| 6 | `advancement.class.grants` | the Paladin's `ItemGrant` composition: the step of the REACHED level does not list the granted spell alongside the features. Measured in DDL-0079; the spell item is on the actor either way |
+| 2 | `spell.method` | Sefris quirk: the document encodes one of her spells differently from all its siblings |
+| 1 | `advancement.class` | the Barbarian capstone's form (`ItemGrant@17` vs our `AbilityScoreImprovement@20`) |
+| 1 | `details.xp` | Riswynn L11 quirk: the premade's XP does not match its own level |
+
+**Re-triaged 2026-07-30 and the old note was wrong.** It recorded all 8
+`advancement.class.grants` as "the Paladin's ItemGrant". Two of them were a MONK
+case, and it was a real bug, now fixed (see the last session below). The lesson:
+a finding that DISAPPEARS as the level rises is not a premade quirk - it is the
+signature of a ladder built from the current level.
 
 ### Blocked on the user (T2d)
 
@@ -436,18 +446,33 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
 
 ### Last session
 
-- **2026-07-30 (2)** - **Outside T2: CONTAINERS** (the last of the three user
-  requests). Decisions in DDL-0082, log in CHANGELOG §108. An additive `container`
-  field (no migration), the RAW weight rule applied up the whole parent CHAIN, the
-  mini-inventory on the item's own screen with bulk stow/remove, and
-  `capacity`/`weightlessContents` in the export so Foundry does the same weight
-  maths as the sheet.
-  **The lesson came from the live pass (TC-0086):** the model was right and the
-  tests passed, but an equipped weapon stayed equipped INSIDE the backpack - a
-  defect that only showed up by clicking. And the right fix was not in the UI:
-  what is "in use" is decided by the **derivation**, otherwise an imported actor in
-  that combination escapes the rule. **Rule that stuck: a state invariant is
-  enforced in the derivation; the UI flow is convenience, not the guarantee.**
+- **2026-07-30 (3)** - **Survey of what was still open, and the two things it
+  found.** 1305 tests (+1), lint, sweep 286/286 `--strict`, `t2` 18 -> **16**,
+  `check:keys` and `check:uuids` clean. Log in CHANGELOG §110, decision in DDL-0083.
+
+  **1. T1 was not actually complete.** The matrix had grown to 286 when the Dwarf
+  swap shipped (DDL-0080, 2026-07-29), three days AFTER T1 was declared done at
+  285. The two new rows had never been opened in a browser. Certified now: the
+  "Dwarf Lineage" umbrella lists both options, Hill derives Dwarven Toughness
+  (HP 33 -> 39 at level 6) and Mountain derives Dwarven Armor Training (ARMOR:
+  Light + Medium) with Toughness correctly ABSENT - the swap is exclusive.
+  **286/286 `ui: ok`.**
+
+  **2. A finding filed as a premade quirk was a real bug.** The triage note said
+  all 8 `advancement.class.grants` were the Paladin's `ItemGrant`. Two were a
+  MONK case, and the giveaway was in the numbers nobody had read: it appeared at
+  L01/L05 and vanished at L11/L17. A finding that disappears as the level rises
+  cannot be a defect of the premade - it is the signature of a ladder built from
+  the CURRENT level. Root cause: `Self-Restoration` (@10) has no file in the
+  dnd5e `packs/_source` tree, so the generated registry had no uuid for it and
+  `buildClassFutureGrants` dropped it silently. A Monk exported below level 10
+  and levelled up inside Foundry never received it.
+
+  **The net matters more than the fix:** `npm run check:uuids` now crosses every
+  `classes24` uuid the 48 premades reference against the registry, so the next
+  missing document fails loudly instead of costing a feature. It found exactly
+  two ids, one of which (`phbmnkUnarmedStr`) is absent on purpose and is named as
+  such in the probe.
 
 ---
 

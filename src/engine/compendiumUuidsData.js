@@ -6,7 +6,7 @@
 // jogo é redistribuído aqui. Consumidos por engine/compendiumUuids.js para montar
 // os ItemGrant de níveis FUTUROS (ver o módulo irmão para o porquê).
 //
-// Cobertura: as 12 classes XPHB (197 features), 12 subclasses SRD
+// Cobertura: as 12 classes XPHB (198 features), 12 subclasses SRD
 // (58 features), 340 magias, 54 origens,
 // 17 talentos e 572 itens de equipamento.
 // -----------------------------------------------------------------------------
@@ -118,6 +118,7 @@ export const CLASS_FEATURE_IDS = {
   "monk|martial arts": "phbmnkMartialArt",
   "monk|monk's focus": "phbmnkMonksFocus",
   "monk|perfect focus": "phbmnkPerfectFoc",
+  "monk|self-restoration": "phbmnkSelfrestor",
   "monk|slow fall": "phbmnkSlowFall00",
   "monk|stunning strike": "phbmnkStunningSt",
   "monk|superior defense": "phbmnkSuperiorDe",

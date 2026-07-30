@@ -436,6 +436,30 @@ describe('escada de níveis futuros (ItemGrant de compêndio)', () => {
     expect(buildClassFutureGrants({ level: 1 }, fake, fakeDb)).toEqual([]);
   });
 
+  // Uma feature SEM uuid no registro é dropada da escada em silêncio, e o efeito
+  // só aparece muito depois: quem sobe de nível dentro do Foundry não a recebe.
+  // Aconteceu com o Self-Restoration do Monge (@10), que o `packs/_source` do
+  // dnd5e não publica como arquivo embora o compêndio compilado o tenha - os
+  // premades do Perrin o referenciam. Ver SOURCE_GAPS em gen-compendium-uuids.js
+  // e a rede permanente `npm run check:uuids`.
+  it('monge nível 1: o passo @10 leva as DUAS features, não só a publicada', () => {
+    const monkObj = {
+      name: 'Monk', source: 'XPHB', hd: { faces: 8 }, proficiency: ['str', 'dex'],
+      startingProficiencies: { armor: [], weapons: ['simple'], skills: [] },
+      classFeatures: ['Heightened Focus|Monk||10', 'Self-Restoration|Monk||10'],
+    };
+    const monkDb = { 'class-monk': { classFeature: [
+      { name: 'Heightened Focus', level: 10, source: 'XPHB', entries: ['x'] },
+      { name: 'Self-Restoration', level: 10, source: 'XPHB', entries: ['x'] },
+    ] } };
+
+    const at10 = buildClassFutureGrants({ level: 1 }, monkObj, monkDb).find((g) => g.level === 10);
+    expect(at10.configuration.items.map((i) => i.uuid)).toEqual([
+      'Compendium.dnd5e.classes24.Item.phbmnkHeightened',
+      'Compendium.dnd5e.classes24.Item.phbmnkSelfrestor',
+    ]);
+  });
+
   it('subclasse: features futuras + as magias concedidas por nível', () => {
     const sub = {
       name: 'Oath of Devotion',

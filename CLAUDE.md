@@ -89,6 +89,7 @@ npm run dev · test · lint · build
 npm run sweep          # Phase T Tier 0, whole matrix (-- --strict, --class=X, --species=Y, --emit-actors)
 npm run t2             # export oracle: re-export the 48 official premades and diff
 npm run check:keys     # curated species-keyed registries vs the resolved catalog
+npm run check:uuids    # premade-referenced compendium uuids vs the generated registry
 npm run pdf:preview    # render the PDF sheet without the browser
 npm run gen:uuids · gen:sources · gen:srd    # regenerate the committed SRD-derived registries
 ```
@@ -128,15 +129,15 @@ documents all four subfolders, their licences and what each is good for.
 | **Creation wizard + level-up guide** (Phase D) | done |
 | **PDF export** (Phase E) | done except E5 polish (below) |
 | **Usage tutorial** (coach-marks) | done (F1-F4) |
-| **Phase T campaign** | T0 done · T1 done (285 units certified) · **T2 in progress** |
+| **Phase T campaign** | T0 done · T1 done (**286/286** units certified) · **T2 in progress** |
 
-**Current numbers:** 1304 tests · sweep **286/286** in `--strict` · `npm run t2`
-at **18** findings (from 1023 at the T2 opening), plus 113 differences named as
-expected across 10 deliberate divergences.
+**Current numbers:** 1305 tests · sweep **286/286** in `--strict` · `npm run t2`
+at **16** findings (from 1023 at the T2 opening), plus 113 differences named as
+expected across 10 deliberate divergences. `check:keys` and `check:uuids` clean.
 
 ### What is left
 
-1. **T2 burn-down.** The remaining 18 findings are triaged in
+1. **T2 burn-down.** The remaining 16 findings are triaged in
    `testing/ISSUES.md`; the analysis of what each one is lives in
    `docs/archive/deferred-review.md`. No `export: ok` row has been marked yet.
 2. **T2d - real Foundry imports.** The only step Claude cannot do:
@@ -248,6 +249,11 @@ buried in an entry.
   positives hide the real absences the oracle exists to show.
 - **Never write "engine-verified" without having run something.** Either run a
   probe, or the note says "inferred from the pattern".
+- **A finding that CHANGES with the character's level is ours, not the source's.**
+  A premade is one fixed document, so a divergence that shows at level 1 and
+  vanishes at level 11 cannot be a defect of it: that is the signature of the
+  future-level ladder, which only exists above the current level. Two findings
+  sat misfiled as "premade quirk" for a week because nobody read that pattern.
 - **HMR artifacts survive `location.reload()`.** With the React Compiler the module
   graph outlives a reload. **Open a NEW TAB** before treating a hooks-order warning
   as a bug.
@@ -276,6 +282,12 @@ buried in an entry.
   is a script, not a list. **Precedence: curated -> SRD -> overlay.** The curated
   entry is the override; the SRD is the target system's own data; the overlay is
   third-party and matches edition-strictly.
+- **Two different reasons a compendium uuid is missing, with opposite answers.**
+  If the SRD does not PUBLISH the content (Artificer, non-SRD subclasses), having
+  no uuid is the correct decision - a near-match would make Foundry replace the
+  player's content. If the document exists and only our source tree lacks the
+  file (the premades reference the id), filling it is fidelity. `SOURCE_GAPS` in
+  the generator is the second case; `npm run check:uuids` is the net.
 - **Verify a data path returns 200 before adding it to the manifest.** One 404
   breaks the whole `Promise.all`.
 - **Check the enum vocabulary in dnd5e's `module/config.mjs` before exporting a
@@ -381,6 +393,7 @@ DDL-0031 "effects only" scope (by **0057**), DDL-0058 (planning; implemented by
 **0059**), DDL-0059/0060 (refined by **0061** and **0063**), DDL-0064 LFL treatment
 (revised by **0066**), DDL-0080 §3.1 resistance sweep (widened by **0081**).
 
+- **DDL-0083** (2026-07-30) - Um achado que SOME conforme o nível sobe não é quirk do premade; e lacuna da árvore de fontes não é "o SRD não publica"
 - **DDL-0082** (2026-07-30) - Contêiner é UM campo de parentesco; e "guardado" é um estado que a DERIVAÇÃO decide
 - **DDL-0081** (2026-07-30) - Uma varredura filtrada por TAG mente; e uma concessão pode depender de outra escolha
 - **DDL-0080** (2026-07-29) - O SRD é REFERÊNCIA, não autoridade; e um `swap` move a mecânica junto com o traço

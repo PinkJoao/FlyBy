@@ -195,6 +195,30 @@ for (const classDir of readdirSync(CLASSES_DIR)) {
   }
 }
 
+// Lacunas do `_source`: documentos que o compêndio COMPILADO tem mas a árvore de
+// fontes não publica como arquivo. Elas existem - os atores premade oficiais os
+// referenciam por uuid - então NÃO são o caso "o SRD não publica" (DDL-0056), em
+// que deixar sem uuid é a decisão certa. Aqui o uuid é real e a ausência é da
+// nossa cópia, então preencher é fidelidade, não invenção.
+//
+// Sem isto a escada de nível FUTURO perde a feature: um Monge exportado abaixo do
+// nível 10 e subido dentro do Foundry não recebia Self-Restoration (medido contra
+// o Perrin L01/L05, `advancement.class.grants monk Class Features@10: 2 x 1`).
+//
+// `npm run check:uuids` é a rede: acusa qualquer uuid de classes24 que um premade
+// use e o registro não conheça. Quando o dnd5e publicar o arquivo, a entrada aqui
+// vira redundante e o gerador avisa.
+const SOURCE_GAPS = {
+  'monk|self-restoration': 'phbmnkSelfrestor',
+};
+for (const [key, id] of Object.entries(SOURCE_GAPS)) {
+  if (classFeatures[key]) {
+    console.warn(`AVISO: '${key}' agora É publicado no _source - remova a entrada de SOURCE_GAPS.`);
+    continue;
+  }
+  classFeatures[key] = id;
+}
+
 for (const f of walk(join(PACKS, 'spells24'))) {
   const { id, name, type } = head(f);
   if (type !== 'spell' || !id || !name) continue;

@@ -4660,3 +4660,61 @@ Verificado: 1304 testes, lint, `npm run check:keys` limpo, sweep **286/286**
 `--strict`, `npm run t2` estável em **18** (+113 esperados). Nenhuma mudança de
 comportamento: os únicos arquivos de código tocados foram seis comentários que
 apontavam para seções que não existiam mais.
+
+## 110. Levantamento dos pendentes: a T1 não estava completa, e um "quirk do premade" era bug
+
+Levantamento pedido pelo usuário do que ainda faltava das fases anteriores, medido
+contra o estado real do código em vez de reler a documentação. Duas coisas que os
+documentos davam por resolvidas não estavam.
+
+### A T1 estava 284 de 286, não 285 de 285
+
+A matriz cresceu quando o `swap` do Dwarf entrou (DDL-0080, 2026-07-29) - **três dias
+DEPOIS** de a T1 ter sido declarada completa em 285 unidades. As duas linhas novas
+(`Dwarf; Hill Lineage` e `Dwarf; Mountain Lineage`) nunca foram abertas num navegador:
+tinham sweep verde e nada mais.
+
+Certificadas agora, ao vivo a 375px: o guarda-chuva "Dwarf Lineage" aparece no preview
+com as duas opções e o texto correto de cada uma; **Hill** deriva Dwarven Toughness
+(HP 33 -> 39 no nível 6, +1/nível); **Mountain** deriva Dwarven Armor Training (ARMOR:
+Light + Medium) e o Toughness fica **ausente** - a troca é exclusiva, que é o ponto
+inteiro do `swap`. Links de glossário resolvendo, zero erro de console. **286/286
+`ui: ok`.**
+
+A lição é de processo: **fechar um estágio é um fato datado, e conteúdo que entra
+depois não herda o carimbo.** Um `swap` de linhagem cria linhas de matriz novas.
+
+### TC-0087: o achado do Monge não era quirk do premade
+
+A nota de triagem registrava os 8 achados `advancement.class.grants` como "a composição
+do ItemGrant do Paladino, já medida no DDL-0079". Dois não eram: eram
+`monk Class Features@10: premade=2 ours=1`.
+
+**O sinal estava nos números que ninguém leu:** o achado aparecia no Perrin L01 e L05 e
+sumia no L11 e L17. Um premade é um documento fixo - ele não muda de comportamento
+conforme o nível do personagem. Só a escada de níveis FUTUROS tem esse formato, porque
+ela só existe acima do nível atual.
+
+**A causa:** `buildClassFutureGrants` monta cada passo com `classFeatureUuid`, e sem
+uuid a entrada é dropada em silêncio. O `Self-Restoration` do Monge (@10) não tem
+arquivo em `packs/_source/classes24/monk/class-features/`, então o gerador nunca o viu.
+Efeito real: **um Monge exportado abaixo do nível 10 e subido dentro do Foundry nunca
+recebia a feature.**
+
+**A distinção que decide o tratamento** (DDL-0083): faltar uuid porque o SRD não publica
+o conteúdo é decisão certa (DDL-0056 - apontar para um near-match faria o Foundry
+substituir o conteúdo do jogador); faltar porque a nossa árvore de fontes não traz o
+arquivo de um documento que existe é lacuna, e os premades provam que o uuid é real.
+
+**O fix é uma linha; a rede é o que importa.** `SOURCE_GAPS` no gerador cobre a lacuna e
+avisa se ela virar redundante. E **`npm run check:uuids`** passa a cruzar todo uuid de
+`classes24` que as 48 fichas premade referenciam contra o registro - a próxima ausência
+falha alto em vez de custar uma feature. Achou exatamente dois ids, e o outro
+(`phbmnkUnarmedStr`) é ausente de propósito e está nomeado como tal na sonda.
+
+Este defeito sobreviveu à T1 inteira, ao sweep e a sete sessões de T2b porque não quebra
+nada visível: o export continua válido e o sweep continua verde. É a mesma forma do
+`check:keys` (DDL-0080) - virar uma armadilha silenciosa em sonda que falha.
+
+**`npm run t2` 18 -> 16.** Verificado: 1305 testes (+1), lint, sweep 286/286 `--strict`,
+`check:keys` e `check:uuids` limpos.

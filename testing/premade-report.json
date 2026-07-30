@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-30T17:56:38.278Z",
+  "generatedAt": "2026-07-30T19:01:35.462Z",
   "deliberate": [
     "background item name (custom origins only)",
     "the class-granted \"Unarmed Strike\" (we grant it to EVERY class - see DDL-0080)",
@@ -54,13 +54,11 @@
   "aggregate": [
     {
       "cat": "advancement.class.grants",
-      "count": 8,
+      "count": 6,
       "actors": [
         "Krusk L05",
         "Krusk L11",
-        "Krusk L17",
-        "Perrin L01",
-        "Perrin L05"
+        "Krusk L17"
       ],
       "examples": [
         {
@@ -1422,12 +1420,6 @@
             "utilize"
           ],
           "expected": "basic-actions"
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "monk Class Features@10",
-          "before": 2,
-          "after": 1
         }
       ]
     },
@@ -1481,12 +1473,6 @@
             "utilize"
           ],
           "expected": "basic-actions"
-        },
-        {
-          "cat": "advancement.class.grants",
-          "key": "monk Class Features@10",
-          "before": 2,
-          "after": 1
         }
       ]
     },

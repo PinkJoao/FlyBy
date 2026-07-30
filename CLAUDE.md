@@ -380,6 +380,73 @@ ADR-style. Newest first. Each entry: **date — title**, then Context / Decision
 Consequences. Append here whenever a direction is set or changed; never silently
 overwrite a past decision — supersede it with a new dated entry.
 
+### DDL-0081 - Uma varredura filtrada por TAG mente; e uma concessão pode depender de outra escolha
+**Date:** 2026-07-30
+**Builds on:** DDL-0080 §3.1 (a varredura das resistências, que este entry mostra ter sido ESTREITA
+demais) e §1.2 (o princípio de fidelidade, aplicado pela segunda vez), DDL-0039/TC-0027 (toda
+subclasse legada é alcançável pelo chassi 2024 - o fato que invalida o filtro por fonte),
+DDL-0056 (a regra do near-match, que proíbe inventar `compendiumSource`).
+
+**Context.** O usuário suspeitou que "a resistência do Genie passou despercebida". Passou - e não
+sozinha.
+
+**Decision - a varredura de uma família se faz pela PROSA, não pela tag, e em TODA fonte.** A
+varredura da leva 4 filtrou por `{@variantrule Resistance|Immunity}` **e** por fonte atual, e por
+isso viu 37 features. A correta - toda feature de classe/subclasse cuja prosa cite "resistance",
+em qualquer fonte - vê **96**, e destapa **11 subclasses alcançáveis derivando `resist: []`**
+(Alchemist, Storm Herald, Forge, Winter Walker, Pyromancer, Storm, Fathomless, Genie, Necromancy).
+Os dois filtros estavam errados pelo mesmo motivo de fundo:
+- **a TAG é opcional no dado.** A maioria destas escreve a resistência em texto puro. Uma
+  assinatura que depende de marcação editorial mede o marcador, não a regra.
+- **"fonte atual" não existe para feature de SUBCLASSE.** Todo stub legado é alcançável pelo chassi
+  2024 (DDL-0039). O Genie é TCE e é jogável.
+**REGRA, escrita no cabeçalho do registro:** ao varrer uma família de mecânica, case o TEXTO e não
+a tag, e não filtre por fonte antes de conferir a alcançabilidade. É a terceira vez na campanha que
+uma assinatura estreita demais esconde casos reais (DDL-0079, DDL-0080).
+
+**Decision - `resistBy`: uma concessão FIXA cujo tipo sai de outra escolha já feita.** O Genie e o
+Storm Herald não cabiam em nenhum dos quatro grupos do DDL-0080 §3.1: não são grant fixo (o tipo
+varia), não são escolha nova (o jogador já escolheu, ao pegar o genie kind ou o ambiente do Storm
+Aura) e não são estado de sessão (nunca mudam depois). São uma TABELA lida a partir de um pick que
+já existe no bag da classe. Vira o grupo **1b**, campo `resistBy: {choice, map}`.
+- **A varredura do bag é por KIND, não pelo id do descritor**, e é segura porque só há uma subclasse
+  por entrada de classe; um pick fora do mapa não contribui.
+- **A normalização descarta a fonte que o pick carrega** (`"Tundra|XGE"` → `tundra`), porque as duas
+  formas de pick do dataset (`spellSet` sem fonte, `featureoption` com) têm de cair na mesma chave.
+- **Sem a escolha feita, nada é concedido** - não se inventa um tipo padrão.
+
+**Decision - `immune` existe, e o comentário que dizia o contrário era só falta de varredura.** O
+`damageTraits` encaminhava apenas `resist` dos grants de subclasse, afirmando em comentário que
+nenhuma feature concede imunidade permanente. Duas concedem (Saint of Forge and Fire, Fiery Soul).
+Export e import não precisaram de nada: `traits.dr`/`di` já saem de `derived.damageTraits`, e o
+import só lê `dr:` de Trait de ESCOLHA - um grant fixo é re-derivado da subclasse.
+
+**Decision - as ações básicas do XPHB saem no ator (2ª divergência deliberada do SRD).** O dnd5e
+publica Dash/Hide/Help/Study como JOURNAL, não como documento de item: nenhum ator - nem os 48
+premades - traz um item "Dash", e na ficha do Foundry elas não aparecem em lugar nenhum. Quem já
+conhece a regra procura no livro; quem não conhece nunca descobre que tinha a opção. Pelo princípio
+do §1.2, divergimos: as **18** ações de `actions.json` com `source === 'XPHB'` viram itens `feat`
+com uma activity `utility` (`engine/foundryBasicActions.js`). Tudo derivado, zero curadoria.
+- **O COROLÁRIO foi seguido, e é o que impede o placar de inflar:** forma própria
+  (`flags.builder5e.basicAction`, e NENHUM `compendiumSource` - não há documento para apontar) mais
+  uma entrada `EXPECTED` nomeada (`basic-actions`).
+- **A classe de achado é PRÓPRIA (`items.basicAction`), roteada pela MARCA em `itemsByType`.** Um
+  predicado por lista de nomes envelheceria, e deixar as 18 caírem em `items.feat` faria a entrada
+  `EXPECTED` engolir uma lacuna futura nos talentos de verdade - exatamente o risco que o §1.2
+  manda evitar.
+- **No import somem num ponto só, pela MARCA e não pelo nome:** são derivadas, e um matcher adiante
+  poderia confundir "Magic"/"Attack" com uma feature. Um item homônimo de um ator que não veio de
+  nós segue o caminho normal.
+- **Fora de escopo, e é decisão:** as ações de outras fontes (PHB 2014, DMG, XGE) não saem - o app é
+  um builder de regras 2024, e emitir as duas edições daria "Dash" em dobro.
+
+**Consequences.**
+- Uma subclasse nova com resistência em prosa é uma linha do registro; uma cujo tipo dependa de
+  outra escolha é uma linha com `resistBy`. Uma ação nova numa errata do XPHB entra sozinha.
+- Verificado: 1281 testes (+9), lint, sweep **286/286** `--strict`, `npm run t2` estável em **18**
+  achados (+113 esperados), e ao vivo num Warlock 6 Genie (DAMAGE RESISTANCES: Fire com Efreeti →
+  Cold com Marid, zero erro de console, sem overflow a 375px). Ver CHANGELOG §107.
+
 ### DDL-0080 - O SRD é REFERÊNCIA, não autoridade; e um `swap` move a mecânica junto com o traço
 **Date:** 2026-07-29
 **Contexto:** a revisão dos itens adiados por conveniência (`DEFERRED-REVIEW.md`), em três levas.

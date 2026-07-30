@@ -21,7 +21,10 @@ const db = {
   },
   'class-sorcerer': {
     class: [{ name: 'Sorcerer', source: 'XPHB', proficiency: ['con', 'cha'], startingProficiencies: {} }],
-    subclass: [{ name: 'Storm Sorcery', shortName: 'Storm', source: 'XGE', subclassFeatures: [] }],
+    subclass: [
+      { name: 'Storm Sorcery', shortName: 'Storm', source: 'XGE', subclassFeatures: [] },
+      { name: 'Pyromancer (PSK)', shortName: 'Pyromancer (PSK)', source: 'PSK', subclassFeatures: [] },
+    ],
   },
   'class-warlock': {
     class: [{ name: 'Warlock', source: 'XPHB', proficiency: ['wis', 'cha'], startingProficiencies: {} }],
@@ -29,7 +32,13 @@ const db = {
       { name: 'Celestial Patron', shortName: 'Celestial', source: 'XPHB', subclassFeatures: [] },
       { name: 'The Celestial', shortName: 'Celestial', source: 'XGE', subclassFeatures: [] },
       { name: 'Fiend Patron', shortName: 'Fiend', source: 'XPHB', subclassFeatures: [] },
+      { name: 'The Genie', shortName: 'Genie', source: 'TCE', subclassFeatures: [] },
+      { name: 'The Fathomless', shortName: 'Fathomless', source: 'TCE', subclassFeatures: [] },
     ],
+  },
+  'class-barbarian': {
+    class: [{ name: 'Barbarian', source: 'XPHB', proficiency: ['str', 'con'], startingProficiencies: {} }],
+    subclass: [{ name: 'Path of the Storm Herald', shortName: 'Storm Herald', source: 'XGE', subclassFeatures: [] }],
   },
   'class-cleric': {
     class: [{ name: 'Cleric', source: 'XPHB', proficiency: ['wis', 'cha'], startingProficiencies: {} }],
@@ -109,6 +118,51 @@ describe('resistência PERMANENTE de feature de subclasse (2026-07-29)', () => {
 
   it('resistência RE-ESCOLHIDA a cada descanso NÃO deriva (Fiendish Resilience)', () => {
     expect(resistOf('warlock', 'Fiend', 10, 'XPHB')).toEqual([]);
+  });
+
+  it('a resistência escrita em PROSA, sem tag e em fonte legada, deriva (Oceanic Soul)', () => {
+    expect(resistOf('warlock', 'Fathomless', 5, 'TCE')).toEqual([]);
+    expect(resistOf('warlock', 'Fathomless', 6, 'TCE')).toEqual(['cold']);
+  });
+
+  it('IMUNIDADE permanente também deriva, e não vira resistência (Fiery Soul)', () => {
+    const at17 = deriveSubclassGrants(mk('sorcerer', 'Pyromancer (PSK)', 17, { subclassSource: 'PSK' }), db);
+    expect(at17.resist).toEqual(['fire']);
+    expect(at17.immune).toEqual([]);
+    const at18 = deriveSubclassGrants(mk('sorcerer', 'Pyromancer (PSK)', 18, { subclassSource: 'PSK' }), db);
+    expect(at18.immune).toEqual(['fire']);
+  });
+});
+
+describe('resistBy - o TIPO vem de outra escolha já feita', () => {
+  const resistWith = (classId, subclassId, level, subclassSource, choices) =>
+    deriveSubclassGrants(mk(classId, subclassId, level, { subclassSource, choices }), db).resist;
+
+  it('Genie: o tipo acompanha o genie kind escolhido (pick spellSet)', () => {
+    const kinds = { Dao: 'bludgeoning', Djinni: 'thunder', Efreeti: 'fire', Marid: 'cold' };
+    for (const [kind, type] of Object.entries(kinds)) {
+      const bag = { 'sub:spellSet-0': { kind: 'spellSet', picks: [kind] } };
+      expect(resistWith('warlock', 'Genie', 6, 'TCE', bag)).toEqual([type]);
+    }
+  });
+
+  it('Storm Herald: o pick carrega a fonte, e a normalização a descarta', () => {
+    const bag = { 'sub:featopt@Storm Aura@3': { kind: 'featureoption', picks: ['Tundra|XGE'] } };
+    expect(resistWith('barbarian', 'Storm Herald', 6, 'XGE', bag)).toEqual(['cold']);
+  });
+
+  it('sem a escolha feita, nada é concedido (não se inventa um tipo padrão)', () => {
+    expect(resistWith('warlock', 'Genie', 6, 'TCE', {})).toEqual([]);
+  });
+
+  it('um pick fora do mapa não contribui (varredura por kind é segura)', () => {
+    const bag = { 'sub:spellSet-0': { kind: 'spellSet', picks: ['Alguma Outra Lista'] } };
+    expect(resistWith('warlock', 'Genie', 6, 'TCE', bag)).toEqual([]);
+  });
+
+  it('abaixo do nível da feature, a escolha existe mas nada é concedido', () => {
+    const bag = { 'sub:spellSet-0': { kind: 'spellSet', picks: ['Efreeti'] } };
+    expect(resistWith('warlock', 'Genie', 5, 'TCE', bag)).toEqual([]);
   });
 });
 

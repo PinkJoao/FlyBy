@@ -14,9 +14,12 @@
 //   armor/weapons/tools/languages  - rótulos (como autoProficiencies)
 //   skills/expertiseSkills/saves   - códigos (skill codes / abreviações de
 //                                    atributo); expertiseSkills marca nível 2
-//   resist                         - tipos de dano (minúsculos), resistência
-//                                    PERMANENTE do personagem. Ver a varredura
-//                                    abaixo antes de acrescentar uma entrada.
+//   resist/immune                  - tipos de dano (minúsculos), resistência ou
+//                                    imunidade PERMANENTE do personagem. Ver a
+//                                    varredura abaixo antes de acrescentar.
+//   resistBy                       - resistência permanente cujo TIPO sai de
+//                                    outra escolha que o jogador já fez (ver
+//                                    o grupo 1b da varredura).
 // Campos CONDICIONAIS ("if you already have…") viram ESCOLHAS geradas ao vivo
 // por subclassConditionalChoices (precisa do personagem):
 //   conditionalArtisanTool: true   - 1 ferramenta de artesão por tool do grant
@@ -35,26 +38,42 @@
 // toggle de conteúdo legacy, isso exigiria sub-escolhas em featureoptions.
 // Classes sidekick e UA (Mystic) não são curadas.
 //
-// RESISTÊNCIA A DANO (campo `resist`, acrescentado 2026-07-29). A varredura das
-// 37 features de classe/subclasse de fonte atual que citam `{@variantrule
-// Resistance|Immunity}` separa quatro grupos, e só o PRIMEIRO deriva:
+// RESISTÊNCIA / IMUNIDADE A DANO (campos `resist`/`immune`/`resistBy`). A
+// varredura correta é sobre TODA feature de classe/subclasse cuja prosa cite
+// "resistance", em QUALQUER fonte - 96 features. Ela separa os grupos abaixo, e
+// só o 1 deriva:
 //
-//  1. PERMANENTE E FIXA -> este registro (6 casos, todos abaixo).
+//  1a. PERMANENTE E FIXA -> este registro (15 casos, todos abaixo).
+//  1b. PERMANENTE, mas com o TIPO vindo de outra escolha JÁ FEITA -> campo
+//      `resistBy` (2 casos: Genie e Storm Herald). Não é escolha nova: é uma
+//      tabela lida a partir de um pick que já existe no bag da classe.
 //  2. PERMANENTE À ESCOLHA -> uma escolha kind 'resist' em SUBCLASS_FEATURE_GRANTS
 //     (classFeatureChoices.js). Único caso: Elemental Affinity (Draconic).
 //  3. RE-ESCOLHIDA A CADA DESCANSO -> **não** é decisão de build, é estado de
 //     sessão: Fiendish Resilience (Fiend @10, "whenever you finish a Short or
-//     Long Rest"), Dread Allegiance (Scion of the Three @3), Nature's Ward
-//     (Land @10, segue a terra escolhida no descanso). Fica na prosa até a
-//     Phase C ter play-state.
+//     Long Rest"), Dread Allegiance (Scion of the Three @3, "When you finish a
+//     Long Rest, you can change your choice"), Nature's Ward (Land @10, segue a
+//     terra escolhida no descanso). Fica na prosa até a Phase C ter play-state.
 //  4. CONDICIONAL a uma aura/forma/reação, ou não sobre um TIPO de dano ->
 //     prosa, pela mesma regra do damageTraits: Aura of Warding/Elemental
 //     Shielding (só dentro da aura), Spell Resistance do Abjurer ("damage of
-//     spells", não é tipo), e tudo que depende de Rage/Wild Shape/Form of Dread.
+//     spells", não é tipo), Stormborn/Full of Stars/Superior Dread (só na forma),
+//     Elemental Epitome (só com o Elemental Attunement ativo), e tudo que
+//     depende de Rage/Wild Shape/Form of Dread. Também fica fora "ignora
+//     resistência do alvo", que é ofensivo e não um traço nosso.
 //
 // A versão PHB do Avatar of Battle ("from nonmagical attacks") também fica na
 // prosa: é um `bypasses` do Foundry, que o nosso modelo de traço plano não
-// expressa - por isso a entrada casa `source: 'XPHB'`.
+// expressa - por isso a entrada casa `source: 'XPHB'`. Mesma razão para o
+// Oathbreaker (Supernatural Resistance) e o Saint of Forge and Fire, cuja parte
+// de bludgeoning/piercing/slashing é "from nonmagical attacks" e por isso NÃO
+// entra (só a imunidade a fogo, que é incondicional).
+//
+// ATENÇÃO ao acrescentar uma entrada: NÃO filtre a varredura pela tag
+// `{@variantrule Resistance}` nem por fonte atual. Foi assim que 11 subclasses
+// alcançáveis ficaram sem derivar nada por uma campanha inteira - a maioria
+// escreve a resistência em texto puro, e toda subclasse legada é alcançável
+// pelo chassi 2024 (stub `_copy`, DDL-0039/TC-0027).
 // -----------------------------------------------------------------------------
 
 import { resolveSubclassObj, resolveClassObj, resolveRaceObj } from './resolve';
@@ -73,6 +92,11 @@ export const SUBCLASS_GRANTS = {
   'artificer|alchemist': [
     { level: 3, source: 'EFA', feature: 'Tools of the Trade', tools: ["Alchemist's Supplies", 'Herbalism Kit'], conditionalArtisanTool: true },
     { level: 3, source: 'TCE', feature: 'Tool Proficiency', tools: ["Alchemist's Supplies"], conditionalArtisanTool: true },
+    // "Chemical Resistance: You gain Resistance to Acid damage and Poison
+    // damage." As duas edições concedem o mesmo (a imunidade é à CONDIÇÃO
+    // Poisoned, que não é traço de dano e fica na prosa).
+    { level: 15, source: 'EFA', feature: 'Chemical Mastery', resist: ['acid', 'poison'] },
+    { level: 15, source: 'TCE', feature: 'Chemical Mastery', resist: ['acid', 'poison'] },
   ],
   'artificer|armorer': [
     { level: 3, source: 'EFA', feature: 'Tools of the Trade', armor: [HEAVY], tools: ["Smith's Tools"], conditionalArtisanTool: true },
@@ -91,6 +115,16 @@ export const SUBCLASS_GRANTS = {
   ],
   'artificer|reanimator': [
     { level: 3, feature: "Reanimator's Skill Set", tools: ["Alchemist's Supplies"], conditionalArtisanTool: true },
+  ],
+  // Storm Soul concede a resistência "even when your aura isn't active", e o
+  // TIPO vem do ambiente escolhido no Storm Aura (nível 3). O pick carrega a
+  // fonte ("Desert|XGE"), que a normalização do resistBy descarta.
+  'barbarian|storm herald': [
+    {
+      level: 6,
+      feature: 'Storm Soul',
+      resistBy: { choice: 'featureoption', map: { desert: ['fire'], sea: ['lightning'], tundra: ['cold'] } },
+    },
   ],
   'bard|valor': [
     { level: 3, feature: 'Bonus Proficiencies', armor: [MEDIUM, SHIELDS], weapons: [MARTIAL] }, // PHB e XPHB (Martial Training) coincidem
@@ -113,7 +147,13 @@ export const SUBCLASS_GRANTS = {
   'cleric|arcana': [{ level: 1, feature: 'Arcane Initiate', skills: ['arc'] }],
   'cleric|order': [{ level: 1, feature: 'Bonus Proficiencies', armor: [HEAVY] }],
   'cleric|twilight': [{ level: 1, feature: 'Bonus Proficiencies', armor: [HEAVY], weapons: [MARTIAL] }],
-  'cleric|forge': [{ level: 1, feature: 'Bonus Proficiency', armor: [HEAVY], tools: ["Smith's Tools"] }],
+  'cleric|forge': [
+    { level: 1, feature: 'Bonus Proficiency', armor: [HEAVY], tools: ["Smith's Tools"] },
+    { level: 6, feature: 'Soul of the Forge', resist: ['fire'] },
+    // Só a IMUNIDADE a fogo, que é incondicional; a resistência a bludgeoning/
+    // piercing/slashing do mesmo traço é "from nonmagical attacks" (grupo 4).
+    { level: 17, feature: 'Saint of Forge and Fire', immune: ['fire'] },
+  ],
   'cleric|knowledge': [
     { level: 6, source: 'FRHoF', feature: 'Unfettered Mind', saves: ['int'], conditionalSaveAlt: [] },
   ],
@@ -134,6 +174,9 @@ export const SUBCLASS_GRANTS = {
   'ranger|gloom stalker': [
     { level: 7, feature: 'Iron Mind', saves: ['wis'], conditionalSaveAlt: ['int', 'cha'] }, // XGE e XPHB coincidem
   ],
+  // "Frost Resistance: You have Resistance to Cold damage." (As outras duas
+  // partes do Frigid Explorer são ofensivas.)
+  'ranger|winter walker': [{ level: 3, feature: 'Frigid Explorer', resist: ['cold'] }],
   'fighter|samurai': [
     { level: 7, feature: 'Elegant Courtier', saves: ['wis'], conditionalSaveAlt: ['int', 'cha'] },
   ],
@@ -147,14 +190,35 @@ export const SUBCLASS_GRANTS = {
   // não está em nenhum campo estruturado (TC-0039, mesma família do Sylvan do
   // Shepherd). Nível 3: no chassi 2024 a umbrella "Storm Sorcery" é reapontada
   // para o nível 3, e a subclasse não é escolhível antes disso.
-  'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages: ['Primordial'] }],
+  'sorcerer|storm': [
+    { level: 3, feature: 'Wind Speaker', languages: ['Primordial'] },
+    { level: 6, feature: 'Heart of the Storm', resist: ['lightning', 'thunder'] },
+  ],
+  'sorcerer|pyromancer (psk)': [
+    { level: 6, feature: 'Fire in the Veins', resist: ['fire'] },
+    { level: 18, feature: 'Fiery Soul', immune: ['fire'] },
+  ],
   'sorcerer|aberrant': [{ level: 6, feature: 'Psychic Defenses', resist: ['psychic'] }],
   'warlock|celestial': [{ level: 6, feature: 'Radiant Soul', resist: ['radiant'] }],
+  'warlock|fathomless': [{ level: 6, feature: 'Oceanic Soul', resist: ['cold'] }],
+  // O tipo sai do genie kind, que o jogador escolhe pelo grupo de
+  // `additionalSpells` ("Dao"/"Djinni"/"Efreeti"/"Marid" - um pick spellSet).
+  'warlock|genie': [
+    {
+      level: 6,
+      feature: 'Elemental Gift',
+      resistBy: {
+        choice: 'spellSet',
+        map: { dao: ['bludgeoning'], djinni: ['thunder'], efreeti: ['fire'], marid: ['cold'] },
+      },
+    },
+  ],
   'warlock|great old one': [{ level: 10, feature: 'Thought Shield', resist: ['psychic'] }],
   // A IMUNIDADE do mesmo traço é condicional (só usando o Form of Dread) e fica
   // na prosa; a resistência é permanente nas duas versões (VRGR e RHW).
   'warlock|undead': [{ level: 10, feature: 'Necrotic Husk', resist: ['necrotic'] }],
   'warlock|hexblade': [{ level: 1, feature: 'Hex Warrior', armor: [MEDIUM, SHIELDS], weapons: [MARTIAL] }],
+  'wizard|necromancy': [{ level: 10, feature: 'Inured to Undeath', resist: ['necrotic'] }],
   'wizard|bladesinging': [
     { level: 2, feature: 'Training in War and Song', armor: [LIGHT], skills: ['prf'] },
   ],
@@ -173,15 +237,36 @@ export function subclassGrantGroups(classId, subclassObj, level) {
 }
 
 /**
- * Proficiências fixas concedidas pelas SUBCLASSES do personagem (TC-0012).
+ * Tipos de dano de um grant `resistBy`: o TIPO não está no registro, vem de uma
+ * escolha que o jogador já fez no bag DESTA classe (o genie kind, o ambiente do
+ * Storm Aura). O pick pode trazer a fonte ("Desert|XGE"), então normalizamos
+ * para a parte antes do pipe, em minúsculas.
+ *
+ * Varrer o bag inteiro pelo KIND (em vez de casar o id do descritor) é seguro
+ * porque só há uma subclasse por entrada de classe, e um pick que não esteja no
+ * mapa simplesmente não contribui.
+ */
+function resistByTypes(spec, cls) {
+  const out = [];
+  for (const pick of collectChoicePicks(cls?.choices, spec.choice)) {
+    const key = String(pick).split('|')[0].trim().toLowerCase();
+    out.push(...(spec.map?.[key] ?? []));
+  }
+  return out;
+}
+
+/**
+ * Proficiências fixas concedidas pelas SUBCLASSES do personagem (TC-0012), mais
+ * os traços de dano permanentes delas.
  * @param {import('../schema/character').Character} character
  * @param {object} db
  * @returns {{armor:string[], weapons:string[], grantedSkills:string[],
  *            expertiseSkills:string[], grantedTools:string[],
- *            languages:string[], saves:string[]}}
+ *            languages:string[], saves:string[], resist:string[],
+ *            immune:string[]}}
  */
 export function deriveSubclassGrants(character, db) {
-  const out = { armor: [], weapons: [], grantedSkills: [], expertiseSkills: [], grantedTools: [], languages: [], saves: [], resist: [] };
+  const out = { armor: [], weapons: [], grantedSkills: [], expertiseSkills: [], grantedTools: [], languages: [], saves: [], resist: [], immune: [] };
   for (const cls of character?.classes ?? []) {
     if (!cls.classId || !cls.subclassId) continue;
     const subObj = resolveSubclassObj(db, cls.classId, cls.subclassId, cls.subclassSource);
@@ -194,6 +279,8 @@ export function deriveSubclassGrants(character, db) {
       out.languages.push(...(g.languages ?? []));
       out.saves.push(...(g.saves ?? []));
       out.resist.push(...(g.resist ?? []));
+      out.immune.push(...(g.immune ?? []));
+      if (g.resistBy) out.resist.push(...resistByTypes(g.resistBy, cls));
     }
   }
   return out;

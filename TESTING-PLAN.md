@@ -390,6 +390,24 @@ on the user's machines).
 
 ## 7. Status & session hand-off (UPDATE EVERY SESSION)
 
+- **2026-07-30** - **Fora da T2: a família das resistências de subclasse (TC-0084) e as ações
+  básicas no export (TC-0085).** Dois pedidos do usuário; decisões em DDL-0081, log em CHANGELOG
+  §107. 1281 testes (+9), lint, sweep 286/286 `--strict`, `npm run t2` estável em **18** (+113
+  esperados, agora com `basic-actions`).
+  **O achado, e a lição de método que ele deixa:** o usuário suspeitou que a resistência do Warlock
+  Genie tinha passado despercebida. Passou - e eram **11 subclasses**, não uma, todas derivando
+  `resist: []` num nível em que o livro concede o traço. A causa é uma **varredura estreita demais**
+  na leva 4: ela filtrou por tag `{@variantrule Resistance}` **e** por fonte atual, vendo 37
+  features; a varredura por PROSA em qualquer fonte vê 96. **Os dois filtros erram pelo mesmo
+  motivo** - a tag é marcação editorial opcional, e "fonte atual" não existe para feature de
+  subclasse (todo stub legado é alcançável pelo chassi 2024; o Genie é TCE e é jogável). É a
+  terceira vez na campanha que uma assinatura estreita esconde casos reais.
+  **Conceito novo:** `resistBy`, para a concessão FIXA cujo TIPO vem de outra escolha já feita (o
+  genie kind, o ambiente do Storm Herald) - não é grant fixo nem escolha nova nem estado de sessão.
+  **Próxima na fila, aprovada pelo usuário:** os **contêineres** no inventário (P3 do
+  `DEFERRED-REVIEW.md`) - a regra de peso já está fixada (segue o RAW: conteúdo de contêiner mágico
+  não conta), falta desenhar a forma na UI. É o único dos três que mexe em schema, derivação e UI.
+
 - **2026-07-29** - **T2b sessão 7: o LEDGER FICOU SEM PENDÊNCIA ABERTA** (170 → **71** achados,
   +33 nomeadas como esperadas). Fechados TC-0064, TC-0065, TC-0070, TC-0072, TC-0082 e a parte
   acionável do TC-0071. 1238 testes (+12), lint, sweep 285/285 `--strict`. Decisões em DDL-0079, log

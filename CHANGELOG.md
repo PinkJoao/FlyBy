@@ -6031,3 +6031,85 @@ Verificado: 1274 testes (+11), lint, `npm run check:keys` (0 mortas), sweep **28
 `npm run t2` de 35 → **18** (+65 nomeados como esperados), e ao vivo (o pack no inventário, o A/B do
 TC-0083 em aba nova, a resistência derivando ponta a ponta na ficha e no ator). **Três classes de
 achado foram a zero** (`traits.dr`, `advancement.subclass`, `items.feat`).
+
+---
+
+## 107. A família das resistências de subclasse (11 unidades) e as ações básicas no export
+
+Dois pedidos do usuário. O primeiro nasceu de uma suspeita dele - "a resistência do Genie deve ter
+passado despercebida" - que a medição confirmou e AMPLIOU: eram 11 subclasses, não uma. Decisões em
+DDL-0081.
+
+### 11 subclasses alcançáveis não derivavam resistência nenhuma
+
+O `SUBCLASS_GRANTS` ganhou o campo `immune` e o campo `resistBy`, mais 15 grupos novos. O que estava
+quebrado, medido com `autoBuild` no nível de cada feature (todos davam `resist: []`):
+
+| subclasse | nível | traço |
+|---|---|---|
+| artificer\|Alchemist (EFA e TCE) | 15 | resist acid, poison |
+| barbarian\|Storm Herald | 6 | resist por ambiente do Storm Aura |
+| cleric\|Forge | 6 / 17 | resist fire / **immune** fire |
+| ranger\|Winter Walker | 3 | resist cold |
+| sorcerer\|Pyromancer (PSK) | 6 / 18 | resist fire / **immune** fire |
+| sorcerer\|Storm | 6 | resist lightning, thunder |
+| warlock\|Fathomless | 6 | resist cold |
+| warlock\|Genie | 6 | resist por genie kind |
+| wizard\|Necromancy | 10 | resist necrotic |
+
+**Por que a varredura da leva 4 não as viu.** Ela filtrou por tag `{@variantrule Resistance}` **e**
+por fonte atual. A maioria destas escreve a resistência em TEXTO PURO, e toda subclasse legada é
+alcançável pelo chassi 2024 (stub `_copy`, DDL-0039/TC-0027) - "fonte atual" nunca foi o filtro certo
+para feature de subclasse. A varredura correta é sobre toda feature cuja prosa cite "resistance", em
+qualquer fonte: **96 features**, e o cabeçalho do registro agora diz isso em letras maiúsculas.
+
+**O campo `resistBy`: o tipo vem de uma escolha que o jogador JÁ fez.** Não é escolha nova nem grant
+fixo - é uma tabela lida a partir de um pick existente no bag da classe (o `spellSet` Dao/Djinni/
+Efreeti/Marid do Genie; o `featureoption` Desert/Sea/Tundra do Storm Herald). A normalização descarta
+a fonte que o pick carrega (`"Tundra|XGE"` → `tundra`), e um pick fora do mapa não contribui.
+
+**Duas correções de fato colaterais:** o `damageTraits` só encaminhava `resist` dos grants de
+subclasse, com um comentário afirmando que nenhuma feature concede imunidade permanente - agora falso
+em dois casos; e `deriveSubclassGrants` passou a devolver `immune`.
+
+**O que continua FORA, verificado um a um:** Dread Allegiance ("When you finish a Long Rest, you can
+change your choice"), Nature's Ward e Fiendish Resilience são estado de SESSÃO; a parte de
+bludgeoning/piercing/slashing do Saint of Forge and Fire e do Oathbreaker é "from nonmagical attacks",
+que o nosso traço plano não expressa; Stormborn / Full of Stars / Superior Dread / Elemental Epitome
+dependem de uma forma ou aura ativa. E "ignora a resistência do alvo" é ofensivo, não um traço nosso.
+
+**Export e import vêm de graça:** `traits.dr`/`di` já saem de `derived.damageTraits`, e o import só lê
+`dr:` de Trait de ESCOLHA - um grant fixo é re-derivado da subclasse, como o Avatar of Battle já era.
+
+### As ações básicas do XPHB no ator exportado
+
+`engine/foundryBasicActions.js`: as **18 ações** do livro 2024 (Attack, Dash, Disengage, Dodge, Don or
+Doff a Shield, End Concentration, Escape a Grapple, Help, Hide, Improvising an Action, Influence,
+Magic, Opportunity Attack, Ready, Search, Study, Two-Weapon Fighting, Utilize) viram itens `feat` com
+uma activity `utility` na ativação certa (action/bonus/reaction; "Free" e "Varies" viram `special`).
+
+Tudo DERIVADO de `actions.json` filtrado por `source === 'XPHB'` - arquivo que o app já baixa desde o
+glossário. Zero curadoria: uma errata que acrescente uma ação entra sozinha.
+
+**Segunda divergência deliberada do SRD** (a primeira foi o Unarmed Strike universal), sob o princípio
+do DDL-0080 §1.2: o dnd5e publica as ações básicas como JOURNAL, não como documento de item, então
+nenhum ator - nem os 48 premades - traz um item "Dash", e no Foundry elas não aparecem em lugar nenhum
+da ficha. Quem não conhece a regra nunca descobre que tinha a opção. O COROLÁRIO foi seguido:
+- **forma própria** - `flags.builder5e.basicAction` em todo item, e NENHUM leva `compendiumSource`
+  (não há documento publicado para apontar; um near-match faria o Foundry trocar o conteúdo, DDL-0056);
+- **entrada `EXPECTED` nomeada** (`basic-actions`), sobre uma classe de achado PRÓPRIA
+  (`items.basicAction`, roteada pela marca em `itemsByType`) - assim a divergência aparece nomeada no
+  resumo em vez de se misturar aos talentos de verdade e esconder uma lacuna neles.
+
+**No import elas somem num ponto só**, antes de qualquer leitura, pela MARCA e não pelo nome: são
+derivadas, então lê-las não acrescentaria decisão e ainda arriscaria um matcher adiante confundir
+"Magic"/"Attack" com uma feature. Um item homônimo de um ator que não veio de nós segue o caminho
+normal.
+
+**Fora de escopo, e é decisão:** as ações de outras fontes (PHB 2014, DMG, XGE) não saem - o app é um
+builder de regras 2024, e emitir as duas edições daria "Dash" em dobro na ficha.
+
+Verificado: 1281 testes (+9), lint, sweep **286/286** `--strict`, `npm run t2` estável em **18**
+achados (+113 esperados, agora incluindo `basic-actions`), e ao vivo num Warlock 6 Genie: DAMAGE
+RESISTANCES mostra **Fire** com Efreeti e **Cold** ao trocar para Marid, sem erro de console e sem
+overflow a 375px.

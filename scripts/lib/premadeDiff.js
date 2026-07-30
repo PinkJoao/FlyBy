@@ -22,6 +22,7 @@
 // -----------------------------------------------------------------------------
 
 import { srdSpellNames } from '../../src/engine/spells';
+import { isBasicActionItem } from '../../src/engine/foundryBasicActions';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
@@ -192,6 +193,20 @@ export const EXPECTED = [
       && JSON.stringify(f.after ?? []) === JSON.stringify(['unarmed strike']),
   },
   {
+    id: 'basic-actions',
+    why:
+      'As ações que QUALQUER personagem pode tomar (Dash, Hide, Help, Study, Influence, Utilize…). '
+      + 'O dnd5e as publica como JOURNAL, não como documento de item, então nenhum ator - nem os '
+      + 'premades - traz um item "Dash", e no Foundry elas não aparecem em lugar nenhum da ficha: '
+      + 'quem não conhece a regra nunca descobre que tinha a opção. Emitimos as 18 do XPHB, '
+      + 'derivadas de actions.json, com a marca `flags.builder5e.basicAction` e SEM '
+      + 'compendiumSource - não há documento publicado para apontar. Segunda divergência '
+      + 'deliberada do SRD (DDL-0080 §1.2), depois do Unarmed Strike universal.',
+    // A classe `items.basicAction` só existe porque o item traz a marca
+    // (ver itemsByType) - nenhum talento de verdade cai aqui.
+    test: (f) => f.cat === 'items.basicAction' && (f.before ?? []).length === 0,
+  },
+  {
     id: 'class-spell-ladder',
     why:
       'A escada de ItemGrant das magias que a CLASSE concede por nível: nós a emitimos para os '
@@ -260,7 +275,12 @@ const preparedOf = (it) => Number(it?.system?.prepared ?? (it?.system?.preparati
 export function itemsByType(actor) {
   const out = {};
   for (const it of actor?.items ?? []) {
-    const m = (out[it.type] ??= new Map());
+    // As ações básicas são `feat` no arquivo, mas ganham uma classe PRÓPRIA no
+    // comparador, pela MARCA (não por uma lista de nomes, que envelheceria).
+    // Assim a divergência deliberada fica nomeada e visível no resumo em vez de
+    // se misturar aos talentos de verdade e esconder uma lacuna neles.
+    const type = isBasicActionItem(it) ? 'basicAction' : it.type;
+    const m = (out[type] ??= new Map());
     const k = keyFor(it.type, it.name);
     const prev = m.get(k);
     if (!prev) m.set(k, it);

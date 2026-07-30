@@ -33,6 +33,7 @@ import { casterInfo } from './spellcasting';
 import { deriveHpBonus } from './hpBonuses';
 import { classWeaponGrants } from './foundryActivities';
 import { classGrantChoices } from './classFeatureGrants';
+import { isBasicActionItem } from './foundryBasicActions';
 
 const norm = (s) => (s ?? '').toString().trim().toLowerCase();
 
@@ -1036,7 +1037,16 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
  *   jogador precisa saber, em vez de descobrir que perdeu conteúdo depois.
  * @returns {import('../schema/character').Character}
  */
-export function foundryToCharacter(actor, db, out = null) {
+export function foundryToCharacter(rawActor, db, out = null) {
+  // As ações básicas (Dash, Hide, Study…) são DERIVADAS: o export as recria para
+  // todo personagem, então lê-las aqui não acrescentaria decisão nenhuma e ainda
+  // arriscaria um matcher de nome adiante confundir "Magic"/"Attack" com uma
+  // feature. Saem antes de qualquer leitura, num ponto só. O corte é pela MARCA
+  // (`flags.builder5e.basicAction`), não pelo nome: um item homônimo de um ator
+  // que não veio de nós continua seguindo o caminho normal.
+  const actor = (rawActor?.items ?? []).some(isBasicActionItem)
+    ? { ...rawActor, items: rawActor.items.filter((i) => !isBasicActionItem(i)) }
+    : rawActor;
   const char = createCharacter({ name: actor?.name || 'Imported Character' });
   if (actor?.img) char.meta.portrait = actor.img;
 

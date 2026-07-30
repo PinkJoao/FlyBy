@@ -40,6 +40,7 @@ import {
   subclassFluffHtml,
 } from './foundryItems';
 import { buildSpellItems, buildSpellSlots, buildUnassignedSpellItems } from './foundrySpells';
+import { buildBasicActionItems } from './foundryBasicActions';
 
 /**
  * Monta o ator Foundry completo a partir do personagem + compêndio.
@@ -162,6 +163,11 @@ export function assembleFoundryActor(character, db) {
   // Magias: um Item `spell` por magia POR ORIGEM (preparadas, concedidas,
   // arcanum) + os espaços de magia do ator (o Foundry deriva os máximos).
   items.push(...spellItems);
+
+  // As ações que qualquer personagem pode tomar (Dash, Hide, Study…). Não
+  // dependem de nada da build - divergência deliberada do SRD, ver o cabeçalho
+  // de foundryBasicActions.
+  items.push(...buildBasicActionItems(db));
   system.spells = buildSpellSlots(derived);
 
   // Referências do ator aos itens (por _id) - como no export real.

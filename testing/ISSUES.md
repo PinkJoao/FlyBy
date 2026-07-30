@@ -1627,3 +1627,46 @@ em `scripts/lib/premadeDiff.js` e na §4.3 do `DEFERRED-REVIEW.md`.
   Não era, e a remoção perderia identidade estável para os consumidores - o arquivo ficou como estava.
 - **Nota de honestidade:** o resumo anterior desta entrada chamou isso de "bug latente". A parte de
   "não é regressão desta sessão" estava certa; a de "bug" não.
+
+---
+
+## TC-0084 - 11 subclasses alcançáveis não derivam a resistência/imunidade que a feature concede
+
+- **Unidade:** `class:artificer/alchemist`, `class:barbarian/storm herald`, `class:cleric/forge`,
+  `class:ranger/winter walker`, `class:sorcerer/pyromancer (psk)`, `class:sorcerer/storm`,
+  `class:warlock/fathomless`, `class:warlock/genie`, `class:wizard/necromancy`.
+  **Severidade:** bug (REGRA - o jogador perde uma capacidade que o livro dá; atinge a ficha, não só
+  o export). **Encontrado:** 2026-07-30, por suspeita do usuário sobre o Genie.
+  **Status:** fixed@2026-07-30 (DDL-0081, CHANGELOG §107).
+- Medido com `autoBuild` no nível de cada feature: todas davam `damageTraits.resist: []`.
+- **Causa: a varredura do DDL-0080 §3.1 foi ESTREITA demais** - filtrou por tag
+  `{@variantrule Resistance|Immunity}` **e** por fonte atual, e viu 37 features. A varredura por
+  PROSA em qualquer fonte vê 96. Os dois filtros erram pelo mesmo motivo: a tag é marcação editorial
+  opcional (a maioria destas escreve em texto puro), e "fonte atual" não existe para feature de
+  subclasse (todo stub legado é alcançável pelo chassi 2024, DDL-0039/TC-0027 - o Genie é TCE e é
+  jogável).
+- **Fix:** 15 grupos novos no `SUBCLASS_GRANTS`, mais dois campos: `immune` (o `damageTraits` só
+  encaminhava `resist`, com um comentário afirmando que nenhuma subclasse concede imunidade
+  permanente - duas concedem) e `resistBy`, para o caso em que o TIPO vem de outra escolha JÁ FEITA
+  (o genie kind do Genie, o ambiente do Storm Herald). Ver o grupo 1b no cabeçalho do registro.
+- **Verificado fora, um a um:** Dread Allegiance / Nature's Ward / Fiendish Resilience são estado de
+  sessão (re-escolhidas no descanso); a parte de bludgeoning/piercing/slashing do Saint of Forge and
+  Fire e do Oathbreaker é "from nonmagical attacks"; Stormborn / Full of Stars / Superior Dread /
+  Elemental Epitome dependem de forma ou aura ativa; "ignora resistência do alvo" é ofensivo.
+- Export/import não precisaram de mudança: `traits.dr`/`di` saem de `derived.damageTraits`, e o
+  import só lê `dr:` de Trait de ESCOLHA.
+
+---
+
+## TC-0085 - O ator exportado não tem nenhuma ação básica (Dash, Hide, Help, Study…)
+
+- **Unidade:** toda ficha. **Severidade:** polish (decisão de produto, tomada pelo usuário).
+  **Encontrado:** 2026-07-30. **Status:** fixed@2026-07-30 (DDL-0081, CHANGELOG §107).
+- No Foundry as ações básicas não aparecem em lugar nenhum da ficha: o dnd5e as publica como
+  JOURNAL (`packs/_source/rules/`), não como documento de item, e nenhum dos 48 premades traz um
+  item "Dash". Quem não conhece a regra nunca descobre que tinha a opção.
+- **Fix:** `engine/foundryBasicActions.js` emite as 18 ações XPHB de `actions.json` como itens
+  `feat` com activity `utility`. Segunda divergência deliberada do SRD (DDL-0080 §1.2), com as duas
+  peças que o corolário exige: marca própria (`flags.builder5e.basicAction`, sem `compendiumSource`)
+  e a entrada `EXPECTED` `basic-actions` sobre uma classe de achado própria (`items.basicAction`).
+- **Fora de escopo, e é decisão:** as ações de outras fontes (PHB 2014, DMG, XGE) não saem.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T23:43:56.855Z",
+  "generatedAt": "2026-07-30T12:49:13.748Z",
   "deliberate": [
     "background item name (custom origins only)",
     "the class-granted \"Unarmed Strike\" (we grant it to EVERY class - see DDL-0080)",
@@ -41,6 +41,10 @@
     {
       "id": "universal-unarmed-strike",
       "why": "O SRD concede o item \"Unarmed Strike\" só ao Bárbaro e ao Monge, cujas features o citam. Mas a regra 2024 diz que TODA criatura pode fazer um Ataque Desarmado, e sem o item um Mago que perdeu o cajado chega ao Foundry sem botão nenhum de ataque - seguir o SRD aqui penalizaria o jogador. Concedemos a TODA classe, com a cópia genérica do equipment24 e num passo de advancement de título próprio, para não se passar pela escada oficial."
+    },
+    {
+      "id": "basic-actions",
+      "why": "As ações que QUALQUER personagem pode tomar (Dash, Hide, Help, Study, Influence, Utilize…). O dnd5e as publica como JOURNAL, não como documento de item, então nenhum ator - nem os premades - traz um item \"Dash\", e no Foundry elas não aparecem em lugar nenhum da ficha: quem não conhece a regra nunca descobre que tinha a opção. Emitimos as 18 do XPHB, derivadas de actions.json, com a marca `flags.builder5e.basicAction` e SEM compendiumSource - não há documento publicado para apontar. Segunda divergência deliberada do SRD (DDL-0080 §1.2), depois do Unarmed Strike universal."
     },
     {
       "id": "class-spell-ladder",
@@ -223,6 +227,32 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -248,6 +278,32 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -273,6 +329,32 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -298,6 +380,32 @@
             "hvy"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -323,6 +431,32 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -348,6 +482,32 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -373,6 +533,32 @@
             "med"
           ],
           "expected": "baked-feature-grant"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         },
         {
           "cat": "items.gear",
@@ -409,6 +595,32 @@
           "expected": "baked-feature-grant"
         },
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "items.gear",
           "key": "names",
           "before": [],
@@ -424,6 +636,32 @@
       "file": "fvtt-Actor-beiro-BeiroLv010000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "items.gear",
           "key": "names",
@@ -450,6 +688,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "items.gear",
           "key": "names",
           "before": [
@@ -474,6 +738,32 @@
       "file": "fvtt-Actor-beiro-BeiroLv110000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "items.gear",
           "key": "names",
@@ -500,6 +790,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "items.gear",
           "key": "names",
           "before": [
@@ -523,13 +839,66 @@
       "actor": "Krusk L01",
       "file": "fvtt-Actor-krusk-KruskLv010000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Krusk L05",
       "file": "fvtt-Actor-krusk-KruskLv050000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -558,6 +927,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
           "before": 3,
@@ -584,6 +979,32 @@
       "file": "fvtt-Actor-krusk-KruskLv170000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
@@ -612,6 +1033,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.class",
           "key": "barbarian",
           "before": [],
@@ -627,6 +1074,32 @@
       "file": "fvtt-Actor-merric-MerricLv05000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.class",
           "key": "barbarian",
@@ -644,6 +1117,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.class",
           "key": "barbarian",
           "before": [],
@@ -659,6 +1158,32 @@
       "file": "fvtt-Actor-merric-MerricLv17000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.class",
           "key": "barbarian",
@@ -676,6 +1201,32 @@
       "file": "fvtt-Actor-morthos-MorthosLv0100000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
@@ -695,6 +1246,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
@@ -713,6 +1290,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
           "before": [
@@ -730,6 +1333,32 @@
       "file": "fvtt-Actor-morthos-MorthosLv1700000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.race",
           "key": "tiefling, infernal",
@@ -769,6 +1398,32 @@
           "expected": "curated-swap-lineage"
         },
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "monk Class Features@10",
           "before": 2,
@@ -800,6 +1455,32 @@
             "halfling lineage (lightfoot)"
           ],
           "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         },
         {
           "cat": "advancement.class.grants",
@@ -834,6 +1515,32 @@
             "self-restoration"
           ],
           "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -890,6 +1597,32 @@
             "self-restoration"
           ],
           "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         }
       ]
     },
@@ -897,49 +1630,265 @@
       "actor": "Quillathe L01",
       "file": "fvtt-Actor-quillathe-QuillatheLv01000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Quillathe L05",
       "file": "fvtt-Actor-quillathe-QuillatheLv05000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Quillathe L11",
       "file": "fvtt-Actor-quillathe-QuillatheLv11000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Quillathe L17",
       "file": "fvtt-Actor-quillathe-QuillatheLv17000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Randal L01",
       "file": "fvtt-Actor-randal-RandalLv01000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Randal L05",
       "file": "fvtt-Actor-randal-RandalLv05000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Randal L11",
       "file": "fvtt-Actor-randal-RandalLv11000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Randal L17",
       "file": "fvtt-Actor-randal-RandalLv17000000",
       "official": true,
-      "findings": []
+      "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        }
+      ]
     },
     {
       "actor": "Riswynn L01",
@@ -965,6 +1914,32 @@
             "dwarf lineage (hill)"
           ],
           "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         },
         {
           "cat": "items.gear",
@@ -1003,6 +1978,32 @@
             "dwarf lineage (hill)"
           ],
           "expected": "curated-swap-lineage"
+        },
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
         },
         {
           "cat": "items.gear",
@@ -1049,6 +2050,32 @@
           "expected": "curated-swap-lineage"
         },
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "items.gear",
           "key": "names",
           "before": [
@@ -1087,6 +2114,32 @@
           "expected": "curated-swap-lineage"
         },
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "items.gear",
           "key": "names",
           "before": [
@@ -1105,6 +2158,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
           "before": 1,
@@ -1118,6 +2197,32 @@
       "file": "fvtt-Actor-sefris-SefrisLv05000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
@@ -1150,6 +2255,32 @@
           "expected": "invocation-spell-copy"
         },
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
@@ -1180,6 +2311,32 @@
           "expected": "invocation-spell-copy"
         },
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "feat.activities",
           "key": "agonizing blast",
           "before": [],
@@ -1201,6 +2358,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
@@ -1216,6 +2399,32 @@
       "file": "fvtt-Actor-zanna-ZannaLv050000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.race",
           "key": "gnome, rock",
@@ -1233,6 +2442,32 @@
       "official": true,
       "findings": [
         {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
+        {
           "cat": "advancement.race",
           "key": "gnome, rock",
           "before": [],
@@ -1248,6 +2483,32 @@
       "file": "fvtt-Actor-zanna-ZannaLv170000000",
       "official": true,
       "findings": [
+        {
+          "cat": "items.basicAction",
+          "key": "names",
+          "before": [],
+          "after": [
+            "attack",
+            "dash",
+            "disengage",
+            "dodge",
+            "don or doff a shield",
+            "end concentration",
+            "escape a grapple",
+            "help",
+            "hide",
+            "improvising an action",
+            "influence",
+            "magic",
+            "opportunity attack",
+            "ready",
+            "search",
+            "study",
+            "two-weapon fighting",
+            "utilize"
+          ],
+          "expected": "basic-actions"
+        },
         {
           "cat": "advancement.race",
           "key": "gnome, rock",

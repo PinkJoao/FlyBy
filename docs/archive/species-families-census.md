@@ -1,3 +1,22 @@
+> **ARCHIVE. Campaign closed 2026-07-23; parts of this file are now WRONG.**
+> Read it only for the §3 census (the 98 sub-races in 7 groups, and the item-by-item
+> analysis of the 20 in the "reprint to 2024 base" group), which answers "what
+> species content is still out of reach?" with data and should not be redone.
+>
+> **What is stale, and must not be believed:**
+> - The header says the **Dwarf was left out of scope**. It was not: the Dwarf swap
+>   shipped 2026-07-29 (DDL-0080), so *Hill* and *Mountain* are both reachable and
+>   the census's one remaining gap (Dwarven Armor Training) is closed.
+> - It points at an `Explicitly OUT OF SCOPE` section of `CLAUDE.md` that no longer
+>   exists.
+> - It names the swap module `legacyLineageSwaps.js` (§5.4, a proposal) and
+>   `legacyHalflingLineages.js` (§7). The real module is
+>   **`src/engine/legacySwapLineages.js`**, generalised when the Dwarf was added.
+>
+> The design and the rules for a `swap` live in DDL-0059/0060/0061/0063 and 0080.
+
+---
+
 # SPECIES-FAMILIES-PLAN.md — famílias de espécie com nome repetido
 
 > Documento de trabalho (padrão `RULES-GLOSSARY-PLAN.md` / `TESTING-PLAN.md`): levantamento,

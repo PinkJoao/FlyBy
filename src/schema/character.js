@@ -223,7 +223,7 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  *   não têm origem: não aparecem na aba Spellbook nem contam em limite nenhum.
  *   É um balde de CARGA, não uma decisão do jogador - a regra de leitura é
  *   exatamente essa, e quem acrescentar um consumidor precisa respeitá-la.
- *   Pendência conhecida (DEFERRED-REVIEW B4): deixar o jogador ATRIBUIR uma
+ *   Pendência conhecida (CLAUDE.md §4, backlog): deixar o jogador ATRIBUIR uma
  *   origem a elas, a partir das possibilidades que a ficha oferece.
  * @property {InventoryItem[]} inventory
  */

@@ -1,3 +1,14 @@
+> **ARCHIVE.** The review of everything that had been deferred for convenience,
+> opened 2026-07-29 and worked through in five levas; it took the T2 comparator
+> from 71 findings to 18. **Still live in here:** §2 lists the two items that
+> remain pending (they are also in `CLAUDE.md` §4), §4 explains the deliberate
+> divergences, and §6 lists the five questions waiting on T2d.
+>
+> The decisions it produced are DDL-0080, DDL-0081 and DDL-0082 in
+> `docs/DECISIONS.md`. Where the two disagree, the DDL entry wins.
+
+---
+
 # DEFERRED-REVIEW.md - a revisão do que ficou adiado
 
 > Aberto em **2026-07-29** para revisar tudo que tinha sido adiado por conveniência ao longo do

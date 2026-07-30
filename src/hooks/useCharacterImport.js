@@ -34,7 +34,7 @@ export default function useCharacterImport() {
         const raw = JSON.parse(await file.text());
         // Canal de AVISOS da conversão: o que o ator trazia e o nosso modelo não
         // guarda. O import segue normalmente - mas o jogador precisa saber, em
-        // vez de descobrir depois que o conteúdo sumiu (DEFERRED-REVIEW §5.3).
+        // vez de descobrir depois que o conteúdo sumiu (DDL-0080).
         const out = {};
         const imported = await importJson(raw, db, out);
         if (out.warnings?.length) {

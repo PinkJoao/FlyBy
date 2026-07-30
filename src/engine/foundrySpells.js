@@ -264,7 +264,7 @@ export function buildSpellItems(derived) {
  * importado trazia e nenhuma classe da ficha sabe conjurar. Sem origem não há
  * atributo, DC nem modo de preparação a derivar, então saem como magias
  * PREPARADAS simples - é o suficiente para o Foundry não perder o documento, que
- * é o único objetivo deste balde (ver o schema e DEFERRED-REVIEW B4).
+ * é o único objetivo deste balde (ver o schema e DDL-0080).
  * @param {import('../schema/character').Character} character
  * @param {object} db
  * @returns {object[]} itens Foundry (type 'spell')

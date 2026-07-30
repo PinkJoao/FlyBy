@@ -1681,7 +1681,7 @@ function nestedBoonEntry(entry) {
  *
  * Sem o pool o passo vira um ItemGrant (concessão fixa) e o Foundry não sabe que
  * ali houve uma ESCOLHA - não oferece trocá-la. Com ele, vira o `ItemChoice` que
- * os atores oficiais têm (C0/§5.1 do DEFERRED-REVIEW).
+ * os atores oficiais têm (DDL-0080).
  * @param {object} db
  * @param {object} raceObj  raça RESOLVIDA (a linhagem)
  * @returns {string[]} uuids de compêndio, ou vazio
@@ -2566,7 +2566,7 @@ export function buildInventoryItems(character, db) {
  *
  * O nosso modelo continua comprando o pack como UMA entrada de inventário
  * (DDL-0013); o desdobramento é só do lado do arquivo exportado, e o import o
- * recolhe de volta (ver `foundryImport`, C4 do DEFERRED-REVIEW).
+ * recolhe de volta (ver `foundryImport`, DDL-0080).
  * @param {object} item  o item já montado do pack
  * @param {object|null} raw  o item 5etools resolvido
  * @param {object} db

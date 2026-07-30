@@ -41,7 +41,7 @@ const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
  * - **Estado de sessão:** `hp.value`, `spellN.value`, `uses.spent`, `death`,
  *   `exhaustion`, `inspiration` - o export nasce "descansado" de propósito.
  * - (nada mais sobre `container`: desde 2026-07-29 um pack É exportado como
- *   contêiner + conteúdo, como nos atores oficiais - ver C4 do DEFERRED-REVIEW.)
+ *   contêiner + conteúdo, como nos atores oficiais - ver DDL-0080.)
  * - **`attributes.senses` / `movement`.** O Foundry DERIVA de Active Effects; os
  *   dois lados guardam null.
  */

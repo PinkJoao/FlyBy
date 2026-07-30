@@ -1,8 +1,17 @@
 # Development Log
 
 A topic-by-topic record of what has been built. Grouped by area rather than by
-date; roughly follows the roadmap phases in the README. Newest work for each area
-is folded into its section.
+date. Newest work for each area is folded into its section, so a section is the
+current account of that topic and not a diary of it.
+
+**Section numbers are stable ids, never renumbered** - other documents cite them
+as `CHANGELOG §NN`. Gaps are expected: 33 numbers were freed on 2026-07-30 when the
+Phase T session-by-session logs were consolidated into §27, since each of them was
+already recorded in `TESTING-PLAN.md`, `testing/COVERAGE.md` and the findings
+ledger. The session narratives themselves are in `docs/archive/`.
+
+Design decisions are not logged here - they live in `docs/DECISIONS.md`, indexed
+from `CLAUDE.md` §8.
 
 ---
 
@@ -43,11 +52,10 @@ is folded into its section.
   17) and a hand-built **Champion** (Fighter 6) both import with derived scores, level and
   HP matching the source exactly, and render correctly in the builder. Card/builder
   **export** is the Foundry actor too, so import↔export share one format — making premades
-  a ready-made comparison/test set. _Known limits (first pass): species **skill/feat
-  sub-choices** aren't back-filled (they land in the derived sheet but not as bag picks
-  yet); a Plutonium-style lineage name (`Elf, Drow`) resolves to the base race but doesn't
-  re-map to our exact `_versions` lineage string; feat picks with a non-canonical/empty
-  source may not re-resolve on a subsequent export._
+  a ready-made comparison/test set. The first pass left three known limits (species
+  sub-choices not back-filled, Plutonium-style lineage names not re-mapped, feat picks
+  with an empty source not re-resolving); all three were closed during Phase T, and the
+  round-trip is asserted per matrix row by the sweep.
 - Roster cards show the character portrait (any aspect ratio, scaled to fit) or a
   name initial.
 - "Create character" buttons reuse the selector's Select-button styling.
@@ -289,7 +297,7 @@ is folded into its section.
   registry is structured to grow toward full mechanical implementation of class
   features (AC/attack bonuses, resources) for the eventual play mode.
 
-## 11. Foundry VTT export (in progress)
+## 11. Foundry VTT export (Phase A, done)
 
 - The end goal is exporting a character as a **Foundry VTT dnd5e actor** `.json`.
   Approach: the Foundry actor is a shell — Foundry recomputes derived stats from the
@@ -642,7 +650,7 @@ is folded into its section.
   and at least one subclass per source (67 subclasses) to confirm no empty,
   unresolved or dropped features.
 
-## 13. Inventory (Phase B1, in progress)
+## 13. Inventory (Phase B1, done)
 
 - **Full item data fetch** — `data/config.js` `GLOBAL_FILES` gains `items.json`
   (2428 entries — all magic items *and* generic gear/food/ammunition; confirmed the
@@ -1195,7 +1203,7 @@ is folded into its section.
   encumbrance/progress bar fills). Verified live: the "Add anyway" primary renders with
   the accent border and no fill.
 
-## 15. Spellbook (Phase B2, in progress)
+## 15. Spellbook (Phase B2, done)
 
 The plan for the whole phase lives in CLAUDE.md **DDL-0008** (architecture + 5 stages,
 from the user's 12 requirements). Progress by stage:
@@ -1494,6 +1502,38 @@ from the user's 12 requirements). Progress by stage:
   into the `featureoption` choice-bag. Verified on the real **Akra** premade: `Divine Order →
   Protector` and `Blessed Strikes → Potent Spellcasting` both reconstruct. +1 unit test
   (`foundryImport.test.js`, 609 total).
+
+## 16. Reference material & licensing
+
+- **`DnD Source Material/README.md` (new, outside the repo)** — the four reference folders
+  (`5etools Source Code`, `DnD 5e System Source Code`, `Character Sheets in JSON`,
+  `Plutonium Module Code`) now carry a README documenting, per folder: what it holds, its
+  licence, the paths worth reading, and why a session would open it. Written so a fresh
+  session gets the same orientation without re-exploring.
+- **The reference folder lives at two different absolute paths** (the user works on two
+  computers) but is **always a sibling of the project directory**. `CLAUDE.md` §3 now says so
+  explicitly and tells sessions to resolve `../DnD Source Material` instead of hardcoding a
+  drive letter.
+- **Licensing correction — the `foundry-*.json` mechanics overlay is 5e.tools', not
+  Plutonium's (DDL-0009).** The overlay files (`foundry-feats`, `foundry-races`,
+  `foundry-items`, `foundry-optionalfeatures`, `class/foundry.json` — Active Effects,
+  ScaleValue tables, special advancement configs) are **byte-for-byte identical** between the
+  Plutonium module and the **MIT-licensed** 5e.tools repo; Plutonium merely bundles a copy.
+  Every one of those paths was verified to return **HTTP 200 on the mirror the app already
+  fetches from**, at matching byte sizes, and `foundry-feats.json` was confirmed to be the
+  real overlay (51 entries; "Alert" carries the `flags.dnd5e.initiativeAlert` change seen in
+  the real Foundry export).
+  - So the overlay **may be fetched at runtime like any other data file**. DDL-0003's
+    Plutonium prohibitions are otherwise untouched — the module stays a private reference,
+    never bundled or fetched.
+  - Caveats for a future consumer: the overlay's Active-Effect `mode` is a **string**
+    (`"OVERRIDE"`, `"ADD"`) rather than Foundry's numeric mode; `foundry-psionics.json` is an
+    empty `{}` upstream; `foundry-backgrounds.json` is **Plutonium-only** (404 on the mirror)
+    and stays out of bounds; and adding paths to `buildManifest` carries the usual risk that a
+    single 404 breaks the whole `Promise.all`.
+  - **Impact (not yet scheduled):** `engine/foundryEffects.js`, our hand-curated Active-Effects
+    registry, can be backed by — or largely replaced with — the upstream overlay, shrinking
+    per-feature curation to the gaps it leaves. Additive; does not block Phase B2.
 
 ## 17. UI pass before the wizard (back button, level controls, filter drawer)
 
@@ -2151,7 +2191,7 @@ from the user's 12 requirements). Progress by stage:
     "6 choices left", which opens the creation guide at Review listing every gap; a guided Fighter's
     saved `scoreMethod` is `standard-array` with the Fighter spread (15/14/13/8/10/12).
 
-## 22. PDF export (Phase E, in progress)
+## 22. PDF export (Phase E, done except E5 polish)
 
 Printable character-sheet PDF — README roadmap #13. **Decision: a clean-room layout** (we draw our
 own original sheet, we do NOT bundle or overlay the copyrighted official WotC sheet — the WotC PDF
@@ -2342,38 +2382,6 @@ illustrations, and the trademark/copyright notice.
   - Verified: 693 tests (5 new: trait paragraphs ×4, PDF page-count ×1 — the render test now
     counts `/Type /Page` dicts), lint, PNG inspection (Aasimar card + overflow page 3).
 
-## 16. Reference material & licensing
-
-- **`DnD Source Material/README.md` (new, outside the repo)** — the four reference folders
-  (`5etools Source Code`, `DnD 5e System Source Code`, `Character Sheets in JSON`,
-  `Plutonium Module Code`) now carry a README documenting, per folder: what it holds, its
-  licence, the paths worth reading, and why a session would open it. Written so a fresh
-  session gets the same orientation without re-exploring.
-- **The reference folder lives at two different absolute paths** (the user works on two
-  computers) but is **always a sibling of the project directory**. `CLAUDE.md` §3 now says so
-  explicitly and tells sessions to resolve `../DnD Source Material` instead of hardcoding a
-  drive letter.
-- **Licensing correction — the `foundry-*.json` mechanics overlay is 5e.tools', not
-  Plutonium's (DDL-0009).** The overlay files (`foundry-feats`, `foundry-races`,
-  `foundry-items`, `foundry-optionalfeatures`, `class/foundry.json` — Active Effects,
-  ScaleValue tables, special advancement configs) are **byte-for-byte identical** between the
-  Plutonium module and the **MIT-licensed** 5e.tools repo; Plutonium merely bundles a copy.
-  Every one of those paths was verified to return **HTTP 200 on the mirror the app already
-  fetches from**, at matching byte sizes, and `foundry-feats.json` was confirmed to be the
-  real overlay (51 entries; "Alert" carries the `flags.dnd5e.initiativeAlert` change seen in
-  the real Foundry export).
-  - So the overlay **may be fetched at runtime like any other data file**. DDL-0003's
-    Plutonium prohibitions are otherwise untouched — the module stays a private reference,
-    never bundled or fetched.
-  - Caveats for a future consumer: the overlay's Active-Effect `mode` is a **string**
-    (`"OVERRIDE"`, `"ADD"`) rather than Foundry's numeric mode; `foundry-psionics.json` is an
-    empty `{}` upstream; `foundry-backgrounds.json` is **Plutonium-only** (404 on the mirror)
-    and stays out of bounds; and adding paths to `buildManifest` carries the usual risk that a
-    single 404 breaks the whole `Promise.all`.
-  - **Impact (not yet scheduled):** `engine/foundryEffects.js`, our hand-curated Active-Effects
-    registry, can be backed by — or largely replaced with — the upstream overlay, shrinking
-    per-feature curation to the gaps it leaves. Additive; does not block Phase B2.
-
 ## 23. Rules glossary with inline links (v1 DONE)
 
 - **Feasibility analysis (2026-07-14) — POSITIVE; plan fixed in `RULES-GLOSSARY-PLAN.md`
@@ -2549,116 +2557,82 @@ illustrations, and the trademark/copyright notice.
   `height: 28px`, width follows (square viewBox). Adjust the height there to resize.
 - Verified live: logo loads (28×28) next to "FlyBy", no console errors, favicon serves.
 
-## 27. Phase T — testing & curation campaign (plan)
+## 27. Phase T - testing & curation campaign
 
-- **`TESTING-PLAN.md` created (2026-07-15)** — the working context for the systematic
-  testing/curation campaign that runs BEFORE play mode (decision recorded as DDL-0024).
-  Three tiers: **Tier 0** an automated sweep (`npm run sweep`, to be built first) that
-  auto-builds every class × subclass × level 1–20 and every species × lineage from the
-  local data snapshot, auto-fills all choices with seeded picks, and asserts derivation/
-  choice-coverage/export/round-trip invariants; **Tier 1** Claude-driven UI sessions over
-  the browser preview, sampled at each class's *decision levels* only; **Tier 2** user
-  curation + real-Foundry milestone imports. Trackers live in `testing/`
-  (`COVERAGE.md`, `ISSUES.md`, `report.json`). Scope order: species/classes/subclasses
-  (T1) → their Foundry export (T2) → feats/spells/items (T3, later).
-- **Stage T0 DONE (2026-07-15): the sweep harness is built and the first full sweep ran.**
-  - `scripts/lib/loadDb.js` (compendium loader extracted from `render-pdf-preview.jsx`),
-    `matrix.js` (data-driven rows: classes × subclasses via the selector entities,
-    species × lineages via `_versions`; fixed default species Dwarf XPHB for class rows),
-    `rng.js` (mulberry32 + per-row FNV seed → every failure reproducible),
-    `autoBuild.js` (the auto-builder: standard-array scores, seeded boosts, fixed Alert
-    origin feat, then derive→fill→repeat over the SAME machinery the UI uses —
-    `parseChoices`/`buildClassChoices`/selector entities/`choicesComplete`/
-    `guidancePendencies` — including feat sub-bags, mixed pools, size/spellAbility
-    selects, optional features with prereq-met preference, and spells filled to the
-    cantrip/prepared limits + Mystic Arcanum picks), `invariants.js` (NaN/undefined deep
-    scan, prof-bonus/HP sanity, Foundry item shape), `roundtrip.js` (decision summary +
-    per-index diff + WAIVERS/KNOWN_ISSUES classification). 13 unit tests
-    (`scripts/lib/sweep.test.js`, 732 total).
-  - `npm run sweep` (flags: `--class= --subclass= --species= --seed= --emit-actors`);
-    class rows build at level 20, then derive a `cleanupClassEntry`-pruned clone at EVERY
-    level 1–20 (also emits each class's **decision levels** into the tracker for Tier 1).
-    Full matrix: **256 rows in ~8 s**. Slices skip the COVERAGE rewrite.
-  - **First sweep result: builder-side all green** — every one of the 256 units auto-fills
-    to zero pendencies, derives at all 20 levels without a crash, and exports a
-    structurally clean actor. **All findings are export/import round-trip gaps**, triaged
-    as `TC-0001…TC-0010` in `testing/ISSUES.md` (headline: TC-0007 — `featureoption`
-    picks never export as the "<Feature>: <Option>" feat Items the import already
-    understands, 54 diffs; plus import gaps for optional features, class tool/expertise
-    grants, feat sub-bags, parenthesized race names, species spellAbility). Baselined in
-    `KNOWN_ISSUES` so the sweep stays green while they wait — closing a TC = fix + remove
-    its pattern + clean sweep. `testing/actors/` (emitted on demand) is gitignored;
-    `report.json`/`COVERAGE.md`/`ISSUES.md` are committed.
-- **T0 backlog BURNED DOWN (2026-07-16): TC-0001…TC-0010 all fixed — the full sweep now
-  runs 256/256 with ZERO round-trip diffs in `--strict` mode** (new sweep flag that ignores
-  the known-issues baseline; `KNOWN_ISSUES` and `WAIVERS` are both empty now, so ANY new
-  round-trip diff fails its row again). Architecture recorded as **DDL-0028**:
-  - **Native where Foundry has a slot.** `featureoption` picks now export as the premades'
-    `"<Feature>: <Option>"` feat Items (`buildFeatureOptionItems`) — the existing import
-    reconstructs them unchanged (TC-0007). Optional features (invocations/metamagic/
-    maneuvers/arcane shots/runes/pact boons) export as feat Items with the right dnd5e
-    subtype (`buildOptionalFeatureItems`) — they were entirely absent from the actor before
-    (TC-0004, worse than triaged). Only the class's own `feat@<level>` slots feed the class
-    ItemChoice/ASI advancement, so Champion's subclass style no longer lands on invented
-    `feat@7/10` keys on import (TC-0006). `parseSpecies` resolves race-item names by EXACT
-    compendium match (bases + `_versions`) before the separator heuristic — "Human (Ixalan)",
-    "Dragonborn (Gem; Amethyst)" and "Variant; Gifted Aetherborn" survive (TC-0008).
-    `weaponKeyToPick` returns plain names, the UI's canonical pick format (TC-0003).
-    `toolId`/`languageCode` fall back to a full REVERSIBLE slug and the canonical multi-word
-    names ("Dice Set" → `dice`, "Chess Set", "Playing Card Set", "Pan Flute") joined
-    `TOOL_TO_FVTT` — "Hand Drum" no longer reimports as "Hand Crossbow" (TC-0001).
-  - **`flags.builder5e.choices` where Foundry has no slot.** Chosen feats carry their
-    sub-bag on their own Item (origin feat, class slots, species feats — TC-0002); the race
-    item carries `spellAbility-N`/`size-N`/mixed pools (TC-0009 + retired the DDL-0017 size
-    waiver); the class item carries the residual bag (`tool@start-*`, `expertise@*`, curated
-    prose grants, subclass `sub:` grants, optional-feature picks — TC-0005). Foundry ignores
-    the namespaced flag; flag-less actors (premades/Plutonium) still go through the native
-    reconstruction paths, including a new name-match fallback for optional features.
-  - **TC-0010 (both sides):** the species item's Trait/ASI advancements use SHALLOW picks
-    only (a feat's sub-choices belong to the feat's item), and the import only back-fills a
-    species skill/tool/language entry when `parseChoices(raceObj)` offers that choice.
-  - **The oracle got stricter:** base `scores` joined the decision summary (validates the
-    `final − boosts` reconstruction, including boosts chosen inside feat flags). Verified:
-    793 tests (4 updated to the new canonical formats + 2 new: exact race names, flag
-    round-trip), lint clean, sweep 256/256 strict.
+Fixed with the user 2026-07-15 (DDL-0024) as the work that had to happen **before**
+play mode: certify that the app is usable and correct for every species, class and
+subclass, and that the Foundry export is right for all of them. The strategy, the
+session protocol and the current hand-off live in **`TESTING-PLAN.md`**; the
+per-unit state is `testing/COVERAGE.md`; the findings are indexed in
+`testing/ISSUES.md` (full text in `docs/archive/issues-ledger.md`). The 42 session
+hand-offs are archived in `docs/archive/phase-t-sessions.md`.
 
-### T1a session 1 — Artificer + 6 subclasses (2026-07-16)
+Three tiers, so that **scripts prove what scripts can prove** and Claude/user eyes
+go only where judgment is needed: automated sweep (exhaustive) -> UI verification
+at decision levels (sampled) -> human curation and real Foundry imports.
 
-- First Tier-1 UI session (alphabetical order): full guided create pass (Human /
-  Armorer), interactive level-ups 1→4 exercising the level-up overlay (spells@2,
-  subclass + Armor Model + spells@3, feat + spells@4), jump to level 19 (pendency
-  badge, fixup guide, Epic Boon picker), and subclass swaps at 19 for Alchemist,
-  Artillerist, Battle Smith, Cartographer and Reanimator (features, spell tables
-  and granted always-prepared spells all render). Spellbook verified at 1/2/3/19
-  (slots, DC/attack, counters, Tinker's Magic Mending at-will); chip popups,
-  choice-title links, mobile layout and console all clean.
-- **Findings logged:** TC-0011 (additionalSpells `{choose}` never surfaced — Magic
-  Initiate grants nothing, structural), TC-0012 (fixed subclass proficiency grants
-  don't derive — Armorer Heavy armor/Smith's Tools, Battle Smith Martial weapons),
-  TC-0013 (picked feat with unfilled sub-choices escapes the ✦ badge/fixup guide —
-  shallow `filled` in `fixupSteps.js`), TC-0014 (structured `resist` chooses
-  unparsed — Boon of Energy Resistance), TC-0015 (guided starting kit lands
-  unequipped, AC reads unarmored), TC-0017 (featureoption chip prints every
-  option's full text). **Fixed in-session:** TC-0016 — ClassStep/SpeciesStep
-  pickers showed raw lowercase ids ("artificer", "human"); they now use the
-  resolved compendium name.
-- **New helper:** `npx vite-node scripts/t1-choices.js <classId>` dumps the
-  per-level choice descriptors (NEW/GROW/SPELL) a T1 session must see per
-  subclass — generated from the same autoBuild/buildClassChoices machinery the
-  sweep uses.
-- Trackers updated: `testing/COVERAGE.md` artificer rows (4× `ui: ok`, Armorer &
-  Battle Smith `ui: issues`), `testing/ISSUES.md` TC-0011…TC-0017,
-  `TESTING-PLAN.md` §7 hand-off (next: Barbarian).
-- **TC-0013 FIXED (follow-up, same day):** the fixup/✦ completeness is now DEEP.
-  `choiceComplete` (per-choice version of the creation guide's `choicesComplete`,
-  exported from `createGuideContext.js`) replaced the shallow `picks >= count`
-  checks in `unfilledClassChoices` (`fixupSteps.js`) and in `FeaturesStep`'s
-  `unfilledOnly` filter. A picked ASI/Epic Boon with an empty sub-bag now keeps
-  the ✦ badge, stays listed in the fixup guide (rendering its embedded
-  sub-choices), and blocks the level-up overlay's auto-advance until the +2/+1
-  (or the boon's ability) is chosen. Bonus: ability-pool targets now respect the
-  chosen alternative (+1 to two with one pick still pends). 7 regression tests
-  (`fixupSteps.test.js`, 800 total); verified live on the session's Artificer 19.
+### What the campaign BUILT
+
+- **`npm run sweep`** (Tier 0, `scripts/sweep.js` + `scripts/lib/`) - enumerates the
+  whole matrix from the data (every class x subclass x level 1-20, every species x
+  lineage), and for each row runs `autoBuild`: it derives, collects every unfilled
+  choice through the same deep-completeness machinery the app uses, fills each with
+  a seeded-random legal option, and repeats until pendencies hit zero. "Stuck" is
+  itself a finding. Then it asserts the invariants (no throw, every choice offers an
+  option, every ref resolves, no `NaN`/`undefined`, HP and proficiency sane) and the
+  **round-trip oracle**: `foundryToCharacter(assembleFoundryActor(c))` diffed against
+  the original decisions. Regenerates `testing/COVERAGE.md` preserving the
+  hand-maintained columns. Flags: `--strict`, `--class=`, `--species=`,
+  `--emit-actors`.
+- **`npm run t2`** (`scripts/compare-premades.js` + `scripts/lib/premadeDiff.js`) -
+  the export oracle, fixed 2026-07-26 (DDL-0072). The sweep compares our export with
+  our own import, so anything never exported is invisible to it (this is how the
+  character's money sat at zero for months). The gabarito is the **48 official
+  premade sheets**: run `P -> foundryToCharacter -> assembleFoundryActor -> A`, diff
+  `A x P`, and aggregate by CLASS of finding so a whole family is triaged once. Its
+  `DELIBERATE` list (differences it does not look at) and `EXPECTED` list
+  (differences it looks at and knows we are right about) are the functional
+  documentation of every deliberate divergence.
+- **`npm run check:keys`** - crosses the curated species-keyed registries against
+  the RESOLVED catalog, so a registry key that stops matching (what silently removed
+  the Dwarf's HP bonus when it became a lineage) fails loudly instead.
+- **The generated registries** (`gen:uuids`, `gen:srd`, `gen:sources`) - facts the
+  target system knows and 5etools does not: compendium UUIDs, resource pools and
+  activities, full source names. Each replaced a hand-curated list.
+
+### The arc
+
+| Stage | Sessions | Result |
+|---|---|---|
+| **T0** harness | 2026-07-15/16 | built; first sweep green on the builder side, 10 round-trip gaps (TC-0001…TC-0010) found and burned down |
+| **T1a** classes | 13 | 135 `class:*` rows `ui: ok`; TC-0019…TC-0045 |
+| **T1b** species | 8 | 150 `species:*` rows `ui: ok`; TC-0046…TC-0054. **STAGE T1 COMPLETE 2026-07-26** (285 units) |
+| **T2a** oracle | 1 | `npm run t2` built; first run **1023 findings** in 27 classes, down to 745 the same session |
+| **T2b** burn-down | 7 | 745 -> **71**; TC-0055…TC-0083, every one fixed in the MECHANISM, never per unit |
+| **deferred review** | 5 levas | 71 -> **18** (see §103 below) |
+
+**T1a's method note:** a disposable probe over `autoBuild` plus an oracle (the book,
+or what the data declares) certifies a whole family's derivation in minutes; the
+live pass is saved for what needs eyes (art, layout, flow). The S-A2 review made
+this a rule after finding that 12 of 19 ancestries had been marked
+"engine-verified" without anything having been executed: **never write
+engine-verified without having run something.**
+
+### What came out of it
+
+Phase T is where most of the curated and generated registries were born, because a
+sweep across the whole dataset kept turning one reported symptom into a family:
+`classFeatureGrants` (prose grants on class features, DDL-0073), `speciesLanguages`,
+the natural-armour family, `legacySwapLineages`, `mergedLineages`,
+`grantedSpellUses`, `spellListWidening` (DDL-0054), `foundryBasicActions`, plus the
+SRD-generated item types, resource pools and activity configs. The rules the
+campaign taught the hard way are distilled in `CLAUDE.md` §6; the per-finding
+detail is in the archived ledger.
+
+**Still open:** T2d (real Foundry imports, the only step Claude cannot do) and the
+18 remaining comparator findings, which are triaged and mostly waiting on it. No
+`export: ok` row has been marked yet: the criterion (TESTING-PLAN §5.2) is
+deliberately stricter than "I did not spot anything".
 
 ## 28. Item shop: generated magic-item variants + weapon filters
 
@@ -3078,48 +3052,6 @@ tabs too). See DDL-0032.
   pass (all five links above open the right popup with the Core/Optional Rule + source
   badges; Weapon Mastery precedence intact; Esc/X close as before; no console errors).
 
-## 37. Phase T - T1a session 2: Barbarian + all 10 subclasses (TC-0019…TC-0022)
-
-Second Tier-1 UI session (TESTING-PLAN §4): full guided create pass (Human/Tough/Skilled →
-Barbarian), interactive level-ups 1→4 through the overlay (subclass@3 + Primal Knowledge +
-Rage of the Wilds; ASI + mastery growth@4), jump to 19 (badge + fixup guide: Aspect@6,
-ASIs@8/12/16 incl. the "+1 to two" alternative and Sentinel's restricted Str/Dex list,
-Power of the Wilds@14, mastery 3→4, Epic Boon@19), subclass swaps at 19 for the other nine,
-Spellbook checks (Wild Heart rituals@3+10, Giant cantrip@3, Ancestral Guardian 1/Rest@10),
-chip popups, choice-title links, mobile width, zero console errors. HP math validated the
-DDL-0029 hpBonuses live (Tough on a d12 chassis: 16 @1 … 233 @19). Findings, all but one
-fixed in-session (see `testing/ISSUES.md`):
-
-- **TC-0019 (bug, fixed)** - Storm Herald's **Storm Aura environment choice had NO
-  selector**: its `options`+`refSubclassFeature` block was treated as the grant-all family
-  (DDL-0002's Genie/Psi Warrior/Soulknife call), but the prose says "Choose desert, sea, or
-  tundra". One curated line (`'storm aura'` in `CHOOSE_ONE_FEATURES`) turns it into the
-  standard featureoption (Desert/Sea/Tundra cards, TC-0017 collapse, sweep autofills it).
-  Storm Soul@6/Raging Storm@14 correctly FOLLOW the choice (no selectors of their own).
-- **TC-0020 (bug, fixed)** - the ✦ badge counted fixup **steps** (max 3/class), not
-  decisions: a Barbarian 19 with 7 open choices showed "1 choice left".
-  `fixupPendencyCount` now sums unfilled choices (+1 subclass, +1 spells).
-- **TC-0021 (bug, fixed for Barbarian)** - the **Weapon Mastery pool ignored per-class
-  restrictions**: a Barbarian could master a Blowgun (text: "Simple or Martial MELEE
-  weapons"). New curated `MASTERY_FILTERS` map feeds the existing `weaponFilter` machinery
-  (DDL-0030) through ChoiceList + autoBuild; Rogue's "Martial with Finesse/Light" variant
-  needs a conditional filter semantics and is deferred to its own T1 session.
-- **TC-0022 (open, needs-user-eyes)** - feat ability increases **don't enforce the score
-  cap 20** (GWM+Sentinel pushed Str 19→22 before the Epic Boon; RAW both cap at 20, boons
-  at 30). Logged for a product decision - may be intended freedom like DDL-0026's
-  over-preparing.
-- Cosmetic fixes in-session: SpeciesTab/ClassTab picker labels showed the lowercase id
-  ("human", "barbarian" - TC-0016's family, now the resolved/capitalized name); the inline
-  `{@table}` tag now honors its 3rd-pipe display ("three skills or tools", not "three Skill
-  List; Skills" - deliberately NOT generalized to `{@filter}`, whose display is the 1st
-  segment); the Spellbook row no longer doubles the "Ritual" chip when the grant's cast
-  type already says Ritual (Wild Heart's Animal Speaker); `scripts/t1-choices.js` no longer
-  hides a choice whose declared level differs from the level it appears at (Giant's
-  spellSet was invisible to the helper).
-- Verified: 869 unit tests (4 new), lint clean, sweep **274/274 `--strict`**, live browser
-  pass (desktop + mobile). Coverage: all 10 `class:barbarian/*` rows → `ui: ok`
-  (TC-0022 noted).
-
 ## 38. Ability score cap (TC-0022) + species natural armor (Tortle/Autognome/Warforged)
 
 Two rules-accuracy fixes (DDL-0034).
@@ -3184,6 +3116,43 @@ Wizard → "Wizard 1".
 
 - Verified: 892 unit tests, lint clean, live browser pass (both flows above).
 
+## 40. SRD 5.2 tables in the glossary (PHB/DMG/MM 2024 free-rules tables)
+
+The browsable glossary now includes the reference **tables** from the 2024 free rules (SRD
+5.2) — Skills, Weapons, Armor, Coin Values, Typical DCs, Travel Pace, Schools of Magic, etc.
+Players can look them up alongside the conditions/actions/rules already there; many carry
+useful rule descriptions and concepts.
+
+**Which tables, and why these.** 5etools marks each free-rules table with `srd52: true` in
+`generated/gendata-tables.json` — that flag IS the definition of "belongs to the free rules",
+so it's the filter. Of the ~2300 book-extracted tables, exactly **49** carry it (42 XPHB, 4
+XDMG, 3 XMM). `engine/glossary.js` `glossaryTables(db)` normalizes each into the same shape as
+a rule (`{ type:'table', name, source, entries:[table] }`), using the table's clean `caption`
+("Skills") as the display name rather than the compound gendata `name` ("Skill List; Skills").
+The table itself is the popup body (`type:'table'` → `renderTable`).
+
+**Data layer.** `generated/gendata-tables.json` added to the manifest (`data/config.js`,
+verified 200 on the mirror; 2.8 MB — same order of magnitude as the already-loaded
+`items.json`, cached 30 days). Only the 49 srd52 tables surface; the rest just sit in the
+cache.
+
+**Ordering (user request).** In the glossary panel's custom item order, tables sit **above**
+the optional/variant/other rules but **below** the game glossary (conditions, actions, skills,
+senses…) and core rules — they're more relevant than non-core rules, less than the core
+glossary. New tier in `glossaryIndex.js` `itemTier` (core → game glossary → **tables** → other
+rules → the rest). A new "Table" category filter appears alphabetically (between "Subclass
+Feature" and "Variant Rule").
+
+**Table rendering improved (benefits all tables app-wide).** `EntryContent` `renderTable` now
+handles two fields it previously dropped: **`colLabelRows`** (multi-row headers, whose cells
+can be `{type:'cellHeader', width}` objects → `colSpan`) so a table like Travel Pace renders
+its "Distance Traveled Per… / Minute / Hour / Day" two-row header, and **`footnotes`** (small
+italic rows under the table).
+
+- Verified: 896 unit tests (+8), lint clean, live browser pass — Coin Values renders its
+  Coin / Value-in-GP header + 5 rows in the popup; Travel Pace's two-row header renders with
+  the correct colspan; the "Table" filter and category appear in the glossary.
+
 ## 41. Good-citizen data usage: attribution footer + incremental (SHA-diff) sync
 
 Two changes to be gentler on the 5e.tools GitHub mirror we fetch from, and to credit it.
@@ -3223,43 +3192,6 @@ probe against the real API + repo:** all 74 manifest SHAs resolved, real `data/`
 resolved, and a simulated 1-stale-file diff downloaded exactly that one file (73 reused). The
 app still boots to READY from the legacy (SHA-less) cache with no errors.
 
-## 40. SRD 5.2 tables in the glossary (PHB/DMG/MM 2024 free-rules tables)
-
-The browsable glossary now includes the reference **tables** from the 2024 free rules (SRD
-5.2) — Skills, Weapons, Armor, Coin Values, Typical DCs, Travel Pace, Schools of Magic, etc.
-Players can look them up alongside the conditions/actions/rules already there; many carry
-useful rule descriptions and concepts.
-
-**Which tables, and why these.** 5etools marks each free-rules table with `srd52: true` in
-`generated/gendata-tables.json` — that flag IS the definition of "belongs to the free rules",
-so it's the filter. Of the ~2300 book-extracted tables, exactly **49** carry it (42 XPHB, 4
-XDMG, 3 XMM). `engine/glossary.js` `glossaryTables(db)` normalizes each into the same shape as
-a rule (`{ type:'table', name, source, entries:[table] }`), using the table's clean `caption`
-("Skills") as the display name rather than the compound gendata `name` ("Skill List; Skills").
-The table itself is the popup body (`type:'table'` → `renderTable`).
-
-**Data layer.** `generated/gendata-tables.json` added to the manifest (`data/config.js`,
-verified 200 on the mirror; 2.8 MB — same order of magnitude as the already-loaded
-`items.json`, cached 30 days). Only the 49 srd52 tables surface; the rest just sit in the
-cache.
-
-**Ordering (user request).** In the glossary panel's custom item order, tables sit **above**
-the optional/variant/other rules but **below** the game glossary (conditions, actions, skills,
-senses…) and core rules — they're more relevant than non-core rules, less than the core
-glossary. New tier in `glossaryIndex.js` `itemTier` (core → game glossary → **tables** → other
-rules → the rest). A new "Table" category filter appears alphabetically (between "Subclass
-Feature" and "Variant Rule").
-
-**Table rendering improved (benefits all tables app-wide).** `EntryContent` `renderTable` now
-handles two fields it previously dropped: **`colLabelRows`** (multi-row headers, whose cells
-can be `{type:'cellHeader', width}` objects → `colSpan`) so a table like Travel Pace renders
-its "Distance Traveled Per… / Minute / Hour / Day" two-row header, and **`footnotes`** (small
-italic rows under the table).
-
-- Verified: 896 unit tests (+8), lint clean, live browser pass — Coin Values renders its
-  Coin / Value-in-GP header + 5 rows in the popup; Travel Pace's two-row header renders with
-  the correct colspan; the "Table" filter and category appear in the glossary.
-
 ## 42. Project migration: FlyBy repo, Firebase Hosting, in-repo source material (DDL-0037)
 
 Infrastructure/context housekeeping, not a feature change — recorded so future sessions don't
@@ -3290,46 +3222,6 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   and `.claude` (bundled with these context updates), which was allowed to carry Claude's
   co-authorship trailer; every later commit drops it again.
 
-## 43. Phase T - T1a session 3: Bard + all 10 subclasses (TC-0023…TC-0026)
-
-- **Migration repair (DDL-0037 fallout), found by the session's pre-flight sweep:**
-  `scripts/lib/loadDb.js` still looked for the source material as a SIBLING folder -
-  now resolves the in-repo `./DnD Source Material` (render-pdf-preview comment updated
-  too); vitest collected the 5etools snapshot's own jest tests (excluded via
-  `vite.config.js` `test.exclude`); eslint descended into the snapshot's
-  `eslint.config.mjs` (folder added to `globalIgnores`); `fetcher.test.js` used the
-  node-only `global` (→ `globalThis`, the one real lint error the exclusion exposed).
-- **TC-0023 - countable proficiency tokens never became choices.** `parseChoices` now
-  reads `{anyMusicalInstrument: 3}`-style token entries (`PROF_COUNT_TOKENS` in
-  `engine/choices.js`) into category-restricted pool choices - Musician XPHB / Harper
-  Agent FRHoF (origin feats!), Artificer Initiate, Satyr, Dwarf (Kaladesh), and every
-  `{anyStandard: N}` language race (Custom Lineage…). Multi-entry proficiency fields are
-  now correctly ALTERNATIVES (5etools joins them with "or"): only the first entry that
-  yields a choice emits one - Human (Ixalan)'s double `{anyStandard:1}` is ONE language.
-- **TC-0024 - kit `{equipmentType}` entries dropped.** The Bard kit's "Musical
-  Instrument of your choice" is now a kit CHOOSE: listed on the option card, picked via
-  an item selector in the guided EquipmentStep (category-matched), stored in
-  `meta.startingKitPicks`, added to the inventory, and gated by deep completeness
-  (`kitStepComplete` ctx flag).
-- **TC-0025 - sibling spell chooses could pick the same spell twice** (Lore's Magical
-  Discoveries). ChoiceList now feeds each SpellChoice the sibling `spell` picks of the
-  same bag; the selector and the add guard exclude them.
-- **TC-0026 - prose-granted spell missing from the data** (College of Spirits RHW's
-  Guidance). New curated `MISSING_ADDITIONAL_SPELLS` registry in
-  `engine/grantedSpellUses.js`, merged into the first `additionalSpells` group by
-  `resolveGranted` (never appended - a new group would be an alternative and spawn a
-  false spellSet choice).
-- **Session pass (all rows `ui: ok`):** full guided create (High Elf / Musician / Lore),
-  overlay level-ups 1→4 (Expertise, subclass + Bonus Proficiencies, ASI + deep
-  sub-choice gating), jump to 19 (badge 8 → fixup guide: 2× Magical Discoveries, 3 ASIs,
-  Expertise@9, Epic Boon - the TC-0022 cap saturating Cha at 20 and the boon lifting it
-  to 21), subclass swaps @19 for the other nine (features, fixed proficiency grants,
-  granted spells incl. Glamour's Always Prepared pair and Spirits' Spirit Guardians
-  1/Day, Swords' restricted FS pool via badge), chip popups, title links, race origin
-  timeline (choose-a-Wizard-cantrip @1, Detect Magic @3, Misty Step @5), mobile width on
-  sheet/Spellbook/Inventory, zero console errors.
-- Verified: 920 tests (+12), lint clean, sweep 274/274 `--strict`.
-
 ## 44. Glossary shows only current versions (duplicate entries removed)
 
 - **Species listed twice.** Searching "Aarakocra" in the browsable glossary returned two
@@ -3355,52 +3247,6 @@ re-derive it. See [DDL-0037](CLAUDE.md).
 - Verified: 922 tests (+2), lint clean, live glossary ("aarakocra" → 1 species + 1
   language; "ammunition" → 1 XPHB property + 1 XDMG property + the SRD table), no console
   errors.
-
-## 45. Phase T - T1a session 4: Cleric + all 19 subclasses (TC-0027…TC-0031)
-
-- **Session scope (TESTING-PLAN §4, 2026-07-19).** The campaign's largest batch, done in
-  one sitting: full guided create (Dwarf XPHB / Magic Initiate (Cleric) as the origin feat
-  / Nature Domain PHB as the representative build), overlay level-ups 1→4 (spells @2,
-  subclass + Acolyte skill + druid cantrip @3, ASI @4), jump to 19 with the fixup guide
-  (Blessed Strikes → Potent Spellcasting, 3 ASIs, War Caster, Durable, Epic Boon → Boon of
-  Fortitude; the DDL-0034 cap saturated Wis at 20 and the boon lifted it to 21; HP 214 with
-  Dwarven Toughness + Durable's Con bump + the boon's +40 all stacking), then subclass
-  swaps @19 for the other 18 domains (features, granted spell lists, fixed proficiency
-  grants and per-subclass chooses verified on each), Spellbook checks at 1/3/19,
-  proficiency cards, chip/title popups, mobile width, zero console errors. All 19
-  `class:cleric/*` rows now `ui: ok` in `testing/COVERAGE.md`.
-- **TC-0027 - legacy subclass `_copy` stubs unresolved (STRUCTURAL, fixed).** Every legacy
-  subclass adopted onto a 2024 class is a 5etools `_copy` STUB carrying only re-pointed
-  `subclassFeatures`; `resolveSubclassObj` returned it unexpanded, so every inherited field
-  - `additionalSpells` above all - vanished. 13 of the Cleric's 19 domains had ZERO domain
-  spells, and the spell chooses hiding in them (Nature/Strength druid cantrip, Arcana's two
-  wizard cantrips + Arcane Mastery's 6th-9th picks, Death's necromancy cantrip) never
-  emitted. Bard/Barbarian escaped by stub shape (no own features → the original won the
-  findLast). Fix in `engine/resolve.js`: the subclass list is now `resolveCopies`-expanded
-  (memoized per db via WeakMap, the selector's shortName|source|classSource id). The sweep
-  could never catch this class of bug - a grant that never derives makes no pendency and no
-  round-trip diff (exactly the T1-session justification).
-- **TC-0028 - Thaumaturge/Magician extra cantrip (fixed).** `CANTRIP_BONUS_FEATURES` +
-  `cantripLimitBonus` in `engine/featureEffects.js`, added to the class origin's
-  `cantripLimit` in resolve (base > 0 only). Guide step, fixup overlay, Spellbook and ✦
-  badge all read the derived field, so one fix reaches all four. Live: 3+1 @1, 5+1 @19.
-- **TC-0030 - Blessings of Knowledge (fixed).** Knowledge (PSA) granted nothing (the PSA
-  domains inline their level-1 text in an umbrella feature named after the subclass - new
-  registry key on the umbrella + dedup by KEY, since the umbrella exists in BOTH class
-  attachments PHB@1/XPHB@3 and emitted twice under name@level dedup). And the chosen
-  skills now carry EXPERTISE in both versions (PHB/PSA "proficiency bonus is doubled",
-  FRHoF "you have Expertise") via the new `expertise: true` flag on skill grants → emitted
-  as kind 'expertise' with `newProf` (pool = the grant's own list, not intersected with
-  proficient skills); picks derive at level 2 through the existing
-  `collectSkillProficiencies` path and ride the DDL-0028 export flags unchanged.
-- **Open, needs-user-eyes:** **TC-0029** (ASI feat picker is category-G-only and the Epic
-  Boon picker EB-only; XPHB RAW says "or another feat of your choice for which you
-  qualify", which admits Origin feats - Tough, Lucky, Alert… - at ASI slots and G/O feats
-  at the boon) and **TC-0031** (spell pickers offer spells already always-prepared from
-  another origin; the pick is legal but silently wasted after the Spellbook collapse).
-- Verified: 928 tests (+6: `_copy` regression, cantrip bonus ×3, Blessings ×2), lint
-  clean, sweep 274/274 `--strict`, full live pass. See DDL-0039 and
-  `testing/ISSUES.md` TC-0027…TC-0031.
 
 ## 46. TC-0029/TC-0031: filtros pré-marcados nos pickers de feat (ASI/boon) e de magia
 
@@ -3489,51 +3335,6 @@ lint, sweep 274/274 `--strict`. Ao vivo, no Cleric 2 / Druid 1 real: card de slo
 "1st ×4 / 2nd ×2" e o picker abrindo com Cantrip + 1st Level + Cleric marcados e **2nd
 Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultados.
 
-## 49. Phase T - T1a session 5: Druid + all 8 subclasses (TC-0032…TC-0034)
-
-- **Scope (TESTING-PLAN §4, 2026-07-20):** `class:druid/*` - Dreams, Shepherd (XGE),
-  Spores, Wildfire (TCE), Land, Moon, Sea, Stars (XPHB). All 8 rows now `ui: ok` in
-  `testing/COVERAGE.md`. Sweep was green before starting (274/274 `--strict`).
-- **Representative build:** full guided create - Goliath (Stone Giant Ancestry) /
-  Magic Initiate (Druid) / Circle of the Land. The feat exercised the TC-0011
-  spellSet + spell chooses (Wis + Druid list → 2 cantrips + level-1 spell) and the
-  DDL-0040 "Already Prepared" flow end-to-end in the CLASS pickers: guided cantrips
-  step hid Guidance/Starry Wisp behind the pre-marked exclude filter, unmarking showed
-  the badge, and adding confirmed with "You already have Guidance from Magic Initiate.
-  Add it anyway?". TC-0028's Magician cantrip bump reached the guide (3 cantrips @1,
-  5/5 @19). Kit auto-equip (TC-0015) gave AC 14 at level 1.
-- **Overlay level-ups 1→4:** spells @2 (prepared 4→5); subclass @3 with the step list
-  REBUILDING live (Land pick → its terrain spellSet appeared as the next step;
-  Temperate chosen; Misty Step auto-excluded from the spell picker the moment it became
-  granted); feat @4 (ASI +2 Wis → 19) + 4th cantrip + spells.
-- **Fixup @19 (badge ✦ 6):** Elemental Fury (Potent Spellcasting), ASI @8 (+2 Wis
-  SATURATED at 20 - DDL-0034 cap, the extra point wasted per RAW), Tough @12 (HP
-  174 = 136 + 2×19 via hpBonuses), War Caster @16 (+1 Int → 14; picker pre-marked
-  General - searching "tough" gave 0 results until the category filter was unmarked,
-  then Tough appeared with its Origin badge, per DDL-0040), Boon of Fortitude @19
-  (HP 214 = +40; +1 Wis LIFTED past the cap to 21, boon max 30). Badge reached zero.
-- **Subclass swaps @19 (the other 7):** every feature list renders and every
-  `additionalSpells` grant derives Always Prepared - the TC-0027 `_copy` resolution
-  verified on the druid stubs: Spores (Chill Touch + 9 circle spells), Wildfire (10),
-  Dreams/Shepherd (correctly none); Moon (6 incl. Fount of Moonlight @15), Sea (11
-  incl. Ray of Frost), Stars (Guidance + Guiding Bolt). Prepared-collapse accounting
-  verified across swaps: Moon freed a slot for the manually-prepared Moonbeam
-  (20/21 + badge 1 → refilled), Dreams showed 22/21 in red (intended over-limit
-  freedom, DDL-0026) as picks de-collapsed.
-- **Bugs - fixed in-session:** **TC-0032** (Shepherd's Speech of the Woods never
-  granted Sylvan - one curated `SUBCLASS_GRANTS` line + test), **TC-0033** (kit items
-  referencing an ITEM GROUP landed as "unresolved" junk - `druidic focus|xphb`; also
-  Cleric/Paladin XPHB `holy symbol|xphb`. `parseStartingEquipment` now emits a
-  closed-pool kit choose riding the whole TC-0024 machinery; verified live with the
-  3-member Druidic Focus picker and a resolved Wooden Staff in Inventory; 3+1 tests).
-- **Open:** **TC-0034** (polish) - the feat sub-bag spell pickers (SpellChoice in
-  ChoiceList) don't get the DDL-0040 Already Prepared flow (no filter/badge/confirm);
-  needs derived origins plumbed into ChoiceList across call sites, deferred.
-- Checks: chip popups (skill chip → DetailView overlay), choice-title links (Primal
-  Order), Spellbook cards (DC 19 / +11 / slots 4-3-3-3-3-2-1-1-1 @19), mobile width
-  (Class/Spellbook/Inventory, no horizontal scroll), zero console errors.
-- Verified: 940 tests (+10), lint clean, sweep 274/274 `--strict`.
-
 ## 50. TC-0034: o fluxo "Already Prepared" chega aos pickers de magia dos talentos
 
 **Fecha o único pendente aberto da sessão T1a Druid (DDL-0041); arquitetura em DDL-0042.**
@@ -3573,43 +3374,6 @@ Level desmarcado** (antes vinha marcado), sem nenhuma magia de 2º nos resultado
   embora o DDL-0034 o tenha resolvido no mesmo dia → corrigida.
 - Verificado: 940 testes, lint clean, sweep 274/274 `--strict`.
 
-## 52. T1a sessão 7: Monk + 10 subclasses (sem achados, DDL-0044)
-
-**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-21); todas as 10 linhas
-`class:monk/*` com `ui: ok` em `testing/COVERAGE.md`. NENHUM bug encontrado — zero
-mudanças de código.**
-
-- **Rep build (Kensei):** guided create completo (Elf / linhagem Wood Elf / Tough),
-  exercitando o fluxo inteiro de criação incluindo o tool de classe MESCLADO
-  **"Artisan's Tools or Musical Instruments"** (42 opções — o caso artesão-OU-instrumento
-  do DDL-0002), as species choices do Wood Elf (linhagem + perícia Keen Senses + atributo
-  de conjuração + Druidcraft/Longstrider/Pass without Trace concedidos) e o popup de regra
-  "Skill" a partir do título da escolha (DDL-0032). **Derivações de nível 1: HP 11 (d8 8 +
-  Con 1 + Tough 2), CA 15 = Unarmored Defense (10 + Dex 3 + Wis 2)** — ambas derivam ao
-  vivo; features Martial Arts + Unarmored Defense renderizam.
-- **Máquina `weaponProf` do Kensei verificada ao vivo (DDL-0030):** picker corpo-a-corpo
-  @3 (21 opções, simples/marcial MELEE, sem Heavy/Special, zero à distância); picker à
-  distância @3 (9 opções, **Longbow presente pela exceção `allow`**, Heavy Crossbow/Net
-  ausentes, zero melee); tool @3 restrito a Calligrapher's/Painter's Supplies; picker @6
-  (32 opções, **qualquer tipo** — melee E ranged — sem Heavy/Special, Longbow). @11/@17
-  compartilham o filtro do @6.
-- **Swaps @19:** **Elements** (featureoption Elemental Epitome @17 renderiza 5 opções
-  Acid/Cold/Fire/Lightning/Thunder; cantrip Elementalism na origem Monk do Spellbook; CA
-  15 intacta) e **Mercy** (grants de Implements of Mercy — Insight, Medicine e Herbalism
-  Kit — todos renderizam no card de Proficiências). As outras 8 subclasses tiveram as
-  derivações verificadas pelo engine (Drunken Master Performance+Brewer's; Shadow Minor
-  Illusion+Darkness; Sun Soul Burning Hands; Long Death/Astral Self/Ascendant Dragon/Open
-  Hand corretamente sem grants). Mobile sem overflow; zero erros de console.
-- **Contagem do badge ✦ correta em toda a sessão** (10 no Kensei 19 = 4 ASI + Epic Boon +
-  tool do Kensei + 3 armas @6/11/17 + 1 `basic`, a sobreposição documentada
-  DDL-0033/TC-0020 para uma escolha de classe do tipo proficiência). **Nota de harness para
-  sessões futuras:** a contagem do badge vive no `title`/nome acessível ("N choices left"),
-  NÃO no `textContent` (que é só "⚛N") — consulte o nome acessível (read_page) ou `.title`,
-  e nunca confie numa leitura do badge feita durante o boot-load do compêndio ou logo após
-  uma mudança disparada por JS (ambos leem 0 transitoriamente).
-- Verificado: 944 testes, lint, sweep 274/274 `--strict` (sem alterações — nenhum código
-  mudou). Ver DDL-0044.
-
 ## 53. CA: Defesa sem Armadura generalizada (registro por-fórmula) + Draconic Sorcerer
 
 **Antes da retomada da campanha Phase T, o usuário pediu para verificar/melhorar a CA das
@@ -3638,140 +3402,6 @@ de espécie) e adiantar a Draconic Sorcerer. Ver DDL-0045.**
 - Verificado: 950 testes (+8, incl. Draconic sozinho/escudo/gating e Monk+Barb+escudo), lint,
   sweep 274/274 `--strict`, e uma passada AO VIVO no código servido (Draconic 3 = 16 / +escudo
   18 / nv2 = 12; Monk/Barb = 16 sem escudo, 15 com). Ver DDL-0045.
-
-## 54. T1a sessão 8: Paladin + 10 subclasses (TC-0038, DDL-0046)
-
-**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-21 (2)); todas as 10 linhas
-`class:paladin/*` com `ui: ok` em `testing/COVERAGE.md`. Um achado, corrigido em sessão.**
-
-- **Rep build (Devotion):** guided create completo (**Aasimar** / Tough) exercitando a
-  escolha de Size, o **kit choose de itemGroup do Holy Symbol** (Amulet/Emblem/Reliquary —
-  o caso Paladin do TC-0033), a cópia da tela de features do half-caster (TC-0037: nomeia
-  "Weapon Mastery and which spells to prepare" — Paladin conjura desde o nível 1 no 2024) e
-  o Weapon Mastery irrestrito (40 opções, DDL-0033). Level-ups 1→3 pelo overlay: **Fighting
-  Style Defense → CA 19 ao vivo** (TC-0036, Chain Mail 16 + escudo 2 + 1); subclasse @3 com
-  oath spells (Protection from Evil and Good / Shield of Faith) Always Prepared + Channel
-  Divinity (Divine Sense) / Sacred Weapon renderizando.
-- **Jump para 19** pelo campo Level da Class tab; **fixup guide** (badge **6** = 5 slots de
-  feat + spells). **Caps do DDL-0034 verificados AO VIVO:** GWM + Crusher(Str) + Slasher(Str)
-  + Piercer(Str) saturam Str em **20**; **Boon of Irresistible Offense (max 30) leva a 21**.
-  **HP 175** = base 137 + Tough 38 (chassi d10). **Slots 4/3/3/3/2 até o 5º círculo**
-  (half-caster), Prepared 15, Channel Divinity 3 na tabela. O picker de feat lista as
-  categorias atrás do filtro pré-marcado (DDL-0040/TC-0029); o de spell até o 5º círculo.
-- **Swaps @19:** **Oathbreaker** (DMG `_copy`: Hellish Rebuke/Inflict Wounds → Contagion/
-  Dominate Person, todas Always Prepared — TC-0027 confirmado no chassi Paladin) e **Noble
-  Genies** (FRHoF: o choose de skill **Genie's Splendor @3** renderiza; oath spells incl. o
-  **cantrip Elementalism** e Contact Other Plane com chip Ritual, todas Always Prepared). As
-  outras 7 (Crown/Conquest/Redemption/Watchers legacy + Glory/Ancients/Vengeance XPHB)
-  tiveram as oath spells verificadas pelo engine. Mobile ok, zero erros de console (após a
-  correção).
-- **Achado — corrigido em sessão: TC-0038.** O picker "+ Choose a spell" do GUIA oferecia as
-  magias que a PRÓPRIA origem já concede sempre (oath / Paladin's Smite → Divine Smite /
-  Faithful Steed → Find Steed) e deixava adicioná-las como prepared redundantes — Aid entrou
-  duas vezes, virando duas linhas "Aid" no Spellbook + erro de key do React, e linha órfã ao
-  trocar o oath. Causa: `SpellPicker.jsx` montava `exclude` só a partir de `picks` (as
-  escolhidas), não de `origin.alwaysPrepared` — enquanto a SpellbookTab monta o dele de `all`
-  (prepared + arcanum + **alwaysPrepared**). O duplo surgiu porque uma magia que é escolhida
-  E sempre-preparada COLAPSA na cópia concedida (B2.3), então `current` nunca refletia o Aid
-  recém-adicionado. **Fix:** `ownedNames` agora inclui `origin.alwaysPrepared` (espelha a
-  SpellbookTab); os três callers (SpellsStep/CantripsStep/LevelUpSpellsStep) já passam a
-  `origin` com `alwaysPrepared`, então nada mais mudou. Verificado ao vivo (Oathbreaker @19:
-  buscar "Hellish Rebuke" no picker do guia = 0 resultados; magias normais seguem listando).
-- Verificado: **950 testes**, lint, sweep **274/274 `--strict`**. Ver DDL-0046.
-
-## 51. T1a sessão 6: Fighter + 10 subclasses (TC-0035..TC-0037, DDL-0043)
-
-**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-20 (3)); todas as 10 linhas
-`class:fighter/*` com `ui: ok` em `testing/COVERAGE.md`.**
-
-- **Rep build (Eldritch Knight):** guided create completo (Human XPHB / Magic Initiate
-  (Wizard) / kit A com Chain Mail auto-equipada, AC 16), level-ups interativos 1→4 pelo
-  overlay (subclasse + 2 cantrips + 3 preparadas @3 com o fluxo DDL-0040 verificado de
-  ponta a ponta — Fire Bolt oculto pelo exclude pré-marcado, badge ao desmarcar, confirm
-  "You already have Fire Bolt from Magic Initiate"; feat + mastery 3→4 @4), salto a 19
-  com o badge ✦ **"8 choices left"** (decisões, TC-0020) e o fixup guide preenchendo
-  5 feats + Epic Boon + 2 masteries + 1 cantrip + 8 magias até o 4º círculo. Caps
-  DDL-0034 exercitados: ASI +2 satura Str em 20, Boon of Fortitude eleva a 21; HP 234 =
-  156 base + 38 (Tough) + 40 (Boon). Spellbook @19: slots 4/3/3/1, DC 15, +7, 3/3 e
-  12/12. Categoria de feat DDL-0040 verificada nos dois slots (ASI lista G+O+EB com
-  General pré-marcado — Tough (Origin) escolhido ao incluir a categoria; Epic Boon
-  pré-marca EB).
-- **Swaps @19 das outras nove:** Arcane Archer (spellSet Prestidigitation/Druidcraft +
-  skill Arcana/Nature + 8 Arcane Shots), Battle Master (tool AT + skill da lista da
-  classe + 23 manobras; popup de chip ok), Cavalier/Samurai (choose `mixed`
-  skill-ou-language com pools XGE menos as possuídas), Champion (Additional FS @7 com
-  9 opções, GWF excluído), Psi Warrior (Telekinesis 1/Day no card Uses @18), Rune Knight
-  (6 runas, Hill/Storm gated 7+; idioma Giant no card), Echo Knight (features EGW, sem
-  choices — correto), Banneret (skill Perf/Pers + Comprehend Languages Ritual no Uses).
-  Mobile sem overflow; zero erros de console.
-- **TC-0035 (bug, corrigido):** picks órfãos de magia após um swap que remove o casting
-  (EK → Arcane Archer) apareciam com badge "Mystic Arcanum / 1/Long Rest" e SEM
-  contadores. O badge da linha agora exige `origin.arcanumLevels.includes(level)` (a
-  classificação do próprio engine, [] para não-pact) e os cards Cantrips/Prepared também
-  renderizam quando a CONTAGEM > 0 — "3/0"/"12/0" em vermelho (a liberdade DDL-0026
-  sinalizada). Sem grants na subclasse (Champion) a origem não existe e os órfãos ficam
-  dormentes — intencional (DDL-0041), registrado no ledger.
-- **TC-0036 (bug, corrigido):** o Defense fighting style nunca chegava à CA do sheet ao
-  vivo (o export já levava o Active Effect). Novo registro curado `AC_BONUS_FEATURES` +
-  `acFeatureBonuses(character)` em `engine/featureEffects.js` (o slot que o header do
-  módulo sempre reservou), dobrado sobre `deriveArmorClass` no resolve.js honrando
-  `requiresArmor`/`hasArmor`. Champion + Defense + Chain Mail = **AC 17** ao vivo.
-- **TC-0037 (polish, corrigido):** a tela "Your character is ready" do guia contava
-  QUALQUER origem de spellcasting como "caster" — um Fighter 1 com Magic Initiate lia
-  "and which spells to prepare" sem passo de magia à frente. Agora exige a origem da
-  própria classe com limite real. De carona: o choose `mixed` do Cavalier/Samurai
-  titulava "Bonus Proficiency - mixed" (nome interno do kind) → "Bonus Proficiency -
-  Skill or Language".
-- Verificado: **944 testes (+4)**, lint, sweep **274/274 `--strict`**, passada live
-  completa (fixes verificados no browser após reinício do dev server).
-
-## 55. T1a sessão 9: Ranger + 10 subclasses (sem achados, DDL-0047)
-
-**Sessão de UI da campanha Phase T (TESTING-PLAN §7 2026-07-21 (3)); todas as 10 linhas
-`class:ranger/*` com `ui: ok` em `testing/COVERAGE.md`. NENHUM bug encontrado — zero
-mudanças de código.** Terceiro half-caster da campanha, após o Paladin.
-
-- **Rep build (Gloom Stalker):** guided create completo (Elf / linhagem Wood Elf / Tough),
-  exercitando todo o fluxo — species choices do Wood Elf (linhagem + perícia Keen Senses +
-  atributo de conjuração Wisdom + Druidcraft concedido), o popup de regra "Skill" a partir
-  do título (DDL-0032), Weapon Mastery **irrestrito** (DDL-0033), e os dois passos de magia
-  do half-caster (sem cantrips — Ranger não tem; só prepared). **Nível 1: HP 13 (d10 10 +
-  Con 1 + Tough 2), AC 15 (Studded Leather 12 + Dex 3); DC 12 / atk +4 / slots 1×2.**
-  Overlay level-ups 1→3 (Deft Explorer Expertise + 2 idiomas, Fighting Style, subclasse @3);
-  jump a 19 pelo campo de Level da Class tab (**HP 175 = base 137 + Tough 38; slots
-  4/3/3/3/2 até o 5º círculo; PB +6; Favored Enemy 6; Prepared 15**).
-- **Hunter's Mark (feature de classe 2024) e Disguise Self (Gloom Stalker @3) renderizam
-  como ALWAYS PREPARED**, fora do contador de preparadas; **Longstrider/Pass without Trace
-  (Wood Elf @3/@5) como 1/Day Always Prepared**. O botão "+ Prepare spell" vira "Remove a
-  spell to prepare another one." ao atingir o limite (R11).
-- **TC-0038 (fix do Paladin) confirmado no Ranger:** o picker "+ Choose a spell" do guia
-  exclui as always-prepared da **mesma origem** por `exclude` duro (buscar "Hunter's Mark"
-  ou "Disguise Self" retorna 0 resultados), e as de **outra origem** (Longstrider via Wood
-  Elf) ficam ocultas pelo filtro "Already Prepared" pré-marcado e removível (fluxo
-  DDL-0040/TC-0031) — sem duplicatas nem colisão de key.
-- **Iron Mind (Gloom Stalker @7) verificado pelo engine:** concede proficiência em save de
-  **Wisdom** de forma PLANA (o Ranger base tem só Str/Dex, então a condicional Int/Cha não
-  dispara) — `proficientSaves` = str/dex no L1, **str/dex/wis a partir do L7**. É a linha
-  `ranger|gloom stalker` do `subclassGrants.js` (DDL-0029).
-- **Magias concedidas das 10 subclasses verificadas** (engine, @19): os `_copy` legados
-  derivam via TC-0027 — **Horizon Walker** (Prot from Evil/Misty Step/Haste/Banishment/
-  Teleportation Circle), **Monster Slayer** (Prot from Evil/Zone of Truth/Magic Circle/
-  Banishment/Hold Monster), **Swarmkeeper** (Mage Hand/Faerie Fire/Web/Gaseous Form/Arcane
-  Eye/Insect Plague), **Drakewarden** (Thaumaturgy) —; e os XPHB/novos **Fey Wanderer**,
-  **Gloom Stalker**, **Winter Walker** (FRHoF), **Hollow Warden** (RHW). **Beast Master** e
-  **Hunter** corretamente sem magias (só o Hunter's Mark de classe).
-- **Swaps @19 na UI:** **Fey Wanderer** (choose de perícia Otherworldly Glamour @3
-  renderiza), **Hunter** (os 3 featureoptions renderizam com opções selecionáveis — Hunter's
-  Prey: Colossus Slayer/Horde Breaker; Defensive Tactics; Superior Hunter's Defense),
-  **Beast Master** (Primal Companion renderiza como PROSA — "Choose Beast of the Land/Sea/
-  Sky", stat block de companheiro não modelado; sem selector por design, sem vazamento de
-  `{@tag}`). Mobile (375px) sem overflow horizontal na Class tab e no Spellbook; zero erros
-  de console.
-- **Nota (não é bug):** na tela de Species, definir o *atributo de conjuração* da linhagem
-  ANTES de escolher a própria linhagem reseta o atributo (ele pertence à linhagem, então
-  re-deriva quando ela muda). No fluxo normal (linhagem primeiro) não ocorre; auto-corrigível.
-- Verificado: 950 testes, lint, sweep 274/274 `--strict` (sem alterações — nenhum código
-  mudou). Ver DDL-0047.
 
 ## 56. QoL: sugestão de magia obtida em duplicidade no guia + lock do preview do seletor
 
@@ -3819,161 +3449,6 @@ Corrige o bug em que magias preparadas sobreviviam a um level-down (DDL-0049).
      ATUAL colapsam mas não contam nem são podadas; arcanum válido do Warlock é preservado.
 - Sem mudança de nível nem de subclasse, devolve o MESMO array (sem escrita).
 - Verificado: 961 testes (+7, `reconcileClassSpells.test.js`), lint. Ver DDL-0049.
-
-## 58. T1a sessão 10: Rogue + 10 subclasses (TC-0021 fechado, DDL-0050)
-
-Fecha o ÚNICO item aberto do ledger de testes: a semântica condicional do Weapon Mastery do
-Rogue (TC-0021), pendente desde a sessão do Barbarian.
-
-- **`weaponFilterAllows` (`engine/choices.js`) ganhou `martialRequiresAnyProp`**: armas SIMPLE
-  passam sem restrição; armas MARTIAL só passam se tiverem ao menos uma das propriedades listadas
-  (F = Finesse, L = Light). Expressa o RAW do Rogue XPHB ("Simple weapons and Martial weapons that
-  have the Finesse or Light property") - a condicional que o filtro plano (kind/noProps/allow) do
-  Kensei/Barbarian não conseguia.
-- **`MASTERY_FILTERS.rogue = { martialRequiresAnyProp: ['F', 'L'] }`** (`classFeatureChoices.js`).
-  Flui de graça pelos dois consumidores que já roteavam por `weaponFilterAllows` (ChoiceList kind
-  `weapon` + autoBuild do sweep). Barbarian permanece `{ kind: 'melee' }`; Fighter/Paladin/Ranger
-  sem entrada (irrestritos).
-- **Verificado ao vivo (Rogue):** o seletor de Weapon Mastery lista 21 armas - todas SIMPLE +
-  as MARTIAL com F/L (Rapier F, Scimitar F/L, Shortsword F/L, Hand Crossbow L, Whip F); "Longsword"
-  = 0 resultados (martial só Versatile, corretamente barrada). Rapier selecionável, chip renderiza.
-  Weapon Mastery mantém count 2 em todos os níveis (Rogue não escala). "Staff"/"Wooden Staff"
-  aparecem por serem armas SIMPLE (Versatile + Topple), não é regressão.
-- **Sessão T1a completa** (as 10 linhas `class:rogue/*` → `ui: ok`): Arcane Trickster (third-caster
-  INT verificado - slots 1st×2, DC 10, cantrips 0/2, prepared 0/3 @3; picker pré-filtrado à lista
-  Wizard, 60 resultados); Mastermind (grants curados Master of Intrigue - Tool restrito a 4 Gaming
-  Sets + 2 Languages); @19 todos os slots de Feat/Expertise/Epic Boon renderizam (Sneak Attack 10d6,
-  PB +6). Mobile 375px sem overflow horizontal; zero erros de console.
-- Verificado: 962 testes (+1, `choices.test.js`), lint, sweep 274/274 `--strict`. Ver DDL-0050.
-
-## 59. T1a sessão 11: Sorcerer + 10 subclasses (TC-0039/TC-0040, DDL-0051)
-
-Primeiro full caster da campanha (Artificer/EK/AT eram parciais). Dois achados, ambos corrigidos
-em sessão.
-
-- **TC-0039 - Storm Sorcery não concedia Primordial.** Wind Speaker (@3, prosa: "You can speak,
-  read, and write Primordial") não tem campo estruturado, e o registro curado não tinha linha para
-  sorcerer. `'sorcerer|storm': [{ level: 3, feature: 'Wind Speaker', languages: ['Primordial'] }]`
-  em `engine/subclassGrants.js` - mesma família do Sylvan do Shepherd (TC-0032/DDL-0041). Nível 3
-  porque no chassi 2024 a umbrella "Storm Sorcery" é reapontada para o nível 3 (o `_copy` XPHB) e a
-  subclasse não é escolhível antes disso. Verificado ao vivo: card LANGUAGES = Common, **Primordial**,
-  Aarakocra.
-- **TC-0040 - `text-transform: capitalize` do PickerField quebrava nomes próprios.** O DOM já
-  carregava o nome certo ("Boon of Fortitude"), mas a regra `.name` renderizava "Boon Of Fortitude"
-  (e quebraria "Pass without Trace", "Circle of the Land"…). Removida: desde o TC-0016 todo caller
-  passa o nome REAL da entidade ou um id já capitalizado, então a muleta de CSS só fazia mal.
-- **Sessão T1a completa** (as 10 linhas `class:sorcerer/*` → `ui: ok`). Rep build **Draconic**:
-  guided create completo (Dragonborn Red / Magic Initiate (Wizard) / Standard Array com o spread
-  recomendado do Sorcerer), overlay de level-up 1→3 e jump a 19 pelo campo Level da aba Class.
-  - **Derivações:** L1 HP 8 (d6 + Con 2), AC 11; L3 **AC 14 = Draconic Resilience** (10 + Dex 1 +
-    Cha 3, com o rótulo na quebra do card - DDL-0045) e HP 23 (inclui os +3/+1-por-nível da
-    Resilience); L19 HP 213 (135 base+Resilience, +38 Tough, +40 Boon of Fortitude), slots
-    **4/3/3/3/3/2/1/1/1**, DC 19, ataque +11, PB +6, prepared 21 / cantrips 6.
-  - **Caps DDL-0034 ao vivo:** dois ASIs +2 em Cha saturam em **20** e o Epic Boon leva a **21**.
-  - **Metamagic:** 10 opções XPHB no seletor, 2 @2 → 4 @10 → **6 @17** (chips + preview corretos);
-    coluna **Sorcery Points** da tabela de classe presente (ScaleValue).
-  - **DDL-0040 verificado no chassi Sorcerer:** o picker do guia esconde Prestidigitation/Fire Bolt/
-    Magic Missile (Magic Initiate, origem CRUZADA) pelo filtro "Already Prepared" pré-marcado; o
-    slot de ASI pré-marca General (Tough só aparece ao limpar o filtro, com badge Origin) e o slot
-    de Epic Boon pré-marca Epic Boon (29 boons).
-  - **Subclasses:** todas as 10 listadas; swaps @19 verificados - **Divine Soul** (spellSet
-    Good/Evil/Law/Chaos/Neutrality → Cure Wounds Always Prepared), **Shadow** (11 magias concedidas +
-    Summon Beast com badge "3 Charges" e entrada no card de Uses - frequência honesta, DDL-0011),
-    **Wild Magic** (tabela d100 do Surge renderiza), Draconic/Storm/Lunar/Aberrant/Clockwork/
-    Spellfire/Pyromancer sem `{@tag}` vazando. A reconciliação DDL-0049 removeu corretamente as
-    magias concedidas pela subclasse ANTERIOR a cada troca.
-  - Mobile 375px sem overflow (Class/Spellbook/Inventory); zero erros de console.
-- Verificado: 963 testes (+2 em `subclassGrants.test.js`), lint, sweep 274/274 `--strict`.
-  Ver DDL-0051.
-
-## 60. T1a sessão 12: Warlock + 9 subclasses (TC-0041/TC-0042, TC-0043 aberto, DDL-0052)
-
-Pact Magic de ponta a ponta. Dois achados corrigidos em sessão e um aberto para decisão do usuário.
-
-- **TC-0041 - pré-requisito de MAGIA imprimia só "Spell".** `engine/prereq.js` não tinha renderer
-  para a chave `spell`, então o seletor de invocações mostrava "Spell" no lugar do requisito real.
-  Novo `spellText`, portado do `Parser.prereqSpellToFull` + `_getHtml_spell` do 5etools: string sem
-  sufixo → nome; `#c` → "<Magia> cantrip"; `#x` → "Hex spell or a warlock feature that curses";
-  objeto `{choose, entry, entrySummary}` (XPHB) → `entrySummary`. Ao vivo: "Grasp of Hadar …
-  Eldritch Blast cantrip", "Agonizing Blast … Warlock Cantrip That Deals Damage, Warlock level 2+".
-- **TC-0042 - Resilient não concedia a proficiência em salvaguarda.** O campo
-  `savingThrowProficiencies` dos talentos não era lido por ninguém (Resilient é o único caso do
-  dataset). Novo `deriveFeatSaveProficiencies(character, db)` (`engine/resolve.js`) dobrado em
-  `ctx.proficientSaves`. Sem segunda escolha: o RAW amarra a salvaguarda ao MESMO atributo do +1,
-  então lemos os picks `ability` do sub-bag do próprio talento (entradas fixas seriam concedidas
-  direto). Ao vivo: apontar o +1 do Resilient para Dex adiciona Dexterity ao card SAVING THROWS.
-- **TC-0040 completado.** A sessão anterior removeu o `text-transform: capitalize` do PickerField;
-  os CHIPS tinham a mesma regra (`ChoiceList.module.css` e `BackgroundTab.module.css`) e mostravam
-  "Pact Of The Blade". Removidas também - os rótulos já chegam com a grafia certa. As regras de
-  `ClassTab .subTab` e `Home .sub` FICAM (ali o texto é um id minúsculo e o capitalize ajuda).
-- **TC-0043 (aberto, needs-user-eyes):** as listas EXPANDIDAS de subclasse legada (Hexblade/Genie/
-  Fathomless/Undying, e por tabela todo domínio/círculo pré-2024) não contam como "lista da classe"
-  no seletor, então preparar Fireball num Genie avisa "not on the Warlock spell list". Não é
-  bloqueio (DDL-0026), mas o aviso está errado. Três saídas registradas no ledger.
-- **Sessão T1a completa** (as 9 linhas `class:warlock/*` → `ui: ok`). Rep build **Hexblade**:
-  guided create (Tiefling / linhagem Infernal / size Medium / Tough) → L1 HP 12, AC 13 (Leather do
-  kit), pact slot **Pact (1st) ×1**, DC 13; jump a 19 (HP 174 → 214 com o boon).
-  - **Pact Magic no card:** `Pact (5th) ×4` + linhas **6th/7th/8th/9th "1/Long Rest"**, contadores
-    `2/4 CANTRIPS`, `2/15 PREPARED` e **`0/4 ARCANUM`** (DDL-0010). Preparar Eyebite (6º) marca
-    **MYSTIC ARCANUM + 1/LONG REST** na linha e conta no arcanum, NÃO no prepared.
-  - **Invocações:** 1 @1 → **10 @18** (a coluna cresce certo); 58 opções no total com os
-    pré-requisitos escritos nos cards e o filtro Met/Not Met/Unverifiable; sem repetição (o
-    escolhido sai do pool). Pact of the Blade escolhido no nível 1 pelo guia.
-  - **Grants curados do Hexblade** (Hex Warrior) no card: Medium Armor, Shields, Martial Weapons;
-    saves base Wisdom/Charisma corretos.
-  - **Swaps @19:** Genie (spellSet Dao/Djinni/Efreeti/Marid), Fiend (featureoption Fiendish
-    Resilience @10 com as 12 opções de dano; 11 magias concedidas), Fathomless (**Evard's Black
-    Tentacles 1/Day** no card de Uses), Archfey/Celestial/Great Old One/Undead/Undying - todas sem
-    `{@tag}` vazando. A reconciliação DDL-0049 retirou as magias do patrono anterior a cada troca.
-  - Mobile 375px sem overflow (Class/Spellbook/Inventory/Background); zero erros de console.
-- Verificado: 967 testes (+4), lint, sweep 274/274 `--strict`. Ver DDL-0052.
-
-## 61. T1a sessão 13: Wizard + 13 subclasses (TC-0044/TC-0045, DDL-0053) - T1a CONCLUÍDA
-
-A última classe da T1a. Dois achados, ambos corrigidos em sessão - e o TC-0045 é transversal a
-TODA subclasse legada adotada num chassi 2024.
-
-- **TC-0044 - Forest Gnome só ganhava Speak with Animals no nível 3.** A prosa do XPHB concede as
-  duas magias da linhagem sem nível nenhum ("You know the Minor Illusion cantrip. You also always
-  have the Speak with Animals spell prepared"), mas o `additionalSpells` põe a segunda sob
-  `innate: {3: …}`. Mesma família do TC-0026 (a prosa manda), só que aqui a magia EXISTE no dado e
-  está no nível errado - corrigir é MOVER, não acrescentar. Novo registro curado
-  `REGRADED_ADDITIONAL_SPELLS` (`engine/grantedSpellUses.js`) com `{bucket, spell, from, to}`,
-  aplicado dentro do `curatedAdditionalSpells` por um par `takeSpell`/`putSpell` que preserva o
-  CAMINHO da estrutura de frequência (`{daily: {pb: […]}}` sai do nível 3 e entra igual no 1) e
-  poda o nível que ficou vazio. Varredura de `races.json` confirmou que é o ÚNICO caso do dataset:
-  as demais espécies com grant tardio dizem "Starting at 3rd level" na prosa (Flamekin/Rimekin LFL
-  via `_copy` do Genasi). Ao vivo: Gnome/Forest Gnome nível 1 → "Speak with Animals · ALWAYS
-  PREPARED · 2/DAY · RITUAL" na aba da linhagem.
-- **TC-0045 - features de subclasse legada apareciam um nível cedo demais.** Uma subclasse pré-2024
-  adotada numa classe 2024 é um stub `_copy` que reaponta a UMBRELLA para o nível novo (School of
-  Conjuration PHB 2 → 3), mas os `refSubclassFeature` dentro dela seguem apontando as sub-features
-  no nível ANTIGO - e o stub de nível 3 é ele mesmo um `_copy` do de nível 2, então herda os
-  mesmos refs. Resultado: Conjuration Savant e Minor Conjuration renderizavam sob **LEVEL 2**,
-  antes mesmo de a subclasse ser escolhível (nível 3). `subclassFeatureList`
-  (`engine/subclassPreview.js`) passou a propagar o nível da umbrella (`emitFeature(f, atLevel)`) -
-  é como o 5etools renderiza (aninhadas nela). Quando os níveis já coincidem (todo o conteúdo
-  2024) o override não muda nada. Alcança o card de Features, o preview do seletor e a progressão.
-  Só exibição: o gate `level <= cls.level` nunca podia conceder cedo, porque a subclasse não existe
-  abaixo do nível dela.
-- **Sessão T1a completa** (as 13 linhas `class:wizard/*` → `ui: ok`). Rep build **Evoker**: guided
-  create (Gnome / linhagem Forest / Magic Initiate (Wizard) / Standard Array com o spread do
-  Wizard) → L1 HP 8, AC 11, slots 1st×2, DC 13, atk +5, 3/3 cantrips, 4/4 prepared.
-  - **Overlay 1→3:** Scholar @2 com o pool de Expertise corretamente restrito às perícias em que já
-    há proficiência (Arcana/History); a lista de passos foi RECONSTRUÍDA ao vivo depois do pick.
-    @3 subclasse + as duas magias do Evocation Savant (pool = Evocação, nível ≤ 2, direto da
-    expressão de filtro do dado).
-  - **@19:** HP 116, PB +6, slots **4/3/3/3/3/2/1/1/1**, DC 19, atk +11, 5/5 cantrips, 24/24
-    prepared; badge **13** (5 slots de feat + 7 chooses do savant + magias). Caps do DDL-0034 ao
-    vivo: 4 ASIs saturam Int em 20 e o Epic Boon leva a **21**.
-  - **Todas as 13 subclasses** verificadas por swap @19: os 4 schools PHB, War XGE, Chronurgy/
-    Graviturgy EGW, Scribes TCE, Abjurer/Diviner/Evoker/Illusionist XPHB, Bladesinger FRHoF. Zero
-    `{@tag}` vazando. Os 4 XPHB emitem os 9 spell chooses (2 @3 + 1 por nível de slot novo) com o
-    pool certo por nível; Diviner mostra o featureoption **The Third Eye** @10 (3 opções);
-    Bladesinger traz o grant curado (Melee Martial sem Two-Handed/Heavy) + o choose de perícia
-    restrito a Athletics/Performance/Persuasion (Acrobatics some por já ser proficiente).
-  - Mobile 375px sem overflow; zero erros de console.
-- Verificado: 972 testes (+5), lint, sweep 274/274 `--strict`. Ver DDL-0053.
 
 ## 62. Alargamento de lista de magias: `expanded` vira "on-list" (TC-0043, DDL-0054)
 
@@ -4427,7 +3902,7 @@ origens. Mobile 375px sem overflow, zero erros de console.
 ## 71. Halfling: a linhagem que a edição 2024 não escreveu (DDL-0063)
 
 **O problema, medido e não suposto.** Um censo das **98 sub-raças** do dataset (7 grupos fechados,
-registrado em `SPECIES-FAMILIES-PLAN.md`) foi atrás do que ainda está fora do alcance. O grupo que o
+registrado em `docs/archive/species-families-census.md`) foi atrás do que ainda está fora do alcance. O grupo que o
 DDL-0058 tinha deixado de fora POR DEFINIÇÃO — as **20 que o 5etools marca como reimpressas na
 PRÓPRIA base 2024** — nunca tinha sido conferido item a item. Conferido agora, o conteúdo mecânico
 realmente perdido no dataset INTEIRO são **dois traços**: *Dwarven Armor Training* (Mountain Dwarf) e
@@ -4868,173 +4343,6 @@ com as ancoras certas; o Spellbook corretamente SEM tour (Barbarian, nao-conjura
 do guia aparecendo no passo 8 do tour da ficha (ficha completa, sem badge) e sumindo depois. Zero
 erros de console.
 
-## 83. Phase T - T1b sessão 1: Bloco S-A1 (núcleo 2024 XPHB) - sem achados
-
-Início da campanha de testes de ESPÉCIES (Tier 1b). Bloco S-A1 = as bases 2024 XPHB e os núcleos de
-linhagem de Elf/Gnome: **9 linhas `ui: ok`, ZERO bugs, nenhuma mudança de código.** Sweep verde antes
-(285/285 `--strict`). Passada ao vivo (mobile-first ~560/820px + spot-check 375px sem overflow):
-- **Aasimar** - escolha de tamanho S/M (link glossário "Size"); Light cantrip (Cha) chega à origem de
-  raça da Spellbook (DC 9); Celestial Revelation em opções estruturadas; lightbox de imagem OK.
-- **Dwarf** - sem sub-escolhas; Dwarven Toughness deriva (HP 14->15 @1); 1 resultado (filtro esconde
-  Kaladesh).
-- **Human** - os três pickers (size, any-skill 14, Origin feat 24 categoria-correta) filtram e
-  persistem; chip do feat com botão de detalhe (ℹ️, DDL-0021).
-- **Orc** - Adrenaline Rush / Darkvision 120 / Relentless Endurance; sem sub-escolhas (sem Powerful
-  Build, correto p/ 2024).
-- **Elf** - o seletor de linhagem traz as 6 (Drow/High/Wood + Lorwyn/Shadowmoor FOLDED, DDL-0066, +
-  Pallid), sem "Elf|LFL" duplicado; Drow deriva Darkvision 120 + Dancing Lights (Spellbook), High
-  abre o seletor "Choose a Wizard cantrip" (24 opts pré-marcado Wizard+Cantrip), Wood deriva Speed 35
-  + Druidcraft; Keen Senses fica visível e o spellcasting-ability é adiado p/ depois da linhagem
-  (DDL-0061).
-- **Gnome** - Forest + Rock; Gnomish Cunning; **TC-0044 CONFIRMADO ao vivo**: Forest concede Minor
-  Illusion + Speak with Animals (2/Day) ambos @1.
-
-Todos com links de glossário resolvendo, zero `{@tag}` vazado, escolhas persistindo. Suíte e lint
-inalterados (sem código tocado). Ver TESTING-PLAN.md §7 e testing/COVERAGE.md.
-
-## 84. Phase T - T1b sessão 2: Bloco S-A2 (Dragonborn/Goliath/Tiefling núcleo) - TC-0051 fixed
-
-Segundo bloco da campanha de espécies. **19 linhas `ui: ok`** (Dragonborn|XPHB ×10, Goliath|XPHB
-×6, Tiefling|XPHB núcleo Abyssal/Chthonic/Infernal ×3). Sweep verde antes (285/285 `--strict`).
-- **Dragonborn** - as 10 ancestrias presentes no seletor de linhagem; preview resolve o tipo de
-  dano por ancestralidade (Black->Acid, Red->Fire); selecionado Red ao vivo: "1d10 Fire damage" +
-  "Resistance to Fire" na ficha, Draconic Flight @5 renderiza.
-- **Goliath** - as 6 ancestralidades de gigante presentes; preview resolve só o benefício
-  escolhido (Cloud's Jaunt / Stone's Endurance testados ao vivo); Large Form @5 + Powerful Build.
-- **Tiefling núcleo** - as 3 legacies oficiais 2024 (Abyssal/Chthonic/Infernal) testadas ao vivo,
-  cada uma com resistência+cantrip corretos e a escolha de atributo de conjuração (Int/Wis/Cha);
-  Infernal com Charisma escolhida deriva DC 10 / Attack +2 na Spellbook, Fire Bolt + Thaumaturgy
-  Always Prepared. Confirmado (regressão do DDL-0061 §69): SEM linhagem escolhida a ficha não
-  mostra nenhum chip de resistência/spell-list, só o seletor "Choose fiendish legacy...".
-- **TC-0051 (FIXED em sessão):** a legacy Abyssal exibia "120 ft / Darkvision" (preview e ficha),
-  única entre as 14 legacies do dataset. Raiz: o JSON cru do 5e.tools carrega `darkvision: 120`
-  no campo de topo da versão "Abyssal Legacy", sem nenhuma entry correspondente na prosa - as
-  outras 13 (incl. Chthonic/Infernal oficiais) não tocam o campo. Cross-checado contra o SRD
-  oficial (dnd5e system, CC-BY-4.0, `tiefling-abyssal.yml`): "Darkvision. You have Darkvision with
-  a range of 60 feet." - confirma erro pontual do dado upstream, não uma regra do livro. Fix:
-  `KNOWN_DATA_FIXES` em `engine/speciesData.js`, aplicado dentro de `buildVariant` por chave exata
-  `Raça|Fonte/Versão` - corrige só o campo errado, sem tocar o resto da variante. 2 testes novos.
-
-1138 testes (+2), lint, sweep 285/285 `--strict`, mobile 375px sem overflow, zero erros de
-console. Ver TESTING-PLAN.md §7, testing/COVERAGE.md e testing/ISSUES.md (TC-0051).
-
-## 85. Phase T - T1b sessão 3: Bloco S-B1 (as 11 legacies REESCRITAS do Tiefling) - TC-0052 fixed
-
-O bloco de maior RISCO da campanha de espécies: caminho de código NOSSO (DDL-0061), não dado
-upstream. **11 linhas `ui: ok`.** Cada legacy conferida ao vivo contra a especificação do
-`engine/legacyFiendishLegacies.js`, e as 11 batem exatamente:
-- **Resistência TRAVADA em fogo** em todas as 11 (o "Hellish Resistance" 2014), contra a escolha
-  livre poison/necrotic/fire do chassi 2024 - verificado no preview e na ficha (DAMAGE
-  RESISTANCES: Fire).
-- **As 4 sem cantrip próprio** (Baalzebul, Dispater, Zariel, Hellfire) têm a frase do cantrip
-  CORTADA do parágrafo, não uma frase vazia - elas já recebem Thaumaturgy pelo Otherworldly
-  Presence. As outras 7 anunciam o cantrip certo (Friends, Minor Illusion, Ray of Frost, Mage
-  Hand ×2, Vicious Mockery).
-- **Os 7 upcasts `#2`** aparecem como frase própria ("When you cast X with this trait, you cast it
-  as a level 2 spell") só onde o dado 2014 mandava; os 4 sem upcast não a exibem.
-- **Zariel: `Shining Smite`** (a reimpressão XPHB de Branding Smite, o único remap manual do
-  módulo) resolve e é concedida ao vivo - build Fighter 5 derivou Searing Smite 1/Day @3 e
-  Shining Smite 1/Day @5, com o card USES e a origem "Zariel Legacy" na Spellbook.
-- **Winged: voo no nível 1 e nada em 3/5** - a ficha deriva "Speed 30 ft, fly 30 ft", a Spellbook
-  mostra só Thaumaturgy, e a linha da tabela traz o voo no nível 1 com "-" em 3/5.
-- **Devil's Tongue / Hellfire / Winged** trazem o traço "Appearance" do SCAG anexado, e ele só
-  aparece ao selecionar a linhagem.
-- O atributo de conjuração é a escolha Int/Wis/Cha em todas (não o Carisma fixo de 2014);
-  escolhido Wisdom, a Spellbook derivou DC 10 / Attack +2.
-
-**TC-0052 (FIXED em sessão):** escolher uma legacy legada trocava a **LORE** da espécie para o
-texto de **2014**. Raiz: uma linhagem curada carrega a fonte da sub-raça de ORIGEM (MTF/SCAG/EGW),
-livros que não têm entrada de fluff da espécie, e a cadeia do `raceEntity.fluff` terminava num
-`find(name === baseName)` - a PRIMEIRA entrada de mesmo nome, que é a de 2014. Não era preservação
-de sabor: era ordem de array (o `Elf (Eladrin)` chegava a exibir a lore e a arte do Elf de
-**Lorwyn**). Fix: `buildVariant` passou a gravar `_baseSource` ao lado do `_baseName` (a MESMA
-convenção que o `mergeSubrace` já usava) e a cadeia ganhou um passo `baseName + _baseSource` antes
-do fallback por nome puro. Sonda sobre o compêndio real: exatamente **14 linhas** mudaram (as 11
-legacies + Halfling Ghostwise/Lotusden + Elf (Eladrin)), **zero regressões** - as linhagens
-fundidas do DDL-0066 resolvem num passo anterior e seguem idênticas, incluindo a troca curada de
-arte Lorwyn↔Shadowmoor.
-
-1141 testes (+3), lint, sweep 285/285 `--strict`, mobile 375px sem overflow horizontal, zero erros
-de console. Ver DDL-0071, TESTING-PLAN.md §7, testing/COVERAGE.md e testing/ISSUES.md (TC-0052).
-
-## 86. Phase T - T1b sessão 4: Bloco S-B2 (o resto da curadoria de espécies) - sem achados
-
-Fecha o **Bloco S-B**. 6 linhas novas `ui: ok` + 6 revalidadas, **zero bugs, nenhuma mudança de
-código**. A verificação central deste bloco era a **ARTE por linhagem** (DDL-0066 amendment), que
-só se confere OLHANDO a imagem - e as quatro conferem:
-- **Elf; Lorwyn** → arte de flores rosas e borboletas (Lorwyn de fato), que mora no arquivo
-  enganosamente chamado `Elf (Shadowmoor).webp`; **Elf; Shadowmoor** → cena escura com cogumelos,
-  do arquivo `Elf (Lorwyn).webp`. Os arquivos ESTÃO trocados no dado upstream e o override curado
-  os desfaz corretamente.
-- **Faerie; Lorwyn** → a arte ORIGINAL do Fairy (MPMM); **Faerie; Shadowmoor** → a do Faerie
-  (LFL). Distintas, como o amendment exige (antes as duas mostravam a mesma).
-- **Elf (Pallid)**: sem "Elven Lineage" órfão (o `supersedes` do DDL-0059 funciona), os 4 traços da
-  base 2024 + os 2 próprios, texto 2014 literal com Wisdom FIXO (é a única que volta como linhagem
-  SEM reescrita, DDL-0060) e arte própria.
-- **Human (Keldon)**: 0 resultados com o filtro "Setting Variant" pré-marcado e volta a **um
-  clique** no chip (DDL-0064); sem seletor de linhagem, sem escolhas, **prosa 2014 removida**
-  (Age/Alignment/Size/Speed/Languages) e sem "Ability Score Increase" (DDL-0060/0058).
-- **Revalidadas:** Halfling ×4 (guarda-chuva "Halfling Lineage"; Lightfoot com a redação **XPHB**
-  "take the Hide action"; Stout → Resistance Poison; Ghostwise → Silent Speech; Lotusden → origem
-  de magia própria com **WISDOM/DC 10 sem seletor de atributo**) e Custom Lineage ×2 (rótulo
-  "Variable Trait", **25** talentos de ORIGEM, perícia adiada para a opção que a concede).
-- O **fix de lore do TC-0052** (§85) confirmado ao vivo também no Halfling: a lore agora é a de
-  2024 ("Cherished and guided by gods who value life, home, and hearth…").
-
-Sem código tocado → suíte (1141), lint e sweep (285/285 `--strict`) inalterados. Mobile 375px sem
-overflow, zero erros de console. Ver TESTING-PLAN.md §7 e testing/COVERAGE.md.
-
-## 87. Phase T - revisão do Bloco S-A2 (pedida pelo usuário): evidência refeita, veredito mantido
-
-O usuário notou que a passada do S-A2 (CHANGELOG §84) rodou com o modelo Sonnet e pediu um
-re-exame. **Resultado: zero bugs novos - as conclusões da 1ª passada se sustentam.** O que estava
-frágil era a EVIDÊNCIA, não o veredito:
-- 8 das 10 ancestralidades de Dragonborn e 4 das 6 de Goliath estavam anotadas no COVERAGE como
-  "engine-verificado" **sem que nada tivesse sido executado por ancestralidade** - a 1ª passada
-  só abriu o preview de Black/Red e Cloud/Stone.
-- O card de **DAMAGE RESISTANCES da FICHA** nunca fora aberto para o Dragonborn (só para o
-  Tiefling), então "a resistência deriva" era uma leitura do texto do preview, não da derivação.
-
-**Como foi fechado.** Um probe descartável construiu as **19 linhas** pelo `autoBuild` (Fighter 5
-+ Champion) e comparou a derivação contra um oráculo **digitado do livro** - as 10 duplas
-dragão→dano, as 6 ancestralidades de gigante e as 3 legacies oficiais - checando resistência,
-darkvision, deslocamento, os traços esperados e a convergência do autoBuild. Tudo verde. Ao vivo,
-as duas lacunas de UI foram fechadas: **Dragonborn (Green) → DAMAGE RESISTANCES: Poison** na ficha
-e **Goliath (Fire) → sem card de resistência** (correto, o Goliath dá um boon, não resistência).
-O TC-0051 (darkvision da Abyssal) confirma-se também no engine.
-
-As 19 notas do `testing/COVERAGE.md` foram **reescritas** para dizer o que foi de fato verificado.
-**Regra que fica (TESTING-PLAN §4.5):** não anotar "engine-verificado" sem ter rodado algo - ou
-roda um probe, ou a nota diz "inferido do padrão". Nenhum código foi tocado: suíte (1141), lint e
-sweep (285/285 `--strict`) inalterados.
-
-## 88. Phase T - T1b sessão 5: Bloco S-C (MPMM) - derivação certificada; UI parcial
-
-Sessão de resultado MISTO, registrado como tal. **Nada de código foi tocado; nenhum bug encontrado.**
-
-**Feito (sólido):** um probe exaustivo construiu **as 30 linhas MPMM** pelo `autoBuild` e comparou a
-derivação contra o que o DADO declara - pegando a classe de bug "o dado diz X e a derivação perde
-X" - além de checar convergência do autoBuild e ausência de NaN no objeto derivado. **Zero
-problemas.** Destaques que o probe prova: **Tortle AC 17** (armadura natural FLAT, DDL-0034 - a
-única linha fora do padrão 11-12), todas as resistências passando do dado à derivação (Duergar/
-Yuan-Ti poison, Githyanki/Githzerai psychic, Sea Elf/Triton cold, Shadar-Kai necrotic, Genasi
-Air/Fire/Water lightning/fire/acid e **Earth sem nenhuma**, correto para MPMM), e os deslocamentos
-especiais (voo do Aarakocra, natação de Genasi Water/Lizardfolk/Sea Elf/Triton, escalada do Tabaxi,
-35 do Genasi Air/Satyr, 40 do Centauro).
-
-**Feito (UI ao vivo): as 3 linhas do Kobold**, que eram a pendência explícita do bloco. O rótulo
-**"Kobold Legacy"** vem do dado (DDL-0062), as 3 opções aparecem, e o **TC-0046/0047 fica FECHADO**:
-antes de escolher a legacy a aba não mostra "Species Choices" nenhuma, e o "Choose a skill 0/1"
-surge **só** ao escolher Craftiness (a magia, só na Draconic Sorcery - provado pelo probe).
-
-**NÃO feito, e por isso as outras 26 linhas seguem `ui: todo`:** a passada de UI por espécie. A aba
-do browser degradou no meio da sessão (o lightbox passou a interceptar cliques, os refs derivaram e
-por fim o painel parou de receber teclado), e insistir teria produzido verificação de má qualidade.
-As notas do COVERAGE dizem exatamente isso - derivação certificada, UI pendente - em vez de marcar
-as linhas como prontas.
-
-Suíte (1141), lint e sweep (285/285 `--strict`) inalterados. Ver TESTING-PLAN.md §7.
-
 ## 89. Tiefling Winged: a frase do atributo muda de traço (TC-0054) + a família da armadura natural (TC-0053)
 
 Duas correções, uma pedida pelo usuário e outra achada ao continuar o Bloco S-C.
@@ -5065,613 +4373,6 @@ máquina mudou** - `deriveArmorClass` já fazia tudo; era só registro, como o D
 1147 testes (+6), lint, sweep 285/285 `--strict`. Ao vivo: o texto do Winged na ficha e
 **Lizardfolk com Dex 10 mostrando AC 13** (era 10). Ver DDL-0061 e DDL-0034 (emendas) e
 testing/ISSUES.md.
-
-## 90. Phase T - T1b sessão 6: Bloco S-C (MPMM) CONCLUÍDO - 27 linhas `ui: ok`
-
-Fecha o Bloco S-C. **Nenhum bug novo; nenhum código tocado** (os dois fixes desta leva saíram em
-§89). Método em duas camadas, o mesmo que a revisão do S-A2 estabeleceu:
-
-**1. Probe de qualidade de PREVIEW (cobertura total, sem clicar).** Para as 28 unidades: todo
-traço tem nome e texto (nenhum preview vazio), **todo `{@tag}` de glossário/entidade RESOLVE**
-(zero link morto - a checagem que importa, já que o renderer nunca vaza a tag crua, ele degrada
-para texto inerte) e **toda escolha de espécie oferece opções** (a classe de bug "Problem 1" do
-DDL-0002). Zero problemas.
-
-**2. Passada ao vivo nas 27 linhas.** Descoberto um atalho confiável para o harness: com a busca
-filtrando para UM resultado, clicar o card e depois "Select" commita exatamente ela - **o clique
-no card é obrigatório**, porque o "Select" sozinho recommita o item SELECIONADO (o `selectedRaw`
-que trava o preview, DDL-0048). Conferidos meta (tamanho/deslocamento/tipo), as escolhas
-renderizadas e a ausência de tag crua em todas; e nos casos de forma distinta: **Tortle AC 17**
-e **Lizardfolk AC 13** na ficha (o fix do TC-0053 ao vivo), **Genasi (Water) com DAMAGE
-RESISTANCES: Acid** e as quatro linhagens trocando com os deslocamentos certos (Air 35, Water
-natação), Centauro 40 ft Fey, Satyr 35 ft Fey com escolha de Instrumento Musical, Githyanki com
-as três escolhas (perícia/ferramenta/atributo), Tabaxi com escalada, Fairy base com voo e
-linhagem OPCIONAL, e o Aarakocra corretamente **sem magia no nível 1** (o Wind Caller só concede
-a partir do 3).
-
-Mobile 375px sem overflow, zero erros de console. Suíte (1147), lint e sweep (285/285 `--strict`)
-inalterados. **Observação de apresentação levada ao usuário** (não é bug, não foi mexido): 22 das
-espécies MPMM trazem `Creature Type` / `Size` / `Speed` como traços de PROSA, duplicando os chips
-de meta que a ficha já mostra - é o formato de 2022, que a edição 2024 moveu para campos
-estruturados.
-
-## 91. Phase T - T1b sessão 7: Bloco S-D (outros livros modernos) CONCLUÍDO - 32 linhas `ui: ok`
-
-Fecha o Bloco S-D. **Nenhum bug; nenhum código tocado.** Mesmo método de duas camadas do S-C
-(probe de cobertura total + passada ao vivo), agora com asserções para os itens de atenção que o
-plano listava - e todos passaram:
-- **Armadura natural (DDL-0034 + TC-0053), as cinco fórmulas na ficha com Dex 10:** Autognome
-  **13** (unarmored 13+Dex), Warforged **11** (10+Dex **+1 de bônus**), Thri-kreen **13**,
-  Locathah **12**, Loxodon **12** (o único que soma **Constituição**). As três últimas só passaram
-  a derivar no TC-0053 desta leva.
-- **Verdan:** o chip mostra **"Varies"** e **não existe escolha de tamanho** - o tamanho vem do
-  NÍVEL (S até o 4, M do 5 em diante), asserido no probe. É exatamente o DDL-0017.
-- **Dragonborn (Gem) ×5:** as cinco resistências distintas (Force/Radiant/Psychic/Thunder/
-  Necrotic) e o voo no texto.
-- **Simic Hybrid:** só a escolha de idioma - a CA dele vem de uma OPÇÃO escolhível, e é por isso
-  que ele fica deliberadamente fora do registro de armadura natural.
-- Owlin dv 120 + voo, Plasmoid tipo Ooze com Acid/Poison, Kalashtar Aberration com Psychic, Grung
-  25 ft + escalada 25, Dhampir 35 ft + escalada, Shifter ×4 com size+perícia.
-
-**Dois falsos positivos do meu probe, verificados antes de virarem bug reportado** (o mesmo
-cuidado que a revisão do S-A2 fixou como regra): (a) "Khoravar: escolha sem opções" - o pool dela
-é uma **expressão de filtro** (Cleric/Druid/Wizard nível 0) que resolve para **35 cantrips**, e meu
-contador só sabia ler lista estática; (b) "Simic Hybrid/Vedalken sem escolhas" na leitura ao vivo -
-essas espécies **não têm arte**, e meu extrator de trecho usava o crédito da arte como delimitador.
-Ambos eram defeito do instrumento, não do app.
-
-Mobile 375px sem overflow, zero erros de console. Suíte (1147), lint e sweep (285/285 `--strict`)
-inalterados. **Restam 37 linhas `todo`, todas do Bloco S-E** (cenário/legado, atrás do filtro).
-
-## 92. Phase T - T1b sessão 8: Bloco S-E CONCLUÍDO ⇒ **STAGE T1 COMPLETO** (285 unidades)
-
-Fecha o último bloco de espécies e, com ele, a etapa T1 inteira. **Nenhum bug; nenhum código
-tocado.** Passada leve, como o plano definia para este bloco (confirmar que constroem, derivam e
-não vazam tag).
-
-**Probe nas 38 unidades de cenário/legado** (LFL + Plane Shift + Half-Orc PHB): todas constroem,
-derivam, o `autoBuild` converge, zero link morto, toda escolha com opções. Um detalhe confirma o
-TC-0053 de passagem: os goblins derivam **AC 10 contra 9** das demais - é o Grit (11+Dex)
-aplicando, **inclusive no `Goblin (Ixalan)`**, que era a chave `Goblin|PSX` que aquele fix
-adicionou.
-
-**DDL-0064 verificado ao vivo**, com o comportamento exato que o entry descreve:
-
-| busca | filtro padrão | um clique no chip |
-|---|---|---|
-| Elf | 3 | 5 (+Kaladesh, +Zendikar) |
-| Human | 1 | 3 (+Innistrad, +Keldon) |
-| Goblin | 2 | 3 (+PSZ) |
-
-E o ponto que mais importa: as três Humans **vazias** (Ixalan/Kaladesh/Zendikar) **não aparecem
-nem com o filtro desligado** - foram removidas de vez, não filtradas. O **Aven|PSA** aparece no
-filtro PADRÃO, confirmando o amendment do DDL-0064 (deixou de colidir quando o Aven|PSD saiu como
-redundante).
-
----
-
-### 🏁 STAGE T1 COMPLETO
-
-Com este bloco, **as 285 unidades da matriz estão certificadas do lado do builder**: as **135
-linhas `class:*`** (T1a, 13 sessões, fechada em 2026-07-22) e as **150 linhas `species:*`** (T1b,
-7 sessões, fechada em 2026-07-26 nos 5 blocos do TESTING-PLAN §4.5). A T1b rendeu quatro
-correções: **TC-0051** (dado upstream errado), **TC-0052** (lore da edição errada em linhagem
-curada), **TC-0053** (5 espécies com armadura natural não implementada) e **TC-0054** (texto do
-Tiefling Winged, pedido do usuário).
-
-**Método que se firmou** (e que vale para a T3): um probe descartável sobre `autoBuild` + um
-oráculo independente certifica a DERIVAÇÃO da família inteira em minutos, e a passada ao vivo
-fica para o que exige olho - arte, layout, fluxo. Com a ressalva que a revisão do S-A2 fixou:
-**verifique a suposição do probe antes de reportar** - vários "bugs" que ele acusou nesta campanha
-eram defeito do instrumento (pool de magia por filtro, delimitador de texto, formato do derivado).
-
-1147 testes, lint, sweep 285/285 `--strict`, mobile sem overflow, zero erros de console.
-**Próxima etapa: T2** - curação do export + importações reais no Foundry.
-
----
-
-## 93. Phase T - **abertura do STAGE T2**: oráculo de export contra as 48 fichas premade + 1º lote de correções
-
-Com a T1 fechada (as 285 unidades `ui: ok`), começa a **T2: curação do EXPORT**. O sweep já
-garantia o piso estrutural do lado Foundry, mas ele compara o nosso export com o nosso próprio
-import - então tudo que **nunca foi exportado** era invisível para ele. A prova disso abre esta
-seção: a **moeda do personagem saía zerada há meses** e nenhum teste percebia.
-
-### `npm run t2` - re-exportar as fichas oficiais e diffar
-
-Novo harness (`scripts/compare-premades.js` + `scripts/lib/premadeDiff.js`), no espírito do
-sweep. Para cada uma das **48 fichas premade oficiais** (12 personagens x níveis 1/5/11/17, em
-`DnD Source Material/Character Sheets in JSON/Standard Premade Characters` - documentos gerados
-pelo próprio sistema dnd5e, portanto verdade de esquema):
-
-```
-P --foundryToCharacter--> C --assembleFoundryActor--> A     e diffa A x P
-```
-
-Os achados saem **agregados por CLASSE** (`cat`: `currency`, `skills`, `items.gear.type`,
-`advancement.race`...), para triar uma vez por classe de problema em vez de linha a linha. Flags:
-`--actor=merric`, `--level=05`, `--cat=currency`, `--verbose`, `--players`. Saída completa em
-`testing/premade-report.json`.
-
-Duas peças de projeto que valem para quem for usar:
-
-- **A lista `DELIBERATE`** documenta o que o comparador NÃO reporta e por quê (nome do background,
-  identidade de documento, prosa, estado de sessão, contêineres, sentidos derivados). Uma
-  diferença sem justificativa ali é bug disfarçado, não ruído - e a lista se pagou na hora: os 48
-  achados de "item faltando" eram os packs, que o nosso modelo compra como um item só.
-- **`grantCounts`** compara quantos itens cada passo de `ItemGrant` concede por `título@nível`. A
-  escada comparada como conjunto esconde isso, e foi só com a contagem que apareceu o TC-0071
-  (`paladin Class Features@2`: 3 no premade, 2 nas nossas).
-
-**1ª rodada: 1023 achados em 27 classes.** Todas triadas em `testing/ISSUES.md` (TC-0055…TC-0076),
-cada uma com a CAUSA: nosso export, nosso import, ou diferença deliberada.
-
-### Corrigido nesta sessão (1023 -> 745)
-
-| TC | O que era | Onde |
-|---|---|---|
-| **TC-0055** | `currency` exportada como zero LITERAL - toda a carteira sumia | export |
-| **TC-0056** | Traits de origem roteados pelo TÍTULO: as perícias e a ferramenta da origem se perdiam ao importar qualquer premade (129+48 achados) | import |
-| **TC-0057** | Item sem `source` gravava fonte vazia; `findFeat` casa nome E fonte, então o talento de origem (e as magias do Magic Initiate) **desaparecia** no re-export, e a espécie podia resolver na EDIÇÃO errada | import |
-| **TC-0058** | `sign` e `cant`: exportávamos `common-sign-language` e `thievescant`, fora do vocabulário do dnd5e | export |
-| **TC-0060** | **Eldritch Knight e Arcane Trickster chegavam ao Foundry SEM conjuração**: as frações `'1/3'` do 5etools não existem no sistema, e o item de subclasse escrevia `progression: 'none'` fixo | export |
-
-O TC-0060 é o mais severo do lote e não vem dos premades (nenhum deles é EK/AT): saiu de conferir
-o vocabulário de `CONFIG.DND5E.spellcasting` contra o que o dado do 5etools escreve. `artificer`
-foi **preservado** no Paladino/Ranger 2024 - é o que o dado diz, e o sistema define `artificer` e
-`half` de forma idêntica (`divisor: 2`, `roundUp: true`), então a diferença com o premade é de
-rótulo, não de mecânica.
-
-O TC-0056/0057 valem também para as fichas Plutonium do usuário e para qualquer ator de fora: um
-premade importado agora chega com as perícias da origem, a ferramenta, o talento de origem e a
-espécie na edição certa.
-
-### A cegueira do oráculo do sweep, fechada
-
-`decisionSummary` (`scripts/lib/roundtrip.js`) passou a comparar **`currency`**. Era o campo que
-faltava para o round-trip pegar o TC-0055 - agora uma regressão volta a falhar a linha em
-`--strict`.
-
-### Verificação
-
-1163 testes (+16: moeda, chaves de idioma, forma dos premades no import, `fvttProgression`,
-conjuração de subclasse, e o próprio comparador), lint limpo, **sweep 285/285 `--strict`**,
-`npm run t2` reproduzível (745 achados, todos triados). Plano da T2 em TESTING-PLAN §5.1-5.2;
-decisões em DDL-0072.
-
----
-
-## 94. Phase T - T2b: **TC-0066 fechado** - o inventário deixa de virar `loot` no Foundry (288 → 0)
-
-Primeira classe do burn-down da T2, e a maior: **288 dos 745 achados** eram itens de inventário
-saindo com o tipo errado. No Foundry o tipo do Item decide o que dá para fazer com ele - um `loot`
-não se equipa nem se consome -, então uma ficha importada perdia affordance real: tocha, ração,
-óleo e poção viravam tesouro morto, e manto, botas e kits também.
-
-### A raiz: a distinção não sai do dado do 5etools
-
-Todo item de aventura carrega o mesmo código de tipo (`G`), e o nosso `GROUP_FOUNDRY` mandava o
-grupo `gear` inteiro para `loot`. O SRD reparte item a item - só na pasta `adventuring-gear` são
-**35 `loot`, 32 `equipment` e 22 `consumable`**. Não há regra a inferir: é classificação curada
-pelo sistema, item por item.
-
-### O fix: o SRD do dnd5e como autoridade, por um registro GERADO
-
-Mesmo padrão do DDL-0055 (uuids de compêndio): `npm run gen:uuids` passou a emitir também
-**`EQUIPMENT_TYPES`** (`nome` → `"tipo/subtipo"`, **572 itens**) a partir do pacote `equipment24`
-do sistema dnd5e. Só classificação - nenhum texto de regra é copiado, como manda o DDL-0003.
-`equipmentFoundryType(name)` consulta o registro e `buildInventoryItems` o adota **apenas dentro
-do trio `equipment`/`consumable`/`loot`**: arma, armadura e ferramenta continuam com a nossa
-classificação, que é quem carrega dano, CA e perícia.
-
-Resultado por par (o que era e virou):
-
-| era | virou | itens |
-|---|---|---|
-| `loot` | `consumable` | ball bearings, caltrops, candle, healer's kit, holy water, hunting trap, ink, oil, rations, rope, torch |
-| `loot` | `equipment` | bell, costume, ink pen, lamp, net, robe, sprig of mistletoe, tinderbox |
-| `equipment` | `consumable` | bead of force |
-
-**Uma exceção deliberada:** o SRD **promove a arma** um item que o 5etools classifica como foco de
-conjuração - o "Staff" (e o "Wooden Staff") tem `weaponCategory`, `dmg1` e propriedades no dado, é
-só o `type` que diz `SCF`. A promoção só acontece **quando há dano no dado**, então a ficha de arma
-nunca é inventada; a categoria vem do raw. Um Staff exportado agora é atacável no Foundry.
-
-### Achado colateral: nome com caixa diferente perdia o item inteiro
-
-A ficha da Quillathe traz **"Sprig of mistletoe"** (m minúsculo). `resolveItemObj` casava o nome
-com caixa EXATA, então o item não resolvia contra o compêndio e perdia peso, preço, descrição e
-tipo de uma vez - o tipo errado era só o sintoma visível. Agora há uma rede case-insensitive
-**depois** do casamento exato, então o caminho normal do builder não muda em nada.
-
-### Verificação
-
-`items.gear.type`: **288 → 0** nas 48 fichas (`npm run t2 -- --cat=items` mostra as três classes
-restantes, todas de outros TCs). 1168 testes (+5), lint limpo, sweep 285/285 `--strict`.
-Total do comparativo: **745 → 457 achados**.
-
----
-
-## 95. Phase T - T2b: escadas do item de classe - **TC-0062, TC-0063 e TC-0069 fechados** (457 → 395)
-
-Segunda leva do burn-down da T2, toda no `advancement[]` do item de classe/subclasse - a "receita"
-que o Foundry desdobra ao importar e ao subir de nível.
-
-### TC-0062 - a premissa estava errada; medir mudou o alvo
-
-Eu tinha registrado "ScaleValue com identificador VAZIO" como bug. **Não é:** o dnd5e faz fallback
-para o slug do título (`configuration.identifier || formatIdentifier(this.title)`), e os próprios
-premades deixam a maioria em branco. Uma sonda comparando a chave EFETIVA (`identifier ||
-slug(title)`) das 12 classes contra as fichas oficiais mostrou o bug de verdade, mais estreito:
-
-- onde o SRD usa um identificador **curto e próprio** (`points`, `focus`, `die`, `aura`, `mark`,
-  `rage-damage`, `inspiration`), nós emitíamos o slug do NOSSO título - `@scale.sorcerer.sorcery-points`
-  em vez de `@scale.sorcerer.points`, o que quebra qualquer fórmula do overlay que o cite;
-- a causa: a entrada da TABELA vencia por título e a do overlay (que traz o identificador) era
-  descartada; e o overlay era ignorado INTEIRO para uma classe com entrada curada.
-
-A precedência passou a ser por ENTRADA - curadas → overlay → tabela -, com a tabela descartada
-quando já existe entrada de mesmo título **ou de mesma escala**. Esse segundo critério importa: o
-SRD às vezes nomeia diferente o mesmo recurso ("Bardic Die" × "Inspiration Die", "Martial Arts" ×
-"Martial Arts Die"), e sem ele o mesmo dado saía duas vezes sob dois nomes.
-
-Mais quatro escalas que a tabela não dá de graça, com o título e o identificador das fichas
-oficiais: **Max Prepared Spells / Max Pact Magic Spells** (`max-prepared`) — junto com o
-`spellcasting.preparation.formula` que a referencia, que é como o Foundry sabe quantas magias a
-classe prepara —, **Cantrips Known**, **Weapon Masteries Known** (`mastery`, só onde a contagem
-CRESCE: no SRD, Paladino/Ranger/Ladino, de contagem fixa, não têm a escala) e **Eldritch
-Invocations Known**.
-
-Resultado medido: **zero chave faltando** nas 12 classes; a única a mais é a `divine-spark` curada,
-que é deliberada (a activity do Clérigo a referencia).
-
-### TC-0063 - sem `ItemChoice`, subir de nível no Foundry não pergunta nada
-
-O premade modela cada escolha de feature como um advancement `ItemChoice` com o POOL de opções e o
-nível. Nós emitíamos só o item ESCOLHIDO: o passo do Fighting Style saía com **pool vazio** e as
-demais escolhas (Divine Order, Blessed Strikes, Primal Order, Metamagic, Invocations) não geravam
-passo nenhum - é o irmão do ItemGrant de níveis futuros do DDL-0055, e sem ele o level-up dentro do
-Foundry é mudo.
-
-`buildItemChoiceAdvancements` emite as duas metades, como o SRD: `configuration.pool` com os uuids
-de todas as opções e `value.added` apontando, por nível, para o item EMBUTIDO já escolhido - senão o
-passo voltaria a perguntar o que já foi decidido. Os picks são **fatiados entre os níveis na ordem**
-(o choice-bag guarda uma lista só para todos os níveis), exatamente como os Traits de Weapon Mastery.
-
-Duas armadilhas que só a sonda pegou:
-
-- `optionalFeatureChoices` **funde** os descritores da classe e da subclasse sem marcá-los, então o
-  Warlock emitia as invocações duas vezes (classe E subclasse). A diferença é o descritor que só
-  aparece quando a subclasse entra.
-- Uma opção sem uuid conhecido não entra no pool, e o descritor inteiro é descartado se o pool ficar
-  vazio: uma escada que não oferece nada é pior que nenhuma (`allowDrops` segue permitindo arrastar).
-
-Conferido ao vivo: Clérigo 7 (Divine Order @1, Blessed Strikes @7), Feiticeiro 10 (Metamagic 2@2 +
-2@10), Warlock 5 (invocações 1@1, 2@2, 2@5, sem duplicata na subclasse), Guerreiro (pool de 4
-fighting styles, que é o que o SRD publica).
-
-### TC-0069 fechado de lambuja
-
-No dnd5e as optional features são documentos de CLASSE, em pastas irmãs (`metamagic-options`,
-`eldritch-invocation-options`) que o gerador de uuids não varria. Passou a varrer todas as pastas da
-classe (159 → **197** features), e as 34 divergências de `compendiumSource` (metamagias, invocações,
-pact boon) foram a zero sem tocar no export.
-
-### Dois achados novos, registrados
-
-- **TC-0077** (novo): o premade do Monge tem um `AbilityScoreImprovement@20` com valores fixos - é o
-  **Body and Mind** (+4 Dex, +4 Wis), que nossa derivação não concede. Mesma família do TC-0059
-  (Druidic/Thieves' Cant) e do TC-0075 (Slippery Mind): feature de CLASSE que concede algo em prosa.
-  Vale um registro só para os três.
-- O Fighting Style EXTRA do Champion @7 ainda não gera passo: vem de um descritor `feat` do
-  `SUBCLASS_FEATURE_GRANTS`, fora dos dois caminhos que a nova função cobre. Anotado no TC-0063.
-
-### Verificação
-
-1173 testes (+10), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **457 → 395** achados.
-
----
-
-## 96. Phase T - T2b: grants em PROSA de feature de classe (TC-0059/0075/0077) + o balde de esperadas
-
-Terceira leva do burn-down. Diferente das duas anteriores, esta corrige a **FICHA**, não só o
-export: três TCs eram a mesma família - "uma feature de CLASSE concede algo que só existe no texto"
-- e foram resolvidos por um registro só.
-
-### A varredura veio antes do código
-
-O hand-off pedia varrer o dataset em vez de cadastrar o caso que apareceu, e foi o que decidiu o
-escopo. Dois lados, que se confirmam:
-
-- **o SRD do dnd5e** (`packs/_source/classes24`): todo advancement `Trait`/`AbilityScoreImprovement`
-  de classe fora dos iniciais e dos ASIs padrão;
-- **o dado do 5etools**: toda feature de classe/subclasse de fonte atual cujo texto casa
-  `{@language …}`, "proficien* in … saving throw" ou "score(s) increase by N".
-
-Os dois convergem para **seis casos de classe** - e dois deles ninguém tinha reportado:
-
-| feature | nível | concede |
-|---|---|---|
-| Druidic (Druida) | 1 | o idioma Druidic |
-| Thieves' Cant (Ladino) | 1 | o idioma Thieves' Cant **+ um idioma à escolha** |
-| Slippery Mind (Ladino) | 15 | salvaguarda de Sabedoria e Carisma |
-| **Disciplined Survivor (Monge)** | 14 | **todas as seis** salvaguardas |
-| **Body and Mind (Monge)** | 20 | +4 Destreza, +4 Sabedoria (teto 25) |
-| **Primal Champion (Bárbaro)** | 20 | +4 Força, +4 Constituição (teto 25) |
-
-Deft Explorer (Ranger), Iron Mind (Gloom Stalker) e Unfettered Mind (Knowledge) já estavam
-cobertos - a varredura serviu também para confirmar isso em vez de duplicar.
-
-### O registro
-
-`engine/classFeatureGrants.js`, irmão do `subclassGrants.js`, com quatro campos: `languages`,
-`languageChoices`, `saves`/`allSaves` e `abilityBoosts`. Consumido pela derivação (idiomas,
-salvaguardas, boosts) e pelo export (um `Trait` no nível da feature para as salvaguardas, um
-`AbilityScoreImprovement` de valores FIXOS para o capstone).
-
-Três detalhes que valem registro:
-
-- **O teto 25 dos capstones** não exigiu máquina nova: a ordenação por teto do DDL-0034 (aplica o
-  menor primeiro) já faz a coisa certa - um ASI para em 20, o capstone segue até 25, um Epic Boon
-  até 30. Coberto por teste.
-- **O "one other language of your choice"** do Thieves' Cant virou uma Choice de kind `language`
-  (`classgrant-lang@1`), então ganhou seletor na aba Class, entra na completude e é sorteada pelo
-  autoBuild sem fiação nova. No export ela viaja num Trait com o idioma CONCEDIDO em `grants` e o
-  ESCOLHIDO em `choices` - a forma exata do premade -, e o import passou a **ignorar o que está em
-  `grants`** para não confundir concessão com escolha.
-- **O sweep pegou uma regressão na hora:** um ASI de valores fixos chega com `assignments` vazio, e
-  o import o tratava como decisão do jogador, inventando um pick "Ability Score Improvement" em
-  toda linha de nível 20 (20 linhas vermelhas). Agora exige ao menos um aumento real.
-
-### Divergências ESPERADAS: um balde nomeado, não um silêncio
-
-Dois grupos de diferença que **não vão mudar** ficariam para sempre no relatório:
-
-- o premade deixa uma proficiência concedida por feature a cargo de um **Active Effect** (Divine
-  Order Protector → `mar`/`hvy`, Primal Order Warden → `med`, Disciplined Survivor →
-  `flags.dnd5e.diamondSoul`), e nós a assamos no ator, que é o que a nossa derivação usa na ficha;
-- o `AbilityScoreImprovement` do capstone: o próprio SRD usa **as duas formas** (no Monge está no
-  item de classe, como o nosso; no Bárbaro, no item da feature).
-
-Em vez de escondê-las na lista `DELIBERATE`, o harness ganhou `EXPECTED`: predicados com motivo
-verificado que tiram o achado da contagem e o imprimem **nomeado** no resumo (`+23 expected:
-baked-feature-grant, capstone-asi-on-class-item`) e por inteiro no report - mesmo espírito dos
-`WAIVERS` do sweep. Contadas, nunca escondidas.
-
-### Verificação
-
-1184 testes (+11, `classFeatureGrants.test.js`), lint limpo, sweep 285/285 `--strict`, `npm run t2`
-de **395 → 361** achados (+23 esperadas). **Ao vivo:** um Rogue 1 mostra o seletor "Language 0/1" e
-o card LANGUAGES com Common · Thieves' Cant; no 15, SAVING THROWS passa a Dex/Int/**Wis/Cha**.
-Decisões em DDL-0073.
-
----
-
-## 97. Phase T - T2b: as magias concedidas e o pool de recurso (TC-0067/0068 fechados; 361 → 257)
-
-Quarta leva do burn-down. Duas correções grandes vindas de medir o SRD do dnd5e, mais três alvos
-baratos (tamanho, alinhamento, identificador de subclasse) e a **higiene das referências** que o
-overlay nos fazia exportar quebradas.
-
-### TC-0067 - uma magia sempre-preparada não é "inata"
-
-Detect Magic e Misty Step (linhagem élfica), Hellish Rebuke e Darkness (legacy do Tiefling), Misty
-Step do Archfey: tudo saía `method: 'innate'`, `prepared: 0`. O premade usa `method: 'spell'`,
-`prepared: 2`, com o uso grátis no `uses` - e o texto do próprio SRD diz por quê:
-
-> "You always have that spell prepared. You can cast it once without a spell slot… **You can also
-> cast the spell using any spell slots you have** of the appropriate level."
-
-Ou seja, `innate` TIRAVA do jogador a possibilidade de gastar espaço. Agora só o `innate` CRU do
-5etools (aquele em que o dado não declara frequência nenhuma - DDL-0011) continua saindo `innate`,
-justamente porque ali não sabemos se gasta espaço.
-
-**Meia correção a mais, do premade do Warlock:** num Warlock PURO não existe espaço comum, então a
-concessão DE CÍRCULO da linhagem Drow também tem de sair como `pact` - senão fica sem espaço algum
-para gastar. O **cantrip** da mesma linhagem (Dancing Lights) fica em `spell`: cantrip não gasta
-espaço. A primeira tentativa promoveu os dois e o comparador acusou na hora.
-
-`spell.method` 26 → 2 e `spell.prepared` 25 → 1 (os dois restantes são quirk do premade: um
-`Contact Other Plane` que ele mesmo encoda diferente dos irmãos, e um nome de magia repetido).
-
-### TC-0068 - o pool de recurso vem do SRD, não de mais 14 linhas curadas
-
-14 features chegavam ao Foundry sem `system.uses` (Relentless Endurance, Draconic Flight, Wild
-Resurgence, Large Form, Divine Intervention, Uncanny Metabolism…), então não havia o que gastar na
-ficha. Em vez de curar caso a caso, `npm run gen:uuids` passou a emitir **`FEATURE_USES_BY_CLASS`**
-e **`FEATURE_USES_FLAT`** (47 pools) do SRD - mesmo padrão do `EQUIPMENT_TYPES` (TC-0066) e do
-registro de uuids (DDL-0055). Precedência: **curado → SRD → overlay**. `feat.uses` 29 → 0.
-
-**Achado colateral, este mais sério: duas referências `@scale` curadas estavam ÓRFÃS.** O TC-0062
-alinhou os identificadores de ScaleValue aos nomes curtos do SRD (`points`, `focus`), mas o registro
-de `uses` continuava montando a referência com o slug do NOSSO título - `@scale.sorcerer.sorcery-points`
-e `@scale.monk.focus-points` não apontavam para escala nenhuma. E um terceiro caso pior, que uma
-sonda de "referência sem escala" não pegaria: `wild shape` apontava para `@scale.druid.wild-shape`,
-que EXISTE mas é a escala de **CR**, não a de usos. As três entradas ganharam um campo `id` literal.
-**Regra que fica:** a referência tem de casar com o IDENTIFICADOR exportado, nunca com o slug do
-título - e uma referência que resolve ainda pode estar apontando para a escala errada.
-
-### Referências `@…[…]` do overlay: 35 apontavam para o vazio
-
-O overlay do 5etools guarda tokens do conversor do Plutonium (`@spell[divine smite|xphb]`,
-`@creature[imp|xmm]`) que **não são uuids do Foundry**. Exportávamos crus. Agora `@spell[…]` resolve
-no uuid real do compêndio, e a activity que carrega uma referência que não sabemos resolver (as
-invocações de criatura - monstro não faz parte do nosso escopo) é **descartada inteira**, o mesmo
-princípio dos links órfãos que o módulo já aplicava. Medido nos 48 atores: **35 tokens → 0**.
-
-As de `type: 'enchant'` FICAM. A primeira tentativa as descartou junto (o raciocínio era que os
-efeitos de encantamento são pulados na tradução) e o comparador subiu de 18 para 24 na hora: os
-premades oficiais TRAZEM essas activities (Martial Arts, Sacred Weapon, Repelling Blast).
-
-### Três alvos baratos
-
-- **TC-0073 (tamanho):** uma espécie com escolha S/M ainda não feita exportava o PRIMEIRO código do
-  array, então um Humano premade reimportado virava **Small**. O ator tem UM tamanho: o padrão
-  honesto é o MAIOR, que é o que o premade traz. 12 → 0.
-- **TC-0074 (alinhamento):** "True Neutral" → "Neutral", e cada palavra capitalizada, como os 48
-  premades escrevem. O import já aceitava as duas formas. 12 → 0.
-- **TC-0074 (identificador de subclasse):** `open-hand` × `hand`. Não é rótulo - o dnd5e o cita em
-  fórmula (`@subclasses.hand.levels`) - e não sai do nome, então virou mais uma tabela gerada do
-  SRD (`SUBCLASS_IDENTIFIERS`). As 12 subclasses publicadas usam o identificador canônico; as outras
-  123 seguem com o slug. 3 → 0.
-
-### Verificação
-
-1193 testes (+9), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **361 → 257** achados
-(+23 esperadas). Decisões em DDL-0074.
-
----
-
-## 98. Phase T - T2b: o que um ator EXTERNO perdia ao ser importado (257 → 190)
-
-Quinta leva do burn-down. O tema saiu da medição, não do plano: quatro das cinco correções são do
-lado do **IMPORT** - decisões que um ator vindo do Foundry trazia e que nós descartávamos em
-silêncio. Duas classes de achado foram a **zero** (`skills` e `tools`), e uma terceira também
-(`traits.weaponProf`).
-
-### TC-0079 - magia de nome próprio não resolvia e sumia do export
-
-O SRD tira o nome do mago do título (é Product Identity), então o sistema dnd5e escreve "Hideous
-Laughter" onde o 5etools transcreve o livro e mantém "Tasha's Hideous Laughter". `resolveSpellObj`
-devolvia `null`, e `buildSpellItems` pula a entrada sem `raw`: **uma magia preparada pelo jogador
-desaparecia sem aviso nenhum**.
-
-A regra é DERIVADA, não curada - "a magia cujo nome é `<alguém>'s <nome curto>`", aceita só quando
-o candidato é ÚNICO. Medida contra o pacote `spells24` do dnd5e: dos 16 casos, **13 saem pela
-regra**; os 3 restantes (Arcane Hand, Arcane Sword, Arcanist's Magic Aura) o SRD reescreveu por
-inteiro e viraram exceções, conferidas uma a uma por círculo e escola. O sentido inverso
-(`srdSpellNames`) faz o `compendiumSource` resolver, então a magia passa a ter procedência mesmo
-saindo com o nome do livro.
-
-**O nome exportado continua o do LIVRO** - somos um builder alimentado pelo 5etools, e quem carrega
-a identidade do documento é o `compendiumSource`, não a grafia. Para o comparador não acusar 26
-falsos positivos, o oráculo passou a reduzir os dois lados ao nome curto (`spellKey`).
-
-### TC-0081 - as magias de um talento não voltavam de um ator externo
-
-Um premade com Magic Initiate traz 2 cantrips + 1 magia de círculo como itens `spell` sempre
-preparados. O import os descarta - certo, concessão é derivável -, **mas a derivação não os
-recriava**, porque o talento chegava com `choices: {}`.
-
-`featSpellBag` reconstrói o sub-bag casando as magias do ator contra os MESMOS descritores que a UI
-usa (`parseChoices` + `spellChoosePredicate`), então nada ali sabe de talento específico. Quando há
-listas ALTERNATIVAS (Cleric/Druid/Wizard), vence a que explica mais magias da ficha.
-
-Duas afinações que a medição pediu, ambas lendo marcas que o próprio documento deixa:
-
-- **a magia de um talento carrega o ATRIBUTO dele e a FREQUÊNCIA dele**; a da classe herda os dois e
-  vem sem. É o que separa o Bless do domínio (sem `ability`, sem `uses`) do Command do Magic
-  Initiate (`wis`, 1/descanso) quando os dois cabem no mesmo filtro;
-- **uma magia que uma concessão FIXA já explica não é candidata** - sem esse corte, o Fire Bolt da
-  linhagem infernal do Tiefling ocupava um slot de escolha e o Mage Hand que o jogador escolheu
-  ficava de fora, perdido.
-
-Medido: das 81 magias `prepared: 2` que sumiam, **57 voltaram**. As 24 restantes são a mesma família
-com OUTRO dono (linhagem, subclasse, Magical Discoveries) - ver o hand-off.
-
-### TC-0061 - escolhas dentro de outros documentos (skills 39 → 0, tools 12 → 0)
-
-Três casos, e o terceiro revelou um bug maior que o enunciado:
-
-1. **Ferramentas iniciais da classe.** O premade titula o Trait "Tool Proficiencies"; o nosso
-   descritor se chama "Musical Instruments". `choiceTraitBag` casava só por título, então as 3 do
-   Bardo e a do Monge se perdiam. Agora há um índice de reserva por **(kind, nível)**, usado quando
-   o título não casa e só se for único ali - a mesma lição do TC-0056: um documento de fora escreve
-   o título que quiser.
-2. **Bonus Proficiencies de subclasse.** As 3 perícias do College of Lore vivem no item de
-   SUBCLASSE, que o import não lia. Passou a ler.
-3. **Traits dentro de um talento concedido.** O Skilled guarda os três picks numa Trait só, sem
-   título, misturando `tool:` e `skills:` - então cada chave é roteada pelo PRÓPRIO prefixo, e o
-   destino pode ser o descritor do kind exato ou um `mixed` que aceite aquele kind.
-
-**O achado maior, ao fazer (3):** o talento do **Versatile do Humano se perdia INTEIRO**. O
-`value.added` de um `ItemChoice` é ANINHADO POR NÍVEL (`{"0": {id: uuid}}`), e o código assumia a
-forma plana do `ItemGrant` - `byId.get("0")` não devolvia nada. Sonda nas 48 fichas: **as 12 que têm
-ItemChoice de raça usam a forma aninhada**, ou seja o caso plano assumido não existe em nenhuma.
-`addedItemIds` passou a ler as duas.
-
-### TC-0076/TC-0078 - a regra CONDICIONAL de arma, enumerada
-
-O Monge 2024 é proficiente em "Simple weapons and Martial weapons that have the Light property".
-Isso vira uma frase na ficha (o certo para o jogador ler), mas o Foundry só entende CÓDIGOS - e sem
-eles o Monge importado **não é proficiente com cimitarra**.
-
-Não precisou de curadoria: o 5etools guarda a mesma regra estruturada em
-`weaponProficiencies[].all.fromFilter`, o mesmo insumo do `weaponFilterAllows` (DDL-0033). A ficha
-continua mostrando a frase; só o export enumera (`derived.weaponNames`, campo à parte).
-
-De passagem, uma correção do INSTRUMENTO: o premade do Ranger lista `longbow`/`shortbow` ao lado de
-`sim`+`mar`, que já os cobrem. Quem tem os dois é proficiente com toda arma mundana, então os dois
-lados são reduzidos antes do diff - sem esconder o caso que importa, porque Monge e Ladino têm só
-`sim` e para eles cada arma marcial PRECISA estar enumerada.
-
-### Verificação
-
-1209 testes (+16), lint limpo, sweep 285/285 `--strict`, `npm run t2` de **257 → 190** achados
-(+23 esperadas), e passada ao vivo (o card de Proficiências do Monge segue mostrando a FRASE, não as
-armas uma a uma; zero erros de console). Decisões em DDL-0075.
-
----
-
-## 99. Phase T - conhecida x preparada, e o resto do TC-0081 (190 → 170)
-
-Duas frentes numa sessão: fechar as 24 magias que ainda se perdiam ao importar um ator externo, e
-modelar a distinção **conhecida x preparada** que o TC-0080 tinha deixado como decisão do usuário.
-
-### O resto do TC-0081: um genérico no lugar do específico
-
-As 24 restantes eram a mesma família com outro DONO. `featSpellBag` virou **`spellChoiceBag`**,
-parametrizado pelos descritores da entidade, e ganhou três chamadores: espécie (o cantrip à escolha
-da linhagem élfica), classe e subclasse (as Magical Discoveries do College of Lore, o terreno do
-Circle of the Land).
-
-Duas coisas que o genérico precisou aprender:
-
-- **uma lista alternativa pode não ter escolha nenhuma.** As quatro do Circle of the Land são listas
-  FIXAS de terreno; a única evidência de qual o jogador tomou são as magias concedidas que a ficha
-  tem. Daí o `grantedFor`: vence o grupo que explica mais magias somando escolhas casadas E
-  concessões fixas. Sem evidência alguma, nenhum grupo é escolhido.
-- **ninguém reivindica a mesma magia duas vezes.** O conjunto `explained` passou a ser MUTADO por
-  cada chamada, na ordem espécie → talento → classe → subclasse; e numa bag de classe, uma magia que
-  o ator atribui a OUTRA classe (`sourceItem`) nem é candidata.
-
-Medido: as magias `prepared: 2` que sumiam foram de **81 a zero** nas 48 fichas.
-
-### Conhecida x preparada (TC-0080, decisão do usuário)
-
-A distinção é **uma bandeira no ref que já existe**: `SpellRef.prepared === false` = no repertório,
-não preparada. Ausente = preparada - o que faz toda ficha antiga derivar idêntica, sem migração e
-sem bump de schema.
-
-- **A derivação separa em vez de reinterpretar:** `origin.prepared` continua sendo o que está
-  preparado e ganha o irmão `origin.unprepared`, então nenhum consumidor antigo mudou de sentido.
-- **Cantrip e arcanum ficam de fora** - um está sempre disponível, o outro não gasta espaço.
-- **O limite de conhecidas sai do dado:** `spellsKnownProgressionFixed`, que entre as 12 classes de
-  2024 só o Mago tem. Cuidado do campo: ele é o DELTA por nível (`[6,2,2,…]`), não o total, então o
-  limite é a soma acumulada. E é PISO, não teto (o Mago copia de pergaminho), então passar do número
-  só acende o contador.
-- **Toggle no molde do inventário:** `PreparedToggle` é o mesmo átomo do "equipar" - só o círculo,
-  preenchido = preparada -, e a linha despreparada recua para o segundo plano.
-- **Padrão ao adicionar: preparada; cheio, despreparada.** Isso obrigou dois ajustes que a passada
-  ao vivo pegou: o seletor parou de esconder os círculos quando as preparadas enchem (o filtro
-  existia para mostrar "onde cabe", e agora sempre cabe), e o botão "+ Prepare spell" parou de
-  desabilitar por preparadas cheias.
-- **Export/import:** `prepared: 0` nos dois sentidos - a forma que o próprio premade usa. A bandeira
-  entrou no `decisionSummary` do sweep, pela regra do TC-0055 (campo de decisão fora do oráculo
-  deixa o round-trip cego).
-
-O que continua fora, e é o certo: as 35 magias soltas da Riswynn (Ladino/Thief, sem conjuração) não
-têm origem que as segure.
-
-### Verificação
-
-1218 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de **190 → 170**, e ao vivo num Mago
-2: Known 0/8 → 6/8, a 6ª magia entrando despreparada com Prepared parado em 5/5, o toggle levando a
-6/5 em vermelho e voltando, mobile 375px sem overflow, zero erros de console. Decisões em DDL-0076.
-Achado novo de passagem: **TC-0082** (o Find Familiar do Wild Companion, que o dado codifica como
-sempre-preparada mas o texto trata como permissão de conjurar).
-
----
 
 ## 100. Selector: chip de filtro que não leva a lugar nenhum fica DESABILITADO
 
@@ -5758,279 +4459,6 @@ Fica anotado, não corrigido (não é regressão, e o rótulo é decisão de pro
 raridade sem chip nenhum** - `unknown` (38), `unknown (magic)` (255) e `varies` (8).
 
 Verificado: 1226 testes (+2), lint, sweep 285/285 `--strict`, e ao vivo (espécie, classe e loja).
-
----
-
-## 102. Phase T - T2b sessão 7: o item de ESPÉCIE, as escadas de concessão e as activities do SRD (170 → 71)
-
-Sessão de burn-down que fechou **todas as pendências `TC-` abertas** do ledger: TC-0064, TC-0065,
-TC-0070, TC-0071 (a parte acionável), TC-0072 e TC-0082. Decisões em **DDL-0079**.
-
-**O item de ESPÉCIE ganhou a forma que o dnd5e usa (TC-0064, decisão do usuário).** Antes só um
-traço com ação ou recurso virava item e o resto ficava como Active Effect no item de raça: no
-Foundry o jogador não VIA "Fey Ancestry", "Trance" ou "Powerful Build" entre as features. Agora
-**todo traço vira um item**, com o nível lido da prosa (`"When you reach character level 5"` /
-`"Starting at character level 5"`, as duas fórmulas do dado) - então **Draconic Flight e Large Form
-deixaram de ser concedidos no nível 1** e viram a receita de compêndio do nível 5. Junto vieram o
-**ScaleValue do Breath Weapon** (a activity do sopro referenciava `@scale.dragonborn-silver.breath`,
-que não existia - o dano rolava ZERO) e o Trait de resistência.
-
-**O nome do documento passou a ser o do dnd5e** ("Elf, High" no lugar de "Elf; High Elf Lineage";
-"Elven Lineage, High Elf" no lugar de "Elven Lineage (High Elf)"), o que também destravou o
-`compendiumSource` da espécie e dos traços. A ficha do FlyBy continua mostrando o nome do livro.
-
-**A ancestralidade volta de um ator externo (TC-0065).** O documento do dnd5e nomeia a espécie
-inteira, então "Dragonborn" não diz a cor: ela vive no Trait de resistência (`dr:cold`) e, no
-Goliath, no `ItemChoice`. `inferLineage` lê essas marcas; o NOSSO export leva a linhagem exata numa
-flag (DDL-0028).
-
-**As escadas de concessão cobrem os níveis JÁ alcançados (TC-0072)**, com `value.added` apontando
-para o item de magia embutido - é o que diz ao Foundry de onde veio a magia que o personagem já
-tem. Vale para subclasse e linhagem; para a classe, só os níveis futuros (é lá que ela faz
-diferença, e o SRD não tem o passo).
-
-**Activities geradas do SRD (TC-0070, decisão do usuário).** Das 133 features do SRD com activity,
-13 eram curadas à mão. `npm run gen:srd` extrai as activities **e os Active Effects que elas
-referenciam por `_id`** - nunca separados. Precedência curado → SRD → overlay, **tudo-ou-nada por
-tier** (somar os dois fazia "Cunning Action: Hiding" sair em dobro). O parser
-(`scripts/lib/yamlLite.js`, 6 testes) cobre o subconjunto de YAML dos packs, medido nos 336
-arquivos, em vez de uma dependência nova só para o gerador.
-
-**Menores:** "Metamagic Options"/"Eldritch Invocation Options" são CATÁLOGO de optional features e
-deixaram de virar item (detectado pela forma, não por nome); o talento escolhido pela espécie virou
-`ItemChoice`; e o **Find Familiar do Wild Companion deixou de ser concedido** - a feature permite
-conjurá-lo, não o deixa preparado (TC-0082, novo registro `REMOVED_ADDITIONAL_SPELLS`).
-
-Verificado: 1238 testes (+12), lint, sweep 285/285 `--strict`, `npm run t2` de **170 → 71** achados
-(+33 nomeadas como esperadas), e uma sonda sobre as 48 fichas confirmando **zero** referência de
-effect órfã e **zero** effect duplicado.
-
----
-
-## 103. Revisão dos adiados: os três aprovados automaticamente (63 achados)
-
-Depois do levantamento em `DEFERRED-REVIEW.md`, os itens **sem malefício algum** foram
-implementados por regra do usuário.
-
-**A1 - o item "Unarmed Strike" do Bárbaro e do Monge.** É o que dá o botão de ataque desarmado na
-ficha do Foundry, e um Monge criado no FlyBy chegava lá **sem a arma principal da classe inteira**.
-O comparador não denunciava porque as fichas premade já trazem o item (entrava pelo import e voltava
-no export) - só um personagem criado do zero sofria. A premissa antiga do TC-0071 ("emiti-lo seria
-inventar um documento") estava ERRADA: o item existe no `equipment24` do dnd5e. `npm run gen:srd`
-passou a emitir `SRD_CLASS_WEAPON_GRANTS` lendo o ItemGrant do PRÓPRIO documento da classe - a única
-fonte que diz qual uuid usar, porque o Bárbaro aponta para a cópia do `equipment24` e o Monge para a
-do `classes24`. O import o ignora como inventário (a derivação o recria da classe).
-
-**A2 - `{@table}` inline deixou de ser inerte.** O motivo de estar inerte era o risco de link morto,
-e ele caiu no DDL-0035, quando as ~2300 tabelas do gendata passaram a ser carregadas. `lookupTable`
-indexa por `nome|fonte`; o `TableLink` abre a tabela no popup de regra e degrada para texto simples
-quando não resolve. Alcance medido: **230 tags no conteúdo que exibimos, 226 resolvem** - a maior
-parte em descrição de item mágico.
-
-**A3 - as raridades sem chip.** `unknown`, `unknown (magic)` e `varies` não tinham opção no filtro,
-e por isso **301 itens eram inalcançáveis**. Entraram no `RARITY_LABEL` (o que também limpa o rótulo
-do card) e no `RARITY_OPTIONS`; nenhuma vira badge colorido, que continua só para os tiers reais.
-
-Verificado: 1247 testes (+9), lint, sweep 285/285 `--strict`, `npm run t2` de 71 → **63**, e ao vivo
-no browser (o chip "Unknown (Magic)" devolvendo os 255 itens; o link "minor beneficial" do Axe of
-the Dwarvish Lords abrindo a tabela d100, com os links de condição vivos dentro dela).
-
----
-
-## 104. Revisão dos adiados, leva 2: os aprovados restantes e as sugestões (63 → 43)
-
-Segunda leva do `DEFERRED-REVIEW.md`, sob o princípio que o usuário fixou: **o SRD é referência, não
-autoridade** - onde segui-lo penaliza o usuário ou o funcionamento da ficha exportada, divergimos, e
-o comparador NOMEIA a divergência em vez de escondê-la.
-
-**A5 - o pseudo-idioma `other`.** O 5etools usa a chave `other` quando o idioma é o próprio do
-cenário, e a ficha mostrava literalmente "Other" - no card de Idiomas de 21 espécies e como OPÇÃO do
-seletor do Simic Hybrid, a única escolha do app que não dizia o que era. Novo registro curado
-`engine/speciesLanguages.js` (22 entradas). **A varredura correta não é sobre `races.race`:** a
-primeira passada fez isso e ficou incompleta em três entradas, porque `other` também vem de
-`races.subrace` (o Keldon) e de reimpressões por `_copy` (Minotaur|MOT). O cabeçalho do módulo manda
-varrer o CATÁLOGO RESOLVIDO. O **Human (Ixalan) fica de fora de propósito**: lá o idioma depende da
-origem nacional do personagem, então não há resposta única, e "Other" é a degradação honesta.
-
-**A4 - o boon da ancestralidade como item próprio.** "Cloud's Jaunt" vira documento à parte, por uma
-regra ESTREITA: o traço tem de ter exatamente UM sub-item nomeado E o nome tem de existir no
-`origins24` (a base do Goliath lista os seis no mesmo traço, e por isso não casa). Entra num passo de
-advancement próprio, para não inflar a contagem do passo oficial.
-
-**5.1 - Unarmed Strike para TODA classe.** A primeira divergência deliberada do SRD sob o princípio
-acima: ele concede o item só ao Bárbaro e ao Monge, mas a regra 2024 diz que toda criatura pode fazer
-um Ataque Desarmado, e sem o item um Mago desarmado chega ao Foundry sem botão nenhum de ataque.
-
-**5.2 - as convenções de nível viram `EXPECTED`.** O SRD não tem regra (`@0` no Gnome, `@1` no Elfo).
-**Antes de nomeá-las, fechei uma lacuna REAL que o predicado esconderia:** a magia ESCOLHIDA da
-linhagem (o cantrip do Alto Elfo) não entrava na escada de concessão porque o `bag` não era passado
-ao `grantedSpells`.
-
-**5.3 - aviso de magia sem origem no import.** Um ator externo pode listar magias que nenhuma classe
-da ficha sabe conjurar (35 no premade da Riswynn); elas somem, e sumir CALADO era a parte ruim. O
-import agora avisa. A forma elaborada (guardar o conteúdo) fica pendente como B4 no
-`DEFERRED-REVIEW.md`.
-
-**A lição da leva:** divergir do SRD sem NOMEAR a divergência faz o placar SUBIR. O Unarmed Strike
-universal acrescentou 40 achados de `items.gear` e inflou o `class-spell-ladder` de 6 para 46, porque
-o passo novo se misturava ao ItemGrant oficial. A correção foi dupla - título de advancement próprio
-para o que é nosso, e uma entrada `EXPECTED` com o motivo escrito.
-
-Verificado: 1259 testes (+12), lint, sweep 285/285 `--strict`, `npm run t2` de 63 → **43** (+85
-nomeados), e ao vivo (o seletor de idioma do Simic Hybrid mostrando "Elvish" e "Vedalken"; um Monge,
-um Bárbaro e um Fighter criados do zero saindo com o item de ataque desarmado).
-
-**Achado colateral, NÃO corrigido:** o `BuilderInner` viola a ordem dos Hooks (erro de console ao
-abrir a ficha). Confirmado por A/B como **pré-existente**, não regressão desta sessão. Registrado
-como TC-0083.
-
----
-
-## 105. Revisão dos adiados, leva 3: as decisões B (43 → 35)
-
-As cinco decisões que faltavam no `DEFERRED-REVIEW.md`, resolvidas pelo usuário.
-
-**B1 - os chips de meta duplicados: MANTER, com uma razão melhor que a minha.** Eu tinha tratado a
-prosa redundante de "Creature Type"/"Size"/"Speed" (95 entradas do dado) como ruído. Não é: **muitas
-dessas prosas detalham o funcionamento CORRETO da feature** - a limitação do voo à armadura leve
-(média no Tiefling Winged) está no TEXTO, não no chip -, servem de lembrete do traço para jogadores
-novos, e o chip continua útil como referência rápida para quem já conhece a regra. As duas
-apresentações têm função diferente. Encerrado, não é mais pendência.
-
-**B2 - o `swap` do Dwarf: FEITO.** O módulo `legacyHalflingLineages.js` virou o genérico
-**`legacySwapLineages.js`**, com um registro `SWAP_LINEAGES` de duas entradas. O "Dwarf Lineage"
-oferece **Hill** e **Mountain**, cada uma TROCANDO o Dwarven Toughness que a base 2024 absorveu do
-Hill - exatamente a forma do DDL-0063, incluindo a regra de que o conjunto tem de conter a opção que
-reproduz a base.
-
-**Duas armadilhas que isso destapou, e valem como regra:**
-1. **Um `swap` move a MECÂNICA junto com o traço.** O Dwarven Toughness (+1 HP/nível) vive num
-   registro keyed por nome de raça RESOLVIDA (`hpBonuses`); ao virar linhagem, a chave `Dwarf|XPHB`
-   deixou de casar e **nenhum** Dwarf ganhava o HP. Quem acrescentar uma espécie ao `SWAP_LINEAGES`
-   tem de migrar a chave para a opção que carrega o traço.
-2. **Assinatura derivada larga dá falso positivo - foi a SEGUNDA vez.** O gerador marcava "o
-   documento do SRD guarda a linhagem dentro de si" com um `- dr:` em qualquer lugar do YAML; a
-   resistência a veneno do Dwarven Resilience é um **grant fixo**, não escolha, então o Dwarf entrava
-   e a linhagem que NÓS criamos herdava o nome e a procedência do documento publicado - o near-match
-   que o DDL-0056 proíbe. Agora o `dr:` tem de estar sob `pool:`.
-   **O sweep pegou as duas na mesma rodada** (137 linhas vermelhas).
-
-**B3 - o polimento do PDF: ADIADO** (a ficha digital já cumpre o papel da impressa). Quando voltar, o
-overflow vem primeiro: é a única parte que pode inutilizar a folha.
-
-**B4 - magias sem origem: LOSSLESS FEITO.** Novo campo aditivo `character.unassignedSpells` (balde de
-CARGA, sem bump de schema): o que um ator importado trazia e nenhuma classe da ficha sabe conjurar
-fica guardado e **volta ao Foundry no re-export**. Não aparece na Spellbook nem conta em limite
-nenhum, porque não tem origem. Medido no premade da Riswynn L17: 34 magias entram, 34 saem, e o balde
-é estável num segundo ciclo. A atribuição de origem pelo jogador ficou agendada (B4b) - o balde já
-guarda `SpellRef`, a mesma forma do `ClassEntry.spells`, então atribuir será MOVER o ref.
-
-**B5 - criação em nível alto: manter como está**, e as menções foram removidas da documentação
-(CLAUDE.md "Explicitly OUT OF SCOPE" e TESTING-PLAN).
-
-Verificado: 1263 testes (+4), lint, sweep **286/286** `--strict` (uma linha nova: Hill e Mountain no
-lugar do Dwarf base), `npm run t2` de 43 → **35** (+93 nomeados), e ao vivo - o preview do Dwarf
-mostra "Dwarf Lineage" com Hill e Mountain, sem erro de console novo. A pane do browser não compôs
-frames neste ambiente (mesma limitação do DDL-0066), então a passada visual foi por `read_page` e
-pelos mesmos code paths da UI.
-
----
-
-## 106. Revisão dos adiados, leva 4: C0, C4, as sugestões e a família das resistências (35 → 18)
-
-Quarta e última leva da revisão aberta em `DEFERRED-REVIEW.md`. Fecha os dois itens C que ainda
-tinham resolução pendente, as duas sugestões que dava para fazer antes do T2d, e o TC-0083 - que
-**não era bug**. Ver DDL-0080 (mesma entrada das levas 1-3).
-
-**C0 - a ancestralidade volta a ser uma ESCOLHA aos olhos do Foundry.** Uma espécie com linhagem
-resolvida guarda só o traço escolhido, então o item de raça saía sem nenhum `ItemChoice` - o Foundry
-recebia o boon do Goliath como se fosse concessão fixa e não oferecia trocá-lo. `ancestryBoonPool`
-(`engine/foundryItems.js`) monta o pool dos seis boons a partir do traço-guarda-chuva da espécie
-BASE, e o passo só é emitido quando **pelo menos dois** uuids resolvem (com um só, não há escolha a
-oferecer). Sai um `ItemChoice@0` com `restriction: {type:'race'}` e `value.added` apontando para o
-item embutido do boon escolhido. A classe `advancement.race` foi a **zero**.
-
-**C4 - um pack agora é CONTÊINER + conteúdo, nos dois sentidos.** `unpackContainer` desdobra a
-entrada única do inventário em um item `container` mais os itens de dentro, tudo derivado do
-`packContents` do 5etools (20 packs o declaram). Três cuidados que a medição impôs:
-- **o peso do contêiner é o peso do RECIPIENTE**, não o total do pack: o Foundry SOMA o conteúdo, e
-  usar o total contava tudo duas vezes;
-- **o preço fica só no contêiner** (`price: 0` nos filhos), pela mesma razão;
-- **o import recolhe de volta numa entrada só**, pulando os filhos por `system.container` e o
-  contêiner por ele ter `packContents` - a decisão do DDL-0013 (o pack é um item) fica intacta.
-Idêntico ao premade da Akra: 5 lb, 33 gp, 6 conteúdos.
-
-**O que abrir o comparador revelou.** `container` estava na lista `DELIBERATE` (o comparador nem
-olhava), e tirá-lo de lá expôs **55 achados reais**: Bag of Holding, Backpack e Pouch saíam como
-`equipment`, e por isso **não guardavam nada** no Foundry. `RECLASSIFIABLE` ganhou `container` e o
-tipo passa a vir do `equipment24` como qualquer outro. **Regra que fica: uma entrada em `DELIBERATE`
-protege uma decisão e ao mesmo tempo CEGA o oráculo - revise-a quando a decisão mudar.**
-
-**§5.2 - as 3 magias que faltavam eram DUAS causas distintas**, como a sugestão previa:
-- uma magia de **PERGAMINHO** (`sourceItem` apontando para um `consumable`) caía num balde de classe
-  que ninguém lia. É o mesmo defeito do B4 por outra porta: agora é roteada para a carga
-  (`SPELL_OWNED_BY_ITEM` em `spellSourceClass`), então volta ao Foundry no re-export;
-- a **cópia do cantrip por invocação** é convenção do premade (a invocação, no nosso modelo, é uma
-  feature; o cantrip é um só). Nomeada `invocation-spell-copy`.
-
-**§5.4 - `npm run check:keys`, a rede contra chave morta.** `scripts/check-species-keys.js` cruza os
-6 registros curados keyed por `Nome|FONTE` de espécie com o catálogo RESOLVIDO (espécies + toda
-linhagem) e acusa chave que não casa nada. Nasceu da armadilha da leva 3 (o `Dwarf|XPHB` do
-`RACE_HP_PER_LEVEL` parou de casar quando o Dwarf ganhou linhagem, e **nenhum** Dwarf ganhava mais o
-+1 HP/nível). Hoje: 0 chaves mortas.
-**A sonda deu um falso positivo antes de acertar**, e o instrumento é que estava errado: o
-`naturalArmorFor` também tenta `<baseName>|<fonte da variante>` (é como o Goblin de Ixalan herda o
-Grit), então essa forma precisa entrar no pool. **Descartar o defeito do instrumento é o primeiro
-passo, sempre.**
-
-**TC-0083 (ordem dos Hooks no `BuilderInner`) - `wontfix`, não era bug.** Era resíduo de HMR: eu
-havia editado o `useCharacterImport` momentos antes das duas medições. O A/B definitivo, em **ABA
-NOVA**, mostra as duas versões do arquivo carregando limpas. O `useCallback` que eu tinha removido
-"para consertar" foi restaurado. **Regra: `location.reload()` na mesma aba não descarta artefato de
-HMR** - num projeto com o React Compiler o grafo de módulos sobrevive ao reload. Abra uma aba nova
-antes de tratar um aviso de ordem de hooks como bug.
-
-**Uma família REAL que a varredura destapou: resistência a dano de feature de subclasse.** Ao
-conferir os achados restantes, dois deles (`traits.dr` + metade de `advancement.subclass`) não eram
-quirk nem espera de T2d: **um Sorcerer Draconic 6, um Warlock Celestial 6 ou um Cleric War 17 não
-tinham resistência nenhuma na ficha.** A varredura das 37 features de fonte atual que citam
-`{@variantrule Resistance|Immunity}` separa quatro grupos, e só o primeiro deriva - o critério inteiro
-está no cabeçalho do `engine/subclassGrants.js`:
-- **permanente e FIXA** (6 casos) -> campo `resist` novo no `SUBCLASS_GRANTS`, consumido pelo
-  `deriveDamageTraits`: Avatar of Battle, Guarded Mind, Psychic Defenses, Radiant Soul, Thought
-  Shield, Necrotic Husk;
-- **permanente À ESCOLHA** (1 caso) -> Elemental Affinity vira uma escolha kind `resist` no
-  `SUBCLASS_FEATURE_GRANTS`, com o pool fechado dos cinco tipos dracônicos. O kind já existia (a
-  escolha estruturada de raça/talento o usa), então UI, completude, autoBuild e derivação vieram de
-  graça;
-- **RE-ESCOLHIDA a cada descanso** -> não é decisão de build, é estado de sessão: Fiendish
-  Resilience, Dread Allegiance, Nature's Ward. Fica na prosa até a Phase C ter play-state;
-- **condicional a uma aura/forma/reação, ou não sobre um TIPO de dano** -> prosa, pela mesma regra que
-  o `damageTraits` já aplicava. Inclui a versão PHB do Avatar of Battle ("from nonmagical attacks"),
-  que é um `bypasses` do Foundry - por isso aquela entrada casa a fonte.
-No EXPORT a escolha vira um `Trait` no nível da feature com pool `dr:<tipo>` (o padrão do DDL-0056
-estendido), e o import lê `dr:` de volta. **Regra que fica: antes de cadastrar o caso que apareceu,
-varra o dataset** - foi o que separou 7 casos acionáveis de 30 que pareciam iguais.
-
-**E o segundo Fighting Style do Champion voltou.** O premade encoda a escolha como um `ItemChoice` de
-tipo feat no item de SUBCLASSE (nível na chave de `choices`, não no campo `level`); nós não emitíamos
-o passo e o import não o lia, então **um Champion vindo de um ator externo perdia o estilo em
-silêncio**. O `buildItemChoiceAdvancements` ganhou um terceiro caso (pool de talentos, `restriction`
-de feat, índice de itens à parte para um talento homônimo de uma optional feature não se confundir) e
-o import ganhou o `subclassFeatChoiceBag`, que casa o passo pelo NÍVEL da chave e, na falta, pelo
-título.
-
-**Documentação.** `DEFERRED-REVIEW.md` foi reestruturado a pedido do usuário: PENDENTE / RESOLVIDO /
-DECIDIDO POR DESIGN / FORA DO ALCANCE, cada item em uma seção só (a versão anterior misturava
-resolvido com pendente, especialmente no C7). Saíram as menções ativas às três decisões que na
-prática são de design: os chips de meta redundantes (que o usuário decidiu MANTER - a prosa detalha o
-funcionamento correto da feature, como a limitação do voo à armadura leve), o nome do item de
-background e as classes sidekick/UA. As entradas históricas do DDL log ficam como estão.
-
-Verificado: 1274 testes (+11), lint, `npm run check:keys` (0 mortas), sweep **286/286** `--strict`,
-`npm run t2` de 35 → **18** (+65 nomeados como esperados), e ao vivo (o pack no inventário, o A/B do
-TC-0083 em aba nova, a resistência derivando ponta a ponta na ficha e no ator). **Três classes de
-achado foram a zero** (`traits.dr`, `advancement.subclass`, `items.feat`).
 
 ---
 
@@ -6171,3 +4599,64 @@ lá deixa o round-trip cego). Pelo NOME do pai, não pelo uid - o uid é regerad
 Verificado: 1304 testes (+23), lint, `npm run check:keys`, sweep **286/286** `--strict`, `npm run t2`
 estável em **18**, e ao vivo (guardar/tirar em lote, aninhamento, a regra de peso, a tela de um item
 guardado sem Equip, zero erro de console, sem overflow a 375px).
+
+## 109. Consolidação da documentação: o que se lê toda sessão cai de 368 KB para 32 KB
+
+Levantamento pedido pelo usuário sobre TODOS os markdowns do projeto, para tirar
+redundância, contradição e ruído. O sintoma que ele descreveu: arquivos longos demais
+acabam citando decisões velhas já alteradas, problemas já resolvidos e minúcias de UI,
+e isso atrapalha em vez de ajudar.
+
+**A redundância estrutural encontrada.** Cada sessão da Phase T estava escrita QUATRO
+vezes: uma seção do CHANGELOG, um hand-off do `TESTING-PLAN` §7, a nota da linha no
+`COVERAGE.md` e a entrada `TC-` no ledger - e o `CLAUDE.md` §4 ainda narrava a mesma
+coisa uma quinta vez. São 34 seções, 42 hand-offs e 86 entradas para os mesmos eventos.
+
+**As contradições que isso já tinha produzido**, todas verificadas antes de mexer:
+- o `CLAUDE.md` §4 parava na "T2b sessão 6, 170 achados" enquanto o estado real era
+  **18** - o arquivo lido primeiro em toda sessão dava o status errado;
+- o cabeçalho dele dizia "Status as of 2026-07-09", três semanas atrás;
+- **cinco referências a um roadmap numerado do README que não existe** ("README
+  roadmap item 9", "README #10", "renumbered 11/12/13"), e a regra 2 do acordo de
+  trabalho mandando atualizá-lo;
+- quatro seções do CHANGELOG ainda intituladas "(in progress)" para fases concluídas;
+- o §2 listava três "known limits" já corrigidos na Phase T;
+- o `SPECIES-FAMILIES-PLAN` dizia que o Dwarf estava fora de escopo (entrou no
+  DDL-0080), apontava para uma seção `Explicitly OUT OF SCOPE` do `CLAUDE.md` que
+  havia sido apagada, e nomeava o módulo do swap de duas formas erradas;
+- seis comentários de código citavam seções do `DEFERRED-REVIEW` (`B4`, `C0`, `§5.1`,
+  `§5.3`) que a própria reestruturação daquele arquivo tinha eliminado.
+
+**A separação que resolve.** O log de decisões misturava duas coisas de natureza
+diferente: **regras duráveis** (varra a PROSA e não a tag; roteie pelo PREFIXO da
+chave e nunca pelo título; meça a premissa antes de corrigir) e **narrativa de
+sessão**. Várias regras estavam ditas três vezes em entradas diferentes, com as
+próprias entradas anotando "é a terceira vez". Agora:
+
+- **`CLAUDE.md`** (4725 -> 466 linhas) é operacional: projeto, acordo, orientação,
+  status atual, modelo do Foundry, um **§6 de regras destiladas** das 82 entradas sem
+  repetição, um **§7 "onde adicionar o quê"** com os pontos de curadoria, e um índice
+  de uma linha por DDL. Um mapa de documentos no topo diz o que ler e quando.
+- **`docs/DECISIONS.md`** guarda as 82 entradas por extenso, fora do caminho de
+  leitura automática.
+- **`docs/archive/`** recebe o que é história: os 42 hand-offs, o texto completo das
+  86 `TC-`, a revisão dos adiados e o censo das famílias de espécie. Cada um ganhou um
+  cabeçalho dizendo o que ainda vale e o que já está errado ali dentro.
+- **`CHANGELOG.md`** (6173 -> 4601) teve as 34 seções de sessão da Phase T dobradas
+  numa seção temática só (§27), que é o que o arquivo se propõe a ser: por tópico, não
+  por data. Os números de seção viraram ids estáveis e as seções foram ordenadas.
+- **`TESTING-PLAN.md`** (1473 -> 467) mantém estratégia e protocolo; o §7 passa a ser
+  só o estado atual mais a última sessão, e o §6 ficou com os critérios de saída
+  (duráveis) em vez de repetir o estado.
+- **`testing/ISSUES.md`** (1687 -> 133) vira índice: zero achados abertos, uma tabela
+  das 86 fechadas e o molde para abrir a próxima.
+
+**Regra que fica:** um fato mora em UM lugar. O estado da campanha é o `COVERAGE.md`,
+a decisão é o DDL, o que foi construído é o CHANGELOG, e o que a próxima sessão precisa
+saber é o `CLAUDE.md`. Quando os quatro contam a mesma história, três delas envelhecem
+sem ninguém notar - foi exatamente o que aconteceu.
+
+Verificado: 1304 testes, lint, `npm run check:keys` limpo, sweep **286/286**
+`--strict`, `npm run t2` estável em **18** (+113 esperados). Nenhuma mudança de
+comportamento: os únicos arquivos de código tocados foram seis comentários que
+apontavam para seções que não existiam mais.

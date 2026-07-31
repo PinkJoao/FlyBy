@@ -4772,3 +4772,51 @@ Verificado ao vivo (375px e desktop, sem overflow, zero erro de console): Quilla
 "Ranger already grants it, so assigning it here changes nothing". Riswynn L17 (Ladina,
 35 na carga) - só a sub-aba de carga, `+` desabilitado, nota na variante certa.
 1312 testes (+7), lint, sweep 286/286 `--strict`.
+
+## 112. Triagem medida dos 16 achados restantes: só 1 é defeito nosso
+
+Sessão de análise, sem mudança de código. Os 16 achados do `npm run t2` foram abertos
+um a um contra o dado, em vez de lidos da nota de triagem - que já tinha se mostrado
+errada duas vezes. O resultado virou **ordem de trabalho no TESTING-PLAN §7**, para a
+correção ser retomada numa próxima sessão.
+
+| N | Categoria | Veredito |
+|---:|---|---|
+| 1 | `advancement.class` (Bárbaro) | **bug nosso** - TC-0088, aberto |
+| 1 | `details.xp` (Riswynn) | defeito do premade, confirmado |
+| 2 | `spell.method` (Sefris) | defeito do premade, e a nossa saída é a que funciona |
+| 6 | `advancement.class.grants` (Paladino) | forma de documento, sem perda |
+| 6 | `feat.activities` | indecidível sem o T2d |
+
+**O único bug (TC-0088).** Estava catalogado como "a forma do capstone do Bárbaro", um
+quirk. Não é. O 5etools traz `Improved Brutal Strike` em @13 **e** @17 com textos que
+não se sobrepõem: o @13 adiciona os efeitos Staggering/Sundering Blow, o @17 diz que o
+dano sobe para **2d10** e que se pode usar **dois efeitos** de uma vez. O dnd5e publica
+os dois documentos e o premade carrega ambos; nossa dedup por nome mantém só o @13.
+Medido dos dois lados: **a ficha ao vivo mostra os dois** (o `classProgression` resolve
+por `name|source|level`), **o ator exportado perde o @17**. A raiz é o DDL-0056, que
+decidiu procurar o item numerado `(2)` só na escada de níveis FUTUROS - por isso quem
+*alcançou* o 17 é justamente quem perde.
+
+O `npm run check:uuids` **não pega este caso**: o uuid do `(2)` está registrado, e por
+isso a sonda reporta zero lacunas. No TC-0087 faltava o uuid; aqui falta emitir o item
+no nível alcançado. Dois modos de falha diferentes na mesma escada.
+
+**Os três defeitos de premade, com a evidência.** O XP da Riswynn L11 é `6500`, que é o
+limiar do nível **5** e é literalmente o valor do arquivo L05 dela: varri as 48 fichas e
+é **1 de 48** incoerente. O `Contact Other Plane` da Sefris sai `method: "spell"` num
+personagem que declara **só slots de pacto** (zero slots normais) e cujas 34 outras
+magias são `pact` - marcada assim ela não tem com o que ser conjurada no Foundry, então
+a nossa saída não é só diferente, é a funcional. (O `Dancing Lights` dela também é
+`spell` e está **certo**: vem da raça Drow, e nisso batemos.)
+
+**O que não é perda.** No Paladino, o `ItemGrant@2` do premade lista Fighting Style +
+Paladin's Smite + **Divine Smite (a magia)**, e nós listamos só as features. Conferido:
+Divine Smite e Find Steed **estão no nosso ator** como itens. A diferença é de qual
+passo os lista, não de conteúdo.
+
+**A lição de método, agora pela segunda vez.** A nota antiga registrava os 8
+`advancement.class.grants` como "o ItemGrant do Paladino" e o Bárbaro como quirk de
+capstone. As duas estavam erradas, e as duas caíram pelo mesmo movimento: abrir a fonte
+em vez de confiar no rótulo. **Uma categoria do comparador é um balde de causas
+DIFERENTES até alguém provar o contrário.**

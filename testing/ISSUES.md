@@ -11,14 +11,51 @@ wrong behavior) · `polish` (cosmetic / minor UX).
 
 ## Open findings
 
-**None.** Every `TC-` raised so far is closed (85 fixed, 1 wontfix). `KNOWN_ISSUES`
-and `WAIVERS` in `scripts/lib/roundtrip.js` are both empty, so any new round-trip
-diff fails its sweep row.
+**One: TC-0088** (below). `KNOWN_ISSUES` and `WAIVERS` in
+`scripts/lib/roundtrip.js` stay empty - TC-0088 is a `npm run t2` finding, not a
+round-trip one, so the sweep is green and must stay green.
 
-> This does **not** mean the export is certified. The `npm run t2` comparator still
-> reports 18 findings against the official premades; they are analysed in
-> `docs/archive/deferred-review.md` and mostly wait on T2d (real Foundry imports).
-> A finding only becomes a `TC-` entry once it is triaged as our defect.
+> The other 15 comparator findings are NOT defects of ours. The measured triage of
+> all 16 is in **TESTING-PLAN.md §7**; a finding only becomes a `TC-` entry once it
+> is triaged as our defect.
+
+## TC-0088 - o Barbaro perde "Improved Brutal Strike (2)" no export ao ALCANCAR o nivel 17
+
+- **Encontrado:** 2026-07-30, ao remedir os 16 achados do `npm run t2` um a um.
+  **Severidade:** bug (o jogador perde regra na ficha do Foundry). **Causa:** export.
+  **Status:** open. **Unidade:** `class:barbarian/*` do nivel 17 para cima.
+- **O sintoma no comparador:** `advancement.class · barbarian: premade=["ItemGrant@17"]
+  ours=["AbilityScoreImprovement@20"]` (Merric L17, 1 achado). Estava catalogado
+  como "a forma do capstone do Barbaro", um quirk. **Nao e.**
+- **O que se perde.** O 5etools tem `Improved Brutal Strike` DUAS vezes, e os textos
+  nao se sobrepoem:
+  - `@13` adiciona os efeitos *Staggering Blow* e *Sundering Blow*;
+  - `@17` diz que o dano do Brutal Strike sobe para **2d10** e que se pode usar
+    **dois efeitos** de uma vez.
+  O dnd5e publica os dois (`phbbrbImpBrutalS` e `phbbrbImp2Brutal`) e o premade
+  carrega ambos. Nossa dedup por nome em `resolveClassFeatures`
+  (`engine/foundryItems.js`) mantem so o `@13`.
+- **Medido dos dois lados (2026-07-30):**
+  - a ficha AO VIVO do FlyBy mostra os dois - o `classProgression` resolve por
+    `name|source|level`, entao o texto do 17 aparece normalmente;
+  - o ator EXPORTADO perde o `@17`: os dois itens de Brutal Strike contem
+    "Staggering", nenhum contem "2d10".
+- **A causa raiz e uma decisao antiga.** O DDL-0056 varreu o dataset, concluiu que
+  o Barbaro `@17` e o UNICO caso de re-listagem com item numerado proprio, e
+  decidiu procurar o `(2)` **so na escada de niveis FUTUROS**. Por isso quem
+  *alcancou* o 17 e justamente quem perde.
+- **O uuid nao e o problema:** `barbarian|improved brutal strike (2)` esta no
+  registro gerado, e por isso o `npm run check:uuids` reporta zero lacunas. A rede
+  do TC-0087 **nao pega este caso** - ali faltava o uuid, aqui falta EMITIR o item
+  no nivel alcancado. Sao dois modos de falha diferentes na mesma escada.
+- **Mesma forma do TC-0087:** nao quebra nada visivel, o export continua valido, o
+  sweep verde, e o jogador perde regra.
+- **Fix sugerido (nao implementado):** ao montar os itens de feature dos niveis JA
+  ALCANCADOS, consultar o item numerado `(<Nome> (2))` da mesma forma que a escada
+  futura ja consulta, em vez de dedupar por nome puro. Trocar a dedup por
+  "dedup por nome+nivel quando existe documento numerado publicado". Depois: teste
+  de regressao (um Barbaro 17 exporta os dois itens) e `npm run t2` deve cair de
+  16 para 15.
 
 ## Adding a finding
 

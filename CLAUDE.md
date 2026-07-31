@@ -137,9 +137,12 @@ expected across 10 deliberate divergences. `check:keys` and `check:uuids` clean.
 
 ### What is left
 
-1. **T2 burn-down.** The remaining 16 findings are triaged in
-   `testing/ISSUES.md`; the analysis of what each one is lives in
-   `docs/archive/deferred-review.md`. No `export: ok` row has been marked yet.
+1. **T2 burn-down.** The 16 remaining findings were measured one by one on
+   2026-07-30 and **only ONE is a defect of ours** (TC-0088, open in
+   `testing/ISSUES.md`). The full triage, with the verdict and the action for each,
+   is the work order in **`TESTING-PLAN.md` §7** - start there. Doing it takes the
+   comparator to 5, all of them waiting on T2d. No `export: ok` row has been marked
+   yet.
 2. **T2d - real Foundry imports.** The only step Claude cannot do:
    `npm run sweep -- --emit-actors`, then the user drags the actors into Foundry.
    Five concrete questions are waiting on it (listed in

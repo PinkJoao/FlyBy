@@ -416,21 +416,89 @@ that is non-trivial (matrix enumeration, waiver diffing) is unit-tested normally
 **No `export: ok` row has been marked yet** - the criterion is in §5.2, and it is
 deliberately stricter than "I did not spot anything".
 
-### What the remaining 16 findings are
+### The remaining 16 findings, measured one by one (2026-07-30)
 
-| N | Category | What it is |
-|---:|---|---|
-| 6 | `feat.activities` | activities we emit and the SRD does not (Paladin's Smite, Agonizing Blast). **Waits on T2d question 2** |
-| 6 | `advancement.class.grants` | the Paladin's `ItemGrant` composition: the step of the REACHED level does not list the granted spell alongside the features. Measured in DDL-0079; the spell item is on the actor either way |
-| 2 | `spell.method` | Sefris quirk: the document encodes one of her spells differently from all its siblings |
-| 1 | `advancement.class` | the Barbarian capstone's form (`ItemGrant@17` vs our `AbilityScoreImprovement@20`) |
-| 1 | `details.xp` | Riswynn L11 quirk: the premade's XP does not match its own level |
+Every one was opened against the source data instead of being read from the old
+triage note - which had been wrong twice in a row (see the sessions below). **Only
+ONE of the 16 is a defect of ours.** This section is the work order: the next
+session can execute it top to bottom.
 
-**Re-triaged 2026-07-30 and the old note was wrong.** It recorded all 8
-`advancement.class.grants` as "the Paladin's ItemGrant". Two of them were a MONK
-case, and it was a real bug, now fixed (see the last session below). The lesson:
-a finding that DISAPPEARS as the level rises is not a premade quirk - it is the
-signature of a ladder built from the current level.
+| N | Category | Verdict | Action |
+|---:|---|---|---|
+| 1 | `advancement.class` (Merric L17) | **BUG - ours** | **fix it**: TC-0088 |
+| 1 | `details.xp` (Riswynn L11) | premade defect, confirmed | name it `EXPECTED` |
+| 2 | `spell.method` (Sefris) | premade defect, and our output is the working one | name it `EXPECTED` |
+| 6 | `advancement.class.grants` (Krusk, Paladin) | document shape, no content lost | name it `EXPECTED`, recheck at T2d |
+| 6 | `feat.activities` (Krusk, Sefris) | undecidable until a real import | **leave alone** until T2d |
+
+Doing the four rows above takes the comparator from **16 to 5**, and the 5 left are
+exactly "waiting for a real Foundry import" - a scoreboard that tells the truth
+instead of mixing bugs with quirks.
+
+#### 1. `advancement.class` - the Barbarian (1). **This one is a real bug.**
+
+Catalogued as "the Barbarian capstone's form", a quirk. It is not. The full entry
+is **TC-0088** in `testing/ISSUES.md`, with the measurements. Short version: the
+5etools data carries `Improved Brutal Strike` at BOTH @13 and @17 with
+non-overlapping text (@13 adds two effects; @17 raises the damage to 2d10 and lets
+you use two effects at once), the dnd5e system publishes both documents, and our
+name-dedup in `resolveClassFeatures` keeps only the @13 one. The FlyBy sheet shows
+both; **the exported actor loses the @17 text.** Root cause is DDL-0056, which
+decided to look up the numbered `(2)` item only in the FUTURE ladder - so the
+character who actually reached 17 is exactly the one who loses it.
+
+#### 2. `details.xp` - Riswynn L11 (1). Premade defect, isolated.
+
+The file says `xp=6500`, which is the level **5** threshold and literally the same
+value as her own L05 file: a copy-paste. Level 11 needs 85,000, which is what we
+emit. Swept all 48 sheets: **1 of 48** has XP incoherent with its own level.
+
+#### 3. `spell.method` - Contact Other Plane on Sefris (2). Premade defect, and ours works.
+
+Sefris is a Warlock 11 whose actor declares **pact slots only** (`{"value": 3}`),
+zero regular slots. Of her 35 spells, 34 are `method: "pact"`. Two exceptions:
+
+- `Dancing Lights` is `spell` and that is **correct** - it comes from her Drow
+  lineage, not the pact, and we match it (so it is not a finding);
+- `Contact Other Plane` is `spell`, while its own siblings at 5th level (Geas,
+  Insect Plague) are `pact`.
+
+It is not only inconsistent with the document itself: marked `spell` on a character
+with no regular slots, it has **nothing to be cast with** in Foundry. Our `pact` is
+the functional encoding.
+
+#### 4. `advancement.class.grants` - the Paladin (6). Document shape, nothing lost.
+
+The premade's `ItemGrant@2` is Fighting Style + Paladin's Smite + **Divine Smite
+(a spell)**, and `@5` is Extra Attack + Faithful Steed + **Find Steed**. We list the
+two features and not the spell, in the step of the level already REACHED.
+
+**Verified: Divine Smite and Find Steed are on our exported actor** as items. The
+player has the spells; the difference is only which advancement step lists them. It
+would only start to matter if Foundry re-ran the advancement (a level-down/up inside
+it), which is T2d question 2 territory - so name it expected and recheck after the
+import.
+
+#### 5. `feat.activities` (6). Do not touch before T2d.
+
+- **Paladin's Smite**: we emit a `cast` activity pointing at the Divine Smite spell
+  and consuming one use. The SRD leaves `activities: {}`.
+- **Agonizing Blast**: we emit `enchant` ("Make Agonizing") over Eldritch Blast. The
+  SRD leaves it empty.
+
+In both cases the target item is also on the actor. Removing them loses a button the
+RAW grants; keeping them risks the use being counted twice. **Only a real import
+answers this** (T2d question 2).
+
+#### The method lesson, now twice over
+
+The old note recorded all 8 `advancement.class.grants` as "the Paladin's ItemGrant"
+and the Barbarian row as a capstone quirk. Both were wrong, and both were caught by
+the same move: **opening the source instead of trusting the label.** The Monk case
+announced itself in numbers nobody had read (it appeared at L01/L05 and vanished at
+L11/L17); the Barbarian one needed the feature text of two levels side by side.
+A category in the comparator is a bucket of DIFFERENT causes until someone proves
+otherwise.
 
 ### Blocked on the user (T2d)
 
@@ -445,6 +513,29 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
 5. Does a pack arrive as a container with its contents, and does carried weight match?
 
 ### Last session
+
+- **2026-07-30 (5)** - **Triagem MEDIDA dos 16 achados restantes; nada implementado.**
+  Sessao de analise a pedido do usuario, que quer retomar as correcoes na proxima.
+  Nenhum codigo mudou: 1312 testes, sweep 286/286 `--strict`, `t2` em 16.
+
+  **O resultado esta na secao "The remaining 16 findings" acima, que e a ORDEM DE
+  TRABALHO.** Resumo: **so 1 dos 16 e defeito nosso** (TC-0088, o Barbaro perdendo
+  o texto do Improved Brutal Strike @17 no export). 3 sao defeitos confirmados do
+  documento premade, 6 sao forma de documento sem perda de conteudo, e 6 nao dao
+  para decidir sem o T2d.
+
+  **Proxima sessao, na ordem:**
+  1. corrigir o **TC-0088** (entrada completa com o fix sugerido em
+     `testing/ISSUES.md`); `t2` deve cair de 16 para 15;
+  2. nomear como `EXPECTED` no `scripts/lib/premadeDiff.js`, cada uma com o motivo:
+     o `details.xp` da Riswynn, o `spell.method` da Sefris, e a composicao do
+     `ItemGrant` do Paladino (esta ultima com a ressalva de reconferir no T2d);
+     `t2` deve cair de 15 para 5;
+  3. **nao tocar** nas 6 `feat.activities` antes do T2d.
+
+  Feito isso, o placar passa a dizer a verdade: os 5 restantes sao exatamente
+  "esperando uma importacao real no Foundry", em vez de misturar bug com quirk.
+
 
 - **2026-07-30 (4)** - **P2 fechado, fora da T2: magias sem origem ganham sub-aba e
   podem receber uma classe.** 1312 testes (+7), lint, sweep 286/286 `--strict`,

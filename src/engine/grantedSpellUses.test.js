@@ -188,3 +188,34 @@ describe('curatedAdditionalSpells - concessão que a REGRA não dá (TC-0082)', 
     expect(names).not.toContain('find familiar');
   });
 });
+
+// A prosa do Contact Patron (Warlock @9) concede a conjuração GRÁTIS que o dado
+// não declara: o `additionalSpells` da classe põe Contact Other Plane em
+// `prepared` (sempre preparada) e nada mais. Antes disto o overlay só olhava
+// `castType: 'innate'`, então o uso grátis sumia inteiro do export - o jogador
+// perdia um recurso rastreado. Achado pelo usuário ao ler o premade da Sefris.
+describe('overlay sobre uma concessão PREPARED (Contact Patron, Warlock @9)', () => {
+  const warlock = [{ prepared: { 9: ['contact other plane|xphb'] } }];
+  const entity = { name: 'Warlock', source: 'XPHB' };
+
+  it('preenche a frequência que só a prosa declara', () => {
+    const out = granted(warlock, 11, entity);
+    const cop = out.find((s) => s.name === 'contact other plane');
+    expect(cop).toMatchObject({ castType: 'restLong', count: 1 });
+  });
+
+  it('abaixo do nível 9 a magia nem é concedida', () => {
+    expect(granted(warlock, 5, entity).map((s) => s.name)).not.toContain('contact other plane');
+  });
+
+  it('sem a entidade certa, nada é sobreposto', () => {
+    const out = granted(warlock, 11, { name: 'Warlock', source: 'PHB' });
+    expect(out.find((s) => s.name === 'contact other plane').castType).toBeFalsy();
+  });
+
+  // A outra metade do par: o que o 5etools JÁ codifica continua intocado.
+  it('frequência já declarada pelo dado passa intacta', () => {
+    const out = granted(drowLineage, 5, { name: 'Elf', source: 'XPHB' });
+    expect(out.find((s) => s.name === 'faerie fire').castType).toBe('daily');
+  });
+});

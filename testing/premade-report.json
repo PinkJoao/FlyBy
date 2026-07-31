@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T12:19:53.272Z",
+  "generatedAt": "2026-07-31T12:47:33.125Z",
   "deliberate": [
     "background item name (custom origins only)",
     "the class-granted \"Unarmed Strike\" (we grant it to EVERY class - see DDL-0080)",
@@ -24,7 +24,7 @@
     },
     {
       "id": "warlock-pact-method",
-      "why": "O documento da Sefris marca UMA magia (Contact Other Plane) como `method: \"spell\"` enquanto as outras 34 dela, incluindo as irmas do mesmo 5o circulo (Geas, Insect Plague), sao `pact`. Nao e so inconsistencia interna: o ator declara APENAS slots de pacto (`spells.pact.value = 3`, zero slots normais), entao no Foundry essa magia fica sem nada com que ser conjurada. A nossa saida (`pact`) e a funcional. O `Dancing Lights` dela, que tambem e `spell`, esta CERTO e nos batemos - vem da raca Drow, nao do pacto. LIMITE: o predicado so vale porque os premades de Warlock sao mono-classe; se um dia entrar um Warlock multiclasse com slots normais de verdade, revisitar."
+      "why": "Contact Other Plane e concedida pelo Contact Patron (Warlock @9): \"you always have the spell prepared… you can cast it without expending a spell slot… once… until you finish a Long Rest\". O premade encoda isso como `method: \"spell\"` + `uses` 1/descanso longo; nos emitimos o MESMO `uses` (o `prepared` do dado nao traz frequencia, ela vem da prosa - ver INNATE_USES) e `method: \"pact\"`. A diferenca e so o caminho de gastar ESPACO: a magia esta sempre preparada, e o RAW deixa conjura-la gastando espaco por cima do uso gratis; num Warlock puro o unico espaco que existe e o de PACTO, entao `spell` deixaria esse caminho morto e `pact` o preserva. Mesma politica do TC-0067/DDL-0074. HISTORICO, para nao se repetir: esta entrada nasceu em 2026-07-30 com a justificativa ERRADA (\"quirk do documento, a magia ficaria sem com que ser conjurada\"), porque a triagem olhou o `method` sem olhar o `uses` ao lado. O usuario apontou o Contact Patron e a remedicao achou um defeito NOSSO de verdade - o uso gratis nao era emitido. Nomear antes de entender a feature que concede e como se esconde bug."
     },
     {
       "id": "race-granted-spell-label",

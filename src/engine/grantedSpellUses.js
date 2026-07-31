@@ -28,6 +28,16 @@
 
 /** @type {Record<string, Record<string, UsesOverride>>} */
 export const INNATE_USES = {
+  // CLASSE, não espécie. O `additionalSpells` do Warlock declara Contact Other
+  // Plane como `prepared` no nível 9 - sempre preparada, sem frequência nenhuma.
+  // A conjuração GRÁTIS existe só na prosa do Contact Patron @9: "you can cast
+  // the spell without expending a spell slot to contact your patron… Once you
+  // cast the spell with this feature, you can't do so in this way again until
+  // you finish a Long Rest." Sem esta linha o uso grátis sumia do export.
+  'Warlock|XPHB': {
+    'contact other plane': { castType: 'restLong', count: 1 },
+  },
+
   // "Once you cast the spell with this trait, you can't do so again until you
   // finish a long rest." (Wind Caller)
   'Aarakocra|MPMM': {
@@ -292,8 +302,18 @@ export function curatedAdditionalSpells(entity) {
 
 /**
  * Aplica o overlay às magias concedidas por uma entidade. Só toca nas entradas
- * cuja frequência o DADO não declara (`castType === 'innate'`); tudo que o
- * 5etools já codifica passa intacto.
+ * cuja frequência o DADO não declara; tudo que o 5etools já codifica
+ * (`will`/`ritual`/`daily`/`rest`) passa intacto.
+ *
+ * Duas formas de "não declara", e as duas precisam do overlay:
+ *  - **`castType === 'innate'`** - o dado diz que conjura sem espaço mas não diz
+ *    com que frequência (o caso original, DDL-0011);
+ *  - **sem `castType` nenhum** - o dado põe a magia em `prepared` (sempre
+ *    preparada) e a conjuração GRÁTIS existe só na prosa da feature. É o Contact
+ *    Patron do Warlock @9: o `additionalSpells` da classe declara a magia como
+ *    preparada no nível 9, e só o texto diz "you can cast the spell without
+ *    expending a spell slot… once… until you finish a Long Rest". Sem isto o
+ *    jogador perdia o uso grátis inteiro no export.
  * @param {Array<object>} spells      saída de `grantedSpells().spells`
  * @param {{name?: string, source?: string}|null} entity  espécie/classe/subclasse
  * @returns {Array<object>}  nova lista (não muta a entrada)
@@ -302,7 +322,7 @@ export function applyUsesOverlay(spells, entity) {
   const table = INNATE_USES[overlayKey(entity)];
   if (!table) return spells ?? [];
   return (spells ?? []).map((s) => {
-    if (s.castType !== 'innate') return s;
+    if (s.castType && s.castType !== 'innate') return s;
     const override = table[s.name.toLowerCase()];
     if (!override) return s;
     return { ...s, castType: override.castType, count: override.count ?? null, scale: null };

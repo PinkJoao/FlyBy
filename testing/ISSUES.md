@@ -11,14 +11,32 @@ wrong behavior) · `polish` (cosmetic / minor UX).
 
 ## Open findings
 
-**None.** Every `TC-` raised so far is closed (86 fixed, 1 wontfix). `KNOWN_ISSUES`
-and `WAIVERS` in `scripts/lib/roundtrip.js` are both empty, so any new round-trip
-diff fails its sweep row.
+**One: TC-0089** (below), a product decision, not a defect of the engine.
+`KNOWN_ISSUES` and `WAIVERS` in `scripts/lib/roundtrip.js` stay empty - the sweep is
+green and must stay green.
 
 > `npm run t2` reports **6** findings, all of one category (`feat.activities`), and
 > none is triaged as our defect: they are activities we emit and the SRD does not,
-> waiting on T2d question 2. The measured triage is in **TESTING-PLAN.md §7**. A
-> finding only becomes a `TC-` entry once it is triaged as our defect.
+> waiting on T2d question 2. The measured triage is in **TESTING-PLAN.md** §7.
+
+## TC-0089 - um ator externo pode listar a MESMA magia duas vezes na mesma classe
+
+- **Encontrado:** 2026-07-30, no console, ao importar a Sefris L11 para conferir o
+  Contact Patron. **Severidade:** polish (numero errado no contador).
+  **Causa:** import. **Status:** open.
+- **Medido:** o ator premade da Sefris lista `Hex` e `Hideous Laughter` DUAS vezes
+  cada. Nosso import carrega as duas copias para `classes[].spells`, entao a
+  classe fica com 21 picks e duas duplicatas.
+- **O que isso causa:** o contador de "Prepared" da origem conta as duas, entao o
+  numero na ficha fica 2 acima do real; e as linhas repetidas colidiam na key do
+  React (ja corrigido: a key leva o indice, senao o React descartava uma linha).
+- **A DECISAO que falta, e por isso nao foi corrigido junto:** deduplicar no
+  import e a escolha obvia (preparar a mesma magia duas vezes nao faz nada pelo
+  jogador), mas e uma decisao de PRODUTO com a mesma forma do balde de carga: o
+  documento diz duas, e apagar uma em silencio e perda de conteudo. As saidas
+  possiveis sao dedupar no import, ou manter e sinalizar a repeticao na aba.
+- **Nao afeta o export:** o `npm run t2` nao acusa nada aqui - as duas copias
+  voltam ao Foundry como o documento as trouxe.
 
 ## Adding a finding
 

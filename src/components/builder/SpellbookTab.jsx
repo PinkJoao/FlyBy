@@ -786,7 +786,7 @@ export default function SpellbookTab({
               )}
               {!isCollapsed && (
                 <ul className={styles.list}>
-                  {list.map((entry) => {
+                  {list.map((entry, i) => {
                     const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
                     // Só magia de CÍRCULO escolhida pelo jogador tem estado de
                     // preparação: cantrip está sempre disponível, arcanum não
@@ -794,7 +794,12 @@ export default function SpellbookTab({
                     const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
                     return (
                       <SpellRow
-                        key={`${origin.key}|${entry.cargoIndex ?? entry.raw.name}|${entry.castMode ?? 'pick'}`}
+                        // O índice entra na chave porque a MESMA magia pode
+                        // aparecer duas vezes: um ator externo pode listá-la
+                        // repetida (a Sefris premade traz Hex e Hideous Laughter
+                        // em duplicidade) e o balde de carga também aceita
+                        // repetidos. Sem ele o React descarta uma das linhas.
+                        key={`${origin.key}|${entry.cargoIndex ?? i}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
                         entry={entry}
                         arcanum={isArc}
                         thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}

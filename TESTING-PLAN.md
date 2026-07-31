@@ -409,7 +409,7 @@ that is non-trivial (matrix enumeration, waiver diffing) is unit-tested normally
 | **T2d** real Foundry imports | ⏳ **blocked on the user** (see below) |
 | **T3** feats/spells/items | later; re-plan then |
 
-**Last measured:** 1314 tests · lint clean · `npm run sweep -- --strict` **286/286**
+**Last measured:** 1318 tests · lint clean · `npm run sweep -- --strict` **286/286**
 · `npm run t2` **6** findings (+127 named as expected) · `check:keys` and
 `check:uuids` clean.
 
@@ -459,6 +459,30 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
 5. Does a pack arrive as a container with its contents, and does carried weight match?
 
 ### Last session
+
+- **2026-07-30 (6)** - **O usuario achou o erro da triagem: Contact Patron.** 1318
+  testes (+4), lint, sweep 286/286 `--strict`, `t2` estavel em **6**. DDL-0086,
+  CHANGELOG §113.
+
+  A sessao anterior nomeou o `spell.method` da Sefris como quirk do premade. Nao
+  era: `Contact Other Plane` e concedida pelo **Contact Patron (Warlock @9)**, e o
+  premade encoda a concessao com `prepared: 2` **mais `uses` 1/descanso longo**. A
+  triagem olhou o `method` e nao olhou o `uses` na mesma linha.
+
+  Por baixo da nomeacao havia defeito nosso: o `additionalSpells` da classe declara
+  a magia em `prepared` sem frequencia, o uso gratis so existe na PROSA, e o
+  `applyUsesOverlay` so agia sobre `castType: 'innate'` - entao **o uso gratis sumia
+  do export**. Corrigido; o `method: "pact"` fica, agora com o motivo certo (e a
+  entrada `EXPECTED` carrega o historico do erro dentro dela).
+
+  **Regra que fica:** antes de nomear uma divergencia como esperada, leia a FEATURE
+  que concede, nao so o campo que diverge. Terceira variacao do mesmo tema - a
+  anterior foi "predicado sobre contagem esconde bug" (DDL-0085).
+
+  Aberto de lambuja: **TC-0089** (o ator premade da Sefris lista Hex e Hideous
+  Laughter em duplicidade; a key da linha foi corrigida, a dedup e decisao de
+  produto e ficou aberta).
+
 
 - **2026-07-30 (5)** - **Triagem executada: TC-0088 corrigido e o oraculo passou a
   nomear.** 1314 testes (+2), lint, sweep 286/286 `--strict`, `check:keys` e

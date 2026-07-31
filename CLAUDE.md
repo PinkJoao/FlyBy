@@ -131,7 +131,7 @@ documents all four subfolders, their licences and what each is good for.
 | **Usage tutorial** (coach-marks) | done (F1-F4) |
 | **Phase T campaign** | T0 done · T1 done (**286/286** units certified) · **T2 in progress** |
 
-**Current numbers:** 1314 tests · sweep **286/286** in `--strict` · `npm run t2`
+**Current numbers:** 1318 tests · sweep **286/286** in `--strict` · `npm run t2`
 at **6** findings (from 1023 at the T2 opening), plus 127 differences named as
 expected across 14 deliberate divergences. `check:keys` and `check:uuids` clean.
 
@@ -274,7 +274,10 @@ buried in an entry.
   naming something expected, check the predicate is not swallowing a real gap. A
   predicate over COUNTS is the classic way to swallow one: "we have one fewer" reads
   the same whether the SRD merely bundles things differently or a feature is missing.
-  Make the oracle report WHAT differs, then predicate on that.
+  Make the oracle report WHAT differs, then predicate on that. And read the FEATURE that
+  grants the thing, not just the field that differs: a `method` that looked like a
+  premade quirk was explained by the class feature next to it, and the `uses` field
+  on the same line was the tell that we were the ones losing something.
 - **Generate a registry from the SRD instead of curating by hand** whenever the fact
   is not derivable from 5etools (which item type an item is, resource pools, subclass
   identifiers, container capacity). Four registries already work this way; a new one
@@ -396,6 +399,7 @@ DDL-0031 "effects only" scope (by **0057**), DDL-0058 (planning; implemented by
 **0059**), DDL-0059/0060 (refined by **0061** and **0063**), DDL-0064 LFL treatment
 (revised by **0066**), DDL-0080 §3.1 resistance sweep (widened by **0081**).
 
+- **DDL-0086** (2026-07-30) - Concessão SEMPRE-PREPARADA também pode ter uso GRÁTIS só na prosa; e nomear antes de ler a feature que concede esconde bug
 - **DDL-0085** (2026-07-30) - Um oráculo que conta NÚMEROS esconde a natureza da diferença; e re-listagem publicada como documento próprio não se dedupa
 - **DDL-0084** (2026-07-30) - Carga ganha SUB-ABA própria, sem contador nenhum; e balde com repetidos se opera por ÍNDICE
 - **DDL-0083** (2026-07-30) - Um achado que SOME conforme o nível sobe não é quirk do premade; e lacuna da árvore de fontes não é "o SRD não publica"

@@ -11,6 +11,60 @@
 
 ---
 
+### DDL-0086 - Concessao SEMPRE-PREPARADA tambem pode ter uso GRATIS so na prosa; e nomear antes de ler a feature que concede esconde bug
+**Date:** 2026-07-30
+
+**Corrige** uma entrada `EXPECTED` que o DDL-0085 tinha acabado de criar com a
+justificativa ERRADA. **Achado pelo usuario**, que reconheceu o Contact Patron.
+
+**O que aconteceu.** A triagem viu `Contact Other Plane` da Sefris com
+`method: "spell"` no premade e `pact` no nosso, notou que as outras 34 magias dela
+sao `pact` e que o ator so tem slots de pacto, e concluiu "quirk do documento,
+nossa saida e melhor". Nomeou como `warlock-pact-method`.
+
+**A premissa estava incompleta:** a magia NAO e uma escolha de pacto. Ela e
+concedida pelo **Contact Patron (Warlock @9)**: *"you always have the Contact Other
+Plane spell prepared. With this feature, you can cast the spell without expending a
+spell slot… Once you cast the spell with this feature, you can't do so in this way
+again until you finish a Long Rest."* O premade encoda exatamente isso:
+`prepared: 2` (sempre preparada) **e `uses` 1/descanso longo**. A triagem olhou o
+`method` e nao olhou o `uses` na mesma linha.
+
+**O defeito real que estava escondido ali.** O `additionalSpells` da CLASSE
+Warlock declara a magia em `prepared: {9: [...]}` - sempre preparada, e nada sobre
+frequencia. A conjuracao gratis existe so na PROSA. O `applyUsesOverlay` so agia
+sobre `castType === 'innate'`, entao o overlay nunca era consultado e **o uso
+gratis sumia inteiro do export**: o jogador perdia um recurso rastreado.
+
+**Decisao 1 - o overlay passa a cobrir DUAS formas de "o dado nao declara".**
+`innate` (conjura sem espaco, frequencia desconhecida - o caso original do
+DDL-0011) e **sem `castType` nenhum** (o dado poe em `prepared` e a prosa e que da
+o uso gratis). O que o 5etools JA codifica (`will`/`ritual`/`daily`/`rest`)
+continua passando intacto - o guard virou `if (s.castType && s.castType !== 'innate')`.
+
+**Decisao 2 - a entrada nova e de CLASSE, nao de especie.** `INNATE_USES` sempre
+aceitou classe e subclasse na chave; esta e a primeira a usar isso:
+`'Warlock|XPHB': { 'contact other plane': { castType: 'restLong', count: 1 } }`.
+
+**Decisao 3 - `method: "pact"` FICA, mas com o motivo certo.** Com o `uses` no
+lugar, a diferenca que sobra e so o caminho de gastar ESPACO. A magia esta sempre
+preparada e o RAW deixa conjura-la gastando espaco por cima do uso gratis; num
+Warlock puro o unico espaco que existe e o de pacto, entao `spell` deixaria esse
+caminho morto e `pact` o preserva. E a mesma politica do TC-0067/DDL-0074. A
+entrada `EXPECTED` continua, com o `why` reescrito **e com o historico do erro
+dentro dela**, para a proxima leitura nao repetir o atalho.
+
+**A regra que fica, e que ja e a terceira variacao do mesmo tema:** antes de
+nomear uma divergencia como esperada, **leia a FEATURE que concede**, nao so o
+campo que diverge. Um campo isolado (`method`) nao diz de onde a magia veio; o
+campo ao lado (`uses`) dizia. O DDL-0085 ja tinha aprendido que um predicado sobre
+CONTAGEM esconde bug - este ensina que uma justificativa escrita sobre UM CAMPO
+esconde do mesmo jeito.
+
+**Verificado:** a ficha ao vivo da Sefris L11 mostra "Always Prepared · 1/Long
+Rest" (antes o chip de frequencia nao existia) e o export emite
+`uses: {max: "1", recovery: [{period: "lr"}]}`, identico ao premade.
+
 ### DDL-0085 - Um oraculo que conta NUMEROS esconde a natureza da diferenca; e re-listagem publicada como documento proprio nao se dedupa
 **Date:** 2026-07-30
 

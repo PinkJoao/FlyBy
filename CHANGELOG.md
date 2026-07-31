@@ -4877,3 +4877,60 @@ dizer a verdade em vez de misturar bug com quirk.
 
 Verificado: 1314 testes (+2), lint, sweep 286/286 `--strict`, `check:keys` e
 `check:uuids` limpos.
+
+## 113. Contact Patron: o uso grátis que só a prosa declara (e uma nomeação minha que escondia bug)
+
+O usuário reconheceu que o `Contact Other Plane` da Sefris tem a ver com a feature
+**Contact Patron (Warlock @9)**, e tinha razão. A §112 tinha nomeado aquela divergência
+como `warlock-pact-method` com a justificativa **errada**, e por baixo dela havia um
+defeito nosso de verdade.
+
+### O que a feature diz, e o que o premade encoda
+
+> *"you always have the Contact Other Plane spell prepared. With this feature, you can
+> cast the spell without expending a spell slot… Once you cast the spell with this
+> feature, you can't do so in this way again until you finish a Long Rest."*
+
+O premade encoda exatamente isso: `prepared: 2` (sempre preparada) **e `uses` de
+1/descanso longo**. A minha triagem olhou o `method` e não olhou o `uses` na mesma
+linha, então leu "quirk do documento" onde estava escrito "concessão de feature".
+
+### O defeito que estava escondido
+
+O `additionalSpells` da **classe** Warlock declara a magia em `prepared: {9: [...]}` -
+sempre preparada, sem frequência nenhuma. A conjuração grátis existe só na PROSA. O
+`applyUsesOverlay` só agia sobre `castType === 'innate'`, então o overlay nunca era
+consultado e **o uso grátis sumia inteiro do export**: o jogador perdia um recurso
+rastreado.
+
+O overlay passa a cobrir as duas formas de "o dado não declara": `innate` (conjura sem
+espaço, frequência desconhecida - o caso original do DDL-0011) e **sem `castType`
+nenhum** (o dado põe em `prepared` e só a prosa dá o uso grátis). O que o 5etools já
+codifica continua intacto. A entrada nova é a primeira de CLASSE no `INNATE_USES`, que
+sempre aceitou classe e subclasse na chave.
+
+### O `method` fica, com o motivo certo
+
+Com o `uses` no lugar, o que sobra é só o caminho de gastar **espaço**. A magia está
+sempre preparada e o RAW deixa conjurá-la gastando espaço por cima do uso grátis; num
+Warlock puro o único espaço que existe é o de pacto, então `spell` deixaria esse caminho
+morto e `pact` o preserva (mesma política do TC-0067/DDL-0074). A entrada `EXPECTED`
+continua, com o `why` reescrito **e com o histórico do erro dentro dela**.
+
+**Regra que fica** (DDL-0086, e é a terceira variação do mesmo tema): antes de nomear uma
+divergência como esperada, **leia a feature que concede**, não só o campo que diverge. O
+§112 já tinha aprendido que predicado sobre CONTAGEM esconde bug; este ensina que
+justificativa escrita sobre UM CAMPO esconde do mesmo jeito.
+
+### De lambuja: TC-0089 (aberto)
+
+A passada ao vivo mostrou chaves duplicadas no console. Medido: **o ator premade da
+Sefris lista `Hex` e `Hideous Laughter` duas vezes cada**, e nosso import carrega as duas
+cópias. A key da linha passou a levar o índice (senão o React descartava uma linha); a
+**dedup em si ficou aberta como TC-0089**, porque é decisão de produto com a mesma forma
+do balde de carga - o documento diz duas, e apagar uma em silêncio é perda de conteúdo.
+
+Verificado ao vivo: a ficha da Sefris L11 mostra "Always Prepared · 1/Long Rest" (antes o
+chip de frequência não existia) e o export emite `uses: {max: "1", recovery: [{period:
+"lr"}]}`, idêntico ao premade. 1318 testes (+4), lint, sweep 286/286 `--strict`,
+`npm run t2` estável em **6**, `check:keys` e `check:uuids` limpos.

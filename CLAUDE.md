@@ -131,18 +131,17 @@ documents all four subfolders, their licences and what each is good for.
 | **Usage tutorial** (coach-marks) | done (F1-F4) |
 | **Phase T campaign** | T0 done · T1 done (**286/286** units certified) · **T2 in progress** |
 
-**Current numbers:** 1312 tests · sweep **286/286** in `--strict` · `npm run t2`
-at **16** findings (from 1023 at the T2 opening), plus 113 differences named as
-expected across 10 deliberate divergences. `check:keys` and `check:uuids` clean.
+**Current numbers:** 1314 tests · sweep **286/286** in `--strict` · `npm run t2`
+at **6** findings (from 1023 at the T2 opening), plus 127 differences named as
+expected across 14 deliberate divergences. `check:keys` and `check:uuids` clean.
 
 ### What is left
 
-1. **T2 burn-down.** The 16 remaining findings were measured one by one on
-   2026-07-30 and **only ONE is a defect of ours** (TC-0088, open in
-   `testing/ISSUES.md`). The full triage, with the verdict and the action for each,
-   is the work order in **`TESTING-PLAN.md` §7** - start there. Doing it takes the
-   comparator to 5, all of them waiting on T2d. No `export: ok` row has been marked
-   yet.
+1. **T2 burn-down: done, except what T2d gates.** All 16 findings were measured one
+   by one on 2026-07-30. One was a defect of ours (TC-0088, fixed); the rest were
+   named as `EXPECTED` with narrow predicates. The **6** that remain are a single
+   category, `feat.activities` (activities we emit and the SRD does not), and they
+   wait on T2d question 2. No `export: ok` row has been marked yet.
 2. **T2d - real Foundry imports.** The only step Claude cannot do:
    `npm run sweep -- --emit-actors`, then the user drags the actors into Foundry.
    Five concrete questions are waiting on it (listed in
@@ -272,7 +271,10 @@ buried in an entry.
   divergence needs **two** things: a FORM that cannot be mistaken for the SRD's (its
   own advancement title, its own flag) **and** an `EXPECTED` entry in the comparator
   with the reason written down. Without both it contaminates the oracle. And before
-  naming something expected, check the predicate is not swallowing a real gap.
+  naming something expected, check the predicate is not swallowing a real gap. A
+  predicate over COUNTS is the classic way to swallow one: "we have one fewer" reads
+  the same whether the SRD merely bundles things differently or a feature is missing.
+  Make the oracle report WHAT differs, then predicate on that.
 - **Generate a registry from the SRD instead of curating by hand** whenever the fact
   is not derivable from 5etools (which item type an item is, resource pools, subclass
   identifiers, container capacity). Four registries already work this way; a new one
@@ -394,6 +396,7 @@ DDL-0031 "effects only" scope (by **0057**), DDL-0058 (planning; implemented by
 **0059**), DDL-0059/0060 (refined by **0061** and **0063**), DDL-0064 LFL treatment
 (revised by **0066**), DDL-0080 §3.1 resistance sweep (widened by **0081**).
 
+- **DDL-0085** (2026-07-30) - Um oráculo que conta NÚMEROS esconde a natureza da diferença; e re-listagem publicada como documento próprio não se dedupa
 - **DDL-0084** (2026-07-30) - Carga ganha SUB-ABA própria, sem contador nenhum; e balde com repetidos se opera por ÍNDICE
 - **DDL-0083** (2026-07-30) - Um achado que SOME conforme o nível sobe não é quirk do premade; e lacuna da árvore de fontes não é "o SRD não publica"
 - **DDL-0082** (2026-07-30) - Contêiner é UM campo de parentesco; e "guardado" é um estado que a DERIVAÇÃO decide

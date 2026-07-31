@@ -404,101 +404,47 @@ that is non-trivial (matrix enumeration, waiver diffing) is unit-tested normally
 | **T1a** classes | ✅ done 2026-07-22 - 135 `class:*` rows `ui: ok`, 13 sessions |
 | **T1b** species | ✅ done - 150 `species:*` rows `ui: ok`, 7 sessions in the 5 blocks of §4.5. The 2 Dwarf swap rows, born after the 2026-07-26 close, were certified 2026-07-30: **286/286** |
 | **T2a** export oracle | ✅ done 2026-07-26 - `npm run t2` built; first run 1023 findings in 27 classes |
-| **T2b** burn-down | 🔄 **in progress** - 1023 → **16** over 8 sessions plus the deferred-review levas |
+| **T2b** burn-down | 🔄 **in progress** - 1023 → **6** over 8 sessions plus the deferred-review levas |
 | **T2c** user decisions | pending: rows flagged `needs-user-eyes` |
 | **T2d** real Foundry imports | ⏳ **blocked on the user** (see below) |
 | **T3** feats/spells/items | later; re-plan then |
 
-**Last measured:** 1312 tests · lint clean · `npm run sweep -- --strict` **286/286**
-· `npm run t2` **16** findings (+113 named as expected) · `check:keys` and
+**Last measured:** 1314 tests · lint clean · `npm run sweep -- --strict` **286/286**
+· `npm run t2` **6** findings (+127 named as expected) · `check:keys` and
 `check:uuids` clean.
 
 **No `export: ok` row has been marked yet** - the criterion is in §5.2, and it is
 deliberately stricter than "I did not spot anything".
 
-### The remaining 16 findings, measured one by one (2026-07-30)
+### The remaining 6 findings
 
-Every one was opened against the source data instead of being read from the old
-triage note - which had been wrong twice in a row (see the sessions below). **Only
-ONE of the 16 is a defect of ours.** This section is the work order: the next
-session can execute it top to bottom.
+All 16 findings that stood on 2026-07-30 were measured one by one against the
+source data, instead of being read from the old triage note - which had been wrong
+twice in a row. **One was a defect of ours** (TC-0088, the Barbarian losing the
+level-17 Improved Brutal Strike on export); it is fixed. The rest were named as
+`EXPECTED` in `scripts/lib/premadeDiff.js`, each with a narrow predicate and the
+measurement behind it. See DDL-0085 and CHANGELOG §112.
 
-| N | Category | Verdict | Action |
-|---:|---|---|---|
-| 1 | `advancement.class` (Merric L17) | **BUG - ours** | **fix it**: TC-0088 |
-| 1 | `details.xp` (Riswynn L11) | premade defect, confirmed | name it `EXPECTED` |
-| 2 | `spell.method` (Sefris) | premade defect, and our output is the working one | name it `EXPECTED` |
-| 6 | `advancement.class.grants` (Krusk, Paladin) | document shape, no content lost | name it `EXPECTED`, recheck at T2d |
-| 6 | `feat.activities` (Krusk, Sefris) | undecidable until a real import | **leave alone** until T2d |
+What is left is **6 findings of a single category**:
 
-Doing the four rows above takes the comparator from **16 to 5**, and the 5 left are
-exactly "waiting for a real Foundry import" - a scoreboard that tells the truth
-instead of mixing bugs with quirks.
+| N | Category | Why it is still open |
+|---:|---|---|
+| 6 | `feat.activities` (Krusk, Sefris) | We emit `cast` on Paladin's Smite and `enchant` on Agonizing Blast; the SRD leaves `activities: {}`. Removing them loses a button the RAW grants; keeping them risks double-counting the free use. **Only a real import decides** - it is T2d question 2. |
 
-#### 1. `advancement.class` - the Barbarian (1). **This one is a real bug.**
+**Do not name this one `EXPECTED` before T2d.** It is the one difference where we
+genuinely do not know which side is right, and that is exactly what the T2d import
+is for.
 
-Catalogued as "the Barbarian capstone's form", a quirk. It is not. The full entry
-is **TC-0088** in `testing/ISSUES.md`, with the measurements. Short version: the
-5etools data carries `Improved Brutal Strike` at BOTH @13 and @17 with
-non-overlapping text (@13 adds two effects; @17 raises the damage to 2d10 and lets
-you use two effects at once), the dnd5e system publishes both documents, and our
-name-dedup in `resolveClassFeatures` keeps only the @13 one. The FlyBy sheet shows
-both; **the exported actor loses the @17 text.** Root cause is DDL-0056, which
-decided to look up the numbered `(2)` item only in the FUTURE ladder - so the
-character who actually reached 17 is exactly the one who loses it.
+#### The method lesson from that pass
 
-#### 2. `details.xp` - Riswynn L11 (1). Premade defect, isolated.
-
-The file says `xp=6500`, which is the level **5** threshold and literally the same
-value as her own L05 file: a copy-paste. Level 11 needs 85,000, which is what we
-emit. Swept all 48 sheets: **1 of 48** has XP incoherent with its own level.
-
-#### 3. `spell.method` - Contact Other Plane on Sefris (2). Premade defect, and ours works.
-
-Sefris is a Warlock 11 whose actor declares **pact slots only** (`{"value": 3}`),
-zero regular slots. Of her 35 spells, 34 are `method: "pact"`. Two exceptions:
-
-- `Dancing Lights` is `spell` and that is **correct** - it comes from her Drow
-  lineage, not the pact, and we match it (so it is not a finding);
-- `Contact Other Plane` is `spell`, while its own siblings at 5th level (Geas,
-  Insect Plague) are `pact`.
-
-It is not only inconsistent with the document itself: marked `spell` on a character
-with no regular slots, it has **nothing to be cast with** in Foundry. Our `pact` is
-the functional encoding.
-
-#### 4. `advancement.class.grants` - the Paladin (6). Document shape, nothing lost.
-
-The premade's `ItemGrant@2` is Fighting Style + Paladin's Smite + **Divine Smite
-(a spell)**, and `@5` is Extra Attack + Faithful Steed + **Find Steed**. We list the
-two features and not the spell, in the step of the level already REACHED.
-
-**Verified: Divine Smite and Find Steed are on our exported actor** as items. The
-player has the spells; the difference is only which advancement step lists them. It
-would only start to matter if Foundry re-ran the advancement (a level-down/up inside
-it), which is T2d question 2 territory - so name it expected and recheck after the
-import.
-
-#### 5. `feat.activities` (6). Do not touch before T2d.
-
-- **Paladin's Smite**: we emit a `cast` activity pointing at the Divine Smite spell
-  and consuming one use. The SRD leaves `activities: {}`.
-- **Agonizing Blast**: we emit `enchant` ("Make Agonizing") over Eldritch Blast. The
-  SRD leaves it empty.
-
-In both cases the target item is also on the actor. Removing them loses a button the
-RAW grants; keeping them risks the use being counted twice. **Only a real import
-answers this** (T2d question 2).
-
-#### The method lesson, now twice over
-
-The old note recorded all 8 `advancement.class.grants` as "the Paladin's ItemGrant"
-and the Barbarian row as a capstone quirk. Both were wrong, and both were caught by
-the same move: **opening the source instead of trusting the label.** The Monk case
-announced itself in numbers nobody had read (it appeared at L01/L05 and vanished at
-L11/L17); the Barbarian one needed the feature text of two levels side by side.
-A category in the comparator is a bucket of DIFFERENT causes until someone proves
-otherwise.
+Two findings in a row had been misfiled, and both hid the same way: **the oracle
+was reporting COUNTS.** `advancement.*.grants` said `premade=3 ours=2`, which reads
+identically whether the SRD merely bundles the granted spell into the same step
+(harmless) or a feature is missing (lost rules). The comparator now reports
+`"<kind>:<name>"` per step, so the difference names itself - and the `EXPECTED`
+predicates can require "what is missing must be a SPELL", which a count-based test
+could never do. A predicate like `before === after + 1` would have swallowed
+TC-0087 itself.
 
 ### Blocked on the user (T2d)
 
@@ -513,6 +459,27 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
 5. Does a pack arrive as a container with its contents, and does carried weight match?
 
 ### Last session
+
+- **2026-07-30 (5)** - **Triagem executada: TC-0088 corrigido e o oraculo passou a
+  nomear.** 1314 testes (+2), lint, sweep 286/286 `--strict`, `check:keys` e
+  `check:uuids` limpos. `npm run t2` **16 -> 6**. DDL-0085, CHANGELOG §112.
+
+  O fix do Barbaro e uma linha de gate. **O que valeu mais foi mudar o oraculo:**
+  `advancement.*.grants` comparava CONTAGENS, e foi por isso que dois defeitos
+  reais (TC-0087, TC-0088) ficaram semanas invisiveis - "premade=2 ours=1" le-se
+  igual quer o SRD so agrupe diferente, quer falte uma feature. Agora cada passo
+  reporta `"<tipo>:<nome>"`.
+
+  A troca destapou de imediato um par que a contagem escondia (o cantrip do Alto
+  Elfo do Beiro). Medido antes de acusar: **nao** era defeito novo, e o limite ja
+  documentado no `spellChoiceBag` - os dois atores tem os mesmos 5 cantrips, so o
+  rotulo de quem concedeu troca.
+
+  **Regra que fica:** um predicado de `EXPECTED` sobre CONTAGEM engole bug por
+  construcao. Faca o oraculo dizer O QUE difere, depois escreva o predicado sobre
+  isso - os cinco novos exigem que o ausente seja `spell:`, entao uma FEATURE que
+  suma continua sendo achado.
+
 
 - **2026-07-30 (5)** - **Triagem MEDIDA dos 16 achados restantes; nada implementado.**
   Sessao de analise a pedido do usuario, que quer retomar as correcoes na proxima.
@@ -598,4 +565,3 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
   (slice) · `-- --emit-actors` (Foundry test actors) · `npm run test` ·
   `npm run lint` · `npm run dev`.
 - Trackers: `testing/COVERAGE.md` (state) · `testing/ISSUES.md` (findings) ·
-  `testing/report.json` (last sweep, machine-readable).

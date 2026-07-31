@@ -23,6 +23,22 @@
 
 import { srdSpellNames } from '../../src/engine/spells';
 import { isBasicActionItem } from '../../src/engine/foundryBasicActions';
+import {
+  CLASS_FEATURE_IDS, SUBCLASS_FEATURE_IDS, SPELL_IDS, FEAT_IDS, ORIGIN_IDS,
+} from '../../src/engine/compendiumUuidsData';
+
+/**
+ * Mapa REVERSO id do compendio -> nome, montado dos registros ja gerados. Serve
+ * so para o oraculo ficar legivel: um achado que diz `feature:heightened focus`
+ * se le, um que diz `phbmnkHeightened` nao.
+ * A chave e o nome curado (ja sem o nome da classe), que e o que interessa ler.
+ */
+const COMPENDIUM_NAMES = new Map();
+for (const reg of [CLASS_FEATURE_IDS, SUBCLASS_FEATURE_IDS, SPELL_IDS, FEAT_IDS, ORIGIN_IDS]) {
+  for (const [key, id] of Object.entries(reg ?? {})) {
+    if (!COMPENDIUM_NAMES.has(id)) COMPENDIUM_NAMES.set(id, key.split('|').pop());
+  }
+}
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
@@ -89,6 +105,52 @@ export const EXPECTED = [
       && Array.isArray(f.after)
       && f.after.some((x) => String(x).startsWith('AbilityScoreImprovement@20'))
       && (f.before ?? []).length === 0,
+  },
+  {
+    id: 'premade-xp-typo',
+    why:
+      'O `details.xp` do Riswynn L11 e 6500, que e o limiar do nivel 5 - e e literalmente o mesmo '
+      + 'valor do arquivo L05 dele, um copy-paste. O nivel 11 pede 85000, que e o que derivamos. '
+      + 'Varredura das 48 fichas em 2026-07-30: esta e a UNICA com XP incoerente com o proprio '
+      + 'nivel. O predicado exige que os DOIS valores sejam limiares oficiais e que o nosso seja o '
+      + 'MAIOR - se um dia emitirmos um numero que nao esta na tabela, volta a ser achado.',
+    test: (f) => {
+      if (f.cat !== 'details.xp') return false;
+      const THRESHOLDS = new Set([0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
+        85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]);
+      return THRESHOLDS.has(f.before) && THRESHOLDS.has(f.after) && f.after > f.before;
+    },
+  },
+  {
+    id: 'warlock-pact-method',
+    why:
+      'O documento da Sefris marca UMA magia (Contact Other Plane) como `method: "spell"` enquanto '
+      + 'as outras 34 dela, incluindo as irmas do mesmo 5o circulo (Geas, Insect Plague), sao '
+      + '`pact`. Nao e so inconsistencia interna: o ator declara APENAS slots de pacto '
+      + '(`spells.pact.value = 3`, zero slots normais), entao no Foundry essa magia fica sem nada '
+      + 'com que ser conjurada. A nossa saida (`pact`) e a funcional. O `Dancing Lights` dela, que '
+      + 'tambem e `spell`, esta CERTO e nos batemos - vem da raca Drow, nao do pacto. '
+      + 'LIMITE: o predicado so vale porque os premades de Warlock sao mono-classe; se um dia '
+      + 'entrar um Warlock multiclasse com slots normais de verdade, revisitar.',
+    test: (f) => f.cat === 'spell.method' && f.before === 'spell' && f.after === 'pact',
+  },
+  {
+    id: 'race-granted-spell-label',
+    why:
+      'O passo de concessao da RACA aponta para um cantrip diferente do que o premade escolheu '
+      + '(Beiro, Alto Elfo: o documento diz Prestidigitation, nos dizemos Mage Hand). E o LIMITE '
+      + 'CONHECIDO E ACEITO documentado no `spellChoiceBag` do foundryImport: uma magia que serve a '
+      + 'duas origens pode ser atribuida a origem errada, porque um ator externo nao diz qual '
+      + 'origem pagou por qual magia. Medido em 2026-07-30: os dois atores tem exatamente os mesmos '
+      + '5 cantrips - nada se perde, so o rotulo de quem concedeu troca. '
+      + 'O predicado exige troca UM-POR-UM de MAGIA: se faltar uma sem nada entrar no lugar, ou se '
+      + 'o que faltar for FEATURE, continua sendo achado.',
+    test: (f) =>
+      f.cat === 'advancement.race.grants'
+      && (f.before ?? []).length > 0
+      && (f.before ?? []).length === (f.after ?? []).length
+      && (f.before ?? []).every((x) => String(x).startsWith('spell:'))
+      && (f.after ?? []).every((x) => String(x).startsWith('spell:')),
   },
   {
     id: 'curated-swap-lineage',
@@ -216,9 +278,28 @@ export const EXPECTED = [
       + 'não divergência de regra.',
     test: (f) =>
       f.cat === 'advancement.class.grants'
-      && typeof f.before === 'number'
-      && typeof f.after === 'number'
-      && f.after > f.before,
+      // Só MAGIA a mais, e nada faltando. Um predicado por CONTAGEM ("temos um a
+      // mais") engoliria uma feature ausente, que foi exatamente como o TC-0087 e
+      // o TC-0088 ficaram semanas invisíveis.
+      && (f.before ?? []).length === 0
+      && (f.after ?? []).length > 0
+      && (f.after ?? []).every((x) => String(x).startsWith('spell:')),
+  },
+  {
+    id: 'reached-level-grant-lists-features-only',
+    why:
+      'No nível JÁ ALCANÇADO o SRD junta a MAGIA concedida no mesmo passo ItemGrant das features '
+      + "(Paladino @2: Fighting Style + Paladin's Smite + a magia Divine Smite; @5: Extra Attack + "
+      + 'Faithful Steed + Find Steed). Nós listamos ali só as features. Medido em 2026-07-30: as '
+      + 'magias ESTÃO no ator exportado como itens, então o jogador não perde nada - a diferença é '
+      + 'de qual passo as lista. Só passaria a importar se o Foundry re-executasse o advancement '
+      + '(um level-down/up dentro dele): é a pergunta 2 do T2d, e esta entrada é para revisitar lá. '
+      + 'O predicado exige que o que falta seja MAGIA - uma FEATURE ausente continua sendo achado.',
+    test: (f) =>
+      f.cat === 'advancement.class.grants'
+      && (f.after ?? []).length === 0
+      && (f.before ?? []).length > 0
+      && (f.before ?? []).every((x) => String(x).startsWith('spell:')),
   },
 ];
 
@@ -306,6 +387,51 @@ export function grantCounts(item) {
     if (a.type !== 'ItemGrant') continue;
     const key = `${a.title || 'ItemGrant'}@${a.level ?? 0}`;
     out[key] = (out[key] ?? 0) + (a.configuration?.items ?? []).length;
+  }
+  return out;
+}
+
+/**
+ * O MESMO agrupamento do `grantCounts`, mas dizendo O QUE cada passo concede em
+ * vez de quantos. Contar esconde a natureza da diferença, e foi exatamente assim
+ * que dois defeitos reais passaram semanas invisíveis (TC-0087, o Monge sem
+ * Self-Restoration; TC-0088, o Bárbaro sem o Improved Brutal Strike do 17):
+ * "premade=2 ours=1" parece igual a "o SRD junta a magia concedida no mesmo
+ * passo", e uma das duas é perda de regra.
+ *
+ * Cada entrada vira `"<tipo>:<nome>"`, com o tipo saído do DESTINO do uuid:
+ * `spells24` (ou um item de magia do ator) = `spell`; qualquer outro = `feature`.
+ * Assim um predicado de `EXPECTED` consegue dizer "só falta MAGIA" sem poder
+ * engolir "falta uma FEATURE".
+ *
+ * Os dois lados usam formas diferentes de uuid de propósito: no nível ALCANÇADO o
+ * grant aponta para o item local (`.abc123`), no FUTURO para o compêndio - por
+ * isso o nome é resolvido, nunca o uuid comparado cru.
+ * @param {object} item   documento de classe/subclasse/raça
+ * @param {object} actor  o ator dono (resolve os refs locais)
+ */
+export function grantEntries(item, actor) {
+  const byId = new Map((actor?.items ?? []).map((i) => [i._id, i]));
+  const out = {};
+  for (const a of Object.values(item?.system?.advancement ?? {})) {
+    if (a.type !== 'ItemGrant') continue;
+    const key = `${a.title || 'ItemGrant'}@${a.level ?? 0}`;
+    const list = out[key] ?? (out[key] = []);
+    for (const cfg of a.configuration?.items ?? []) {
+      const uuid = String(cfg?.uuid ?? cfg ?? '');
+      // `norm`, NÃO `itemKey`: aqui o sufixo "(2)" é a informação, não ruído. O
+      // lado do compêndio traz o nome publicado ("Improved Brutal Strike (2)") e
+      // o lado local o nome do nosso item; se um dos dois apagasse o sufixo, o
+      // par nunca casaria e o oráculo acusaria uma diferença que não existe.
+      if (uuid.startsWith('.')) {
+        const it = byId.get(uuid.slice(1));
+        list.push(`${it?.type === 'spell' ? 'spell' : 'feature'}:${norm(it?.name ?? uuid)}`);
+      } else {
+        const kind = /\.spells24\./.test(uuid) ? 'spell' : 'feature';
+        const id = uuid.split('.').pop();
+        list.push(`${kind}:${norm(COMPENDIUM_NAMES.get(id) ?? id)}`);
+      }
+    }
   }
   return out;
 }
@@ -433,11 +559,13 @@ function compareItems(P, A, out) {
       if (!ait) continue;
       const label = t === 'background' ? 'background' : name;
       cmpSet(out, `advancement.${t}`, label, advLadder(pit), advLadder(ait));
-      const pg = grantCounts(pit);
-      const ag = grantCounts(ait);
+      // O QUE cada passo concede, não quantos: a contagem esconde a natureza da
+      // diferença (ver o cabeçalho de `grantEntries`).
+      const pg = grantEntries(pit, P);
+      const ag = grantEntries(ait, A);
       for (const k of new Set([...Object.keys(pg), ...Object.keys(ag)])) {
         // Um passo que só existe num lado já foi reportado pela escada acima.
-        if (pg[k] != null && ag[k] != null) cmp(out, `advancement.${t}.grants`, `${label} ${k}`, pg[k], ag[k]);
+        if (pg[k] != null && ag[k] != null) cmpSet(out, `advancement.${t}.grants`, `${label} ${k}`, pg[k], ag[k]);
       }
       if (t === 'class') {
         cmp(out, 'class.levels', label, pit.system?.levels, ait.system?.levels);

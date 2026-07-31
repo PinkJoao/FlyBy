@@ -342,6 +342,44 @@ describe('buildClassFeatureItems + ItemGrant', () => {
     expect(items.find((i) => i.name === 'Second Wind').system.uses.max).toBe('@scale.fighter.second-wind');
   });
 
+  // TC-0088. A dedup acima é a regra; a exceção é a re-listagem que o dnd5e
+  // PUBLICA como documento próprio ("<Nome> (2)"). Sem ela, um Bárbaro que
+  // ALCANÇOU o 17 exportava só o texto do 13 e perdia o upgrade (dano 2d10 +
+  // dois efeitos de uma vez). O teste do Indomitable acima é a outra metade do
+  // par: lá não existe documento numerado, então continua deduplicando.
+  describe('re-listagem com documento numerado publicado (TC-0088)', () => {
+    const barbDb = { 'class-barbarian': { classFeature: [
+      { name: 'Rage', level: 1, source: 'XPHB', entries: ['x'] },
+      { name: 'Improved Brutal Strike', level: 13, source: 'XPHB', entries: ['staggering blow'] },
+      { name: 'Improved Brutal Strike', level: 17, source: 'XPHB', entries: ['damage rises to 2d10'] },
+    ] } };
+    const barbObj = {
+      name: 'Barbarian', source: 'XPHB', hd: { faces: 12 }, proficiency: ['str', 'con'],
+      startingProficiencies: { armor: [], weapons: ['simple'], skills: [] },
+      classFeatures: [
+        'Rage|Barbarian||1',
+        'Improved Brutal Strike|Barbarian||13',
+        'Improved Brutal Strike|Barbarian||17',
+      ],
+    };
+
+    it('no nível 17 emite o item numerado, com o texto DAQUELE nível', () => {
+      const items = buildClassFeatureItems({ level: 17 }, barbObj, barbDb);
+      expect(items.map((i) => i.name)).toEqual([
+        'Rage', 'Improved Brutal Strike', 'Improved Brutal Strike (2)',
+      ]);
+      const second = items.find((i) => i.name === 'Improved Brutal Strike (2)');
+      expect(second.system.description.value).toContain('2d10');
+      // O nome publicado é o que faz a procedência casar (DDL-0056).
+      expect(second._stats.compendiumSource).toContain('phbbrbImp2Brutal');
+    });
+
+    it('abaixo do nível da re-listagem, nada muda', () => {
+      expect(buildClassFeatureItems({ level: 16 }, barbObj, barbDb).map((i) => i.name))
+        .toEqual(['Rage', 'Improved Brutal Strike']);
+    });
+  });
+
   it('buildClassItem liga as features via ItemGrant por nível', () => {
     const items = buildClassFeatureItems({ level: 5 }, classObj, db);
     const cls = buildClassItem({ level: 5, hitPoints: {} }, classObj, items);

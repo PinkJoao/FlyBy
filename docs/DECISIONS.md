@@ -11,6 +11,62 @@
 
 ---
 
+### DDL-0085 - Um oraculo que conta NUMEROS esconde a natureza da diferenca; e re-listagem publicada como documento proprio nao se dedupa
+**Date:** 2026-07-30
+
+**Fecha o TC-0088** e leva o `npm run t2` de 16 para 6 achados, todos de uma
+categoria so.
+
+**O defeito.** O 5etools re-lista `Improved Brutal Strike` do Barbaro em @13 e @17
+com textos que NAO se sobrepoem (@13 acrescenta dois efeitos; @17 sobe o dano para
+2d10 e libera usar dois de uma vez). O dnd5e publica os DOIS documentos. Nossa
+dedup por nome em `resolveClassFeatures` mantinha so o @13, entao um Barbaro que
+ALCANCOU o 17 exportava sem o upgrade do 17. A ficha ao vivo mostrava certo (o
+`classProgression` resolve por `name|source|level`); so o export perdia.
+
+**Decisao 1 - a dedup continua, com UM gate.** Uma re-listagem so vira item
+proprio se o dnd5e PUBLICA o documento numerado (`"<Nome> (2)"`). E o mesmo
+predicado que `relistedFeatureGrants` ja usava na escada FUTURA, agora valendo dos
+dois lados. Ele e estreito nas duas direcoes, e isso foi VERIFICADO: casa o Barbaro
+@17, e uma varredura das 13 classes no nivel 20 mostra que **nenhuma outra** emite
+item numerado (Indomitable, ASI, Subclass Feature, Expertise, Metamagic e Mystic
+Arcanum nao tem documento publicado, entao a consulta devolve null).
+
+**Decisao 2, e a que vale mais: o oraculo passa a dizer O QUE falta, nao QUANTOS.**
+`advancement.*.grants` comparava contagens (`premade=3 ours=2`). Isso apaga a
+diferenca entre "o SRD junta a magia concedida no mesmo passo" (inofensivo) e
+"falta uma feature" (perda de regra) - e foi exatamente assim que o TC-0087 e o
+TC-0088 passaram semanas invisiveis. Agora cada passo reporta
+`"<tipo>:<nome>"`, com o tipo saido do destino do uuid (`spells24` = spell, o
+resto = feature) e o nome resolvido por um mapa reverso dos registros gerados.
+
+Os dois lados usam formas de uuid diferentes DE PROPOSITO (no nivel alcancado o
+grant aponta para o item local, no futuro para o compendio), entao o nome e
+resolvido; o uuid nunca e comparado cru. E a normalizacao tem de ser a MESMA nos
+dois lados: usar `itemKey` (que apaga o sufixo "(2)") de um lado e o nome
+publicado do outro criava uma diferenca que nao existia.
+
+**Consequencia imediata:** a contagem mais rica destapou de cara um par que estava
+escondido (o cantrip do Alto Elfo do Beiro), que **nao** era defeito novo - e o
+limite conhecido e ja documentado no `spellChoiceBag`.
+
+**Decisao 3 - as divergencias medidas foram NOMEADAS.** Cinco entradas novas de
+`EXPECTED`, cada uma com predicado ESTREITO, porque um predicado largo aqui e
+perigoso por construcao (um teste por contagem tipo `before === after + 1` teria
+engolido o proprio TC-0087):
+
+| id | o que e | por que o predicado nao engole bug |
+|---|---|---|
+| `reached-level-grant-lists-features-only` | o SRD junta a MAGIA concedida no passo do nivel alcancado (Paladino @2/@5); as magias estao no nosso ator do mesmo jeito | exige que o que falta seja `spell:`; uma FEATURE ausente continua achado |
+| `premade-xp-typo` | Riswynn L11 com xp=6500 (limiar do nivel 5, copy-paste do arquivo L05); 1 de 48 | exige que os dois valores sejam limiares oficiais e o nosso o maior |
+| `warlock-pact-method` | Contact Other Plane da Sefris como `spell` num ator com so slots de pacto - no Foundry ficaria sem com que conjurar | so casa `spell` -> `pact`; o inverso continua achado |
+| `race-granted-spell-label` | o passo da raca aponta para outro cantrip (limite ja documentado no `spellChoiceBag`); os dois atores tem os mesmos 5 cantrips | exige troca UM-POR-UM de MAGIA; sumir sem reposicao continua achado |
+| `class-spell-ladder` (reescrito) | o mesmo de antes, agora por nome | exige que o excedente seja `spell:` |
+
+**Resultado.** 16 -> **6**, e os 6 sao uma categoria unica (`feat.activities`, as
+activities que emitimos e o SRD nao) esperando a pergunta 2 do T2d. O placar
+passou a dizer a verdade em vez de misturar bug com quirk.
+
 ### DDL-0084 - Carga ganha SUB-ABA propria, sem contador nenhum; e balde com repetidos se opera por INDICE
 **Date:** 2026-07-30
 

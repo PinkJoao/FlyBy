@@ -525,25 +525,48 @@ function isOptionCatalog(feature) {
 /** Resolve os refs de classFeatures até o nível em objetos {name, level, source, entries}.
  * DEDUPA por nome (mantém a 1ª/mais baixa ocorrência): o 5etools re-lista a mesma
  * feature nos níveis em que ela MELHORA (ex: Indomitable 9/13/17), mas o Foundry
- * quer UM item por feature (a progressão é ScaleValue/uses), como nos premades. */
+ * quer UM item por feature (a progressão é ScaleValue/uses), como nos premades.
+ *
+ * **A exceção, e o gate que a mantém estreita (TC-0088).** Às vezes a re-listagem
+ * NÃO é a mesma regra num número maior, e sim conteúdo novo: o `Improved Brutal
+ * Strike` do Bárbaro @13 acrescenta dois efeitos, e o @17 sobe o dano para 2d10 e
+ * libera usar dois efeitos de uma vez - textos que não se sobrepõem. Quando isso
+ * acontece o dnd5e **publica um segundo documento**, `"<Nome> (2)"`, e o premade
+ * carrega os dois. Dedupar ali fazia o jogador perder a regra do nível alcançado.
+ *
+ * O gate é exatamente "existe documento numerado publicado" (o mesmo predicado que
+ * `relistedFeatureGrants` já usa na escada FUTURA, agora dos dois lados). Ele é
+ * estreito nas duas direções: casa o Bárbaro @17, e NÃO casa nenhuma outra
+ * re-listagem do dataset (Indomitable, ASI, Subclass Feature, Expertise, Metamagic,
+ * Mystic Arcanum), porque para elas a consulta devolve null e nada é emitido. Um
+ * caso novo entra sozinho no dia em que o dnd5e publicar o documento dele. */
 function resolveClassFeatures(db, classId, classObj, level) {
   const pool = db?.[`class-${classId}`]?.classFeature ?? [];
   const idx = new Map();
   for (const f of pool) idx.set(`${norm(f.name)}|${f.level}`, f);
 
   const out = [];
-  const seen = new Set();
+  const seen = new Map(); // nome → quantas vezes já saiu (1ª = o item base)
   for (const ref of classObj?.classFeatures ?? []) {
     const r = parseFeatureRef(ref);
     if (r.level > level) continue;
     if (r.gainsSubclass) continue; // vira advancement Subclass, não item
     if (NON_ITEM_FEATURES.has(norm(r.name))) continue; // ASI/Epic Boon = advancement
-    if (seen.has(norm(r.name))) continue; // já emitida num nível anterior
     const f = idx.get(`${norm(r.name)}|${r.level}`);
-    if (f && !isOptionCatalog(f)) {
-      seen.add(norm(r.name));
-      out.push({ name: f.name, level: f.level, source: f.source ?? classObj.source, entries: f.entries ?? [], classId });
+    if (!f || isOptionCatalog(f)) continue;
+
+    const nth = (seen.get(norm(r.name)) ?? 0) + 1;
+    seen.set(norm(r.name), nth);
+    const entry = { level: f.level, source: f.source ?? classObj.source, entries: f.entries ?? [], classId };
+    if (nth === 1) {
+      out.push({ name: f.name, ...entry });
+      continue;
     }
+    // Re-listagem: só vira item próprio se o documento numerado EXISTE no dnd5e.
+    // O nome tem de ser o publicado ("<Nome> (2)"), senão a procedência não casa
+    // e o Foundry oferece "atualizar do compêndio" a partir do documento errado.
+    const numbered = `${f.name} (${nth})`;
+    if (classFeatureUuid(classId, numbered)) out.push({ name: numbered, ...entry });
   }
   return out;
 }

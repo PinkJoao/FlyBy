@@ -4820,3 +4820,60 @@ passo os lista, não de conteúdo.
 capstone. As duas estavam erradas, e as duas caíram pelo mesmo movimento: abrir a fonte
 em vez de confiar no rótulo. **Uma categoria do comparador é um balde de causas
 DIFERENTES até alguém provar o contrário.**
+
+## 112. O oráculo passa a dizer O QUE difere, e o placar cai de 16 para 6
+
+Executa a triagem medida da §111 anterior: corrige o único achado que era defeito
+nosso (TC-0088) e nomeia as divergências que já tinham veredito. Decisões no DDL-0085.
+
+### TC-0088: o Bárbaro perdia o upgrade do nível 17 no export
+
+O 5etools re-lista `Improved Brutal Strike` em @13 e @17, e os textos **não se
+sobrepõem**: o @13 acrescenta os efeitos Staggering/Sundering Blow, o @17 diz que o
+dano sobe para **2d10** e que se pode usar **dois efeitos** de uma vez. O dnd5e publica
+os dois documentos e o premade carrega ambos. Nossa dedup por nome mantinha só o @13,
+então um Bárbaro que **alcançou** o 17 exportava sem o upgrade. A ficha ao vivo mostrava
+certo (o `classProgression` resolve por `name|source|level`); só o export perdia.
+
+A dedup continua, com um gate: uma re-listagem só vira item próprio se o dnd5e
+**publica** o documento numerado (`"<Nome> (2)"`) - o mesmo predicado que a escada de
+níveis futuros já usava, agora valendo dos dois lados. Verificado que é estreito: uma
+varredura das 13 classes no nível 20 mostra que **nenhuma outra** emite item numerado.
+
+### O que valeu mais: o comparador deixou de contar e passou a nomear
+
+`advancement.*.grants` comparava contagens (`premade=3 ours=2`). Isso apaga a diferença
+entre "o SRD junta a magia concedida no mesmo passo" (inofensivo) e "falta uma feature"
+(perda de regra) - e foi **exatamente assim que o TC-0087 e o TC-0088 passaram semanas
+invisíveis**. Agora cada passo reporta `"<tipo>:<nome>"`, com o tipo saindo do destino do
+uuid e o nome resolvido por um mapa reverso dos registros gerados.
+
+Dois cuidados que a mudança impôs: os dois lados usam formas de uuid diferentes de
+propósito (item local no nível alcançado, compêndio no futuro), então compara-se o NOME;
+e a normalização tem de ser a mesma dos dois lados - usar `itemKey` (que apaga o sufixo
+"(2)") de um lado e o nome publicado do outro inventava uma diferença que não existia.
+
+**Efeito imediato:** a comparação mais rica destapou um par que a contagem escondia (o
+cantrip do Alto Elfo do Beiro). Medido: **não** era defeito novo, é o limite conhecido e
+já documentado no `spellChoiceBag` - os dois atores têm exatamente os mesmos 5 cantrips,
+só o rótulo de quem concedeu troca.
+
+### Cinco divergências nomeadas, com predicados estreitos
+
+Um predicado largo aqui é perigoso por construção: um teste por contagem do tipo
+`before === after + 1` teria engolido o próprio TC-0087.
+
+| id | o que é |
+|---|---|
+| `reached-level-grant-lists-features-only` | o SRD junta a MAGIA no passo do nível alcançado (Paladino @2/@5); as magias estão no nosso ator do mesmo jeito. Exige que o ausente seja `spell:` |
+| `premade-xp-typo` | Riswynn L11 com `xp=6500`, o limiar do nível **5** e o mesmo valor do arquivo L05 dela. 1 de 48 fichas |
+| `warlock-pact-method` | Contact Other Plane da Sefris como `spell` num ator com **só slots de pacto** - no Foundry ficaria sem com que ser conjurada. As outras 34 magias dela são `pact` |
+| `race-granted-spell-label` | o passo da raça aponta para outro cantrip; limite já documentado. Exige troca UM-POR-UM de magia |
+| `class-spell-ladder` | reescrito para o formato por nome |
+
+**`npm run t2`: 16 -> 6**, e os 6 são uma categoria única (`feat.activities`, as
+activities que emitimos e o SRD não) esperando a pergunta 2 do T2d. O placar passou a
+dizer a verdade em vez de misturar bug com quirk.
+
+Verificado: 1314 testes (+2), lint, sweep 286/286 `--strict`, `check:keys` e
+`check:uuids` limpos.

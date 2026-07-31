@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-30T19:46:58.870Z",
+  "generatedAt": "2026-07-31T12:19:53.272Z",
   "deliberate": [
     "background item name (custom origins only)",
     "the class-granted \"Unarmed Strike\" (we grant it to EVERY class - see DDL-0080)",
@@ -17,6 +17,18 @@
     {
       "id": "capstone-asi-on-class-item",
       "why": "O aumento de atributo do capstone (Primal Champion, Body and Mind) vira um AbilityScoreImprovement no item de CLASSE. O próprio SRD usa as duas formas - no Monge ele está no item de classe (como o nosso), no Bárbaro no item da FEATURE -, então o passo a mais no item de classe do Bárbaro é escolha de forma, não lacuna."
+    },
+    {
+      "id": "premade-xp-typo",
+      "why": "O `details.xp` do Riswynn L11 e 6500, que e o limiar do nivel 5 - e e literalmente o mesmo valor do arquivo L05 dele, um copy-paste. O nivel 11 pede 85000, que e o que derivamos. Varredura das 48 fichas em 2026-07-30: esta e a UNICA com XP incoerente com o proprio nivel. O predicado exige que os DOIS valores sejam limiares oficiais e que o nosso seja o MAIOR - se um dia emitirmos um numero que nao esta na tabela, volta a ser achado."
+    },
+    {
+      "id": "warlock-pact-method",
+      "why": "O documento da Sefris marca UMA magia (Contact Other Plane) como `method: \"spell\"` enquanto as outras 34 dela, incluindo as irmas do mesmo 5o circulo (Geas, Insect Plague), sao `pact`. Nao e so inconsistencia interna: o ator declara APENAS slots de pacto (`spells.pact.value = 3`, zero slots normais), entao no Foundry essa magia fica sem nada com que ser conjurada. A nossa saida (`pact`) e a funcional. O `Dancing Lights` dela, que tambem e `spell`, esta CERTO e nos batemos - vem da raca Drow, nao do pacto. LIMITE: o predicado so vale porque os premades de Warlock sao mono-classe; se um dia entrar um Warlock multiclasse com slots normais de verdade, revisitar."
+    },
+    {
+      "id": "race-granted-spell-label",
+      "why": "O passo de concessao da RACA aponta para um cantrip diferente do que o premade escolheu (Beiro, Alto Elfo: o documento diz Prestidigitation, nos dizemos Mage Hand). E o LIMITE CONHECIDO E ACEITO documentado no `spellChoiceBag` do foundryImport: uma magia que serve a duas origens pode ser atribuida a origem errada, porque um ator externo nao diz qual origem pagou por qual magia. Medido em 2026-07-30: os dois atores tem exatamente os mesmos 5 cantrips - nada se perde, so o rotulo de quem concedeu troca. O predicado exige troca UM-POR-UM de MAGIA: se faltar uma sem nada entrar no lugar, ou se o que faltar for FEATURE, continua sendo achado."
     },
     {
       "id": "curated-swap-lineage",
@@ -49,48 +61,13 @@
     {
       "id": "class-spell-ladder",
       "why": "A escada de ItemGrant das magias que a CLASSE concede por nível: nós a emitimos para os níveis futuros de toda classe, o SRD só a tem no Paladino. Sem ela, subir de nível dentro do Foundry não concede a magia (o Power Word Heal do Bardo 20, o Contact Other Plane do Warlock 9). O passo a mais concede exatamente o que a classe concede - é cobertura, não divergência de regra."
+    },
+    {
+      "id": "reached-level-grant-lists-features-only",
+      "why": "No nível JÁ ALCANÇADO o SRD junta a MAGIA concedida no mesmo passo ItemGrant das features (Paladino @2: Fighting Style + Paladin's Smite + a magia Divine Smite; @5: Extra Attack + Faithful Steed + Find Steed). Nós listamos ali só as features. Medido em 2026-07-30: as magias ESTÃO no ator exportado como itens, então o jogador não perde nada - a diferença é de qual passo as lista. Só passaria a importar se o Foundry re-executasse o advancement (um level-down/up dentro dele): é a pergunta 2 do T2d, e esta entrada é para revisitar lá. O predicado exige que o que falta seja MAGIA - uma FEATURE ausente continua sendo achado."
     }
   ],
   "aggregate": [
-    {
-      "cat": "advancement.class.grants",
-      "count": 6,
-      "actors": [
-        "Krusk L05",
-        "Krusk L11",
-        "Krusk L17"
-      ],
-      "examples": [
-        {
-          "actor": "Krusk L05",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "actor": "Krusk L05",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "actor": "Krusk L11",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
-        },
-        {
-          "actor": "Krusk L11",
-          "cat": "advancement.class.grants",
-          "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
-        }
-      ]
-    },
     {
       "cat": "feat.activities",
       "count": 6,
@@ -138,66 +115,6 @@
           "after": [
             "enchant"
           ]
-        }
-      ]
-    },
-    {
-      "cat": "spell.method",
-      "count": 2,
-      "actors": [
-        "Sefris L11",
-        "Sefris L17"
-      ],
-      "examples": [
-        {
-          "actor": "Sefris L11",
-          "cat": "spell.method",
-          "key": "contact other plane",
-          "before": "spell",
-          "after": "pact"
-        },
-        {
-          "actor": "Sefris L17",
-          "cat": "spell.method",
-          "key": "contact other plane",
-          "before": "spell",
-          "after": "pact"
-        }
-      ]
-    },
-    {
-      "cat": "advancement.class",
-      "count": 1,
-      "actors": [
-        "Merric L17"
-      ],
-      "examples": [
-        {
-          "actor": "Merric L17",
-          "cat": "advancement.class",
-          "key": "barbarian",
-          "before": [
-            "ItemGrant@17"
-          ],
-          "after": [
-            "AbilityScoreImprovement@20"
-          ]
-        }
-      ]
-    },
-    {
-      "cat": "details.xp",
-      "count": 1,
-      "actors": [
-        "Riswynn L11"
-      ],
-      "examples": [
-        {
-          "actor": "Riswynn L11",
-          "cat": "details.xp",
-          "key": "value",
-          "before": 6500,
-          "after": 85000
         }
       ]
     }
@@ -674,9 +591,23 @@
         {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3,
+          "before": [],
+          "after": [
+            "spell:power word heal",
+            "spell:power word kill"
+          ],
           "expected": "class-spell-ladder"
+        },
+        {
+          "cat": "advancement.race.grants",
+          "key": "elf, high High Elf Traits@1",
+          "before": [
+            "spell:prestidigitation"
+          ],
+          "after": [
+            "spell:mage hand"
+          ],
+          "expected": "race-granted-spell-label"
         }
       ]
     },
@@ -725,9 +656,23 @@
         {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3,
+          "before": [],
+          "after": [
+            "spell:power word heal",
+            "spell:power word kill"
+          ],
           "expected": "class-spell-ladder"
+        },
+        {
+          "cat": "advancement.race.grants",
+          "key": "elf, high High Elf Traits@1",
+          "before": [
+            "spell:prestidigitation"
+          ],
+          "after": [
+            "spell:mage hand"
+          ],
+          "expected": "race-granted-spell-label"
         }
       ]
     },
@@ -776,9 +721,23 @@
         {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3,
+          "before": [],
+          "after": [
+            "spell:power word heal",
+            "spell:power word kill"
+          ],
           "expected": "class-spell-ladder"
+        },
+        {
+          "cat": "advancement.race.grants",
+          "key": "elf, high High Elf Traits@1",
+          "before": [
+            "spell:prestidigitation"
+          ],
+          "after": [
+            "spell:mage hand"
+          ],
+          "expected": "race-granted-spell-label"
         }
       ]
     },
@@ -827,9 +786,23 @@
         {
           "cat": "advancement.class.grants",
           "key": "bard Class Features@20",
-          "before": 1,
-          "after": 3,
+          "before": [],
+          "after": [
+            "spell:power word heal",
+            "spell:power word kill"
+          ],
           "expected": "class-spell-ladder"
+        },
+        {
+          "cat": "advancement.race.grants",
+          "key": "elf, high High Elf Traits@1",
+          "before": [
+            "spell:prestidigitation"
+          ],
+          "after": [
+            "spell:mage hand"
+          ],
+          "expected": "race-granted-spell-label"
         }
       ]
     },
@@ -900,14 +873,20 @@
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
+          "before": [
+            "spell:divine smite"
+          ],
+          "after": [],
+          "expected": "reached-level-grant-lists-features-only"
         },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
+          "before": [
+            "spell:find steed"
+          ],
+          "after": [],
+          "expected": "reached-level-grant-lists-features-only"
         },
         {
           "cat": "feat.activities",
@@ -953,14 +932,20 @@
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
+          "before": [
+            "spell:divine smite"
+          ],
+          "after": [],
+          "expected": "reached-level-grant-lists-features-only"
         },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
+          "before": [
+            "spell:find steed"
+          ],
+          "after": [],
+          "expected": "reached-level-grant-lists-features-only"
         },
         {
           "cat": "feat.activities",
@@ -1006,14 +991,20 @@
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@2",
-          "before": 3,
-          "after": 2
+          "before": [
+            "spell:divine smite"
+          ],
+          "after": [],
+          "expected": "reached-level-grant-lists-features-only"
         },
         {
           "cat": "advancement.class.grants",
           "key": "paladin Class Features@5",
-          "before": 3,
-          "after": 2
+          "before": [
+            "spell:find steed"
+          ],
+          "after": [],
+          "expected": "reached-level-grant-lists-features-only"
         },
         {
           "cat": "feat.activities",
@@ -1185,12 +1176,11 @@
         {
           "cat": "advancement.class",
           "key": "barbarian",
-          "before": [
-            "ItemGrant@17"
-          ],
+          "before": [],
           "after": [
             "AbilityScoreImprovement@20"
-          ]
+          ],
+          "expected": "capstone-asi-on-class-item"
         }
       ]
     },
@@ -2013,7 +2003,8 @@
           "cat": "details.xp",
           "key": "value",
           "before": 6500,
-          "after": 85000
+          "after": 85000,
+          "expected": "premade-xp-typo"
         },
         {
           "cat": "items.race",
@@ -2172,8 +2163,10 @@
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
-          "before": 1,
-          "after": 2,
+          "before": [],
+          "after": [
+            "spell:contact other plane"
+          ],
           "expected": "class-spell-ladder"
         }
       ]
@@ -2212,8 +2205,10 @@
         {
           "cat": "advancement.class.grants",
           "key": "warlock Class Features@9",
-          "before": 1,
-          "after": 2,
+          "before": [],
+          "after": [
+            "spell:contact other plane"
+          ],
           "expected": "class-spell-ladder"
         },
         {
@@ -2278,7 +2273,8 @@
           "cat": "spell.method",
           "key": "contact other plane",
           "before": "spell",
-          "after": "pact"
+          "after": "pact",
+          "expected": "warlock-pact-method"
         }
       ]
     },
@@ -2334,7 +2330,8 @@
           "cat": "spell.method",
           "key": "contact other plane",
           "before": "spell",
-          "after": "pact"
+          "after": "pact",
+          "expected": "warlock-pact-method"
         }
       ]
     },

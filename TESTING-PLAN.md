@@ -409,7 +409,7 @@ that is non-trivial (matrix enumeration, waiver diffing) is unit-tested normally
 | **T2d** real Foundry imports | ⏳ **blocked on the user** (see below) |
 | **T3** feats/spells/items | later; re-plan then |
 
-**Last measured:** 1318 tests · lint clean · `npm run sweep -- --strict` **286/286**
+**Last measured:** 1331 tests · lint clean · `npm run sweep -- --strict` **286/286**
 · `npm run t2` **6** findings (+127 named as expected) · `check:keys` and
 `check:uuids` clean.
 
@@ -459,6 +459,28 @@ drags them into Foundry (dnd5e 5.3.3+). Five concrete questions are waiting:
 5. Does a pack arrive as a container with its contents, and does carried weight match?
 
 ### Last session
+
+- **2026-07-30 (7)** - **TC-0089 fechado (dedup por padrao) + o levantamento das
+  concessoes de magia.** 1331 testes (+13), lint, sweep 286/286 `--strict`, `t2`
+  estavel em 6. DDL-0087, CHANGELOG §114.
+
+  Escolha de magia repetida num ator externo passa a ser deduplicada. **O escopo
+  e a decisao:** concessao com pool de usos NAO mora em `ClassEntry.spells`, entao
+  a dedup nao alcanca nenhuma. E a **ordem** importa - o primeiro corte rodava
+  antes do encalhe e teria colapsado as duas Magic Missile da Riswynn dentro do
+  balde de carga, que aceita repetidos de proposito.
+
+  **Ferramenta nova:** `npx vite-node scripts/survey-granted-spells.js` lista as
+  973 concessoes de magia (188 com uso proprio) e as colisoes de mesma magia por
+  fontes diferentes. E o gabarito de qualquer dedup futura, e foi ele que achou o
+  **TC-0090** (Hunter's Mark do Ranger sem o pool do Favored Enemy).
+
+  **A licao e sobre o INSTRUMENTO:** tres probes mentiram antes de acertar nesta
+  sessao, e o pior deles concluiu que NENHUMA magia de patrono do Warlock derivava
+  - so porque chamou a subclasse de `Archfey Patron` quando o engine a indexa por
+  `Archfey`. Uma linha do `COVERAGE.md` escrita numa sessao ao vivo desmentiu.
+  Antes de reportar ausencia, confirme que o probe acha o que voce sabe que existe.
+
 
 - **2026-07-30 (6)** - **O usuario achou o erro da triagem: Contact Patron.** 1318
   testes (+4), lint, sweep 286/286 `--strict`, `t2` estavel em **6**. DDL-0086,

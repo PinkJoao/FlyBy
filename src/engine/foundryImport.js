@@ -28,6 +28,7 @@ import { parseClass } from './classData';
 import { TRAIT_CHOICE_KINDS, choiceTraitTitle } from './foundryItems';
 import { parseChoices, collectAbilityPicks } from './choices';
 import { resolveSpellObj, spellChoosePredicate } from './spells';
+import { dedupeSpellPicks } from './dedupeSpellPicks';
 import { grantedSpells, additionalSpellChoices } from './grantedSpells';
 import { casterInfo } from './spellcasting';
 import { deriveHpBonus } from './hpBonuses';
@@ -1269,6 +1270,23 @@ export function foundryToCharacter(rawActor, db, out = null) {
   // conjuração de classe nenhuma, e o nosso modelo não guarda magia DENTRO de
   // item - então são carga pelo mesmo motivo.
   stranded.push(...(spellsByClass.get(SPELL_OWNED_BY_ITEM) ?? []));
+  // DEPOIS do encalhe, de propósito. Um ator externo pode listar a MESMA magia
+  // duas vezes (a Sefris premade traz Hex e Hideous Laughter em duplicidade), e a
+  // cópia extra só inflava o contador de preparadas - a mesma decisão escrita
+  // duas vezes não é duas decisões (TC-0089).
+  //
+  // Rodar isto ANTES do encalhe colapsaria as duas Magic Missile da Riswynn
+  // dentro do balde de CARGA, que existe justamente para não perder conteúdo: lá
+  // o documento manda, e o balde opera por índice (DDL-0084). Aqui só sobram as
+  // ESCOLHAS de uma classe conjuradora.
+  //
+  // O escopo é estreito por construção: concessão não mora em `ClassEntry.spells`
+  // (a derivação a recria), então nenhum pool de usos é colapsado. O levantamento
+  // das 188 concessões com uso próprio - Hunter's Mark do Ranger, os quatro Misty
+  // Step do Archfey, o Contact Other Plane do Contact Patron - está em
+  // `scripts/survey-granted-spells.js`.
+  for (const cls of char.classes) cls.spells = dedupeSpellPicks(cls.spells);
+
   char.unassignedSpells = stranded;
   if (stranded.length && out) {
     const n = stranded.length;

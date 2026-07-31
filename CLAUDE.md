@@ -90,6 +90,7 @@ npm run sweep          # Phase T Tier 0, whole matrix (-- --strict, --class=X, -
 npm run t2             # export oracle: re-export the 48 official premades and diff
 npm run check:keys     # curated species-keyed registries vs the resolved catalog
 npm run check:uuids    # premade-referenced compendium uuids vs the generated registry
+npx vite-node scripts/survey-granted-spells.js   # concessões de magia com uso próprio (gabarito de dedup)
 npm run pdf:preview    # render the PDF sheet without the browser
 npm run gen:uuids · gen:sources · gen:srd    # regenerate the committed SRD-derived registries
 ```
@@ -131,7 +132,7 @@ documents all four subfolders, their licences and what each is good for.
 | **Usage tutorial** (coach-marks) | done (F1-F4) |
 | **Phase T campaign** | T0 done · T1 done (**286/286** units certified) · **T2 in progress** |
 
-**Current numbers:** 1318 tests · sweep **286/286** in `--strict` · `npm run t2`
+**Current numbers:** 1331 tests · sweep **286/286** in `--strict` · `npm run t2`
 at **6** findings (from 1023 at the T2 opening), plus 127 differences named as
 expected across 14 deliberate divergences. `check:keys` and `check:uuids` clean.
 
@@ -243,6 +244,11 @@ buried in an entry.
 - **Verify the probe's own assumption before reporting.** Several "bugs" a probe
   accused were defects of the instrument. Correct the instrument: 26 false
   positives hide the real absences the oracle exists to show.
+  **Before reporting an ABSENCE, confirm the probe finds something you know is
+  there.** Three probes lied in one session: one imported a registry name that does
+  not exist and saw 139 gaps where there were 2; one called a subclass by its full
+  name when the engine indexes it by `shortName`, and concluded no patron spell
+  derived at all.
 - **Never write "engine-verified" without having run something.** Either run a
   probe, or the note says "inferred from the pattern".
 - **A finding that CHANGES with the character's level is ours, not the source's.**
@@ -399,6 +405,7 @@ DDL-0031 "effects only" scope (by **0057**), DDL-0058 (planning; implemented by
 **0059**), DDL-0059/0060 (refined by **0061** and **0063**), DDL-0064 LFL treatment
 (revised by **0066**), DDL-0080 §3.1 resistance sweep (widened by **0081**).
 
+- **DDL-0087** (2026-07-30) - Escolha repetida se DEDUPA; concessão com pool não. E o levantamento é que define a fronteira
 - **DDL-0086** (2026-07-30) - Concessão SEMPRE-PREPARADA também pode ter uso GRÁTIS só na prosa; e nomear antes de ler a feature que concede esconde bug
 - **DDL-0085** (2026-07-30) - Um oráculo que conta NÚMEROS esconde a natureza da diferença; e re-listagem publicada como documento próprio não se dedupa
 - **DDL-0084** (2026-07-30) - Carga ganha SUB-ABA própria, sem contador nenhum; e balde com repetidos se opera por ÍNDICE

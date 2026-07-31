@@ -11,32 +11,39 @@ wrong behavior) · `polish` (cosmetic / minor UX).
 
 ## Open findings
 
-**One: TC-0089** (below), a product decision, not a defect of the engine.
-`KNOWN_ISSUES` and `WAIVERS` in `scripts/lib/roundtrip.js` stay empty - the sweep is
-green and must stay green.
+**One: TC-0090** (below), achado pelo levantamento das concessoes de magia.
+`KNOWN_ISSUES` e `WAIVERS` em `scripts/lib/roundtrip.js` seguem vazios.
 
-> `npm run t2` reports **6** findings, all of one category (`feat.activities`), and
-> none is triaged as our defect: they are activities we emit and the SRD does not,
-> waiting on T2d question 2. The measured triage is in **TESTING-PLAN.md** §7.
+> `npm run t2` reporta **6** achados, todos de uma categoria (`feat.activities`),
+> nenhum triado como defeito nosso: sao activities que emitimos e o SRD nao,
+> esperando a pergunta 2 do T2d. A triagem medida esta em **TESTING-PLAN.md** §7.
 
-## TC-0089 - um ator externo pode listar a MESMA magia duas vezes na mesma classe
+## TC-0090 - Hunter's Mark do Ranger nao tem o pool de usos gratis do Favored Enemy
 
-- **Encontrado:** 2026-07-30, no console, ao importar a Sefris L11 para conferir o
-  Contact Patron. **Severidade:** polish (numero errado no contador).
-  **Causa:** import. **Status:** open.
-- **Medido:** o ator premade da Sefris lista `Hex` e `Hideous Laughter` DUAS vezes
-  cada. Nosso import carrega as duas copias para `classes[].spells`, entao a
-  classe fica com 21 picks e duas duplicatas.
-- **O que isso causa:** o contador de "Prepared" da origem conta as duas, entao o
-  numero na ficha fica 2 acima do real; e as linhas repetidas colidiam na key do
-  React (ja corrigido: a key leva o indice, senao o React descartava uma linha).
-- **A DECISAO que falta, e por isso nao foi corrigido junto:** deduplicar no
-  import e a escolha obvia (preparar a mesma magia duas vezes nao faz nada pelo
-  jogador), mas e uma decisao de PRODUTO com a mesma forma do balde de carga: o
-  documento diz duas, e apagar uma em silencio e perda de conteudo. As saidas
-  possiveis sao dedupar no import, ou manter e sinalizar a repeticao na aba.
-- **Nao afeta o export:** o `npm run t2` nao acusa nada aqui - as duas copias
-  voltam ao Foundry como o documento as trouxe.
+- **Encontrado:** 2026-07-30, pelo `scripts/survey-granted-spells.js` ao levantar
+  o gabarito da dedup (TC-0089). **Severidade:** bug (o jogador perde um recurso
+  rastreado). **Causa:** derivacao/export. **Status:** open.
+  **Unidade:** `class:ranger/*` do nivel 1 em diante.
+- **A prosa do Favored Enemy @1:** "You always have the Hunter's Mark spell
+  prepared. You can cast it **twice** without expending a spell slot, and you
+  regain all expended uses when you finish a **Long Rest**. The number of times
+  you can cast the spell without a spell slot **increases when you reach certain
+  Ranger levels**, as shown in the Favored Enemy column of the Ranger Features
+  table."
+- **Medido:** um `ranger/Hunter` nivel 5 deriva `Hunter's Mark` como concedida
+  (`alwaysPrepared`), mas com `castType = -` e `count = -`. Ou seja: a magia
+  aparece, o POOL nao. Mesma forma do TC-0087/DDL-0086 (Contact Patron), com uma
+  diferenca importante.
+- **Por que nao foi corrigido junto com o Contact Patron:** ali a frequencia e
+  FIXA (1/descanso longo) e coube numa linha do `INNATE_USES`. Aqui a contagem
+  **escala com o nivel** por uma coluna da tabela da classe (2 no 1, mais depois),
+  e o `INNATE_USES` so guarda `count` constante. O fix precisa de uma forma de
+  contagem por nivel - decidir se ela entra no proprio registro ou vem de um
+  ScaleValue.
+- **O levantamento e o gabarito:** `npx vite-node scripts/survey-granted-spells.js`
+  lista as **188** concessoes com uso proprio. Vale conferir as vizinhas ao mexer
+  aqui; os casos-limite ja verificados como CORRETOS sao o Archfey Warlock (12
+  concedidas @14, Misty Step `daily`) e o Contact Patron (`restLong` x1).
 
 ## Adding a finding
 
@@ -151,3 +158,4 @@ and the traps each one left behind. The table is the index.
 | TC-0086 | Item guardado num contêiner continuava EQUIPADO | fixed@2026-07-30 (DDL-0082, CHANGELOG §108) |
 | TC-0087 | Monge perde Self-Restoration ao subir de nível DENTRO do Foundry (escada @10 sem uuid) | fixed@2026-07-30 (DDL-0083, CHANGELOG §110) |
 | TC-0088 | Barbaro perde "Improved Brutal Strike (2)" no export ao ALCANCAR o nivel 17 | fixed@2026-07-30 (DDL-0085, CHANGELOG §112) |
+| TC-0089 | Ator externo lista a MESMA magia duas vezes na mesma classe (contador inflado) | fixed@2026-07-30 (DDL-0087, CHANGELOG §114) |

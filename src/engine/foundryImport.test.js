@@ -505,6 +505,38 @@ describe('featSpellBag', () => {
   });
 });
 
+// TC-0089. Um ator externo pode listar a MESMA magia duas vezes (a ficha premade
+// da Sefris traz Hex e Hideous Laughter em duplicidade); a copia extra so inflava
+// o contador de preparadas. O levantamento das concessoes com uso proprio esta em
+// `scripts/survey-granted-spells.js` - nenhuma delas mora em ClassEntry.spells,
+// por isso dedupar la nao pode colapsar pool nenhum (o unitario e
+// dedupeSpellPicks.test.js).
+//
+// O que se testa AQUI e a ORDEM: a dedup roda DEPOIS do encalhe, senao ela
+// colapsaria as copias dentro do balde de CARGA - que existe para nao perder
+// conteudo e opera por indice (DDL-0084).
+describe('escolha de magia repetida no ator externo (TC-0089)', () => {
+  const actor = (classId, spells) => ({
+    type: 'character',
+    name: 'T',
+    system: { abilities: {}, details: {}, attributes: {} },
+    items: [
+      { _id: 'c1', type: 'class', name: classId, system: { identifier: classId.toLowerCase(), levels: 5 } },
+      ...spells.map((n, i) => ({
+        _id: `s${i}`, type: 'spell', name: n,
+        system: { level: 1, method: 'spell', prepared: 1 },
+      })),
+    ],
+  });
+
+  it('o balde de CARGA preserva as repetidas (a dedup nao chega la)', () => {
+    // Classe nao-conjuradora: tudo encalha. O documento diz duas, o balde guarda
+    // duas - e o re-export as devolve.
+    const c = foundryToCharacter(actor('Rogue', ['Magic Missile', 'Shield', 'Magic Missile']), null);
+    expect(c.unassignedSpells.map((r) => r.id)).toEqual(['Magic Missile', 'Shield', 'Magic Missile']);
+  });
+});
+
 describe('magia sem origem: guardada e avisada (5.3 / B4)', () => {
   const actor = (classId, spells) => ({
     type: 'character',

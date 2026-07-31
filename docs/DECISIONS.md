@@ -11,6 +11,63 @@
 
 ---
 
+### DDL-0087 - Escolha repetida se DEDUPA; concessao com pool nao. E o levantamento e que define a fronteira
+**Date:** 2026-07-30
+
+**Fecha o TC-0089** e abre o **TC-0090**.
+
+**O caso.** A ficha premade da Sefris (Warlock 11) lista `Hex` e `Hideous
+Laughter` DUAS vezes cada. O import carregava as duas copias para
+`ClassEntry.spells`, e o contador de preparadas somava as duas: numero errado na
+ficha. Preparar a mesma magia duas vezes nao faz nada pelo jogador - e a mesma
+decisao escrita duas vezes, nao duas decisoes.
+
+**Decisao 1 - dedupar por padrao** (pedido do usuario), em
+`engine/dedupeSpellPicks.js`, puro e com teste. A copia que sobrevive e a
+primeira, com a bandeira `prepared` unificada pelo MAIS CAPAZ: se qualquer copia
+estava preparada, a sobrevivente fica preparada (senao a dedup tiraria uma
+capacidade de quem tinha uma no grimorio e outra preparada).
+
+**Decisao 2 - o ESCOPO e o coracao da decisao.** Uma magia CONCEDIDA pode trazer
+um pool de usos proprio, e a MESMA magia pode ser concedida por varias fontes.
+Colapsar qualquer uma dessas perderia o pool. Elas estao a salvo por construcao:
+concessao nao mora em `ClassEntry.spells` (o schema diz, e a derivacao a recria).
+A funcao so ve ESCOLHAS.
+
+**Decisao 3 - a ORDEM importa, e o primeiro corte estava errado.** A dedup rodava
+ANTES do encalhe, entao teria colapsado as **duas Magic Missile** da Riswynn
+dentro do balde de CARGA - exatamente o campo que existe para nao perder conteudo,
+e que opera por indice justamente porque aceita repetidos (DDL-0084). Movida para
+DEPOIS do encalhe: no balde o documento manda, nas escolhas mandamos nos. Ha teste
+para as duas metades.
+
+**Decisao 4 - o levantamento vira ferramenta, nao anotacao.**
+`scripts/survey-granted-spells.js` enumera as concessoes de magia das 13 classes
+por duas vias: o `additionalSpells` estruturado e a PROSA ("without expending a
+spell slot"). Sao **973 concessoes, 188 com uso/frequencia propria**, mais uma
+secao que lista a mesma magia vinda de fontes diferentes - o gabarito de qualquer
+dedup futura. Os casos que o usuario levantou aparecem nele e foram verificados:
+
+| caso | veredito |
+|---|---|
+| **Archfey Warlock / Misty Step** (4 fontes: patrono sempre-preparada @3, patrono `daily:cha`, Steps of the Fey @3, Bewitching Magic @14) | CORRETO - 12 concedidas @14, Misty Step `daily` |
+| **Contact Patron / Contact Other Plane** | CORRETO desde o DDL-0086 (`restLong` x1) |
+| **Ranger / Hunter's Mark** (Favored Enemy @1) | **BUG - TC-0090**: concedida, mas sem pool |
+
+**O TC-0090, e por que ficou aberto.** No Contact Patron a frequencia e FIXA e
+coube numa linha do `INNATE_USES`. No Favored Enemy a contagem **escala com o
+nivel** por uma coluna da tabela da classe, e o registro so guarda `count`
+constante. Fechar exige decidir a forma da contagem por nivel; nao e uma linha.
+
+**A licao de metodo desta sessao, e ela e sobre o INSTRUMENTO.** Tres probes
+mentiram antes de acertar: um leu `CLASS_FEATURE_UUIDS` (nome inexistente) e
+acusou 139 lacunas onde havia 2; outro usou `itemKey`, que apaga o sufixo "(2)",
+e inventou uma diferenca; o terceiro chamou a subclasse de `Archfey Patron`
+quando o engine a indexa por `Archfey`, e concluiu que **nenhuma** magia de
+patrono derivava - um alarme enorme e falso, desmentido por uma linha do
+`COVERAGE.md` escrita numa sessao ao vivo. **Antes de reportar ausencia, confirme
+que o instrumento acha o que voce sabe que existe.**
+
 ### DDL-0086 - Concessao SEMPRE-PREPARADA tambem pode ter uso GRATIS so na prosa; e nomear antes de ler a feature que concede esconde bug
 **Date:** 2026-07-30
 

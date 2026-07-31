@@ -4934,3 +4934,67 @@ Verificado ao vivo: a ficha da Sefris L11 mostra "Always Prepared · 1/Long Rest
 chip de frequência não existia) e o export emite `uses: {max: "1", recovery: [{period:
 "lr"}]}`, idêntico ao premade. 1318 testes (+4), lint, sweep 286/286 `--strict`,
 `npm run t2` estável em **6**, `check:keys` e `check:uuids` limpos.
+
+## 114. Escolha de magia repetida é deduplicada; e o levantamento das concessões com uso próprio
+
+Fecha o **TC-0089** (decisão do usuário: dedupar por padrão) e abre o **TC-0090**.
+
+### O caso
+
+A ficha premade da Sefris lista `Hex` e `Hideous Laughter` **duas vezes cada**. O
+import carregava as duas cópias para `ClassEntry.spells` e o contador de preparadas
+somava as duas. Preparar a mesma magia duas vezes não faz nada pelo jogador: é a mesma
+decisão escrita duas vezes.
+
+`engine/dedupeSpellPicks.js` (puro, com teste) remove a repetida preservando a ordem, e
+unifica a bandeira `prepared` pelo **mais capaz** - se qualquer cópia estava preparada, a
+sobrevivente fica preparada, senão a dedup tiraria uma capacidade de quem tinha uma no
+grimório e outra preparada. Na Sefris: 21 → 19 picks.
+
+### O escopo é o coração da decisão
+
+Uma magia **concedida** pode trazer um pool de usos próprio, e a mesma magia pode vir de
+várias fontes. Colapsar uma dessas perderia o pool. Elas estão a salvo por construção:
+concessão não mora em `ClassEntry.spells` - a derivação a recria. A função só vê escolhas.
+
+**E a ORDEM importa: o primeiro corte estava errado.** A dedup rodava ANTES do encalhe,
+então teria colapsado as **duas Magic Missile da Riswynn dentro do balde de carga** -
+justamente o campo que existe para não perder conteúdo, e que opera por índice porque
+aceita repetidos (DDL-0084). Movida para depois: no balde o documento manda, nas escolhas
+mandamos nós. Há teste para as duas metades.
+
+### O levantamento (`scripts/survey-granted-spells.js`)
+
+Ferramenta nova, permanente. Enumera as concessões de magia das 13 classes por duas vias
+(o `additionalSpells` estruturado e a PROSA "without expending a spell slot"): **973
+concessões, 188 com uso ou frequência própria**, mais uma seção que lista a mesma magia
+vinda de fontes diferentes. É o gabarito de qualquer dedup futura.
+
+Os casos que o usuário levantou aparecem nele e foram verificados um a um:
+
+| caso | veredito |
+|---|---|
+| **Archfey Warlock / Misty Step** - quatro fontes: patrono sempre-preparada @3, patrono `daily:cha`, Steps of the Fey @3, Bewitching Magic @14 | **correto** - 12 concedidas @14, Misty Step `daily` |
+| **Contact Patron / Contact Other Plane** | **correto** desde a §113 (`restLong` ×1) |
+| **Ranger / Hunter's Mark** (Favored Enemy @1) | **bug: TC-0090** |
+
+### TC-0090 (aberto)
+
+Um `ranger/Hunter` nível 5 deriva Hunter's Mark como concedida, mas **sem pool de usos**.
+A prosa do Favored Enemy dá conjurações grátis por descanso longo, e a contagem **escala
+com o nível** por uma coluna da tabela da classe. No Contact Patron a frequência era fixa
+e coube numa linha do `INNATE_USES`; aqui não cabe, porque o registro só guarda `count`
+constante. Fechar exige decidir a forma da contagem por nível.
+
+### A lição desta sessão é sobre o INSTRUMENTO
+
+Três probes mentiram antes de acertar: um importou um nome de registro inexistente e
+acusou 139 lacunas onde havia 2; outro usou `itemKey`, que apaga o sufixo "(2)", e
+inventou uma diferença; o terceiro chamou a subclasse de `Archfey Patron` quando o engine
+a indexa por `Archfey`, e concluiu que **nenhuma** magia de patrono derivava - alarme
+enorme e falso, desmentido por uma linha do `COVERAGE.md` escrita numa sessão ao vivo.
+**Antes de reportar uma ausência, confirme que o instrumento acha o que você sabe que
+existe.**
+
+Verificado: 1331 testes (+13), lint, sweep 286/286 `--strict`, `npm run t2` estável em
+**6**, `check:keys` e `check:uuids` limpos.

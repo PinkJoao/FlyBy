@@ -3217,7 +3217,7 @@ re-derive it. See [DDL-0037](CLAUDE.md).
   `launch.json` are committed. `.claude/settings.local.json` is left **untracked and not
   force-ignored** (matching the previous project, which never listed it in `.gitignore`) and its
   stale old-project paths were cleaned. Still ignored: `.agents/`, `skills-lock.json`.
-- **Commit authorship.** The no-`Co-Authored-By` rule (working agreement §2 rule 3) is permanent.
+- **Commit authorship.** The no-`Co-Authored-By` rule (working agreement §2, "Claude commits; the user pushes/pulls") is permanent.
   A **single, already-spent one-time exception** applied to the commit that un-ignored `CLAUDE.md`
   and `.claude` (bundled with these context updates), which was allowed to carry Claude's
   co-authorship trailer; every later commit drops it again.
@@ -4998,3 +4998,31 @@ existe.**
 
 Verificado: 1331 testes (+13), lint, sweep 286/286 `--strict`, `npm run t2` estável em
 **6**, `check:keys` e `check:uuids` limpos.
+
+## 115. O CLAUDE.md passa a guardar as 5 últimas trocas da sessão
+
+Pedido do usuário, que troca de chat com frequência: os documentos guardavam o que foi
+**decidido** (DDL) e o que foi **construído** (CHANGELOG), mas nada guardava *o que
+estava sendo feito agora*. Um chat que morre no meio de uma tarefa levava o contexto
+junto.
+
+**§9 do `CLAUDE.md`** passa a manter um log rotativo de 5 tuplas (request, response),
+com data e hora. Mora ali e não num arquivo à parte porque o `CLAUDE.md` é o único lido
+por inteiro em toda sessão.
+
+**A ordem é a parte inteligente, e é do usuário:** a request é resumida **antes** de
+qualquer trabalho, a response no fim do turno. Assim uma tupla com `Feito:` vazio não é
+um registro pela metade - é o **sinal de que a sessão foi interrompida**, com o pedido
+preservado. Um chat novo lê, confere `git status` e os trackers, e continua de onde
+parou.
+
+Teto explícito de 5 entradas curtas: o arquivo acabou de sair de 368 KB para 32 KB
+(§109) e um log sem limite o re-incharia. O log é **ponteiro** para os registros de
+verdade, nunca substituto.
+
+**E ler os markdowns da raiz virou regra** (§2 rule 1), junto com "depois leia o §9". O
+usuário vinha pedindo isso à mão em quase toda sessão nova.
+
+Manutenção: as regras novas entraram nas posições 1 e 2 e deslocaram a numeração do
+resto, então as quatro referências existentes a "§2 rule 3" passaram a citar a regra pelo
+**nome** - número de lista não serve como identificador durável. Decisões no DDL-0088.

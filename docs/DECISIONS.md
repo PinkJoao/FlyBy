@@ -11,6 +11,37 @@
 
 ---
 
+### DDL-0088 - O CLAUDE.md guarda um log rotativo das 5 ultimas trocas, e a request entra ANTES do trabalho
+**Date:** 2026-07-31
+
+**O problema.** O usuario troca de chat com frequencia, e um chat que morre no meio
+de uma tarefa leva o contexto junto. Os documentos guardavam o que foi DECIDIDO e o
+que foi CONSTRUIDO, mas nada guardava "o que estava sendo feito agora".
+
+**Decisao 1 - o log mora no `CLAUDE.md` (§9), nao num arquivo a parte.** Ele e o
+unico arquivo lido por inteiro em toda sessao; um log noutro lugar so seria lido
+por quem ja soubesse que ele existe, o que derrota o proposito.
+
+**Decisao 2 - a ORDEM e a parte inteligente, e veio do usuario.** A request e
+resumida **antes** de qualquer trabalho; a response, no fim do turno. Assim uma
+tupla com `Feito:` VAZIO nao e um registro incompleto: e o sinal de que a sessao
+foi interrompida, com o pedido preservado. Um chat novo le, confere `git status` e
+os trackers, e continua de onde parou.
+
+**Decisao 3 - exatamente 5 tuplas, curtas.** O arquivo acabou de sair de 368 KB
+para 32 KB (DDL-0084 e o CHANGELOG §109); um log sem teto o re-incharia. Cinco
+entradas de poucas linhas cada, e o log e PONTEIRO para os registros de verdade
+(CHANGELOG, DDL, ledger), nunca substituto deles.
+
+**Decisao 4 - ler os markdowns da raiz vira REGRA (§2 rule 1).** O usuario abria
+quase toda sessao pedindo isso a mao. Agora e a primeira regra do acordo, junto com
+"depois leia o §9 para saber onde a anterior parou".
+
+**Consequencia de manutencao:** as regras novas entraram nas posicoes 1 e 2, o que
+deslocou a numeracao do resto. As quatro referencias existentes a "§2 rule 3"
+(autoria de commit) passaram a citar a regra pelo NOME, que e estavel - numero de
+lista nao serve como identificador durável.
+
 ### DDL-0087 - Escolha repetida se DEDUPA; concessao com pool nao. E o levantamento e que define a fronteira
 **Date:** 2026-07-30
 
@@ -2830,7 +2861,7 @@ first-run breakage left by the DDL-0037 migration.
 
 ### DDL-0037 — Project migration: "FlyBy" repo, Firebase Hosting, in-repo (git-ignored) source material, tracked CLAUDE.md/.claude
 **Date:** 2026-07-18
-**Touches:** the §3 reference-material section (moved in-repo) and the §2 rule-3 commit-authorship
+**Touches:** the §3 reference-material section (moved in-repo) and the §2 commit-authorship
 rule (one-time exception). **Does not change** any DDL-0003/0009 licensing decision.
 
 **Context.** The project moved to a fresh repository under its own name, changed hosting provider,
@@ -2844,7 +2875,7 @@ must not re-derive.
 - **Hosting: Firebase Hosting**, replacing the previous **Cloudflare (Pages / `*.pages.dev`)**
   deploy. Config is committed: `firebase.json` (SPA rewrite of `**` → `/index.html`, serving
   `dist/`) and `.firebaserc` (default project **`flyby-hub`**). Deploy is `npm run build` then
-  `firebase deploy` — the **user runs deploys**, like pushes/pulls (§2 rule 3). No Cloudflare/
+  `firebase deploy` — the **user runs deploys**, like pushes/pulls (§2, the commit/push rule). No Cloudflare/
   wrangler config remains in the repo.
 - **Reference material moved in-repo and git-ignored.** `DnD Source Material/` now sits at the
   project root (was a sibling across two machines — see §3) and is added to `.gitignore`, so it is
@@ -2857,7 +2888,7 @@ must not re-derive.
   force-ignored** (matching the previous project's `.gitignore`, which never listed it) and is left
   **untracked/uncommitted** — it is a machine-local permission cache. Kept ignored: `.agents/`,
   `skills-lock.json`.
-- **Commit-authorship: §2 rule 3 stands unchanged** (Claude adds **no** `Co-Authored-By` / AI
+- **Commit-authorship: the §2 rule stands unchanged** (Claude adds **no** `Co-Authored-By` / AI
   trailer). **One-time exception, already spent:** the single commit that removed `CLAUDE.md` and
   `.claude` from `.gitignore` (bundled with these context updates) was allowed to carry Claude's
   co-authorship trailer. Every commit after it follows the no-co-authorship rule again.

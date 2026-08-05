@@ -348,6 +348,7 @@ export function spellChoosePredicate(pool, db) {
     if (f.levels && !f.levels.includes(spell.level)) return false;
     if (classLists.length && !classLists.some((set) => set.has(spell.name.toLowerCase()))) return false;
     if (f.schools && !f.schools.includes(String(spell.school ?? '').toUpperCase())) return false;
+    if (f.sources && !f.sources.includes(String(spell.source ?? '').toUpperCase())) return false;
     if (f.ritual && !isRitual(spell)) return false;
     if (f.attack && !(spell.spellAttack ?? []).some((a) => f.attack.includes(String(a).toUpperCase()))) return false;
     return true;

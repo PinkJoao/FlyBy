@@ -156,6 +156,56 @@
   background: rgba(230, 180, 60, 0.1);
 }
 
+/* Seção retrátil entre as chips e o corpo (ex: "Spell Lists" da magia). */
+.expando {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.expandoHead {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.expandoHead:hover .expandoLabel {
+  color: var(--text-h);
+}
+
+.expandoChevron {
+  font-size: 11px;
+  opacity: 0.5;
+  transition: transform 0.15s;
+}
+
+.expandoOpen .expandoChevron {
+  transform: rotate(180deg);
+}
+
+.expandoLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.expandoBody {
+  border-top: 1px solid var(--border);
+  padding: 8px 10px 10px;
+  font-size: 13px;
+}
+
 .lore {
   margin-top: 12px;
   padding-top: 12px;

@@ -27,6 +27,7 @@ import classEntity from '../../selector/entities/class';
 import languageEntity from '../../selector/entities/language';
 import { makeFeatEntity } from '../../selector/entities/feat';
 import { makeOptionalFeatureEntity } from '../../selector/entities/optionalfeature';
+import { makeSubclassEntity } from '../../selector/entities/subclass';
 
 // Entities de popup genéricas (sem ctx de personagem: pré-requisitos aparecem
 // sem coloração de status, como nos seletores abertos "a seco").
@@ -105,18 +106,19 @@ export const SIMPLE_TAGS = {
 
 /** A tag abre link de entidade? (as demais tags de referência ficam inertes). */
 export function isEntityTag(tag) {
-  return tag in SIMPLE_TAGS || tag === 'classFeature' || tag === 'subclassFeature';
+  return tag in SIMPLE_TAGS || tag === 'classFeature' || tag === 'subclassFeature' || tag === 'subclass';
 }
 
 /**
  * Texto exibido de uma tag de entidade (também usado pelo fallback inerte).
- * classFeature/subclassFeature têm gramática própria (o display fica depois de
- * classe/subclasse/nível); as demais seguem Name|Source|Display.
+ * classFeature/subclassFeature/subclass têm gramática própria (o display fica
+ * depois de classe/subclasse/nível); as demais seguem Name|Source|Display.
  */
 export function entityTagDisplay(tag, content) {
   const parts = String(content ?? '').split('|');
   if (tag === 'classFeature') return (parts[5] ?? '').trim() || parts[0];
   if (tag === 'subclassFeature') return (parts[7] ?? '').trim() || parts[0];
+  if (tag === 'subclass') return (parts[4] ?? '').trim() || parts[0];
   return parseTagContent(content).display;
 }
 
@@ -203,6 +205,34 @@ function lookupSubclassFeature(db, content) {
   };
 }
 
+// --- Subclasse ----------------------------------------------------------------
+// {@subclass ShortName|Class|ClassSource|Source|Display} - gramática do 5etools.
+// A subclasse mora no arquivo da classe, então a entity é a FÁBRICA de sempre
+// (makeSubclassEntity), que sabe montar as features resolvidas e achar a arte.
+// `_copy` resolvido antes de casar: a cópia "compat" de uma subclasse antiga
+// anexada à classe nova não repete o conteúdo dela.
+function lookupSubclass(db, content) {
+  const p = String(content ?? '').split('|').map((s) => s.trim());
+  const [shortName, className, , source] = p;
+  if (!shortName || !className) return null;
+  const classId = className.toLowerCase();
+  const pool = db?.[`class-${classId}`]?.subclass;
+  if (!pool?.length) return null;
+  const idOf = (s) => `${s.shortName ?? s.name}|${s.source}|${s.classSource ?? ''}`;
+  const want = shortName.toLowerCase();
+  const candidates = resolveCopies(pool, idOf).filter(
+    (s) => (s.shortName ?? s.name)?.toLowerCase() === want || s.name?.toLowerCase() === want,
+  );
+  const raw = pickBySource(candidates, source);
+  if (!raw) return null;
+  return {
+    kind: 'entity',
+    entity: makeSubclassEntity(classId, 'Subclass'),
+    raw,
+    display: entityTagDisplay('subclass', content),
+  };
+}
+
 /**
  * Resolve uma tag de entidade para o alvo do link, ou null (sem match → o
  * chamador degrada para o span inerte).
@@ -213,6 +243,7 @@ export function lookupEntityLink(db, tag, content) {
   if (!db) return null;
   if (tag === 'classFeature') return lookupClassFeature(db, content);
   if (tag === 'subclassFeature') return lookupSubclassFeature(db, content);
+  if (tag === 'subclass') return lookupSubclass(db, content);
   const cfg = SIMPLE_TAGS[tag];
   if (!cfg) return null;
   const { name, source, display } = parseTagContent(content);

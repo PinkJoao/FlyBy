@@ -147,7 +147,7 @@ documents all four subfolders, their licences and what each is good for.
 | **Usage tutorial** (coach-marks) | done (F1-F4) |
 | **Phase T campaign** | T0 done · T1 done (**286/286** units certified) · **T2 in progress** |
 
-**Current numbers:** 1331 tests · sweep **286/286** in `--strict` · `npm run t2`
+**Current numbers:** 1352 tests · sweep **286/286** in `--strict` · `npm run t2`
 at **6** findings (from 1023 at the T2 opening), plus 127 differences named as
 expected across 14 deliberate divergences. `check:keys` and `check:uuids` clean.
 
@@ -397,6 +397,8 @@ one of these is probably the right home instead.
 | a Foundry Active Effect or activity we must override | `engine/foundryEffects.js` · `foundryActivities.js` · `foundryFeatureUses.js` |
 | a fact the SRD knows and 5etools does not | a generator: `npm run gen:uuids` / `gen:srd` / `gen:sources` |
 | a deliberate difference from the premades | `DELIBERATE` (not looked at) or `EXPECTED` (looked at, with the reason) in `scripts/lib/premadeDiff.js` |
+| an entity mention that must become a clickable preview | a tag in `SIMPLE_TAGS` (`components/common/entityLinks.js`); a tag with its own pipe grammar gets a `lookupX` there |
+| true-but-bulky info to hang off an entity's detail sheet | `entity.sections(raw, db)` → `[{ id, label, entries }]`, rendered collapsed by DetailView |
 
 **`DELIBERATE` vs `EXPECTED`:** `DELIBERATE` means the comparator does not look
 (document identity, prose, session state); `EXPECTED` means it looks, finds, and
@@ -420,6 +422,7 @@ DDL-0031 "effects only" scope (by **0057**), DDL-0058 (planning; implemented by
 **0059**), DDL-0059/0060 (refined by **0061** and **0063**), DDL-0064 LFL treatment
 (revised by **0066**), DDL-0080 §3.1 resistance sweep (widened by **0081**).
 
+- **DDL-0089** (2026-08-05) - A magia diz a QUAIS LISTAS pertence; e a NATUREZA da entrada (concedida x disponível) é o que salva a lista do ruído
 - **DDL-0088** (2026-07-31) - O CLAUDE.md guarda um log rotativo das 5 últimas trocas, e a request entra ANTES do trabalho
 - **DDL-0087** (2026-07-30) - Escolha repetida se DEDUPA; concessão com pool não. E o levantamento é que define a fronteira
 - **DDL-0086** (2026-07-30) - Concessão SEMPRE-PREPARADA também pode ter uso GRÁTIS só na prosa; e nomear antes de ler a feature que concede esconde bug
@@ -538,6 +541,22 @@ how far it got, and continue from there.
 
 ---
 
+### 2026-08-05 10:36 - listas de magia na ficha da magia
+**Pedido:** incluir na magia a informação que o 5e.tools mostra: a QUAIS LISTAS
+ela pertence (classes, subclasses, espécies, talentos e etc. que a concedem).
+Como ocupa muito espaço, atrás de um BOTÃO DE EXPANDIR (chevron-down), colocado
+depois das chips e antes do texto da magia. E as entradas têm de ser CLICÁVEIS,
+na mesma ideia dos links internos, para o usuário saber do que se trata aquela
+classe/subclasse/talento/espécie.
+**Feito:** seção "Spell Lists" retrátil entre as chips e o texto, gerada por
+`engine/spellSources.js`: a linha de Classes vem do mapa reverso oficial, o resto é
+derivado varrendo `additionalSpells` de subclasse/espécie/linhagem/talento/
+background/optional feature. Cada entrada é uma TAG do 5etools, então o EntryContent
+já a torna link (4818 tags geradas no catálogo, 0 mortas); `{@subclass}` é tag nova
+no `entityLinks`. A marca `*` separa CONCEDIDA de DISPONÍVEL - sem ela, Magic
+Initiate afogaria as concessões reais. DDL-0089, CHANGELOG §116. 1352 testes, sweep
+286/286, t2 estável em 6.
+
 ### 2026-07-31 14:00 - regra do log de sessão
 **Pedido:** criar esta seção. Guardar as 5 últimas tuplas (request, response)
 resumidas, com data e hora; a request entra ANTES do trabalho, a response no fim,
@@ -576,9 +595,3 @@ export). Mais importante: o comparador deixou de contar e passou a NOMEAR o que
 difere, porque foi a contagem que escondeu TC-0087 e TC-0088. Cinco divergências
 nomeadas como `EXPECTED` com predicados estreitos. `t2` 16 -> 6. DDL-0085,
 CHANGELOG §112, commit `2133ffa`.
-
-### 2026-07-30 22:09 - entender os quirks do premade
-**Pedido:** detalhar do que se tratam os quirks do premade e se precisam de ajuste.
-**Feito:** os 16 achados medidos um a um contra o dado. Só 1 era defeito nosso
-(TC-0088, aberto na hora); 3 eram quirks confirmados do documento oficial, 6 forma
-de documento sem perda, 6 esperando o T2d. Sem mudança de código. Commit `7588295`.

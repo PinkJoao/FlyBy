@@ -4,6 +4,12 @@
 // Mostra imagem (fluff), nome/fonte, os traços mecânicos (raw.entries) e a lore
 // (fluff.entries), estilo 5etools. A entity pode expor `fluff(raw, db)` para
 // fornecer imagens + lore; sem isso, mostra só os entries mecânicos.
+//
+// Entre as chips e o corpo cabe ainda uma SEÇÃO RETRÁTIL por entidade
+// (`entity.sections(raw, db)` → `[{ id, label, entries }]`): informação
+// verdadeira mas volumosa, que só ocupa espaço quando o usuário pede. A magia a
+// usa para dizer a quais listas ela pertence (engine/spellSources). Como o corpo
+// é `entries` do 5etools, o EntryContent já transforma as tags em links.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -27,6 +33,20 @@ function metaClass(m) {
         ? styles.metaHi
         : '';
   return extra ? `${styles.metaItem} ${extra}` : styles.metaItem;
+}
+
+/** Seção retrátil (chevron + rótulo), fechada por padrão. */
+function Expando({ label, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={open ? `${styles.expando} ${styles.expandoOpen}` : styles.expando}>
+      <button type="button" className={styles.expandoHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span className={styles.expandoChevron} aria-hidden="true">▾</span>
+        <span className={styles.expandoLabel}>{label}</span>
+      </button>
+      {open && <div className={styles.expandoBody}>{children}</div>}
+    </div>
+  );
 }
 
 export default function DetailView({
@@ -66,6 +86,7 @@ export default function DetailView({
   const meta = entity?.meta?.(raw, db) ?? [];
   // Entidades como classe/subclasse montam os entries (fluff/features resolvidas).
   const bodyEntries = entity?.entries?.(raw, db) ?? raw.entries;
+  const sections = (entity?.sections?.(raw, db) ?? []).filter((s) => s?.entries?.length);
   const editable = typeof onImgClick === 'function';
   const imgClass = capImage ? `${styles.img} ${styles.imgCapped}` : styles.img;
   // Ações do visualizador de imagem editável (item do inventário): Change sempre;
@@ -121,6 +142,12 @@ export default function DetailView({
           ))}
         </div>
       )}
+
+      {sections.map((s) => (
+        <Expando key={s.id} label={s.label}>
+          <EntryContent entries={s.entries} />
+        </Expando>
+      ))}
 
       {bodyEntries?.length > 0 && <EntryContent entries={bodyEntries} />}
 

@@ -27,6 +27,7 @@ import {
   isConcentration,
   saveOrAttack,
 } from '../../engine/spells';
+import { spellSourceEntries } from '../../engine/spellSources';
 
 /** Rótulo da duração: "Instantaneous", "Concentration, up to 1 minute"… */
 export function durationLabel(spell) {
@@ -141,6 +142,14 @@ const spellEntity = {
 
   // Texto mecânico + o bloco de conjuração em círculo superior.
   entries: (spell) => [...(spell.entries ?? []), ...(spell.entriesHigherLevel ?? [])],
+
+  // A quais listas a magia pertence (classes, subclasses, espécies, talentos…).
+  // Volumoso - de 9 entradas em média a 40 na pior magia - então vai numa seção
+  // RETRÁTIL, fechada por padrão, entre as chips e o texto. As entradas são tags
+  // do 5etools, que o EntryContent resolve para o preview de cada entidade.
+  sections: (spell, db) => [
+    { id: 'spell-lists', label: 'Spell Lists', entries: spellSourceEntries(db, spell) },
+  ],
 };
 
 /**

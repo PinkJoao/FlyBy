@@ -11,6 +11,61 @@
 
 ---
 
+### DDL-0089 - A magia diz a QUAIS LISTAS pertence, e a natureza da entrada (concedida x disponivel) e o que salva a lista do ruido
+**Date:** 2026-08-05
+
+**O pedido.** Trazer para a ficha da magia o bloco que o 5e.tools imprime no pe
+dela ("Classes: ... / Subclasses: ... / Species: ... / Feats: ..."), atras de um
+botao de expandir e com as entradas clicaveis.
+
+**Decisao 1 - DUAS origens, e so uma delas e um mapa pronto.** A linha de CLASSES
+sai do `spells/sources.json` (o mapa reverso oficial, keyed por fonte da magia);
+tudo o mais e derivado varrendo `additionalSpells` de subclasse, especie,
+linhagem, sub-raca, talento, background e optional feature - exatamente o que o
+5etools faz em tempo de execucao. Indice memoizado por `db` (WeakMap): 554 magias
+varridas em 118 ms, ~0,2 ms por consulta.
+
+**Decisao 2 - a NATUREZA da entrada e dita, e e ela que torna a lista utilizavel.**
+Um nome concreto em `known`/`prepared`/`innate` e uma CONCESSAO (o Drow ganha
+Faerie Fire); o bucket `expanded` e qualquer folha `{choose}`/`{all}` so
+DISPONIBILIZAM (Magic Initiate alcanca todo truque de mago). Sem a marca `*` as
+duas viram a mesma linha e a lista de um truque comum fica dominada pelas escolhas
+abertas. O 5etools resolveu o mesmo problema PODANDO (ele nem varre as
+`additionalSpells` de classe); marcar preserva a informacao em vez de esconde-la,
+que e a regra da casa - liberdade com aviso, nunca bloqueio duro.
+
+**Decisao 3 - a UNICA poda e a folha de FILTRO das `additionalSpells` de CLASSE.**
+Os Magical Secrets do Bardo alcancam metade do catalogo e a linha de classes ja vem
+do mapa reverso, que e exato. Os nomes CONCRETOS de classe ficam - e assim que o
+Druida 2024 aparece em Find Familiar, que ele tem sempre preparada sem que ela
+esteja na lista dele. Podar a classe inteira (como o 5etools faz) perderia isso.
+
+**Decisao 4 - a base da especie SAI quando as linhagens entram.** O
+`additionalSpells` da raca base e a UNIAO dos grupos, um por linhagem, e cada
+`_versions` traz o seu: listar os dois duplicaria cada magia ("Elf" e "Elf (Drow
+Lineage)" para a mesma Faerie Fire). A base fica quando NENHUMA versao traz a sua
+(as linhagens de Kobold zeram com `additionalSpells: null`). Medido: so 3 racas tem
+as duas coisas, e em todas as versoes cobrem 100% da base.
+
+**Decisao 5 - o bloco e gerado como MARKUP do 5etools, nao como componente.** Cada
+entrada vira uma tag (`{@subclass}`, `{@race}`, `{@feat}`...) e o `EntryContent` ja
+sabe transforma-la no preview da entidade. Custo: uma tag nova no `entityLinks`
+(`{@subclass}`, gramatica `ShortName|Class|ClassSource|Source|Display`), que o app
+inteiro passa a resolver. Probe sobre o catalogo completo: **4818 tags, 0 mortas**.
+
+**Decisao 6 - o que a base derruba, derruba tambem aqui.** As especies passam pela
+mesma lista que o indice de links usa (`_copy` resolvido, sem reimpressas): sem
+isso, Half-Elf e Yuan-ti Pureblood produziam 30 linhas inertes, e a versao atual ja
+entra por conta propria.
+
+**Achado de tabela:** `parseSpellChooseFilter` ignorava `source=`, entao o
+`{all: 'source=EGW'}` de Chronurgy/Graviturgy casava com o catalogo inteiro.
+Corrigido no parser e no predicado - vale tambem para os pools de escolha do
+builder.
+
+**Onde mora:** `engine/spellSources.js` (indice + markup), `DetailView` ganhou o
+gancho generico `entity.sections(raw, db)` para secoes retrateis.
+
 ### DDL-0088 - O CLAUDE.md guarda um log rotativo das 5 ultimas trocas, e a request entra ANTES do trabalho
 **Date:** 2026-07-31
 

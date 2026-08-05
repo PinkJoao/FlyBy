@@ -5026,3 +5026,65 @@ usuário vinha pedindo isso à mão em quase toda sessão nova.
 Manutenção: as regras novas entraram nas posições 1 e 2 e deslocaram a numeração do
 resto, então as quatro referências existentes a "§2 rule 3" passaram a citar a regra pelo
 **nome** - número de lista não serve como identificador durável. Decisões no DDL-0088.
+
+## 116. A magia diz a quais LISTAS pertence, atrás de um chevron e com tudo clicável
+
+O 5e.tools imprime, no pé da ficha de uma magia, de onde ela pode vir: "Classes:
+Sorcerer, Wizard / Subclasses: ... / Species: ... / Feats: ...". A informação não
+existia no app. Agora existe, numa seção **retrátil** entre as chips e o texto da
+magia, com cada entrada abrindo o preview da entidade.
+
+**Duas origens, e só uma é um mapa pronto.** A linha de **Classes** sai do
+`spells/sources.json` (o mapa reverso oficial, keyed pela fonte da magia). Todo o
+resto é derivado varrendo o campo `additionalSpells` de subclasse, espécie,
+linhagem (`_versions`), sub-raça, talento, background e optional feature - que é
+exatamente o que o 5etools faz em tempo de execução. `engine/spellSources.js`
+constrói o índice inverso uma vez por `db` (WeakMap): as 554 magias do catálogo
+saem em 118 ms, ~0,2 ms por consulta.
+
+**A marca `*` é o que torna a lista utilizável.** Um nome concreto em
+`known`/`prepared`/`innate` é uma **concessão** (o Drow ganha Faerie Fire, e
+ponto); o bucket `expanded` e qualquer folha `{choose}`/`{all}` só
+**disponibilizam** - Magic Initiate (Wizard) alcança *todo* truque de mago, e dizer
+que ele "concede" Fire Bolt seria mentira. Sem a distinção, a lista de um cantrip
+comum vira uma parede de escolhas abertas indistinguíveis das concessões reais. O
+5etools resolveu o mesmo problema **podando** (ele nem varre as `additionalSpells`
+de classe); marcar preserva a informação em vez de escondê-la.
+
+**A única poda é a folha de FILTRO das `additionalSpells` de CLASSE.** Os Magical
+Secrets do Bardo alcançam metade do catálogo, e a linha de classes já vem do mapa
+reverso, que é exato. Os nomes **concretos** de classe ficam - é assim que o Druida
+2024 aparece em Find Familiar, que ele tem sempre preparada sem que ela esteja na
+lista dele. Podar a classe inteira teria perdido isso.
+
+**A base da espécie sai quando as linhagens entram.** O `additionalSpells` da raça
+base é a UNIÃO dos grupos, um por linhagem, e cada `_versions` traz o seu: listar os
+dois duplicaria cada magia ("Elf" e "Elf (Drow Lineage)" para a mesma Faerie Fire).
+A base fica quando nenhuma versão traz a sua - as linhagens de Kobold zeram com
+`additionalSpells: null`. Medido: só 3 raças têm as duas coisas, e nas três as
+versões cobrem 100% da base.
+
+**Nada disso é componente novo: é markup.** Cada entrada é gerada como tag do
+5etools (`{@subclass}`, `{@race}`, `{@feat}`, `{@background}`, `{@optfeature}`,
+`{@class}`) e o `EntryContent` já sabe transformá-la no preview da entidade. Custo:
+uma tag nova no `entityLinks` - **`{@subclass}`**, gramática
+`ShortName|Class|ClassSource|Source|Display`, que abre a subclasse com features
+resolvidas e arte, e que o app inteiro passa a resolver em qualquer prosa. Probe
+sobre o catálogo completo: **4818 tags geradas, 0 mortas**.
+
+O `DetailView` ganhou um gancho genérico para isso: `entity.sections(raw, db)` →
+`[{ id, label, entries }]`, renderizado como bloco retrátil (chevron, fechado por
+padrão) entre as chips e o corpo. Qualquer entity pode usá-lo.
+
+**Achado de tabela.** `parseSpellChooseFilter` ignorava a condição `source=`, então
+o `{all: 'source=EGW'}` de Chronurgy/Graviturgy casava com o catálogo inteiro.
+Corrigido no parser e no predicado - vale também para os pools de escolha do
+builder, não só para esta tela.
+
+**As espécies passam pela mesma lista que o índice de links usa** (`_copy`
+resolvido, sem as reimpressas). Sem isso, Half-Elf e Yuan-ti Pureblood produziam 30
+linhas inertes; a versão atual de cada uma já entra por conta própria.
+
+Verificado: 1352 testes (+21), lint, sweep 286/286 `--strict`, `npm run t2` estável
+em **6**, e a tela conferida no preview (aba nova - os cliques que "não abriam"
+eram artefato de HMR, como o §6.1 avisa). Decisões no DDL-0089.

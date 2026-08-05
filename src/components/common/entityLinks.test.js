@@ -22,6 +22,10 @@ const db = {
       { name: 'Channel Divinity', className: 'Paladin', source: 'PHB', level: 3, entries: ['old'] },
       { name: 'Channel Divinity', className: 'Paladin', source: 'XPHB', level: 3, entries: ['You can channel…'] },
     ],
+    subclass: [
+      { name: 'Oath of the Ancients', shortName: 'Ancients', source: 'PHB', className: 'Paladin', classSource: 'PHB' },
+      { name: 'Oath of the Ancients', shortName: 'Ancients', source: 'XPHB', className: 'Paladin', classSource: 'XPHB' },
+    ],
     subclassFeature: [
       { name: 'Aura of Warding', className: 'Paladin', subclassShortName: 'Ancients', source: 'XPHB', level: 7, entries: ['Ancient magic…'] },
     ],
@@ -30,7 +34,7 @@ const db = {
 
 describe('isEntityTag', () => {
   it('reconhece as tags cobertas e rejeita as demais', () => {
-    for (const t of ['spell', 'item', 'feat', 'optfeature', 'race', 'class', 'language', 'background', 'classFeature', 'subclassFeature']) {
+    for (const t of ['spell', 'item', 'feat', 'optfeature', 'race', 'class', 'language', 'background', 'classFeature', 'subclassFeature', 'subclass']) {
       expect(isEntityTag(t)).toBe(true);
     }
     expect(isEntityTag('creature')).toBe(false);
@@ -105,13 +109,28 @@ describe('lookupEntityLink - features de classe/subclasse', () => {
     expect(hit.entry).toMatchObject({ type: 'subclassFeature', name: 'Aura of Warding' });
     expect(lookupEntityLink(db, 'subclassFeature', 'Aura of Warding|Paladin|XPHB|Vengeance|XPHB|7')).toBeNull();
   });
+
+  it('subclass: ShortName|Class|ClassSource|Source|Display abre o preview da subclasse', () => {
+    const hit = lookupEntityLink(db, 'subclass', 'Ancients|Paladin|XPHB|XPHB|Oath of the Ancients (Paladin)');
+    expect(hit.kind).toBe('entity');
+    expect(hit.raw).toMatchObject({ name: 'Oath of the Ancients', source: 'XPHB' });
+    expect(hit.display).toBe('Oath of the Ancients (Paladin)');
+  });
+
+  it('subclass sem fonte prefere a versão 2024; subclasse inexistente fica inerte', () => {
+    expect(lookupEntityLink(db, 'subclass', 'Ancients|Paladin|PHB').raw.source).toBe('XPHB');
+    expect(lookupEntityLink(db, 'subclass', 'Vengeance|Paladin|XPHB|XPHB')).toBeNull();
+    expect(lookupEntityLink(db, 'subclass', 'Ancients|Bard|XPHB|XPHB')).toBeNull();
+  });
 });
 
 describe('entityTagDisplay', () => {
-  it('gramáticas próprias: classFeature (6º) e subclassFeature (8º)', () => {
+  it('gramáticas próprias: classFeature (6º), subclassFeature (8º) e subclass (5º)', () => {
     expect(entityTagDisplay('classFeature', 'Rage|Barbarian||1||fúria')).toBe('fúria');
     expect(entityTagDisplay('classFeature', 'Rage|Barbarian||1')).toBe('Rage');
     expect(entityTagDisplay('subclassFeature', 'A|B|C|D|E|6|F|texto')).toBe('texto');
+    expect(entityTagDisplay('subclass', 'Ancients|Paladin|XPHB|XPHB|Oath of the Ancients')).toBe('Oath of the Ancients');
+    expect(entityTagDisplay('subclass', 'Ancients|Paladin|XPHB|XPHB')).toBe('Ancients');
   });
 
   it('tags simples: Name|Source|Display', () => {

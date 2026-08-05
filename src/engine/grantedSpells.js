@@ -137,10 +137,13 @@ function groupFallbackLabel(group, index) {
 /** Interpreta a expressão de filtro de um `{choose}` de magia
  * ("level=0;1|class=Cleric;Druid|school=A|spell attack=m;r|components &
  * miscellaneous=ritual"). Condições desconhecidas são ignoradas (permissivo).
+ * `source=` recorta pelo LIVRO da magia: é a única condição de duas subclasses
+ * do EGW (Chronurgy/Graviturgy, `{all: 'source=EGW'}`), e ignorá-la fazia a
+ * expressão casar com o catálogo inteiro.
  * @returns {{ levels:number[]|null, classes:string[]|null, schools:string[]|null,
- *             ritual:boolean, attack:string[]|null }} */
+ *             ritual:boolean, attack:string[]|null, sources:string[]|null }} */
 export function parseSpellChooseFilter(expr) {
-  const out = { levels: null, classes: null, schools: null, ritual: false, attack: null };
+  const out = { levels: null, classes: null, schools: null, ritual: false, attack: null, sources: null };
   for (const cond of String(expr ?? '').split('|')) {
     const eq = cond.indexOf('=');
     if (eq < 0) continue;
@@ -151,6 +154,7 @@ export function parseSpellChooseFilter(expr) {
     else if (key === 'school') out.schools = vals.map((v) => v.toUpperCase());
     else if (key === 'spell attack') out.attack = vals.map((v) => v.toUpperCase());
     else if (key === 'components & miscellaneous') out.ritual = vals.some((v) => v.toLowerCase() === 'ritual');
+    else if (key === 'source') out.sources = vals.map((v) => v.toUpperCase());
   }
   return out;
 }

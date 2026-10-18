@@ -121,7 +121,7 @@ FlyBy runs in your web browser, on a phone or a computer: open **[flyby-hub.web.
 <p align="center"><img src="docs/images/welcome.png" alt="The welcome screen: Explore with SRD 5.2, or Use my own game data" width="360"></p>
 
 - **Explore with SRD 5.2** - the official free rules content (see below), built into the app and ready right away.
-- **Use my own game data** - if someone in your group gave you a **setup link**, just open it: FlyBy asks once to confirm, and from then on everything is ready. Opening the same link again later changes nothing, so it is safe to keep using it as your link to the app. If you use FlyBy from your phone's home screen, you can also paste the setup link here.
+- **Use my own game data** - if someone in your group gave you a **setup link**, just open it: FlyBy asks once to confirm, and from then on everything is ready. If you use FlyBy from your phone's home screen, you can also paste the setup link here.
 
 You can change this at any time in the menu (**☰ > Game data source**).
 
@@ -157,6 +157,36 @@ In your browser, on that device only. Nobody else can see them. To move a charac
 
 **What content comes with the app?**
 The **System Reference Document 5.2** (SRD), the free rules content published by Wizards of the Coast under an open license: all 12 classes (each with one subclass), 9 species, 4 backgrounds, 17 feats, over 300 spells and over 500 items, plus magic weapons and armor. Content from other books is not included; FlyBy can read it only from a game data source that you provide.
+
+**How do I use my own game data?**
+Open a **setup link** if someone gave you one, or go to **☰ > Game data source**, paste the address of a game data folder (or the whole setup link) and tap **Use this address**. FlyBy downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
+
+**What address does FlyBy accept?**
+The `https://` address of a folder of game data, the folder that holds the files listed below. The address must start with `https://`; a final `/` is optional. A few examples of what works:
+
+- A folder in a GitHub repository, through its raw address: `https://raw.githubusercontent.com/<owner>/<repository>/<branch>/data/`. This is the best option: when the files are in a folder named `data` at the root of the repository, FlyBy downloads only the files that changed when it checks for updates.
+- Any other web server or file host, as long as it serves the files over `https` and allows web pages from other sites to read them (the server sends an `Access-Control-Allow-Origin` header). On these, FlyBy downloads every file again when it updates, about once a month.
+
+**What format does the game data need to be in?**
+The JSON data format of the open-source 5e.tools project: the same folder layout, file names and fields. A copy of that project's `data` folder, or a mirror of it, works as it is. A source does not need every file: anything missing is simply left out (the **Game data source** menu tells you how many files a source is missing), but a source with none of them is treated as a wrong address.
+
+<details>
+<summary>The files FlyBy reads (74, all relative to the data folder)</summary>
+
+| Where | Files |
+|---|---|
+| the folder itself | `races.json`, `fluff-races.json`, `backgrounds.json`, `feats.json`, `optionalfeatures.json`, `skills.json`, `languages.json`, `senses.json`, `items.json`, `items-base.json`, `fluff-items.json`, `magicvariants.json`, `variantrules.json`, `conditionsdiseases.json`, `actions.json`, `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json` |
+| `class/` | `class-<name>.json` and `fluff-class-<name>.json` for each of the 13 classes (artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard), plus `foundry.json` |
+| `spells/` | `spells-<source>.json` for each spell source FlyBy knows (17), the matching `fluff-spells-<source>.json` where they exist (9), and `sources.json` |
+| `generated/` | `gendata-variantrules.json`, `gendata-tables.json` |
+
+</details>
+
+**How do I share my game data with my group?**
+In **☰ > Game data source**, tap **Copy setup link** and send it to them. Opening it the first time sets up the same game data on their device, after a confirmation; opening it again later changes nothing. The link only carries the address of the data: nobody receives your characters.
+
+**Who can see the game data address I use?**
+Only you, on your device. FlyBy has no server: the address is saved in your browser, and the game data goes straight from that address to your device.
 
 **Which rules does it use?**
 The 2024 revision of the 5th edition rules.

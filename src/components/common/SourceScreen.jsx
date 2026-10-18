@@ -24,7 +24,7 @@
 import { useState } from 'react';
 import base from './UpdatingScreen.module.css';
 import styles from './SourceScreen.module.css';
-import { describeSource, SRD_SOURCE } from '../../data/dataSource';
+import { describeSource, SRD_SOURCE, SOURCE_PLACEHOLDER } from '../../data/dataSource';
 import { sourceFromInput } from '../../data/setupLink';
 
 export default function SourceScreen({ pending, onChoose, onDismiss }) {
@@ -72,7 +72,7 @@ function FirstVisit({ onChoose }) {
             inputMode="url"
             autoFocus
             value={text}
-            placeholder="https://..."
+            placeholder={SOURCE_PLACEHOLDER}
             onChange={(e) => {
               setText(e.target.value);
               setInvalid(false);

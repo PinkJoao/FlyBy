@@ -7,7 +7,10 @@
  *
  * DECISÕES E ARMADILHAS
  *   - O quadro e o título vêm de UpdatingScreen.module.css: as telas antes do app
- *     (carregando, erro, escolha da fonte) são a mesma família visual.
+ *     (carregando, erro, escolha da fonte) são a mesma família visual. O botão de
+ *     lá traz margin-top, que `.row > button` zera para os dois ficarem alinhados.
+ *   - O placeholder é menor que o texto digitado: o endereço de exemplo é longo
+ *     (SOURCE_PLACEHOLDER) e cortaria na largura de um celular.
  * -------------------------------------------------------------------------- */
 
 .options {
@@ -76,12 +79,22 @@
   border-color: var(--accent);
 }
 
+.input::placeholder {
+  font-size: 12px;
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   margin-top: 20px;
+}
+
+/* ATENÇÃO: o botão de UpdatingScreen traz margin-top próprio, que desalinha a linha. */
+.row > button {
+  margin-top: 0;
 }
 
 .ghost {

@@ -31,7 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import useCharacterStore from '../store/characterStore';
 import useSettingsStore from '../store/settingsStore';
 import { useData } from '../data/dataContext';
-import { describeSource, sameSource, SRD_SOURCE } from '../data/dataSource';
+import { describeSource, sameSource, SRD_SOURCE, SOURCE_PLACEHOLDER } from '../data/dataSource';
 import { buildSetupLink, sourceFromInput } from '../data/setupLink';
 import useCharacterImport from '../hooks/useCharacterImport';
 import { assembleFoundryActor } from '../engine/foundryActor';
@@ -149,7 +149,7 @@ export default function Home() {
         type: 'text',
         name: 'url',
         label: 'Data address',
-        placeholder: 'https://.../data/',
+        placeholder: SOURCE_PLACEHOLDER,
         default: source?.kind === 'url' ? source.base : '',
       }],
       actions: [

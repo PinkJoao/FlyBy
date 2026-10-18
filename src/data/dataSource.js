@@ -20,6 +20,8 @@
 //   - Sem fonte configurada, o app PERGUNTA (a primeira visita, Fase 3); não há
 //     fonte padrão, e nenhum endereço mora no código (Fase 5). O cache de antes
 //     da Fase 2 é reconhecido pelo CONTEÚDO, não pelo endereço (useDataEngine).
+//   - SOURCE_PLACEHOLDER mostra a forma de um raw do GitHub com o dono e o repo
+//     mascarados: ajuda a reconhecer o endereço sem pôr nenhum no código (Fase 5).
 //   - `https` obrigatório: uma fonte http seria bloqueada como conteúdo misto no
 //     site publicado, e falharia sem explicação.
 // -----------------------------------------------------------------------------
@@ -29,6 +31,9 @@ import db from './db';
 const SOURCE_KEY = 'dataSource';
 
 export const SRD_SOURCE = Object.freeze({ kind: 'srd' });
+
+/** O texto de dica dos campos de endereço: a FORMA esperada, sem endereço real. */
+export const SOURCE_PLACEHOLDER = 'https://raw.githubusercontent.com/******/main/data/';
 
 /** A base comparável, ou null se não serve. */
 export function normalizeBase(url) {

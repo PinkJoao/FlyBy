@@ -33,7 +33,7 @@ const SOURCE_KEY = 'dataSource';
 export const SRD_SOURCE = Object.freeze({ kind: 'srd' });
 
 /** O texto de dica dos campos de endereço: a FORMA esperada, sem endereço real. */
-export const SOURCE_PLACEHOLDER = 'https://raw.githubusercontent.com/******/main/data/';
+export const SOURCE_PLACEHOLDER = 'https://raw.githubusercontent.com/.../main/data/';
 
 /** A base comparável, ou null se não serve. */
 export function normalizeBase(url) {

@@ -1,0 +1,125 @@
+/* =============================================================================
+ * RoleplayField.module.css: os traços de roleplay (lista + randomizador)
+ * =============================================================================
+ * CLASSES
+ *   .rpField, .fieldLabel, .rpRow: o campo; os botões ficam ancorados no TOPO e a
+ *     caixa cresce para baixo.
+ *   .rpInputWrap, .rpInput, .rpDie: a caixa de texto com o dado sobreposto no
+ *     canto inferior direito (o padding deixa espaço para ele).
+ *   .rpRowBtns, .rpIconBtn: botões quadrados de tamanho FIXO, que não esticam com
+ *     a caixa.
+ *   .rpAddBtn: adicionar entrada, com destaque de accent.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A altura da caixa é do auto-ajuste em JS: sem resize manual.
+ * -------------------------------------------------------------------------- */
+
+.rpField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.75;
+}
+
+.rpRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rpInputWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.rpInput {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 40px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 1.5;
+  font-family: inherit;
+  /* ATENÇÃO: o piso de 78px é a altura dos dois botões empilhados ao lado (36 + 6 + 36). */
+  resize: none;
+  overflow: hidden;
+  min-height: 78px;
+}
+
+.rpInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.rpDie {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.rpDie:hover {
+  opacity: 1;
+  background: var(--bg-soft);
+}
+
+.rpRowBtns {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rpIconBtn {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rpIconBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.rpAddBtn {
+  font-size: 26px;
+}
+
+.rpAddBtn:hover {
+  border-color: var(--accent-border);
+}

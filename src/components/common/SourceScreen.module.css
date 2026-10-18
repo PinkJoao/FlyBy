@@ -1,0 +1,111 @@
+/* =============================================================================
+ * SourceScreen.module.css: a escolha da fonte de dados (primeira visita e link)
+ * =============================================================================
+ * CLASSES
+ *   .options, .option, .optionTitle, .optionSub, .primary, .field, .input,
+ *   .row, .ghost, .error, .source.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O quadro e o título vêm de UpdatingScreen.module.css: as telas antes do app
+ *     (carregando, erro, escolha da fonte) são a mesma família visual.
+ * -------------------------------------------------------------------------- */
+
+.options {
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.option {
+  appearance: none;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.option:hover,
+.option:focus-visible {
+  border-color: var(--accent);
+}
+
+.primary {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.optionTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.optionSub {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 14px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ghost {
+  appearance: none;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #e5484d;
+  text-align: left;
+}
+
+.source {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-h);
+  word-break: break-all;
+}

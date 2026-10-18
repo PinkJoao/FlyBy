@@ -1,0 +1,153 @@
+/* =============================================================================
+ * ClassTab.module.css: a aba Class
+ * =============================================================================
+ * CLASSES
+ *   .subTabs, .subTab*, .addTab, .multiBadge: as sub-abas de multiclasse (uma
+ *     classe por vez).
+ *   .classCard, .classTop: o conteúdo da classe, SEM card com borda: as sub-abas já
+ *     separam as classes e as features têm seção própria, então o conteúdo flui e
+ *     ganha largura no mobile.
+ *   .levelControl, .levelLabel: o controle de nível no canto superior direito, com
+ *     o rótulo À ESQUERDA do stepper para a linha não ficar alta.
+ *   .tab, .choices, .subLabel, .addBtn, .summary: o resto da aba.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - .classTop tem a mesma largura máxima do .field do PickerField (420px), para
+ *     o controle de nível se alinhar à direita do campo e não à borda do painel.
+ * -------------------------------------------------------------------------- */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subTabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.subTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.subTab {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  text-transform: capitalize;
+}
+
+.subTab:hover {
+  color: var(--text-h);
+}
+
+.subTabActive {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.addTab {
+  flex: none;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  width: 38px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.addTab:hover {
+  border-color: var(--accent-border);
+}
+
+.multiBadge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.choices {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.classCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.classTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.levelControl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.levelLabel {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.7;
+  color: var(--text-h);
+}
+
+.subLabel {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.addBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.addBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.addBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.summary {
+  font-size: 13px;
+  opacity: 0.6;
+}

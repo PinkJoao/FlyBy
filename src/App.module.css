@@ -1,0 +1,23 @@
+/* =============================================================================
+ * App.module.css: o shell de altura fixa
+ * =============================================================================
+ * CLASSES
+ *   .app, .main: o shell; o .main é o ÚNICO scroller da área de conteúdo.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Assim a Home preenche a tela exatamente (rolando só a lista), e o Builder,
+ *     mais alto, rola dentro do .main.
+ * -------------------------------------------------------------------------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}

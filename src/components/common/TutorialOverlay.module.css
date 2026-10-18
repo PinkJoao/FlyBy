@@ -1,0 +1,141 @@
+/* =============================================================================
+ * TutorialOverlay.module.css: o tutorial de uso (coach-marks)
+ * =============================================================================
+ * CLASSES
+ *   .root: a camada do tour.
+ *   .blocker: camada transparente que engole os cliques do fundo (o tour anda pelo
+ *     Next).
+ *   .hole: o recorte iluminado: o elemento é transparente e um box-shadow gigante
+ *     escurece o resto; uma borda accent marca o alvo.
+ *   .dim: o passo sem alvo (balão central) escurece a tela inteira.
+ *   .tip, .tipTitle, .tipBody, .tipFoot, .counter: o balão.
+ *   .navBtns, .skip, .navBtn, .navPrimary: a navegação; o primário é borda e texto
+ *     accent, o padrão do Select e do diálogo.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - z-index acima do SelectorPanel (150), dos menus (200) e das tabelas (130), e
+ *     abaixo dos diálogos (1000) e do ImageViewer (1200): o tour aponta para o
+ *     chrome do app, nunca para um diálogo ou lightbox.
+ * -------------------------------------------------------------------------- */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+}
+
+.blocker {
+  position: absolute;
+  inset: 0;
+}
+
+/* ATENÇÃO: pointer-events: none no .hole, para não roubar o hit-testing; quem pega os cliques é o .blocker. */
+.hole {
+  position: absolute;
+  border-radius: 10px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  transition: top 0.18s ease, left 0.18s ease, width 0.18s ease, height 0.18s ease;
+}
+
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.tip {
+  position: absolute;
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+  transition: opacity 0.12s ease;
+}
+
+.tip:focus {
+  outline: none;
+}
+
+.tipTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-h);
+}
+
+.tipBody {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.tipFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.counter {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.navBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.skip {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: var(--text);
+  opacity: 0.65;
+  cursor: pointer;
+}
+.skip:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.navBtn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.navBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.navPrimary {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+.navPrimary:hover {
+  border-color: var(--accent);
+  filter: brightness(1.12);
+}

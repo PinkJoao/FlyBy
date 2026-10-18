@@ -1,0 +1,180 @@
+/* =============================================================================
+ * ImageViewer.module.css: o visualizador de imagem em tela cheia (lightbox)
+ * =============================================================================
+ * CLASSES
+ *   .overlay, .stage, .img, .close: o lightbox; o .stage deixa espaço para o X, os
+ *     créditos e os pontinhos, e o swipe horizontal para o carrossel.
+ *   .arrow, .arrowL, .arrowR: as setas, fixas nas EXTREMIDADES da tela.
+ *   .actions, .actionBtn, .actionDanger: os botões sob a imagem (Trocar, Remover
+ *     do item do inventário), no molde do visualizador do retrato.
+ *   .credit, .dots, .dot, .dotOn.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O z-index fica acima dos diálogos (DialogHost, 1000), de onde costuma abrir.
+ *   - No desktop (700px ou mais) há calhas laterais, e as setas presas ao overlay
+ *     (não à imagem) nunca cobrem a arte nem se deslocam quando a proporção muda.
+ *   - No mobile as setas somem: a navegação é por SWIPE e pontinhos, e sem as
+ *     calhas elas ficariam justamente sobre a arte.
+ * -------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  outline: none;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: calc(100svh - 120px);
+  touch-action: pan-y;
+}
+
+@media (min-width: 700px) {
+  .overlay {
+    padding-left: 76px;
+    padding-right: 76px;
+  }
+}
+
+.img {
+  max-width: min(100%, 1100px);
+  max-height: calc(100svh - 120px);
+  object-fit: contain;
+  border-radius: 12px;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 17px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+
+.close:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding-bottom: 4px;
+}
+
+.arrow:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.arrowL {
+  left: 14px;
+}
+
+.arrowR {
+  right: 14px;
+}
+
+/* ATENÇÃO: o mesmo breakpoint das calhas laterais (700px): as duas regras não podem discordar. */
+@media (max-width: 699px) {
+  .arrow {
+    display: none;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.actionBtn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.actionDanger:hover {
+  border-color: #d9534f;
+  color: #d9534f;
+}
+
+.credit {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dotOn {
+  background: #fff;
+  border-color: #fff;
+}

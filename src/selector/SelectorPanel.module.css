@@ -1,0 +1,649 @@
+/* =============================================================================
+ * SelectorPanel.module.css: o painel de seleção (busca, filtros, resultados, preview)
+ * =============================================================================
+ * CLASSES
+ *   Painel
+ *   .overlay, .panel, .header, .headerText, .hint, .close: o painel; .hint é a
+ *     dica opcional sob o título (glossário).
+ *   .detailScreen, .detailHead, .detailScroll: a tela de DETALHE do mobile
+ *     (tocar num card a abre antes de selecionar).
+ *   .searchBar, .search, .filterToggle: a busca; o toggle só existe no mobile.
+ *   .body, .bodyNoPreview: o corpo; sem preview (glossário), filtros e resultados.
+ *   Filtros
+ *   .filters, .grabber, .filtersHead*: a coluna (a gaveta, no mobile); o
+ *     cabeçalho GRUDA no topo, com fundo, para Clear e Apply seguirem alcançáveis.
+ *   .filterSearch*: a busca DENTRO dos filtros, atrás da lupa no desktop.
+ *   .legend*, .dotInc, .dotExc: a legenda include/exclude, em duas linhas no
+ *     desktop (não disputa largura com o Clear) e horizontal no mobile.
+ *   .filtersActions, .clear, .applyFilters: os botões (Apply só na gaveta).
+ *   .filterGroup, .chips, .chip, .inc, .exc, .noFilters: os chips.
+ *   .chipEmpty: a opção que não alcança resultado agora: visível e inerte, nunca
+ *     numa opção ativa (DDL-0077).
+ *   Resultados
+ *   .results, .count, .cards, .sentinel: a grade e o sentinel das levas.
+ *   .card*, .badges, .badge: os cards; .cardBox é o card COM ações (loja), um
+ *     <div> com o botão de info e o stepper na base.
+ *   .rarityBadge: a raridade (loja), bordada; a cor vem inline.
+ *   .toneNeutral, .toneBlue, .toneAccent, .toneRed: os tons dos badges.
+ *   .prereq, .preOk, .preBad, .preUnknown: os pré-requisitos, pelo status contra o
+ *     personagem.
+ *   Preview
+ *   .preview, .previewScroll, .previewFoot, .selectBtn, .muted.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - z-index 150: acima do guia (120), que o abre de DENTRO, e abaixo dos
+ *     diálogos (1000).
+ *   - A lupa é QUADRADA com o lado igual à altura do "Clear" (1lh + padding +
+ *     borda). A line-height herdada do app é um comprimento (18px/145%), e
+ *     aspect-ratio com align-self: stretch não serve (é ignorado num flex item
+ *     esticado). Os dois botões têm a mesma altura, então centralizar basta.
+ *   - No mobile (até 760px) só os resultados ficam no corpo, o toque no card faz
+ *     o preview, e a busca principal some com a gaveta aberta (não filtra os chips
+ *     e rouba altura); a busca dos filtros, então, fica sempre visível.
+ *   - O puxador GRUDA no topo, opaco e de largura cheia (margem negativa), para os
+ *     chips passarem POR BAIXO; o gesto é nosso, não do scroll. --grab-h é a
+ *     altura dele (10 + 4 da barra + 6).
+ * -------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 150;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  height: min(90svh, 800px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.detailScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.detailHead {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.detailScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.headerText {
+  min-width: 0;
+}
+.hint {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text);
+  opacity: 0.8;
+}
+.close {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+.close:hover {
+  background: var(--bg-soft);
+}
+
+.searchBar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.search {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.search:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+.filterToggle {
+  display: none;
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr 260px;
+  min-height: 0;
+}
+.bodyNoPreview {
+  grid-template-columns: 220px 1fr;
+}
+
+.filters {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.grabber {
+  display: none;
+}
+
+.filtersHead {
+  position: sticky;
+  top: -16px;
+  z-index: 2;
+  margin: -16px -16px 12px;
+  padding: 16px 16px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.filtersHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.filterSearchBtn {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  /* ATENÇÃO: line-height: inherit é o que faz 1lh igualar a altura do "Clear" (DDL-0023). */
+  line-height: inherit;
+  width: calc(1lh + 12px);
+  height: calc(1lh + 12px);
+  padding: 0;
+  font-size: 17px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  transform: scaleX(-1);
+}
+.filterSearchBtn:hover {
+  color: var(--accent);
+  filter: brightness(1.1);
+}
+.filterSearchBtnOn {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.filterSearch {
+  margin-top: 10px;
+}
+.filterSearchHidden {
+  display: none;
+}
+.filterSearchInput {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.filterSearchInput:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.noFilters {
+  font-size: 13px;
+  opacity: 0.6;
+}
+.legend {
+  font-size: 11px;
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.legendRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.dotInc,
+.dotExc {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.dotInc {
+  background: var(--accent);
+}
+.dotExc {
+  background: #e05050;
+}
+.filtersActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.clear {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+}
+.clear:hover {
+  color: #e05050;
+  filter: brightness(1.1);
+}
+.applyFilters {
+  display: none;
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--accent);
+  cursor: pointer;
+}
+.applyFilters:hover {
+  filter: brightness(1.1);
+}
+.filterGroup {
+  margin-bottom: 18px;
+}
+.filterGroup h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  appearance: none;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.chip:hover {
+  filter: brightness(1.1);
+  border-color: var(--accent-border);
+}
+.inc {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.inc:hover {
+  border-color: var(--accent);
+}
+.exc {
+  background: rgba(224, 80, 80, 0.12);
+  border-color: #e05050;
+  color: #e05050;
+  text-decoration: line-through;
+}
+.exc:hover {
+  border-color: #e05050;
+}
+
+.chipEmpty {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.chipEmpty:hover {
+  filter: none;
+  border-color: var(--border);
+}
+
+.results {
+  overflow-y: auto;
+  padding: 16px;
+}
+.count {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.sentinel {
+  grid-column: 1 / -1;
+  height: 1px;
+}
+.card {
+  width: 100%;
+  appearance: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: inherit;
+  transition: border-color 0.12s ease;
+}
+.card:hover {
+  border-color: var(--accent-border);
+}
+.cardPinned {
+  border-color: var(--accent-border);
+}
+.cardSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.cardTitle {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 15px;
+}
+.cardSub {
+  font-size: 12px;
+  opacity: 0.6;
+  font-family: var(--mono);
+}
+
+.cardMeta {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.cardBox {
+  justify-content: space-between;
+  cursor: default;
+  padding: 10px;
+}
+.cardInfo {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cardActions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.badge {
+  font-style: normal;
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.rarityBadge {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.toneNeutral {
+  background: rgba(160, 200, 230, 0.14);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.toneBlue {
+  background: rgba(90, 150, 255, 0.14);
+  color: #7fb0ff;
+}
+.toneAccent {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.toneRed {
+  background: rgba(224, 80, 80, 0.14);
+  color: #ff8a8a;
+}
+
+.prereq {
+  font-style: normal;
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.preOk {
+  border-color: rgba(80, 200, 120, 0.55);
+  background: rgba(80, 200, 120, 0.1);
+}
+.preBad {
+  border-color: rgba(224, 80, 80, 0.6);
+  background: rgba(224, 80, 80, 0.1);
+}
+.preUnknown {
+  border-color: rgba(230, 180, 60, 0.55);
+  background: rgba(230, 180, 60, 0.1);
+}
+
+.preview {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.previewScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+}
+.previewFoot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+.selectBtn {
+  appearance: none;
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: #fff;
+  cursor: pointer;
+}
+.selectBtn:hover {
+  filter: brightness(1.08);
+}
+.muted {
+  opacity: 0.5;
+  padding: 18px;
+}
+
+@media (max-width: 760px) {
+  .overlay {
+    padding: 0;
+  }
+  .panel {
+    height: 100svh;
+    max-width: none;
+    border-radius: 0;
+    border: none;
+  }
+  .filterToggle {
+    display: block;
+  }
+  .applyFilters {
+    display: inline-block;
+  }
+  .body {
+    grid-template-columns: 1fr;
+  }
+  .preview {
+    display: none;
+  }
+  .filters {
+    position: absolute;
+    inset: 0;
+    top: auto;
+    height: 70svh;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    z-index: 10;
+    padding-top: 0;
+    --grab-h: 20px;
+  }
+  .filtersOpen {
+    transform: translateY(0);
+  }
+
+  .searchBarHidden {
+    display: none;
+  }
+
+  /* ATENÇÃO: o .filtersHead gruda em --grab-h, a altura exata deste puxador; os dois em top: 0 se sobrepõem. */
+  .grabber {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin: 0 -16px;
+    padding: 10px 16px 6px;
+    background: var(--bg);
+    cursor: grab;
+    touch-action: none;
+  }
+  .grabber:active {
+    cursor: grabbing;
+  }
+  .grabberBar {
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--border);
+  }
+
+  .filtersHead {
+    top: var(--grab-h);
+    margin-top: 0;
+    padding-top: 6px;
+  }
+
+  .filterSearchHidden {
+    display: block;
+  }
+  .filterSearchBtn {
+    display: none;
+  }
+
+  .legend {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+}

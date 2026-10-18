@@ -1,0 +1,104 @@
+/* =============================================================================
+ * Stepper.module.css: o stepper reutilizável
+ * =============================================================================
+ * CLASSES
+ *   .stepper, .minus, .plus, .number: o stepper; .vertical põe o mais em cima e o
+ *     menos embaixo (o DOM é menos, número, mais, então column-reverse).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Todo valor de estilo é uma custom property com fallback; cada instância
+ *     sobrescreve o que precisar via props. O LevelControls espelha estes defaults.
+ *   - flex e line-height: 0 centram o glifo pela CAIXA (ignorando ascent e descent
+ *     da fonte); senão o menos e o mais ficam baixos em relação ao número.
+ *   - O .number tem piso de largura para 2 dígitos: espremido em card estreito
+ *     (atributos no mobile), ele nunca some nem corta.
+ * -------------------------------------------------------------------------- */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--stp-gap, 2px);
+  padding: var(--stp-padding, 2px);
+  height: var(--stp-height, auto);
+  max-width: var(--stp-max-width, none);
+  box-sizing: border-box;
+  background: var(--stp-bg, var(--bg));
+  border: 1px solid var(--stp-border, var(--border));
+  border-radius: var(--stp-radius, 9px);
+}
+
+.vertical {
+  flex-direction: column-reverse;
+}
+
+.minus,
+.plus {
+  flex: none;
+  width: var(--stp-btn-size, 22px);
+  height: var(--stp-btn-size, 22px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font: inherit;
+  font-size: calc(var(--stp-font-size, 13px) + 3px);
+  font-weight: 700;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.minus {
+  color: var(--stp-minus-color, var(--accent));
+}
+
+.plus {
+  color: var(--stp-plus-color, var(--accent));
+}
+
+.minus:hover:not(:disabled),
+.plus:hover:not(:disabled) {
+  background: var(--accent-bg);
+}
+
+.minus:disabled,
+.plus:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.number {
+  flex: 1;
+  width: var(--stp-num-width, 2.5ch);
+  min-width: var(--stp-num-min, 2.4ch);
+  height: var(--stp-btn-size, 22px);
+  line-height: var(--stp-btn-size, 22px);
+  padding: 0 1px;
+  border: none;
+  background: none;
+  text-align: center;
+  font: inherit;
+  font-size: var(--stp-font-size, 13px);
+  font-weight: var(--stp-font-weight, 700);
+  color: var(--stp-num-color, var(--text-h));
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.number::-webkit-outer-spin-button,
+.number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number:focus {
+  outline: none;
+  color: var(--stp-plus-color, var(--accent));
+}
+
+.number:disabled {
+  color: var(--stp-num-color, var(--text-h));
+}

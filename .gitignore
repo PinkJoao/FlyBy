@@ -1,0 +1,37 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+pdf-preview/
+# Actors de teste emitidos sob demanda pelo sweep (--emit-actors)
+testing/actors/
+
+# Local reference source material (5e.tools / Foundry / Plutonium) — never committed or redistributed
+DnD Source Material/
+
+# Claude / AI agents
+# CLAUDE.md and .claude config are tracked (shared working agreement + project config — see DDL-0037).
+# .claude/settings.local.json is a machine-local permission cache: NOT force-ignored (matching the
+# previous project's .gitignore, which never listed it) and left untracked/uncommitted, as before.
+.agents/
+skills-lock.json

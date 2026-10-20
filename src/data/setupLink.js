@@ -10,8 +10,10 @@
 //
 // FUNÇÕES
 //   parseSetupParam(search): a base do `?fonte=` de uma query string, ou null.
-//   sourceFromInput(text): a base de um endereço OU de um link de configuração
-//     colado, ou null.
+//   sourceFromInput(text): o endereço interpretado (parseSourceAddress) de um
+//     endereço OU de um link de configuração colado, ou null.
+//   resolveSourceInput(text, options): o mesmo, resolvido e testado
+//     (resolveSourceAddress); é o que os campos de endereço chamam.
 //   buildSetupLink(origin, base): o link a copiar.
 //   takeSetupLink(): lê o link da página UMA vez e tira o parâmetro da URL.
 //   decideBoot({ stored, link }): 'boot' (com a fonte), 'first' (primeira
@@ -30,9 +32,12 @@
 //   - O jogador de iPhone com o app instalado não consegue abrir o link DENTRO
 //     do app (o link abre no Safari): por isso o campo aceita o link inteiro
 //     colado, e sourceFromInput extrai o endereço.
+//   - O `?fonte=` é lido com normalizeBase PURO, sem as formas do GitHub: o link
+//     é gerado pelo app a partir da base gravada, e o R2 compara a base exata.
 // -----------------------------------------------------------------------------
 
 import { normalizeBase, sameSource } from './dataSource';
+import { parseSourceAddress, resolveSourceAddress } from './sourceAddress';
 
 const PARAM = 'fonte';
 
@@ -46,18 +51,22 @@ export function parseSetupParam(search) {
   }
 }
 
-/** A base de um endereço ou de um link de configuração colado, ou null. */
+/** O endereço interpretado do que foi colado: link de configuração ou endereço. */
 export function sourceFromInput(text) {
   const t = String(text ?? '').trim();
   if (!t) return null;
   try {
-    const u = new URL(t);
-    const fromParam = parseSetupParam(u.search);
-    if (fromParam) return fromParam;
+    const fromParam = parseSetupParam(new URL(t).search);
+    if (fromParam) return { base: fromParam };
   } catch {
-    return null;
+    /* sem esquema: segue como endereço */
   }
-  return normalizeBase(t);
+  return parseSourceAddress(t);
+}
+
+/** O que foi colado, resolvido e testado (resolveSourceAddress). */
+export function resolveSourceInput(text, options) {
+  return resolveSourceAddress(sourceFromInput(text), options);
 }
 
 /** O link de configuração a copiar. */

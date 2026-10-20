@@ -18,6 +18,9 @@
 // DECISÕES E ARMADILHAS
 //   - O campo aceita o link inteiro (sourceFromInput): no iPhone, o app instalado
 //     não abre o link, que vai para o Safari; colar dentro do app resolve.
+//   - FirstVisit testa o endereço antes de gravar (resolveSourceInput), mas a
+//     falha não bloqueia: "Use anyway" grava a base que o resolve achou, porque
+//     um servidor fora do ar agora pode ser o certo depois (liberdade com aviso).
 //   - Nenhuma escolha é definitiva: o menu da Home troca a fonte depois.
 // -----------------------------------------------------------------------------
 
@@ -25,7 +28,8 @@ import { useState } from 'react';
 import base from './UpdatingScreen.module.css';
 import styles from './SourceScreen.module.css';
 import { describeSource, SRD_SOURCE, SOURCE_PLACEHOLDER } from '../../data/dataSource';
-import { sourceFromInput } from '../../data/setupLink';
+import { resolveSourceInput } from '../../data/setupLink';
+import { describeProblem } from '../../data/sourceAddress';
 
 export default function SourceScreen({ pending, onChoose, onDismiss }) {
   return (
@@ -45,16 +49,18 @@ export default function SourceScreen({ pending, onChoose, onDismiss }) {
 function FirstVisit({ onChoose }) {
   const [step, setStep] = useState('pick');
   const [text, setText] = useState('');
-  const [invalid, setInvalid] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [problem, setProblem] = useState(null);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const found = sourceFromInput(text);
-    if (!found) {
-      setInvalid(true);
-      return;
-    }
-    onChoose({ kind: 'url', base: found });
+    if (checking) return;
+    setChecking(true);
+    setProblem(null);
+    const result = await resolveSourceInput(text);
+    setChecking(false);
+    if (result.ok) onChoose({ kind: 'url', base: result.base });
+    else setProblem(result);
   };
 
   if (step === 'url') {
@@ -62,7 +68,7 @@ function FirstVisit({ onChoose }) {
       <form onSubmit={submit}>
         <h1 className={base.title}>Your game data</h1>
         <p className={base.subtitle}>
-          Paste the setup link or the data address you were given. It must start with https://.
+          Paste the setup link you were given, a GitHub repository or release link, or the address of a data folder.
         </p>
         <label className={styles.field}>
           Setup link or data address
@@ -75,17 +81,22 @@ function FirstVisit({ onChoose }) {
             placeholder={SOURCE_PLACEHOLDER}
             onChange={(e) => {
               setText(e.target.value);
-              setInvalid(false);
+              setProblem(null);
             }}
           />
         </label>
-        {invalid ? <p className={styles.error}>That is not a valid https:// address or setup link.</p> : null}
+        {problem ? <p className={styles.error}>{describeProblem(problem)}</p> : null}
         <div className={styles.row}>
           <button type="button" className={styles.ghost} onClick={() => setStep('pick')}>
             Back
           </button>
-          <button type="submit" className={base.retry}>
-            Continue
+          {problem?.base ? (
+            <button type="button" className={styles.ghost} onClick={() => onChoose({ kind: 'url', base: problem.base })}>
+              Use anyway
+            </button>
+          ) : null}
+          <button type="submit" className={base.retry} disabled={checking}>
+            {checking ? 'Checking...' : 'Continue'}
           </button>
         </div>
       </form>

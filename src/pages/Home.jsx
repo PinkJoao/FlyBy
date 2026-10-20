@@ -26,7 +26,8 @@
 //   - chooseSource: trocar de fonte não toca nos personagens; a fonte nova vale a
 //     partir do recarregamento do compêndio. "Update game data" só existe para
 //     fonte por URL (o SRD embutido não tem o que re-baixar). O campo aceita o
-//     endereço ou um link de configuração colado (sourceFromInput).
+//     endereço, um link do GitHub ou um link de configuração colado, e o testa
+//     antes de gravar (resolveSourceInput); a falha pergunta, não bloqueia.
 // -----------------------------------------------------------------------------
 
 import { useEffect, useMemo, useState } from 'react';
@@ -35,7 +36,8 @@ import useCharacterStore from '../store/characterStore';
 import useSettingsStore from '../store/settingsStore';
 import { useData } from '../data/dataContext';
 import { describeSource, sameSource, SRD_SOURCE, SOURCE_PLACEHOLDER } from '../data/dataSource';
-import { buildSetupLink, sourceFromInput } from '../data/setupLink';
+import { buildSetupLink, resolveSourceInput } from '../data/setupLink';
+import { describeProblem } from '../data/sourceAddress';
 import useCharacterImport from '../hooks/useCharacterImport';
 import { assembleFoundryActor } from '../engine/foundryActor';
 import { deriveFromDb } from '../engine/resolve';
@@ -151,7 +153,7 @@ export default function Home() {
       title: 'Game data source',
       message:
         `Currently using: ${current}.${gaps}\n\n` +
-        'The built-in SRD 5.2 content works offline and needs no download. To use other content, enter the address of a folder of game data in the 5etools format (it must start with https://). Your characters are not affected.',
+        'The built-in SRD 5.2 content works offline and needs no download. To use other content, paste a GitHub repository or release link, or the address of a folder of game data in the 5etools format. Your characters are not affected.',
       fields: [{
         type: 'text',
         name: 'url',
@@ -175,13 +177,18 @@ export default function Home() {
       if (source?.kind !== 'srd') changeSource(SRD_SOURCE);
       return;
     }
-    const base = sourceFromInput(res.values.url);
-    if (!base) {
-      await alert({ title: 'Invalid address', message: 'The address must be a full https:// link to a folder of game data.' });
+    const result = await resolveSourceInput(res.values.url);
+    if (!result.ok && !result.base) {
+      const title = result.reason === 'no-repo' ? 'Repository not found' : 'Invalid address';
+      await alert({ title, message: describeProblem(result) });
       return;
     }
-    if (sameSource(source, { kind: 'url', base })) return;
-    changeSource({ kind: 'url', base });
+    if (!result.ok) {
+      const anyway = await confirm({ title: 'No game data found', message: describeProblem(result), confirmLabel: 'Use anyway' });
+      if (!anyway) return;
+    }
+    if (sameSource(source, { kind: 'url', base: result.base })) return;
+    changeSource({ kind: 'url', base: result.base });
   };
 
   const handleExport = (character) => {

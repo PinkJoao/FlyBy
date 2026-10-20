@@ -159,7 +159,7 @@ In your browser, on that device only. Nobody else can see them. To move a charac
 The **System Reference Document 5.2** (SRD), the free rules content published by Wizards of the Coast under an open license: all 12 classes (each with one subclass), 9 species, 4 backgrounds, 17 feats, over 300 spells and over 500 items, plus magic weapons and armor. Content from other books is not included; FlyBy can read it only from a game data source that you provide.
 
 **How do I use my own game data?**
-Open a **setup link** if someone gave you one, or go to **☰ > Game data source**, paste the address of a game data folder (or the whole setup link) and tap **Use this address**. FlyBy downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
+Open a **setup link** if someone gave you one, or go to **☰ > Game data source**, paste the address of your data (a GitHub repository or release link, the address of a game data folder in the 5etools format, or the whole setup link) and tap **Use this address**. FlyBy checks that it finds game data there before switching, then downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
 
 **What address does FlyBy accept?**
 The `https://` address of a folder of game data, the folder that holds the files listed below. The address must start with `https://`; a final `/` is optional. A few examples of what works:

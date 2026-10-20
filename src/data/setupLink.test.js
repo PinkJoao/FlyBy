@@ -2,9 +2,10 @@
 // setupLink.test: o link de configuração e a decisão do boot (R1 e R2)
 // =============================================================================
 // O QUE FAZ
-//   A leitura do `?fonte=`, o campo que aceita endereço ou link colado, o link a
-//   copiar e, principalmente, decideBoot: link com a mesma fonte não pergunta
-//   nada (R2); fonte nova pergunta sempre; sem fonte, a primeira visita (R1).
+//   A leitura do `?fonte=`, o campo que aceita endereço ou link colado (as formas
+//   do GitHub em si são de sourceAddress.test), o link a copiar e,
+//   principalmente, decideBoot: link com a mesma fonte não pergunta nada (R2);
+//   fonte nova pergunta sempre; sem fonte, a primeira visita (R1).
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
@@ -28,14 +29,29 @@ describe('parseSetupParam e buildSetupLink', () => {
 
 describe('sourceFromInput', () => {
   it('aceita o endereço direto ou o link de configuração colado', () => {
-    expect(sourceFromInput(BASE)).toBe(BASE);
-    expect(sourceFromInput(buildSetupLink('https://flyby.example', BASE))).toBe(BASE);
-    expect(sourceFromInput('  https://raw.example.com/owner/repo/main/data  ')).toBe(BASE);
+    expect(sourceFromInput(BASE)).toEqual({ base: BASE });
+    expect(sourceFromInput(buildSetupLink('https://flyby.example', BASE))).toEqual({ base: BASE });
+    expect(sourceFromInput('  https://raw.example.com/owner/repo/main/data  ')).toEqual({ base: BASE });
   });
 
   it('recusa texto que não é endereço https', () => {
     expect(sourceFromInput('hello')).toBeNull();
+    expect(sourceFromInput('http://raw.example.com/data/')).toBeNull();
     expect(sourceFromInput('')).toBeNull();
+  });
+});
+
+describe('sourceFromInput com as formas do GitHub', () => {
+  it('o link do repositório pede o branch padrão; o de release vira a tag', () => {
+    expect(sourceFromInput('github.com/owner/repo')).toEqual({ owner: 'owner', repo: 'repo', ref: 'default' });
+    expect(sourceFromInput('https://github.com/owner/repo/releases/tag/v1.2.0')).toEqual({
+      base: 'https://raw.githubusercontent.com/owner/repo/v1.2.0/data/',
+    });
+  });
+
+  it('o ?fonte= de um link de configuração é lido sem transformação (R2)', () => {
+    const odd = 'https://host.example/data/extra/';
+    expect(parseSetupParam(new URL(buildSetupLink('https://flyby.example', odd)).search)).toBe(odd);
   });
 });
 

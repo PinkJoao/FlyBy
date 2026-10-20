@@ -19,11 +19,11 @@ import { imgUrl } from '../common/media';
 export const RARITY_ORDER = ['artifact', 'legendary', 'very rare', 'rare', 'uncommon', 'common', 'none'];
 
 export const RARITY_COLOR = {
-  uncommon: '#3fa14b',
-  rare: '#4a90d9',
-  'very rare': '#a45ee5',
-  legendary: '#e08a2e',
-  artifact: '#c9a227',
+  uncommon: 'var(--rarity-uncommon)',
+  rare: 'var(--rarity-rare)',
+  'very rare': 'var(--rarity-very-rare)',
+  legendary: 'var(--rarity-legendary)',
+  artifact: 'var(--rarity-artifact)',
 };
 
 export const GROUP_ICONS = {

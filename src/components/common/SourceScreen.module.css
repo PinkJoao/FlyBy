@@ -112,7 +112,7 @@
 .error {
   margin: 8px 0 0;
   font-size: 13px;
-  color: #e5484d;
+  color: var(--danger);
   text-align: left;
 }
 

@@ -56,9 +56,9 @@
 }
 
 .itemDanger .itemTitle {
-  color: #e05050;
+  color: var(--danger);
 }
 
 .itemDanger:hover:not(:disabled) {
-  background: rgba(224, 80, 80, 0.12);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }

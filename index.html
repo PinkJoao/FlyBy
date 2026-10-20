@@ -6,6 +6,24 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#16171d" />
+    <script>
+      // O tema antes do primeiro pintar (src/theme.js, resolveTheme): sem isto o
+      // tema escuro abre com um clarão branco. Chave e nomes iguais aos do app.
+      (function () {
+        var t;
+        try {
+          t = JSON.parse(localStorage.getItem('builder5e:settings') || '{}').theme;
+        } catch (e) {}
+        if (t !== 'dark' && t !== 'light' && t !== 'paper') {
+          try {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          } catch (e) {
+            t = 'dark';
+          }
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="FlyBy" />

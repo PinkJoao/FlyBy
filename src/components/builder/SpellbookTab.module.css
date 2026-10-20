@@ -196,7 +196,7 @@
 }
 
 .statOver {
-  color: #e05050;
+  color: var(--danger);
 }
 
 .statLabel {
@@ -732,13 +732,13 @@
   border-radius: 9px;
   border: 1px solid var(--border);
   background: var(--bg);
-  color: #e05050;
+  color: var(--danger);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .removeBtn:hover {
-  border-color: #e05050;
+  border-color: var(--danger);
 }
 
 .swapBtn {
@@ -802,7 +802,7 @@
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent-border);
   border-radius: 8px;
-  background: var(--surface, var(--bg));
+  background: var(--bg);
   opacity: 0.85;
 }
 

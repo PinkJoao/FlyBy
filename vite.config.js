@@ -16,6 +16,8 @@
 //     rede; o compêndio de uma fonte do usuário NÃO entra no cache dele (já mora
 //     no IndexedDB, com o sync por SHA). Por isso o limite de tamanho sobe: o
 //     chunk principal e o pacote SRD passam dos 2 MB padrão do Workbox.
+//   - Das fontes do tema papel, só o subconjunto LATINO entra no precache (cerca
+//     de 113 KB): os outros alfabetos só aparecem em nome raro e vêm sob demanda.
 //   - `autoUpdate`: um deploy novo assume na próxima abertura, sem perguntar. O
 //     `navigateFallback` responde qualquer rota com o index.html, como o rewrite
 //     do Firebase; a query (`?fonte=`) segue na URL e o app a lê igual.
@@ -57,7 +59,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png}'],
+        globPatterns: ['**/*.{js,css,html,svg,png}', '**/*-latin-wght-*.woff2'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,

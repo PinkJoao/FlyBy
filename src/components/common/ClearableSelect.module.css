@@ -52,6 +52,6 @@
 }
 
 .clearX:hover {
-  border-color: #d9534f;
-  color: #d9534f;
+  border-color: var(--danger);
+  color: var(--danger);
 }

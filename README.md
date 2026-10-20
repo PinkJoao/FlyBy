@@ -149,6 +149,9 @@ Updates arrive on their own: the next time you open the app after an update, you
 **Is it free?**
 Yes. FlyBy is free and open source.
 
+**Can I change how it looks?**
+Yes: **☰ > Theme** switches between Dark, Light and Parchment, or follows your device's light or dark mode (the default).
+
 **Do I need an account?**
 No. There is no sign-up and no login: open it and start.
 

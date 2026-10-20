@@ -64,7 +64,7 @@ describe('itemEntity', () => {
 
   it('card: raridade vira badge pequeno colorido pela raridade', () => {
     const c = itemEntity.card(cloak);
-    expect(c.rarity).toEqual({ label: 'Uncommon', color: '#3fa14b' });
+    expect(c.rarity).toEqual({ label: 'Uncommon', color: 'var(--rarity-uncommon)' });
   });
 
   it('raridade de DUAS palavras casa a opção do filtro (era "Very rare")', () => {

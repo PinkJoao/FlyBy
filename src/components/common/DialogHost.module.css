@@ -188,14 +188,14 @@
 }
 
 .danger {
-  border-color: #e05050;
-  background: rgba(224, 80, 80, 0.16);
-  color: #ff9a9a;
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger-text);
 }
 
 .danger:hover {
-  background: rgba(224, 80, 80, 0.28);
-  color: #ffb3b3;
+  background: color-mix(in srgb, var(--danger) 28%, transparent);
+  color: var(--danger-text);
 }
 
 @media (max-width: 480px) {

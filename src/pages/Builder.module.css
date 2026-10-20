@@ -99,7 +99,7 @@
   box-sizing: border-box;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 10px;
   font-weight: 700;
   line-height: 16px;
@@ -199,8 +199,8 @@
 }
 
 .viewerDanger:hover {
-  border-color: #d9534f;
-  color: #d9534f;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .viewerClose {

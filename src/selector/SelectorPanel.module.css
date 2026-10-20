@@ -270,7 +270,7 @@
   background: var(--accent);
 }
 .dotExc {
-  background: #e05050;
+  background: var(--danger);
 }
 .filtersActions {
   display: inline-flex;
@@ -291,7 +291,7 @@
   border-radius: 8px;
 }
 .clear:hover {
-  color: #e05050;
+  color: var(--danger);
   filter: brightness(1.1);
 }
 .applyFilters {
@@ -350,13 +350,13 @@
   border-color: var(--accent);
 }
 .exc {
-  background: rgba(224, 80, 80, 0.12);
-  border-color: #e05050;
-  color: #e05050;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: var(--danger);
+  color: var(--danger);
   text-decoration: line-through;
 }
 .exc:hover {
-  border-color: #e05050;
+  border-color: var(--danger);
 }
 
 .chipEmpty {
@@ -487,21 +487,21 @@
 }
 
 .toneNeutral {
-  background: rgba(160, 200, 230, 0.14);
+  background: color-mix(in srgb, var(--info) 10%, transparent);
   color: var(--text);
   border: 1px solid var(--border);
 }
 .toneBlue {
-  background: rgba(90, 150, 255, 0.14);
-  color: #7fb0ff;
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  color: var(--info-text);
 }
 .toneAccent {
   background: var(--accent-bg);
   color: var(--accent);
 }
 .toneRed {
-  background: rgba(224, 80, 80, 0.14);
-  color: #ff8a8a;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger-text);
 }
 
 .prereq {
@@ -513,16 +513,16 @@
   color: var(--text);
 }
 .preOk {
-  border-color: rgba(80, 200, 120, 0.55);
-  background: rgba(80, 200, 120, 0.1);
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
 }
 .preBad {
-  border-color: rgba(224, 80, 80, 0.6);
-  background: rgba(224, 80, 80, 0.1);
+  border-color: color-mix(in srgb, var(--danger) 60%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 .preUnknown {
-  border-color: rgba(230, 180, 60, 0.55);
-  background: rgba(230, 180, 60, 0.1);
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
 }
 
 .preview {
@@ -549,7 +549,7 @@
   border-radius: 10px;
   border: 1px solid var(--accent-border);
   background: var(--bg-soft);
-  color: #fff;
+  color: var(--text-h);
   cursor: pointer;
 }
 .selectBtn:hover {

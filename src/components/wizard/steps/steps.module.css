@@ -340,8 +340,8 @@
 }
 
 .spellRemove:hover {
-  border-color: #dc2626;
-  color: #dc2626;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .spellAdd {
@@ -410,11 +410,11 @@
 }
 
 .alignCodeGood {
-  color: #5a96ff;
+  color: var(--info);
 }
 
 .alignCodeEvil {
-  color: #e05050;
+  color: var(--danger);
 }
 
 .alignDash {
@@ -492,7 +492,7 @@
 }
 
 .pointsOver strong {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .abilityGrid {

@@ -11,8 +11,9 @@
 //
 // FUNÇÕES
 //   Home(): a página. Por dentro: startNew, createNew, updateData, chooseSource
-//     (a fonte de dados, DDL-0091), copySetupLink (o link da mesa) e as ações por
-//     card (abrir, duplicar, exportar Foundry e PDF, apagar).
+//     (a fonte de dados, DDL-0091), copySetupLink (o link da mesa), chooseTheme
+//     (o tema da interface) e as ações por card (abrir, duplicar, exportar
+//     Foundry e PDF, apagar).
 //
 // DECISÕES E ARMADILHAS
 //   - Criar respeita a Character Guidance: 'ask' pergunta, com "remember my
@@ -49,6 +50,7 @@ import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
 import { alert, confirm, ask } from '../components/common/dialog';
 import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint';
+import { THEME_CHOICES } from '../theme';
 import styles from './Home.module.css';
 
 const SORT_OPTIONS = [
@@ -72,6 +74,8 @@ export default function Home() {
   const setGuidance = useSettingsStore((s) => s.setGuidance);
   const samsungHintDismissed = useSettingsStore((s) => s.samsungHintDismissed);
   const dismissSamsungHint = useSettingsStore((s) => s.dismissSamsungHint);
+  const theme = useSettingsStore((s) => s.theme);
+  const setTheme = useSettingsStore((s) => s.setTheme);
   const showSamsungHint = !samsungHintDismissed && isSamsungInternet(navigator.userAgent) && !isStandalone();
   const tutEnabled = useTutorialStore((s) => s.enabled);
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
@@ -191,6 +195,20 @@ export default function Home() {
     changeSource({ kind: 'url', base: result.base });
   };
 
+  /** Escolhe o tema da interface (src/theme.js). */
+  const chooseTheme = async () => {
+    const res = await ask({
+      title: 'Theme',
+      message: 'How FlyBy looks on this device. "Match the device" follows its light or dark mode.',
+      fields: [{ type: 'select', name: 'theme', label: 'Theme', options: THEME_CHOICES, default: theme }],
+      actions: [
+        { label: 'Cancel', value: null },
+        { label: 'Apply', value: 'apply', tone: 'primary' },
+      ],
+    });
+    if (res?.action === 'apply' && res.values.theme !== theme) setTheme(res.values.theme);
+  };
+
   const handleExport = (character) => {
     const actor = assembleFoundryActor(character, db);
     const blob = new Blob([JSON.stringify(actor, null, 2)], { type: 'application/json' });
@@ -294,6 +312,7 @@ export default function Home() {
             tutEnabled
               ? { label: 'Disable tutorials', sub: 'Turn off the walkthroughs', onClick: () => setTutEnabled(false) }
               : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
+            { label: 'Theme', sub: THEME_CHOICES.find((t) => t.value === theme)?.label, onClick: chooseTheme },
             { label: 'Import character', sub: 'Foundry actor JSON', onClick: pickFile },
             { label: 'Game data source', sub: describeSource(source), onClick: chooseSource },
             ...(source?.kind === 'url'

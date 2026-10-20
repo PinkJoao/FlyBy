@@ -2,27 +2,31 @@
 // settingsStore: as preferências do app (Zustand e localStorage)
 // =============================================================================
 // O QUE FAZ
-//   Preferências que NÃO são de um personagem: por ora só a Character Guidance (o
-//   assistente de criação e level-up, Fase D). Ficam no localStorage (síncrono, e
-//   não é dado de jogo), não no IndexedDB.
+//   Preferências que NÃO são de um personagem: a Character Guidance (o assistente
+//   de criação e level-up, Fase D), o tema e o aviso do Samsung Internet. Ficam no
+//   localStorage (síncrono, e não é dado de jogo), não no IndexedDB.
 //
 //   guidance: 'ask' pergunta a cada criação (o padrão); 'on' guia sempre; 'off'
 //   nunca guia.
 //   samsungHintDismissed: o aviso de instalação do Samsung Internet (installHint,
 //   DDL-0095) foi dispensado.
+//   theme: 'system' (o padrão, segue o aparelho), 'dark', 'light' ou 'paper'
+//   (src/theme.js). ATENÇÃO à chave KEY: o script inline do index.html a lê.
 //
 // FUNÇÕES
 //   load(), persist(state): leitura e escrita no localStorage. Sem localStorage
 //     (modo privado), as preferências ficam só em memória.
 //   useSettingsStore: o store. setGuidance(value) muda a preferência;
-//     dismissSamsungHint() esconde o aviso de instalação do Samsung Internet.
+//     dismissSamsungHint() esconde o aviso de instalação do Samsung Internet;
+//     setTheme(value) grava o tema e o aplica no documento.
 // -----------------------------------------------------------------------------
 
 import { create } from 'zustand';
+import { applyTheme } from '../theme';
 
 const KEY = 'builder5e:settings';
 
-const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false };
+const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false, theme: 'system' };
 
 function load() {
   try {
@@ -34,7 +38,7 @@ function load() {
 
 function persist(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed }));
+    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme }));
   } catch {
     // localStorage indisponível (modo privado): as preferências ficam só em memória.
   }
@@ -47,6 +51,13 @@ const useSettingsStore = create((set, get) => ({
   setGuidance: (guidance) => {
     set({ guidance });
     persist(get());
+  },
+
+  /** Grava o tema ('system', 'dark', 'light' ou 'paper') e o aplica. */
+  setTheme: (theme) => {
+    set({ theme });
+    persist(get());
+    applyTheme(theme);
   },
 
   /** Esconde o aviso de instalação do Samsung Internet, de vez. */

@@ -164,7 +164,7 @@
 }
 
 .tagRemove:hover {
-  color: #d9534f;
+  color: var(--danger);
   background: var(--bg);
 }
 

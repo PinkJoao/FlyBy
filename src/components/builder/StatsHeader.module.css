@@ -251,8 +251,8 @@ button.tileHead:hover {
 }
 
 .alignGood {
-  border-color: rgba(90, 150, 255, 0.35);
-  background: rgba(90, 150, 255, 0.1);
+  border-color: color-mix(in srgb, var(--info) 35%, transparent);
+  background: color-mix(in srgb, var(--info) 10%, transparent);
 }
 
 .alignNeutral {
@@ -261,14 +261,14 @@ button.tileHead:hover {
 }
 
 .alignEvil {
-  border-color: rgba(224, 80, 80, 0.35);
-  background: rgba(224, 80, 80, 0.1);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .alignGood.alignSel {
-  border-color: #5a96ff;
-  color: #9dbfff;
-  background: rgba(90, 150, 255, 0.22);
+  border-color: var(--info);
+  color: var(--info-text);
+  background: color-mix(in srgb, var(--info) 22%, transparent);
 }
 
 .alignNeutral.alignSel {
@@ -278,9 +278,9 @@ button.tileHead:hover {
 }
 
 .alignEvil.alignSel {
-  border-color: #e05050;
-  color: #ff9a9a;
-  background: rgba(224, 80, 80, 0.22);
+  border-color: var(--danger);
+  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
 }
 
 .abilities {

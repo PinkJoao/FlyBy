@@ -134,9 +134,9 @@
 }
 
 .toneBlue {
-  border-color: rgba(90, 150, 255, 0.45);
-  background: rgba(90, 150, 255, 0.12);
-  color: #7fb0ff;
+  border-color: color-mix(in srgb, var(--info) 45%, transparent);
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  color: var(--info-text);
 }
 
 .toneAccent {
@@ -146,24 +146,24 @@
 }
 
 .toneRed {
-  border-color: rgba(224, 80, 80, 0.45);
-  background: rgba(224, 80, 80, 0.12);
-  color: #ff8a8a;
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger-text);
 }
 
 .metaOk {
-  border-color: rgba(80, 200, 120, 0.55);
-  background: rgba(80, 200, 120, 0.1);
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
 }
 
 .metaBad {
-  border-color: rgba(224, 80, 80, 0.6);
-  background: rgba(224, 80, 80, 0.1);
+  border-color: color-mix(in srgb, var(--danger) 60%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .metaUnknown {
-  border-color: rgba(230, 180, 60, 0.55);
-  background: rgba(230, 180, 60, 0.1);
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
 }
 
 .expando {

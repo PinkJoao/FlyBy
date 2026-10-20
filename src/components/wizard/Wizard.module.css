@@ -143,14 +143,14 @@
   white-space: nowrap;
 }
 .complete {
-  color: #3fa14b;
-  border-color: rgba(63, 161, 75, 0.5);
-  background: rgba(63, 161, 75, 0.1);
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 50%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
 }
 .incomplete {
-  color: #e0a02e;
-  border-color: rgba(224, 160, 46, 0.5);
-  background: rgba(224, 160, 46, 0.1);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 50%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
 }
 .optional {
   color: var(--text);
@@ -210,7 +210,7 @@
   margin: 8px 0 0;
   font-size: 12px;
   text-align: center;
-  color: #e0a02e;
+  color: var(--warning);
 }
 
 .reviewList {
@@ -242,7 +242,7 @@
   text-align: left;
 }
 .reviewJump:hover {
-  background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+  background: color-mix(in srgb, var(--text) 8%, transparent);
 }
 .reviewJump:hover .reviewName {
   color: var(--accent);

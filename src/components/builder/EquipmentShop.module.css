@@ -27,7 +27,7 @@
   border-radius: 10px;
   border: 1px solid var(--accent-border);
   background: var(--bg-soft);
-  color: #fff;
+  color: var(--text-h);
   cursor: pointer;
   flex: none;
   white-space: nowrap;
@@ -74,7 +74,7 @@
   border-radius: 10px;
   border: 1px solid var(--accent-border);
   background: var(--bg-soft);
-  color: #fff;
+  color: var(--text-h);
   cursor: pointer;
 }
 
@@ -196,12 +196,12 @@
   border-radius: 8px;
   border: 1px solid var(--border);
   background: none;
-  color: #e05050;
+  color: var(--danger);
   cursor: pointer;
 }
 
 .cartClear:hover {
-  border-color: #e05050;
+  border-color: var(--danger);
 }
 
 .cartList {

@@ -2,9 +2,10 @@
  * index.css: os tokens globais e a tabela padrão do app
  * =============================================================================
  * O QUE FAZ
- *   Os tokens de tema em :root (texto, fundo, borda, accent, sombra, fontes), o
- *   tema escuro por prefers-color-scheme, o corpo da fonte (18px, 16px abaixo de
- *   1024px) e os estilos globais.
+ *   Os tokens de tema (texto, fundo, borda, accent, estados, raridade, sombra,
+ *   fontes) para os três temas, escolhidos pelo `data-theme` do <html>
+ *   (src/theme.js): o claro em :root, o escuro e o papel por cima. Mais o corpo
+ *   da fonte (18px, 16px abaixo de 1024px) e os estilos globais.
  *
  * CLASSES
  *   .data-table: a tabela PADRÃO do app (progressão, raças, features...), a mesma
@@ -12,14 +13,30 @@
  *     numéricas (progressão).
  *
  * DECISÕES E ARMADILHAS
- *   - O frame da tabela (borda, scroll, tela cheia) fica no TableViewer, não aqui.
+ *   - Cor nova num CSS de componente usa um token daqui, nunca um hex: um hex
+ *     fica igual nos três temas (o texto branco fixo sobre --bg-soft sumia no
+ *     claro). Tom de um estado vem de color-mix sobre o token (`color-mix(in
+ *     srgb, var(--danger) 12%, transparent)`), não de um rgba copiado.
+ *   - Ficam fora dos tokens, de propósito: a moldura preta das telas de imagem e
+ *     tabela em tela cheia (mídia pede fundo escuro em qualquer tema), os véus
+ *     escuros atrás de diálogos e as moedas do CurrencyCard (cor do metal).
+ *   - Os estados: --danger (erro, excesso, apagar), --info (azul), --success,
+ *     --warning; --danger-text e --info-text são o mesmo tom legível como TEXTO
+ *     sobre o tom claro de fundo (no escuro, mais claro que o sólido).
+ *   - O papel troca também as fontes: Cinzel nos títulos e Alegreya no texto
+ *     (importadas no main.jsx). O accent dele é bordô (vinho), e o --danger é
+ *     um escarlate alaranjado: com dois vermelhos parecidos, o include e o
+ *     exclude dos filtros ficavam indistinguíveis.
  *   - --src-origin e --src-species são o que sobrou das cores por FONTE: o esquema
  *     por categoria foi descartado e a diferenciação padrão agora é o accent.
+ *   - O --bg de cada tema é repetido em THEME_BAR (src/theme.js), a cor da barra
+ *     do sistema.
  * -------------------------------------------------------------------------- */
 
 :root {
   --text: #6b6375;
   --text-h: #08060d;
+  --text-muted: #8a8494;
   --bg: #fff;
   --bg-soft: #f7f6f9;
   --border: #e5e4e7;
@@ -27,8 +44,22 @@
   --accent: #aa3bff;
   --accent-bg: rgba(170, 59, 255, 0.1);
   --accent-border: rgba(170, 59, 255, 0.5);
+  --on-accent: #fff;
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --danger: #d03b3b;
+  --danger-text: #b42323;
+  --info: #2f6fd6;
+  --info-text: #1f5fbf;
+  --success: #2e8b3e;
+  --warning: #b77a10;
+
+  --rarity-uncommon: #2e8b3e;
+  --rarity-rare: #2f74c0;
+  --rarity-very-rare: #8e44d0;
+  --rarity-legendary: #c56f12;
+  --rarity-artifact: #a8861a;
 
   --src-origin: #d97706;
   --src-species: #0d9488;
@@ -39,7 +70,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -54,23 +85,75 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --bg-soft: #1c1d25;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+:root[data-theme='dark'] {
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --text-muted: #9aa0a6;
+  --bg: #16171d;
+  --bg-soft: #1c1d25;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --accent-border: rgba(192, 132, 252, 0.5);
+  --on-accent: #fff;
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
-    --src-origin: #fbbf24;
-    --src-species: #2dd4bf;
-  }
+  --danger: #e05050;
+  --danger-text: #ff9a9a;
+  --info: #5a96ff;
+  --info-text: #8fb8ff;
+  --success: #46b35e;
+  --warning: #e0a02e;
+
+  --rarity-uncommon: #3fa14b;
+  --rarity-rare: #4a90d9;
+  --rarity-very-rare: #a45ee5;
+  --rarity-legendary: #e08a2e;
+  --rarity-artifact: #c9a227;
+
+  --src-origin: #fbbf24;
+  --src-species: #2dd4bf;
+
+  color-scheme: dark;
+}
+
+:root[data-theme='paper'] {
+  --text: #5b4636;
+  --text-h: #2a1a0e;
+  --text-muted: #8a7560;
+  --bg: #f3e8d0;
+  --bg-soft: #eadcbd;
+  --border: #cdb98f;
+  --code-bg: #e6d6b2;
+  --accent: #7a1e2c;
+  --accent-bg: rgba(122, 30, 44, 0.1);
+  --accent-border: rgba(122, 30, 44, 0.45);
+  --on-accent: #fbf3e2;
+  --shadow:
+    rgba(70, 40, 10, 0.18) 0 10px 15px -3px, rgba(70, 40, 10, 0.1) 0 4px 6px -2px;
+
+  --danger: #d4500f;
+  --danger-text: #a83a06;
+  --info: #2c5f8f;
+  --info-text: #234e78;
+  --success: #3d6e2a;
+  --warning: #9b6a10;
+
+  --rarity-uncommon: #3d6e2a;
+  --rarity-rare: #2c5f8f;
+  --rarity-very-rare: #6e3a9c;
+  --rarity-legendary: #a8560f;
+  --rarity-artifact: #84690f;
+
+  --src-origin: #a5560c;
+  --src-species: #1f6e66;
+
+  --sans: 'Alegreya Variable', Georgia, serif;
+  --heading: 'Cinzel Variable', Georgia, serif;
+
+  color-scheme: light;
 }
 
 table.data-table {

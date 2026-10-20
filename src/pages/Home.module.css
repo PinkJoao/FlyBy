@@ -17,6 +17,8 @@
  *   .menuTrigger: o gatilho do menu (substituiu os três botões soltos).
  *   .primary, .muted, .empty: o estado vazio, centralizado.
  *   .attribution: a atribuição discreta (fonte de dados e licença SRD).
+ *   .installHint, .installHintText, .installHintActions, .installHintLink,
+ *     .installHintClose: o aviso do Samsung Internet sob o topo (DDL-0095).
  * -------------------------------------------------------------------------- */
 
 .page {
@@ -351,4 +353,48 @@
 }
 .attribution a:hover {
   color: var(--accent);
+}
+
+.installHint {
+  flex: none;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  background: var(--accent-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.installHintText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-h);
+}
+.installHintActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.installHintLink,
+.installHintClose {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  text-decoration: none;
+  cursor: pointer;
+}
+.installHintLink {
+  border-color: var(--accent-border);
+}
+.installHintLink:hover,
+.installHintClose:hover {
+  filter: brightness(1.08);
 }

@@ -6,7 +6,8 @@
 //   de busca, agrupamento e ordenação (como no Inventário e nas Magias) com o botão
 //   "Add", e a lista (só ela rola; a página cabe na tela). Importar, forçar a
 //   atualização do compêndio, a fonte de dados, o glossário e o tutorial ficam
-//   no menu.
+//   no menu. No Samsung Internet, um aviso dispensável sob o topo manda instalar
+//   pelo Chrome (installHint, DDL-0095).
 //
 // FUNÇÕES
 //   Home(): a página. Por dentro: startNew, createNew, updateData, chooseSource
@@ -20,6 +21,8 @@
 //   - Semeadura do tutorial na 1a carga do roster: quem já tem personagens nasce
 //     com os tours vistos; instalação nova os mantém para disparar.
 //   - O PDF usa o mesmo pipeline do Builder, importado dinamicamente.
+//   - O aviso do Samsung Internet lembra que os personagens ficam neste navegador:
+//     o Chrome tem armazenamento próprio, então exportar antes evita a surpresa.
 //   - chooseSource: trocar de fonte não toca nos personagens; a fonte nova vale a
 //     partir do recarregamento do compêndio. "Update game data" só existe para
 //     fonte por URL (o SRD embutido não tem o que re-baixar). O campo aceita o
@@ -43,6 +46,7 @@ import { openGlossary } from '../store/glossaryStore';
 import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
 import { alert, confirm, ask } from '../components/common/dialog';
+import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint';
 import styles from './Home.module.css';
 
 const SORT_OPTIONS = [
@@ -64,6 +68,9 @@ export default function Home() {
   const remove = useCharacterStore((s) => s.remove);
   const guidance = useSettingsStore((s) => s.guidance);
   const setGuidance = useSettingsStore((s) => s.setGuidance);
+  const samsungHintDismissed = useSettingsStore((s) => s.samsungHintDismissed);
+  const dismissSamsungHint = useSettingsStore((s) => s.dismissSamsungHint);
+  const showSamsungHint = !samsungHintDismissed && isSamsungInternet(navigator.userAgent) && !isStandalone();
   const tutEnabled = useTutorialStore((s) => s.enabled);
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
   const resetTutorials = useTutorialStore((s) => s.resetSeen);
@@ -291,6 +298,24 @@ export default function Home() {
           <span aria-hidden="true">☰</span>
         </MenuButton>
       </header>
+
+      {showSamsungHint && (
+        <aside className={styles.installHint}>
+          <p className={styles.installHintText}>
+            Installing from Samsung Internet is blocked by Google Play Protect. To install
+            FlyBy as an app, open it in Chrome. Characters stay in this browser, so export
+            any you made here first.
+          </p>
+          <div className={styles.installHintActions}>
+            <a className={styles.installHintLink} href={chromeIntentUrl(window.location)}>
+              Open in Chrome
+            </a>
+            <button type="button" className={styles.installHintClose} onClick={dismissSamsungHint}>
+              Dismiss
+            </button>
+          </div>
+        </aside>
+      )}
 
       <main className={styles.main}>
         <h2 className={styles.rosterTitle}>Characters</h2>

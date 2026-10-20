@@ -132,7 +132,7 @@ You can change this at any time in the menu (**☰ > Game data source**).
 **4. Install it (optional, recommended on iPhone and iPad).** FlyBy then gets its own icon and opens in its own window, without the browser bar.
 
 - **iPhone and iPad (Safari):** tap the **Share** button, then **Add to Home Screen**.
-- **Android (Chrome):** open the **⋮** menu and tap **Install app** (or **Add to Home screen**).
+- **Android (Chrome):** open the **⋮** menu and tap **Install app** (or **Add to Home screen**). We recommend Chrome for this.
 - **Computer (Chrome or Edge):** click the install icon at the right end of the address bar.
 
 Updates arrive on their own: the next time you open the app after an update, you are on the new version.

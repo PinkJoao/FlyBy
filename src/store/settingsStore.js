@@ -8,18 +8,21 @@
 //
 //   guidance: 'ask' pergunta a cada criação (o padrão); 'on' guia sempre; 'off'
 //   nunca guia.
+//   samsungHintDismissed: o aviso de instalação do Samsung Internet (installHint,
+//   DDL-0095) foi dispensado.
 //
 // FUNÇÕES
 //   load(), persist(state): leitura e escrita no localStorage. Sem localStorage
 //     (modo privado), as preferências ficam só em memória.
-//   useSettingsStore: o store. setGuidance(value) muda a preferência.
+//   useSettingsStore: o store. setGuidance(value) muda a preferência;
+//     dismissSamsungHint() esconde o aviso de instalação do Samsung Internet.
 // -----------------------------------------------------------------------------
 
 import { create } from 'zustand';
 
 const KEY = 'builder5e:settings';
 
-const DEFAULTS = { guidance: 'ask' };
+const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false };
 
 function load() {
   try {
@@ -31,7 +34,7 @@ function load() {
 
 function persist(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance }));
+    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed }));
   } catch {
     // localStorage indisponível (modo privado): as preferências ficam só em memória.
   }
@@ -43,6 +46,12 @@ const useSettingsStore = create((set, get) => ({
   /** Define a preferência de Character Guidance ('ask', 'on' ou 'off'). */
   setGuidance: (guidance) => {
     set({ guidance });
+    persist(get());
+  },
+
+  /** Esconde o aviso de instalação do Samsung Internet, de vez. */
+  dismissSamsungHint: () => {
+    set({ samsungHintDismissed: true });
     persist(get());
   },
 }));

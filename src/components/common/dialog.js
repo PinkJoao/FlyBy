@@ -23,6 +23,8 @@
 //   alert(opts): aviso com OK.
 //   confirm(opts): Cancelar ou Confirmar (confirmLabel, cancelLabel, danger).
 //   ask(opts): opções e campos; resolve { action, values }.
+//   menu({ content, ...opts }): um submenu numa janelinha (o corpo é um
+//     MenuList), com X e sem ações; o conteúdo se fecha por useDialogClose.
 //
 // DECISÕES E ARMADILHAS
 //   - O componente se chama DialogHost.jsx, não Dialog.jsx, DE PROPÓSITO: num
@@ -89,5 +91,20 @@ export function ask(opts) {
   });
 }
 
-const dialog = { alert, confirm, ask };
+/**
+ * Submenu numa janelinha: `content` é o corpo (em geral um MenuList), com X.
+ * @returns {Promise<void>}
+ */
+export function menu({ content, ...opts }) {
+  return open({
+    variant: 'menu',
+    dismissable: true,
+    showClose: true,
+    dismissValue: undefined,
+    message: content,
+    ...opts,
+  }).then(() => undefined);
+}
+
+const dialog = { alert, confirm, ask, menu };
 export default dialog;

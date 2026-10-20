@@ -4,16 +4,17 @@
 // O QUE FAZ
 //   A marca e o menu sanduíche no topo; abaixo, centralizados, o título, a barra
 //   de busca, agrupamento e ordenação (como no Inventário e nas Magias) com o botão
-//   "Add", e a lista (só ela rola; a página cabe na tela). Importar, forçar a
-//   atualização do compêndio, a fonte de dados, o glossário e o tutorial ficam
-//   no menu. No Samsung Internet, um aviso dispensável sob o topo manda instalar
+//   "Add", e a lista (só ela rola; a página cabe na tela). O menu tem o
+//   glossário, importar, e dois submenus em janelinha (HomeMenus): Game data (a
+//   fonte, atualizar, o link da mesa) e Settings (tema, guia, tutoriais); mais o
+//   feedback. No Samsung Internet, um aviso dispensável sob o topo manda instalar
 //   pelo Chrome (installHint, DDL-0095).
 //
 // FUNÇÕES
 //   Home(): a página. Por dentro: startNew, createNew, updateData, chooseSource
-//     (a fonte de dados, DDL-0091), copySetupLink (o link da mesa), chooseTheme
-//     (o tema da interface) e as ações por card (abrir, duplicar, exportar
-//     Foundry e PDF, apagar).
+//     (a fonte de dados, DDL-0091), copySetupLink (o link da mesa), openSettings
+//     e openGameData (os submenus) e as ações por card (abrir, duplicar,
+//     exportar Foundry e PDF, apagar).
 //
 // DECISÕES E ARMADILHAS
 //   - Criar respeita a Character Guidance: 'ask' pergunta, com "remember my
@@ -24,6 +25,8 @@
 //   - O PDF usa o mesmo pipeline do Builder, importado dinamicamente.
 //   - O aviso do Samsung Internet lembra que os personagens ficam neste navegador:
 //     o Chrome tem armazenamento próprio, então exportar antes evita a surpresa.
+//   - O menu agrupa em submenus porque passava de dez itens, três deles títulos
+//     desabilitados; as escolhas de Settings aplicam na hora (MenuList, keepOpen).
 //   - chooseSource: trocar de fonte não toca nos personagens; a fonte nova vale a
 //     partir do recarregamento do compêndio. "Update game data" só existe para
 //     fonte por URL (o SRD embutido não tem o que re-baixar). O campo aceita o
@@ -48,9 +51,9 @@ import MenuButton from '../components/common/MenuButton';
 import { openGlossary } from '../store/glossaryStore';
 import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
-import { alert, confirm, ask } from '../components/common/dialog';
+import { alert, confirm, ask, menu } from '../components/common/dialog';
 import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint';
-import { THEME_CHOICES } from '../theme';
+import { SettingsMenu, GameDataMenu } from './HomeMenus';
 import styles from './Home.module.css';
 
 const SORT_OPTIONS = [
@@ -74,10 +77,7 @@ export default function Home() {
   const setGuidance = useSettingsStore((s) => s.setGuidance);
   const samsungHintDismissed = useSettingsStore((s) => s.samsungHintDismissed);
   const dismissSamsungHint = useSettingsStore((s) => s.dismissSamsungHint);
-  const theme = useSettingsStore((s) => s.theme);
-  const setTheme = useSettingsStore((s) => s.setTheme);
   const showSamsungHint = !samsungHintDismissed && isSamsungInternet(navigator.userAgent) && !isStandalone();
-  const tutEnabled = useTutorialStore((s) => s.enabled);
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
   const resetTutorials = useTutorialStore((s) => s.resetSeen);
   const replayTutorials = () => {
@@ -167,16 +167,11 @@ export default function Home() {
       }],
       actions: [
         { label: 'Cancel', value: null },
-        ...(source?.kind === 'url' ? [{ label: 'Copy setup link', value: 'copy' }] : []),
         { label: 'Use SRD 5.2', value: 'srd' },
         { label: 'Use this address', value: 'url', tone: 'primary' },
       ],
     });
     if (!res || res.action == null) return;
-    if (res.action === 'copy') {
-      copySetupLink();
-      return;
-    }
     if (res.action === 'srd') {
       if (source?.kind !== 'srd') changeSource(SRD_SOURCE);
       return;
@@ -195,19 +190,17 @@ export default function Home() {
     changeSource({ kind: 'url', base: result.base });
   };
 
-  /** Escolhe o tema da interface (src/theme.js). */
-  const chooseTheme = async () => {
-    const res = await ask({
-      title: 'Theme',
-      message: 'How FlyBy looks on this device. "Match the device" follows its light or dark mode.',
-      fields: [{ type: 'select', name: 'theme', label: 'Theme', options: THEME_CHOICES, default: theme }],
-      actions: [
-        { label: 'Cancel', value: null },
-        { label: 'Apply', value: 'apply', tone: 'primary' },
-      ],
+  /** O submenu Settings: tema, guia e tutoriais (HomeMenus). */
+  const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
+
+  /** O submenu Game data: a fonte, a atualização e o link da mesa (HomeMenus). */
+  const openGameData = () =>
+    menu({
+      title: 'Game data',
+      content: (
+        <GameDataMenu source={source} onChooseSource={chooseSource} onUpdate={updateData} onCopyLink={copySetupLink} />
+      ),
     });
-    if (res?.action === 'apply' && res.values.theme !== theme) setTheme(res.values.theme);
-  };
 
   const handleExport = (character) => {
     const actor = assembleFoundryActor(character, db);
@@ -242,12 +235,6 @@ export default function Home() {
   );
 
   const total = characters.length;
-
-  const guidanceItem = (value, label, sub) => ({
-    label: `${guidance === value ? '✓  ' : '   '}${label}`,
-    sub,
-    onClick: () => setGuidance(value),
-  });
 
   const renderCard = (c) => {
     const summary = classNames(c);
@@ -303,21 +290,9 @@ export default function Home() {
           buttonTitle="Settings"
           items={[
             { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
-            { label: 'Character Guidance', sub: 'The step-by-step creation guide', disabled: true },
-            guidanceItem('ask', 'Ask each time'),
-            guidanceItem('on', 'Always guided'),
-            guidanceItem('off', 'Never guided'),
-            { label: 'Tutorials', sub: 'In-app usage walkthroughs', disabled: true },
-            { label: 'Replay tutorials', sub: 'Show them again as you navigate', onClick: replayTutorials },
-            tutEnabled
-              ? { label: 'Disable tutorials', sub: 'Turn off the walkthroughs', onClick: () => setTutEnabled(false) }
-              : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
-            { label: 'Theme', sub: THEME_CHOICES.find((t) => t.value === theme)?.label, onClick: chooseTheme },
             { label: 'Import character', sub: 'Foundry actor JSON', onClick: pickFile },
-            { label: 'Game data source', sub: describeSource(source), onClick: chooseSource },
-            ...(source?.kind === 'url'
-              ? [{ label: 'Update game data', sub: 'Re-download from the data source', onClick: updateData }]
-              : []),
+            { label: 'Game data', sub: describeSource(source), onClick: openGameData },
+            { label: 'Settings', sub: 'Theme, creation guide and tutorials', onClick: openSettings },
             { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
           ]}
         >

@@ -2,6 +2,7 @@
  * DialogHost.module.css: os diálogos in-app
  * =============================================================================
  * CLASSES
+ *   .menuBody: o corpo de um submenu (MenuList), sem o pre-line do texto.
  *   .overlay, .card, .title, .message, .close: o diálogo; o card se ajusta ao
  *     conteúdo entre um mínimo legível e --dlg-max-width, nunca maior que a tela,
  *     e o corpo rola se alto.
@@ -225,4 +226,8 @@
     opacity: 1;
     transform: none;
   }
+}
+
+.menuBody {
+  margin: 0 -8px -8px;
 }

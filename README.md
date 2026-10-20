@@ -123,7 +123,7 @@ FlyBy runs in your web browser, on a phone or a computer: open **[flyby-hub.web.
 - **Explore with SRD 5.2** - the official free rules content (see below), built into the app and ready right away.
 - **Use my own game data** - if someone in your group gave you a **setup link**, just open it: FlyBy asks once to confirm, and from then on everything is ready. If you use FlyBy from your phone's home screen, you can also paste the setup link here.
 
-You can change this at any time in the menu (**☰ > Game data source**).
+You can change this at any time in the menu (**☰ > Game data**).
 
 **2. Make a character.** Tap **New Character** and choose **Guide me** for the step-by-step guide, or **Just the sheet** if you already know what you want.
 
@@ -150,7 +150,7 @@ Updates arrive on their own: the next time you open the app after an update, you
 Yes. FlyBy is free and open source.
 
 **Can I change how it looks?**
-Yes: **☰ > Theme** switches between Dark, Light and Parchment, or follows your device's light or dark mode (the default).
+Yes: **☰ > Settings** switches the theme between Dark, Light and Parchment, or follows your device's light or dark mode (the default).
 
 **Do I need an account?**
 No. There is no sign-up and no login: open it and start.
@@ -162,7 +162,7 @@ In your browser, on that device only. Nobody else can see them. To move a charac
 The **System Reference Document 5.2** (SRD), the free rules content published by Wizards of the Coast under an open license: all 12 classes (each with one subclass), 9 species, 4 backgrounds, 17 feats, over 300 spells and over 500 items, plus magic weapons and armor. Content from other books is not included; FlyBy can read it only from a game data source that you provide.
 
 **How do I use my own game data?**
-Open a **setup link** if someone gave you one, or go to **☰ > Game data source**, paste the address of your data (a GitHub repository or release link, the address of a game data folder in the 5etools format, or the whole setup link) and tap **Use this address**. FlyBy checks that it finds game data there before switching, then downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
+Open a **setup link** if someone gave you one, or go to **☰ > Game data > Game data source**, paste the address of your data (a GitHub repository or release link, the address of a game data folder in the 5etools format, or the whole setup link) and tap **Use this address**. FlyBy checks that it finds game data there before switching, then downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
 
 **What address does FlyBy accept?**
 The `https://` address of a folder of game data, the folder that holds the files listed below. The address must start with `https://`; a final `/` is optional. A few examples of what works:
@@ -186,7 +186,7 @@ The JSON data format of the open-source 5e.tools project: the same folder layout
 </details>
 
 **How do I share my game data with my group?**
-In **☰ > Game data source**, tap **Copy setup link** and send it to them. Opening it the first time sets up the same game data on their device, after a confirmation; opening it again later changes nothing. The link only carries the address of the data: nobody receives your characters.
+In **☰ > Game data**, tap **Copy setup link** and send it to them. Opening it the first time sets up the same game data on their device, after a confirmation; opening it again later changes nothing. The link only carries the address of the data: nobody receives your characters.
 
 **Who can see the game data address I use?**
 Only you, on your device. FlyBy has no server: the address is saved in your browser, and the game data goes straight from that address to your device.

@@ -7,7 +7,9 @@
 //   ajusta ao conteúdo (fit-content, capado por --dlg-max-width) sem passar da
 //   viewport (o corpo rola); tem ações em botões (default, primary, danger) e
 //   campos (select, texto); clique fora, Esc e um X opcionais (cancelam com
-//   `dismissValue`); e é todo temável (as props de estilo viram --dlg-*).
+//   `dismissValue`); e é todo temável (as props de estilo viram --dlg-*). Um
+//   conteúdo React no `message` recebe o "fechar" por DialogCloseContext
+//   (dialogContext.js): é como o submenu (variant 'menu') se fecha.
 //
 // FUNÇÕES
 //   buildStyle(cfg): as props de estilo em CSS custom properties.
@@ -19,6 +21,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useDialogStore from '../../store/dialogStore';
+import { DialogCloseContext } from './dialogContext';
 import styles from './DialogHost.module.css';
 
 const STYLE_VARS = {
@@ -132,7 +135,11 @@ function DialogCard({ dialog, onResolve }) {
             {title}
           </h2>
         )}
-        {message != null && <div className={styles.message}>{message}</div>}
+        {message != null && (
+          <DialogCloseContext.Provider value={onResolve}>
+            <div className={variant === 'menu' ? styles.menuBody : styles.message}>{message}</div>
+          </DialogCloseContext.Provider>
+        )}
 
         {fields.length > 0 && (
           <div className={styles.fields}>

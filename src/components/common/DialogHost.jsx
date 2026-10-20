@@ -9,7 +9,8 @@
 //   campos (select, texto); clique fora, Esc e um X opcionais (cancelam com
 //   `dismissValue`); e é todo temável (as props de estilo viram --dlg-*). Um
 //   conteúdo React no `message` recebe o "fechar" por DialogCloseContext
-//   (dialogContext.js): é como o submenu (variant 'menu') se fecha.
+//   (dialogContext.js): é como o submenu (variant 'menu') se fecha. O voltar
+//   do celular fecha o diálogo de cima como um clique fora (useBackLayer).
 //
 // FUNÇÕES
 //   buildStyle(cfg): as props de estilo em CSS custom properties.
@@ -22,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useDialogStore from '../../store/dialogStore';
 import { DialogCloseContext } from './dialogContext';
+import { useBackLayer } from '../../hooks/useBack';
 import styles from './DialogHost.module.css';
 
 const STYLE_VARS = {
@@ -87,6 +89,8 @@ function DialogCard({ dialog, onResolve }) {
   const dismiss = () => {
     if (dismissable) onResolve(dismissValue);
   };
+
+  useBackLayer(true, dismiss);
 
   const pick = (action) => {
     onResolve(fields.length ? { action: action.value, values } : action.value);

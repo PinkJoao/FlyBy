@@ -15,6 +15,7 @@
 // -----------------------------------------------------------------------------
 
 import { useEffect, useMemo } from 'react';
+import { useBackLayer } from '../../hooks/useBack';
 import { createPortal } from 'react-dom';
 import useDerived from '../../hooks/useDerived';
 import { ask } from '../common/dialog';
@@ -70,8 +71,6 @@ export default function LevelUpWizard({ character, db, save, classUid, onClose, 
     return <Screen {...sctx} />;
   };
 
-  if (steps.length === 0) return null;
-
   const onExit = async () => {
     if (!levelUp) {
       onClose();
@@ -90,6 +89,10 @@ export default function LevelUpWizard({ character, db, save, classUid, onClose, 
     if (choice === 'revert') onRevert?.();
     onClose();
   };
+
+  useBackLayer(steps.length > 0, onExit);
+
+  if (steps.length === 0) return null;
 
   // ATENÇÃO: o portal para document.body é necessário; um ancestral com transform prenderia o overlay.
   return createPortal(

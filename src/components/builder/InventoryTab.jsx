@@ -49,6 +49,7 @@ import {
   RARITY_COLOR, GROUP_ICONS, cap, rarityRank, nameOf, metaParts, thumbOf,
 } from './inventoryDisplay';
 import styles from './InventoryTab.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -103,6 +104,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const [sortBy, setSortBy] = useState('name');
   const [groupBy, setGroupBy] = useState('type');
   const [infoUid, setInfoUid] = useState(null);
+  useBackLayer(infoUid != null, () => setInfoUid(null));
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [imgModalOpen, setImgModalOpen] = useState(false);
   const [picker, setPicker] = useState(null);
@@ -547,6 +549,7 @@ function ItemThumb({ src, group, alt }) {
 /** O escolhedor da imagem do item. */
 function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onRemove, onClose }) {
   const [url, setUrl] = useState('');
+  useBackLayer(true, onClose);
   const submitUrl = (e) => {
     e.preventDefault();
     const trimmed = url.trim();

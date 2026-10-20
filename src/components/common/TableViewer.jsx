@@ -14,9 +14,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import styles from './TableViewer.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 export default function TableViewer({ children, footer = null, fullscreenChildren = null }) {
   const [full, setFull] = useState(false);
+  useBackLayer(full, () => setFull(false));
   const [canScroll, setCanScroll] = useState(false);
   const scrollRef = useRef(null);
 

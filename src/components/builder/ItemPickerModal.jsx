@@ -13,9 +13,11 @@
 import { useState } from 'react';
 import { nameOf, metaParts, cap, RARITY_COLOR, GROUP_ICONS, thumbOf } from './inventoryDisplay';
 import styles from './InventoryTab.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 export default function ItemPickerModal({ title, entries, confirmLabel, emptyText, db, onConfirm, onClose }) {
   const [picked, setPicked] = useState(() => new Set());
+  useBackLayer(true, onClose);
 
   const toggle = (uid) =>
     setPicked((prev) => {

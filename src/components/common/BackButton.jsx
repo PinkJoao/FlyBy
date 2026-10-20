@@ -4,15 +4,19 @@
 // O QUE FAZ
 //   Antes havia três textos diferentes de "voltar", cada um com a largura do
 //   rótulo. Aqui é sempre o mesmo ícone compacto, com o destino no title e no
-//   aria-label: a UI ganha espaço e fala uma língua só. Aceita `to` (vira um Link
-//   do router) OU `onClick` (vira um button).
+//   aria-label: a UI ganha espaço e fala uma língua só. Aceita `to` (um link que
+//   sai DESEMPILHANDO, por useLeaveTo) OU `onClick` (vira um button).
+//
+// DECISÕES E ARMADILHAS
+//   - Com `to` ele não é um Link do router: um Link empilha a página de destino,
+//     e o voltar do celular, depois, reabriria a página que o botão fechou.
 //
 // FUNÇÕES
 //   Chevron(): a seta em SVG (escala com a fonte, não depende do sistema).
 //   BackButton(props): o botão.
 // -----------------------------------------------------------------------------
 
-import { Link } from 'react-router-dom';
+import { useLeaveTo } from '../../hooks/useBack';
 import styles from './BackButton.module.css';
 
 /** A seta em SVG. */
@@ -44,11 +48,21 @@ export default function BackButton({ to, onClick, label = 'Back', className }) {
   const content = <Chevron />;
   const a11y = { title: `Back to ${label.toLowerCase()}`, 'aria-label': `Back to ${label.toLowerCase()}` };
 
+  const leaveTo = useLeaveTo();
+
   if (to) {
     return (
-      <Link to={to} className={cls} {...a11y}>
+      <a
+        href={to}
+        className={cls}
+        {...a11y}
+        onClick={(e) => {
+          e.preventDefault();
+          leaveTo(to);
+        }}
+      >
         {content}
-      </Link>
+      </a>
     );
   }
   return (

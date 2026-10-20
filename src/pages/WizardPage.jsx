@@ -20,10 +20,11 @@
 // -----------------------------------------------------------------------------
 
 import { useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import useCharacterStore from '../store/characterStore';
 import { useData } from '../data/dataContext';
 import useDerived from '../hooks/useDerived';
+import { useLeaveTo } from '../hooks/useBack';
 import { buildCreateSteps, pendingSubclassClass } from '../engine/wizardSteps';
 import { createGuideContext } from '../components/wizard/createGuideContext';
 import Wizard from '../components/wizard/Wizard';
@@ -89,7 +90,7 @@ export default function WizardPage() {
 }
 
 function WizardInner({ character }) {
-  const navigate = useNavigate();
+  const leaveTo = useLeaveTo();
   const location = useLocation();
   const { db } = useData();
   const save = useCharacterStore((s) => s.save);
@@ -113,12 +114,12 @@ function WizardInner({ character }) {
 
   const onFinish = () => {
     save({ ...character, meta: { ...character.meta, creating: false } });
-    navigate(`/build/${character.id}`);
+    leaveTo(`/build/${character.id}`);
   };
 
   const onExit = async () => {
     if (built) {
-      navigate(`/build/${character.id}`);
+      leaveTo(`/build/${character.id}`);
       return;
     }
     const choice = await ask({
@@ -132,7 +133,7 @@ function WizardInner({ character }) {
     });
     if (choice == null) return;
     if (choice === 'discard') await remove(character.id);
-    navigate('/');
+    leaveTo('/');
   };
 
   return (

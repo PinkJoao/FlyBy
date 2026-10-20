@@ -31,6 +31,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useTutorialStore from '../../store/tutorialStore';
 import styles from './TutorialOverlay.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 const PAD = 6;
 const GAP = 12;
@@ -109,6 +110,7 @@ export default function TutorialOverlay() {
   const finish = useTutorialStore((s) => s.finish);
 
   const step = steps[index] ?? null;
+  useBackLayer(!!step, finish);
   if (!step) return null;
 
   return createPortal(

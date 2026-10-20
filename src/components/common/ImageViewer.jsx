@@ -23,10 +23,13 @@ import { createPortal } from 'react-dom';
 import useImageViewerStore from '../../store/imageViewerStore';
 import { useSwipe } from './imageNav';
 import styles from './ImageViewer.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 export default function ImageViewer() {
   const { open, images, index, actions, hide, setIndex } = useImageViewerStore();
   const overlayRef = useRef(null);
+
+  useBackLayer(open, hide);
 
   useEffect(() => {
     if (!open) return undefined;

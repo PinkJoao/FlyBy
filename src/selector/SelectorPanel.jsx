@@ -37,6 +37,8 @@
 //     hover, depois o primeiro da lista.
 //   - No mobile a busca principal some com a gaveta aberta (não filtra nada ali);
 //     o puxador fecha arrastando ou tocando, e um arrasto curto não vira clique.
+//   - O voltar do celular fecha, nesta ordem, o detalhe, a gaveta de filtros e o
+//     painel (três useBackLayer, src/backStack.js).
 //   - O tour do seletor (DDL-0069) dispara na 1a abertura de um seletor com preview
 //     (o glossário e a loja ficam fora) e, no mobile, DIRIGE a gaveta e o detalhe
 //     por `mobileAction` passo a passo; ao terminar, fecha os dois.
@@ -50,6 +52,7 @@ import BackButton from '../components/common/BackButton';
 import useTutorialStore, { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import styles from './SelectorPanel.module.css';
+import { useBackLayer } from '../hooks/useBack';
 
 const DRAWER_CLOSE_PX = 70;
 
@@ -95,6 +98,10 @@ export default function SelectorPanel({
   const [filterSearchOpen, setFilterSearchOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [dragY, setDragY] = useState(0);
+
+  useBackLayer(true, onClose);
+  useBackLayer(showFilters, () => setShowFilters(false));
+  useBackLayer(!!detailItem, () => setDetailItem(null));
   const dragStart = useRef(null);
   const dragged = useRef(false);
 

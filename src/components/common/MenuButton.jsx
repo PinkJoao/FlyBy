@@ -21,6 +21,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useBackLayer } from '../../hooks/useBack';
 import styles from './MenuButton.module.css';
 
 const GAP = 6;
@@ -41,6 +42,8 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
   const [pos, setPos] = useState(null);
   const btnRef = useRef(null);
   const menuRef = useRef(null);
+
+  useBackLayer(open, () => setOpen(false));
 
   useLayoutEffect(() => {
     if (!open || !btnRef.current || !menuRef.current) return;

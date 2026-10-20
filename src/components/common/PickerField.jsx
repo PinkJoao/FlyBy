@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import SelectorPanel from '../../selector/SelectorPanel';
 import DetailView from './DetailView';
 import styles from './PickerField.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 /**
  * O gatilho de um seletor, com limpar e info.
@@ -48,6 +49,7 @@ export default function PickerField({
 }) {
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState(false);
+  useBackLayer(info, () => setInfo(false));
 
   const didAuto = useRef(false);
   useEffect(() => {

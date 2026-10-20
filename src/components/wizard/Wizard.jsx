@@ -18,9 +18,12 @@
 //     Revisão e um passo obrigatório vazio trava o Avançar.
 //   - Skip só em passos OPCIONAIS (biografia, nome, alinhamento). Sem passos, nada
 //     a guiar.
+//   - Cada passo além do primeiro é uma entrada no histórico (useBackDepth): o
+//     voltar do celular volta um passo; no primeiro, sai do guia como antes.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
+import { useBackDepth } from '../../hooks/useBack';
 import styles from './Wizard.module.css';
 
 const STATUS_LABEL = { complete: 'Done', incomplete: 'Needs a choice', optional: 'Optional', info: 'Info' };
@@ -53,6 +56,8 @@ export default function Wizard({
   blockIncomplete = false,
 }) {
   const [index, setIndex] = useState(initialIndex);
+  const lastIndex = steps?.length ? (showReview ? steps.length : steps.length - 1) : 0;
+  useBackDepth(Math.min(index, lastIndex), () => setIndex((i) => Math.max(0, Math.min(i, lastIndex) - 1)));
 
   if (!steps || steps.length === 0) {
     return null;

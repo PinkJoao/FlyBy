@@ -114,6 +114,7 @@ import {
   isConcentration,
 } from '../../engine/spells';
 import styles from './SpellbookTab.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 const ORIGIN_ICONS = { class: '📖', race: '🧬', feat: '⭐', unassigned: '📦' };
 
@@ -249,6 +250,7 @@ export default function SpellbookTab({
   const [sortBy, setSortBy] = useState('name');
   const [groupBy, setGroupBy] = useState('level');
   const [infoKey, setInfoKey] = useState(null);
+  useBackLayer(infoKey != null, () => setInfoKey(null));
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [prepareOpen, setPrepareOpen] = useState(false);
   const [replacing, setReplacing] = useState(null);

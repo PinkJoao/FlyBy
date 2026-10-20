@@ -79,6 +79,7 @@ import ClassTab from '../components/builder/ClassTab';
 import InventoryTab from '../components/builder/InventoryTab';
 import SpellbookTab from '../components/builder/SpellbookTab';
 import styles from './Builder.module.css';
+import { useBackLayer } from '../hooks/useBack';
 
 const TABS = ['Species', 'Background', 'Class', 'Inventory', 'Spellbook', 'Biography'];
 
@@ -547,6 +548,7 @@ function portraitFilename(name, src) {
 
 /** O retrato em tela cheia: trocar, baixar, remover. */
 function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
+  useBackLayer(true, onClose);
   return (
     <div className={styles.viewerOverlay} onClick={onClose}>
       <img className={styles.viewerImg} src={src} alt="Portrait" onClick={(e) => e.stopPropagation()} />
@@ -571,6 +573,7 @@ function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
 /** O escolhedor da fonte do retrato: upload ou URL. */
 function PortraitSourceModal({ onUpload, onUseUrl, onClose }) {
   const [url, setUrl] = useState('');
+  useBackLayer(true, onClose);
   const submitUrl = (e) => {
     e.preventDefault();
     const trimmed = url.trim();

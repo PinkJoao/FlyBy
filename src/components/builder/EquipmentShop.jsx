@@ -34,6 +34,7 @@ import { toCopper, toGp, fromCopper } from '../../engine/currency';
 import { itemValue } from '../../engine/magicItemPrice';
 import { confirm } from '../common/dialog';
 import styles from './EquipmentShop.module.css';
+import { useBackLayer } from '../../hooks/useBack';
 
 const idOf = (raw) => `${raw.name}|${raw.source}`;
 
@@ -56,6 +57,7 @@ export default function EquipmentShop({ character, db, onPurchase, containerUid 
   const [open, setOpen] = useState(false);
   const [cart, setCart] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
+  useBackLayer(cartOpen, () => setCartOpen(false));
 
   const cartQty = (raw) => cart[idOf(raw)]?.qty ?? 0;
   const setCartQty = (raw, n) => {

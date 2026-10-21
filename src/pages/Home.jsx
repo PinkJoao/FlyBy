@@ -55,6 +55,7 @@ import { alert, confirm, ask, menu } from '../components/common/dialog';
 import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint';
 import { SettingsMenu, GameDataMenu } from '../components/common/AppMenus';
 import styles from './Home.module.css';
+import Icon from '../components/common/Icon';
 
 const SORT_OPTIONS = [
   { value: 'name', label: 'Name' },
@@ -239,7 +240,7 @@ export default function Home() {
   const renderCard = (c) => {
     const summary = classNames(c);
     return (
-      <li key={c.id} className={styles.card}>
+      <li key={c.id} className={`${styles.card} ornate-frame`}>
         <button
           type="button"
           className={styles.cardMain}
@@ -271,7 +272,7 @@ export default function Home() {
               { label: 'Delete', danger: true, onClick: () => askDelete(c) },
             ]}
           >
-            <span aria-hidden="true">⋮</span>
+            <span aria-hidden="true"><Icon name="more" /></span>
           </MenuButton>
         </div>
       </li>
@@ -293,10 +294,11 @@ export default function Home() {
             { label: 'Import character', sub: 'Foundry actor JSON', onClick: pickFile },
             { label: 'Game data', sub: describeSource(source), onClick: openGameData },
             { label: 'Settings', sub: 'Theme, creation guide and tutorials', onClick: openSettings },
+            { label: 'About FlyBy', sub: 'Version, credits and licenses', onClick: () => navigate('/about') },
             { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
           ]}
         >
-          <span aria-hidden="true">☰</span>
+          <span aria-hidden="true"><Icon name="menu" /></span>
         </MenuButton>
       </header>
 
@@ -319,7 +321,7 @@ export default function Home() {
       )}
 
       <main className={styles.main}>
-        <h2 className={styles.rosterTitle}>Characters</h2>
+        <h2 className={`${styles.rosterTitle} ornate-rule ornate-rule-center`}>Characters</h2>
 
         {!loaded ? (
           <p className={styles.muted}>Loading…</p>
@@ -377,7 +379,16 @@ export default function Home() {
         <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">
           CC BY 4.0
         </a>
-        . An unofficial fan-made tool, not affiliated with or endorsed by Wizards of the Coast.
+        . An unofficial fan-made tool, not affiliated with or endorsed by Wizards of the Coast.{' '}
+        <a
+          href="/about"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/about');
+          }}
+        >
+          Credits
+        </a>
       </footer>
 
       <input ref={inputRef} type="file" accept="application/json,.json" hidden onChange={onFileChange} />

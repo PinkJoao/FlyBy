@@ -35,6 +35,7 @@ import { itemValue } from '../../engine/magicItemPrice';
 import { confirm } from '../common/dialog';
 import styles from './EquipmentShop.module.css';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from '../common/Icon';
 
 const idOf = (raw) => `${raw.name}|${raw.source}`;
 
@@ -222,13 +223,13 @@ export default function EquipmentShop({ character, db, onPurchase, containerUid 
           onClick={() => setCartOpen((o) => !o)}
           aria-expanded={cartOpen}
         >
-          <span className={styles.cartBarIcon} aria-hidden="true">🛒</span>
+          <span className={styles.cartBarIcon} aria-hidden="true"><Icon name="cart" /></span>
           <span className={styles.cartBarCount}>
             {cartUnits} item{cartUnits > 1 ? 's' : ''}
           </span>
           <span className={styles.cartBarTotal}>{gpText(cartTotalCopper)}</span>
           <span className={styles.cartBarCta}>
-            Checkout <span className={cartOpen ? `${styles.cartChevron} ${styles.cartChevronUp}` : styles.cartChevron} aria-hidden="true">▴</span>
+            Checkout <span className={cartOpen ? `${styles.cartChevron} ${styles.cartChevronUp}` : styles.cartChevron} aria-hidden="true"><Icon name="chevronUp" /></span>
           </span>
         </button>
       </div>
@@ -238,7 +239,7 @@ export default function EquipmentShop({ character, db, onPurchase, containerUid 
   return (
     <>
       <button type="button" className={styles.shopBtn} onClick={() => setOpen(true)}>
-        <span aria-hidden="true">🛒</span> {label}
+        <span aria-hidden="true"><Icon name="cart" /></span> {label}
       </button>
       {open && (
         <SelectorPanel

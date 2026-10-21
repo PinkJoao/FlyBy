@@ -10,12 +10,13 @@
 // -----------------------------------------------------------------------------
 
 import styles from './steps.module.css';
+import Icon from '../../common/Icon';
 
 export default function IntroStep() {
   return (
     <div className={styles.step}>
       <div className={styles.introBlock}>
-        <span className={styles.introEmoji}>🎲</span>
+        <span className={styles.introEmoji}><Icon name="dice" /></span>
         <p className={styles.introText}>
           We'll build your character together, one step at a time, choosing a class, species,
           background, ability scores, gear and a bit of personality.

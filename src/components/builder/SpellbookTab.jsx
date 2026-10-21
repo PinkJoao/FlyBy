@@ -115,13 +115,22 @@ import {
 } from '../../engine/spells';
 import styles from './SpellbookTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from '../common/Icon';
 
-const ORIGIN_ICONS = { class: '📖', race: '🧬', feat: '⭐', unassigned: '📦' };
+const ORIGIN_ICONS = { class: 'originClass', race: 'originSpecies', feat: 'originFeat', unassigned: 'itemAll' };
 
 const CARGO_KEY = 'unassigned';
 
 const SCHOOL_GLYPHS = {
-  A: '🛡️', C: '🌀', D: '🔎', E: '💫', V: '🔥', I: '🎭', N: '💀', T: '🔄', P: '🧠',
+  A: 'schoolAbjuration',
+  C: 'schoolConjuration',
+  D: 'schoolDivination',
+  E: 'schoolEnchantment',
+  V: 'schoolEvocation',
+  I: 'schoolIllusion',
+  N: 'schoolNecromancy',
+  T: 'schoolTransmutation',
+  P: 'schoolPsionic',
 };
 
 const SORT_OPTIONS = [
@@ -634,7 +643,7 @@ export default function SpellbookTab({
             className={o.key === origin.key ? `${styles.subTab} ${styles.subTabActive}` : styles.subTab}
             onClick={() => selectOrigin(o.key)}
           >
-            <span className={styles.subTabIcon} aria-hidden="true">{ORIGIN_ICONS[o.kind]}</span>
+            <span className={styles.subTabIcon} aria-hidden="true"><Icon name={ORIGIN_ICONS[o.kind]} /></span>
             {o.label}
           </button>
         ))}
@@ -734,7 +743,7 @@ export default function SpellbookTab({
                     className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
                     aria-hidden="true"
                   >
-                    ▾
+                    <Icon name="chevron" />
                   </span>
                 </button>
               )}
@@ -767,10 +776,10 @@ export default function SpellbookTab({
 
       {infoEntry && (
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoKey(null)}>
-          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.infoPanel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfoKey(null)} aria-label="Close">
-                ✕
+                <Icon name="close" />
               </button>
             </div>
             <div className={styles.infoScroll}>
@@ -862,7 +871,7 @@ function SpellThumb({ src, school, alt }) {
   }
   return (
     <span className={styles.thumbGlyph} aria-hidden="true">
-      {SCHOOL_GLYPHS[school] ?? '✨'}
+      <Icon name={SCHOOL_GLYPHS[school] ?? 'sparkles'} />
     </span>
   );
 }
@@ -913,7 +922,7 @@ function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, 
             title={`Replace ${raw.name}`}
             aria-label={`Replace ${raw.name}`}
           >
-            ⇄
+            <Icon name="swap" />
           </button>
         )}
         {onAssign && (

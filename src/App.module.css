@@ -7,6 +7,9 @@
  * DECISÕES E ARMADILHAS
  *   - Assim a Home preenche a tela exatamente (rolando só a lista), e o Builder,
  *     mais alto, rola dentro do .main.
+ *   - O .main publica a própria rolagem como `--flyby-page` (scroll-timeline):
+ *     é ela que move o fundo decorado (decor.css), que fica FORA dele. E corta o
+ *     eixo X, porque abas e passos entram deslizando de lado (motion.css).
  * -------------------------------------------------------------------------- */
 
 .app {
@@ -20,4 +23,6 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  scroll-timeline: --flyby-page block;
 }

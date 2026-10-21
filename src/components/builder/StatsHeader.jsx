@@ -29,6 +29,7 @@ import Stepper from '../common/Stepper';
 import { TUT } from '../../tutorial/anchors';
 import { ABILITY_FULL } from './labels';
 import styles from './StatsHeader.module.css';
+import Icon from '../common/Icon';
 
 const TILE_STEPPER = {
   bg: 'var(--bg-soft)',
@@ -115,7 +116,7 @@ function ExpandableTile({ label, value, children }) {
   return (
     <div className={open ? `${styles.tile} ${styles.open}` : styles.tile}>
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <span className={styles.tileChevron}>▾</span>
+        <span className={styles.tileChevron}><Icon name="chevron" /></span>
         <span className={styles.value}>{value}</span>
         <span className={styles.label}>{label}</span>
       </button>
@@ -232,7 +233,7 @@ function AlignmentTile({ current, onSelect }) {
   return (
     <div className={open ? `${styles.tile} ${styles.open}` : styles.tile}>
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <span className={styles.tileChevron}>▾</span>
+        <span className={styles.tileChevron}><Icon name="chevron" /></span>
         <span className={`${styles.value} ${styles.small}`}>{value}</span>
         <span className={styles.label}>Alignment</span>
       </button>
@@ -273,7 +274,7 @@ function AbilityCard({ ability, total, base, mod, onStep }) {
   return (
     <div className={open ? `${styles.ability} ${styles.open}` : styles.ability}>
       <button type="button" className={styles.abilityHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <span className={styles.chevron}>▾</span>
+        <span className={styles.chevron}><Icon name="chevron" /></span>
         <span className={styles.name}>{ABILITY_FULL[ability]}</span>
         <span className={styles.total}>{total}</span>
         <span className={styles.mod}>{formatBonus(mod)}</span>

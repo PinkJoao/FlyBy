@@ -12,6 +12,7 @@
 import { useRef, useState } from 'react';
 import { fileToPortrait } from '../../common/imageFile';
 import styles from './steps.module.css';
+import Icon from '../../common/Icon';
 
 export default function NamePortraitStep({ character, onChange }) {
   const meta = character.meta ?? {};
@@ -64,7 +65,7 @@ export default function NamePortraitStep({ character, onChange }) {
             onClick={() => fileRef.current?.click()}
             title={meta.portrait ? 'Change portrait' : 'Add a portrait'}
           >
-            {meta.portrait ? <img src={meta.portrait} alt="Portrait" /> : <span className={styles.portraitPlaceholder}>👤</span>}
+            {meta.portrait ? <img src={meta.portrait} alt="Portrait" /> : <span className={styles.portraitPlaceholder}><Icon name="portrait" /></span>}
           </button>
           <div className={styles.portraitControls}>
             <button type="button" className={styles.smallBtn} onClick={() => fileRef.current?.click()}>

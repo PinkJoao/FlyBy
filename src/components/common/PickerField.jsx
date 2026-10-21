@@ -18,6 +18,7 @@ import SelectorPanel from '../../selector/SelectorPanel';
 import DetailView from './DetailView';
 import styles from './PickerField.module.css';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from './Icon';
 
 /**
  * O gatilho de um seletor, com limpar e info.
@@ -109,10 +110,10 @@ export default function PickerField({
 
       {info && (
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfo(false)}>
-          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.infoPanel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfo(false)} aria-label="Close">
-                ✕
+                <Icon name="close" />
               </button>
             </div>
             <div className={styles.infoScroll}>

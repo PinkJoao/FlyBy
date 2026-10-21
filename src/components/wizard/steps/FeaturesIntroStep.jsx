@@ -18,6 +18,7 @@
 
 import { buildClassChoices, isFeatureChoice } from '../../builder/classChoices';
 import styles from './steps.module.css';
+import Icon from '../../common/Icon';
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -47,7 +48,7 @@ export default function FeaturesIntroStep({ character, derived, db }) {
   return (
     <div className={styles.step}>
       <div className={styles.introBlock}>
-        <span className={styles.introEmoji}>✨</span>
+        <span className={styles.introEmoji}><Icon name="sparkles" /></span>
         <p className={styles.introText}>
           <strong>Your character is ready to play!</strong> Class, species, background, ability
           scores and equipment are all set.

@@ -13,6 +13,7 @@
 import { randomSuggestion } from '../../../engine/suggestedCharacteristics';
 import RoleplayField from '../../common/RoleplayField';
 import styles from './steps.module.css';
+import Icon from '../../common/Icon';
 
 const TRAIT_FIELDS = [
   { key: 'personality', label: 'Personality Traits', placeholder: 'How do they behave? Quirks, habits, the way they carry themselves…' },
@@ -30,7 +31,7 @@ export default function PersonalityStoryStep({ character, db, onChange }) {
       <p className={styles.callout}>
         This is the heart of who your character is, beyond the numbers. None of it changes your
         mechanics, it's for you and your table. Add as many entries as you like, or tap
-        <strong> 🎲 </strong> to roll a suggestion drawn from every published background. You can keep
+        <strong> <Icon name="dice" /> </strong> to roll a suggestion drawn from every published background. You can keep
         writing on the sheet later.
       </p>
 

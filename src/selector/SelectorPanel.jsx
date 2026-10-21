@@ -53,6 +53,7 @@ import useTutorialStore, { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import styles from './SelectorPanel.module.css';
 import { useBackLayer } from '../hooks/useBack';
+import Icon from '../components/common/Icon';
 
 const DRAWER_CLOSE_PX = 70;
 
@@ -302,14 +303,14 @@ export default function SelectorPanel({
   // ATENÇÃO: o portal para document.body é necessário; um ancestral com transform prenderia o painel.
   return createPortal(
     <div className={`${styles.overlay} motion-page`} onClick={onClose}>
-      <div className={`${styles.panel} motion-pop`} onClick={(e) => e.stopPropagation()}>
+      <div className={`${styles.panel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
         <header className={styles.header}>
           <div className={styles.headerText}>
             <h2>{heading ?? `Choose ${entity.title}`}</h2>
             {hint && <p className={styles.hint}>{hint}</p>}
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
-            ✕
+            <Icon name="close" />
           </button>
         </header>
 
@@ -378,7 +379,7 @@ export default function SelectorPanel({
                     aria-pressed={filterSearchOpen}
                     title="Search filters"
                   >
-                    ⌕
+                    <Icon name="search" />
                   </button>
                   <button type="button" className={styles.applyFilters} onClick={closeFilters}>
                     Apply

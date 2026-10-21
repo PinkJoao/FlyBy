@@ -24,6 +24,7 @@ import useImageViewerStore from '../../store/imageViewerStore';
 import { useSwipe } from './imageNav';
 import styles from './ImageViewer.module.css';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from './Icon';
 
 export default function ImageViewer() {
   const { open, images, index, actions, hide, setIndex } = useImageViewerStore();
@@ -72,7 +73,7 @@ export default function ImageViewer() {
       onKeyDown={onKeyDown}
     >
       <button type="button" className={styles.close} onClick={hide} aria-label="Close">
-        ✕
+        <Icon name="close" />
       </button>
 
       {multi && (

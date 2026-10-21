@@ -19,6 +19,7 @@ import { classFeatureLevels, isLongFeature } from '../../engine/classProgression
 import EntryContent from '../common/EntryContent';
 import ClassTableView from '../common/ClassTableView';
 import styles from './ClassProgression.module.css';
+import Icon from '../common/Icon';
 
 export default function ClassProgression({ db, classId, classObj, subclass, level }) {
   const [mode, setMode] = useState('default');
@@ -79,7 +80,7 @@ export default function ClassProgression({ db, classId, classObj, subclass, leve
                 aria-expanded={!isCollapsed}
               >
                 <span className={isCollapsed ? `${styles.levelChevron} ${styles.levelChevronClosed}` : styles.levelChevron}>
-                  ▾
+                  <Icon name="chevron" />
                 </span>
                 Level {l.level}
                 {l.level > level && <span className={styles.futureTag}>Locked</span>}
@@ -108,7 +109,7 @@ function FeatureCard({ feature, subclassName }) {
         <span className={styles.featureName}>{feature.name}</span>
         {sub && <span className={styles.subTag}>{subclassName ?? 'Subclass'}</span>}
         {!open && long && <span className={styles.longHint}>Options</span>}
-        <span className={open ? `${styles.chevron} ${styles.chevronOpen}` : styles.chevron}>▾</span>
+        <span className={open ? `${styles.chevron} ${styles.chevronOpen}` : styles.chevron}><Icon name="chevron" /></span>
       </button>
       {open && (
         <div className={`${styles.featureBody} motion-expand`}>

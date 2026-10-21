@@ -50,6 +50,7 @@ import {
 } from './inventoryDisplay';
 import styles from './InventoryTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from '../common/Icon';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -284,7 +285,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
           className={activeGroup === 'all' ? `${styles.subTab} ${styles.subTabActive}` : styles.subTab}
           onClick={() => selectGroup('all')}
         >
-          <span className={styles.subTabIcon} aria-hidden="true">{GROUP_ICONS.all}</span>
+          <span className={styles.subTabIcon} aria-hidden="true"><Icon name={GROUP_ICONS.all} /></span>
           All Items
         </button>
         {presentGroups.map((g) => (
@@ -294,7 +295,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
             className={activeGroup === g.key ? `${styles.subTab} ${styles.subTabActive}` : styles.subTab}
             onClick={() => selectGroup(g.key)}
           >
-            <span className={styles.subTabIcon} aria-hidden="true">{GROUP_ICONS[g.key] ?? GROUP_ICONS.other}</span>
+            <span className={styles.subTabIcon} aria-hidden="true"><Icon name={GROUP_ICONS[g.key] ?? GROUP_ICONS.other} /></span>
             {g.label}
           </button>
         ))}
@@ -343,7 +344,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                     className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
                     aria-hidden="true"
                   >
-                    ▾
+                    <Icon name="chevron" />
                   </span>
                 </button>
               )}
@@ -369,10 +370,10 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
       {infoEntry && (
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoUid(null)}>
-          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.infoPanel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfoUid(null)} aria-label="Close">
-                ✕
+                <Icon name="close" />
               </button>
             </div>
             <div className={styles.infoScroll}>
@@ -427,7 +428,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
                   <div className={styles.contentsActions}>
                     <button type="button" className={styles.contentsBtn} onClick={() => setPicker('stow')}>
-                      Load ↓
+                      Load <Icon name="down" />
                     </button>
                     <button
                       type="button"
@@ -435,7 +436,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                       disabled={contents.length === 0}
                       onClick={() => setPicker('takeOut')}
                     >
-                      Unload ↑
+                      Unload <Icon name="up" />
                     </button>
                     <EquipmentShop
                       character={character}
@@ -478,7 +479,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                     className={infoEntry.equipped ? `${styles.infoBtn} ${styles.infoBtnActive}` : styles.infoBtn}
                     onClick={() => toggleEquip(infoEntry)}
                   >
-                    {infoEntry.equipped ? '✓ Equipped' : 'Equip'}
+                    {infoEntry.equipped ? <><Icon name="check" /> Equipped</> : 'Equip'}
                   </button>
                 )}
                 {infoEntry.required && (
@@ -541,7 +542,7 @@ function ItemThumb({ src, group, alt }) {
   }
   return (
     <span className={styles.thumbGlyph} aria-hidden="true">
-      {GROUP_ICONS[group] ?? GROUP_ICONS.other}
+      <Icon name={GROUP_ICONS[group] ?? GROUP_ICONS.other} />
     </span>
   );
 }
@@ -561,7 +562,7 @@ function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onRemove, onClose }) 
         <div className={styles.imgModalHead}>
           <h3>{hasCustom ? 'Change item image' : 'Add item image'}</h3>
           <button type="button" className={styles.infoClose} onClick={onClose} aria-label="Close">
-            ✕
+            <Icon name="close" />
           </button>
         </div>
         <button type="button" className={styles.imgModalUpload} onClick={onUpload}>

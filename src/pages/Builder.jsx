@@ -86,6 +86,7 @@ import InventoryTab from '../components/builder/InventoryTab';
 import SpellbookTab from '../components/builder/SpellbookTab';
 import styles from './Builder.module.css';
 import { useBackLayer } from '../hooks/useBack';
+import Icon from '../components/common/Icon';
 
 const TABS = ['Species', 'Background', 'Class', 'Inventory', 'Spellbook', 'Biography'];
 
@@ -386,7 +387,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
                     : 'The guide button (shown here for the tutorial)'
                 }
               >
-                <span aria-hidden="true">⚛</span>
+                <span aria-hidden="true"><Icon name="guide" /></span>
                 {pend.total > 0 && <span className={styles.guideBadge}>{pend.total}</span>}
               </button>
             );
@@ -400,10 +401,11 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               { label: 'Export & import', sub: 'Foundry VTT, PDF, or open another character', onClick: openFiles },
               { label: 'Character guide', sub: 'Re-run the creation guide, guide on or off', onClick: openGuideMenu },
               { label: 'Settings', sub: 'Theme, creation guide and tutorials', onClick: openSettings },
+              { label: 'About FlyBy', sub: 'Version, credits and licenses', onClick: () => navigate('/about') },
               { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
             ]}
           >
-            <span aria-hidden="true">☰</span>
+            <span aria-hidden="true"><Icon name="menu" /></span>
           </MenuButton>
         </div>
       </div>
@@ -418,7 +420,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
             title={character.meta.portrait ? 'View portrait' : 'Add a portrait'}
             onClick={onPortraitClick}
           >
-            {character.meta.portrait ? <img src={character.meta.portrait} alt="Portrait" /> : '👤'}
+            {character.meta.portrait ? <img src={character.meta.portrait} alt="Portrait" /> : <Icon name="portrait" />}
           </button>
           <input
             ref={fileRef}
@@ -587,7 +589,7 @@ function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
         </button>
       </div>
       <button type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">
-        ✕
+        <Icon name="close" />
       </button>
     </div>
   );
@@ -608,7 +610,7 @@ function PortraitSourceModal({ onUpload, onUseUrl, onClose }) {
         <div className={styles.sourceHead}>
           <h2>Add portrait</h2>
           <button type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">
-            ✕
+            <Icon name="close" />
           </button>
         </div>
         <button type="button" className={styles.sourceUploadBtn} onClick={onUpload}>

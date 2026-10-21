@@ -26,6 +26,7 @@ import { createPortal } from 'react-dom';
 import useDialogStore from '../../store/dialogStore';
 import { DialogCloseContext } from './dialogContext';
 import { reducedMotion } from '../../motion';
+import Icon from './Icon';
 import { useBackLayer } from '../../hooks/useBack';
 import styles from './DialogHost.module.css';
 
@@ -137,7 +138,7 @@ function DialogCard({ dialog, onResolve }) {
       }}
     >
       <div
-        className={styles.card}
+        className={`${styles.card} ornate-frame`}
         role={variant === 'alert' ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-labelledby={title ? `${id}-title` : undefined}
@@ -148,7 +149,7 @@ function DialogCard({ dialog, onResolve }) {
       >
         {showClose && (
           <button type="button" className={styles.close} aria-label="Close" onClick={dismiss}>
-            ×
+            <Icon name="close" />
           </button>
         )}
         {title && (

@@ -17,6 +17,7 @@ import { ABILITIES } from '../../schema/character';
 import { formatBonus } from '../../engine/math';
 import { ABILITY_FULL, SKILL_LABEL } from './labels';
 import styles from './ProficienciesCard.module.css';
+import Icon from '../common/Icon';
 
 export default function ProficienciesCard({ derived }) {
   const [open, setOpen] = useState(false);
@@ -62,13 +63,13 @@ export default function ProficienciesCard({ derived }) {
   return (
     <div className={open ? `${styles.card} ${styles.open}` : styles.card}>
       <button type="button" className={styles.head} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <span className={styles.icon}>᯽</span>
+        <span className={styles.icon}><Icon name="proficiency" /></span>
         <span className={styles.title}>Proficiencies</span>
         <span className={styles.bonusWrap}>
           <span className={styles.bonusLabel}>Bonus</span>
           <span className={styles.bonus}>{formatBonus(derived.proficiencyBonus)}</span>
         </span>
-        <span className={styles.chevron}>▾</span>
+        <span className={styles.chevron}><Icon name="chevron" /></span>
       </button>
 
       {open && (

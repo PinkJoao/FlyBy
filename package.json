@@ -17,6 +17,7 @@
     "gen:sources": "vite-node scripts/gen-source-names.js",
     "gen:srd": "vite-node scripts/gen-srd-activities.js",
     "gen:srd-bundle": "vite-node scripts/gen-srd-bundle.js",
+    "gen:icons": "node scripts/gen-icons.js",
     "check:keys": "vite-node scripts/check-species-keys.js",
     "check:uuids": "vite-node scripts/check-compendium-uuids.js",
     "check:comments": "node scripts/check-comments.js",
@@ -35,6 +36,8 @@
   "devDependencies": {
     "@babel/core": "^7.29.7",
     "@eslint/js": "^10.0.1",
+    "@iconify-json/game-icons": "^1.2.4",
+    "@iconify-json/lucide": "^1.2.147",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

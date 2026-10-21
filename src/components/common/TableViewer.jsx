@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './TableViewer.module.css';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from './Icon';
 
 export default function TableViewer({ children, footer = null, fullscreenChildren = null }) {
   const [full, setFull] = useState(false);
@@ -47,7 +48,7 @@ export default function TableViewer({ children, footer = null, fullscreenChildre
             aria-label="View table fullscreen"
             title="Fullscreen"
           >
-            ⛶
+            <Icon name="fullscreen" />
           </button>
         )}
       </div>
@@ -58,7 +59,7 @@ export default function TableViewer({ children, footer = null, fullscreenChildre
           <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
             <div className={styles.sheetHead}>
               <button type="button" className={styles.close} onClick={() => setFull(false)} aria-label="Close">
-                ✕
+                <Icon name="close" />
               </button>
             </div>
             <div className={styles.sheetScroll}>{fullscreenChildren ?? children}</div>

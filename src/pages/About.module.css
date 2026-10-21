@@ -1,0 +1,91 @@
+/* =============================================================================
+ * About.module.css: a página "sobre" e os créditos
+ * =============================================================================
+ * CLASSES
+ *   .page, .top: a coluna da página e a barra com o voltar.
+ *   .hero, .logo, .name, .version, .lead, .links: a apresentação do app.
+ *   .section, .sectionTitle: um bloco de créditos (com os cantos e o filete de
+ *     decor.css); quebra em qualquer ponto, porque as URLs das licenças são
+ *     escritas por extenso e passariam da largura do celular.
+ *   .credits: a lista de autores dos ícones.
+ *   .disclaimer: o aviso de não afiliação, no pé.
+ * -------------------------------------------------------------------------- */
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+}
+
+.hero {
+  text-align: center;
+  margin: 8px 0 24px;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+}
+
+.name {
+  margin: 8px 0 0;
+  font-size: 32px;
+}
+
+.version {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.lead {
+  margin: 14px auto 0;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+.links {
+  margin: 12px 0 0;
+  font-size: 15px;
+}
+
+.section {
+  margin-top: 16px;
+  padding: 18px 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.section p {
+  margin: 10px 0 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 18px;
+}
+
+.credits {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.credits li {
+  margin-top: 4px;
+}
+
+.disclaimer {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}

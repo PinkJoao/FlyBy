@@ -282,7 +282,7 @@ const tabBiography = {
     {
       anchor: TUT.TAB_BIO_TRAITS,
       title: 'Traits',
-      body: 'Personality, ideals, bonds and flaws - free text, or roll 🎲 for a suggestion. Appearance goes here too.',
+      body: 'Personality, ideals, bonds and flaws - free text, or roll the die for a suggestion. Appearance goes here too.',
       placement: 'bottom',
     },
     {

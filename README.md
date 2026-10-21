@@ -149,6 +149,9 @@ Updates arrive on their own: the next time you open the app after an update, you
 **Is it free?**
 Yes. FlyBy is free and open source.
 
+**Where are the credits?**
+In the app, under **☰ > About FlyBy**: the SRD 5.2 attribution, the icons (from game-icons.net and Lucide), the fonts and the libraries FlyBy is built with. The full license texts are in the [NOTICE](NOTICE) file.
+
 **Can I change how it looks?**
 Yes: **☰ > Settings** switches the theme between Dark, Light and Parchment, or follows your device's light or dark mode (the default).
 

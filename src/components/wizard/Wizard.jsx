@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { useBackDepth } from '../../hooks/useBack';
 import { directionOf, slideClass } from '../../motion';
 import styles from './Wizard.module.css';
+import Icon from '../common/Icon';
 
 const STATUS_LABEL = { complete: 'Done', incomplete: 'Needs a choice', optional: 'Optional', info: 'Info' };
 
@@ -109,7 +110,7 @@ export default function Wizard({
         </div>
         {onExit && (
           <button type="button" className={styles.exit} onClick={onExit} aria-label="Exit guide">
-            ✕
+            <Icon name="close" />
           </button>
         )}
       </header>
@@ -122,7 +123,7 @@ export default function Wizard({
         ) : (
           <section key={clamped} className={`${styles.step} ${slideClass(dir)}`}>
             <p className={styles.stepKicker}>{step.subtitle}</p>
-            <h2 className={styles.stepTitle}>{step.title}</h2>
+            <h2 className={`${styles.stepTitle} ornate-rule`}>{step.title}</h2>
 
             <div className={styles.stepBody}>
               {renderStep?.(step, { character, derived, db, onChange }) ?? (

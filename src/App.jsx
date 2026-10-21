@@ -8,6 +8,7 @@
 //   erro o ErrorScreen, que oferece voltar ao SRD embutido.
 //   Pronto, expõe o db pelo DataProvider e monta as rotas (Home, Builder, Wizard)
 //   mais as camadas globais (glossário, diálogos, imagem, tutorial).
+//   Rotas: Home, Builder, Wizard e About (os créditos).
 //
 // FUNÇÕES
 //   App(): o componente raiz.
@@ -26,6 +27,7 @@ import TutorialOverlay from './components/common/TutorialOverlay';
 import Home from './pages/Home';
 import Builder from './pages/Builder';
 import WizardPage from './pages/WizardPage';
+import About from './pages/About';
 import styles from './App.module.css';
 
 export default function App() {
@@ -49,6 +51,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/build/:id" element={<Builder />} />
             <Route path="/build/:id/wizard" element={<WizardPage />} />
+            <Route path="/about" element={<About />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

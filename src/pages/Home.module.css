@@ -234,6 +234,7 @@
 }
 
 .card {
+  --orn-size: 14px;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--border);

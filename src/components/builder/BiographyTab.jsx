@@ -16,6 +16,7 @@ import { randomSuggestion } from '../../engine/suggestedCharacteristics';
 import RoleplayField from '../common/RoleplayField';
 import { TUT } from '../../tutorial/anchors';
 import styles from './BiographyTab.module.css';
+import Icon from '../common/Icon';
 
 const TRAIT_FIELDS = [
   { key: 'personality', label: 'Personality Traits', placeholder: 'How does this character behave?' },
@@ -51,7 +52,7 @@ export default function BiographyTab({ character, db, onChange }) {
       <section className={styles.section} data-tour={TUT.TAB_BIO_TRAITS}>
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionTitle}>Traits</h3>
-          <span className={styles.sectionHint}>Free text. Add entries or roll 🎲 for a suggestion.</span>
+          <span className={styles.sectionHint}>Free text. Add entries or roll <Icon name="dice" /> for a suggestion.</span>
         </div>
         {TRAIT_FIELDS.map((f) => (
           <RoleplayField

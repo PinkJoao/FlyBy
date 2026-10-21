@@ -15,6 +15,7 @@ import { useMemo } from 'react';
 import { redundantPreparations } from '../../../engine/spellcasting';
 import { spellLevelLabel } from '../../../engine/spells';
 import styles from './steps.module.css';
+import Icon from '../../common/Icon';
 
 /** Junta rótulos em "A", "A and B", "A, B, and C". */
 function joinLabels(labels) {
@@ -41,7 +42,7 @@ export default function SpellRedundancyNotice({ origins, filter = 'all' }) {
 
   return (
     <div className={styles.suggestion}>
-      <p className={styles.suggestionHead}>💡 Some spells overlap</p>
+      <p className={styles.suggestionHead}><Icon name="idea" /> Some spells overlap</p>
       <ul className={styles.suggestionList}>
         {items.map((r) => {
           const granted = joinLabels(r.grantedFrom);

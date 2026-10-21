@@ -29,6 +29,7 @@ import ImageCarousel from './ImageCarousel';
 import { showImageViewer } from '../../store/imageViewerStore';
 import { imgUrl } from './media';
 import styles from './DetailView.module.css';
+import Icon from './Icon';
 
 const STATUS_CLASS = { ok: 'metaOk', bad: 'metaBad', unknown: 'metaUnknown' };
 const TONE_CLASS = { blue: 'toneBlue', accent: 'toneAccent', red: 'toneRed', neutral: 'toneNeutral' };
@@ -51,7 +52,7 @@ function Expando({ label, children }) {
   return (
     <div className={open ? `${styles.expando} ${styles.expandoOpen}` : styles.expando}>
       <button type="button" className={styles.expandoHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <span className={styles.expandoChevron} aria-hidden="true">▾</span>
+        <span className={styles.expandoChevron} aria-hidden="true"><Icon name="chevron" /></span>
         <span className={styles.expandoLabel}>{label}</span>
       </button>
       {open && <div className={`${styles.expandoBody} motion-expand`}>{children}</div>}
@@ -115,7 +116,7 @@ export default function DetailView({
           </button>
         ) : (
           <button type="button" className={styles.imgAddBtn} onClick={onImgClick}>
-            <span aria-hidden="true">🖼️</span> Add image
+            <Icon name="addImage" /> Add image
           </button>
         )
       ) : (

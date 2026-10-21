@@ -8,6 +8,7 @@
  *   da fonte (18px, 16px abaixo de 1024px) e os estilos globais.
  *
  * CLASSES
+ *   svg.icon: o ícone (Icon.jsx), alinhado à linha de texto.
  *   .data-table: a tabela PADRÃO do app (progressão, raças, features...), a mesma
  *     identidade para toda tabela renderizada; .data-table--center para as
  *     numéricas (progressão).
@@ -31,6 +32,8 @@
  *     por categoria foi descartado e a diferenciação padrão agora é o accent.
  *   - O --bg de cada tema é repetido em THEME_BAR (src/theme.js), a cor da barra
  *     do sistema.
+ *   - --ornament é a cor dos cantos e filetes decorativos (src/decor.css); no
+ *     papel é um marrom dourado mais forte, nos outros o accent bem suave.
  * -------------------------------------------------------------------------- */
 
 :root {
@@ -63,6 +66,8 @@
 
   --src-origin: #d97706;
   --src-species: #0d9488;
+
+  --ornament: rgba(170, 59, 255, 0.35);
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -116,6 +121,8 @@
   --src-origin: #fbbf24;
   --src-species: #2dd4bf;
 
+  --ornament: rgba(192, 132, 252, 0.45);
+
   color-scheme: dark;
 }
 
@@ -149,6 +156,8 @@
 
   --src-origin: #a5560c;
   --src-species: #1f6e66;
+
+  --ornament: rgba(122, 78, 22, 0.7);
 
   --sans: 'Alegreya Variable', Georgia, serif;
   --heading: 'Cinzel Variable', Georgia, serif;
@@ -196,6 +205,12 @@ table.data-table--center th:first-child {
 
 * {
   box-sizing: border-box;
+}
+
+svg.icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: -0.125em;
 }
 
 body {

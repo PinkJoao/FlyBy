@@ -12,7 +12,8 @@
 //     onBack uma vez (no guia, `depth` é o índice do passo e onBack volta um).
 //   useLeaveTo(): a função que sai da página atual para `to` desempilhando
 //     (backStack.popRoute); se a anterior não for `to`, empilha `to` por cima
-//     dela. Sem página anterior (link aberto direto), substitui a atual.
+//     dela. Sem `to`, só volta à página anterior (a About). Sem página anterior
+//     (link aberto direto), substitui a atual por `to` ou pela Home.
 //
 // DECISÕES E ARMADILHAS
 //   - Se onClose NÃO fechar a camada (um "sair do guia?" que o usuário cancela),
@@ -80,11 +81,11 @@ export function useLeaveTo() {
   return (to) => {
     const idx = window.history.state?.idx;
     if (!backStack || !idx) {
-      navigate(to, { replace: true });
+      navigate(to ?? '/', { replace: true });
       return;
     }
     backStack.popRoute(() => {
-      if (window.location.pathname !== to) navigate(to);
+      if (to && window.location.pathname !== to) navigate(to);
     });
   };
 }

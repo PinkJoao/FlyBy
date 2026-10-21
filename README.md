@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/mobile.png" alt="FlyBy on a phone: the character list, a character sheet and its spellbook" width="100%">
+  <img src="docs/images/mobile.png" alt="FlyBy on a phone: the character list in the Dark theme, a character sheet in the Parchment theme and its spellbook in the Light theme" width="100%">
 </p>
 
 ## What is FlyBy?
@@ -107,6 +107,16 @@ Spells, conditions, actions and rules mentioned anywhere in the app are links. T
 
 **Foundry VTT, both ways.** Export a character as a file that Foundry VTT (with its D&amp;D 5e system) opens with everything set up: class features, proficiencies, inventory, spells, and buttons to roll attacks and checks. You can also import a Foundry character back into FlyBy.
 
+### Three themes
+
+Pick the look you like in **☰ > Settings**: **Dark**, **Light**, or **Parchment**, a warm paper look with classic fantasy lettering. By default FlyBy follows your device's light or dark mode. Each theme has its own subtle background and ornaments, and the app uses its own icons, so it looks the same on every phone.
+
+<p align="center"><img src="docs/images/themes.png" alt="The same character sheet in the Dark, Light and Parchment themes" width="100%"></p>
+
+### Feels like an app on your phone
+
+Install it on your home screen and it opens in its own window and works offline (see Getting started). The phone's back gesture closes whatever is open (a menu, a window, the filters) before it leaves the page, and inside the guide it goes back one step. Screens and cards move with short animations, and they stay still if your device asks for reduced motion.
+
 ## Getting started
 
 FlyBy runs in your web browser, on a phone or a computer: open **[flyby-hub.web.app](https://flyby-hub.web.app)**. You can use it right there, or install it like an app (step 4).
@@ -152,9 +162,6 @@ Yes. FlyBy is free and open source.
 **Where are the credits?**
 In the app, under **☰ > About FlyBy**: the SRD 5.2 attribution, the icons (from game-icons.net and Lucide), the fonts and the libraries FlyBy is built with. The full license texts are in the [NOTICE](NOTICE) file.
 
-**Can I change how it looks?**
-Yes: **☰ > Settings** switches the theme between Dark, Light and Parchment, or follows your device's light or dark mode (the default).
-
 **Do I need an account?**
 No. There is no sign-up and no login: open it and start.
 
@@ -168,10 +175,12 @@ The **System Reference Document 5.2** (SRD), the free rules content published by
 Open a **setup link** if someone gave you one, or go to **☰ > Game data > Game data source**, paste the address of your data (a GitHub repository or release link, the address of a game data folder in the 5etools format, or the whole setup link) and tap **Use this address**. FlyBy checks that it finds game data there before switching, then downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
 
 **What address does FlyBy accept?**
-The `https://` address of a folder of game data, the folder that holds the files listed below. The address must start with `https://`; a final `/` is optional. A few examples of what works:
+Whatever is easiest to copy. FlyBy checks the address and tells you if it finds no game data there before switching. It understands:
 
-- A folder in a GitHub repository, through its raw address: `https://raw.githubusercontent.com/<owner>/<repository>/<branch>/data/`. This is the best option: when the files are in a folder named `data` at the root of the repository, FlyBy downloads only the files that changed when it checks for updates.
-- Any other web server or file host, as long as it serves the files over `https` and allows web pages from other sites to read them (the server sends an `Access-Control-Allow-Origin` header). On these, FlyBy downloads every file again when it updates, about once a month.
+- **A GitHub repository**, `https://github.com/<owner>/<repository>`, or a link to one of its folders or files. This is the best option: when the game data is in a folder named `data` at the root of the repository, FlyBy downloads only the files that changed when it checks for updates.
+- **A GitHub release**, `https://github.com/<owner>/<repository>/releases/tag/<version>` (or `/releases/latest`). The data then stays at that version.
+- **The address of a folder of game data** on any web server or file host, as long as it serves the files over `https` and allows web pages from other sites to read them (the server sends an `Access-Control-Allow-Origin` header). On these, FlyBy downloads every file again when it updates, about once a month.
+- **A setup link** someone shared with you.
 
 **What format does the game data need to be in?**
 The JSON data format of the open-source 5e.tools project: the same folder layout, file names and fields. A copy of that project's `data` folder, or a mirror of it, works as it is. A source does not need every file: anything missing is simply left out (the **Game data source** menu tells you how many files a source is missing), but a source with none of them is treated as a wrong address.
@@ -221,10 +230,10 @@ Game content uses the data format of the open-source [5e.tools](https://5e.tools
 
 ## Credits and license
 
-The code is MIT licensed ([LICENSE](LICENSE)). Third-party material and its licenses are listed in [NOTICE](NOTICE).
+The code is MIT licensed ([LICENSE](LICENSE)). Third-party material and its licenses are listed in [NOTICE](NOTICE) and, inside the app, under **☰ > About FlyBy**: the icons come from [game-icons.net](https://game-icons.net) (CC BY 3.0, credited by author) and [Lucide](https://lucide.dev) (ISC), and the Parchment theme uses the Cinzel and Alegreya fonts (SIL Open Font License).
 
 This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
 FlyBy is an unofficial fan-made tool. It is not affiliated with, endorsed, sponsored or approved by Wizards of the Coast, 5e.tools or Foundry Gaming LLC. Thanks to the 5e.tools community for the data format that makes this app possible.
 
-<sub>The screenshots show the built-in SRD 5.2 content and the official SRD premade characters, imported from their Foundry VTT files.</sub>
+<sub>The screenshots show the built-in SRD 5.2 content and the official SRD premade characters, imported from their Foundry VTT files, in the Dark theme unless noted.</sub>

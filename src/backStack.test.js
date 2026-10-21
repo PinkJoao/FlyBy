@@ -6,7 +6,9 @@
 //   popstate assíncrono como o do navegador) e os casos: voltar fecha só a de
 //   cima; fechar pela interface deixa a entrada gasta, que o voltar pula sem
 //   mudar de página; camadas aninhadas; depois de recarregar; o forward; e o
-//   popRoute, que desempilha a página inteira até a anterior.
+//   popRoute, que desempilha a página inteira até a anterior. Conta as
+//   NAVEGAÇÕES: recuar uma a uma esbarrava no freio do Chrome, então os saltos
+//   têm de ser poucos, não importa quantas entradas gastas existam.
 //
 // FUNÇÕES
 //   fakeWindow(): a janela falsa; `goBack()` e `goForward()` imitam o aparelho e
@@ -21,7 +23,9 @@ function fakeWindow(initialState = null) {
   let at = 0;
   const listeners = new Set();
   const queue = [];
+  let navigations = 0;
   const move = (delta) => {
+    navigations += 1;
     queue.push(() => {
       const next = at + delta;
       if (next < 0 || next >= entries.length) return;
@@ -39,7 +43,11 @@ function fakeWindow(initialState = null) {
         entries.push({ state });
         at = entries.length - 1;
       },
+      replaceState(state) {
+        entries[at] = { state };
+      },
       back: () => move(-1),
+      go: (n) => move(n),
     },
     addEventListener: (type, fn) => listeners.add(fn),
     removeEventListener: (type, fn) => listeners.delete(fn),
@@ -50,6 +58,7 @@ function fakeWindow(initialState = null) {
     },
     position: () => at,
     length: () => entries.length,
+    navigations: () => navigations,
   };
   return win;
 }
@@ -162,6 +171,74 @@ describe('backStack', () => {
     expect(win.history.state.idx).toBe(1);
     expect(win.history.state.flybyLayer).toBeUndefined();
     expect(then).toHaveBeenCalledTimes(1);
-    for (const fn of steps) expect(fn).toHaveBeenCalledTimes(1);
+    for (const fn of steps) expect(fn).not.toHaveBeenCalled();
+    expect(win.navigations()).toBe(2);
+  });
+
+  it('popRoute sai de uma página com muitas entradas gastas num salto só', () => {
+    const win = fakeWindow({ idx: 0 });
+    const stack = createBackStack(win);
+    win.history.pushState({ idx: 1 });
+    for (let i = 0; i < 300; i++) stack.release(stack.push(() => {}));
+    stack.push(() => {});
+    const then = vi.fn();
+    stack.popRoute(then);
+    win.flush();
+    expect(win.history.state.idx).toBe(0);
+    expect(then).toHaveBeenCalledTimes(1);
+    expect(win.navigations()).toBe(1);
+  });
+
+  it('um voltar sobre uma fileira de entradas gastas pula num salto até a camada viva', () => {
+    const win = fakeWindow();
+    const stack = createBackStack(win);
+    const closePanel = vi.fn();
+    stack.push(closePanel);
+    for (let i = 0; i < 50; i++) stack.release(stack.push(() => {}));
+    const closeDialog = vi.fn();
+    stack.push(closeDialog);
+    win.goBack();
+    win.flush();
+    expect(closeDialog).toHaveBeenCalledTimes(1);
+    expect(closePanel).not.toHaveBeenCalled();
+    expect(win.history.state.flybyDepth).toBe(1);
+    expect(win.navigations()).toBe(1);
+  });
+
+  it('abrir e fechar pela interface 300 vezes não faz o histórico crescer', () => {
+    const win = fakeWindow({ idx: 0 });
+    const stack = createBackStack(win);
+    const closePanel = vi.fn();
+    stack.push(closePanel);
+    for (let i = 0; i < 300; i++) stack.release(stack.push(() => {}));
+    expect(win.length()).toBe(3);
+    win.goBack();
+    win.flush();
+    expect(closePanel).toHaveBeenCalledTimes(1);
+    expect(win.position()).toBe(0);
+  });
+
+  it('o guia indo e voltando pela interface mantém uma entrada por passo', () => {
+    const win = fakeWindow({ idx: 0 });
+    const stack = createBackStack(win);
+    const steps = [stack.push(() => {}), stack.push(() => {})];
+    for (let i = 0; i < 40; i++) {
+      stack.release(steps.pop());
+      steps.push(stack.push(() => {}));
+    }
+    expect(win.length()).toBe(3);
+    expect(win.history.state.flybyDepth).toBe(2);
+  });
+
+  it('o primeiro voltar depois de fechar algo pelo X fecha o que está à vista', () => {
+    const win = fakeWindow();
+    const stack = createBackStack(win);
+    const closePanel = vi.fn();
+    stack.push(closePanel);
+    stack.release(stack.push(() => {}));
+    win.goBack();
+    win.flush();
+    expect(closePanel).toHaveBeenCalledTimes(1);
+    expect(win.position()).toBe(0);
   });
 });

@@ -5,7 +5,8 @@
  *   .rpField, .fieldLabel, .rpRow: o campo; os botões ficam ancorados no TOPO e a
  *     caixa cresce para baixo.
  *   .rpInputWrap, .rpInput, .rpDie: a caixa de texto com o dado sobreposto no
- *     canto inferior direito (o padding deixa espaço para ele).
+ *     canto SUPERIOR direito (o padding deixa espaço para ele): ancorado no topo,
+ *     ele fica parado quando a caixa cresce, como os botões ao lado.
  *   .rpRowBtns, .rpIconBtn: botões quadrados de tamanho FIXO, que não esticam com
  *     a caixa.
  *   .rpAddBtn: adicionar entrada, com destaque de accent.
@@ -67,8 +68,8 @@
 
 .rpDie {
   position: absolute;
+  top: 8px;
   right: 8px;
-  bottom: 8px;
   width: 26px;
   height: 26px;
   border-radius: 8px;

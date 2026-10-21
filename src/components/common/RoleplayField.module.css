@@ -9,9 +9,11 @@
  *     ele fica parado quando a caixa cresce, como os botões ao lado.
  *   .rpRowBtns, .rpIconBtn: botões quadrados de tamanho FIXO, que não esticam com
  *     a caixa.
- *   .rpAddBtn: adicionar entrada, com destaque de accent.
+ *   .rpAddBtn: adicionar entrada, com o ícone na cor accent.
  *
  * DECISÕES E ARMADILHAS
+ *   - Remover e adicionar usam os ícones do mesmo conjunto (Lucide `x` e `plus`),
+ *     no mesmo tamanho: um "+" de texto ao lado de um X desenhado destoava.
  *   - A altura da caixa é do auto-ajuste em JS: sem resize manual.
  * -------------------------------------------------------------------------- */
 
@@ -105,7 +107,7 @@
   border: 1px solid var(--border);
   background: var(--bg-soft);
   color: var(--text);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -118,7 +120,7 @@
 }
 
 .rpAddBtn {
-  font-size: 26px;
+  color: var(--accent);
 }
 
 .rpAddBtn:hover {

@@ -6,7 +6,9 @@
 //
 // FUNÇÕES
 //   useSwipe(onPrev, onNext): swipe horizontal (mais de 40px).
-//   useCarouselIndex(count): índice circular, clampado se `count` encolher.
+//   useCarouselIndex(count): índice circular, clampado se `count` encolher, e a
+//     direção da última troca ('next' ou 'prev'), para a foto nova entrar do lado
+//     certo (motion.js). Avançar do último para o primeiro ainda é 'next'.
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -27,15 +29,20 @@ export function useSwipe(onPrev, onNext) {
   };
 }
 
-/** O índice circular de um carrossel. */
+/** O índice circular de um carrossel, com a direção da última troca. */
 export function useCarouselIndex(count) {
   const [raw, setRaw] = useState(0);
+  const [dir, setDir] = useState(null);
   const index = count ? Math.min(raw, count - 1) : 0;
-  const go = (i) => setRaw(count ? ((i % count) + count) % count : 0);
+  const go = (i, d) => {
+    setDir(d ?? (i >= index ? 'next' : 'prev'));
+    setRaw(count ? ((i % count) + count) % count : 0);
+  };
   return {
     index,
-    setIndex: go,
-    prev: () => go(index - 1),
-    next: () => go(index + 1),
+    dir,
+    setIndex: (i) => go(i),
+    prev: () => go(index - 1, 'prev'),
+    next: () => go(index + 1, 'next'),
   };
 }

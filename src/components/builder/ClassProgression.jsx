@@ -20,6 +20,7 @@ import EntryContent from '../common/EntryContent';
 import ClassTableView from '../common/ClassTableView';
 import styles from './ClassProgression.module.css';
 import Icon from '../common/Icon';
+import Collapse from '../common/Collapse';
 
 export default function ClassProgression({ db, classId, classObj, subclass, level }) {
   const [mode, setMode] = useState('default');
@@ -85,10 +86,13 @@ export default function ClassProgression({ db, classId, classObj, subclass, leve
                 Level {l.level}
                 {l.level > level && <span className={styles.futureTag}>Locked</span>}
               </button>
-              {!isCollapsed &&
-                l.features.map((f) => (
-                  <FeatureCard key={f.key} feature={f} subclassName={subclass?.shortName} />
-                ))}
+              <Collapse open={!isCollapsed}>
+                <div className={styles.levelFeatures}>
+                  {l.features.map((f) => (
+                    <FeatureCard key={f.key} feature={f} subclassName={subclass?.shortName} />
+                  ))}
+                </div>
+              </Collapse>
             </div>
           );
         })
@@ -104,18 +108,18 @@ function FeatureCard({ feature, subclassName }) {
   const sub = feature.from === 'subclass';
 
   return (
-    <div className={`${sub ? `${styles.feature} ${styles.featureSub}` : styles.feature} motion-expand`}>
+    <div className={sub ? `${styles.feature} ${styles.featureSub}` : styles.feature}>
       <button type="button" className={styles.featureHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.featureName}>{feature.name}</span>
         {sub && <span className={styles.subTag}>{subclassName ?? 'Subclass'}</span>}
         {!open && long && <span className={styles.longHint}>Options</span>}
         <span className={open ? `${styles.chevron} ${styles.chevronOpen}` : styles.chevron}><Icon name="chevron" /></span>
       </button>
-      {open && (
-        <div className={`${styles.featureBody} motion-expand`}>
+      <Collapse open={open}>
+        <div className={styles.featureBody}>
           <EntryContent entries={feature.entries} />
         </div>
-      )}
+      </Collapse>
     </div>
   );
 }

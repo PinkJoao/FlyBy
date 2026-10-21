@@ -15,11 +15,13 @@ import { useState } from 'react';
 import { showImageViewer } from '../../store/imageViewerStore';
 import { useCarouselIndex, useSwipe } from './imageNav';
 import styles from './ImageCarousel.module.css';
+import Icon from './Icon';
+import { slideClass } from '../../motion';
 
 export default function ImageCarousel({ images, capped = false, alt = '' }) {
   const [broken, setBroken] = useState(() => new Set());
   const shown = images.filter((im) => im?.src && !broken.has(im.src));
-  const { index, setIndex, prev, next } = useCarouselIndex(shown.length);
+  const { index, dir, setIndex, prev, next } = useCarouselIndex(shown.length);
   const swipe = useSwipe(prev, next);
 
   if (shown.length === 0) return null;
@@ -36,7 +38,8 @@ export default function ImageCarousel({ images, capped = false, alt = '' }) {
           title="Expand image"
         >
           <img
-            className={styles.img}
+            key={`${cur.src}-${index}`}
+            className={`${styles.img} ${slideClass(dir)}`}
             src={cur.src}
             alt={cur.alt ?? alt}
             loading="lazy"
@@ -52,7 +55,7 @@ export default function ImageCarousel({ images, capped = false, alt = '' }) {
               onClick={prev}
               aria-label="Previous image"
             >
-              ‹
+              <Icon name="chevronLeft" />
             </button>
             <button
               type="button"
@@ -60,7 +63,7 @@ export default function ImageCarousel({ images, capped = false, alt = '' }) {
               onClick={next}
               aria-label="Next image"
             >
-              ›
+              <Icon name="chevronRight" />
             </button>
           </>
         )}

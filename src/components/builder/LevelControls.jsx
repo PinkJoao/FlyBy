@@ -18,6 +18,7 @@
 import { ask } from '../common/dialog';
 import { totalLevel } from '../../schema/character';
 import styles from './LevelControls.module.css';
+import AnimatedNumber from '../common/AnimatedNumber';
 
 const MAX_TOTAL_LEVEL = 20;
 
@@ -91,7 +92,7 @@ export default function LevelControls({ character, onChangeClasses }) {
         −
       </button>
       <span className={styles.level} title={`Character level ${total}`}>
-        <span className={styles.levelValue}>{total}</span>
+        <AnimatedNumber value={total} className={styles.levelValue} />
         <span className={styles.levelLabel}>LVL</span>
       </span>
       <button

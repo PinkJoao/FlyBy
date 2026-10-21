@@ -22,6 +22,8 @@
 
 import { useState } from 'react';
 import styles from './Stepper.module.css';
+import AnimatedNumber from './AnimatedNumber';
+import { useNumberMotion } from '../../hooks/useNumberMotion';
 
 const STYLE_VARS = {
   bg: { var: '--stp-bg' },
@@ -122,6 +124,7 @@ export default function Stepper({
     style,
   );
 
+  const numberMotion = useNumberMotion(value);
   const rootClass = [styles.stepper, orientation === 'vertical' && styles.vertical, className]
     .filter(Boolean)
     .join(' ');
@@ -139,9 +142,10 @@ export default function Stepper({
       </button>
       {editable ? (
         <input
+          key={numberMotion.key}
           type="text"
           inputMode={decimals > 0 ? 'decimal' : 'numeric'}
-          className={styles.number}
+          className={`${styles.number} ${numberMotion.className}`}
           aria-label={ariaLabel}
           value={text}
           disabled={disabled}
@@ -150,7 +154,9 @@ export default function Stepper({
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
         />
       ) : (
-        <span className={styles.number}>{fmt(value, decimals)}</span>
+        <AnimatedNumber value={value} className={styles.number}>
+          {fmt(value, decimals)}
+        </AnimatedNumber>
       )}
       <button
         type="button"

@@ -51,6 +51,7 @@ import {
 import styles from './InventoryTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
+import Collapse from '../common/Collapse';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -348,8 +349,8 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                   </span>
                 </button>
               )}
-              {!isCollapsed && (
-                <ul className={`${styles.list} motion-expand`}>
+              <Collapse open={!isCollapsed}>
+                <ul className={styles.list}>
                   {items.map((entry) => (
                     <ItemRow
                       key={entry.uid}
@@ -362,7 +363,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                     />
                   ))}
                 </ul>
-              )}
+              </Collapse>
             </section>
           );
         })

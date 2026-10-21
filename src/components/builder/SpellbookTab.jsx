@@ -116,6 +116,7 @@ import {
 import styles from './SpellbookTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
+import Collapse from '../common/Collapse';
 
 const ORIGIN_ICONS = { class: 'originClass', race: 'originSpecies', feat: 'originFeat', unassigned: 'itemAll' };
 
@@ -747,8 +748,8 @@ export default function SpellbookTab({
                   </span>
                 </button>
               )}
-              {!isCollapsed && (
-                <ul className={`${styles.list} motion-expand`}>
+              <Collapse open={!isCollapsed}>
+                <ul className={styles.list}>
                   {list.map((entry, i) => {
                     const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
                     const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
@@ -768,7 +769,7 @@ export default function SpellbookTab({
                     );
                   })}
                 </ul>
-              )}
+              </Collapse>
             </section>
           );
         })

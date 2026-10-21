@@ -95,7 +95,7 @@ export default function RoleplayField({ label, value, placeholder, onRandom, onC
               title="Add another"
               aria-label="Add another"
             >
-              +
+              <Icon name="plus" />
             </button>
           </div>
         </div>

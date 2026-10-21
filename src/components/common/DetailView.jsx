@@ -30,6 +30,7 @@ import { showImageViewer } from '../../store/imageViewerStore';
 import { imgUrl } from './media';
 import styles from './DetailView.module.css';
 import Icon from './Icon';
+import Collapse from './Collapse';
 
 const STATUS_CLASS = { ok: 'metaOk', bad: 'metaBad', unknown: 'metaUnknown' };
 const TONE_CLASS = { blue: 'toneBlue', accent: 'toneAccent', red: 'toneRed', neutral: 'toneNeutral' };
@@ -55,7 +56,9 @@ function Expando({ label, children }) {
         <span className={styles.expandoChevron} aria-hidden="true"><Icon name="chevron" /></span>
         <span className={styles.expandoLabel}>{label}</span>
       </button>
-      {open && <div className={`${styles.expandoBody} motion-expand`}>{children}</div>}
+      <Collapse open={open}>
+        <div className={styles.expandoBody}>{children}</div>
+      </Collapse>
     </div>
   );
 }

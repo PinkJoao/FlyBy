@@ -4,7 +4,8 @@
  * CLASSES
  *   .progression, .head, .title, .modes, .modeBtn, .modeActive: o cabeçalho e os
  *     modos de exibição.
- *   .level*, .future, .futureTag: os blocos por nível (os futuros esmaecidos).
+ *   .level*, .future, .futureTag: os blocos por nível (os futuros esmaecidos);
+ *     .levelFeatures repete o espaçamento do bloco dentro do Collapse.
  *   .levelChevronClosed, .chevronOpen: as setas giram (uma só seta, como nos
  *     outros cards), em vez de trocar de caractere.
  *   .feature*, .subTag, .longHint, .chevron, .empty: o card de feature; o de
@@ -61,6 +62,12 @@
 }
 
 .levelBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.levelFeatures {
   display: flex;
   flex-direction: column;
   gap: 8px;

@@ -18,13 +18,14 @@
 //     a proporção muda de uma foto para outra.
 // -----------------------------------------------------------------------------
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useImageViewerStore from '../../store/imageViewerStore';
 import { useSwipe } from './imageNav';
 import styles from './ImageViewer.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from './Icon';
+import { slideClass } from '../../motion';
 
 export default function ImageViewer() {
   const { open, images, index, actions, hide, setIndex } = useImageViewerStore();
@@ -41,7 +42,13 @@ export default function ImageViewer() {
     };
   }, [open]);
 
-  const swipe = useSwipe(() => setIndex(index - 1), () => setIndex(index + 1));
+  const [dir, setDir] = useState(null);
+  /** Troca de imagem lembrando a direção, para a nova entrar do lado certo. */
+  const step = (d) => {
+    setDir(d > 0 ? 'next' : 'prev');
+    setIndex(index + d);
+  };
+  const swipe = useSwipe(() => step(-1), () => step(1));
 
   if (!open || images.length === 0) return null;
   const multi = images.length > 1;
@@ -53,10 +60,10 @@ export default function ImageViewer() {
       hide();
     } else if (multi && e.key === 'ArrowLeft') {
       e.stopPropagation();
-      setIndex(index - 1);
+      step(-1);
     } else if (multi && e.key === 'ArrowRight') {
       e.stopPropagation();
-      setIndex(index + 1);
+      step(1);
     }
   };
 
@@ -81,24 +88,30 @@ export default function ImageViewer() {
           <button
             type="button"
             className={`${styles.arrow} ${styles.arrowL}`}
-            onClick={() => setIndex(index - 1)}
+            onClick={() => step(-1)}
             aria-label="Previous image"
           >
-            ‹
+            <Icon name="chevronLeft" />
           </button>
           <button
             type="button"
             className={`${styles.arrow} ${styles.arrowR}`}
-            onClick={() => setIndex(index + 1)}
+            onClick={() => step(1)}
             aria-label="Next image"
           >
-            ›
+            <Icon name="chevronRight" />
           </button>
         </>
       )}
 
       <div className={styles.stage} {...(multi ? swipe : {})}>
-        <img className={styles.img} src={cur.src} alt={cur.alt ?? ''} onMouseDown={(e) => e.stopPropagation()} />
+        <img
+          key={`${cur.src}-${index}`}
+          className={`${styles.img} ${slideClass(dir)}`}
+          src={cur.src}
+          alt={cur.alt ?? ''}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
       </div>
 
       {cur.credit && <p className={styles.credit}>Art: {cur.credit}</p>}
@@ -110,7 +123,10 @@ export default function ImageViewer() {
               key={`${im.src}-${i}`}
               type="button"
               className={i === index ? `${styles.dot} ${styles.dotOn}` : styles.dot}
-              onClick={() => setIndex(i)}
+              onClick={() => {
+                setDir(i >= index ? 'next' : 'prev');
+                setIndex(i);
+              }}
               aria-label={`Go to image ${i + 1}`}
               aria-current={i === index}
             />

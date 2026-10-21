@@ -30,6 +30,8 @@ import { TUT } from '../../tutorial/anchors';
 import { ABILITY_FULL } from './labels';
 import styles from './StatsHeader.module.css';
 import Icon from '../common/Icon';
+import Collapse from '../common/Collapse';
+import AnimatedNumber from '../common/AnimatedNumber';
 
 const TILE_STEPPER = {
   bg: 'var(--bg-soft)',
@@ -117,10 +119,12 @@ function ExpandableTile({ label, value, children }) {
     <div className={open ? `${styles.tile} ${styles.open}` : styles.tile}>
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.tileChevron}><Icon name="chevron" /></span>
-        <span className={styles.value}>{value}</span>
+        <AnimatedNumber value={value} className={styles.value} />
         <span className={styles.label}>{label}</span>
       </button>
-      {open && <div className={`${styles.tileBody} motion-expand`}>{children}</div>}
+      <Collapse open={open}>
+        <div className={styles.tileBody}>{children}</div>
+      </Collapse>
     </div>
   );
 }
@@ -237,8 +241,8 @@ function AlignmentTile({ current, onSelect }) {
         <span className={`${styles.value} ${styles.small}`}>{value}</span>
         <span className={styles.label}>Alignment</span>
       </button>
-      {open && (
-        <div className={`${styles.tileBody} motion-expand`}>
+      <Collapse open={open}>
+        <div className={styles.tileBody}>
           <div className={styles.alignGrid}>
             {ALIGNMENT_ORDER.map((code) => {
               const group = styles[ALIGNMENT_GROUP[code]];
@@ -262,7 +266,7 @@ function AlignmentTile({ current, onSelect }) {
             })}
           </div>
         </div>
-      )}
+      </Collapse>
     </div>
   );
 }
@@ -276,12 +280,14 @@ function AbilityCard({ ability, total, base, mod, onStep }) {
       <button type="button" className={styles.abilityHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.chevron}><Icon name="chevron" /></span>
         <span className={styles.name}>{ABILITY_FULL[ability]}</span>
-        <span className={styles.total}>{total}</span>
-        <span className={styles.mod}>{formatBonus(mod)}</span>
+        <AnimatedNumber value={total} className={styles.total} />
+        <AnimatedNumber value={mod} className={styles.mod}>
+          {formatBonus(mod)}
+        </AnimatedNumber>
       </button>
 
-      {open && (
-        <div className={`${styles.detail} motion-expand`}>
+      <Collapse open={open}>
+        <div className={styles.detail}>
           <div className={styles.stepperBlock}>
             <span className={styles.stepLabel}>Base</span>
             <Stepper
@@ -303,7 +309,7 @@ function AbilityCard({ ability, total, base, mod, onStep }) {
             <span className={styles.rowValue}>{formatBonus(mod)}</span>
           </div>
         </div>
-      )}
+      </Collapse>
     </div>
   );
 }

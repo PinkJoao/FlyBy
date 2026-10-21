@@ -18,6 +18,7 @@ import { formatBonus } from '../../engine/math';
 import { ABILITY_FULL, SKILL_LABEL } from './labels';
 import styles from './ProficienciesCard.module.css';
 import Icon from '../common/Icon';
+import Collapse from '../common/Collapse';
 
 export default function ProficienciesCard({ derived }) {
   const [open, setOpen] = useState(false);
@@ -72,8 +73,8 @@ export default function ProficienciesCard({ derived }) {
         <span className={styles.chevron}><Icon name="chevron" /></span>
       </button>
 
-      {open && (
-        <div className={`${styles.body} motion-expand`}>
+      <Collapse open={open}>
+        <div className={styles.body}>
           {isEmpty ? (
             <p className={styles.empty}>
               No proficiencies yet. Pick a species, background and class to gain them.
@@ -93,7 +94,7 @@ export default function ProficienciesCard({ derived }) {
             </>
           )}
         </div>
-      )}
+      </Collapse>
     </div>
   );
 }

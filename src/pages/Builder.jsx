@@ -20,6 +20,8 @@
 //   - O menu segue o padrão de menus do app (AppMenus, DDL-0098): glossário,
 //     Export & import, Character guide e Settings em janelinhas, e o feedback.
 //   - A aba nova entra deslizando do lado para onde se foi (openTab, motion.js).
+//     No celular, arrastar o conteúdo para o lado troca de aba (useSwipeNav, num
+//     contêiner estável em volta do painel, que remonta a cada troca).
 //   - A guidance é POR personagem (`meta.guided`). O botão do guia aparece enquanto
 //     faltar qualquer campo obrigatório não-biográfico (guidancePendencies); com
 //     pendência BÁSICA abre o guia de criação na Revisão, só com decisões de classe
@@ -64,6 +66,7 @@ import MenuButton from '../components/common/MenuButton';
 import { SettingsMenu, SheetFilesMenu, SheetGuideMenu } from '../components/common/AppMenus';
 import { menu } from '../components/common/dialog';
 import { directionOf, slideClass } from '../motion';
+import { useSwipeNav } from '../hooks/useSwipeNav';
 import { openGlossary } from '../store/glossaryStore';
 import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { startTutorial, maybeStartTutorial } from '../store/tutorialStore';
@@ -138,6 +141,14 @@ export default function Builder() {
 
 function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   const [tabDir, setTabDir] = useState(null);
+  const swipeRef = useRef(null);
+  const tabIndex = TABS.indexOf(activeTab);
+  useSwipeNav(swipeRef, {
+    onPrev: () => openTab(TABS[tabIndex - 1]),
+    onNext: () => openTab(TABS[tabIndex + 1]),
+    canPrev: tabIndex > 0,
+    canNext: tabIndex < TABS.length - 1,
+  });
   /** Troca de aba lembrando a direção, para a aba nova entrar do lado certo. */
   const openTab = (tab) => {
     if (tab === activeTab) return;
@@ -479,43 +490,45 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         ))}
       </nav>
 
-      <div key={activeTab} className={`${styles.panel} ${slideClass(tabDir)}`}>
-        {activeTab === 'Species' && (
-          <SpeciesTab
-            character={character}
-            db={db}
-            onPick={pickSpecies}
-            onClear={clearSpecies}
-            onChangeChoices={setSpeciesChoices}
-            onChangeLineage={setSpeciesLineage}
-          />
-        )}
+      <div ref={swipeRef}>
+        <div key={activeTab} className={`${styles.panel} ${slideClass(tabDir)}`}>
+          {activeTab === 'Species' && (
+            <SpeciesTab
+              character={character}
+              db={db}
+              onPick={pickSpecies}
+              onClear={clearSpecies}
+              onChangeChoices={setSpeciesChoices}
+              onChangeLineage={setSpeciesLineage}
+            />
+          )}
 
-        {activeTab === 'Background' && (
-          <BackgroundTab character={character} db={db} onChangeOrigin={setOrigin} onChangeIdentity={setIdentity} />
-        )}
-        {activeTab === 'Class' && <ClassTab character={character} db={db} onChange={setClasses} />}
-        {activeTab === 'Inventory' && (
-          <InventoryTab
-            character={character}
-            db={db}
-            derived={derived}
-            onChange={setInventory}
-            onChangeCurrency={setCurrency}
-            onPurchase={purchaseItems}
-          />
-        )}
-        {activeTab === 'Spellbook' && (
-          <SpellbookTab
-            character={character}
-            db={db}
-            derived={derived}
-            onChangeSpells={setClassSpells}
-            onAssignUnassigned={assignUnassignedSpell}
-            onDiscardUnassigned={discardUnassignedSpell}
-          />
-        )}
-        {activeTab === 'Biography' && <BiographyTab character={character} db={db} onChange={setIdentity} />}
+          {activeTab === 'Background' && (
+            <BackgroundTab character={character} db={db} onChangeOrigin={setOrigin} onChangeIdentity={setIdentity} />
+          )}
+          {activeTab === 'Class' && <ClassTab character={character} db={db} onChange={setClasses} />}
+          {activeTab === 'Inventory' && (
+            <InventoryTab
+              character={character}
+              db={db}
+              derived={derived}
+              onChange={setInventory}
+              onChangeCurrency={setCurrency}
+              onPurchase={purchaseItems}
+            />
+          )}
+          {activeTab === 'Spellbook' && (
+            <SpellbookTab
+              character={character}
+              db={db}
+              derived={derived}
+              onChangeSpells={setClassSpells}
+              onAssignUnassigned={assignUnassignedSpell}
+              onDiscardUnassigned={discardUnassignedSpell}
+            />
+          )}
+          {activeTab === 'Biography' && <BiographyTab character={character} db={db} onChange={setIdentity} />}
+        </div>
       </div>
 
       {viewerOpen && character.meta.portrait && (

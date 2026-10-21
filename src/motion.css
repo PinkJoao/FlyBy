@@ -4,23 +4,26 @@
  * O QUE FAZ
  *   Classes GLOBAIS (não módulo) que animam um elemento ao montar: as telas que
  *   trocam (abas da ficha, passos do guia, preview do seletor) entram deslizando
- *   na direção da navegação, as páginas entram esmaecendo, os corpos de card
- *   expansível descem, e as janelas surgem com um leve zoom. Importado no
+ *   na direção da navegação, as páginas entram esmaecendo, as janelas surgem com
+ *   um leve zoom, e os números rolam ao mudar (o abrir e fechar dos cards é do
+ *   Collapse.jsx, que anima a altura). Importado no
  *   main.jsx; src/motion.js tem a contraparte em JS.
  *
  * CLASSES
  *   .motion-next, .motion-prev: entra vindo da direita (avançar) ou da esquerda
  *     (voltar).
  *   .motion-page: a página que acabou de abrir, esmaecendo.
- *   .motion-expand: o corpo de um card que abriu, descendo.
  *   .motion-pop: uma janela ou menu surgindo.
  *   .motion-rise: um painel que sobe do pé da tela (o seletor no celular).
+ *   .motion-num-up, .motion-num-down: um número que entra subindo (aumentou) ou
+ *     descendo (diminuiu), como num contador de rolo (AnimatedNumber.jsx).
  *
  * DECISÕES E ARMADILHAS
- *   - Só ENTRADA, ao montar: as abas, os passos e os corpos de card já remontam a
+ *   - Só ENTRADA, ao montar: as abas, os passos e os números já remontam a
  *     cada troca, então basta a classe, sem biblioteca e sem a View Transitions
  *     API (que ainda falta em parte dos navegadores e congela a tela durante a
- *     troca). A saída dos diálogos é do DialogHost.
+ *     troca). A saída dos diálogos é do DialogHost, e a dos cards que recolhem,
+ *     do Collapse.jsx.
  *   - `animation-fill-mode: backwards`, nunca `both`: um transform que fica depois
  *     da animação vira o bloco de contenção de todo `position: fixed` dentro dele,
  *     e os painéis de info das abas (fixos) passariam a se posicionar pela aba.
@@ -42,16 +45,36 @@
   animation: motion-fade 0.2s ease-out backwards;
 }
 
-.motion-expand {
-  animation: motion-expand 0.2s ease-out backwards;
-}
-
 .motion-pop {
   animation: motion-pop 0.16s ease-out backwards;
 }
 
 .motion-rise {
   animation: motion-rise 0.26s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.motion-num-up {
+  display: inline-block;
+  animation: motion-num-up 0.22s ease-out backwards;
+}
+
+.motion-num-down {
+  display: inline-block;
+  animation: motion-num-down 0.22s ease-out backwards;
+}
+
+@keyframes motion-num-up {
+  from {
+    opacity: 0;
+    transform: translateY(45%);
+  }
+}
+
+@keyframes motion-num-down {
+  from {
+    opacity: 0;
+    transform: translateY(-45%);
+  }
 }
 
 @keyframes motion-slide-next {
@@ -71,13 +94,6 @@
 @keyframes motion-fade {
   from {
     opacity: 0;
-  }
-}
-
-@keyframes motion-expand {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
   }
 }
 

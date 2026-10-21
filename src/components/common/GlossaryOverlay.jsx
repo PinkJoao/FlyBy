@@ -12,6 +12,8 @@
 //   GlossaryOverlay(): o overlay.
 //
 // DECISÕES E ARMADILHAS
+//   - A ordem própria do índice (regras primeiro, DDL-0027) é a `naturalSort`:
+//     segue sendo a padrão, e o nome vira uma opção do botão de ordenar.
 //   - A entity é estável por db: o precompute das 7700+ entradas roda uma vez por
 //     sessão. Uma entrada pode casar várias categorias (DDL-0027).
 // -----------------------------------------------------------------------------
@@ -36,6 +38,7 @@ export default function GlossaryOverlay() {
     () => ({
       type: 'glossary',
       title: 'Glossary',
+      naturalSort: { value: 'natural', label: 'Rules first', defaultDir: 'asc', dirLabels: ['Rules first', 'Reversed'] },
       list: () => entries,
       idOf: (e) => e.id,
       precompute: (e) => ({

@@ -7,7 +7,8 @@
  *     carga e attunement; abaixo de 700px empilham.
  *   Controles
  *   .controls, .searchBox, .search, .filters, .select*: busca e loja numa linha
- *     fixa; Sort e Group abaixo das abas (no mobile, metade da largura cada).
+ *     fixa; abaixo das abas, o Group ocupa a linha e o botão de ordenar
+ *     (SortButton) fica à direita, sozinho também quando não há Group.
  *   .subTabs, .subTab*: as sub-abas de grupo, no estilo pill do ClassTab; crescem
  *     para preencher a linha quando cabem e rolam quando não.
  *   Painéis (estilo items-section do dnd5e)
@@ -169,6 +170,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.filters > .select {
+  flex: 1;
+  min-width: 0;
+}
+
+.filters > .select select {
+  flex: 1;
+  min-width: 0;
+}
+
+.filters > :last-child {
+  margin-left: auto;
 }
 
 .select {

@@ -4,6 +4,8 @@
  * CLASSES
  *   .menu, .item, .itemTitle, .itemSub: o menu e os itens.
  *   .itemDanger: ação destrutiva (Delete), vermelha, e o hover não usa o accent.
+ *   .itemChoice, .itemCheck, .itemText: item de escolha única, com o check numa
+ *     coluna fixa à esquerda (o texto não pula quando a marca muda).
  * -------------------------------------------------------------------------- */
 
 .menu {
@@ -61,4 +63,24 @@
 
 .itemDanger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.itemChoice {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemCheck {
+  flex: none;
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }

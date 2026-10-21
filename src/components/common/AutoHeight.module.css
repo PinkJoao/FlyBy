@@ -1,0 +1,12 @@
+/* =============================================================================
+ * AutoHeight.module.css: o contêiner de altura animada
+ * =============================================================================
+ * CLASSES
+ *   .outer: a altura, dada em JS, desliza; corta só na vertical.
+ * -------------------------------------------------------------------------- */
+
+.outer {
+  overflow-x: visible;
+  overflow-y: clip;
+  transition: height 0.26s ease;
+}

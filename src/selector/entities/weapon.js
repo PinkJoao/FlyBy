@@ -8,8 +8,12 @@
 //   descrições da maestria e das propriedades; antes ficava vazio.
 //
 // FUNÇÕES
+//   maxDamage(expr): o dano máximo de um dado ("2d6" vira 12), para ordenar.
 //   isMelee(w), masteryName(w), propertyNames(w), cap(s), damageText(w): os campos.
 //   Exporta weaponEntity.
+//
+// DECISÕES E ARMADILHAS
+//   - `sorts`: Damage, pelo máximo do dado (2d6 = 12 vence 1d10 = 10).
 // -----------------------------------------------------------------------------
 
 import { latestOnly } from '../reprints';
@@ -40,6 +44,12 @@ function damageText(w) {
   return `${w.dmg1} ${DMG_TYPE[w.dmgType] ?? w.dmgType ?? ''}`.trim();
 }
 
+/** O dano máximo de uma expressão de dado ("2d6" vira 12); sem dado, null. */
+function maxDamage(expr) {
+  const m = /^(\d+)d(\d+)/.exec(String(expr ?? ''));
+  return m ? Number(m[1]) * Number(m[2]) : null;
+}
+
 const weaponEntity = {
   type: 'weapon',
   title: 'Weapon',
@@ -60,6 +70,10 @@ const weaponEntity = {
       mastery: [masteryName(w)].filter(Boolean),
     },
   }),
+
+  sorts: [
+    { value: 'damage', label: 'Damage', defaultDir: 'desc', dirLabels: ['Weakest first', 'Strongest first'], keyOf: (w) => maxDamage(w.dmg1) },
+  ],
 
   filters: [
     { id: 'category', header: 'Category', options: ['Simple', 'Martial'] },

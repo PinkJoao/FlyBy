@@ -15,7 +15,8 @@
  *     .statOver é acima do limite, no vermelho da sobrecarga do inventário.
  *   .categories, .category*: os círculos, no MESMO estilo das sub-abas de tipo do
  *     inventário.
- *   .controls, .searchBox, .search, .filters, .select*: busca e Group/Sort.
+ *   .controls, .searchBox, .search, .filters, .select*: busca, e o Group
+ *     ocupando a linha com o botão de ordenar (SortButton) à direita.
  *   .prepareBtn: "Prepare spell", no padrão do Shop; no limite (R11) não some,
  *     fica indisponível.
  *   Painéis
@@ -329,6 +330,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.filters > .select {
+  flex: 1;
+  min-width: 0;
+}
+
+.filters > .select select {
+  flex: 1;
+  min-width: 0;
+}
+
+.filters > :last-child {
+  margin-left: auto;
 }
 
 .select {

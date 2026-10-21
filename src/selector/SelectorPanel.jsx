@@ -39,6 +39,21 @@
 //     o puxador fecha arrastando ou tocando, e um arrasto curto não vira clique.
 //   - O voltar do celular fecha, nesta ordem, o detalhe, a gaveta de filtros e o
 //     painel (três useBackLayer, src/backStack.js).
+//   - Desktop: duplo clique num card seleciona (o clique simples só fixa a
+//     prévia). Fora no celular (o toque abre o detalhe e o toque duplo é zoom) e
+//     na loja (`renderFooter`: não há um Select para imitar).
+//   - Escolha MÚLTIPLA (`multi = { total, chosen: [{ key, label }], onRemove }`):
+//     o título ganha "(n of total)", o botão diz "Next" enquanto faltar mais de
+//     um, e a faixa "Chosen" mostra o que já foi escolhido, com desfazer. Quem
+//     chama decide fechar só quando completa; a seleção é esperada (`choose`
+//     aguarda o onSelect, que pode abrir uma confirmação) e, se o painel seguir
+//     aberto, a prévia, o detalhe do celular e a busca voltam ao começo.
+//   - Ordenação pelo CONTEXTO, como os filtros: a entity declara `sorts` (Level e
+//     School nas magias, Price, Weight e Rarity nos itens...) e, se a lista tem
+//     uma ordem própria, `naturalSort` (o glossário, regras primeiro). O padrão é
+//     o nome, de A a Z; o botão (SortButton) fica à direita do contador e só
+//     aparece com mais de uma opção. A ordenação é por cima do que os filtros e o
+//     `exclude` deixaram (src/sorting.js).
 //   - O tour do seletor (DDL-0069) dispara na 1a abertura de um seletor com preview
 //     (o glossário e a loja ficam fora) e, no mobile, DIRIGE a gaveta e o detalhe
 //     por `mobileAction` passo a passo; ao terminar, fecha os dois.
@@ -54,6 +69,8 @@ import { TUT } from '../tutorial/anchors';
 import styles from './SelectorPanel.module.css';
 import { useBackLayer } from '../hooks/useBack';
 import Icon from '../components/common/Icon';
+import SortButton from '../components/common/SortButton';
+import { NAME_SORT, sortList } from '../sorting';
 
 const DRAWER_CLOSE_PX = 70;
 
@@ -87,6 +104,7 @@ export default function SelectorPanel({
   noPreview,
   heading,
   hint,
+  multi,
 }) {
   const [query, setQuery] = useState('');
   const [filterState, setFilterState] = useState(
@@ -196,10 +214,17 @@ export default function SelectorPanel({
       }),
     [items, query, filterState, entity.filters],
   );
-  const results = useMemo(
-    () => (exclude ? filtered.filter((it) => !exclude(it.raw)) : filtered),
-    [filtered, exclude]
-  );
+  const sortOptions = useMemo(() => {
+    const own = (entity.sorts ?? []).map((o) => ({ ...o, keyOf: o.keyOf && ((raw) => o.keyOf(raw, db)) }));
+    return entity.naturalSort ? [entity.naturalSort, NAME_SORT, ...own] : [NAME_SORT, ...own];
+  }, [entity, db]);
+  const [sort, setSort] = useState(() => ({ value: sortOptions[0].value, dir: sortOptions[0].defaultDir ?? 'asc' }));
+  const activeSort = sortOptions.find((o) => o.value === sort.value) ?? sortOptions[0];
+
+  const results = useMemo(() => {
+    const kept = exclude ? filtered.filter((it) => !exclude(it.raw)) : filtered;
+    return sortList(kept, { option: activeSort, dir: sort.dir, rawOf: (it) => it.raw });
+  }, [filtered, exclude, activeSort, sort.dir]);
 
   const tourId = useTutorialStore((s) => s.tourId);
   const tourSteps = useTutorialStore((s) => s.steps);
@@ -229,19 +254,20 @@ export default function SelectorPanel({
   const [visibleCount, setVisibleCount] = useState(RENDER_CHUNK);
   const resultsRef = useRef(null);
   const sentinelRef = useRef(null);
-  const [prevRefine, setPrevRefine] = useState({ query, filterState, entity, db });
+  const [prevRefine, setPrevRefine] = useState({ query, filterState, entity, db, sort });
   if (
     prevRefine.query !== query ||
     prevRefine.filterState !== filterState ||
     prevRefine.entity !== entity ||
-    prevRefine.db !== db
+    prevRefine.db !== db ||
+    prevRefine.sort !== sort
   ) {
-    setPrevRefine({ query, filterState, entity, db });
+    setPrevRefine({ query, filterState, entity, db, sort });
     setVisibleCount(RENDER_CHUNK);
   }
   useEffect(() => {
     resultsRef.current?.scrollTo?.({ top: 0 });
-  }, [query, filterState, entity, db]);
+  }, [query, filterState, entity, db, sort]);
   const shown = results.length > visibleCount ? results.slice(0, visibleCount) : results;
   const hasMore = results.length > shown.length;
   useEffect(() => {
@@ -300,19 +326,54 @@ export default function SelectorPanel({
 
   const preview = hovered ?? detailItem ?? selectedRaw ?? lastHovered ?? results[0]?.raw ?? null;
 
+  const remaining = multi ? Math.max(0, multi.total - multi.chosen.length) : 0;
+  const selectLabel = multi && remaining > 1 ? 'Next' : 'Select';
+  const title = heading ?? `Choose ${entity.title}`;
+  const shownTitle = multi && multi.total > 1 && remaining > 0 ? `${title} (${multi.chosen.length + 1} of ${multi.total})` : title;
+
+  /** Seleciona; num painel múltiplo que segue aberto, volta à lista limpa para a próxima. */
+  const choose = async (raw) => {
+    await onSelect(raw);
+    if (!multi) return;
+    setDetailItem(null);
+    setHovered(null);
+    setLastHovered(null);
+    setQuery('');
+  };
+
   // ATENÇÃO: o portal para document.body é necessário; um ancestral com transform prenderia o painel.
   return createPortal(
     <div className={`${styles.overlay} motion-page`} onClick={onClose}>
       <div className={`${styles.panel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
         <header className={styles.header}>
           <div className={styles.headerText}>
-            <h2>{heading ?? `Choose ${entity.title}`}</h2>
+            <h2>{shownTitle}</h2>
             {hint && <p className={styles.hint}>{hint}</p>}
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
             <Icon name="close" />
           </button>
         </header>
+
+        {multi && multi.chosen.length > 0 && (
+          <div className={styles.chosenStrip} aria-label="Already chosen">
+            <span className={styles.chosenLabel}>Chosen</span>
+            {multi.chosen.map((c) => (
+              <span key={c.key} className={`${styles.chosenChip} motion-pop`}>
+                {c.label}
+                <button
+                  type="button"
+                  className={styles.chosenRemove}
+                  onClick={() => multi.onRemove(c.key)}
+                  aria-label={`Remove ${c.label}`}
+                  title={`Remove ${c.label}`}
+                >
+                  <Icon name="close" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className={showFilters ? `${styles.searchBar} ${styles.searchBarHidden}` : styles.searchBar}>
           <input
@@ -431,7 +492,18 @@ export default function SelectorPanel({
           </aside>
 
           <main className={styles.results} ref={resultsRef} data-tour={TUT.SELECTOR_RESULTS}>
-            <div className={styles.count}>{results.length} result(s)</div>
+            <div className={styles.countRow}>
+              <span className={styles.count}>{results.length} result(s)</span>
+              {sortOptions.length > 1 && (
+                <SortButton
+                  options={sortOptions}
+                  value={activeSort.value}
+                  dir={sort.dir}
+                  onChange={(value, dir) => setSort({ value, dir })}
+                  className={styles.sortBtn}
+                />
+              )}
+            </div>
             <ul className={styles.cards}>
               {shown.map((item) => {
                 const card = cardOf(item, entity, db);
@@ -439,9 +511,10 @@ export default function SelectorPanel({
                 const isPinned = detailItem && entity.idOf(detailItem) === item.id;
                 const stateCls = `${selected ? styles.cardSel : ''} ${isPinned ? styles.cardPinned : ''}`;
                 const info = noPreview
-                  ? { onClick: () => onSelect(item.raw) }
+                  ? { onClick: () => choose(item.raw) }
                   : {
                       onClick: () => setDetailItem(item.raw),
+                      onDoubleClick: renderFooter || isMobile() ? undefined : () => choose(item.raw),
                       onMouseEnter: () => {
                         setHovered(item.raw);
                         setLastHovered(item.raw);
@@ -527,9 +600,9 @@ export default function SelectorPanel({
                         type="button"
                         className={styles.selectBtn}
                         data-tour={TUT.SELECTOR_SELECT}
-                        onClick={() => onSelect(preview)}
+                        onClick={() => choose(preview)}
                       >
-                        Select
+                        {selectLabel}
                       </button>
                     )}
                   </div>
@@ -555,8 +628,8 @@ export default function SelectorPanel({
               {renderFooter ? (
                 renderFooter(detailItem)
               ) : (
-                <button type="button" className={styles.selectBtn} onClick={() => onSelect(detailItem)}>
-                  Select
+                <button type="button" className={styles.selectBtn} onClick={() => choose(detailItem)}>
+                  {selectLabel}
                 </button>
               )}
             </div>

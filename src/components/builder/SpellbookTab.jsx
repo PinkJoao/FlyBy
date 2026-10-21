@@ -28,12 +28,18 @@
 //     togglePrepared(entry): prepara ou desprepara uma magia do repertório.
 //     assignSpell(entry), discardSpell(entry): dão destino à carga.
 //     startReplace(entry), closePicker(), removeSpell(entry): o fluxo de troca.
+//     openPrepare(), undoSessionPick(name): o "Prepare spell" em modo múltiplo.
 //     inClassList(raw), excludeFromPicker(raw): os recortes do seletor.
 //   PreparedToggle(props): o radio de preparação (o mesmo átomo do EquipToggle).
 //   SpellThumb(props): arte do fluff, senão o glyph da escola.
 //   SpellRow(props): uma linha da lista.
 //
 // DECISÕES E ARMADILHAS
+//   - "Prepare spell" abre o seletor em modo MÚLTIPLO: segue aberto enquanto
+//     houver vaga livre (truques mais preparadas) e fecha quando acabam. A faixa
+//     mostra só o que foi adicionado NESTA abertura (`session`), não o repertório
+//     inteiro. Passar do limite continua possível, reabrindo (liberdade com
+//     aviso). A troca de uma magia (`replacing`) segue sendo uma escolha só.
 //   Origens e limites
 //   - Magia CONCEDIDA (subclasse, linhagem, talento) é "Always Prepared": não sai
 //     e não conta nos limites. Só o que o jogador escolheu conta.
@@ -117,6 +123,8 @@ import styles from './SpellbookTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
+import SortButton from '../common/SortButton';
+import { NAME_SORT } from '../../sorting';
 
 const ORIGIN_ICONS = { class: 'originClass', race: 'originSpecies', feat: 'originFeat', unassigned: 'itemAll' };
 
@@ -135,10 +143,10 @@ const SCHOOL_GLYPHS = {
 };
 
 const SORT_OPTIONS = [
-  { value: 'name', label: 'Name' },
-  { value: 'level', label: 'Level' },
-  { value: 'time', label: 'Casting Time' },
-  { value: 'range', label: 'Range' },
+  NAME_SORT,
+  { value: 'level', label: 'Level', defaultDir: 'asc' },
+  { value: 'time', label: 'Casting Time', defaultDir: 'asc', dirLabels: ['Fastest first', 'Slowest first'] },
+  { value: 'range', label: 'Range', defaultDir: 'asc', dirLabels: ['Shortest first', 'Longest first'] },
 ];
 
 const GROUP_BY_OPTIONS = [
@@ -258,11 +266,13 @@ export default function SpellbookTab({
   const [category, setCategory] = useState('all');
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
   const [groupBy, setGroupBy] = useState('level');
   const [infoKey, setInfoKey] = useState(null);
   useBackLayer(infoKey != null, () => setInfoKey(null));
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [prepareOpen, setPrepareOpen] = useState(false);
+  const [session, setSession] = useState([]);
   const [replacing, setReplacing] = useState(null);
 
   const origin = origins.find((o) => o.key === originKey) ?? origins[0];
@@ -324,15 +334,18 @@ export default function SpellbookTab({
   const sorted = [...visible].sort((a, b) => {
     const s = sectionRank(a, groupBy) - sectionRank(b, groupBy);
     if (s !== 0) return s;
+    const sign = sortDir === 'desc' ? -1 : 1;
     if (sortBy === 'level') {
-      const l = a.raw.level - b.raw.level;
+      const l = (a.raw.level - b.raw.level) * sign;
       if (l !== 0) return l;
     } else if (sortBy === 'time') {
-      const t = castingTimeRank(a.raw) - castingTimeRank(b.raw);
+      const t = (castingTimeRank(a.raw) - castingTimeRank(b.raw)) * sign;
       if (t !== 0) return t;
     } else if (sortBy === 'range') {
-      const r = rangeRank(a.raw) - rangeRank(b.raw);
+      const r = (rangeRank(a.raw) - rangeRank(b.raw)) * sign;
       if (r !== 0) return r;
+    } else {
+      return a.raw.name.localeCompare(b.raw.name) * sign;
     }
     return a.raw.name.localeCompare(b.raw.name);
   });
@@ -364,6 +377,7 @@ export default function SpellbookTab({
   const replIsPrepared = !!replRaw && !replIsCantrip && !replIsArcanum;
   const freeCantripsFull = cantripCount - (replIsCantrip ? 1 : 0) >= origin.cantripLimit;
   const freePreparedFull = preparedCount - (replIsPrepared ? 1 : 0) >= origin.prepareLimit;
+  const freeSlots = Math.max(0, origin.cantripLimit - cantripCount) + Math.max(0, origin.prepareLimit - preparedCount);
   const freeArcanumForPick = replIsArcanum ? new Set([...freeArcanumLevels, replRaw.level]) : freeArcanumLevels;
 
   const uses = origin.uses ?? [];
@@ -482,7 +496,26 @@ export default function SpellbookTab({
     const ref = { id: raw.name, source: raw.source };
     if (asUnprepared) ref.prepared = false;
     setSpells([...base, ref]);
-    closePicker();
+    if (replacing) {
+      closePicker();
+      return;
+    }
+    const usesSlot = raw.level === 0 ? !freeCantripsFull : raw.level <= origin.maxPrepareLevel && !freePreparedFull;
+    setSession((names) => [...names, raw.name]);
+    if (freeSlots - (usesSlot ? 1 : 0) <= 0) closePicker();
+  };
+
+  /** Abre o seletor para preparar, em modo múltiplo até as vagas livres acabarem. */
+  const openPrepare = () => {
+    setSession([]);
+    setPrepareOpen(true);
+  };
+
+  /** Desfaz, pela faixa do seletor, uma magia adicionada nesta abertura. */
+  const undoSessionPick = (name) => {
+    const key = name.toLowerCase();
+    setSpells((classEntry?.spells ?? []).filter((s) => String(s.id ?? s.name).toLowerCase() !== key));
+    setSession((names) => names.filter((n) => n !== name));
   };
 
   /** Alterna a preparação de uma magia do repertório. */
@@ -674,7 +707,7 @@ export default function SpellbookTab({
           <button
             type="button"
             className={styles.prepareBtn}
-            onClick={() => setPrepareOpen(true)}
+            onClick={openPrepare}
             disabled={prepareDisabled}
             title={prepareDisabled ? 'Remove a spell to prepare another one.' : undefined}
           >
@@ -712,14 +745,15 @@ export default function SpellbookTab({
             ))}
           </select>
         </label>
-        <label className={styles.select}>
-          <span className={styles.selectLabel}>Sort</span>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </label>
+        <SortButton
+          options={SORT_OPTIONS}
+          value={sortBy}
+          dir={sortDir}
+          onChange={(value, dir) => {
+            setSortBy(value);
+            setSortDir(dir);
+          }}
+        />
       </div>
 
       {all.length === 0 ? (
@@ -841,6 +875,15 @@ export default function SpellbookTab({
           hint={replacing ? 'The spell you pick takes its place. Close to keep the current one.' : undefined}
           onSelect={addSpell}
           onClose={closePicker}
+          multi={
+            replacing
+              ? undefined
+              : {
+                  total: session.length + freeSlots,
+                  chosen: session.map((n) => ({ key: n, label: n })),
+                  onRemove: undoSessionPick,
+                }
+          }
         />
       )}
     </div>

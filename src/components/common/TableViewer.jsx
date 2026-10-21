@@ -55,8 +55,8 @@ export default function TableViewer({ children, footer = null, fullscreenChildre
       {footer}
 
       {full && (
-        <div className={styles.overlay} onClick={() => setFull(false)}>
-          <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+        <div className={`${styles.overlay} motion-page`} onClick={() => setFull(false)}>
+          <div className={`${styles.sheet} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.sheetHead}>
               <button type="button" className={styles.close} onClick={() => setFull(false)} aria-label="Close">
                 <Icon name="close" />

@@ -52,6 +52,8 @@ import styles from './InventoryTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
+import SortButton from '../common/SortButton';
+import { NAME_SORT, sortName } from '../../sorting';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -89,9 +91,9 @@ const GROUP_BY_OPTIONS = {
 };
 
 const SORT_OPTIONS = [
-  { value: 'name', label: 'Name' },
-  { value: 'rarity', label: 'Rarity' },
-  { value: 'weight', label: 'Weight' },
+  NAME_SORT,
+  { value: 'rarity', label: 'Rarity', defaultDir: 'asc', dirLabels: ['Rarest first', 'Most common first'] },
+  { value: 'weight', label: 'Weight', defaultDir: 'desc', dirLabels: ['Lightest first', 'Heaviest first'] },
 ];
 
 const SECTION_ORDERS = {
@@ -104,6 +106,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const [activeGroup, setActiveGroup] = useState('all');
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
   const [groupBy, setGroupBy] = useState('type');
   const [infoUid, setInfoUid] = useState(null);
   useBackLayer(infoUid != null, () => setInfoUid(null));
@@ -218,14 +221,17 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const sorted = [...visible].sort((a, b) => {
     const s = sectionRank(a) - sectionRank(b);
     if (s !== 0) return s;
+    const sign = sortDir === 'desc' ? -1 : 1;
     if (sortBy === 'rarity') {
-      const r = rarityRank(a.rarity) - rarityRank(b.rarity);
+      const r = (rarityRank(a.rarity) - rarityRank(b.rarity)) * sign;
       if (r !== 0) return r;
     } else if (sortBy === 'weight') {
-      const w = (b.lineWeight ?? 0) - (a.lineWeight ?? 0);
+      const w = ((a.lineWeight ?? 0) - (b.lineWeight ?? 0)) * sign;
       if (w !== 0) return w;
+    } else {
+      return sortName(nameOf(a)).localeCompare(sortName(nameOf(b))) * sign;
     }
-    return nameOf(a).localeCompare(nameOf(b));
+    return sortName(nameOf(a)).localeCompare(sortName(nameOf(b)));
   });
 
   const rows = groupRows(sorted, groupBy === 'none' ? null : sectionOf);
@@ -313,14 +319,15 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
             </select>
           </label>
         )}
-        <label className={styles.select}>
-          <span className={styles.selectLabel}>Sort</span>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </label>
+        <SortButton
+          options={SORT_OPTIONS}
+          value={sortBy}
+          dir={sortDir}
+          onChange={(value, dir) => {
+            setSortBy(value);
+            setSortDir(dir);
+          }}
+        />
       </div>
 
       {loose.length === 0 ? (
@@ -412,7 +419,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                   ) : (
                     <ul className={styles.list}>
                       {[...contents]
-                        .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
+                        .sort((a, b) => sortName(nameOf(a)).localeCompare(sortName(nameOf(b))))
                         .map((entry) => (
                           <ItemRow
                             key={entry.uid}

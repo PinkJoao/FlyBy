@@ -16,6 +16,9 @@
 //     campos do card e dos filtros.
 //   classFluff(c, db): a entrada de fluff da classe.
 //   Exporta classEntity.
+//
+// DECISÕES E ARMADILHAS
+//   - `sorts`: Hit Die, pelo tamanho do dado de vida.
 // -----------------------------------------------------------------------------
 
 import { CLASS_NAMES } from '../../data/config';
@@ -100,6 +103,10 @@ const classEntity = {
       die: [`d${c.hd?.faces ?? '?'}`],
     },
   }),
+
+  sorts: [
+    { value: 'hitDie', label: 'Hit Die', defaultDir: 'desc', dirLabels: ['Smallest first', 'Largest first'], keyOf: (c) => c.hd?.faces ?? null },
+  ],
 
   filters: [
     {

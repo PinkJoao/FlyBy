@@ -56,12 +56,14 @@ import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint
 import { SettingsMenu, GameDataMenu } from '../components/common/AppMenus';
 import styles from './Home.module.css';
 import Icon from '../components/common/Icon';
+import SortButton from '../components/common/SortButton';
+import { NAME_SORT } from '../sorting';
 
 const SORT_OPTIONS = [
-  { value: 'name', label: 'Name' },
-  { value: 'level', label: 'Level' },
-  { value: 'created', label: 'Recent' },
-  { value: 'class', label: 'Class' },
+  NAME_SORT,
+  { value: 'level', label: 'Level', defaultDir: 'desc', dirLabels: ['Lowest first', 'Highest first'] },
+  { value: 'created', label: 'Recent', defaultDir: 'desc', dirLabels: ['Oldest first', 'Newest first'] },
+  { value: 'class', label: 'Class', defaultDir: 'asc', dirLabels: ['A to Z', 'Z to A'] },
 ];
 
 export default function Home() {
@@ -89,6 +91,7 @@ export default function Home() {
 
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
 
   useEffect(() => {
     if (!loaded) load();
@@ -231,8 +234,11 @@ export default function Home() {
   };
 
   const items = useMemo(
-    () => orderRoster(characters, { query, sortBy })[0].items,
-    [characters, query, sortBy],
+    () => {
+      const option = SORT_OPTIONS.find((o) => o.value === sortBy) ?? SORT_OPTIONS[0];
+      return orderRoster(characters, { query, sortBy, reverse: sortDir !== option.defaultDir })[0].items;
+    },
+    [characters, query, sortBy, sortDir],
   );
 
   const total = characters.length;
@@ -344,14 +350,16 @@ export default function Home() {
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
-              <label className={styles.select}>
-                <span className={styles.selectLabel}>Sort</span>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </label>
+              <SortButton
+                options={SORT_OPTIONS}
+                value={sortBy}
+                dir={sortDir}
+                onChange={(value, dir) => {
+                  setSortBy(value);
+                  setSortDir(dir);
+                }}
+                className={styles.sortBtn}
+              />
             </div>
 
             <div className={styles.newRow}>

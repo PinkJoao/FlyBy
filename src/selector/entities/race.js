@@ -18,6 +18,7 @@
 //   Exporta raceEntity.
 //
 // DECISÕES E ARMADILHAS
+//   - `sorts`: Speed, pela velocidade de caminhada.
 //   - A lista: `_copy` resolvido, só versões atuais, só JOGÁVEIS. As linhagens não
 //     entram (têm seletor próprio), salvo as legadas curadas `as: 'species'`
 //     (DDL-0059). Saem as espécies de cenário vazias ou redundantes e as
@@ -212,6 +213,10 @@ const raceEntity = {
       },
     };
   },
+
+  sorts: [
+    { value: 'speed', label: 'Speed', defaultDir: 'desc', dirLabels: ['Slowest first', 'Fastest first'], keyOf: (r) => speedObj(r.speed).walk ?? null },
+  ],
 
   filters: [
     { id: 'size', header: 'Size', options: options(SIZE_LABEL) },

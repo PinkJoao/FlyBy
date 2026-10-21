@@ -1,0 +1,30 @@
+/* =============================================================================
+ * SortButton.module.css: o botão de ordenar
+ * =============================================================================
+ * CLASSES
+ *   .btn: quadrado, no visual dos selects das listas; quem usa pode ajustar o
+ *     tamanho pela classe que passa.
+ * -------------------------------------------------------------------------- */
+
+.btn {
+  appearance: none;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.btn:hover,
+.btn[aria-expanded='true'] {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}

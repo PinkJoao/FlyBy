@@ -9,7 +9,9 @@
 // FUNÇÕES
 //   cap(s), nameOf(c): texto.
 //   primaryClass(c): a classe principal (a original, ou a primeira com id).
-//   orderRoster(characters, opts): os grupos.
+//   orderRoster(characters, opts): os grupos; `reverse` inverte a ordenação
+//     escolhida (cada uma tem a sua direção natural: nível e criação, do maior e
+//     do mais recente).
 // -----------------------------------------------------------------------------
 
 import { totalLevel } from '../schema/character';
@@ -34,15 +36,16 @@ const SORTERS = {
 /**
  * Os personagens filtrados, ordenados e agrupados.
  * @param {object[]} characters
- * @param {{ query?: string, sortBy?: string, groupBy?: string }} opts
+ * @param {{ query?: string, sortBy?: string, reverse?: boolean, groupBy?: string }} opts
  * @returns {Array<{ key: string|null, items: object[] }>}
  */
-export function orderRoster(characters, { query = '', sortBy = 'name', groupBy = 'none' } = {}) {
+export function orderRoster(characters, { query = '', sortBy = 'name', reverse = false, groupBy = 'none' } = {}) {
   const q = query.trim().toLowerCase();
   let list = characters ?? [];
   if (q) list = list.filter((c) => nameOf(c).toLowerCase().includes(q) || (nameOf(c) === '' && 'unnamed'.includes(q)));
 
-  const sorted = [...list].sort(SORTERS[sortBy] ?? SORTERS.name);
+  const sorter = SORTERS[sortBy] ?? SORTERS.name;
+  const sorted = [...list].sort(reverse ? (a, b) => sorter(b, a) : sorter);
 
   if (groupBy !== 'class') return [{ key: null, items: sorted }];
 

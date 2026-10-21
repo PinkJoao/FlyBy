@@ -11,6 +11,8 @@
 //   SpellPicker(props): o seletor (`level` e `maxLevel` dão a faixa).
 //
 // DECISÕES E ARMADILHAS
+//   - O seletor abre em modo MÚLTIPLO (`multi`): segue aberto até completar o
+//     limite do passo, com a faixa do que já foi escolhido.
 //   - A lista inclui o que a feature ALARGA (TC-0043).
 //   - TC-0031: o que vem de outra origem ganha badge, filtro pré-marcado e aviso.
 //   - Esconde o escolhido E o que a origem SEMPRE concede (DDL-0046): preparar a
@@ -87,7 +89,7 @@ export default function SpellPicker({ origin, origins, db, level, maxLevel, limi
       if (!ok) return;
     }
     setSpells([...(classEntry.spells ?? []), { id: raw.name, source: raw.source }]);
-    setOpen(false);
+    if (picks.length + 1 >= limit) setOpen(false);
   };
   const remove = (entry) => {
     const name = entry.raw.name.toLowerCase();
@@ -156,6 +158,14 @@ export default function SpellPicker({ origin, origins, db, level, maxLevel, limi
           initialFilterState={initialFilterState}
           onSelect={add}
           onClose={() => setOpen(false)}
+          multi={{
+            total: limit,
+            chosen: picks.map((e) => ({ key: e.raw.name, label: e.raw.name })),
+            onRemove: (name) => {
+              const entry = picks.find((e) => e.raw.name === name);
+              if (entry) remove(entry);
+            },
+          }}
         />
       )}
     </div>

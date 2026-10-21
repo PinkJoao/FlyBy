@@ -5,8 +5,9 @@
 //   O menu é um PORTAL no body: os cards do roster têm `overflow:hidden` e
 //   cortariam um dropdown dentro deles. A posição é medida a cada abertura e
 //   ancorada ao gatilho. Itens: [{ label, sub?, onClick?, href?, disabled?,
-//   danger?, title? }]; `href` vira link real (mais confiável para mailto:), e um
-//   http(s) abre em aba nova.
+//   danger?, title?, checked? }]; `href` vira link real (mais confiável para
+//   mailto:), e um http(s) abre em aba nova. `checked` (true ou false) faz do
+//   item uma opção de escolha única, com o check à esquerda (o SortButton).
 //
 // FUNÇÕES
 //   MenuButton(props): o gatilho e o menu.
@@ -22,6 +23,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useBackLayer } from '../../hooks/useBack';
+import Icon from './Icon';
 import styles from './MenuButton.module.css';
 
 const GAP = 6;
@@ -97,12 +99,23 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
             role="menu"
           >
             {items.map((item) => {
-              const className = item.danger ? `${styles.item} ${styles.itemDanger}` : styles.item;
-              const body = (
+              const choice = typeof item.checked === 'boolean';
+              const className = [styles.item, item.danger && styles.itemDanger, choice && styles.itemChoice]
+                .filter(Boolean)
+                .join(' ');
+              const text = (
                 <>
                   <span className={styles.itemTitle}>{item.label}</span>
                   {item.sub && <span className={styles.itemSub}>{item.sub}</span>}
                 </>
+              );
+              const body = choice ? (
+                <>
+                  <span className={styles.itemCheck}>{item.checked && <Icon name="check" />}</span>
+                  <span className={styles.itemText}>{text}</span>
+                </>
+              ) : (
+                text
               );
               if (item.href) {
                 const isExternal = /^https?:/.test(item.href);
@@ -125,7 +138,8 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
                 <button
                   key={item.label}
                   type="button"
-                  role="menuitem"
+                  role={choice ? 'menuitemradio' : 'menuitem'}
+                  aria-checked={choice ? item.checked : undefined}
                   className={className}
                   disabled={item.disabled}
                   title={item.title}

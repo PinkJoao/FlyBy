@@ -5,6 +5,8 @@
  *   Painel
  *   .overlay, .panel, .header, .headerText, .hint, .close: o painel; .hint é a
  *     dica opcional sob o título (glossário).
+ *   .chosenStrip, .chosenLabel, .chosenChip, .chosenRemove: a faixa do que já
+ *     foi escolhido numa escolha múltipla, com desfazer.
  *   .detailScreen, .detailHead, .detailScroll: a tela de DETALHE do mobile
  *     (tocar num card a abre antes de selecionar).
  *   .searchBar, .search, .filterToggle: a busca; o toggle só existe no mobile.
@@ -21,6 +23,7 @@
  *     numa opção ativa (DDL-0077).
  *   Resultados
  *   .results, .count, .cards, .sentinel: a grade e o sentinel das levas.
+ *   .countRow, .sortBtn: o contador à esquerda e o botão de ordenar à direita.
  *   .card*, .badges, .badge: os cards; .cardBox é o card COM ações (loja), um
  *     <div> com o botão de info e o stepper na base.
  *   .rarityBadge: a raridade (loja), bordada; a cor vem inline.
@@ -97,6 +100,58 @@
 .header h2 {
   margin: 0;
   font-size: 20px;
+}
+
+.chosenStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.chosenLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.chosenChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--text-h);
+  font-size: 13px;
+}
+
+.chosenRemove {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chosenRemove:hover {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
 }
 .headerText {
   min-width: 0;
@@ -646,4 +701,22 @@
     align-items: center;
     gap: 10px;
   }
+}
+
+.countRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.countRow .count {
+  margin-bottom: 0;
+}
+
+.sortBtn {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
 }

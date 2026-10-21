@@ -18,6 +18,8 @@
 //   Exporta itemEntity.
 //
 // DECISÕES E ARMADILHAS
+//   - `sorts`: Price (o derivado também, `itemValue`), Weight e Rarity; item sem
+//     preço, peso ou raridade fica no fim nos dois sentidos (src/sorting.js).
 //   - RARITY_LABEL existe porque o `cap` genérico fazia "very rare" virar "Very
 //     rare", que não casava com o chip "Very Rare": 732 itens inalcançáveis. Os três
 //     valores que não são tier (unknown, unknown (magic), varies) também têm opção,
@@ -47,6 +49,7 @@ const RARITY_COLOR = {
 };
 
 const RARITY_TIERS = new Set(['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact']);
+const RARITY_RANK = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
 
 const DAMAGE_TYPES = {
   A: 'Acid', B: 'Bludgeoning', C: 'Cold', F: 'Fire', O: 'Force', L: 'Lightning',
@@ -174,6 +177,18 @@ const itemEntity = {
       },
     };
   },
+
+  sorts: [
+    { value: 'price', label: 'Price', defaultDir: 'asc', keyOf: (r, db) => itemValue(r, db) ?? null },
+    { value: 'weight', label: 'Weight', defaultDir: 'asc', dirLabels: ['Lightest first', 'Heaviest first'], keyOf: (r) => r.weight ?? null },
+    {
+      value: 'rarity',
+      label: 'Rarity',
+      defaultDir: 'asc',
+      dirLabels: ['Most common first', 'Rarest first'],
+      keyOf: (r) => (RARITY_TIERS.has(r.rarity) ? RARITY_RANK.indexOf(r.rarity) : null),
+    },
+  ],
 
   filters: [
     { id: 'type', header: 'Type', derive: true },

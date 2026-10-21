@@ -41,6 +41,7 @@ const ICONS = {
   chevronLeft: 'lucide:chevron-left',
   chevronRight: 'lucide:chevron-right',
   plus: 'lucide:plus',
+  sort: 'lucide:arrow-up-down',
   menu: 'lucide:menu',
   more: 'lucide:ellipsis-vertical',
   check: 'lucide:check',

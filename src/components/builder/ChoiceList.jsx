@@ -28,6 +28,10 @@
 //   - DEDUP: `owned` (tudo que a ficha tem) impede escolher duas vezes; talentos
 //     `repeatable` escapam. Expertise exclui as que já têm expertise.
 //   - Tocar num chip abre a descrição do escolhido (DDL-0021).
+//   - Escolha de mais de um (perícias, idiomas, optional features, magias, o
+//     misto) abre o seletor em modo MÚLTIPLO (`multi`): ele segue aberto até a
+//     escolha completar, com o "n of total" no título e a faixa do que já foi
+//     escolhido. Cada `add` só fecha o painel quando a contagem fecha.
 //   - O título é link para a feature que concede a escolha (`ruleEntry`), senão
 //     para a regra do KIND (choiceRules, DDL-0032); sem regra, texto.
 //   - `guided` (dentro do guia): "Prerequisites: Met" pré-marcado nos talentos.
@@ -229,10 +233,12 @@ function TagChoice({ choice, picks, onChange, db, owned }) {
 
   const add = (raw) => {
     const value = valueOf(raw);
+    let total = picks.length;
     if (!picks.includes(value) && picks.length < choice.count) {
       onChange({ kind, picks: [...picks, value] });
+      total += 1;
     }
-    setOpen(false);
+    if (total >= choice.count) setOpen(false);
   };
   const remove = (value) => onChange({ kind, picks: picks.filter((p) => p !== value) });
   const openDetail = (value) => {
@@ -275,6 +281,7 @@ function TagChoice({ choice, picks, onChange, db, owned }) {
             return isOwned(owned, kind, v);
           }}
           onSelect={add}
+          multi={{ total: choice.count, chosen: picks.map((v) => ({ key: v, label: labelOf(v) })), onRemove: remove }}
           onClose={() => setOpen(false)}
         />
       )}
@@ -292,10 +299,12 @@ function OptionalFeatureChoice({ choice, picks, onChange, db, character }) {
   const nameOf = (id) => id.split('|')[0];
   const add = (raw) => {
     const id = `${raw.name}|${raw.source}`;
+    let total = picks.length;
     if (!picks.includes(id) && picks.length < choice.count) {
       onChange({ kind: 'optionalfeature', picks: [...picks, id] });
+      total += 1;
     }
-    setOpen(false);
+    if (total >= choice.count) setOpen(false);
   };
   const remove = (id) => onChange({ kind: 'optionalfeature', picks: picks.filter((p) => p !== id) });
   const openDetail = (id) => {
@@ -337,6 +346,7 @@ function OptionalFeatureChoice({ choice, picks, onChange, db, character }) {
           exclude={(raw) => picks.includes(`${raw.name}|${raw.source}`)}
           onSelect={confirmAdd}
           onClose={() => setOpen(false)}
+          multi={{ total: choice.count, chosen: picks.map((id) => ({ key: id, label: nameOf(id) })), onRemove: remove }}
         />
       )}
     </div>
@@ -514,8 +524,10 @@ function SpellChoice({ choice, picks, onChange, db, siblingPicks, spellsOwned })
         if (!ok) return;
       }
       onChange({ kind: 'spell', picks: [...picks, id] });
+      if (picks.length + 1 >= choice.count) setOpen(false);
+      return;
     }
-    setOpen(false);
+    if (picks.length >= choice.count) setOpen(false);
   };
   const remove = (id) => onChange({ kind: 'spell', picks: picks.filter((p) => p !== id) });
   const openDetail = (id) => {
@@ -554,6 +566,7 @@ function SpellChoice({ choice, picks, onChange, db, siblingPicks, spellsOwned })
           initialFilterState={(spellsOwned?.size ?? 0) > 0 ? { owned: { yes: 'exclude' } } : undefined}
           onSelect={add}
           onClose={() => setOpen(false)}
+          multi={{ total: choice.count, chosen: picks.map((id) => ({ key: id, label: nameOf(id) })), onRemove: remove }}
         />
       )}
     </div>
@@ -566,10 +579,12 @@ function MixedChoice({ choice, picks, onChange, db, owned }) {
 
   const add = (kind, raw) => {
     const value = kind === 'skill' ? skillCode(raw.name) : raw.name;
+    let total = picks.length;
     if (!picks.some((p) => p.value === value) && picks.length < choice.count) {
       onChange({ kind: choice.kind, picks: [...picks, { kind, value }] });
+      total += 1;
     }
-    setAddKind(null);
+    if (total >= choice.count) setAddKind(null);
   };
   const remove = (value) => onChange({ kind: choice.kind, picks: picks.filter((p) => p.value !== value) });
   const labelFor = (p) => (p.kind === 'skill' ? (SKILL_LABEL[p.value] ?? p.value) : p.value);
@@ -611,6 +626,7 @@ function MixedChoice({ choice, picks, onChange, db, owned }) {
           }}
           onSelect={(raw) => add(addKind, raw)}
           onClose={() => setAddKind(null)}
+          multi={{ total: choice.count, chosen: picks.map((p) => ({ key: p.value, label: labelFor(p) })), onRemove: remove }}
         />
       )}
     </div>

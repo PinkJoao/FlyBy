@@ -56,6 +56,12 @@ describe('orderRoster - ordenação', () => {
     expect(g.items.map((c) => c.meta.createdAt)).toEqual([300, 200, 100, 50]);
   });
 
+  it('reverse inverte a ordenação escolhida', () => {
+    const [byLevel] = orderRoster(all, { sortBy: 'level' });
+    const [reversed] = orderRoster(all, { sortBy: 'level', reverse: true });
+    expect(reversed.items.map((c) => c.id)).toEqual([...byLevel.items].reverse().map((c) => c.id));
+  });
+
   it('por classe, alfabético pela classe principal', () => {
     const [g] = orderRoster(all, { sortBy: 'class' });
     expect(g.items.map((c) => primaryClass(c))).toEqual(['Fighter', 'Ranger', 'Unclassed', 'Wizard']);

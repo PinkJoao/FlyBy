@@ -7,6 +7,9 @@
 //
 // FUNÇÕES
 //   abilityOf(s): a habilidade da perícia.
+//
+// DECISÕES E ARMADILHAS
+//   - `sorts`: Ability, pela habilidade da perícia.
 // -----------------------------------------------------------------------------
 
 import { latestOnly } from '../reprints';
@@ -40,6 +43,10 @@ const skillEntity = {
       ability: [abilityOf(s)].filter(Boolean),
     },
   }),
+
+  sorts: [
+    { value: 'ability', label: 'Ability', defaultDir: 'asc', dirLabels: ['A to Z', 'Z to A'], keyOf: (s) => abilityOf(s) ?? null },
+  ],
 
   filters: [
     { id: 'ability', header: 'Ability', derive: true },

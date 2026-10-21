@@ -7,8 +7,9 @@
  *     altura do logo define o tamanho, o SVG é quadrado) e o menu à direita.
  *   .main, .rosterTitle: o roster no espaço restante; título, controles e botão
  *     têm altura fixa.
- *   .controls, .searchBox, .search, .select, .selectLabel: busca e Sort, no
- *     espírito das abas de inventário e magias.
+ *   .controls, .searchBox, .search, .sortBtn: a busca e o botão de ordenar
+ *     (SortButton), como nas abas de inventário e magias; o botão tem a altura
+ *     da busca.
  *   .newRow, .newBtn: "New Character", centralizado abaixo da busca.
  *   .listScroll: a ÚNICA área que rola, com padding lateral para a barra não colar
  *     nos cards.
@@ -123,40 +124,9 @@
   border-color: var(--accent-border);
 }
 
-.select {
-  display: inline-flex;
-  align-items: center;
+.sortBtn {
+  width: 40px;
   height: 40px;
-  box-sizing: border-box;
-  gap: 6px;
-  padding: 0 4px 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-soft);
-  flex: none;
-}
-.selectLabel {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.6;
-}
-.select select {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 0 4px;
-  align-self: stretch;
-  border: none;
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
-}
-.select select option {
-  background: var(--bg-soft);
-  color: var(--text-h);
-}
-.select:focus-within {
-  border-color: var(--accent-border);
 }
 
 .newRow {

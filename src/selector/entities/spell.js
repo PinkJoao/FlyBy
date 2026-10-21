@@ -14,6 +14,7 @@
 //   Exporta spellEntity (sem filtro de classe).
 //
 // DECISÕES E ARMADILHAS
+//   - `sorts`: as ordenações do seletor além do nome (Level, School).
 //   - O filtro de CLASSE é comum, com TODAS as classes; o SpellbookTab só pré-marca
 //     a da origem. Dá para preparar uma magia de Warlock no Bardo se o mestre
 //     deixar. Ele vem logo depois de Level, com "Already Prepared" abaixo (TC-0031;
@@ -96,6 +97,11 @@ const spellEntity = {
   idOf: (r) => `${r.name}|${r.source}`,
 
   precompute: (r) => precomputeSpell(r, null),
+
+  sorts: [
+    { value: 'level', label: 'Level', defaultDir: 'asc', keyOf: (r) => r.level },
+    { value: 'school', label: 'School', defaultDir: 'asc', dirLabels: ['A to Z', 'Z to A'], keyOf: (r) => schoolName(r.school) },
+  ],
 
   filters: [
     { id: 'level', header: 'Level', options: LEVEL_OPTIONS },

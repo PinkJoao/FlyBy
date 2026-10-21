@@ -9,9 +9,14 @@
 //   quando recebe o `ctx`.
 //
 // FUNÇÕES
+//   prereqLevel(feat): o nível que o pré-requisito pede (1 sem pré-requisito).
 //   inTypes(feat, types): o tipo casa?
 //   makeOptionalFeatureEntity(featureTypes, title, ctx): a fábrica (sem
 //     pré-requisito conta como atendido).
+//
+// DECISÕES E ARMADILHAS
+//   - `sorts`: Level, pelo nível que o pré-requisito pede (invocations); sem
+//     pré-requisito de nível, conta como nível 1.
 // -----------------------------------------------------------------------------
 
 import { latestOnly } from '../reprints';
@@ -29,6 +34,12 @@ function inTypes(feat, types) {
  * @param {string} title
  * @param {object} [ctx]
  */
+/** O nível que o pré-requisito pede; sem pré-requisito de nível, 1. */
+function prereqLevel(feat) {
+  const levels = (feat.prerequisite ?? []).map((p) => (typeof p.level === 'object' ? p.level?.level : p.level)).filter(Number.isFinite);
+  return levels.length ? Math.min(...levels) : 1;
+}
+
 export function makeOptionalFeatureEntity(featureTypes, title = 'Option', ctx = null) {
   const prereqOf = (f) => evalPrereq(f, ctx ?? EMPTY_CTX);
 
@@ -51,6 +62,10 @@ export function makeOptionalFeatureEntity(featureTypes, title = 'Option', ctx = 
         },
       };
     },
+
+    sorts: [
+      { value: 'level', label: 'Level', defaultDir: 'asc', keyOf: (f) => prereqLevel(f) },
+    ],
 
     filters: [
       { id: 'source', header: 'Source', derive: true },

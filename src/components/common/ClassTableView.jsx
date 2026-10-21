@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   Onde um texto de feature cita "the ... Features table", a tabela aparece ao
 //   lado. Por padrão só a LINHA do nível atual; um botão expande a tabela inteira,
-//   com a linha atual destacada. Reusa classTable (engine) e o TableViewer.
+//   com a linha atual destacada, e a altura desliza entre as duas (AutoHeight).
+//   Reusa classTable (engine) e o TableViewer.
 //
 // FUNÇÕES
 //   ClassTableView(props): a tabela.
@@ -14,6 +15,7 @@ import { useState } from 'react';
 import { classTable } from '../../engine/classProgression';
 import { InlineEntry } from './EntryContent';
 import TableViewer from './TableViewer';
+import AutoHeight from './AutoHeight';
 import styles from './ClassTableView.module.css';
 
 export default function ClassTableView({ classObj, subclass = null, level }) {
@@ -45,15 +47,17 @@ export default function ClassTableView({ classObj, subclass = null, level }) {
   );
 
   return (
-    <TableViewer
-      fullscreenChildren={renderTable(table.rows)}
-      footer={
-        <button type="button" className={styles.tableToggle} onClick={() => setFull((v) => !v)}>
-          {full ? 'Show current level only' : 'Show full table'}
-        </button>
-      }
-    >
-      {renderTable(full ? table.rows : table.rows.slice(level - 1, level))}
-    </TableViewer>
+    <AutoHeight>
+      <TableViewer
+        fullscreenChildren={renderTable(table.rows)}
+        footer={
+          <button type="button" className={styles.tableToggle} onClick={() => setFull((v) => !v)}>
+            {full ? 'Show current level only' : 'Show full table'}
+          </button>
+        }
+      >
+        {renderTable(full ? table.rows : table.rows.slice(level - 1, level))}
+      </TableViewer>
+    </AutoHeight>
   );
 }

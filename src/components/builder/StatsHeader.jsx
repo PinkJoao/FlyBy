@@ -119,7 +119,7 @@ function ExpandableTile({ label, value, children }) {
         <span className={styles.value}>{value}</span>
         <span className={styles.label}>{label}</span>
       </button>
-      {open && <div className={styles.tileBody}>{children}</div>}
+      {open && <div className={`${styles.tileBody} motion-expand`}>{children}</div>}
     </div>
   );
 }
@@ -237,7 +237,7 @@ function AlignmentTile({ current, onSelect }) {
         <span className={styles.label}>Alignment</span>
       </button>
       {open && (
-        <div className={styles.tileBody}>
+        <div className={`${styles.tileBody} motion-expand`}>
           <div className={styles.alignGrid}>
             {ALIGNMENT_ORDER.map((code) => {
               const group = styles[ALIGNMENT_GROUP[code]];
@@ -280,7 +280,7 @@ function AbilityCard({ ability, total, base, mod, onStep }) {
       </button>
 
       {open && (
-        <div className={styles.detail}>
+        <div className={`${styles.detail} motion-expand`}>
           <div className={styles.stepperBlock}>
             <span className={styles.stepLabel}>Base</span>
             <Stepper

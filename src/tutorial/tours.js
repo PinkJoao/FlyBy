@@ -144,7 +144,7 @@ const sheet = {
     {
       anchor: TUT.SHEET_MENU,
       title: 'Menu',
-      body: 'Export to Foundry VTT or PDF, open the rules glossary, import a character, or replay these tutorials.',
+      body: "The rules glossary, export to Foundry VTT or PDF, this character's guide, and settings like the theme and these tutorials.",
       placement: 'bottom',
     },
   ],

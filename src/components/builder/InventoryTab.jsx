@@ -348,7 +348,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                 </button>
               )}
               {!isCollapsed && (
-                <ul className={styles.list}>
+                <ul className={`${styles.list} motion-expand`}>
                   {items.map((entry) => (
                     <ItemRow
                       key={entry.uid}
@@ -368,8 +368,8 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
       )}
 
       {infoEntry && (
-        <div className={styles.infoOverlay} onClick={() => setInfoUid(null)}>
-          <div className={styles.infoPanel} onClick={(e) => e.stopPropagation()}>
+        <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoUid(null)}>
+          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfoUid(null)} aria-label="Close">
                 ✕

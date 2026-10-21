@@ -3,6 +3,7 @@
  * =============================================================================
  * CLASSES
  *   .menuBody: o corpo de um submenu (MenuList), sem o pre-line do texto.
+ *   .closing: a saída, o véu e o card somem juntos (DialogHost, EXIT_MS).
  *   .overlay, .card, .title, .message, .close: o diálogo; o card se ajusta ao
  *     conteúdo entre um mínimo legível e --dlg-max-width, nunca maior que a tela,
  *     e o corpo rola se alto.
@@ -230,4 +231,26 @@
 
 .menuBody {
   margin: 0 -8px -8px;
+}
+
+.closing {
+  animation: dlgFadeOut 0.12s ease forwards;
+  pointer-events: none;
+}
+
+.closing .card {
+  animation: dlgPopOut 0.12s ease forwards;
+}
+
+@keyframes dlgFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dlgPopOut {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
 }

@@ -5,6 +5,8 @@
  *   .progression, .head, .title, .modes, .modeBtn, .modeActive: o cabeçalho e os
  *     modos de exibição.
  *   .level*, .future, .futureTag: os blocos por nível (os futuros esmaecidos).
+ *   .levelChevronClosed, .chevronOpen: as setas giram (uma só seta, como nos
+ *     outros cards), em vez de trocar de caractere.
  *   .feature*, .subTag, .longHint, .chevron, .empty: o card de feature; o de
  *     subclasse ganha borda accent à esquerda e uma tag, diferenciando sem esquema
  *     de cores.
@@ -91,6 +93,11 @@
 .levelChevron {
   font-size: 10px;
   opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+.levelChevronClosed {
+  transform: rotate(-90deg);
 }
 
 .future {
@@ -167,6 +174,11 @@
   margin-left: auto;
   font-size: 11px;
   opacity: 0.5;
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
 }
 
 .featureBody {

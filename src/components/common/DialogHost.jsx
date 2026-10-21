@@ -11,6 +11,8 @@
 //   conteúdo React no `message` recebe o "fechar" por DialogCloseContext
 //   (dialogContext.js): é como o submenu (variant 'menu') se fecha. O voltar
 //   do celular fecha o diálogo de cima como um clique fora (useBackLayer).
+//   Todo fechamento passa por `finish`: a classe .closing anima a saída por
+//   EXIT_MS e só então resolve a Promise; com "reduzir movimento", resolve na hora.
 //
 // FUNÇÕES
 //   buildStyle(cfg): as props de estilo em CSS custom properties.
@@ -23,8 +25,11 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useDialogStore from '../../store/dialogStore';
 import { DialogCloseContext } from './dialogContext';
+import { reducedMotion } from '../../motion';
 import { useBackLayer } from '../../hooks/useBack';
 import styles from './DialogHost.module.css';
+
+const EXIT_MS = 120;
 
 const STYLE_VARS = {
   accent: { var: '--dlg-accent' },
@@ -77,6 +82,18 @@ function DialogCard({ dialog, onResolve }) {
   );
   const cardRef = useRef(null);
   const autoRef = useRef(null);
+  const [closing, setClosing] = useState(false);
+
+  /** Fecha com a animação de saída e só então resolve (uma vez só). */
+  const finish = (result) => {
+    if (closing) return;
+    if (reducedMotion()) {
+      onResolve(result);
+      return;
+    }
+    setClosing(true);
+    setTimeout(() => onResolve(result), EXIT_MS);
+  };
 
   useEffect(() => {
     const prev = document.activeElement;
@@ -87,13 +104,13 @@ function DialogCard({ dialog, onResolve }) {
   }, []);
 
   const dismiss = () => {
-    if (dismissable) onResolve(dismissValue);
+    if (dismissable) finish(dismissValue);
   };
 
   useBackLayer(true, dismiss);
 
   const pick = (action) => {
-    onResolve(fields.length ? { action: action.value, values } : action.value);
+    finish(fields.length ? { action: action.value, values } : action.value);
   };
 
   const primaryAction = () =>
@@ -114,7 +131,7 @@ function DialogCard({ dialog, onResolve }) {
 
   return (
     <div
-      className={styles.overlay}
+      className={closing ? `${styles.overlay} ${styles.closing}` : styles.overlay}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) dismiss();
       }}
@@ -140,7 +157,7 @@ function DialogCard({ dialog, onResolve }) {
           </h2>
         )}
         {message != null && (
-          <DialogCloseContext.Provider value={onResolve}>
+          <DialogCloseContext.Provider value={finish}>
             <div className={variant === 'menu' ? styles.menuBody : styles.message}>{message}</div>
           </DialogCloseContext.Provider>
         )}

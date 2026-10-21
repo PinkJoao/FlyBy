@@ -16,7 +16,10 @@
 //   PortraitSourceModal(props): upload ou URL do retrato.
 //
 // DECISÕES E ARMADILHAS
-//   Guia e tutorial
+//   Menu e guia
+//   - O menu segue o padrão de menus do app (AppMenus, DDL-0098): glossário,
+//     Export & import, Character guide e Settings em janelinhas, e o feedback.
+//   - A aba nova entra deslizando do lado para onde se foi (openTab, motion.js).
 //   - A guidance é POR personagem (`meta.guided`). O botão do guia aparece enquanto
 //     faltar qualquer campo obrigatório não-biográfico (guidancePendencies); com
 //     pendência BÁSICA abre o guia de criação na Revisão, só com decisões de classe
@@ -58,6 +61,9 @@ import { assembleFoundryActor } from '../engine/foundryActor';
 import { seedStartingGold } from '../engine/startingGold';
 import { fileToPortrait } from '../components/common/imageFile';
 import MenuButton from '../components/common/MenuButton';
+import { SettingsMenu, SheetFilesMenu, SheetGuideMenu } from '../components/common/AppMenus';
+import { menu } from '../components/common/dialog';
+import { directionOf, slideClass } from '../motion';
 import { openGlossary } from '../store/glossaryStore';
 import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { startTutorial, maybeStartTutorial } from '../store/tutorialStore';
@@ -130,17 +136,27 @@ export default function Builder() {
 }
 
 function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
+  const [tabDir, setTabDir] = useState(null);
+  /** Troca de aba lembrando a direção, para a aba nova entrar do lado certo. */
+  const openTab = (tab) => {
+    if (tab === activeTab) return;
+    setTabDir(directionOf(TABS.indexOf(activeTab), TABS.indexOf(tab)));
+    setActiveTab(tab);
+  };
   const navigate = useNavigate();
   const derived = useDerived(character);
   const active = guidanceActive(character);
-  const setGuided = (guided) => save({ ...character, meta: { ...character.meta, guided } });
+  /** Liga ou desliga o guia; lê o personagem do store (o submenu fica aberto e ele muda). */
+  const setGuided = (guided) => {
+    const latest = useCharacterStore.getState().getById(character.id) ?? character;
+    save({ ...latest, meta: { ...latest.meta, guided } });
+  };
   const pend = guidancePendencies(db, character, derived);
   const { inputRef: importRef, onFileChange: onImportFile, pickFile: pickImport } = useCharacterImport();
   const fileRef = useRef(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const tutEnabled = useTutorialStore((s) => s.enabled);
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
   const resetTutorials = useTutorialStore((s) => s.resetSeen);
   const replayTutorials = () => {
@@ -286,6 +302,28 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     a.click();
     URL.revokeObjectURL(url);
   };
+  /** Os submenus do menu sanduíche (AppMenus, o padrão de menus do app). */
+  const openFiles = () =>
+    menu({
+      title: 'Export & import',
+      content: <SheetFilesMenu onExportFoundry={exportFoundry} onExportPdf={exportPdf} onImport={pickImport} />,
+    });
+  const openGuideMenu = () =>
+    menu({
+      title: 'Character guide',
+      content: (
+        <SheetGuideMenu
+          characterId={character.id}
+          onRerun={() => {
+            save({ ...character, meta: { ...character.meta, creating: true } });
+            navigate(`/build/${character.id}/wizard`);
+          }}
+          onSetGuided={setGuided}
+        />
+      ),
+    });
+  const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
+
   const exportFoundry = () => download(assembleFoundryActor(character, db), '.json');
   const exportPdf = async () => {
     const { exportCharacterPdf } = await import('../pdf/exportPdf');
@@ -328,7 +366,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} motion-page`}>
       <div className={styles.topBar}>
         <BackButton to="/" label="characters" />
         <div className={styles.topActions}>
@@ -359,24 +397,9 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
             dataTour={TUT.SHEET_MENU}
             items={[
               { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
-              { label: 'Export', sub: 'Foundry actor JSON', onClick: exportFoundry },
-              { label: 'Export PDF', sub: 'Printable character sheet', onClick: exportPdf },
-              { label: 'Import character', sub: 'Opens a new character', onClick: pickImport },
-              {
-                label: 'Creation guide',
-                sub: 'Re-run the full step-by-step',
-                onClick: () => {
-                  save({ ...character, meta: { ...character.meta, creating: true } });
-                  navigate(`/build/${character.id}/wizard`);
-                },
-              },
-              active
-                ? { label: 'Disable Character Guidance', sub: 'Hide the guide for this character', onClick: () => setGuided(false) }
-                : { label: 'Enable Character Guidance', sub: 'Show the guide for this character', onClick: () => setGuided(true) },
-              { label: 'Replay tutorial', sub: 'Show the usage walkthrough again', onClick: replayTutorials },
-              tutEnabled
-                ? { label: 'Disable tutorials', sub: 'Turn off the walkthroughs', onClick: () => setTutEnabled(false) }
-                : { label: 'Enable tutorials', sub: 'Turn on the walkthroughs', onClick: () => setTutEnabled(true) },
+              { label: 'Export & import', sub: 'Foundry VTT, PDF, or open another character', onClick: openFiles },
+              { label: 'Character guide', sub: 'Re-run the creation guide, guide on or off', onClick: openGuideMenu },
+              { label: 'Settings', sub: 'Theme, creation guide and tutorials', onClick: openSettings },
               { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
             ]}
           >
@@ -446,7 +469,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
           <button
             key={tab}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => openTab(tab)}
             className={activeTab === tab ? `${styles.tab} ${styles.tabActive}` : styles.tab}
           >
             {tab}
@@ -454,7 +477,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         ))}
       </nav>
 
-      <div className={styles.panel}>
+      <div key={activeTab} className={`${styles.panel} ${slideClass(tabDir)}`}>
         {activeTab === 'Species' && (
           <SpeciesTab
             character={character}

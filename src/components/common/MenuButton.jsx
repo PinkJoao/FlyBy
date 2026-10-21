@@ -92,7 +92,7 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
         createPortal(
           <div
             ref={menuRef}
-            className={styles.menu}
+            className={pos ? `${styles.menu} motion-pop` : styles.menu}
             style={pos ?? { top: 0, left: 0, visibility: 'hidden' }}
             role="menu"
           >

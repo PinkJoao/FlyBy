@@ -5,7 +5,7 @@
 //   A marca e o menu sanduíche no topo; abaixo, centralizados, o título, a barra
 //   de busca, agrupamento e ordenação (como no Inventário e nas Magias) com o botão
 //   "Add", e a lista (só ela rola; a página cabe na tela). O menu tem o
-//   glossário, importar, e dois submenus em janelinha (HomeMenus): Game data (a
+//   glossário, importar, e dois submenus em janelinha (AppMenus): Game data (a
 //   fonte, atualizar, o link da mesa) e Settings (tema, guia, tutoriais); mais o
 //   feedback. No Samsung Internet, um aviso dispensável sob o topo manda instalar
 //   pelo Chrome (installHint, DDL-0095).
@@ -53,7 +53,7 @@ import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
 import { alert, confirm, ask, menu } from '../components/common/dialog';
 import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint';
-import { SettingsMenu, GameDataMenu } from './HomeMenus';
+import { SettingsMenu, GameDataMenu } from '../components/common/AppMenus';
 import styles from './Home.module.css';
 
 const SORT_OPTIONS = [
@@ -190,10 +190,10 @@ export default function Home() {
     changeSource({ kind: 'url', base: result.base });
   };
 
-  /** O submenu Settings: tema, guia e tutoriais (HomeMenus). */
+  /** O submenu Settings: tema, guia e tutoriais (AppMenus). */
   const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
 
-  /** O submenu Game data: a fonte, a atualização e o link da mesa (HomeMenus). */
+  /** O submenu Game data: a fonte, a atualização e o link da mesa (AppMenus). */
   const openGameData = () =>
     menu({
       title: 'Game data',
@@ -279,7 +279,7 @@ export default function Home() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} motion-page`}>
       <header className={styles.topbar}>
         <span className={styles.brand}>
           <img src="/logo.svg" alt="" className={styles.brandLogo} />

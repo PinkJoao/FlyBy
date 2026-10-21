@@ -1,0 +1,106 @@
+/* =============================================================================
+ * motion.css: as animações de entrada do app, globais
+ * =============================================================================
+ * O QUE FAZ
+ *   Classes GLOBAIS (não módulo) que animam um elemento ao montar: as telas que
+ *   trocam (abas da ficha, passos do guia, preview do seletor) entram deslizando
+ *   na direção da navegação, as páginas entram esmaecendo, os corpos de card
+ *   expansível descem, e as janelas surgem com um leve zoom. Importado no
+ *   main.jsx; src/motion.js tem a contraparte em JS.
+ *
+ * CLASSES
+ *   .motion-next, .motion-prev: entra vindo da direita (avançar) ou da esquerda
+ *     (voltar).
+ *   .motion-page: a página que acabou de abrir, esmaecendo.
+ *   .motion-expand: o corpo de um card que abriu, descendo.
+ *   .motion-pop: uma janela ou menu surgindo.
+ *   .motion-rise: um painel que sobe do pé da tela (o seletor no celular).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Só ENTRADA, ao montar: as abas, os passos e os corpos de card já remontam a
+ *     cada troca, então basta a classe, sem biblioteca e sem a View Transitions
+ *     API (que ainda falta em parte dos navegadores e congela a tela durante a
+ *     troca). A saída dos diálogos é do DialogHost.
+ *   - `animation-fill-mode: backwards`, nunca `both`: um transform que fica depois
+ *     da animação vira o bloco de contenção de todo `position: fixed` dentro dele,
+ *     e os painéis de info das abas (fixos) passariam a se posicionar pela aba.
+ *   - Com "reduzir movimento" no sistema, toda animação e transição do app cai
+ *     para 1 ms (a regra no fim); o spinner de carregamento fica parado.
+ *   - Os nomes são `motion-*` para não colidir com classes de módulo, que são
+ *     sempre com hash.
+ * -------------------------------------------------------------------------- */
+
+.motion-next {
+  animation: motion-slide-next 0.24s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.motion-prev {
+  animation: motion-slide-prev 0.24s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.motion-page {
+  animation: motion-fade 0.2s ease-out backwards;
+}
+
+.motion-expand {
+  animation: motion-expand 0.2s ease-out backwards;
+}
+
+.motion-pop {
+  animation: motion-pop 0.16s ease-out backwards;
+}
+
+.motion-rise {
+  animation: motion-rise 0.26s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+@keyframes motion-slide-next {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes motion-slide-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@keyframes motion-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes motion-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes motion-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

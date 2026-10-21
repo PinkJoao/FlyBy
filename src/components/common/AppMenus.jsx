@@ -1,15 +1,25 @@
 // =============================================================================
-// HomeMenus: os submenus do menu sanduíche da Home (Settings e Game data)
+// AppMenus: os submenus dos menus sanduíche (Home e ficha)
 // =============================================================================
 // O QUE FAZ
-//   O conteúdo das janelinhas que o menu da Home abre (dialog.js, `menu()`),
-//   montado com o MenuList. Settings junta as preferências do aparelho: o tema
-//   (src/theme.js), a Character Guidance e os tutoriais. Game data junta a fonte
-//   de dados (DDL-0091): trocar, atualizar e copiar o link da mesa.
+//   O conteúdo das janelinhas que os menus abrem (dialog.js, `menu()`), montado
+//   com o MenuList. É o PADRÃO de menu do app (DDL-0098): o dropdown fica curto
+//   (glossário, os grupos, feedback) e cada grupo abre uma janelinha.
+//     Settings (Home e ficha): o tema (src/theme.js), a Character Guidance padrão
+//       e os tutoriais.
+//     Game data (Home): a fonte de dados (DDL-0091): trocar, atualizar e copiar o
+//       link da mesa.
+//     Export & import (ficha): Foundry, PDF e importar outro personagem.
+//     Character guide (ficha): refazer o guia de criação e ligar o guia DESTE
+//       personagem.
 //
 // FUNÇÕES
 //   SettingsMenu({ onReplayTutorials }): as preferências, vivas (lê os stores).
 //   GameDataMenu({ source, onChooseSource, onUpdate, onCopyLink }): a fonte.
+//   SheetFilesMenu({ onExportFoundry, onExportPdf, onImport }): exportar e
+//     importar.
+//   SheetGuideMenu({ characterId, onRerun, onSetGuided }): o guia do
+//     personagem, vivo (lê o personagem do store).
 //
 // DECISÕES E ARMADILHAS
 //   - Tema, guia e ligar tutoriais são escolhas com keepOpen: o tema muda na hora,
@@ -17,13 +27,18 @@
 //     porque o tour dispara nas telas, não aqui.
 //   - Update e o link da mesa só existem com fonte por URL: o SRD embutido não tem
 //     o que re-baixar nem endereço a passar.
+//   - A Character Guidance aparece duas vezes, de propósito: em Settings é o
+//     PADRÃO para personagens novos; em Character guide, o liga/desliga do
+//     personagem aberto (`meta.guided`). Os subtítulos dizem qual é qual.
 // -----------------------------------------------------------------------------
 
-import MenuList from '../components/common/MenuList';
-import useSettingsStore from '../store/settingsStore';
-import useTutorialStore from '../store/tutorialStore';
-import { describeSource } from '../data/dataSource';
-import { THEME_CHOICES } from '../theme';
+import MenuList from './MenuList';
+import useSettingsStore from '../../store/settingsStore';
+import useTutorialStore from '../../store/tutorialStore';
+import useCharacterStore from '../../store/characterStore';
+import { guidanceActive } from '../wizard/guidancePendencies';
+import { describeSource } from '../../data/dataSource';
+import { THEME_CHOICES } from '../../theme';
 
 const GUIDANCE_CHOICES = [
   { value: 'ask', label: 'Ask each time', sub: 'Choose when you create a character' },
@@ -50,7 +65,7 @@ export function SettingsMenu({ onReplayTutorials }) {
           keepOpen: true,
           onClick: () => setTheme(t.value),
         })),
-        { heading: 'Character Guidance' },
+        { heading: 'Guide for new characters' },
         ...GUIDANCE_CHOICES.map((g) => ({
           label: g.label,
           sub: g.sub,
@@ -86,6 +101,40 @@ export function GameDataMenu({ source, onChooseSource, onUpdate, onCopyLink }) {
               { label: 'Copy setup link', sub: 'A link that sets up the same data for your players', onClick: onCopyLink },
             ]
           : []),
+      ]}
+    />
+  );
+}
+
+/** Exportar a ficha (Foundry, PDF) e importar outro personagem. */
+export function SheetFilesMenu({ onExportFoundry, onExportPdf, onImport }) {
+  return (
+    <MenuList
+      items={[
+        { label: 'Export to Foundry VTT', sub: 'Foundry actor JSON', onClick: onExportFoundry },
+        { label: 'Export PDF', sub: 'Printable character sheet', onClick: onExportPdf },
+        { label: 'Import character', sub: 'Opens a new character from a Foundry file', onClick: onImport },
+      ]}
+    />
+  );
+}
+
+/** O guia deste personagem: refazer a criação e ligar ou desligar a ajuda. */
+export function SheetGuideMenu({ characterId, onRerun, onSetGuided }) {
+  const character = useCharacterStore((s) => s.getById(characterId));
+  const guided = character ? guidanceActive(character) : false;
+  return (
+    <MenuList
+      items={[
+        { label: 'Re-run the creation guide', sub: 'The full step-by-step, from the start', onClick: onRerun },
+        {
+          label: 'Guide for this character',
+          sub: 'The guide button and the level-up help on this sheet',
+          checked: guided,
+          toggle: true,
+          keepOpen: true,
+          onClick: () => onSetGuided(!guided),
+        },
       ]}
     />
   );

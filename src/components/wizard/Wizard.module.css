@@ -90,6 +90,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* ATENÇÃO: o passo entra deslizando de lado (motion.css); sem isto pisca uma barra horizontal. */
+  overflow-x: hidden;
   padding: 24px 0;
 }
 

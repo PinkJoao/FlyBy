@@ -72,7 +72,7 @@ export default function ProficienciesCard({ derived }) {
       </button>
 
       {open && (
-        <div className={styles.body}>
+        <div className={`${styles.body} motion-expand`}>
           {isEmpty ? (
             <p className={styles.empty}>
               No proficiencies yet. Pick a species, background and class to gain them.

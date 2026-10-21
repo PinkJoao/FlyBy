@@ -739,7 +739,7 @@ export default function SpellbookTab({
                 </button>
               )}
               {!isCollapsed && (
-                <ul className={styles.list}>
+                <ul className={`${styles.list} motion-expand`}>
                   {list.map((entry, i) => {
                     const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
                     const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
@@ -766,8 +766,8 @@ export default function SpellbookTab({
       )}
 
       {infoEntry && (
-        <div className={styles.infoOverlay} onClick={() => setInfoKey(null)}>
-          <div className={styles.infoPanel} onClick={(e) => e.stopPropagation()}>
+        <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoKey(null)}>
+          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfoKey(null)} aria-label="Close">
                 ✕

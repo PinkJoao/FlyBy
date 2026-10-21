@@ -301,8 +301,8 @@ export default function SelectorPanel({
 
   // ATENÇÃO: o portal para document.body é necessário; um ancestral com transform prenderia o painel.
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+    <div className={`${styles.overlay} motion-page`} onClick={onClose}>
+      <div className={`${styles.panel} motion-pop`} onClick={(e) => e.stopPropagation()}>
         <header className={styles.header}>
           <div className={styles.headerText}>
             <h2>{heading ?? `Choose ${entity.title}`}</h2>
@@ -543,7 +543,7 @@ export default function SelectorPanel({
         {renderBottomBar && renderBottomBar({ setPreview: setDetailItem })}
 
         {!noPreview && detailItem && isMobile() && (
-          <div className={styles.detailScreen} data-tour={TUT.SELECTOR_DETAIL}>
+          <div className={`${styles.detailScreen} motion-next`} data-tour={TUT.SELECTOR_DETAIL}>
             <div className={styles.detailHead}>
               <BackButton onClick={() => setDetailItem(null)} label="results" />
             </div>

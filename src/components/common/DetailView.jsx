@@ -54,7 +54,7 @@ function Expando({ label, children }) {
         <span className={styles.expandoChevron} aria-hidden="true">▾</span>
         <span className={styles.expandoLabel}>{label}</span>
       </button>
-      {open && <div className={styles.expandoBody}>{children}</div>}
+      {open && <div className={`${styles.expandoBody} motion-expand`}>{children}</div>}
     </div>
   );
 }

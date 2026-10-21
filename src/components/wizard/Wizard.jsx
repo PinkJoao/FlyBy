@@ -20,10 +20,14 @@
 //     a guiar.
 //   - Cada passo além do primeiro é uma entrada no histórico (useBackDepth): o
 //     voltar do celular volta um passo; no primeiro, sai do guia como antes.
+//   - O passo é remontado por `key` e entra deslizando na direção da navegação
+//     (motion.js): avançar vem da direita, voltar (botão, revisão ou gesto) da
+//     esquerda. A key também zera o estado local de um passo ao trocar.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
 import { useBackDepth } from '../../hooks/useBack';
+import { directionOf, slideClass } from '../../motion';
 import styles from './Wizard.module.css';
 
 const STATUS_LABEL = { complete: 'Done', incomplete: 'Needs a choice', optional: 'Optional', info: 'Info' };
@@ -56,8 +60,12 @@ export default function Wizard({
   blockIncomplete = false,
 }) {
   const [index, setIndex] = useState(initialIndex);
+  const [dir, setDir] = useState(null);
   const lastIndex = steps?.length ? (showReview ? steps.length : steps.length - 1) : 0;
-  useBackDepth(Math.min(index, lastIndex), () => setIndex((i) => Math.max(0, Math.min(i, lastIndex) - 1)));
+  useBackDepth(Math.min(index, lastIndex), () => {
+    setDir('prev');
+    setIndex((i) => Math.max(0, Math.min(i, lastIndex) - 1));
+  });
 
   if (!steps || steps.length === 0) {
     return null;
@@ -71,7 +79,11 @@ export default function Wizard({
   const isLast = clamped === total - 1;
   const progress = Math.min(clamped, total) / total;
 
-  const goto = (i) => setIndex(Math.max(0, Math.min(maxIndex, i)));
+  const goto = (i) => {
+    const next = Math.max(0, Math.min(maxIndex, i));
+    setDir(directionOf(clamped, next));
+    setIndex(next);
+  };
   const back = () => (clamped === 0 ? onExit?.() : goto(clamped - 1));
 
   const statusOf = (s) => s.status?.(character, derived) ?? 'optional';
@@ -104,9 +116,11 @@ export default function Wizard({
 
       <main className={styles.body}>
         {onReview ? (
-          <Review steps={steps} statusOf={statusOf} onGoto={goto} />
+          <div key="review" className={slideClass(dir)}>
+            <Review steps={steps} statusOf={statusOf} onGoto={goto} />
+          </div>
         ) : (
-          <section className={styles.step}>
+          <section key={clamped} className={`${styles.step} ${slideClass(dir)}`}>
             <p className={styles.stepKicker}>{step.subtitle}</p>
             <h2 className={styles.stepTitle}>{step.title}</h2>
 

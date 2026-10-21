@@ -78,7 +78,9 @@ export default function ClassProgression({ db, classId, classObj, subclass, leve
                 onClick={() => toggleLevel(l.level)}
                 aria-expanded={!isCollapsed}
               >
-                <span className={styles.levelChevron}>{isCollapsed ? '▸' : '▾'}</span>
+                <span className={isCollapsed ? `${styles.levelChevron} ${styles.levelChevronClosed}` : styles.levelChevron}>
+                  ▾
+                </span>
                 Level {l.level}
                 {l.level > level && <span className={styles.futureTag}>Locked</span>}
               </button>
@@ -101,15 +103,15 @@ function FeatureCard({ feature, subclassName }) {
   const sub = feature.from === 'subclass';
 
   return (
-    <div className={sub ? `${styles.feature} ${styles.featureSub}` : styles.feature}>
+    <div className={`${sub ? `${styles.feature} ${styles.featureSub}` : styles.feature} motion-expand`}>
       <button type="button" className={styles.featureHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.featureName}>{feature.name}</span>
         {sub && <span className={styles.subTag}>{subclassName ?? 'Subclass'}</span>}
         {!open && long && <span className={styles.longHint}>Options</span>}
-        <span className={styles.chevron}>{open ? '▴' : '▾'}</span>
+        <span className={open ? `${styles.chevron} ${styles.chevronOpen}` : styles.chevron}>▾</span>
       </button>
       {open && (
-        <div className={styles.featureBody}>
+        <div className={`${styles.featureBody} motion-expand`}>
           <EntryContent entries={feature.entries} />
         </div>
       )}

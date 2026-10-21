@@ -31,8 +31,8 @@ export default function ItemPickerModal({ title, entries, confirmLabel, emptyTex
   const allPicked = sorted.length > 0 && picked.size === sorted.length;
 
   return (
-    <div className={styles.pickerOverlay} onClick={onClose}>
-      <div className={styles.pickerPanel} onClick={(e) => e.stopPropagation()}>
+    <div className={`${styles.pickerOverlay} motion-page`} onClick={onClose}>
+      <div className={`${styles.pickerPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
         <div className={styles.pickerHead}>
           <h3 className={styles.pickerTitle}>{title}</h3>
           <button type="button" className={styles.infoClose} onClick={onClose} aria-label="Close">

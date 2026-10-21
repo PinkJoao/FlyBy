@@ -9,6 +9,10 @@
 //
 // FUNÇÕES
 //   ImageCarousel(props): o carrossel.
+//
+// DECISÕES E ARMADILHAS
+//   - Com mais de uma imagem, o quadro leva `data-own-swipe`: o arrasto entre as
+//     abas da ficha (useSwipeNav) deixa o gesto horizontal para o carrossel.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -30,7 +34,11 @@ export default function ImageCarousel({ images, capped = false, alt = '' }) {
 
   return (
     <div className={styles.carousel}>
-      <div className={capped ? `${styles.frame} ${styles.frameCapped}` : styles.frame} {...(multi ? swipe : {})}>
+      <div
+        className={capped ? `${styles.frame} ${styles.frameCapped}` : styles.frame}
+        data-own-swipe={multi ? '' : undefined}
+        {...(multi ? swipe : {})}
+      >
         <button
           type="button"
           className={styles.imgBtn}

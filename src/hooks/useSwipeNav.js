@@ -7,8 +7,8 @@
 //   chama onPrev ou onNext; curto, ou sem aba para aquele lado, volta ao lugar.
 //
 // FUNÇÕES
-//   startsInScroller(target, root): o toque começou num campo ou numa fileira que
-//     rola de lado?
+//   startsInScroller(target, root): o toque começou num campo, numa fileira que
+//     rola de lado ou num elemento com gesto próprio (`data-own-swipe`)?
 //   useSwipeNav(ref, { onPrev, onNext, canPrev, canNext }): liga os gestos.
 //
 // DECISÕES E ARMADILHAS
@@ -16,8 +16,10 @@
 //     desiste; horizontal assume e impede a rolagem (por isso os ouvintes são
 //     nativos, com `passive: false`: os do React são passivos e o
 //     preventDefault não valeria).
-//   - Toque que começa num campo de texto ou numa fileira que rola de lado (os
-//     chips de filtro, a barra de abas) é deles, não da troca de aba.
+//   - Toque que começa num campo de texto, numa fileira que rola de lado (os
+//     chips de filtro, a barra de abas) ou num elemento que tem o próprio gesto
+//     horizontal (`data-own-swipe`: o carrossel de imagens) é deles, não da troca
+//     de aba. Quem tem gesto próprio sempre ganha.
 //   - O arrasto mexe no `style` direto, sem render a cada quadro. Na ponta sem
 //     aba seguinte, o conteúdo resiste (fração do arrasto) e volta.
 //   - Só toque: mouse e caneta não trocam de aba (no desktop há a barra).
@@ -35,7 +37,7 @@ const EDGE_FOLLOW = 0.12;
 /** O toque começou num campo ou numa fileira que rola de lado? */
 function startsInScroller(target, root) {
   for (let el = target; el && el !== root; el = el.parentElement) {
-    if (el.matches?.('input, textarea, select, [contenteditable="true"]')) return true;
+    if (el.matches?.('input, textarea, select, [contenteditable="true"], [data-own-swipe]')) return true;
     const style = getComputedStyle(el);
     if (/(auto|scroll)/.test(style.overflowX) && el.scrollWidth > el.clientWidth + 2) return true;
   }

@@ -43,7 +43,8 @@ const TILE_STEPPER = {
 
 const ABILITY_STEPPER = {
   bg: 'var(--bg-soft)',
-  buttonSize: 24,
+  buttonSize: 22,
+  gap: 1,
   fontSize: 15,
   numberColor: 'var(--text-h)',
   style: { width: '100%' },

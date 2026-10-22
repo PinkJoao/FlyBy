@@ -9,6 +9,10 @@
  * DECISÕES E ARMADILHAS
  *   - A opacidade anda junto com a altura: o conteúdo aparece enquanto cresce e
  *     some enquanto encolhe, em vez de ser cortado seco.
+ *   - O .inner precisa de min-width: 0 além de min-height: 0: enquanto tem
+ *     overflow: hidden o grid já zera a largura mínima, mas ao entrar em .shown
+ *     (overflow: visible) o piso voltava para min-content e deslocava o conteúdo
+ *     para a direita nos cards estreitos.
  * -------------------------------------------------------------------------- */
 
 .collapse {
@@ -26,6 +30,7 @@
 }
 
 .inner {
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
 }

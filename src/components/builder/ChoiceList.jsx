@@ -12,6 +12,8 @@
 //       (atributo de conjuração, tamanho), pills (tipos de dano, save), spell.
 //     feat: um PickerField por slot; ao escolher um talento, RECURSA nas escolhas
 //       DELE logo abaixo (estilo Pathbuilder).
+//     optional feature com escolha própria (os cantrips e rituais do Pact of the
+//       Tome): recursa como o talento, num bloco nomeado abaixo dos chips.
 //   É um dos dois choke-points do app (DDL-0042): deriva o que precisa aqui, em vez
 //   de receber por prop de cada chamador.
 //
@@ -49,6 +51,10 @@
 //     pool de Fighting Style concede a feature homônima; `only` restringe nomes;
 //     legacy ganha +1 livre; os já tomados somem, salvo o deste slot e os
 //     repeatable.
+//   - Sub-escolha de optional feature vive em `entry.sub[pick]`, como a do
+//     talento; tirar o pick apaga o sub-bag dele. A família é pequena (Pact of
+//     the Tome 2024 e 2014, Book of Ancient Secrets, Blessed e Druidic Warrior,
+//     todas de magia), mas o caminho é o genérico do parseChoices.
 //   - Ferramenta com categoria (anyArtisansTool) restringe ao prefixo do tipo, e
 //     pode ser lista (o Monge: artesão OU instrumento). `fromByKind` restringe um
 //     dos tipos do pool misto (Cavalier, Samurai).
@@ -56,7 +62,7 @@
 
 import { useMemo, useState } from 'react';
 import { parseChoices, LEGACY_ABILITY_CHOICE, weaponFilterAllows } from '../../engine/choices';
-import { resolveFeat, deriveFromDb } from '../../engine/resolve';
+import { resolveFeat, resolveOptionalFeature, deriveFromDb } from '../../engine/resolve';
 import { preparedElsewhere } from '../../engine/spellcasting';
 import { skillCode } from '../../engine/classData';
 import { spellChoosePredicate } from '../../engine/spells';
@@ -197,7 +203,7 @@ function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, sibl
       {choice.pool.type === 'feat' ? (
         <FeatChoice choice={choice} entry={entry} picks={picks} onChange={onChange} db={db} owned={owned} character={character} guided={guided} spellsOwned={spellsOwned} />
       ) : choice.pool.type === 'optionalfeature' ? (
-        <OptionalFeatureChoice choice={choice} picks={picks} onChange={onChange} db={db} character={character} />
+        <OptionalFeatureChoice choice={choice} entry={entry} picks={picks} onChange={onChange} db={db} owned={owned} character={character} guided={guided} spellsOwned={spellsOwned} />
       ) : choice.pool.type === 'featureoption' ? (
         <FeatureOptionChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'ability' ? (
@@ -289,8 +295,8 @@ function TagChoice({ choice, picks, onChange, db, owned }) {
   );
 }
 
-/** Escolha de optional features (invocations, metamagic...). */
-function OptionalFeatureChoice({ choice, picks, onChange, db, character }) {
+/** Escolha de optional features (invocations, metamagic...), recursiva nas sub-escolhas. */
+function OptionalFeatureChoice({ choice, entry, picks, onChange, db, owned, character, guided, spellsOwned }) {
   const [open, setOpen] = useState(false);
   const ctx = character ? prereqContext(character, { db }) : null;
   const entity = makeOptionalFeatureEntity(choice.pool.featureType, choice.label, ctx);
@@ -301,12 +307,24 @@ function OptionalFeatureChoice({ choice, picks, onChange, db, character }) {
     const id = `${raw.name}|${raw.source}`;
     let total = picks.length;
     if (!picks.includes(id) && picks.length < choice.count) {
-      onChange({ kind: 'optionalfeature', picks: [...picks, id] });
+      onChange({ ...entry, kind: 'optionalfeature', picks: [...picks, id] });
       total += 1;
     }
     if (total >= choice.count) setOpen(false);
   };
-  const remove = (id) => onChange({ kind: 'optionalfeature', picks: picks.filter((p) => p !== id) });
+  const remove = (id) => {
+    const sub = { ...(entry?.sub ?? {}) };
+    delete sub[id];
+    onChange({ kind: 'optionalfeature', picks: picks.filter((p) => p !== id), ...(Object.keys(sub).length ? { sub } : {}) });
+  };
+  const setSub = (id, subBag) => onChange({ kind: 'optionalfeature', picks, sub: { ...(entry?.sub ?? {}), [id]: subBag } });
+  const level = character ? totalLevel(character) : Infinity;
+  const withSubs = picks
+    .map((id) => {
+      const raw = resolveOptionalFeature(db, id);
+      return { id, choices: raw ? parseChoices(raw, { level, bag: entry?.sub?.[id] ?? null }) : [] };
+    })
+    .filter((x) => x.choices.length > 0);
   const openDetail = (id) => {
     const raw = entity.list(db).find((f) => `${f.name}|${f.source}` === id);
     if (raw) showDetailPopup({ entity, raw, db });
@@ -321,34 +339,51 @@ function OptionalFeatureChoice({ choice, picks, onChange, db, character }) {
   };
 
   return (
-    <div className={styles.tags}>
-      {picks.map((id) => (
-        <span key={id} className={styles.tagChip}>
-          <button type="button" className={styles.tagLabel} onClick={() => openDetail(id)}>
-            {nameOf(id)}
+    <div className={styles.featSlot}>
+      <div className={styles.tags}>
+        {picks.map((id) => (
+          <span key={id} className={styles.tagChip}>
+            <button type="button" className={styles.tagLabel} onClick={() => openDetail(id)}>
+              {nameOf(id)}
+            </button>
+            <button type="button" className={styles.tagRemove} onClick={() => remove(id)} aria-label={`Remove ${nameOf(id)}`}>
+              ×
+            </button>
+          </span>
+        ))}
+        {picks.length < choice.count && (
+          <button type="button" className={styles.addBtn} onClick={() => setOpen(true)}>
+            + Add
           </button>
-          <button type="button" className={styles.tagRemove} onClick={() => remove(id)} aria-label={`Remove ${nameOf(id)}`}>
-            ×
-          </button>
-        </span>
+        )}
+        {open && (
+          <SelectorPanel
+            entity={entity}
+            db={db}
+            currentId={null}
+            initialFilterState={isInvocation ? PREREQ_MET_FILTER : undefined}
+            exclude={(raw) => picks.includes(`${raw.name}|${raw.source}`)}
+            onSelect={confirmAdd}
+            onClose={() => setOpen(false)}
+            multi={{ total: choice.count, chosen: picks.map((id) => ({ key: id, label: nameOf(id) })), onRemove: remove }}
+          />
+        )}
+      </div>
+      {withSubs.map(({ id, choices }) => (
+        <div key={id} className={styles.nested}>
+          <span className={styles.nestedTitle}>{nameOf(id)}</span>
+          <ChoiceList
+            choices={choices}
+            bag={entry?.sub?.[id] ?? {}}
+            db={db}
+            owned={owned}
+            character={character}
+            guided={guided}
+            spellsOwned={spellsOwned}
+            onChange={(subBag) => setSub(id, subBag)}
+          />
+        </div>
       ))}
-      {picks.length < choice.count && (
-        <button type="button" className={styles.addBtn} onClick={() => setOpen(true)}>
-          + Add
-        </button>
-      )}
-      {open && (
-        <SelectorPanel
-          entity={entity}
-          db={db}
-          currentId={null}
-          initialFilterState={isInvocation ? PREREQ_MET_FILTER : undefined}
-          exclude={(raw) => picks.includes(`${raw.name}|${raw.source}`)}
-          onSelect={confirmAdd}
-          onClose={() => setOpen(false)}
-          multi={{ total: choice.count, chosen: picks.map((id) => ({ key: id, label: nameOf(id) })), onRemove: remove }}
-        />
-      )}
     </div>
   );
 }

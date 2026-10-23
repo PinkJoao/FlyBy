@@ -36,6 +36,11 @@
 //     (DDL-0086): o dado diz `prepared` e só o texto dá o uso de 1 por descanso
 //     longo; sem a linha, o jogador perdia o recurso no export. O Eldritch Hex é o
 //     oposto: bucket `innate` mas sem conjuração grátis (castType null).
+//   - Invocações (TC-0092): o dado traz a magia como `innate` sem frequência, e a
+//     prosa diz "without expending a spell slot" sem limite (2024) ou "at will"
+//     (2014): castType 'will'. Linha por "Nome|Fonte", lida no texto de cada uma.
+//     As de uso único o dado já marca `daily` (1/Day): o overlay só preenche
+//     frequência AUSENTE (DDL-0011), então elas ficam com o dado.
 //   - Contagem que ESCALA com o nível (TC-0090, Favored Enemy do Ranger: 2 no 1,
 //     até 6 no 17): `countColumn` lê a coluna da tabela da classe, sem curar
 //     números. `poolOnFeature` diz que no Foundry o pool mora no ITEM da feature
@@ -125,6 +130,28 @@ export const INNATE_USES = {
   'Diviner|XPHB': {
     'see invisibility': { castType: 'rest', count: 1 },
   },
+
+  'Armor of Shadows|XPHB': { 'mage armor': { castType: 'will' } },
+  'Ascendant Step|XPHB': { levitate: { castType: 'will' } },
+  'Fiendish Vigor|XPHB': { 'false life': { castType: 'will' } },
+  'Mask of Many Faces|XPHB': { 'disguise self': { castType: 'will' } },
+  'Master of Myriad Forms|XPHB': { 'alter self': { castType: 'will' } },
+  'Misty Visions|XPHB': { 'silent image': { castType: 'will' } },
+  'One with Shadows|XPHB': { invisibility: { castType: 'will' } },
+  'Otherworldly Leap|XPHB': { jump: { castType: 'will' } },
+  'Visions of Distant Realms|XPHB': { 'arcane eye': { castType: 'will' } },
+  'Whispers of the Grave|XPHB': { 'speak with dead': { castType: 'will' } },
+  'Armor of Shadows|PHB': { 'mage armor': { castType: 'will' } },
+  'Ascendant Step|PHB': { levitate: { castType: 'will' } },
+  'Beast Speech|PHB': { 'speak with animals': { castType: 'will' } },
+  'Eldritch Sight|PHB': { 'detect magic': { castType: 'will' } },
+  'Fiendish Vigor|PHB': { 'false life': { castType: 'will' } },
+  'Mask of Many Faces|PHB': { 'disguise self': { castType: 'will' } },
+  'Master of Myriad Forms|PHB': { 'alter self': { castType: 'will' } },
+  'Misty Visions|PHB': { 'silent image': { castType: 'will' } },
+  'Otherworldly Leap|PHB': { jump: { castType: 'will' } },
+  'Visions of Distant Realms|PHB': { 'arcane eye': { castType: 'will' } },
+  'Whispers of the Grave|PHB': { 'speak with dead': { castType: 'will' } },
 };
 
 /** A chave da entidade no overlay. */

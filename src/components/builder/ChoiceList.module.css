@@ -13,7 +13,9 @@
  *   .modeRow, .modeBtn, .modeActive, .pillsWrap: pills; .pillsWrap quebra linha
  *     (tipos de dano: até 9 opções no Boon of Energy Resistance).
  *   .option*: cards de sub-feature (Divine Order, Primal Order).
- *   .featSlot, .nested: os slots de talento e o aninhamento recursivo.
+ *   .featSlot, .nested: os slots de talento e o aninhamento recursivo;
+ *     .nestedTitle nomeia o bloco aninhado de uma optional feature (o Pact of the
+ *     Tome), já que os chips ficam acima e pode haver mais de uma.
  *
  * DECISÕES E ARMADILHAS
  *   - Sem capitalize nos chips (TC-0040): os rótulos já chegam com a grafia certa
@@ -297,4 +299,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.nestedTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
 }

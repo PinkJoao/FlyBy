@@ -31,6 +31,9 @@
 //   resolveGranted(additionalSpells, level, db, ctx, entity, opts): as magias
 //     CONCEDIDAS de um additionalSpells, com usos e escolhas.
 //   usesFromGranted(spells): os usos por dia ou descanso de uma origem.
+//   resolveOptionalFeature(db, pick): a optional feature de um pick "Nome|Fonte".
+//   optionalFeatureGrants(cls, db, ctx): as magias das invocações e demais
+//     optional features escolhidas na classe.
 //   grantedOrigin(opts): uma origem racial ou de talento.
 //   deriveSpellcasting(character, db, derived): a conjuração inteira, por origem.
 //   spellRefName(ref), grantedNamesOf(additionalSpells, level, db, entity, opts):
@@ -69,6 +72,14 @@
 //     concede magia ganha a aba; sem nada concedido, não.
 //   - Concedida que o jogador também preparou aparece UMA vez e não consome
 //     slot: a concessão vence (R12).
+//   - Invocação que concede magia (TC-0092): a magia entra na origem da CLASSE
+//     que escolheu a invocação, com o atributo dela e a frequência do dado ou do
+//     registro curado (grantedSpellUses), marcada com `grantedBy`. Ela NÃO
+//     esconde a mesma magia preparada à mão: o Mage Armor do Armor of Shadows é
+//     só em si mesmo, o preparado alcança outros, e concessão com uso próprio
+//     nunca se dedupa (DDL-0087). Sub-escolha de invocação (os cantrips do Pact
+//     of the Tome) usa o `sub` do pick, como o talento, e os mesmos ids do
+//     parseChoices (sem prefixo: o sub-bag já é só daquele pick).
 //   - Mystic Arcanum: círculos acima do teto do pacto, 1 por descanso longo, fora
 //     da contagem. O teto de preparação é SEMPRE o do nível individual da classe;
 //     os slots compartilhados do multiclasse não o influenciam.
@@ -351,6 +362,31 @@ function usesFromGranted(spells) {
   return out;
 }
 
+/** A optional feature de um pick "Nome|Fonte". */
+export function resolveOptionalFeature(db, pick) {
+  const [name, source] = String(pick).split('|');
+  const list = db?.optionalfeatures?.optionalfeature ?? [];
+  const lc = name.toLowerCase();
+  return list.find((o) => o.name.toLowerCase() === lc && (!source || o.source?.toLowerCase() === source.toLowerCase()))
+    ?? list.find((o) => o.name.toLowerCase() === lc)
+    ?? null;
+}
+
+/** As magias concedidas pelas optional features escolhidas na classe (TC-0092). */
+function optionalFeatureGrants(cls, db, ctx) {
+  const out = [];
+  for (const entry of Object.values(cls.choices ?? {})) {
+    if (entry?.kind !== 'optionalfeature') continue;
+    for (const pick of entry.picks ?? []) {
+      const of = resolveOptionalFeature(db, pick);
+      if (!of?.additionalSpells) continue;
+      const { spells } = resolveGranted(of.additionalSpells, cls.level, db, ctx, of, { bag: entry.sub?.[pick] ?? {} });
+      out.push(...spells.map((s) => ({ ...s, grantedBy: of.name })));
+    }
+  }
+  return out;
+}
+
 /** Uma origem racial ou de talento, ou null sem concessão no nível. */
 function grantedOrigin({ key, kind, label, entity, additionalSpells, level, db, profBonus, modifiers, chosenAbility, bag }) {
   const { spells, ability: fixedAbility, abilityChoices, pendingChoices } = resolveGranted(
@@ -474,10 +510,11 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       : null;
     const info = casterInfo(classObj, subclassObj);
 
-    const granted = [
+    const featureGranted = [
       ...resolveGranted(classObj?.additionalSpells, cls.level, db, usesCtx, classObj, { bag: cls.choices, idPrefix: 'class:' }).spells,
       ...resolveGranted(subclassObj?.additionalSpells, cls.level, db, usesCtx, subclassObj, { bag: cls.choices, idPrefix: 'sub:' }).spells,
     ];
+    const granted = [...featureGranted, ...optionalFeatureGrants(cls, db, usesCtx)];
 
     if (!info && granted.length === 0) continue;
 
@@ -489,7 +526,7 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
 
     const ability = info?.ability ?? null;
     const abilityMod = ability ? (modifiers?.[ability] ?? 0) : null;
-    const grantedNames = new Set(granted.map((s) => s.raw.name.toLowerCase()));
+    const grantedNames = new Set(featureGranted.map((s) => s.raw.name.toLowerCase()));
     const picks = resolveSpellRefs(cls.spells, db);
     const shadowed = (s) => !!s.raw && grantedNames.has(s.raw.name.toLowerCase());
     const resolved = picks.filter((s) => !shadowed(s));

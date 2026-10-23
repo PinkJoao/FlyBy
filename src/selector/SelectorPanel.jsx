@@ -19,6 +19,9 @@
 //   SelectorPanel(props): o painel.
 //
 // DECISÕES E ARMADILHAS
+//   - Entrada do SRD 5.1 no pacote embutido (`srd51`, DDL-0107) ganha o badge
+//     "Legacy (SRD 5.1)" no card, aqui, para valer em todo seletor (espécie,
+//     invocação, item) sem cada entity repetir a regra.
 //   - Os filtros são filtros COMUNS, desmarcáveis: liberdade com aviso (DDL-0040).
 //   - Opção FIXA que nenhum item do catálogo carrega é REMOVIDA ("zero SEMPRE",
 //     contado no catálogo cru); opção que não alcança nada AGORA vira chip
@@ -81,6 +84,7 @@ function cardOf(item, entity, db) {
   let c = cardCache.get(item);
   if (!c) {
     c = entity.card(item.raw, db);
+    if (item.raw?.srd51) c = { ...c, badges: [{ text: 'Legacy (SRD 5.1)', tone: 'neutral' }, ...(c.badges ?? [])] };
     cardCache.set(item, c);
   }
   return c;

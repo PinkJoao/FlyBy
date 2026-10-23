@@ -47,7 +47,8 @@
 //     diário; é uma magia com duas propriedades, e o modo `prepared` manda.
 //   - `{choose}` vira escolha (filtro ou lista fechada), e os picks feitos entram
 //     como concedidas com o modo e a frequência da folha. O `idPrefix` ('class:',
-//     'sub:') evita colisão no bag da classe.
+//     'sub:') evita colisão no bag da classe. O pick feito leva `chosen`: o
+//     export não o confunde com a magia fixa que a activity da feature já lança.
 //   - O filtro aceita `source=`: é a única condição de Chronurgy e Graviturgy
 //     (EGW), e ignorá-la casava o catálogo inteiro. Condição desconhecida é
 //     ignorada (permissivo).
@@ -180,7 +181,7 @@ function spellChooseLabel(pool, count) {
  * @param {{ bag?: object|null, idPrefix?: string }} [opts]
  * @returns {{
  *   spells: Array<{ name: string, source: string|null, castMode: string,
- *   castType: string|null, uses: number|null, castLevel: number|null }>,
+ *   castType: string|null, uses: number|null, castLevel: number|null, chosen?: boolean }>,
  *   ability: string|null,          // atributo de conjuração, quando fixo
  *   abilityChoices: string[],      // opções, quando o dado manda escolher
  *   pendingChoices: number,        // escolhas de magia ainda não feitas
@@ -201,10 +202,11 @@ export function grantedSpells(additionalSpells, level, opts = {}) {
     const key = ref.name.toLowerCase();
     const existing = byName.get(key);
     if (!existing) {
-      byName.set(key, { ...ref, castMode, castType: meta.castType, count: meta.count, scale: meta.scale });
+      byName.set(key, { ...ref, castMode, castType: meta.castType, count: meta.count, scale: meta.scale, ...(meta.chosen ? { chosen: true } : {}) });
       return;
     }
     if (MODE_RANK[castMode] > MODE_RANK[existing.castMode]) existing.castMode = castMode;
+    if (meta.chosen) existing.chosen = true;
     if (existing.castType == null && meta.castType != null) {
       existing.castType = meta.castType;
       existing.count = meta.count;
@@ -271,7 +273,7 @@ export function grantedSpells(additionalSpells, level, opts = {}) {
             const picks = bag?.[id]?.picks ?? [];
             for (const pk of picks) {
               const ref = parseSpellRef(pk);
-              if (ref) merge(ref, castMode, meta);
+              if (ref) merge(ref, castMode, { ...meta, chosen: true });
             }
             pendingChoices += Math.max(0, count - picks.length);
             return;

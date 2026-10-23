@@ -417,3 +417,45 @@ describe('regressão: subclasse volta pelo shortName, não pelo nome do Item', (
     expect(sc.origins[0].alwaysPrepared.map((s) => s.raw.name)).toEqual(['Misty Step']);
   });
 });
+
+describe('buildSpellItems - magia de invocação (TC-0092)', () => {
+  const mageArmor = { name: 'Mage Armor', source: 'XPHB', level: 1, school: 'A' };
+  const derived = {
+    spellcasting: {
+      slots: {}, pactSlots: { slots: 2 },
+      origins: [{
+        key: 'class:warlock', kind: 'class', classId: 'warlock', ability: 'cha',
+        cantrips: [], prepared: [], unprepared: [], arcanumSpells: [],
+        alwaysPrepared: [{ raw: mageArmor, granted: true, castType: 'will', grantedBy: 'Armor of Shadows' }],
+      }],
+    },
+  };
+
+  it('o item da invocação com activity já lança a magia: ela não sai como item', () => {
+    expect(buildSpellItems(derived, { castByFeature: () => true })).toHaveLength(0);
+  });
+
+  it('sem activity no item da invocação, a magia sai à vontade e o import não a lê como escolha', () => {
+    const items = buildSpellItems(derived, { castByFeature: () => false });
+    expect(items.map((i) => [i.name, i.system.method])).toEqual([['Mage Armor', 'atwill']]);
+    expect(isPlayerChosenSpell(items[0])).toBe(false);
+  });
+});
+
+describe('buildSpellItems - magia ESCOLHIDA numa optional feature', () => {
+  const light = { name: 'Light', source: 'XPHB', level: 0, school: 'V' };
+  const derived = {
+    spellcasting: {
+      slots: {}, pactSlots: { slots: 2 },
+      origins: [{
+        key: 'class:warlock', kind: 'class', classId: 'warlock', ability: 'cha',
+        cantrips: [], prepared: [], unprepared: [], arcanumSpells: [],
+        alwaysPrepared: [{ raw: light, granted: true, castType: null, grantedBy: 'Book of Ancient Secrets', chosen: true }],
+      }],
+    },
+  };
+
+  it('sai como item mesmo com activity no item da feature: nenhuma activity a lança', () => {
+    expect(buildSpellItems(derived, { castByFeature: () => true }).map((i) => i.name)).toEqual(['Light']);
+  });
+});

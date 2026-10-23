@@ -539,3 +539,83 @@ describe('deriveSpellcasting - conhecidas x preparadas', () => {
     expect(deriveSpellcasting(ch, db, derivedCtx).origins[0].knownLimit).toBeNull();
   });
 });
+
+const armorOfShadows = { name: 'Armor of Shadows', source: 'XPHB', additionalSpells: [{ innate: { _: ['mage armor|xphb'] } }] };
+const giftOfTheDepths = { name: 'Gift of the Depths', source: 'XPHB', additionalSpells: [{ innate: { _: { daily: { '1e': ['water breathing|xphb'] } } } }] };
+const beastSpeech = { name: 'Beast Speech', source: 'PHB', additionalSpells: [{ innate: { _: ['speak with animals'] } }] };
+const waterBreathing = { name: 'Water Breathing', source: 'XPHB', level: 3, school: 'T' };
+const speakWithAnimals = { name: 'Speak with Animals', source: 'PHB', level: 1, school: 'D' };
+const dbI = {
+  ...db,
+  optionalfeatures: { optionalfeature: [armorOfShadows, giftOfTheDepths, beastSpeech] },
+  'spells-xphb': { spell: [fireBolt, fireball, mageArmor, waterBreathing] },
+  'spells-phb': { spell: [speakWithAnimals] },
+};
+
+describe('deriveSpellcasting - magias das invocações (TC-0092)', () => {
+  const ch = warlock(5);
+  ch.classes[0].choices = {
+    'optfeat@EI': { kind: 'optionalfeature', picks: ['Armor of Shadows|XPHB', 'Gift of the Depths|XPHB', 'Beast Speech|PHB'] },
+  };
+  const wl = deriveSpellcasting(ch, dbI, ctxW).origins[0];
+
+  it('entram na origem da CLASSE, sempre preparadas e marcadas com a invocação', () => {
+    expect(wl.alwaysPrepared.map((s) => [s.raw.name, s.grantedBy])).toEqual([
+      ['Mage Armor', 'Armor of Shadows'],
+      ['Water Breathing', 'Gift of the Depths'],
+      ['Speak with Animals', 'Beast Speech'],
+    ]);
+  });
+
+  it('a frequência: à vontade pelo overlay, a de uso único pelo dado', () => {
+    expect(wl.uses.map((u) => [u.name, u.label])).toEqual([
+      ['Mage Armor', 'At Will'],
+      ['Water Breathing', '1/Day'],
+      ['Speak with Animals', 'At Will'],
+    ]);
+  });
+
+  it('não contam no limite de preparadas', () => {
+    expect(wl.prepared).toHaveLength(0);
+  });
+
+  it('não escondem a mesma magia preparada à mão (ela segue gastando espaço)', () => {
+    const ch2 = warlock(5, [{ id: 'Mage Armor', source: 'XPHB' }]);
+    ch2.classes[0].choices = { 'optfeat@EI': { kind: 'optionalfeature', picks: ['Armor of Shadows|XPHB'] } };
+    const o = deriveSpellcasting(ch2, dbI, ctxW).origins[0];
+    expect(o.prepared.map((s) => s.raw.name)).toEqual(['Mage Armor']);
+    expect(o.alwaysPrepared.map((s) => s.raw.name)).toEqual(['Mage Armor']);
+  });
+});
+
+describe('deriveSpellcasting - escolhas do Pact of the Tome', () => {
+  const tome = {
+    name: 'Pact of the Tome', source: 'XPHB',
+    additionalSpells: [{
+      ability: 'cha',
+      known: { _: [{ choose: 'level=0', count: 3 }] },
+      prepared: { _: [{ choose: 'level=1|components & miscellaneous=ritual', count: 2 }] },
+    }],
+  };
+  const ch = warlock(5);
+  ch.classes[0].choices = {
+    'optfeat@EI': {
+      kind: 'optionalfeature',
+      picks: ['Pact of the Tome|XPHB'],
+      sub: { 'Pact of the Tome|XPHB': { 'spell-0': { kind: 'spell', picks: ['Fire Bolt|XPHB'] }, 'spell-1': { kind: 'spell', picks: ['Mage Armor|XPHB'] } } },
+    },
+  };
+  const wl = deriveSpellcasting(ch, { ...dbI, optionalfeatures: { optionalfeature: [tome] } }, ctxW).origins[0];
+
+  it('as magias escolhidas no sub-bag entram como concedidas e marcadas como escolha', () => {
+    expect(wl.alwaysPrepared.map((s) => [s.raw.name, s.grantedBy, s.chosen])).toEqual([
+      ['Fire Bolt', 'Pact of the Tome', true],
+      ['Mage Armor', 'Pact of the Tome', true],
+    ]);
+  });
+
+  it('não contam nos limites de cantrips e preparadas', () => {
+    expect(wl.cantrips).toHaveLength(0);
+    expect(wl.prepared).toHaveLength(0);
+  });
+});

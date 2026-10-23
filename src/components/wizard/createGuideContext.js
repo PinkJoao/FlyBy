@@ -21,7 +21,8 @@
 //   - Regra com o usuário (2026-07-15, DDL-0018): na criação, TODO passo
 //     não-biográfico é OBRIGATÓRIO, e a completude é PROFUNDA: um talento só
 //     completa com o sub-bag dele (o Magic Initiate sem as magias, o ASI sem o
-//     +2/+1). Só história, alinhamento e nome ficam opcionais. O fixup e o botão do
+//     +2/+1), e uma optional feature só com o dela (os cantrips do Pact of the
+//     Tome). Só história, alinhamento e nome ficam opcionais. O fixup e o botão do
 //     guia usam o MESMO choiceComplete (TC-0013).
 //   - A espécie usa a MESMA lista da aba (speciesChoices), senão o guia exigiria o
 //     que a tela esconde. Só as linhagens NATIVAS obrigam. Raça ou talento fora do
@@ -30,7 +31,7 @@
 // -----------------------------------------------------------------------------
 
 import { parseChoices, LEGACY_ABILITY_CHOICE } from '../../engine/choices';
-import { resolveFeat, resolveRaceObj, resolveClassObj } from '../../engine/resolve';
+import { resolveFeat, resolveOptionalFeature, resolveRaceObj, resolveClassObj } from '../../engine/resolve';
 import { totalLevel } from '../../schema/character';
 import { requiresLineage, speciesChoices } from '../../engine/speciesData';
 import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
@@ -66,6 +67,14 @@ export function choiceComplete(ch, bag, db, level = Infinity) {
   const entry = bag?.[ch.id];
   const picks = entry?.picks ?? [];
   if (picks.length < targetCount(ch, entry)) return false;
+  if (ch.kind === 'optionalfeature') {
+    return picks.every((pick) => {
+      const of = resolveOptionalFeature(db, pick);
+      if (!of) return true;
+      const sub = entry?.sub?.[pick] ?? {};
+      return choicesComplete(parseChoices(of, { level, bag: sub }), sub, db, level);
+    });
+  }
   if (ch.kind !== 'feat') return true;
   return picks.every((pick) => {
     const featData = resolveFeat(db, pick);

@@ -17,7 +17,8 @@
 //     racial (Light, CHA fixo, então DC e ataque da origem racial), tamanho À
 //     ESCOLHA e o Celestial Revelation com sub-opções nomeadas (os PARÁGRAFOS com
 //     negrito do card de Species Traits); a tendência vai como código, como o
-//     builder salva; há uma sub-feature e uma Invocation escolhidas, anotadas na
+//     builder salva; há uma sub-feature e uma Invocation (Armor of Shadows, que
+//     concede Mage Armor à vontade, TC-0092) escolhidas, anotadas na
 //     lista de features da ficha.
 // -----------------------------------------------------------------------------
 
@@ -87,7 +88,7 @@ function previewCharacter() {
   warlock.source = 'XPHB';
   warlock.level = 1;
   warlock.choices = {
-    'optfeat@EI': { kind: 'optionalfeature', picks: ['Pact of the Blade|XPHB'] },
+    'optfeat@EI': { kind: 'optionalfeature', picks: ['Armor of Shadows|XPHB'] },
   };
   warlock.spells = [
     { id: 'Eldritch Blast', source: 'XPHB' },

@@ -13,6 +13,8 @@
 //   norm(s): o nome comparável (aspas retas, minúsculo).
 //   isEntityArray(v): um array de entidades 5etools (objetos com name e source).
 //   srdKeep(e): a entrada está no SRD 5.2 (`srd52`, ou `inherits.srd52`).
+//   legacyKey(e), legacyKeep(e, where, legacy): os extras do SRD 5.1, por lista
+//     fechada (DDL-0107).
 //   entityKey(e): a chave de identidade (nome, fonte, classe, subclasse, nível).
 //   buildRenames(full, extra): nome antigo -> nome do SRD, das 33 entradas com
 //     `srd52` string (as variantes mágicas trazem o nome em `inherits.srd52`),
@@ -35,8 +37,13 @@
 //   buildSrdBundle(full, opts): o pacote inteiro, com o relatório.
 //
 // DECISÕES E ARMADILHAS
-//   - O critério é a flag `srd52` do próprio 5etools, nunca `srd` (5.1) nem
-//     `basicRules2024` (gratuito, mas não é licença aberta).
+//   - O critério é a flag `srd52` do próprio 5etools, nunca `basicRules2024`
+//     (gratuito, mas não é licença aberta). A flag `srd` (5.1) só vale para a
+//     lista FECHADA de extras que o gerador passa em `legacy` (DDL-0107): o que
+//     o 5.2 não cobre e serve a uma ficha 2024. Cada extra precisa estar na
+//     lista E ter a flag; vira `srd51: true` no pacote, e a varredura confere o
+//     texto dele contra o SRD 5.1 (`legacyCorpus`), não contra o 5.2. Extra
+//     pedido que não existe mais no dado aparece em `legacyMissing`.
 //   - `srd52` como STRING é o nome com que o SRD publica a entrada ("Heward's
 //     Handy Haversack" -> "Handy Haversack"). A troca vale para o nome E para
 //     toda menção no texto de qualquer entrada mantida; em minúsculas (as
@@ -86,6 +93,14 @@ export function isEntityArray(v) {
 /** A entrada está no SRD 5.2. */
 export function srdKeep(e) {
   return Boolean(e?.srd52 || e?.inherits?.srd52);
+}
+
+/** A chave de um extra do SRD 5.1: "Nome|Fonte", ou "|Fonte|Raça" na sub-raça sem nome. */
+export const legacyKey = (e) => (e?.name ? `${e.name}|${e.source}` : `|${e?.source}|${e?.raceName ?? ''}`);
+
+/** A entrada é um extra pedido do SRD 5.1 (na lista E com a flag `srd` do 5etools). */
+export function legacyKeep(e, where, legacy) {
+  return Boolean(e?.srd && legacy?.[where]?.includes(legacyKey(e)));
 }
 
 /** A chave de identidade: nome, fonte, classe, subclasse e nível. */
@@ -277,7 +292,7 @@ export function normalizeCorpus(s) {
  * Os nomes protegidos que sobraram e cujo trecho (até `pad` caracteres de cada
  * lado) não aparece igual no SRD; com `docNames`, também o NOME da entrada.
  */
-export function scanProtected(bundle, terms, corpus, { pad = 20, docNames = null } = {}) {
+export function scanProtected(bundle, terms, corpus, { pad = 20, docNames = null, legacyCorpus = null, legacyDocNames = null } = {}) {
   const re = new RegExp(`${BS}b(${terms.join('|')})${BS}b`, 'gi');
   const hits = [];
   const seen = new Set();
@@ -286,8 +301,11 @@ export function scanProtected(bundle, terms, corpus, { pad = 20, docNames = null
       if (!Array.isArray(arr)) continue;
       for (const e of arr) {
         const where = `${fk}.${ak}:${e?.name ?? '?'}|${e?.source ?? ''}`;
-        const nameHit = docNames && typeof e?.name === 'string' ? normalizeCorpus(e.name).match(re) : null;
-        if (nameHit && !docNames.has(normalizeCorpus(e.name))) {
+        const old = Boolean(e?.srd51);
+        const text = old ? legacyCorpus ?? '' : corpus;
+        const names = old ? legacyDocNames : docNames;
+        const nameHit = names && typeof e?.name === 'string' ? normalizeCorpus(e.name).match(re) : null;
+        if (nameHit && !names.has(normalizeCorpus(e.name))) {
           hits.push({ where, term: nameHit[0], text: `nome "${e.name}" não é nome de documento do SRD` });
         }
         mapStrings(e, (s) => {
@@ -296,7 +314,7 @@ export function scanProtected(bundle, terms, corpus, { pad = 20, docNames = null
             const a = Math.max(0, m.index - pad);
             const b = Math.min(plain.length, m.index + m[0].length + pad);
             const windowText = plain.slice(a, b).trim();
-            if (corpus.includes(windowText)) continue;
+            if (text.includes(windowText)) continue;
             const key = `${where}#${m[0]}#${windowText}`;
             if (seen.has(key)) continue;
             seen.add(key);
@@ -316,8 +334,9 @@ export function scanProtected(bundle, terms, corpus, { pad = 20, docNames = null
  * @param {{ textFixes?: Record<string, object[]>, extraRenames?: Record<string, string> }} [opts]
  * @returns {{ bundle: object, report: object }}
  */
-export function buildSrdBundle(full, { textFixes = {}, extraRenames = {} } = {}) {
+export function buildSrdBundle(full, { textFixes = {}, extraRenames = {}, legacy = null } = {}) {
   const renames = buildRenames(full, extraRenames);
+  const legacyFound = new Set();
   const keptNames = new Set();
   const keptKeys = new Set();
   const keptSpells = new Set();
@@ -338,7 +357,9 @@ export function buildSrdBundle(full, { textFixes = {}, extraRenames = {} } = {})
       if (!(isEntityArray(arr) || variant)) { outFile[ak] = arr; continue; }
       if (fk === 'items-base' && ak !== 'baseitem' && ak !== 'itemMastery') { outFile[ak] = arr; continue; }
       if (fk === 'languages' && ak === 'languageScript') { outFile[ak] = []; continue; }
-      const keep = arr.filter(srdKeep);
+      const keep = arr
+        .filter((e) => srdKeep(e) || legacyKeep(e, `${fk}.${ak}`, legacy))
+        .map((e) => (srdKeep(e) ? e : (legacyFound.add(`${fk}.${ak}:${legacyKey(e)}`), { ...e, srd51: true })));
       counts[`${fk}.${ak}`] = [keep.length, arr.length];
       for (const e of keep) {
         const name = typeof e.srd52 === 'string' ? e.srd52 : (typeof e.inherits?.srd52 === 'string' ? e.inherits.srd52 : e.name);
@@ -385,5 +406,11 @@ export function buildSrdBundle(full, { textFixes = {}, extraRenames = {} } = {})
     bundle[fk] = outFile;
   }
   const unusedFixes = Object.keys(textFixes).filter((k) => !applied.has(k));
-  return { bundle, report: { counts, renames: renames.size, renameMap: Object.fromEntries(renames), unusedFixes } };
+  const legacyMissing = Object.entries(legacy ?? {})
+    .flatMap(([where, keys]) => keys.map((k) => `${where}:${k}`))
+    .filter((k) => !legacyFound.has(k));
+  return {
+    bundle,
+    report: { counts, renames: renames.size, renameMap: Object.fromEntries(renames), unusedFixes, legacy: legacyFound.size, legacyMissing },
+  };
 }

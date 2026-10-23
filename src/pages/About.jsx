@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   Rota `/about`, aberta pelo menu (Home e ficha) e pelo rodapé da Home. Diz o
 //   que é o FlyBy, a versão, o link do código e do feedback, e credita tudo o que
-//   o app traz de terceiros: o SRD 5.2 (CC BY 4.0), o formato de dados do
+//   o app traz de terceiros: o SRD 5.2 e os extras do SRD 5.1 (CC BY 4.0,
+//   DDL-0107), o formato de dados do
 //   5etools (MIT), o sistema dnd5e do Foundry (MIT), os ícones (game-icons.net,
 //   CC BY 3.0, por autor; Lucide, ISC), as fontes do tema papel (OFL 1.1) e as
 //   bibliotecas. O NOTICE na raiz do repositório traz as licenças por extenso.
@@ -94,8 +95,21 @@ export default function About() {
           .
         </p>
         <p>
+          This work includes material taken from the System Reference Document 5.1 (&quot;SRD 5.1&quot;) by Wizards of the
+          Coast LLC and available at{' '}
+          <ExtLink href="https://dnd.wizards.com/resources/systems-reference-document">
+            https://dnd.wizards.com/resources/systems-reference-document
+          </ExtLink>
+          . The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at{' '}
+          <ExtLink href="https://creativecommons.org/licenses/by/4.0/legalcode">
+            https://creativecommons.org/licenses/by/4.0/legalcode
+          </ExtLink>
+          . From the SRD 5.1, FlyBy includes only what the SRD 5.2 does not cover: the Half-Elf and Half-Orc, 13 Eldritch
+          Invocations and some adventuring gear, marked as legacy content.
+        </p>
+        <p>
           FlyBy reads game data in the 5etools format (MIT, Copyright 2017 TheGiddyLimit and contributors). Any content
-          beyond the SRD 5.2 comes from a data source you configure; it is read on your device and is not distributed with
+          beyond the SRD comes from a data source you configure; it is read on your device and is not distributed with
           FlyBy.
         </p>
       </Section>

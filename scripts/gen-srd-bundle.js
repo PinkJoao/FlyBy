@@ -12,8 +12,9 @@
 //
 // FUNÇÕES
 //   walk(dir, out): os .yml de uma pasta, recursivo.
-//   srdCorpus(): o texto oficial do SRD 5.2, dos packs `*24` do dnd5e, já
-//     normalizado para comparação, e o nome de cada documento.
+//   srdCorpus(edition): o texto oficial do SRD 5.2 (packs `*24` do dnd5e) ou do
+//     SRD 5.1 (SRD51_PACKS, os sem sufixo), já normalizado para comparação, e o
+//     nome de cada documento.
 //   renamesModule(map): o src/engine/srdRenamesData.js gerado (nome antigo ->
 //     nome do SRD), para resolver fichas entre os dois modos.
 //   main(): gera, varre, grava e falha se sobrar nome protegido.
@@ -35,6 +36,14 @@
 //     `srd52: true`, e o corpo do item no próprio SRD ainda diz "Lolth's").
 //   - O corpus exclui os premades (actors24/premades) e as páginas de licença:
 //     um nome citado ali não é texto de regra.
+//   - SRD51_EXTRAS (DDL-0107): o que o SRD 5.1 (2014, também CC-BY-4.0) tem e o
+//     5.2 não, e serve a uma ficha 2024: Half-Elf e Half-Orc (com as sub-raças
+//     sem nome, que só carregam a flag), as 13 invocações que o 2024 cortou e 25
+//     itens mundanos que o PHB 2024 tirou (o Spellbook entre eles). Lista
+//     FECHADA, levantada em 2026-10-23: magias, o talento, o background, os
+//     itens mágicos e as subclasses do 5.1 já estão no 5.2, e as features das
+//     classes de 2014 não servem a um app 2024. Um extra só passa com a flag
+//     `srd` do 5etools, e a varredura dele usa o texto do SRD 5.1.
 //   - Saída sem espaços nem timestamp: o diff entre duas gerações é só conteúdo.
 // -----------------------------------------------------------------------------
 
@@ -87,6 +96,24 @@ const EXTRA_RENAMES = {
   "Lolth's Sting": "Spider's Sting",
 };
 
+const SRD51_EXTRAS = {
+  'races.race': ['Half-Elf|PHB', 'Half-Orc|PHB'],
+  'races.subrace': ['|PHB|Half-Elf', '|PHB|Half-Orc'],
+  'optionalfeatures.optionalfeature': [
+    'Beast Speech|PHB', 'Beguiling Influence|PHB', 'Bewitching Whispers|PHB', 'Chains of Carceri|PHB',
+    'Dreadful Word|PHB', 'Eldritch Sight|PHB', 'Eyes of the Rune Keeper|PHB', 'Minions of Chaos|PHB',
+    'Mire the Mind|PHB', 'Sculptor of Flesh|PHB', 'Sign of Ill Omen|PHB', 'Thief of Five Fates|PHB',
+    'Voice of the Chain Master|PHB',
+  ],
+  'items.item': [
+    'Abacus|PHB', 'Ale (gallon)|PHB', 'Bit and bridle|PHB', 'Chalk (1 piece)|PHB', 'Chunk of Meat|PHB',
+    'Donkey|PHB', 'Fishing Tackle|PHB', 'Hammer|PHB', 'Hourglass|PHB', "Merchant's Scale|PHB", 'Mess Kit|PHB',
+    "Miner's Pick|PHB", 'Pack Saddle|PHB', 'Pitcher|PHB', 'Piton|PHB', 'Saddlebags|PHB', 'Sealing Wax|PHB',
+    'Signet Ring|PHB', 'Silk Rope (50 feet)|PHB', 'Sledgehammer|PHB', 'Soap|PHB', 'Spellbook|PHB',
+    'Tankard|PHB', 'Totem|PHB', 'Whetstone|PHB',
+  ],
+};
+
 /** Os .yml de uma pasta, recursivo. */
 function walk(dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -98,9 +125,11 @@ function walk(dir, out = []) {
   return out;
 }
 
-/** O texto do SRD 5.2 (packs `*24`) e os nomes dos seus documentos. */
-function srdCorpus() {
-  const dirs = readdirSync(PACKS).filter((d) => d.endsWith('24'));
+const SRD51_PACKS = ['backgrounds', 'classes', 'classfeatures', 'items', 'races', 'rules', 'spells', 'subclasses', 'tables', 'tradegoods'];
+
+/** O texto de um SRD (5.2: packs `*24`; 5.1: os de SRD51_PACKS) e os nomes dos seus documentos. */
+function srdCorpus(edition = '5.2') {
+  const dirs = edition === '5.1' ? SRD51_PACKS : readdirSync(PACKS).filter((d) => d.endsWith('24'));
   const files = dirs.flatMap((d) => walk(join(PACKS, d)))
     .filter((f) => !/premades|legal-information|disclaimer/.test(f));
   const texts = files.map((f) => readFileSync(f, 'utf8'));
@@ -142,9 +171,16 @@ function renamesModule(map) {
 function main() {
   if (!existsSync(PACKS)) throw new Error('Packs do dnd5e não encontrados (./DnD Source Material).');
   const full = loadDb();
-  const { bundle, report } = buildSrdBundle(full, { textFixes: TEXT_FIXES, extraRenames: EXTRA_RENAMES });
-  const { corpus, docNames } = srdCorpus();
-  const hits = scanProtected(bundle, PROTECTED_TERMS, corpus, { docNames });
+  const { bundle, report } = buildSrdBundle(full, { textFixes: TEXT_FIXES, extraRenames: EXTRA_RENAMES, legacy: SRD51_EXTRAS });
+  const { corpus, docNames } = srdCorpus('5.2');
+  const old = srdCorpus('5.1');
+  const hits = scanProtected(bundle, PROTECTED_TERMS, corpus, { docNames, legacyCorpus: old.corpus, legacyDocNames: old.docNames });
+  if (report.legacyMissing.length) {
+    console.error(`Extras do SRD 5.1 pedidos e não achados (com a flag srd): ${report.legacyMissing.join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`Extras do SRD 5.1: ${report.legacy}`);
 
   for (const [k, [kept, total]] of Object.entries(report.counts)) {
     if (kept) console.log(`  ${k}: ${kept}/${total}`);

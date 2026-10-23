@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   DDL-0018: a espécie com linhagem e todas as sub-escolhas, o talento de origem
-//   com o sub-bag e a recursão nos talentos escolhidos, sobre um compêndio mínimo.
+//   com o sub-bag, a recursão nos talentos escolhidos e nas optional features com
+//   escolha própria (o Pact of the Tome), sobre um compêndio mínimo.
 //
 // FUNÇÕES
 //   human(choices): um personagem humano de teste.
@@ -139,5 +140,29 @@ describe('choicesComplete (pool ability: o alvo é o count da alternativa)', () 
     expect(choicesComplete(choices, { 'ability-0': { kind: 'ability', picks: [{ ability: 'str', amount: 2 }] } }, db)).toBe(false);
     expect(choicesComplete(choices, { 'ability-0': { kind: 'ability', alt: 0, picks: [{ ability: 'str', amount: 2 }] } }, db)).toBe(true);
     expect(choicesComplete(choices, { 'ability-0': { kind: 'ability', alt: 1, picks: [{ ability: 'str', amount: 1 }] } }, db)).toBe(false);
+  });
+});
+
+describe('choicesComplete (optional feature com escolha própria)', () => {
+  const dbT = {
+    optionalfeatures: {
+      optionalfeature: [{
+        name: 'Pact of the Tome', source: 'XPHB', featureType: ['EI'],
+        additionalSpells: [{ ability: 'cha', known: { _: [{ choose: 'level=0', count: 3 }] } }],
+      }],
+    },
+  };
+  const ch = { id: 'optfeat@EI', kind: 'optionalfeature', count: 1, pool: { type: 'optionalfeature', featureType: ['EI'] } };
+  const pick = 'Pact of the Tome|XPHB';
+
+  it('pende até os 3 cantrips do sub-bag', () => {
+    const bag = { 'optfeat@EI': { kind: 'optionalfeature', picks: [pick], sub: { [pick]: { 'spell-0': { kind: 'spell', picks: ['Light|XPHB'] } } } } };
+    expect(choicesComplete([ch], bag, dbT)).toBe(false);
+  });
+
+  it('completa com o sub-bag cheio', () => {
+    const sub = { 'spell-0': { kind: 'spell', picks: ['Light|XPHB', 'Guidance|XPHB', 'Thaumaturgy|XPHB'] } };
+    const bag = { 'optfeat@EI': { kind: 'optionalfeature', picks: [pick], sub: { [pick]: sub } } };
+    expect(choicesComplete([ch], bag, dbT)).toBe(true);
   });
 });

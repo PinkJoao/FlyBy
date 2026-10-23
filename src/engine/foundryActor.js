@@ -28,6 +28,8 @@
 //     (TC-0022) o final pode saturar, e base = final menos boosts deixou de ser
 //     reversível. Ator sem a flag cai na subtração.
 //   - As ações básicas entram para todo personagem (foundryBasicActions).
+//   - Os itens de optional feature são montados ANTES das magias: a magia de uma
+//     invocação cujo item já tem activity não sai (TC-0092, foundrySpells).
 // -----------------------------------------------------------------------------
 
 import { deriveFromDb, resolveRaceObj, resolveClassObj, resolveSubclassObj } from './resolve';
@@ -80,8 +82,11 @@ export function assembleFoundryActor(character, db) {
 
   const items = [];
 
+  const optionalItems = new Map((character.classes ?? []).map((cls) => [cls, buildOptionalFeatureItems(cls, db)]));
+  const castByFeature = (name) => [...optionalItems.values()].flat()
+    .some((it) => it.name === name && Object.keys(it.system.activities ?? {}).length > 0);
   // ATENÇÃO: as magias saem ANTES das escadas: o value.added das escadas aponta para elas.
-  const spellItems = [...buildSpellItems(derived), ...buildUnassignedSpellItems(character, db)];
+  const spellItems = [...buildSpellItems(derived, { castByFeature }), ...buildUnassignedSpellItems(character, db)];
   const spellIds = new Map(spellItems.map((s) => [(s.name ?? '').trim().toLowerCase(), s._id]));
 
   const speciesFeatItems = buildSpeciesFeatItems(character, db);
@@ -102,7 +107,7 @@ export function assembleFoundryActor(character, db) {
     const featureItems = buildClassFeatureItems(cls, classObj, db);
     const { items: chosenFeatItems, asiByLevel, fightingStyles } = buildClassChosenFeats(cls, db);
     // ATENÇÃO: os itens de escolha saem ANTES dos de classe: o ItemChoice aponta para eles.
-    const optionItems = [...buildFeatureOptionItems(cls, classObj, subObj, db), ...buildOptionalFeatureItems(cls, db)];
+    const optionItems = [...buildFeatureOptionItems(cls, classObj, subObj, db), ...(optionalItems.get(cls) ?? [])];
     const weaponItems = buildClassWeaponItems(cls, classObj);
     const classItem = buildClassItem(cls, classObj, featureItems, asiByLevel, {
       weaponItems,

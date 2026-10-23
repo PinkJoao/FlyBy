@@ -17,7 +17,7 @@
 //   foundryUses(entry): os usos de uma concessão limitada.
 //   foundryPreparation(entry, origin, isArcanum, opts): `method` e `prepared`.
 //   buildSpellItem(entry, origin, opts): um item spell.
-//   buildSpellItems(derived): todas, uma por ORIGEM.
+//   buildSpellItems(derived, opts): todas, uma por ORIGEM.
 //   buildUnassignedSpellItems(character, db): as da carga.
 //   buildSpellSlots(derived): `spell1` a `spell9` e `pact`.
 //
@@ -46,6 +46,13 @@
 //     sai o item da concessão (`prepared: 2`, o estado nativo certo) com a marca
 //     `flags.builder5e.classPick`, a ref da escolha. O Foundry não tem campo para
 //     "também escolhida", e sem a marca o import descartava a decisão.
+//   - Magia de INVOCAÇÃO (`grantedBy`, TC-0092): o SRD a lança por uma activity no
+//     item da própria invocação (Armor of Shadows, Pact of the Chain), sem item de
+//     magia. Quando o item exportado da invocação tem activity
+//     (`opts.castByFeature`), a magia não sai: seriam dois botões. Sem activity
+//     (homebrew, overlay ausente), sai como concessão, para não sumir. A magia
+//     ESCOLHIDA (`chosen`: os cantrips do Pact of the Tome, os rituais do Book of
+//     Ancient Secrets) sai sempre: nenhuma activity a lança.
 // -----------------------------------------------------------------------------
 
 import { randomFoundryId, itemStats, sourceBlock, slugify, entriesToHtml } from './foundryItems';
@@ -222,9 +229,10 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
 /**
  * Todos os itens spell, uma magia por origem.
  * @param {ReturnType<import('./resolve').deriveFromDb>} derived
+ * @param {{ castByFeature?: (name: string) => boolean }} [opts]
  * @returns {object[]}
  */
-export function buildSpellItems(derived) {
+export function buildSpellItems(derived, opts = {}) {
   const out = [];
   const sc = derived?.spellcasting;
   const pactOnly =
@@ -241,6 +249,7 @@ export function buildSpellItems(derived) {
     ];
     for (const entry of all) {
       if (!entry.raw) continue;
+      if (entry.grantedBy && !entry.chosen && opts.castByFeature?.(entry.grantedBy)) continue;
       const item = buildSpellItem(entry, origin, { isArcanum: arcanumNames.has(entry.raw.name), pactOnly });
       const pick = entry.granted ? picks.get(entry.raw.name.toLowerCase()) : null;
       if (pick) {

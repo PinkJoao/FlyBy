@@ -121,9 +121,9 @@ Pick the look you like in **☰ > Settings**: **Dark**, **Light**, or **Parchmen
 
 Install it on your home screen and it opens in its own window and works offline (see Getting started). The phone's back gesture closes whatever is open (a menu, a window, the filters) before it leaves the page, and inside the guide it goes back one step. Screens and cards move with short animations, and they stay still if your device asks for reduced motion.
 
-### And just as good on a computer
+### And just as good on desktop
 
-In a desktop browser the sheet sits in a comfortable column in the middle of the screen, and every list (species, classes, spells, items) opens in a wide window with the filters, the results and the full description side by side. Double-click an option to pick it.
+The sheet sits in a comfortable column in the middle of the screen, and every list (species, classes, spells, items) opens in a wide window with the filters, the results and the full description side by side. Double-click an option to pick it.
 
 <p align="center"><img src="docs/images/desktop-selector.png" alt="Choosing a species on a computer: filters on the left, the results in the middle and the full description on the right" width="100%"></p>
 
@@ -181,7 +181,7 @@ Updates arrive on their own: the next time you open the app after an update, you
 Yes. FlyBy is free and open source.
 
 **Where are the credits?**
-In the app, under **☰ > About FlyBy**: the SRD 5.2 attribution, the icons (from game-icons.net and Lucide), the fonts and the libraries FlyBy is built with. The full license texts are in the [NOTICE](NOTICE) file.
+In the app, under **☰ > About FlyBy**: the SRD 5.2 and SRD 5.1 attributions, the icons (from game-icons.net and Lucide), the fonts and the libraries FlyBy is built with. The full license texts are in the [NOTICE](NOTICE) file.
 
 **Do I need an account?**
 No. There is no sign-up and no login: open it and start.
@@ -190,7 +190,7 @@ No. There is no sign-up and no login: open it and start.
 In your browser, on that device only. Nobody else can see them. To move a character, or to keep a backup, use **Export** on the character (a small file) and **Import character** in the menu on the other device. Clearing your browser's site data deletes your characters, so keep a backup of the ones you care about. On iPhones and iPads, install the app to keep Safari from clearing it (see the note in Getting started).
 
 **What content comes with the app?**
-The **System Reference Document 5.2** (SRD), the free rules content published by Wizards of the Coast under an open license: all 12 classes (each with one subclass), 9 species, 4 backgrounds, 17 feats, over 300 spells and over 500 items, plus magic weapons and armor. Content from other books is not included; FlyBy can read it only from a game data source that you provide.
+The **System Reference Document 5.2** (SRD), the free rules content published by Wizards of the Coast under an open license: all 12 classes (each with one subclass), 9 species, 4 backgrounds, 17 feats, over 300 spells and over 500 items, plus magic weapons and armor. From the older **SRD 5.1** (2014) it adds, marked as legacy content, only what the 2024 SRD left out: the Half-Elf and Half-Orc, 13 Eldritch Invocations and some classic adventuring gear (a spellbook, a whetstone, pitons and the like). Content from other books is not included; FlyBy can read it only from a game data source that you provide.
 
 **How do I use my own game data?**
 Open a **setup link** if someone gave you one, or go to **☰ > Game data > Game data source**, paste the address of your data (a GitHub repository or release link, the address of a game data folder in the 5etools format, or the whole setup link) and tap **Use this address**. FlyBy checks that it finds game data there before switching, then downloads the content once and keeps a copy on your device. You can switch back to the built-in SRD 5.2 at any time from the same menu; your characters are not affected.
@@ -253,6 +253,8 @@ Game content uses the data format of the open-source [5e.tools](https://5e.tools
 The code is MIT licensed ([LICENSE](LICENSE)). Third-party material and its licenses are listed in [NOTICE](NOTICE) and, inside the app, under **☰ > About FlyBy**: the icons come from [game-icons.net](https://game-icons.net) (CC BY 3.0, credited by author) and [Lucide](https://lucide.dev) (ISC), and the Parchment theme and the PDF sheet use the Cinzel and Alegreya fonts (SIL Open Font License).
 
 This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
+
+This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
 FlyBy is an unofficial fan-made tool. It is not affiliated with, endorsed, sponsored or approved by Wizards of the Coast, 5e.tools or Foundry Gaming LLC. Thanks to the 5e.tools community for the data format that makes this app possible.
 

@@ -385,7 +385,7 @@ export default function Home() {
         {source?.kind === 'srd' ? 'Built-in game data in the ' : 'Game data from '}
         <a href="https://5e.tools" target="_blank" rel="noopener noreferrer">5e.tools</a>
         {source?.kind === 'srd' ? ' format' : ''}. Includes SRD
-        5.2 content © Wizards of the Coast, licensed under{' '}
+        5.2 and SRD 5.1 content © Wizards of the Coast, licensed under{' '}
         <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">
           CC BY 4.0
         </a>

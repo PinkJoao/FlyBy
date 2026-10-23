@@ -59,6 +59,7 @@ function previewCharacter() {
   c.identity.appearance = 'Silver hair, moss-green eyes; carries a battered holy symbol.';
   c.identity.personality = 'Soft-spoken, but immovable when the weak are threatened.';
   c.identity.backstory = 'Raised in a roadside shrine, Lyra heard the whisper of two patrons: one divine, one fey.';
+  c.meta.portrait = `data:image/png;base64,${readFileSync(join(ROOT, 'public/icons/icon-512.png')).toString('base64')}`;
 
   const cleric = createClassEntry(true);
   cleric.classId = 'cleric';

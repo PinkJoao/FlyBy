@@ -46,11 +46,11 @@ export default function CharacterSheet({ model }) {
   const compact = !model.featureGroups.some((g) => g.detail === 'full') && !model.spellcasting.cards?.length;
 
   const parts = [
-    s.combat && <CombatSection key="combat" m={model} t={t} opts={opts} />,
+    s.combat && <CombatSection key="combat" m={model} t={t} opts={opts} contentHeight={height - PAD.top - PAD.bottom} />,
     s.features && model.featureGroups.length > 0 && <FeaturesSection key="features" groups={model.featureGroups} t={t} w={w} />,
     s.spells && model.spellcasting.origins.length > 0 && <SpellsSection key="spells" sc={model.spellcasting} t={t} w={w} />,
     s.inventory && <InventorySection key="inventory" inv={inv} t={t} w={w} />,
-    s.biography && <BiographySection key="bio" b={model.biography} t={t} w={w} />,
+    s.biography && <BiographySection key="bio" b={model.biography} t={t} w={w} portrait={opts.fields.portrait ? model.header.portrait : null} />,
   ].filter(Boolean);
 
   return (

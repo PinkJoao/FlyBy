@@ -60,7 +60,8 @@
 //     senão o Divine Spark sairia só com o nome.
 //   - O flavour de subclasse vem do fluff quando ele tem texto; no XPHB o fluff
 //     só traz a arte e o texto mora na feature GUARDA-CHUVA de mesmo nome (que o
-//     export pula), nas strings antes das referências.
+//     export pula), em tudo antes da primeira referência: as listas também (os
+//     dogmas da Oath of Devotion saíam cortados quando só as strings entravam).
 //   - Os traços e a lore da espécie vêm do raceEntity, o mesmo da tela (linhagem,
 //     `_copy` e a edição da base resolvidos, DDL-0071).
 //   - Cada linha de magia concedida leva o DC e o ataque da PRÓPRIA origem
@@ -69,7 +70,9 @@
 //   - Iniciativa: Destreza, mais o PB com o Alert (o 2024 dá "Initiative
 //     Proficiency"; o app não deriva iniciativa em outro lugar).
 //   - Item custom vem de ator importado com a descrição em HTML do Foundry
-//     (`@UUID[...]{Nome}`, `[[/r 1d4]]`): sai como texto, com o nome e o dado.
+//     (`@UUID[...]{Nome}`, `&Reference[Nome]`, `[[/r 1d4]]`): sai como texto, com
+//     o nome e o dado; enricher sem rótulo (`@Embed[...]`, `@UUID[...]` puro) some,
+//     senão o caminho do compêndio vazava na ficha.
 //   - Os recursos NÃO têm regra própria aqui: vêm do `system.uses` que o export
 //     do Foundry já deriva (registro curado, SRD, overlay; foundryFeatureUses), e
 //     evalUses só troca @scale, @abilities, @prof e @classes pelos números da
@@ -360,7 +363,7 @@ function inlineRefs(entries, db, depth = 0) {
   });
 }
 
-/** O texto da feature guarda-chuva da subclasse (strings antes das refs). */
+/** O texto da feature guarda-chuva da subclasse (tudo antes das refs). */
 function umbrellaFlavor(subObj, classId, db) {
   const names = new Set([norm(subObj.name), norm(subObj.shortName)]);
   const src = norm(subObj.source);
@@ -369,12 +372,12 @@ function umbrellaFlavor(subObj, classId, db) {
       && norm(f.subclassSource ?? f.source) === src
       && names.has(norm(f.name)),
   );
-  const strings = [];
+  const intro = [];
   for (const e of umbrella?.entries ?? []) {
-    if (typeof e !== 'string') break;
-    strings.push(e);
+    if (e && typeof e === 'object' && String(e.type).startsWith('ref')) break;
+    intro.push(e);
   }
-  return strings;
+  return intro;
 }
 
 /** O flavour da subclasse: o fluff com texto, ou a guarda-chuva. */
@@ -640,9 +643,11 @@ function buildSpellcasting(character, derived, opts) {
 /** O texto de um ator importado (HTML e os enrichers do Foundry) em parágrafos. */
 function foreignText(html) {
   const text = htmlToText(String(html ?? ''))
-    .replace(/@\w+\[[^\]]*\]\{([^}]*)\}/g, '$1')
-    .replace(/@\w+\[([^\]]*)\]/g, '$1')
-    .replace(/\[\[\/\w+ ([^\]]+)\]\]/g, '$1');
+    .replace(/[@&]\w+\[[^\]]*\]\{([^}]*)\}/g, '$1')
+    .replace(/&Reference\[([^\]|]*)[^\]]*\]/g, '$1')
+    .replace(/@\w+\[[^\]]*\]/g, '')
+    .replace(/\[\[\/\w+ ([^\]]+)\]\]/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ');
   return text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 }
 

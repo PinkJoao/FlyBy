@@ -22,21 +22,43 @@
 //   isLongCard(card), pairs(list): o cartão que pode partir, e as linhas de dois.
 //   ItemTable(props), Coins(props), InventorySection(props): o inventário.
 //   TextBox(props), BiographySection(props): a história.
+//   isLong(blocks, limit), rightColumnHeight(m, f): o texto que pode partir, e a
+//     altura estimada da coluna direita da página de combate.
 //
 // DECISÕES E ARMADILHAS
-//   - Título de grupo e de feature levam `minPresenceAhead`: sem isso o título
-//     fica sozinho no pé da página e o texto começa na seguinte.
+//   - QUEBRA DE PÁGINA: caixa, linha de tabela, cartão, item e todo texto curto
+//     são inquebráveis (`wrap={false}`); só o texto LONGO (acima de SHORT_CHARS,
+//     ou LONG_ITEM_CHARS num item) pode continuar na página seguinte, e mesmo ele
+//     leva o título junto. Os limites são altos de propósito (um texto de 1200
+//     caracteres cabe com folga numa página): partir só o que precisa.
+//   - TÍTULO PRESO ao que vem depois, num bloco inquebrável: a feature ao primeiro
+//     parágrafo (até KEEP_FIRST_CHARS), a tabela de magias (título e colunas) às
+//     duas primeiras linhas, o círculo dos cartões à primeira linha de cartões, o
+//     contêiner do inventário ao primeiro item, o grupo de features (classe,
+//     subclasse, espécie) à introdução ou à primeira feature. Só o
+//     `minPresenceAhead` não basta: medido, ele deixou órfãos o Channel Divinity
+//     (um parágrafo de 3 linhas não parte e pulou inteiro depois que o título
+//     ficou), o "4th Level", o Magic Initiate, o "Case, Map or Scroll" e o "Life
+//     Domain". Ele fica só como reserva onde o primeiro bloco é longo demais.
+//   - A página de combate cabe numa folha: as notas ganham só as linhas que
+//     sobram na coluna direita (rightColumnHeight, estimada) e somem abaixo de 3;
+//     antes, no papel Carta, a caixa de notas ia sozinha para a página 2.
 //   - Os cartões vão em LINHAS de dois, e a linha é INQUEBRÁVEL para o cartão
 //     não partir no meio, exceto quando um deles passa de CARD_WRAP_CHARS ou
 //     traz tabela: um cartão maior que a página seria cortado. (Com flexWrap o
-//     @react-pdf não sabe partir a linha e reclama do nó grande demais.) O título do círculo pede 200 pt livres, senão
-//     ficaria órfão no pé, longe do primeiro cartão.
+//     @react-pdf não sabe partir a linha e reclama do nó grande demais.) O título
+//     do círculo vai PRESO à primeira linha de cartões; quando ela pode partir,
+//     o título pede 200 pt livres. Só o minPresenceAhead deixava o "4th Level"
+//     órfão no pé quando a linha seguinte, inquebrável, pulava inteira.
 //   - Com as descrições ligadas, a linha da tabela de inventário ganha o texto
 //     do item logo abaixo, recuado; o flavour sai em itálico apagado.
 //   - Recurso com até MAX_PIPS usos ganha uma caixa por uso; acima disso (Lay
 //     on Hands, pontos de feitiçaria altos) vira "____ / máximo", para o lápis.
 //   - As caixas da mesa (PV atual, temporário, dados gastos, testes contra a
 //     morte, inspiração, exaustão) ficam em branco: são para o lápis.
+//   - Retrato: o círculo no cabeçalho (recortado, `cover`) e, na história, o
+//     retrato inteiro (`contain`, sem cortar) ao lado da aparência. Os dois
+//     obedecem ao campo Portrait das opções.
 // -----------------------------------------------------------------------------
 
 import { View, Text, Image } from '@react-pdf/renderer';
@@ -45,6 +67,21 @@ import { Blocks, SectionTitle, GroupTitle, Label, Box, Pips } from './parts';
 import { blocksText } from './entries';
 
 const CARD_WRAP_CHARS = 2200;
+const SHORT_CHARS = 1200;
+const LONG_ITEM_CHARS = 2000;
+const KEEP_FIRST_CHARS = 900;
+
+/** O texto é longo o bastante para PODER continuar na página seguinte? */
+const isLong = (blocks, limit = SHORT_CHARS) => blocksText(blocks).length > limit;
+
+/** A altura estimada (pt) da coluna direita da página de combate, sem as notas. */
+function rightColumnHeight(m, f) {
+  const profLines = Object.values(m.proficiencies)
+    .reduce((n, v) => n + Math.max(1, Math.ceil((String(v).length + 12) / 80)), 0);
+  return (f.attacks ? 36 + 16 * Math.max(m.attacks.length, 4) : 0)
+    + (m.resources.length ? 32 + 23 * m.resources.length : 0)
+    + (f.proficiencies ? 28 + 13 * profLines : 0);
+}
 
 const body = (t, size = 9) => ({ fontFamily: FONTS.body, fontSize: size, color: t.ink });
 
@@ -53,8 +90,8 @@ function Header({ h, t, showPortrait }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
       {showPortrait && h.portrait ? (
-        <View style={{ width: 62, height: 62, borderWidth: 1.2, borderColor: t.red, borderRadius: 31, overflow: 'hidden', marginRight: 10 }}>
-          <Image src={h.portrait} style={{ width: 62, height: 62, objectFit: 'cover' }} />
+        <View style={{ width: 74, height: 74, borderWidth: 1.5, borderColor: t.red, borderRadius: 37, overflow: 'hidden', marginRight: 12, backgroundColor: t.box }}>
+          <Image src={h.portrait} style={{ width: 74, height: 74, objectFit: 'cover' }} />
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
@@ -274,8 +311,10 @@ function Proficiencies({ p, t }) {
 }
 
 /** A página de combate. */
-export function CombatSection({ m, t, opts }) {
+export function CombatSection({ m, t, opts, contentHeight }) {
   const f = opts.fields;
+  const columnsTop = f.tableBoxes ? 250 : 196;
+  const notesLines = Math.min(24, Math.floor((contentHeight - columnsTop - rightColumnHeight(m, f) - 40) / 13));
   return (
     <View>
       <Header h={m.header} t={t} showPortrait={f.portrait} />
@@ -291,7 +330,7 @@ export function CombatSection({ m, t, opts }) {
           {f.attacks ? <AttackTable rows={m.attacks} t={t} /> : null}
           {m.resources.length ? <Resources rows={m.resources} t={t} /> : null}
           {f.proficiencies ? <Proficiencies p={m.proficiencies} t={t} /> : null}
-          {f.tableBoxes ? <TextBox label="NOTES" t={t} lines={Math.max(4, 22 - m.attacks.length - 2 * m.resources.length)} /> : null}
+          {f.tableBoxes && notesLines >= 3 ? <TextBox label="NOTES" t={t} lines={notesLines} /> : null}
         </View>
       </View>
     </View>
@@ -300,18 +339,23 @@ export function CombatSection({ m, t, opts }) {
 
 /** Uma feature com o texto completo. */
 function FeatureItem({ item, t }) {
+  const blocks = item.blocks ?? [];
+  const first = blocks[0]?.type === 'p' && blocksText(blocks.slice(0, 1)).length <= KEEP_FIRST_CHARS ? 1 : 0;
   return (
-    <View wrap={blocksText(item.blocks).length > 500 || item.options.length > 0} style={{ marginBottom: 5 }}>
-      <View minPresenceAhead={28} style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-        <Text style={{ flex: 1, fontFamily: FONTS.title, fontWeight: 700, fontSize: 9, color: t.ink, letterSpacing: 0.3 }}>{item.name}</Text>
-        {item.tag ? <Text style={{ ...body(t, 7.5), color: t.muted, fontStyle: 'italic' }}>{item.tag}</Text> : null}
+    <View wrap={isLong(item.blocks) || item.options.length > 0} style={{ marginBottom: 5 }}>
+      <View minPresenceAhead={48} wrap={false}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+          <Text style={{ flex: 1, fontFamily: FONTS.title, fontWeight: 700, fontSize: 9, color: t.ink, letterSpacing: 0.3 }}>{item.name}</Text>
+          {item.tag ? <Text style={{ ...body(t, 7.5), color: t.muted, fontStyle: 'italic' }}>{item.tag}</Text> : null}
+        </View>
+        {item.notes.length ? (
+          <Text style={{ ...body(t, 8.5), color: t.red, fontStyle: 'italic', marginBottom: 1.5 }}>Chosen: {item.notes.join('; ')}</Text>
+        ) : null}
+        <Blocks blocks={blocks.slice(0, first)} t={t} justify />
       </View>
-      {item.notes.length ? (
-        <Text style={{ ...body(t, 8.5), color: t.red, fontStyle: 'italic', marginBottom: 1.5 }}>Chosen: {item.notes.join('; ')}</Text>
-      ) : null}
-      <Blocks blocks={item.blocks} t={t} justify />
+      <Blocks blocks={blocks.slice(first)} t={t} justify />
       {item.options.map((o) => (
-        <View key={o.name} style={{ marginLeft: 8, borderLeftWidth: 1, borderLeftColor: t.rule, paddingLeft: 5, marginBottom: 2 }}>
+        <View key={o.name} wrap={isLong(o.blocks)} style={{ marginLeft: 8, borderLeftWidth: 1, borderLeftColor: t.rule, paddingLeft: 5, marginBottom: 2 }}>
           <Text style={{ ...body(t, 8.5), fontWeight: 700, fontStyle: 'italic' }}>{o.name}</Text>
           <Blocks blocks={o.blocks} t={t} size={8.5} justify />
         </View>
@@ -340,17 +384,22 @@ function TitleGrid({ items, t }) {
 
 /** Um grupo de features (classe, subclasse, espécie, talentos). */
 function FeatureGroup({ g, t }) {
+  const full = g.detail === 'full';
+  const flavor = g.flavor ? (
+    <View wrap={isLong(g.flavor)} style={{ backgroundColor: t.panel, borderRadius: 3, padding: 5, marginBottom: 5 }}>
+      <Blocks blocks={g.flavor} t={t} size={8.5} justify muted />
+    </View>
+  ) : null;
+  const items = full ? g.items.map((it, i) => <FeatureItem key={i} item={it} t={t} />) : [<TitleGrid key="grid" items={g.items} t={t} />];
+  const firstLong = flavor ? isLong(g.flavor) : full && isLong(g.items[0]?.blocks);
+  const [first, ...rest] = flavor ? [flavor, ...items] : items;
   return (
     <View>
-      <GroupTitle t={t} title={g.title} subtitle={g.subtitle} />
-      {g.flavor ? (
-        <View style={{ backgroundColor: t.panel, borderRadius: 3, padding: 5, marginBottom: 5 }}>
-          <Blocks blocks={g.flavor} t={t} size={8.5} justify muted />
-        </View>
-      ) : null}
-      {g.detail === 'full'
-        ? g.items.map((it, i) => <FeatureItem key={i} item={it} t={t} />)
-        : <TitleGrid items={g.items} t={t} />}
+      <View wrap={!!firstLong}>
+        <GroupTitle t={t} title={g.title} subtitle={g.subtitle} ahead={firstLong ? 120 : 0} />
+        {first}
+      </View>
+      {rest}
     </View>
   );
 }
@@ -396,32 +445,36 @@ function SlotTracker({ slots, pact, t }) {
 function SpellTable({ o, t }) {
   const col = [{ width: 14 }, { width: 16, textAlign: 'center' }, { flex: 2.4 }, { width: 34 }, { flex: 1.1 }, { width: 34, textAlign: 'center' }, { flex: 1.6 }];
   const prep = (p) => (p === 'always' ? 2 : p === 'yes' ? 1 : 0);
+  const row = (r, i) => (
+    <View key={i} wrap={false} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 1.5, backgroundColor: i % 2 ? 'transparent' : t.stripe }}>
+      <View style={col[0]}>{r.prepared ? <Pips t={t} n={1} shape="diamond" size={6} filled={prep(r.prepared) ? 1 : 0} /> : null}</View>
+      <Text style={{ ...body(t, 8.5), ...col[1] }}>{r.level}</Text>
+      <Text style={{ ...body(t, 8.5), fontWeight: 700, ...col[2] }}>{r.name}</Text>
+      <Text style={{ ...body(t, 8), ...col[3] }}>{r.time}</Text>
+      <Text style={{ ...body(t, 8), ...col[4] }}>{r.range}</Text>
+      <Text style={{ ...body(t, 8), ...col[5] }}>{[r.c ? 'C' : '-', r.r ? 'R' : '-', r.m ? 'M' : '-'].join(' ')}</Text>
+      <Text style={{ ...body(t, 7.5), color: t.muted, ...col[6] }}>{[r.prepared === 'always' ? 'Always' : null, r.notes].filter(Boolean).join(', ')}</Text>
+    </View>
+  );
   return (
     <View style={{ marginBottom: 8 }}>
-      <View minPresenceAhead={40} style={{ flexDirection: 'row', alignItems: 'flex-end', borderBottomWidth: 1, borderBottomColor: t.red, paddingBottom: 1.5, marginBottom: 2 }}>
-        <Text style={{ flex: 1, fontFamily: FONTS.title, fontWeight: 700, fontSize: 11, color: t.red }}>{o.title}</Text>
-        {o.ability ? (
-          <Text style={{ ...body(t, 8.5) }}>
-            {o.ability} <Text style={{ fontWeight: 700 }}>{o.mod}</Text>   ·   Save DC <Text style={{ fontWeight: 700 }}>{o.dc}</Text>   ·   Attack <Text style={{ fontWeight: 700 }}>{o.attack}</Text>
-          </Text>
-        ) : null}
-      </View>
-      <View style={{ flexDirection: 'row', paddingBottom: 1 }}>
-        {['', 'Lv', 'Name', 'Time', 'Range', 'C R M', 'Notes'].map((h, i) => (
-          <Text key={i} style={{ ...body(t, 7), color: t.muted, fontWeight: 700, ...col[i] }}>{h}</Text>
-        ))}
-      </View>
-      {o.rows.map((r, i) => (
-        <View key={i} wrap={false} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 1.5, backgroundColor: i % 2 ? 'transparent' : t.stripe }}>
-          <View style={col[0]}>{r.prepared ? <Pips t={t} n={1} shape="diamond" size={6} filled={prep(r.prepared) ? 1 : 0} /> : null}</View>
-          <Text style={{ ...body(t, 8.5), ...col[1] }}>{r.level}</Text>
-          <Text style={{ ...body(t, 8.5), fontWeight: 700, ...col[2] }}>{r.name}</Text>
-          <Text style={{ ...body(t, 8), ...col[3] }}>{r.time}</Text>
-          <Text style={{ ...body(t, 8), ...col[4] }}>{r.range}</Text>
-          <Text style={{ ...body(t, 8), ...col[5] }}>{[r.c ? 'C' : '-', r.r ? 'R' : '-', r.m ? 'M' : '-'].join(' ')}</Text>
-          <Text style={{ ...body(t, 7.5), color: t.muted, ...col[6] }}>{[r.prepared === 'always' ? 'Always' : null, r.notes].filter(Boolean).join(', ')}</Text>
+      <View wrap={false}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', borderBottomWidth: 1, borderBottomColor: t.red, paddingBottom: 1.5, marginBottom: 2 }}>
+          <Text style={{ flex: 1, fontFamily: FONTS.title, fontWeight: 700, fontSize: 11, color: t.red }}>{o.title}</Text>
+          {o.ability ? (
+            <Text style={{ ...body(t, 8.5) }}>
+              {o.ability} <Text style={{ fontWeight: 700 }}>{o.mod}</Text>   ·   Save DC <Text style={{ fontWeight: 700 }}>{o.dc}</Text>   ·   Attack <Text style={{ fontWeight: 700 }}>{o.attack}</Text>
+            </Text>
+          ) : null}
         </View>
-      ))}
+        <View style={{ flexDirection: 'row', paddingBottom: 1 }}>
+          {['', 'Lv', 'Name', 'Time', 'Range', 'C R M', 'Notes'].map((h, i) => (
+            <Text key={i} style={{ ...body(t, 7), color: t.muted, fontWeight: 700, ...col[i] }}>{h}</Text>
+          ))}
+        </View>
+        {o.rows.slice(0, 2).map(row)}
+      </View>
+      {o.rows.slice(2).map((r, i) => row(r, i + 2))}
     </View>
   );
 }
@@ -459,17 +512,25 @@ const pairs = (list) => list.reduce((acc, c, i) => (i % 2 ? acc[acc.length - 1].
 /** Os cartões de magia por círculo. */
 function CardGrid({ cards, t }) {
   const levels = [...new Set(cards.map((c) => c.level))];
-  return levels.map((lvl) => (
-    <View key={lvl}>
-      <GroupTitle t={t} title={lvl === 0 ? 'Cantrips' : `${ORD[lvl]} Level`} subtitle="Spell descriptions" ahead={200} />
-      {pairs(cards.filter((c) => c.level === lvl)).map(([a, b]) => (
-        <View key={a.key} wrap={isLongCard(a) || isLongCard(b)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <SpellCard card={a} t={t} />
-          {b ? <SpellCard card={b} t={t} /> : null}
-        </View>
-      ))}
+  const row = ([a, b]) => (
+    <View key={a.key} wrap={isLongCard(a) || isLongCard(b)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+      <SpellCard card={a} t={t} />
+      {b ? <SpellCard card={b} t={t} /> : null}
     </View>
-  ));
+  );
+  return levels.map((lvl) => {
+    const [first, ...rest] = pairs(cards.filter((c) => c.level === lvl));
+    const longFirst = isLongCard(first[0]) || isLongCard(first[1]);
+    return (
+      <View key={lvl}>
+        <View wrap={longFirst} minPresenceAhead={longFirst ? 200 : 0}>
+          <GroupTitle t={t} title={lvl === 0 ? 'Cantrips' : `${ORD[lvl]} Level`} subtitle="Spell descriptions" ahead={longFirst ? 200 : 0} />
+          {row(first)}
+        </View>
+        {rest.map(row)}
+      </View>
+    );
+  });
 }
 
 /** A conjuração: slots, origens e cartões. */
@@ -488,25 +549,35 @@ export function SpellsSection({ sc, t, w }) {
 /** A tabela de um grupo de itens. */
 function ItemTable({ g, t }) {
   const col = [{ flex: 3 }, { width: 28, textAlign: 'center' }, { width: 46, textAlign: 'right' }, { flex: 2, paddingLeft: 8 }];
+  const long = (it) => blocksText(it.blocks).length + blocksText(it.flavor).length > LONG_ITEM_CHARS;
+  const [first, ...rest] = g.items;
+  const row = (it, i) => (
+    <View
+      key={it.uid ?? i}
+      wrap={long(it)}
+      style={{ backgroundColor: i % 2 ? 'transparent' : t.stripe, paddingVertical: 1.5 }}
+    >
+      <View wrap={false} minPresenceAhead={it.blocks || it.flavor ? 30 : 0} style={{ flexDirection: 'row' }}>
+        <Text style={{ ...body(t, 8.8), fontWeight: 700, ...col[0] }}>{it.name}</Text>
+        <Text style={{ ...body(t, 8.5), ...col[1] }}>{it.quantity > 1 ? `x${it.quantity}` : ''}</Text>
+        <Text style={{ ...body(t, 8), color: t.muted, ...col[2] }}>{it.weight}</Text>
+        <Text style={{ ...body(t, 7.5), color: t.red, fontStyle: 'italic', ...col[3] }}>{it.tags.join(', ')}</Text>
+      </View>
+      {it.blocks || it.flavor ? (
+        <View style={{ marginLeft: 10, marginRight: 4, marginTop: 1.5 }}>
+          {it.flavor ? <Blocks blocks={it.flavor} t={t} size={8} muted justify /> : null}
+          {it.blocks ? <Blocks blocks={it.blocks} t={t} size={8.2} justify /> : null}
+        </View>
+      ) : null}
+    </View>
+  );
   return (
     <View style={{ marginBottom: 6 }}>
-      <GroupTitle t={t} title={g.title} />
-      {g.items.map((it, i) => (
-        <View key={it.uid ?? i} style={{ backgroundColor: i % 2 ? 'transparent' : t.stripe, paddingVertical: 1.5 }}>
-          <View wrap={false} style={{ flexDirection: 'row' }}>
-            <Text style={{ ...body(t, 8.8), fontWeight: 700, ...col[0] }}>{it.name}</Text>
-            <Text style={{ ...body(t, 8.5), ...col[1] }}>{it.quantity > 1 ? `x${it.quantity}` : ''}</Text>
-            <Text style={{ ...body(t, 8), color: t.muted, ...col[2] }}>{it.weight}</Text>
-            <Text style={{ ...body(t, 7.5), color: t.red, fontStyle: 'italic', ...col[3] }}>{it.tags.join(', ')}</Text>
-          </View>
-          {it.blocks || it.flavor ? (
-            <View style={{ marginLeft: 10, marginRight: 4, marginTop: 1.5 }}>
-              {it.flavor ? <Blocks blocks={it.flavor} t={t} size={8} muted justify /> : null}
-              {it.blocks ? <Blocks blocks={it.blocks} t={t} size={8.2} justify /> : null}
-            </View>
-          ) : null}
-        </View>
-      ))}
+      <View wrap={!first || long(first)}>
+        <GroupTitle t={t} title={g.title} />
+        {first ? row(first, 0) : null}
+      </View>
+      {rest.map((it, i) => row(it, i + 1))}
     </View>
   );
 }
@@ -556,8 +627,10 @@ export function InventorySection({ inv, t, w }) {
 /** Um quadro de texto livre, ou linhas para escrever quando vazio. */
 function TextBox({ label, text, t, lines = 3, style }) {
   return (
-    <Box t={t} wrap style={{ marginBottom: 6, ...style }}>
-      <Label t={t} color={t.red} align="left">{label}</Label>
+    <Box t={t} wrap={String(text ?? '').length > SHORT_CHARS} style={{ marginBottom: 6, ...style }}>
+      <View minPresenceAhead={30}>
+        <Label t={t} color={t.red} align="left">{label}</Label>
+      </View>
       {text ? (
         String(text).split(/\n{2,}/).map((p, i) => (
           <Text key={i} style={{ ...body(t, 9), lineHeight: 1.35, marginTop: 2, textAlign: 'justify' }}>{p}</Text>
@@ -570,7 +643,7 @@ function TextBox({ label, text, t, lines = 3, style }) {
 }
 
 /** A história do personagem. */
-export function BiographySection({ b, t, w }) {
+export function BiographySection({ b, t, w, portrait }) {
   return (
     <View>
       <SectionTitle t={t} width={w}>Biography</SectionTitle>
@@ -583,7 +656,16 @@ export function BiographySection({ b, t, w }) {
           ))}
         </View>
       ) : null}
-      <TextBox label="APPEARANCE" text={b.appearance} t={t} />
+      {portrait ? (
+        <View wrap={false} style={{ flexDirection: 'row', marginBottom: 6 }}>
+          <View style={{ width: 150, marginRight: 6, borderWidth: 1.5, borderColor: t.red, borderRadius: 4, padding: 3, backgroundColor: t.box }}>
+            <Image src={portrait} style={{ width: '100%', maxHeight: 200, objectFit: 'contain' }} />
+          </View>
+          <TextBox label="APPEARANCE" text={b.appearance} t={t} lines={9} style={{ flex: 1, marginBottom: 0 }} />
+        </View>
+      ) : (
+        <TextBox label="APPEARANCE" text={b.appearance} t={t} />
+      )}
       <View style={{ flexDirection: 'row' }}>
         <TextBox label="PERSONALITY" text={b.personality} t={t} style={{ flex: 1, marginRight: 5 }} />
         <TextBox label="IDEALS" text={b.ideals} t={t} style={{ flex: 1 }} />

@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   O pipeline produz um PDF válido sem o download do navegador, com as fontes
 //   da ficha embutidas: o personagem vazio cabe na página de combate mais a
-//   história, e desligar seções tira as páginas delas.
+//   história, desligar seções tira as páginas delas, e o retrato entra (e sai
+//   com o campo Portrait).
 //
 // FUNÇÕES
 //   toBytes(el): os bytes do PDF.
@@ -14,6 +15,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import process from 'node:process';
 import { pdf } from '@react-pdf/renderer';
 import CharacterSheet from './CharacterSheetDoc';
@@ -57,6 +59,20 @@ describe('character sheet PDF', () => {
     expect(text).toContain('Cinzel-Bold');
     expect(text).toContain('Alegreya-Regular');
     expect(pageCount(bytes)).toBe(2);
+  }, 30000);
+
+  it('o retrato entra no cabeçalho e na história, e o campo Portrait o tira', async () => {
+    const png = `data:image/png;base64,${readFileSync(join(process.cwd(), 'public/icons/icon-192.png')).toString('base64')}`;
+    const images = async (options) => {
+      const ch = createCharacter({ name: 'Test Hero' });
+      ch.meta.portrait = png;
+      const bytes = await toBytes(<CharacterSheet model={buildSheetModel(ch, derived, {}, options)} />);
+      let text = '';
+      for (const b of bytes) text += String.fromCharCode(b);
+      return (text.match(/\/Subtype \/Image/g) ?? []).length;
+    };
+    expect(await images({})).toBeGreaterThan(0);
+    expect(await images({ fields: { portrait: false } })).toBe(0);
   }, 30000);
 
   it('desligar seções tira as páginas delas', async () => {

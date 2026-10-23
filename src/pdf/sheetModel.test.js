@@ -325,7 +325,10 @@ describe('buildSheetModel', () => {
         { uid: 'c', itemId: 'Backpack', quantity: 1, isContainer: true, raw: { name: 'Backpack' } },
         {
           uid: 'd', itemId: 'Trinket', quantity: 2, container: 'c', isCustom: true,
-          custom: { name: 'Trinket', description: '<p>A @UUID[Compendium.x]{Lucky Coin} worth [[/r 1d4]] gp.</p><p>Shiny.</p>' },
+          custom: {
+            name: 'Trinket',
+            description: '<p>A @UUID[Compendium.x]{Lucky Coin} worth [[/r 1d4]] gp.</p><p>Shiny, &Reference[Spell Scroll] @Embed[Compendium.dnd5e.spells24.Item.x inline]</p>',
+          },
         },
       ],
     };
@@ -337,7 +340,7 @@ describe('buildSheetModel', () => {
     expect(ring.tags).toEqual(['Attuned', 'Rare']);
     expect(ring.blocks).toHaveLength(1);
     const trinket = inv.groups[1].items[0];
-    expect(trinket.blocks.map((b) => b.runs[0].text)).toEqual(['A Lucky Coin worth 1d4 gp.', 'Shiny.']);
+    expect(trinket.blocks.map((b) => b.runs[0].text)).toEqual(['A Lucky Coin worth 1d4 gp.', 'Shiny, Spell Scroll']);
     expect(inv.attuned).toEqual(['Ring of Protection']);
     expect(inv.coins.gp).toBe(125);
   });

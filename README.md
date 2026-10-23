@@ -94,13 +94,17 @@ Spells, conditions, actions and rules mentioned anywhere in the app are links. T
 
 ### Take your character to the table
 
+**A printable sheet made for FlyBy.** Export a filled-in PDF on white or parchment, with your character's portrait, a combat page with room for hit points and boxes to tick for death saves and limited-use abilities, spell slots to mark, and then your features, spells, equipment and story. Keep it short with just the names for a few pages at the table, or print every feature, spell and item described in full.
+
+<p align="center"><img src="docs/images/pdf.png" alt="Three pages of a FlyBy PDF: the combat page with the portrait on parchment, a features page on parchment and spell cards on white" width="100%"></p>
+
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/pdf.png" alt="A filled-in printable PDF character sheet"></td>
+    <td width="50%"><img src="docs/images/desktop-pdf.png" alt="The Export PDF options: look, paper, content presets and a section-by-section choice of what goes in"></td>
     <td width="50%"><img src="docs/images/home.png" alt="The character list"></td>
   </tr>
   <tr>
-    <td><b>Printable PDF</b>: a filled-in sheet made for FlyBy, on white or parchment. You choose what goes in: just the names for a few pages at the table, or every feature, spell and item described in full.</td>
+    <td><b>You choose what goes in</b>: a ready mix (Compact, Standard, Complete), or each section and how much detail it gets.</td>
     <td><b>All your characters in one place</b>: create, duplicate, export or delete them from the list.</td>
   </tr>
 </table>
@@ -116,6 +120,23 @@ Pick the look you like in **☰ > Settings**: **Dark**, **Light**, or **Parchmen
 ### Feels like an app on your phone
 
 Install it on your home screen and it opens in its own window and works offline (see Getting started). The phone's back gesture closes whatever is open (a menu, a window, the filters) before it leaves the page, and inside the guide it goes back one step. Screens and cards move with short animations, and they stay still if your device asks for reduced motion.
+
+### And just as good on a computer
+
+In a desktop browser the sheet sits in a comfortable column in the middle of the screen, and every list (species, classes, spells, items) opens in a wide window with the filters, the results and the full description side by side. Double-click an option to pick it.
+
+<p align="center"><img src="docs/images/desktop-selector.png" alt="Choosing a species on a computer: filters on the left, the results in the middle and the full description on the right" width="100%"></p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/desktop-sheet.png" alt="The character sheet on a computer, with the portrait, the numbers and the Class tab"></td>
+    <td width="50%"><img src="docs/images/desktop-spellbook.png" alt="The spellbook on a computer, with spell slots, save DC and the spells by level"></td>
+  </tr>
+  <tr>
+    <td><b>Your sheet</b>: portrait, numbers and every choice, one tab at a time.</td>
+    <td><b>Your spellbook</b>: slots, save DC and prepared spells at a glance.</td>
+  </tr>
+</table>
 
 ## Getting started
 

@@ -23,6 +23,9 @@
 //     repetem em toda página e ficam por baixo do texto.
 //   - O pergaminho é só vetor (gradiente radial nas bordas e um tom de papel):
 //     nenhuma imagem, nenhuma textura de terceiros (DDL-0003, DDL-0105).
+//   - Tabela: a legenda e o cabeçalho ficam juntos e pedem espaço para as
+//     primeiras linhas; cada linha é inquebrável, e o inset até 1200 caracteres
+//     também. O inset longo pode partir, mas o nome vai preso ao primeiro bloco.
 //   - Lead de parágrafo em negrito itálico, como no livro; o corpo justificado
 //     só no texto longo (a coluna estreita dos cartões fica à esquerda, para não
 //     abrir buracos entre as palavras).
@@ -30,6 +33,7 @@
 
 import { View, Text, Svg, Rect, Path, Circle, Defs, RadialGradient, Stop } from '@react-pdf/renderer';
 import { FONTS } from './theme';
+import { blocksText } from './entries';
 
 /** Runs { text, b, i } num Text. */
 export function Rich({ runs, style }) {
@@ -48,18 +52,20 @@ function TableBlock({ block, t, size }) {
   const cellStyle = (i) => ({ flex: i === 0 && cols > 2 ? 0.7 : 1, paddingHorizontal: 3, paddingVertical: 1.5 });
   return (
     <View style={{ marginVertical: 3 }} wrap={block.rows.length > 8 || JSON.stringify(block.rows).length > 1200}>
-      {block.caption ? (
-        <Text style={{ fontFamily: FONTS.body, fontWeight: 700, fontSize: size, color: t.ink, marginBottom: 1.5 }}>{block.caption}</Text>
-      ) : null}
-      {block.head ? (
-        <View style={{ flexDirection: 'row', borderBottomWidth: 0.8, borderBottomColor: t.red }}>
-          {block.head.map((h, i) => (
-            <View key={i} style={cellStyle(i)}>
-              <Rich runs={h} style={{ fontFamily: FONTS.body, fontWeight: 700, fontSize: size - 0.5, color: t.red }} />
-            </View>
-          ))}
-        </View>
-      ) : null}
+      <View minPresenceAhead={30} wrap={false}>
+        {block.caption ? (
+          <Text style={{ fontFamily: FONTS.body, fontWeight: 700, fontSize: size, color: t.ink, marginBottom: 1.5 }}>{block.caption}</Text>
+        ) : null}
+        {block.head ? (
+          <View style={{ flexDirection: 'row', borderBottomWidth: 0.8, borderBottomColor: t.red }}>
+            {block.head.map((h, i) => (
+              <View key={i} style={cellStyle(i)}>
+                <Rich runs={h} style={{ fontFamily: FONTS.body, fontWeight: 700, fontSize: size - 0.5, color: t.red }} />
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
       {block.rows.map((row, ri) => (
         <View key={ri} wrap={false} style={{ flexDirection: 'row', backgroundColor: ri % 2 ? 'transparent' : t.stripe }}>
           {Array.from({ length: cols }).map((_, ci) => (
@@ -105,9 +111,12 @@ export function Blocks({ blocks, t, size = 9, justify = false, muted = false }) 
     if (b.type === 'table') return <TableBlock key={i} block={b} t={t} size={size} />;
     if (b.type === 'inset') {
       return (
-        <View key={i} style={{ borderLeftWidth: 2, borderLeftColor: t.red, backgroundColor: t.panel, padding: 5, marginVertical: 3 }}>
-          {b.name ? <Text style={{ ...para, fontWeight: 700 }}>{b.name}</Text> : null}
-          <Blocks blocks={b.blocks} t={t} size={size - 0.5} justify={justify} muted={muted} />
+        <View key={i} wrap={blocksText(b.blocks).length > 1200} style={{ borderLeftWidth: 2, borderLeftColor: t.red, backgroundColor: t.panel, padding: 5, marginVertical: 3 }}>
+          <View wrap={false}>
+            {b.name ? <Text style={{ ...para, fontWeight: 700 }}>{b.name}</Text> : null}
+            <Blocks blocks={b.blocks.slice(0, 1)} t={t} size={size - 0.5} justify={justify} muted={muted} />
+          </View>
+          <Blocks blocks={b.blocks.slice(1)} t={t} size={size - 0.5} justify={justify} muted={muted} />
         </View>
       );
     }

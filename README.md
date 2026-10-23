@@ -113,7 +113,7 @@ Spells, conditions, actions and rules mentioned anywhere in the app are links. T
 
 ### Three themes
 
-Pick the look you like in **☰ > Settings**: **Dark**, **Light**, or **Parchment**, a warm paper look with classic fantasy lettering. By default FlyBy follows your device's light or dark mode. Each theme has its own subtle background and ornaments, and the app uses its own icons, so it looks the same on every phone.
+Pick the look you like in **☰ > Settings**: **Dark**, **Light**, or **Parchment**, an old but well-kept parchment with worn, nicked edges and classic fantasy lettering. By default FlyBy follows your device's light or dark mode. Each theme has its own subtle background (stars, a dot grid, aged parchment) and ornaments, and the app uses its own icons, so it looks the same on every phone.
 
 <p align="center"><img src="docs/images/themes.png" alt="The same character sheet in the Dark, Light and Parchment themes" width="100%"></p>
 

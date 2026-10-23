@@ -46,7 +46,7 @@ function ExtLink({ href, children }) {
 /** Um bloco com título e filete. */
 function Section({ title, children }) {
   return (
-    <section className={`${styles.section} ornate-frame`}>
+    <section className={styles.section}>
       <h2 className={`${styles.sectionTitle} ornate-rule`}>{title}</h2>
       {children}
     </section>

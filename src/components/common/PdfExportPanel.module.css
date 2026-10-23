@@ -13,6 +13,9 @@
  * DECISÕES E ARMADILHAS
  *   - Cores só por token (DDL-0097): o escolhido é --accent-bg com a borda
  *     --accent-border, como o item marcado do MenuList.
+ *   - .seg é uma TRILHA com folga interna, e cada botão tem a própria borda e o
+ *     próprio raio. Antes o contêiner cortava os filhos (overflow + raio) e o
+ *     anel do escolhido, de cantos retos, saía fatiado nas pontas.
  * -------------------------------------------------------------------------- */
 
 .panel {
@@ -38,25 +41,27 @@
 
 .seg {
   display: inline-flex;
+  gap: 2px;
+  padding: 2px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
+  border-radius: 9px;
+  background: var(--bg);
 }
 
 .seg button {
   appearance: none;
-  padding: 6px 12px;
-  border: none;
-  border-left: 1px solid var(--border);
-  background: var(--bg);
+  padding: 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
   font: inherit;
   font-size: 13px;
   color: var(--text);
   cursor: pointer;
 }
 
-.seg button:first-child {
-  border-left: none;
+.seg button:not(:disabled):not(.segOn):hover {
+  background: var(--bg-soft);
 }
 
 .seg button:disabled {
@@ -65,15 +70,15 @@
 }
 
 .seg button.segOn {
+  border-color: var(--accent-border);
   background: var(--accent-bg);
   color: var(--text-h);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--accent-border);
   opacity: 1;
 }
 
 .segSmall button {
-  padding: 4px 9px;
+  padding: 3px 8px;
   font-size: 12px;
 }
 

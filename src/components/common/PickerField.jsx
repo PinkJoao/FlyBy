@@ -110,7 +110,7 @@ export default function PickerField({
 
       {info && (
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfo(false)}>
-          <div className={`${styles.infoPanel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfo(false)} aria-label="Close">
                 <Icon name="close" />

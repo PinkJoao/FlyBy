@@ -348,7 +348,7 @@ export default function SelectorPanel({
   // ATENÇÃO: o portal para document.body é necessário; um ancestral com transform prenderia o painel.
   return createPortal(
     <div className={`${styles.overlay} motion-page`} onClick={onClose}>
-      <div className={`${styles.panel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
+      <div className={`${styles.panel} motion-pop`} onClick={(e) => e.stopPropagation()}>
         <header className={styles.header}>
           <div className={styles.headerText}>
             <h2>{shownTitle}</h2>

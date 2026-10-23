@@ -248,7 +248,7 @@ export default function Home() {
   const renderCard = (c) => {
     const summary = classNames(c);
     return (
-      <li key={c.id} className={`${styles.card} ornate-frame`}>
+      <li key={c.id} className={styles.card}>
         <button
           type="button"
           className={styles.cardMain}

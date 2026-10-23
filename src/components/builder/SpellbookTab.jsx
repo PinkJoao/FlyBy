@@ -811,7 +811,7 @@ export default function SpellbookTab({
 
       {infoEntry && (
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoKey(null)}>
-          <div className={`${styles.infoPanel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfoKey(null)} aria-label="Close">
                 <Icon name="close" />

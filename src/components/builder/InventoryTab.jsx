@@ -378,7 +378,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
       {infoEntry && (
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoUid(null)}>
-          <div className={`${styles.infoPanel} motion-pop ornate-frame`} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
               <button type="button" className={styles.infoClose} onClick={() => setInfoUid(null)} aria-label="Close">
                 <Icon name="close" />

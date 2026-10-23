@@ -138,7 +138,7 @@ function DialogCard({ dialog, onResolve }) {
       }}
     >
       <div
-        className={`${styles.card} ornate-frame`}
+        className={styles.card}
         role={variant === 'alert' ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-labelledby={title ? `${id}-title` : undefined}

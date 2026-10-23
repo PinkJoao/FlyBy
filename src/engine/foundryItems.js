@@ -137,7 +137,9 @@
 //     (DDL-0031); os do SRD andam com as activities do SRD, que os citam por
 //     `_id`, e somar os do overlay aplicava o efeito em dobro (foi assim que
 //     "Cunning Action: Hiding" saiu duplicado). `uses` e `activities` do overlay
-//     entram sempre que o curado não cobrir aquele campo.
+//     entram sempre que o curado não cobrir aquele campo. Sem `uses` em nenhum dos
+//     três (curado, SRD, overlay), vale o pool que só a PROSA declara
+//     (proseUses, DDL-0106), em feature, traço de espécie e talento.
 //
 //   Classe e features
 //   - fvttProgression: as frações '1/2' e '1/3' do 5etools não existem no dnd5e;
@@ -271,7 +273,7 @@ import {
   overlaySubclassFeatureEntry,
   overlayMechanics,
 } from './foundryOverlay';
-import { featureUses } from './foundryFeatureUses';
+import { featureUses, proseUses, firstUses } from './foundryFeatureUses';
 import { featureActivities, srdFeatureMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
@@ -672,7 +674,7 @@ function isOptionCatalog(feature) {
 }
 
 /** Features da classe até o nível, dedupadas por nome. */
-function resolveClassFeatures(db, classId, classObj, level) {
+export function resolveClassFeatures(db, classId, classObj, level) {
   const pool = db?.[`class-${classId}`]?.classFeature ?? [];
   const idx = new Map();
   for (const f of pool) idx.set(`${norm(f.name)}|${f.level}`, f);
@@ -777,7 +779,7 @@ export function buildFeatureItem(feature, db = null) {
       source: sourceBlock(feature.source),
       requirements: '',
       properties: [],
-      uses: curatedUses ?? overlay.system.uses ?? { max: '', spent: 0, recovery: [] },
+      uses: firstUses(curatedUses, overlay.system.uses, proseUses(feature.name, feature.classId, activities)),
       prerequisites: { level: null, repeatable: false, items: [] },
       activities,
       advancement: {},
@@ -1047,7 +1049,7 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
       source: sourceBlock(featData.source),
       requirements: '',
       properties: [],
-      uses: featOverlay.system.uses ?? { max: '', spent: 0, recovery: [] },
+      uses: firstUses(featOverlay.system.uses, proseUses(featData.name, null, featOverlay.activities)),
       prerequisites: { level: null, repeatable: !!featData.repeatable, items: [] },
       activities: featOverlay.activities,
       advancement: keyById(advancement),
@@ -1442,7 +1444,7 @@ export function buildBackgroundItem(character, originFeatItem = null, db = null)
 }
 
 /** Features de subclasse do pool cru, numa faixa de níveis. */
-function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } = {}) {
+export function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } = {}) {
   if (!subclass) return [];
   const short = norm(subclass.shortName);
   const src = norm(subclass.source);
@@ -1659,7 +1661,10 @@ export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
         source: sourceBlock(raceObj.source),
         requirements: '',
         properties: [],
-        uses: featureUses(name) ?? featureUses(entry.name) ?? m?.system?.uses ?? { max: '', spent: 0, recovery: [] },
+        uses: firstUses(
+          featureUses(name), featureUses(entry.name), m?.system?.uses,
+          proseUses(name, null, srd?.activities ?? m?.activities), proseUses(entry.name, null, srd?.activities ?? m?.activities),
+        ),
         prerequisites: { level: null, repeatable: false, items: [] },
         activities: retargetScaleRefs(srd?.activities ?? m?.activities ?? {}, speciesIdentifier(raceObj)),
         advancement: {},

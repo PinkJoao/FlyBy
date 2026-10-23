@@ -2,18 +2,24 @@
 // characterSheetPdf.test: testes do PDF da ficha
 // =============================================================================
 // O QUE FAZ
-//   O pipeline produz um PDF válido sem o download do navegador: o template VAZIO
-//   (2 páginas) e a paginação de magias (36 magias dão 1 página de rosto e 2 de
-//   magias).
+//   O pipeline produz um PDF válido sem o download do navegador, com as fontes
+//   da ficha embutidas: o personagem vazio cabe na página de combate mais a
+//   história, e desligar seções tira as páginas delas.
 //
 // FUNÇÕES
 //   toBytes(el): os bytes do PDF.
 //   pageCount(bytes): as páginas (dicts "/Type /Page").
+//   render(options): o PDF de um personagem novo com as opções.
 // -----------------------------------------------------------------------------
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { join } from 'node:path';
+import process from 'node:process';
 import { pdf } from '@react-pdf/renderer';
-import CharacterSheet, { SPELL_ROWS_PER_PAGE } from './CharacterSheetDoc';
+import CharacterSheet from './CharacterSheetDoc';
+import { buildSheetModel } from './sheetModel';
+import { registerPdfFonts } from './fonts';
+import { createCharacter } from '../schema/character';
 
 async function toBytes(el) {
   const blob = await pdf(el).toBlob();
@@ -27,21 +33,34 @@ function pageCount(bytes) {
   return (text.match(/\/Type \/Page\b/g) ?? []).length;
 }
 
-describe('character sheet PDF', () => {
-  it('renders a valid, non-trivial PDF (blank = 2 pages)', async () => {
-    const bytes = await toBytes(<CharacterSheet />);
-    expect(bytes.length).toBeGreaterThan(2000);
-    expect(String.fromCharCode(...bytes.slice(0, 5))).toBe('%PDF-');
-    expect(pageCount(bytes)).toBe(2);
-  }, 20000);
+const derived = {
+  level: 1, proficiencyBonus: 2,
+  scores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+  modifiers: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 },
+  saves: {}, skills: {}, inventory: [], spellcasting: { origins: [] },
+};
 
-  it('magias além da página 2 geram páginas EXTRAS de spells (página 1 não repete)', async () => {
-    const spellRows = Array.from({ length: SPELL_ROWS_PER_PAGE + 5 }, (_, i) => ({
-      level: '1', name: `Spell ${i + 1}`, time: 'A', range: '30 ft',
-      c: false, r: false, m: false, notes: '', _rank: 1,
-    }));
-    const model = { sheets: [{ spellRows }] };
-    const bytes = await toBytes(<CharacterSheet model={model} />);
-    expect(pageCount(bytes)).toBe(3);
-  }, 20000);
+/** O PDF de um personagem novo com as opções. */
+function render(options) {
+  const model = buildSheetModel(createCharacter({ name: 'Test Hero' }), derived, {}, options);
+  return toBytes(<CharacterSheet model={model} />);
+}
+
+describe('character sheet PDF', () => {
+  beforeAll(() => registerPdfFonts((url) => join(process.cwd(), url)));
+
+  it('gera um PDF válido com as fontes da ficha embutidas', async () => {
+    const bytes = await render({ theme: 'parchment' });
+    expect(String.fromCharCode(...bytes.slice(0, 5))).toBe('%PDF-');
+    let text = '';
+    for (const b of bytes) text += String.fromCharCode(b);
+    expect(text).toContain('Cinzel-Bold');
+    expect(text).toContain('Alegreya-Regular');
+    expect(pageCount(bytes)).toBe(2);
+  }, 30000);
+
+  it('desligar seções tira as páginas delas', async () => {
+    const bytes = await render({ sections: { combat: true, features: false, spells: false, inventory: false, biography: false } });
+    expect(pageCount(bytes)).toBe(1);
+  }, 30000);
 });

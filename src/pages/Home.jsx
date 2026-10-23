@@ -56,6 +56,7 @@ import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint
 import { SettingsMenu, GameDataMenu } from '../components/common/AppMenus';
 import styles from './Home.module.css';
 import Icon from '../components/common/Icon';
+import { showPdfExport } from '../components/common/pdfExportDialog';
 import SortButton from '../components/common/SortButton';
 import { NAME_SORT } from '../sorting';
 
@@ -218,10 +219,11 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExportPdf = async (character) => {
-    const { exportCharacterPdf } = await import('../pdf/exportPdf');
-    await exportCharacterPdf(character, deriveFromDb(character, db), db);
-  };
+  const handleExportPdf = (character) =>
+    showPdfExport(async (options) => {
+      const { exportCharacterPdf } = await import('../pdf/exportPdf');
+      await exportCharacterPdf(character, deriveFromDb(character, db), db, options);
+    });
 
   const askDelete = async (character) => {
     const ok = await confirm({

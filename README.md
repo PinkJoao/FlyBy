@@ -100,7 +100,7 @@ Spells, conditions, actions and rules mentioned anywhere in the app are links. T
     <td width="50%"><img src="docs/images/home.png" alt="The character list"></td>
   </tr>
   <tr>
-    <td><b>Printable PDF</b>: a complete, filled-in sheet, ready to print. Multiclass characters get one sheet per class.</td>
+    <td><b>Printable PDF</b>: a filled-in sheet made for FlyBy, on white or parchment. You choose what goes in: just the names for a few pages at the table, or every feature, spell and item described in full.</td>
     <td><b>All your characters in one place</b>: create, duplicate, export or delete them from the list.</td>
   </tr>
 </table>
@@ -212,7 +212,6 @@ A **play mode**: a screen made for the table, to roll checks and attacks with a 
 ## Known limitations
 
 - **Leveling up inside Foundry VTT.** A character exported from FlyBy brings the features of its current level. When you level it up inside Foundry, Foundry adds the new features from the D&amp;D 5e system's compendiums, which only contain the SRD content. Anything else (subclasses, species and options from your own game data source) is not there, so Foundry cannot add it. **Level up in FlyBy, then export and import the character into Foundry again.** In Foundry you can import the new file over the existing character (right-click it, then **Import Data**); note that this also replaces what changed during play there, such as current hit points and used spell slots.
-- **Long lists on the PDF.** On high-level characters, very long lists of features or equipment may not fit in their boxes on the printed sheet.
 - **No session tracking yet.** FlyBy keeps your character's build, not what happens at the table (current hit points, used spell slots, conditions). That is what the upcoming play mode is for.
 
 ## For developers
@@ -230,7 +229,7 @@ Game content uses the data format of the open-source [5e.tools](https://5e.tools
 
 ## Credits and license
 
-The code is MIT licensed ([LICENSE](LICENSE)). Third-party material and its licenses are listed in [NOTICE](NOTICE) and, inside the app, under **☰ > About FlyBy**: the icons come from [game-icons.net](https://game-icons.net) (CC BY 3.0, credited by author) and [Lucide](https://lucide.dev) (ISC), and the Parchment theme uses the Cinzel and Alegreya fonts (SIL Open Font License).
+The code is MIT licensed ([LICENSE](LICENSE)). Third-party material and its licenses are listed in [NOTICE](NOTICE) and, inside the app, under **☰ > About FlyBy**: the icons come from [game-icons.net](https://game-icons.net) (CC BY 3.0, credited by author) and [Lucide](https://lucide.dev) (ISC), and the Parchment theme and the PDF sheet use the Cinzel and Alegreya fonts (SIL Open Font License).
 
 This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 

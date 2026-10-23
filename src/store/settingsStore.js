@@ -12,17 +12,21 @@
 //   DDL-0095) foi dispensado.
 //   theme: 'system' (o padrão, segue o aparelho), 'dark', 'light' ou 'paper'
 //   (src/theme.js). ATENÇÃO à chave KEY: o script inline do index.html a lê.
+//   pdf: as opções da ficha PDF (src/pdf/pdfOptions.js, DDL-0105), a última
+//   escolha do jogador; normalizadas na leitura, então um valor antigo não quebra.
 //
 // FUNÇÕES
 //   load(), persist(state): leitura e escrita no localStorage. Sem localStorage
 //     (modo privado), as preferências ficam só em memória.
 //   useSettingsStore: o store. setGuidance(value) muda a preferência;
 //     dismissSamsungHint() esconde o aviso de instalação do Samsung Internet;
-//     setTheme(value) grava o tema e o aplica no documento.
+//     setTheme(value) grava o tema e o aplica no documento; setPdfOptions(opts)
+//     grava as opções da ficha PDF.
 // -----------------------------------------------------------------------------
 
 import { create } from 'zustand';
 import { applyTheme } from '../theme';
+import { normalizePdfOptions } from '../pdf/pdfOptions';
 
 const KEY = 'builder5e:settings';
 
@@ -30,15 +34,16 @@ const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false, theme: 'system'
 
 function load() {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    const saved = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    return { ...saved, pdf: normalizePdfOptions(saved.pdf) };
   } catch {
-    return { ...DEFAULTS };
+    return { ...DEFAULTS, pdf: normalizePdfOptions() };
   }
 }
 
 function persist(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme }));
+    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf }));
   } catch {
     // localStorage indisponível (modo privado): as preferências ficam só em memória.
   }
@@ -58,6 +63,12 @@ const useSettingsStore = create((set, get) => ({
     set({ theme });
     persist(get());
     applyTheme(theme);
+  },
+
+  /** Grava as opções da ficha PDF (normalizadas). */
+  setPdfOptions: (opts) => {
+    set({ pdf: normalizePdfOptions(opts) });
+    persist(get());
   },
 
   /** Esconde o aviso de instalação do Samsung Internet, de vez. */

@@ -1,0 +1,158 @@
+/* =============================================================================
+ * PdfExportPanel.module.css: o painel de opções da ficha PDF
+ * =============================================================================
+ * CLASSES
+ *   .panel: a coluna do painel, na largura do diálogo.
+ *   .row, .label: uma linha rótulo + controle (quebra no celular estreito).
+ *   .seg, .segSmall, .segOn: o controle segmentado e o botão escolhido.
+ *   .hint: a frase que explica o atalho escolhido.
+ *   .more: o botão que abre o Customize.
+ *   .custom, .heading, .checks, .check: o bloco de personalização.
+ *   .actions, .primary: Cancel e Export.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Cores só por token (DDL-0097): o escolhido é --accent-bg com a borda
+ *     --accent-border, como o item marcado do MenuList.
+ * -------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(470px, calc(100vw - 72px));
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.label {
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.seg button {
+  appearance: none;
+  padding: 6px 12px;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.seg button:first-child {
+  border-left: none;
+}
+
+.seg button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.seg button.segOn {
+  background: var(--accent-bg);
+  color: var(--text-h);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+  opacity: 1;
+}
+
+.segSmall button {
+  padding: 4px 9px;
+  font-size: 12px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.more {
+  appearance: none;
+  align-self: flex-start;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+
+.heading {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 4px 12px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.check input {
+  accent-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.actions button {
+  appearance: none;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.actions button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}

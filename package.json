@@ -18,6 +18,7 @@
     "gen:srd": "vite-node scripts/gen-srd-activities.js",
     "gen:srd-bundle": "vite-node scripts/gen-srd-bundle.js",
     "gen:icons": "node scripts/gen-icons.js",
+    "gen:pdf-fonts": "python scripts/gen-pdf-fonts.py",
     "check:keys": "vite-node scripts/check-species-keys.js",
     "check:uuids": "vite-node scripts/check-compendium-uuids.js",
     "check:comments": "node scripts/check-comments.js",

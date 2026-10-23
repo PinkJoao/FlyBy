@@ -90,6 +90,7 @@ import SpellbookTab from '../components/builder/SpellbookTab';
 import styles from './Builder.module.css';
 import { useBackLayer } from '../hooks/useBack';
 import Icon from '../components/common/Icon';
+import { showPdfExport } from '../components/common/pdfExportDialog';
 
 const TABS = ['Species', 'Background', 'Class', 'Inventory', 'Spellbook', 'Biography'];
 
@@ -337,10 +338,11 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
 
   const exportFoundry = () => download(assembleFoundryActor(character, db), '.json');
-  const exportPdf = async () => {
-    const { exportCharacterPdf } = await import('../pdf/exportPdf');
-    await exportCharacterPdf(character, derived, db);
-  };
+  const exportPdf = () =>
+    showPdfExport(async (options) => {
+      const { exportCharacterPdf } = await import('../pdf/exportPdf');
+      await exportCharacterPdf(character, derived, db, options);
+    });
 
   const pickSpecies = (race) =>
     save({ ...character, species: { id: race.name.toLowerCase(), source: race.source, choices: {}, lineage: null } });

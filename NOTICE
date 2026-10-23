@@ -74,11 +74,13 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-4. Fonts of the Parchment theme (SIL Open Font License 1.1)
------------------------------------------------------------
+4. Fonts of the Parchment theme and the PDF sheet (SIL Open Font License 1.1)
+---------------------------------------------------------------------------
 
 Files: the Cinzel and Alegreya font files bundled into the built app (from the
-@fontsource-variable/cinzel and @fontsource-variable/alegreya packages).
+@fontsource-variable/cinzel and @fontsource-variable/alegreya packages), and the
+static instances of the same fonts in src/pdf/fonts/, generated from those
+packages by scripts/gen-pdf-fonts.py and embedded in the PDF sheet.
 
 Cinzel: Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel)
 Alegreya: Copyright 2011 The Alegreya Project Authors (https://github.com/huertatipografica/Alegreya)

@@ -8,13 +8,14 @@
 //
 // FUNÇÕES
 //   safeName(character): o nome de arquivo.
-//   exportCharacterPdf(character, derived, db): o PDF preenchido (uma ficha por
-//     classe).
+//   exportCharacterPdf(character, derived, db, options): registra as fontes, gera
+//     a ficha com as opções do jogador (DDL-0105) e baixa.
 // -----------------------------------------------------------------------------
 
 import { pdf } from '@react-pdf/renderer';
 import CharacterSheet from './CharacterSheetDoc';
 import { buildSheetModel } from './sheetModel';
+import { registerPdfFonts } from './fonts';
 
 /** Um nome de arquivo seguro. */
 const safeName = (character) => (character.meta?.name || 'character').replace(/[^\w.-]+/g, '_');
@@ -24,9 +25,11 @@ const safeName = (character) => (character.meta?.name || 'character').replace(/[
  * @param {object} character
  * @param {object} derived
  * @param {object} db
+ * @param {object} [options] as opções do pdfOptions
  */
-export async function exportCharacterPdf(character, derived, db) {
-  const model = buildSheetModel(character, derived, db);
+export async function exportCharacterPdf(character, derived, db, options) {
+  registerPdfFonts();
+  const model = buildSheetModel(character, derived, db, options);
   const blob = await pdf(<CharacterSheet model={model} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

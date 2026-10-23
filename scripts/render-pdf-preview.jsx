@@ -21,13 +21,19 @@
 //     lista de features da ficha.
 // -----------------------------------------------------------------------------
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { renderToFile } from '@react-pdf/renderer';
 import CharacterSheet from '../src/pdf/CharacterSheetDoc';
 import { createCharacter, createClassEntry, createInventoryItem } from '../src/schema/character';
 import { deriveFromDb } from '../src/engine/resolve';
 import { buildSheetModel } from '../src/pdf/sheetModel';
 import { loadDb } from './lib/loadDb';
+import { registerPdfFonts } from '../src/pdf/fonts';
+import { applyPreset } from '../src/pdf/pdfOptions';
+import { foundryToCharacter } from '../src/engine/foundryImport';
+
+const ROOT = join(import.meta.dirname, '..');
 
 function previewCharacter() {
   const c = createCharacter({ name: 'Lyra of the Vale' });
@@ -102,14 +108,28 @@ function previewCharacter() {
   return c;
 }
 
+registerPdfFonts((url) => join(ROOT, url));
 mkdirSync('pdf-preview', { recursive: true });
-await renderToFile(<CharacterSheet />, 'pdf-preview/sheet.pdf');
-console.log('OK: pdf-preview/sheet.pdf (blank)');
 
 const db = loadDb();
 const character = previewCharacter();
 const derived = deriveFromDb(character, db);
-const model = buildSheetModel(character, derived, db);
-console.log('sheets:', model.sheets.map((s) => s.classText || '(no class)').join(' | '));
-await renderToFile(<CharacterSheet model={model} />, 'pdf-preview/sheet-filled.pdf');
-console.log('OK: pdf-preview/sheet-filled.pdf');
+const variants = [
+  ['sheet-parchment-complete', { ...applyPreset({}, 'complete'), theme: 'parchment' }],
+  ['sheet-white-compact', { ...applyPreset({}, 'compact'), theme: 'white' }],
+  ['sheet-default', {}],
+];
+for (const [name, options] of variants) {
+  const model = buildSheetModel(character, derived, db, options);
+  await renderToFile(<CharacterSheet model={model} />, `pdf-preview/${name}.pdf`);
+  console.log(`OK: pdf-preview/${name}.pdf`);
+}
+
+const premade = join(ROOT, 'DnD Source Material/Character Sheets in JSON/Standard Premade Characters/fvtt-Actor-zanna-ZannaLv170000000.json');
+if (existsSync(premade)) {
+  const imported = foundryToCharacter(JSON.parse(readFileSync(premade, 'utf8')), db);
+  const zanna = imported.character ?? imported;
+  const model = buildSheetModel(zanna, deriveFromDb(zanna, db), db, { ...applyPreset({}, 'complete'), theme: 'white' });
+  await renderToFile(<CharacterSheet model={model} />, 'pdf-preview/premade-zanna17-complete.pdf');
+  console.log('OK: pdf-preview/premade-zanna17-complete.pdf');
+}

@@ -4,11 +4,13 @@
 // O QUE FAZ
 //   A referência casa com o identificador exportado, não com o slug do título
 //   (TC-0068; o Wild Shape é o caso), e um traço de espécie sem classId cai na
-//   tabela plana.
+//   tabela plana. A reserva da prosa (DDL-0106): por classe e plana, nunca com
+//   pool na activity, e de precedência mais baixa no item exportado.
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { featureUses } from './foundryFeatureUses';
+import { featureUses, proseUses, firstUses, NOT_A_POOL } from './foundryFeatureUses';
+import { buildSpeciesTraitItems } from './foundryItems';
 
 describe('featureUses', () => {
   it('feature de escala → max @scale.<class>.<slug> + recovery', () => {
@@ -48,5 +50,42 @@ describe('featureUses', () => {
   it('feature sem recurso nenhum → null (case-insensitive)', () => {
     expect(featureUses('Extra Attack', 'fighter')).toBeNull();
     expect(featureUses('SECOND WIND', 'fighter')).not.toBeNull();
+  });
+});
+
+describe('proseUses (o pool que só a prosa declara)', () => {
+  it('traço e talento pela tabela plana; feature pela classe', () => {
+    expect(proseUses('Healing Hands')).toEqual({ max: '1', spent: 0, recovery: [{ period: 'lr', type: 'recoverAll' }] });
+    expect(proseUses('Fey Step').max).toBe('@prof');
+    expect(proseUses('Accursed Specter', 'warlock').max).toBe('1');
+    expect(proseUses('Accursed Specter')).toBeNull();
+    expect(proseUses("Hexblade's Curse", 'warlock').recovery).toEqual([{ period: 'sr', type: 'recoverAll' }]);
+  });
+
+  it('nunca soma um pool no item quando a activity já tem o dela (a forma do SRD)', () => {
+    expect(proseUses('Healing Hands', null, { a: { uses: { max: '1' } } })).toBeNull();
+    expect(proseUses('Healing Hands', null, { a: { uses: { max: '' } } })).not.toBeNull();
+  });
+
+  it('o que não é pool próprio fica de fora', () => {
+    expect(NOT_A_POOL.has('superior inspiration')).toBe(true);
+    expect(proseUses('Superior Inspiration', 'bard')).toBeNull();
+  });
+
+  it('firstUses: o primeiro com máximo; sem nenhum, o primeiro que existe', () => {
+    const overlayEmpty = { max: '', spent: 0, recovery: [{ period: 'lr', type: 'recoverAll' }] };
+    expect(firstUses(null, overlayEmpty, proseUses('Healing Hands')).max).toBe('1');
+    expect(firstUses({ max: '@prof' }, proseUses('Healing Hands')).max).toBe('@prof');
+    expect(firstUses(null, overlayEmpty, null)).toBe(overlayEmpty);
+    expect(firstUses(null, undefined)).toEqual({ max: '', spent: 0, recovery: [] });
+  });
+
+  it('o Healing Hands do Aasimar sai com o pool no export', () => {
+    const aasimar = {
+      name: 'Aasimar', source: 'XPHB',
+      entries: [{ type: 'entries', name: 'Healing Hands', entries: ["Once you use this trait, you can't use it again until you finish a Long Rest."] }],
+    };
+    const [item] = buildSpeciesTraitItems(aasimar, null);
+    expect(item.system.uses).toMatchObject({ max: '1', recovery: [{ period: 'lr', type: 'recoverAll' }] });
   });
 });

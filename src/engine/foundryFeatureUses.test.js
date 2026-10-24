@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { featureUses, proseUses, firstUses, NOT_A_POOL } from './foundryFeatureUses';
+import { featureUses, featUses, proseUses, firstUses, NOT_A_POOL, NO_POOL } from './foundryFeatureUses';
 import { buildSpeciesTraitItems } from './foundryItems';
 
 describe('featureUses', () => {
@@ -87,5 +87,32 @@ describe('proseUses (o pool que só a prosa declara)', () => {
     };
     const [item] = buildSpeciesTraitItems(aasimar, null);
     expect(item.system.uses).toMatchObject({ max: '1', recovery: [{ period: 'lr', type: 'recoverAll' }] });
+  });
+});
+
+describe('pool compartilhado e pools por classe (TC-0093, TC-0094)', () => {
+  it('o pool mora no DONO, pela escala da subclasse, com a recuperação do XPHB', () => {
+    expect(featureUses('Psionic Power', 'fighter')).toMatchObject({ max: '@scale.psi-warrior.die.number', recovery: [{ period: 'lr', type: 'recoverAll' }, { period: 'sr', type: 'formula', formula: '1' }] });
+    expect(featureUses('Psionic Power', 'rogue').max).toBe('@scale.soulknife.die.number');
+    expect(featureUses('Combat Superiority', 'fighter')).toMatchObject({ max: '@scale.battle-master.superiority.number', recovery: [{ period: 'sr', type: 'recoverAll' }] });
+    expect(featureUses('Warrior of the Gods', 'barbarian').max).toBe('@scale.zealot.warrior-of-the-gods');
+  });
+
+  it('a sub-feature que gasta o pool do dono não tem pool próprio, mesmo com o overlay copiando', () => {
+    expect(featureUses('Protective Field', 'fighter')).toBe(NO_POOL);
+    const overlayCopy = { max: '@scale.psi-warrior.die.number', spent: 0, recovery: [] };
+    expect(firstUses(featureUses('Protective Field', 'fighter'), overlayCopy, null)).toEqual({ max: '', spent: 0, recovery: [] });
+  });
+
+  it('sem NO_POOL na frente, o firstUses segue como antes', () => {
+    const a = { max: '2', spent: 0, recovery: [] };
+    expect(firstUses(null, a)).toBe(a);
+    expect(firstUses(null, { max: '', spent: 0, recovery: [] }).max).toBe('');
+  });
+
+  it('o talento ganha o pool curado (Ritual Caster, Boon of Recovery)', () => {
+    expect(featUses('Ritual Caster')).toMatchObject({ max: '1', recovery: [{ period: 'lr', type: 'recoverAll' }] });
+    expect(featUses('Boon of Recovery').max).toBe('10');
+    expect(featUses('Alert')).toBeNull();
   });
 });

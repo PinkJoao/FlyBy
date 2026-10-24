@@ -25,6 +25,7 @@
 //   optionalFeatureChoices(classObj, subclass, level): invocations, metamagic,
 //     maneuvers e afins, na classe e na subclasse.
 //   pruneChoicesAboveLevel(bag, level), dropSubclassGrants(bag): podas do bag.
+//   isOptionalFeatureId(id): o id é de uma escolha de optional feature?
 //   cleanupClassEntry(cls, ctx): a limpeza central em toda mudança de nível.
 //
 // DECISÕES E ARMADILHAS
@@ -71,6 +72,13 @@
 //     Weapon Mastery e optional features ao count, e reverte a subclasse (com os
 //     grants `sub:`) abaixo do nível dela. Recebe objetos resolvidos para não
 //     importar o resolve (ciclo).
+//   - Os ids de optional feature (`optfeat@MV:B`, `feat@fs@FS:B`) não têm nível
+//     nem o prefixo `sub:`, então nem a poda por nível nem a da subclasse os veem.
+//     A regra é a da OFERTA: a escolha que optionalFeatureChoices não oferece mais
+//     no nível novo sai inteira, com o sub-bag (TC-0096). Varrido em 2026-10-24
+//     sobre as 135 linhas de classe: Battle Master, Arcane Archer, Rune Knight e
+//     College of Swords abaixo do nível da subclasse, e a Metamagic do Sorcerer
+//     no nível 1; nenhuma escolha oferecida é tocada.
 // -----------------------------------------------------------------------------
 
 const FS_EXTRA = { paladin: 'FS:P', ranger: 'FS:R' };
@@ -500,6 +508,9 @@ export function pruneChoicesAboveLevel(bag, level) {
   return out;
 }
 
+/** O id é de uma escolha de optional feature (`optfeat@`, `feat@fs@`)? */
+const isOptionalFeatureId = (id) => id.startsWith('optfeat@') || id.startsWith('feat@fs@');
+
 /** Remove os picks concedidos pela subclasse (ids `sub:`). */
 const dropSubclassGrants = (bag) =>
   Object.fromEntries(Object.entries(bag ?? {}).filter(([id]) => !id.startsWith('sub:')));
@@ -530,7 +541,10 @@ export function cleanupClassEntry(cls, { classObj, subclassObj, subclassLevel = 
     }
   }
   if (classObj) {
-    for (const oc of optionalFeatureChoices(classObj, effSub, level)) {
+    const offered = optionalFeatureChoices(classObj, effSub, level);
+    const offeredIds = new Set(offered.map((oc) => oc.id));
+    choices = Object.fromEntries(Object.entries(choices).filter(([id]) => !isOptionalFeatureId(id) || offeredIds.has(id)));
+    for (const oc of offered) {
       const e = choices[oc.id];
       if (e?.picks && e.picks.length > oc.count) {
         choices = { ...choices, [oc.id]: { ...e, picks: e.picks.slice(0, oc.count) } };

@@ -1,0 +1,225 @@
+/* =============================================================================
+ * PlayHistory.module.css: o histórico de ações do play mode
+ * =============================================================================
+ * CLASSES
+ *   .list, .day, .empty: a lista, o separador de dia e o vazio.
+ *   .card, .undone: o cartão de um evento; o desfeito fica esmaecido.
+ *   .head, .kind, .title, .time: o cabeçalho do cartão.
+ *   .body, .total, .tags, .tag, .crit, .fumble: o total e as marcas.
+ *   .lines: o resumo de um evento de vida ou descanso.
+ *   .parts, .part, .partLabel, .partFormula, .partTotal: as partes da rolagem.
+ *   .dice, .die, .dropped, .nat20, .nat1: os dados.
+ *   .action, .actionRow: os botões do cartão (rolar o dano, o ataque da magia).
+ * -------------------------------------------------------------------------- */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.day {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.undone {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.kind {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.time {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.total {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.crit {
+  border-color: var(--success);
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.fumble {
+  border-color: var(--danger);
+  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.lines {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.part {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.partLabel {
+  color: var(--text);
+}
+
+.partFormula {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.partTotal {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.dice {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.die {
+  min-width: 22px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-h);
+}
+
+.dropped {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.nat20 {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.nat1 {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.action {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.action:hover {
+  border-color: var(--accent);
+}

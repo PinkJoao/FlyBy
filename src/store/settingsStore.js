@@ -14,6 +14,10 @@
 //   (src/theme.js). ATENÇÃO à chave KEY: o script inline do index.html a lê.
 //   pdf: as opções da ficha PDF (src/pdf/pdfOptions.js, DDL-0105), a última
 //   escolha do jogador; normalizadas na leitura, então um valor antigo não quebra.
+//   playHistory: a janela do histórico do play mode ({ maxEvents, maxAgeDays },
+//   engine/playState); o que passa dela é dobrado no estado-base (DDL-0108).
+//   experimental: os recursos ainda em desenvolvimento ligados (DDL-0111); hoje,
+//   o play mode. Desligado por padrão.
 //
 // FUNÇÕES
 //   load(), persist(state): leitura e escrita no localStorage. Sem localStorage
@@ -21,29 +25,32 @@
 //   useSettingsStore: o store. setGuidance(value) muda a preferência;
 //     dismissSamsungHint() esconde o aviso de instalação do Samsung Internet;
 //     setTheme(value) grava o tema e o aplica no documento; setPdfOptions(opts)
-//     grava as opções da ficha PDF.
+//     grava as opções da ficha PDF; setPlayHistory(patch) muda a janela do
+//     histórico do play mode; setExperimental(on) liga ou desliga os recursos em
+//     desenvolvimento.
 // -----------------------------------------------------------------------------
 
 import { create } from 'zustand';
 import { applyTheme } from '../theme';
 import { normalizePdfOptions } from '../pdf/pdfOptions';
+import { normalizeLimits } from '../engine/playState';
 
 const KEY = 'builder5e:settings';
 
-const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false, theme: 'system' };
+const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false, theme: 'system', experimental: false };
 
 function load() {
   try {
     const saved = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
-    return { ...saved, pdf: normalizePdfOptions(saved.pdf) };
+    return { ...saved, pdf: normalizePdfOptions(saved.pdf), playHistory: normalizeLimits(saved.playHistory) };
   } catch {
-    return { ...DEFAULTS, pdf: normalizePdfOptions() };
+    return { ...DEFAULTS, pdf: normalizePdfOptions(), playHistory: normalizeLimits() };
   }
 }
 
 function persist(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf }));
+    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf, playHistory: state.playHistory, experimental: !!state.experimental }));
   } catch {
     // localStorage indisponível (modo privado): as preferências ficam só em memória.
   }
@@ -68,6 +75,18 @@ const useSettingsStore = create((set, get) => ({
   /** Grava as opções da ficha PDF (normalizadas). */
   setPdfOptions: (opts) => {
     set({ pdf: normalizePdfOptions(opts) });
+    persist(get());
+  },
+
+  /** Muda a janela do histórico do play mode (normalizada). */
+  setPlayHistory: (patch) => {
+    set({ playHistory: normalizeLimits({ ...get().playHistory, ...patch }) });
+    persist(get());
+  },
+
+  /** Liga ou desliga os recursos em desenvolvimento (o play mode). */
+  setExperimental: (on) => {
+    set({ experimental: !!on });
     persist(get());
   },
 

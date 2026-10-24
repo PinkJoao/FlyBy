@@ -11,6 +11,7 @@
 // FUNÇÕES
 //   clamp(n, lo, hi), isMobile(): utilitários.
 //   resolveText(value, mobile): o texto do dispositivo.
+//   findAnchor(key): o primeiro alvo VISÍVEL com a chave, ou null.
 //   place(rect, tw, th, vw, vh, hint, mobile): a posição do balão (no mobile,
 //     vertical; no desktop, a dica e depois os quatro lados por espaço).
 //   TutorialOverlay(): o overlay.
@@ -25,6 +26,11 @@
 //   - O alvo é procurado com tentativas em rAF (pode ainda não estar no DOM), e há
 //     re-medições atrasadas: um alvo que ANIMA ao aparecer (a gaveta de filtros,
 //     0.25s) só assenta depois. Nenhum setState síncrono no corpo do efeito.
+//   - Uma chave pode marcar dois elementos que se alternam pela largura (o
+//     histórico do play mode: coluna no desktop, botão no celular); findAnchor
+//     acende o que tem tamanho. Escondido (display none), o rect seria 0x0 no canto.
+//   - O scrollIntoView vai sem `inline`: centrar na horizontal rolava o main do
+//     app (overflow hidden) para o lado, e a tela ficava torta depois do tour.
 // -----------------------------------------------------------------------------
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -55,6 +61,16 @@ function resolveText(value, mobile) {
   if (value == null) return null;
   if (typeof value === 'string') return value;
   return mobile ? value.mobile ?? value.desktop : value.desktop ?? value.mobile;
+}
+
+/** O primeiro alvo visível com a chave (dois podem alternar pela largura). */
+function findAnchor(key) {
+  if (!key) return null;
+  const all = [...document.querySelectorAll(`[data-tour="${key}"]`)];
+  return all.find((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 || r.height > 0;
+  }) ?? null;
 }
 
 /** A posição do balão ao redor do recorte. */
@@ -146,7 +162,7 @@ function Spotlight({ step, index, total, onNext, onBack, onSkip }) {
         setRect(null);
         return;
       }
-      const el = document.querySelector(`[data-tour="${step.anchor}"]`);
+      const el = findAnchor(step.anchor);
       if (!el) {
         setRect(null);
         return;
@@ -156,13 +172,13 @@ function Spotlight({ step, index, total, onNext, onBack, onSkip }) {
     };
     const tick = () => {
       if (done) return;
-      const el = step.anchor ? document.querySelector(`[data-tour="${step.anchor}"]`) : null;
+      const el = findAnchor(step.anchor);
       if (step.anchor && !el && tries < MAX_TRIES) {
         tries += 1;
         raf = requestAnimationFrame(tick);
         return;
       }
-      if (el) el.scrollIntoView({ block: 'center', inline: 'center' });
+      if (el) el.scrollIntoView({ block: 'center' });
       raf = requestAnimationFrame(() => {
         done = true;
         measure();

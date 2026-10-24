@@ -8,7 +8,7 @@
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { buildClassAdvancement, scaleValueAdvancements } from './foundryAdvancement';
+import { buildClassAdvancement, scaleValueAdvancements, curatedSubclassScales, curatedRaceScales } from './foundryAdvancement';
 
 const fighterObj = {
   name: 'Fighter',
@@ -213,5 +213,19 @@ describe('classRestriction (primary/secondary) - gabarito Riswynn/Merric', () =>
     const sk = solo.filter((a) => a.type === 'Trait' && a.title === 'Skill Proficiencies');
     expect(sk).toHaveLength(1);
     expect(sk[0].classRestriction).toBe('primary');
+  });
+});
+
+describe('ScaleValue curados de subclasse e espécie (TC-0094, TC-0095)', () => {
+  it('o pool do Warrior of the Gods mora no Zealot', () => {
+    const [adv] = curatedSubclassScales('barbarian', 'Zealot');
+    expect(adv.configuration).toMatchObject({ identifier: 'warrior-of-the-gods', scale: { 3: { value: 4 }, 17: { value: 7 } } });
+    expect(curatedSubclassScales('barbarian', 'Berserker')).toEqual([]);
+  });
+
+  it('o sopro do Dragonborn (Gem) é dado, e a linhagem herda da base', () => {
+    const [adv] = curatedRaceScales({ name: 'Dragonborn (Gem; Amethyst)', _baseName: 'Dragonborn (Gem)', source: 'FTD' });
+    expect(adv.configuration).toMatchObject({ identifier: 'breath', type: 'dice', scale: { 1: { number: 1, faces: 10 }, 17: { number: 4, faces: 10 } } });
+    expect(curatedRaceScales({ name: 'Dwarf', source: 'XPHB' })).toEqual([]);
   });
 });

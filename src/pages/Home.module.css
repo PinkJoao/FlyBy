@@ -16,6 +16,7 @@
  *   .list, .card*, .avatar, .avatarImg, .info, .name, .sub: os cards; o retrato
  *     cabe em qualquer proporção, sem distorcer nem cortar.
  *   .menuTrigger: o gatilho do menu (substituiu os três botões soltos).
+ *   .playBtn: o atalho do play mode no card (o d20).
  *   .primary, .muted, .empty: o estado vazio, centralizado.
  *   .attribution: a atribuição discreta (fonte de dados e licença SRD).
  *   .installHint, .installHintText, .installHintActions, .installHintLink,
@@ -300,6 +301,12 @@
 .cardActions button:hover {
   background: var(--accent-bg);
   color: var(--text-h);
+}
+.playBtn {
+  font-size: 19px;
+  line-height: 1;
+  display: inline-grid;
+  place-items: center;
 }
 .menuTrigger {
   font-size: 18px;

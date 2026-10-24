@@ -17,6 +17,8 @@
 //     type, scale, identifier), progressionScale(values): as peças de ScaleValue.
 //   srdScaleValues(classObj): as escalas que o SRD publica e a tabela não dá.
 //   scaleValueAdvancements(classObj, db): todos os ScaleValue da classe.
+//   curatedSubclassScales(classId, shortName), curatedRaceScales(raceObj): os
+//     ScaleValue curados de uma subclasse e de uma espécie.
 //   tableScaleValues(classObj): os das colunas de RECURSO da tabela.
 //   traitAdvancement(title, opts), sameProfList(a, b): um Trait.
 //   buildClassAdvancement(classObj, db): o advancement derivável.
@@ -30,6 +32,12 @@
 //     toda fórmula que os cite quebra (TC-0062); (3) as colunas da tabela. Uma
 //     entrada da tabela sai quando já há uma de mesmo título OU de mesma escala
 //     (o "Bardic Die" e o "Inspiration Die"), normalizando 1dN.
+//   - CURATED_SUBCLASS_SCALES e CURATED_RACE_SCALES (TC-0094, TC-0095): escalas
+//     que uma fórmula cita e nem o SRD nem o overlay põem no item: o pool do
+//     Warrior of the Gods do Zealot (4 d12, 5 no 6, 6 no 12, 7 no 17; o overlay a
+//     põe no item da FEATURE, que o dnd5e não lê como escala) e o dano do sopro do
+//     Dragonborn (Gem) do FTD (1d10, 2d10 no 5, 3d10 no 11, 4d10 no 17), ambos
+//     conferidos na prosa. Precedem o overlay pelo identifier.
 //   - srdScaleValues, com os títulos e ids dos premades: "Max Prepared Spells"
 //     (`max-prepared`, que o `preparation.formula` cita), "Cantrips Known",
 //     "Weapon Masteries Known" (`mastery`, a contagem; as escolhas seguem nos
@@ -65,6 +73,18 @@ const CURATED_SCALE_VALUES = {
   ],
   cleric: [
     { title: 'Divine Spark', type: 'number', scale: { 2: { value: 1 }, 7: { value: 2 }, 13: { value: 3 }, 18: { value: 4 } } },
+  ],
+};
+
+const CURATED_SUBCLASS_SCALES = {
+  'barbarian|zealot': [
+    { title: 'Warrior of the Gods', identifier: 'warrior-of-the-gods', type: 'number', scale: { 3: { value: 4 }, 6: { value: 5 }, 12: { value: 6 }, 17: { value: 7 } } },
+  ],
+};
+
+const CURATED_RACE_SCALES = {
+  'dragonborn (gem)|ftd': [
+    { title: 'Breath Weapon', identifier: 'breath', type: 'dice', scale: { 1: { number: 1, faces: 10 }, 5: { number: 2, faces: 10 }, 11: { number: 3, faces: 10 }, 17: { number: 4, faces: 10 } } },
   ],
 };
 
@@ -112,6 +132,18 @@ function scaleAdv(title, type, scale, identifier = '') {
     title,
     configuration: { identifier, type, distance: { units: type === 'distance' ? 'ft' : '' }, scale },
   };
+}
+
+/** Os ScaleValue curados de uma subclasse. */
+export function curatedSubclassScales(classId, shortName) {
+  return (CURATED_SUBCLASS_SCALES[`${norm(classId)}|${norm(shortName)}`] ?? []).map((c) => scaleAdv(c.title, c.type, c.scale, c.identifier));
+}
+
+/** Os ScaleValue curados de uma espécie (a linhagem herda os da base). */
+export function curatedRaceScales(raceObj) {
+  if (!raceObj) return [];
+  const key = `${norm(raceObj._baseName ?? raceObj.name)}|${norm(raceObj._baseSource ?? raceObj.source)}`;
+  return (CURATED_RACE_SCALES[key] ?? []).map((c) => scaleAdv(c.title, c.type, c.scale, c.identifier));
 }
 
 /** Uma progressão de 20 níveis como breakpoints. */

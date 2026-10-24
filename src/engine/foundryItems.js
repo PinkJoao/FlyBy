@@ -27,6 +27,8 @@
 //   norm(s): string normalizada para comparação.
 //   randomFoundryId(): id de 16 caracteres no formato do Foundry.
 //   keyById(list): advancement como objeto indexado por `_id`.
+//   withCurated(curated, overlay): os ScaleValue curados e os do overlay que não
+//     repetem um identifier curado (o curado ganha, foundryAdvancement).
 //   itemStats(compendiumSource), sourceBlock(book): blocos padrão do item.
 //   overlaySystemExtras(system): campos de `system` do overlay, sem `uses`.
 //   slugify(name), stripTags(s), entriesToHtml(entries): texto para o Foundry.
@@ -260,7 +262,7 @@ import { classGrantChoices, classGrantGroups } from './classFeatureGrants';
 import { parseClass, parseFeatureRef } from './classData';
 import { classLevelChoices, classToolChoices, subclassFeatureChoices, optionalFeatureChoices, optionalFeatureCount } from './classFeatureChoices';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
-import { buildClassAdvancement } from './foundryAdvancement';
+import { buildClassAdvancement, curatedSubclassScales, curatedRaceScales } from './foundryAdvancement';
 import { effectChangesFor, targetEffectFor } from './foundryEffects';
 import {
   overlayRaceEffects,
@@ -273,7 +275,7 @@ import {
   overlaySubclassFeatureEntry,
   overlayMechanics,
 } from './foundryOverlay';
-import { featureUses, proseUses, firstUses } from './foundryFeatureUses';
+import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
 import { featureActivities, srdFeatureMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
@@ -392,6 +394,12 @@ const SYSTEM_VERSION = '5.3.3';
  */
 function keyById(list) {
   return Object.fromEntries((list ?? []).map((a) => [a._id, a]));
+}
+
+/** Os ScaleValue curados primeiro; do overlay, só os de identifier novo. */
+function withCurated(curated, overlay) {
+  const ids = new Set(curated.map((a) => a.configuration?.identifier).filter(Boolean));
+  return [...curated, ...(overlay ?? []).filter((a) => !ids.has(a.configuration?.identifier))];
 }
 
 /** Bloco `_stats` padrão. */
@@ -1049,7 +1057,7 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
       source: sourceBlock(featData.source),
       requirements: '',
       properties: [],
-      uses: firstUses(featOverlay.system.uses, proseUses(featData.name, null, featOverlay.activities)),
+      uses: firstUses(featUses(featData.name), featOverlay.system.uses, proseUses(featData.name, null, featOverlay.activities)),
       prerequisites: { level: null, repeatable: !!featData.repeatable, items: [] },
       activities: featOverlay.activities,
       advancement: keyById(advancement),
@@ -1748,7 +1756,8 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
 
   const advancement = [
     { _id: randomFoundryId(), type: 'Size', configuration: { sizes: [sizeCode] }, level: 0, title: '', hint: '', value: { size: sizeCode }, flags: {} },
-    ...overlayRaceAdvancement(db, raceObj).map((a) => ({ _id: randomFoundryId(), level: 0, hint: '', value: {}, flags: {}, ...a })),
+    ...withCurated(curatedRaceScales(raceObj), overlayRaceAdvancement(db, raceObj))
+      .map((a) => ({ _id: randomFoundryId(), level: 0, hint: '', value: {}, flags: {}, ...a })),
   ];
 
   const resists = (raceObj.resist ?? []).filter((r) => typeof r === 'string');
@@ -1913,9 +1922,10 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
         ...itemGrantAdvancements(featureItems, 'Subclass Features'),
         ...(opts.futureGrants ?? []),
         ...(opts.choiceTraits ?? []),
-        ...overlaySubclassAdvancement(opts.db, {
-          className: classId, shortName: subclass.shortName, source: subclass.source,
-        }).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
+        ...withCurated(
+          curatedSubclassScales(classId, subclass.shortName),
+          overlaySubclassAdvancement(opts.db, { className: classId, shortName: subclass.shortName, source: subclass.source }),
+        ).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
         ...(opts.itemChoices ?? []).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
       ]),
       source: sourceBlock(subclass.source),

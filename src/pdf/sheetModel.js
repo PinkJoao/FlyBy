@@ -20,12 +20,10 @@
 //
 // FUNÇÕES
 //   signed(n), timeAbbrev(spell), speciesLabel(raceObj, fallback), norm(s): texto.
-//   propCodes(raw), weaponProficient(entry, weaponProfs), weaponRows(character,
-//     derived, opts): a tabela de armas (equipadas primeiro).
-//   scaledDice(raw, level), cantripAttackRows(spellcasting, level): os cantrips
-//     de ataque, com o dado do nível.
+//   weaponRows(character, derived, opts): a tabela de armas (equipadas primeiro).
+//   cantripAttackRows(spellcasting, level): os cantrips de ataque, com o dado do
+//     nível.
 //   asiText(subBag), pickName(p): os picks em texto.
-//   textDice(raw): o primeiro dado de dano do texto (cantrip sem escala).
 //   featureAnnotations(cls, classObj, subObj, db): as escolhas do bag anotadas na
 //     feature que as concedeu.
 //   findOptionalFeature(db, pick): a optional feature escolhida.
@@ -43,10 +41,10 @@
 //   foreignText(html): a descrição de um item importado, sem HTML nem enrichers.
 //   isMagicItem(e), itemRow(e, db, opts), buildInventory(character, derived, db,
 //     opts): o inventário.
-//   recoveryText(recovery), scaleValues(actor, totalLevel), evalUses(formula,
-//     ctx), resourceRows(actor, derived), characterResources(character, derived,
-//     db): os recursos com usos e a recuperação deles.
+//   resourceRows(actor, derived), characterResources(character, derived, db): os
+//     recursos com usos e a recuperação deles.
 //   buildSheetModel(character, derived, db, options): o modelo.
+//   evalUses e recoveryText são reexportados do engine/playCatalog.
 //
 // DECISÕES E ARMADILHAS
 //   - featureAnnotations lê os ids do bag (featopt@, optfeat@, feat@fs@,
@@ -67,18 +65,18 @@
 //   - Cada linha de magia concedida leva o DC e o ataque da PRÓPRIA origem
 //     ("Drow (DC 13/+5)"). Os slots do pacto ficam numa linha própria agora que a
 //     ficha é nossa; slotTotals (o pacto somado) segue para quem quiser o total.
-//   - Iniciativa: Destreza, mais o PB com o Alert (o 2024 dá "Initiative
-//     Proficiency"; o app não deriva iniciativa em outro lugar).
+//   - Ataques, recursos, iniciativa e dados de vida vêm do CATÁLOGO DE JOGO
+//     (engine/playCatalog, DDL-0108): a ficha impressa e o play mode leem a mesma
+//     fonte, e aqui só se formata o texto das linhas.
 //   - Item custom vem de ator importado com a descrição em HTML do Foundry
 //     (`@UUID[...]{Nome}`, `&Reference[Nome]`, `[[/r 1d4]]`): sai como texto, com
 //     o nome e o dado; enricher sem rótulo (`@Embed[...]`, `@UUID[...]` puro) some,
 //     senão o caminho do compêndio vazava na ficha.
-//   - Os recursos NÃO têm regra própria aqui: vêm do `system.uses` que o export
-//     do Foundry já deriva (registro curado, SRD, overlay; foundryFeatureUses), e
-//     evalUses só troca @scale, @abilities, @prof e @classes pelos números da
-//     ficha e faz a conta. Fórmula com o que não resolve fica de fora, em vez de
-//     um número inventado. Quando o SRD guarda o pool na ACTIVITY (Natural
-//     Recovery, Tireless), a linha sai dela, uma por activity com pool.
+//   - Os recursos NÃO têm regra própria aqui: o catálogo os lê do `system.uses`
+//     do ator montado (registro curado, SRD, overlay; foundryFeatureUses), e
+//     resourceRows só tira o nome repetido e escreve a recuperação. Fórmula com o
+//     que não resolve fica de fora, em vez de um número inventado. Quando o SRD
+//     guarda o pool na ACTIVITY (Natural Recovery, Tireless), a linha sai dela.
 //   - Dados de vida agregados por face ("Cleric 5 + Warlock 1" dá "6d8").
 // -----------------------------------------------------------------------------
 
@@ -93,7 +91,10 @@ import { optionalFeatureChoices } from '../engine/classFeatureChoices';
 import { collectAbilityPicks } from '../engine/choices';
 import { resolveClassFeatures, resolveSubclassFeatures } from '../engine/foundryItems';
 import { htmlToText } from '../engine/foundryImport';
-import { assembleFoundryActor } from '../engine/foundryActor';
+import {
+  DAMAGE_NAME, weaponAttacks, cantripAttacks, actorResources, safeActor, recoveryText, initiativeBonus, hitDiceByFace,
+} from '../engine/playCatalog';
+export { evalUses, recoveryText } from '../engine/playCatalog';
 import { SKILL_ABILITY } from '../engine/proficiency';
 import { SKILL_LABEL, ABILITY_SHORT } from '../components/builder/labels';
 import raceEntity from '../selector/entities/race';
@@ -110,11 +111,6 @@ const ALIGNMENT_NAME = {
   LG: 'Lawful Good', NG: 'Neutral Good', CG: 'Chaotic Good',
   LN: 'Lawful Neutral', N: 'Neutral', CN: 'Chaotic Neutral',
   LE: 'Lawful Evil', NE: 'Neutral Evil', CE: 'Chaotic Evil',
-};
-
-const DAMAGE_NAME = {
-  A: 'acid', B: 'bludgeoning', C: 'cold', F: 'fire', O: 'force', L: 'lightning',
-  N: 'necrotic', P: 'piercing', I: 'poison', Y: 'psychic', R: 'radiant', S: 'slashing', T: 'thunder',
 };
 
 /** Um modificador com sinal. */
@@ -144,102 +140,35 @@ export function speciesLabel(raceObj, fallback = '') {
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 
-/** Os códigos de propriedade de arma. */
-const propCodes = (raw) =>
-  (raw?.property ?? []).map((p) => String(typeof p === 'string' ? p : p?.uid ?? '').split('|')[0]);
-
-/** O personagem é proficiente com a arma? */
-function weaponProficient(entry, weaponProfs) {
-  const profs = (weaponProfs ?? []).map((w) => w.toLowerCase());
-  const cat = entry.category ? `${entry.category} weapons`.toLowerCase() : null;
-  const name = (entry.raw?.name ?? '').toLowerCase();
-  return profs.some((p) => p === cat || p === name || p === `${name}s`);
-}
-
-/** As linhas de armas, equipadas primeiro. */
+/** As linhas de armas, equipadas primeiro (os ataques do catálogo de jogo). */
 export function weaponRows(character, derived, { max = 12 } = {}) {
-  const weapons = (derived.inventory ?? []).filter((e) => e.group === 'weapon' && e.raw);
-  weapons.sort((a, b) => (b.equipped === true) - (a.equipped === true));
-
-  const masteryPicks = new Set();
-  for (const cls of character.classes ?? []) {
-    for (const entry of Object.values(cls.choices ?? {})) {
-      if (entry?.kind !== 'weapon') continue;
-      for (const p of entry.picks ?? []) masteryPicks.add(String(p).split('|')[0].toLowerCase());
-    }
-  }
-
-  const rows = [];
-  for (const e of weapons.slice(0, max)) {
-    const raw = e.raw;
-    const props = propCodes(raw);
-    const finesse = props.includes('F');
-    const { str = 0, dex = 0 } = derived.modifiers ?? {};
-    const mod = e.kind === 'ranged' ? dex : finesse ? Math.max(str, dex) : str;
-    const magic = Number(raw.bonusWeapon ?? 0) || 0;
-    const prof = weaponProficient(e, derived.weapons) ? derived.proficiencyBonus : 0;
-
-    const dmgBonus = mod + magic;
-    const dmg = raw.dmg1
-      ? `${raw.dmg1}${dmgBonus ? signed(dmgBonus) : ''} ${DAMAGE_NAME[raw.dmgType] ?? raw.dmgType ?? ''}`.trim()
-      : '-';
-
+  return weaponAttacks(character, derived).slice(0, max).map((w) => {
     const notes = [];
-    if (masteryPicks.has(raw.name.toLowerCase()) && raw.mastery?.length) {
-      notes.push(`Mastery: ${String(raw.mastery[0]).split('|')[0]}`);
-    }
-    if (props.includes('T')) notes.push('Thrown');
-    if (raw.dmg2) notes.push(`Versatile ${raw.dmg2}`);
-    if (raw.range) notes.push(`${raw.range} ft`);
-
-    rows.push({
-      name: raw.name,
-      bonus: signed(mod + magic + prof),
-      damage: dmg,
+    if (w.mastery) notes.push(`Mastery: ${w.mastery}`);
+    if (w.thrown) notes.push('Thrown');
+    if (w.versatile) notes.push(`Versatile ${w.versatile}`);
+    if (w.distance) notes.push(`${w.distance} ft`);
+    return {
+      name: w.name,
+      bonus: signed(w.toHit.total),
+      damage: w.damage
+        ? `${w.damage.dice}${w.damage.bonus ? signed(w.damage.bonus) : ''} ${w.damage.types.join('/')}`.trim()
+        : '-',
       notes: notes.join(', '),
-      equipped: e.equipped === true,
-    });
-  }
-  return rows;
+      equipped: w.equipped,
+    };
+  });
 }
 
-/** O dado de um cantrip no nível do personagem ("2d10"). */
-function scaledDice(raw, level) {
-  const list = Array.isArray(raw?.scalingLevelDice) ? raw.scalingLevelDice : raw?.scalingLevelDice ? [raw.scalingLevelDice] : [];
-  const scaling = list[0]?.scaling;
-  if (!scaling) return null;
-  const steps = Object.keys(scaling).map(Number).filter((n) => n <= level).sort((a, b) => b - a);
-  return steps.length ? scaling[steps[0]] : null;
-}
-
-/** O primeiro dado de dano citado no texto ({@damage 1d10}). */
-function textDice(raw) {
-  return JSON.stringify(raw?.entries ?? []).match(/\{@damage ([^}|]+)/)?.[1] ?? null;
-}
-
-/** Os cantrips que atacam ou pedem salvaguarda e causam dano. */
+/** Os cantrips que atacam ou pedem salvaguarda e causam dano, como linhas. */
 function cantripAttackRows(spellcasting, level) {
-  const rows = [];
-  const seen = new Set();
-  for (const origin of spellcasting?.origins ?? []) {
-    for (const s of [...(origin.cantrips ?? []), ...(origin.alwaysPrepared ?? [])]) {
-      const raw = s.raw;
-      if (!raw || raw.level !== 0 || seen.has(raw.name)) continue;
-      const attack = raw.spellAttack?.length;
-      const save = raw.savingThrow?.[0];
-      if (!raw.damageInflict?.length || (!attack && !save)) continue;
-      seen.add(raw.name);
-      const dice = scaledDice(raw, level) ?? textDice(raw) ?? '';
-      rows.push({
-        name: raw.name,
-        bonus: attack ? signed(origin.attackBonus) : `DC ${origin.saveDc ?? ''} ${ABILITY_SHORT[save.slice(0, 3)] ?? save}`.trim(),
-        damage: `${dice} ${raw.damageInflict.join('/')}`.trim(),
-        notes: [rangeLabel(raw).replace(/ feet/, ' ft'), 'Cantrip'].filter(Boolean).join(', '),
-        equipped: false,
-      });
-    }
-  }
-  return rows;
+  return cantripAttacks(spellcasting, level).map((c) => ({
+    name: c.name,
+    bonus: c.attack ? signed(c.attack.bonus) : `DC ${c.save.dc ?? ''} ${ABILITY_SHORT[c.save.ability] ?? c.save.ability}`.trim(),
+    damage: `${c.damage.dice} ${c.damage.types.join('/')}`.trim(),
+    notes: [c.rangeText.replace(/ feet/, ' ft'), 'Cantrip'].filter(Boolean).join(', '),
+    equipped: false,
+  }));
 }
 
 /** "+2 Str, +1 Con" a partir do sub-bag de um ASI. */
@@ -708,107 +637,20 @@ function buildInventory(character, derived, db, opts) {
   };
 }
 
-const PERIOD = {
-  lr: 'Long Rest', sr: 'Short Rest', day: 'Dawn', dawn: 'Dawn', dusk: 'Dusk',
-  turn: 'Turn', round: 'Round', initiative: 'Initiative',
-};
-
-/** A recuperação de um pool ("Long Rest, 1 on Short Rest"). */
-export function recoveryText(recovery) {
-  const list = recovery ?? [];
-  const all = list.filter((r) => r.type === 'recoverAll').map((r) => PERIOD[r.period] ?? r.period);
-  const partial = list
-    .filter((r) => r.type === 'formula' && r.formula)
-    .map((r) => `${r.formula} on ${PERIOD[r.period] ?? r.period}`);
-  return [all.join(' or '), ...partial].filter(Boolean).join(', ');
-}
-
-/** O valor de cada ScaleValue do ator no nível dele ("cleric.channel-divinity"). */
-function scaleValues(actor, totalLevel) {
-  const items = actor?.items ?? [];
-  const classLevel = Object.fromEntries(
-    items.filter((i) => i.type === 'class').map((i) => [i.system?.identifier, i.system?.levels ?? 0]),
-  );
-  const out = {};
-  for (const it of items) {
-    if (!['class', 'subclass', 'race'].includes(it.type)) continue;
-    const level = it.type === 'class'
-      ? classLevel[it.system?.identifier]
-      : it.type === 'subclass' ? classLevel[it.system?.classIdentifier] : totalLevel;
-    for (const a of Object.values(it.system?.advancement ?? {})) {
-      const id = a?.configuration?.identifier;
-      if (a?.type !== 'ScaleValue' || !id) continue;
-      const steps = Object.keys(a.configuration.scale ?? {}).map(Number).filter((n) => n <= (level ?? 0)).sort((x, y) => y - x);
-      const step = steps.length ? a.configuration.scale[steps[0]] : null;
-      const value = step?.value ?? step?.number;
-      if (typeof value === 'number') out[`${it.system.identifier}.${id}`] = value;
-    }
-  }
-  return out;
-}
-
-/**
- * O número de uma fórmula de `uses.max` do Foundry, ou null se ela citar algo
- * que a ficha não sabe resolver.
- */
-export function evalUses(formula, { scales = {}, mods = {}, prof = 0, classLevels = {}, level = 0 } = {}) {
-  let unresolved = false;
-  const expr = String(formula ?? '')
-    .replace(/@scale\.([\w-]+\.[\w-]+)/g, (_, k) => (k in scales ? String(scales[k]) : ((unresolved = true), '0')))
-    .replace(/@abilities\.(\w+)\.mod/g, (_, a) => (a in mods ? String(mods[a]) : ((unresolved = true), '0')))
-    .replace(/@classes\.([\w-]+)\.levels/g, (_, c) => String(classLevels[c] ?? 0))
-    .replace(/@details\.level/g, String(level))
-    .replace(/@prof/g, String(prof));
-  if (unresolved || /@/.test(expr)) return null;
-  const bare = expr.replace(/\b(max|min|floor|ceil|round)\b/g, '');
-  if (!/^[\d\s+\-*/().,]*$/.test(bare) || !expr.trim()) return null;
-  try {
-    const value = new Function('max', 'min', 'floor', 'ceil', 'round', `return (${expr});`)(
-      Math.max, Math.min, Math.floor, Math.ceil, Math.round,
-    );
-    return Number.isFinite(value) ? Math.floor(value) : null;
-  } catch {
-    return null;
-  }
-}
-
 /** Os recursos com usos (Channel Divinity, Rage...), lidos do ator do export. */
 export function resourceRows(actor, derived) {
-  const classLevels = Object.fromEntries(
-    (actor?.items ?? []).filter((i) => i.type === 'class').map((i) => [i.system?.identifier, i.system?.levels ?? 0]),
-  );
-  const ctx = {
-    scales: scaleValues(actor, derived.level ?? 0),
-    mods: derived.modifiers ?? {},
-    prof: derived.proficiencyBonus ?? 0,
-    classLevels,
-    level: derived.level ?? 0,
-  };
   const rows = [];
-  const add = (name, uses) => {
-    if (rows.some((r) => r.name === name)) return;
-    const max = evalUses(uses.max, ctx);
-    if (max != null && max > 0) rows.push({ name, max, recovery: recoveryText(uses.recovery) });
-  };
-  for (const it of actor?.items ?? []) {
-    if (it.type !== 'feat') continue;
-    if (it.system?.uses?.max) {
-      add(it.name, it.system.uses);
-      continue;
-    }
-    const pooled = Object.values(it.system?.activities ?? {}).filter((a) => a?.uses?.max);
-    for (const a of pooled) add(pooled.length > 1 ? `${it.name}: ${a.name}` : it.name, a.uses);
+  for (const r of actorResources(actor, derived)) {
+    if (rows.some((x) => x.name === r.name)) continue;
+    rows.push({ name: r.name, max: r.max, recovery: recoveryText(r.recovery) });
   }
   return rows;
 }
 
-/** Os recursos do personagem, sem derrubar a ficha se o export falhar. */
+/** Os recursos do personagem, sem derrubar a ficha se a montagem do ator falhar. */
 function characterResources(character, derived, db) {
-  try {
-    return resourceRows(assembleFoundryActor(character, db), derived);
-  } catch {
-    return [];
-  }
+  const actor = safeActor(character, db);
+  return actor ? resourceRows(actor, derived) : [];
 }
 
 /**
@@ -849,18 +691,8 @@ export function buildSheetModel(character, derived, db, options) {
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const dieCount = {};
-  for (const c of derived.classBreakdown ?? []) {
-    if (c.hitDie) dieCount[c.hitDie] = (dieCount[c.hitDie] ?? 0) + c.level;
-  }
-  const hitDice = Object.keys(dieCount)
-    .sort((a, b) => b - a)
-    .map((d) => `${dieCount[d]}d${d}`)
-    .join(' + ');
-
-  const hasAlert = norm(character.origin?.originFeat?.id).startsWith('alert')
-    || (character.classes ?? []).some((c) => Object.values(c.choices ?? {}).some((e) => e?.kind === 'feat' && (e.picks ?? []).some((p) => norm(p).startsWith('alert|'))));
-  const initiative = (derived.modifiers?.dex ?? 0) + (hasAlert ? derived.proficiencyBonus ?? 0 : 0);
+  const hitDice = hitDiceByFace(derived).map((h) => `${h.count}d${h.faces}`).join(' + ');
+  const initiative = initiativeBonus(character, derived);
 
   const speed = species?.speed ?? {};
   const otherSpeeds = ['fly', 'swim', 'climb', 'burrow']

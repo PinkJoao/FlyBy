@@ -28,6 +28,10 @@
 //     Divinity, não o próprio; Wild Shape usa o preset nativo `wildshape` com
 //     perfis por faixa de nível; Font of Magic converte pontos e espaços; Monk's
 //     Focus gasta 1 Focus Point, e o Patient Defense tem a versão grátis.
+//   - War Bond (Eldritch Knight, TC-0094): o overlay faz o "Bond with Weapon"
+//     gastar um uso do próprio item, e o XPHB não dá limite nenhum (um ritual de 1
+//     hora, que cabe num descanso curto). As duas activities saem curadas, SEM
+//     consumo: no Foundry, um consumo de item sem `uses` falha ao usar.
 //   - srdFeatureMechanics devolve activities e effects JUNTOS: a activity cita os
 //     effects do próprio item por `_id`, e separá-los deixa a referência no vazio
 //     (TC-0068, DDL-0074). Activity é mecânica do SISTEMA DE DESTINO: o SRD é a
@@ -145,6 +149,10 @@ const FEATURE_ACTIVITIES = {
     heal({ activation: BONUS, number: 1, denomination: 10, bonus: `@classes.${classId}.levels` }),
   ],
   'action surge': () => [utility({ activation: { type: 'special' } })],
+  'war bond': () => [
+    utility({ activation: { type: 'bonus' }, name: 'Summon Weapon', consumption: { targets: [] } }),
+    utility({ activation: { type: 'special' }, name: 'Bond with Weapon', consumption: { targets: [] } }),
+  ],
   indomitable: () => [utility({ activation: { type: 'action' } })],
   rage: () => [utility({ activation: { type: 'bonus', value: 1 }, name: 'Expend Rage', duration: MIN10 })],
   'bardic inspiration': () => [utility({ activation: { type: 'bonus', value: 1 }, name: 'Inspire', duration: HOUR1 })],

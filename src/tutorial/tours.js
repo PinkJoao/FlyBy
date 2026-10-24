@@ -18,6 +18,8 @@
 //   - Tours: `selector` (na 1a abertura do seletor), `sheet` (F2, na 1a ficha) e os
 //     micro-tours por ABA (F3, na 1a abertura de cada uma; curtos, só os elementos
 //     estáveis).
+//   - O play mode tem o seu: `play` (na 1a abertura da tela de jogo) e
+//     `play-combat` (no 1o combate, sobre a barra que só existe então).
 //   - No mobile o tour do seletor ABRE a gaveta e a tela de detalhe
 //     (`mobileAction`) e as fecha ao avançar e terminar; por isso a âncora é o
 //     painel, não o botão "Filters" (que some com a gaveta aberta).
@@ -294,6 +296,79 @@ const tabBiography = {
   ],
 };
 
+const play = {
+  id: 'play',
+  steps: [
+    {
+      title: 'Play mode',
+      body: 'This is the sheet you play with at the table. Every roll and every change is saved, and anything can be undone.',
+    },
+    {
+      anchor: TUT.PLAY_STATS,
+      title: 'Your numbers',
+      body: {
+        desktop: 'Click Hit points for damage, healing or temporary hit points. Click Initiative to roll it.',
+        mobile: 'Tap Hit points for damage, healing or temporary hit points. Tap Initiative to roll it.',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_STATUS,
+      title: 'Status and rests',
+      body: 'Conditions, effects and concentration show up here, next to your hit dice, the two rests and Start combat.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_TABS,
+      title: 'Tabs',
+      body: 'Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Inventory, items and money; Checks, every ability check, save and skill.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_ROLLS,
+      title: 'Rolling',
+      body: {
+        desktop: 'Click a roll to choose advantage, add a bonus or type in physical dice. Shift-click rolls right away.',
+        mobile: 'Tap a roll to choose advantage, add a bonus or type in physical dice. Hold it to roll right away.',
+      },
+      placement: 'auto',
+    },
+    {
+      anchor: TUT.PLAY_UNDO,
+      title: 'Undo and redo',
+      body: 'Undo takes back the last action, even a long rest or a potion you drank. Redo, next to it, puts it back.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_HISTORY,
+      title: 'History',
+      body: {
+        desktop: 'Every roll and change lands here, like a chat log. Cards have follow-up buttons, such as Roll damage after a hit.',
+        mobile: 'This button opens the history: every roll and change, like a chat log, with follow-up buttons such as Roll damage after a hit.',
+      },
+      placement: 'auto',
+    },
+  ],
+};
+
+const playCombat = {
+  id: 'play-combat',
+  steps: [
+    {
+      anchor: TUT.PLAY_COMBAT,
+      title: 'Combat',
+      body: 'Your round and initiative. Action, Bonus and Reaction are crossed out as you use them; tap one to fix it by hand.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_COMBAT,
+      title: 'Next turn',
+      body: 'Press Next turn when your turn starts: your action, bonus action and reaction come back, and effects that ran out end on their own. End combat when the fight is over.',
+      placement: 'bottom',
+    },
+  ],
+};
+
 export const TOURS = {
   selector,
   sheet,
@@ -303,6 +378,8 @@ export const TOURS = {
   'tab-inventory': tabInventory,
   'tab-spellbook': tabSpellbook,
   'tab-biography': tabBiography,
+  play,
+  'play-combat': playCombat,
 };
 
 export const ALL_TOUR_IDS = Object.keys(TOURS);

@@ -13,7 +13,7 @@
 // FUNÇÕES
 //   Home(): a página. Por dentro: startNew, createNew, updateData, chooseSource
 //     (a fonte de dados, DDL-0091), copySetupLink (o link da mesa), openSettings
-//     e openGameData (os submenus) e as ações por card (abrir, duplicar,
+//     e openGameData (os submenus) e as ações por card (abrir, jogar, duplicar,
 //     exportar Foundry e PDF, apagar).
 //
 // DECISÕES E ARMADILHAS
@@ -23,6 +23,9 @@
 //   - Semeadura do tutorial na 1a carga do roster: quem já tem personagens nasce
 //     com os tours vistos; instalação nova os mantém para disparar.
 //   - O PDF usa o mesmo pipeline do Builder, importado dinamicamente.
+//   - O d20 do card abre o play mode (DDL-0004); só existe com os recursos
+//     experimentais ligados (DDL-0111), e some enquanto a criação guiada não
+//     termina, porque não há ficha para jogar ainda.
 //   - O aviso do Samsung Internet lembra que os personagens ficam neste navegador:
 //     o Chrome tem armazenamento próprio, então exportar antes evita a surpresa.
 //   - O menu agrupa em submenus porque passava de dez itens, três deles títulos
@@ -81,6 +84,7 @@ export default function Home() {
   const setGuidance = useSettingsStore((s) => s.setGuidance);
   const samsungHintDismissed = useSettingsStore((s) => s.samsungHintDismissed);
   const dismissSamsungHint = useSettingsStore((s) => s.dismissSamsungHint);
+  const experimental = useSettingsStore((s) => s.experimental);
   const showSamsungHint = !samsungHintDismissed && isSamsungInternet(navigator.userAgent) && !isStandalone();
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
   const resetTutorials = useTutorialStore((s) => s.resetSeen);
@@ -270,6 +274,11 @@ export default function Home() {
           </span>
         </button>
         <div className={styles.cardActions}>
+          {experimental && !c.meta?.creating && (
+            <button type="button" className={styles.playBtn} title="Play" aria-label={`Play ${c.meta.name || 'character'}`} onClick={() => navigate(`/play/${c.id}`)}>
+              <Icon name="dice" />
+            </button>
+          )}
           <MenuButton
             buttonClassName={styles.menuTrigger}
             buttonTitle="Character options"

@@ -13,11 +13,12 @@
 // FUNÇÕES
 //   walk(dir, out): os .yml de uma pasta, recursivo.
 //   srdCorpus(edition): o texto oficial do SRD 5.2 (packs `*24` do dnd5e) ou do
-//     SRD 5.1 (SRD51_PACKS, os sem sufixo), já normalizado para comparação, e o
-//     nome de cada documento.
+//     SRD 5.1 (SRD51_PACKS, os sem sufixo), já normalizado para comparação, o
+//     nome de cada documento e, à parte, o de cada página do texto de regras.
 //   renamesModule(map): o src/engine/srdRenamesData.js gerado (nome antigo ->
 //     nome do SRD), para resolver fichas entre os dois modos.
-//   main(): gera, varre, grava e falha se sobrar nome protegido.
+//   main(): gera, varre, grava e falha se sobrar nome protegido, ou se uma
+//     entrada das listas fechadas não existir no dado ou no SRD.
 //
 // DECISÕES E ARMADILHAS
 //   - PROTECTED_TERMS: nomes próprios de magos e deuses, cenários, livros e
@@ -44,6 +45,19 @@
 //     itens mágicos e as subclasses do 5.1 já estão no 5.2, e as features das
 //     classes de 2014 não servem a um app 2024. Um extra só passa com a flag
 //     `srd` do 5etools, e a varredura dele usa o texto do SRD 5.1.
+//   - SRD52_UNFLAGGED (TC-0098, DDL-0109): o que o SRD 5.2 publica e o 5etools não marca
+//     com `srd52`, por isso o filtro deixava de fora. Chave "Nome|Fonte" do
+//     5etools -> nome do documento (ou da página do glossário) no SRD 5.2 do
+//     dnd5e; a geração FALHA se a entrada não existir no dado ou se o nome não
+//     for documento nem página do SRD. Lista FECHADA, levantada em 2026-10-24
+//     varrendo as entradas 2024 sem a flag contra os packs `*24` e contra o PDF
+//     do SRD 5.2.1: as ações Influence e Study, Map, String, Airship e dois
+//     jogos (o SRD os lista entre as variantes do Gaming Set), os três focos de
+//     conjuração, as duas Fighting Styles de classe (Blessed Warrior, Druidic
+//     Warrior), 7 invocações, 2 metamagias e o Weapon of Warning. Arcane Vigor
+//     fica FORA de propósito: o pack `spells24` do dnd5e tem o documento, mas o
+//     texto do SRD 5.2.1 não tem a magia. Improvising an Action também (só
+//     Basic Rules). Um pack `*24` não basta como prova sozinho.
 //   - Saída sem espaços nem timestamp: o diff entre duas gerações é só conteúdo.
 // -----------------------------------------------------------------------------
 
@@ -114,6 +128,28 @@ const SRD51_EXTRAS = {
   ],
 };
 
+const SRD52_UNFLAGGED = {
+  'actions.action': { 'Influence|XPHB': 'Influence', 'Study|XPHB': 'Study' },
+  'items.item': {
+    'Map|XPHB': 'Map', 'String|XPHB': 'String', 'Airship|XPHB': 'Airship',
+    'Dragonchess Set|XPHB': 'Dragonchess', 'Three-Dragon Ante Set|XPHB': 'Three-dragon ante',
+  },
+  'items.itemGroup': {
+    'Arcane Focus|XPHB': 'Arcane Focus (Varies)', 'Druidic Focus|XPHB': 'Druidic Focus (Varies)',
+    'Holy Symbol|XPHB': 'Holy Symbol (Varies)',
+  },
+  'feats.feat': { 'Blessed Warrior|XPHB': 'Blessed Warrior', 'Druidic Warrior|XPHB': 'Druidic Warrior' },
+  'optionalfeatures.optionalfeature': {
+    'Devouring Blade|XPHB': 'Devouring Blade', 'Eldritch Mind|XPHB': 'Eldritch Mind',
+    'Eldritch Smite|XPHB': 'Eldritch Smite', 'Gift of the Depths|XPHB': 'Gift of the Depths',
+    'Gift of the Protectors|XPHB': 'Gift of the Protectors',
+    'Investment of the Chain Master|XPHB': 'Investment of the Chain Master',
+    'Lessons of the First Ones|XPHB': 'Lessons of the First Ones',
+    'Seeking Spell|XPHB': 'Seeking Spell', 'Transmuted Spell|XPHB': 'Transmuted Spell',
+  },
+  'magicvariants.magicvariant': { 'Weapon of Warning|XDMG': 'Weapon of Warning' },
+};
+
 /** Os .yml de uma pasta, recursivo. */
 function walk(dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -133,12 +169,15 @@ function srdCorpus(edition = '5.2') {
   const files = dirs.flatMap((d) => walk(join(PACKS, d)))
     .filter((f) => !/premades|legal-information|disclaimer/.test(f));
   const texts = files.map((f) => readFileSync(f, 'utf8'));
+  const clean = (s) => normalizeCorpus(s.replace(/^['"]|['"]$/g, ''));
   const docNames = new Set();
-  for (const t of texts) {
+  const pageNames = new Set();
+  texts.forEach((t, i) => {
     const m = t.match(/^name: (.*)$/m);
-    if (m) docNames.add(normalizeCorpus(m[1].replace(/^['"]|['"]$/g, '')));
-  }
-  return { corpus: normalizeCorpus(texts.map((t) => t.replace(/\s*\n\s*/g, ' ')).join(' ')), docNames };
+    if (m) docNames.add(clean(m[1]));
+    if (/content24/.test(files[i])) for (const p of t.matchAll(/^ {4}name: (.*)$/gm)) pageNames.add(clean(p[1]));
+  });
+  return { corpus: normalizeCorpus(texts.map((t) => t.replace(/\s*\n\s*/g, ' ')).join(' ')), docNames, pageNames };
 }
 
 /** O módulo gerado com as trocas de nome (antigo minúsculo -> nome do SRD). */
@@ -171,8 +210,22 @@ function renamesModule(map) {
 function main() {
   if (!existsSync(PACKS)) throw new Error('Packs do dnd5e não encontrados (./DnD Source Material).');
   const full = loadDb();
-  const { bundle, report } = buildSrdBundle(full, { textFixes: TEXT_FIXES, extraRenames: EXTRA_RENAMES, legacy: SRD51_EXTRAS });
-  const { corpus, docNames } = srdCorpus('5.2');
+  const { bundle, report } = buildSrdBundle(full, {
+    textFixes: TEXT_FIXES, extraRenames: EXTRA_RENAMES, legacy: SRD51_EXTRAS, unflagged: SRD52_UNFLAGGED,
+  });
+  const { corpus, docNames, pageNames } = srdCorpus('5.2');
+  const notInSrd = Object.entries(SRD52_UNFLAGGED)
+    .flatMap(([where, map]) => Object.entries(map).map(([k, srdName]) => [`${where}:${k}`, normalizeCorpus(srdName)]))
+    .filter(([, n]) => !docNames.has(n) && !pageNames.has(n))
+    .map(([k]) => k);
+  if (report.unflaggedMissing.length || notInSrd.length) {
+    if (report.unflaggedMissing.length) console.error(`SRD 5.2 sem a flag pedidas e não achadas no dado: ${report.unflaggedMissing.join(', ')}`);
+    if (notInSrd.length) console.error(`SRD 5.2 sem a flag cujo nome não é documento nem página do SRD: ${notInSrd.join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`SRD 5.2 sem a flag srd52 (lista fechada): ${report.unflagged}`);
+  if (report.unflaggedFlagged.length) console.log(`  já marcadas pelo 5etools, tirar da lista: ${report.unflaggedFlagged.join(', ')}`);
   const old = srdCorpus('5.1');
   const hits = scanProtected(bundle, PROTECTED_TERMS, corpus, { docNames, legacyCorpus: old.corpus, legacyDocNames: old.docNames });
   if (report.legacyMissing.length) {

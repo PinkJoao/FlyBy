@@ -53,6 +53,10 @@ const ICONS = {
   cart: 'lucide:shopping-cart',
   addImage: 'lucide:image-plus',
   idea: 'lucide:lightbulb',
+  undo: 'lucide:undo-2',
+  redo: 'lucide:redo-2',
+  history: 'lucide:scroll-text',
+  edit: 'lucide:pencil',
 
   dice: 'game:dice-twenty-faces-twenty',
   guide: 'game:compass',

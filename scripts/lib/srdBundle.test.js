@@ -7,7 +7,9 @@
 //   o overlay pela chave completa e a varredura de nomes protegidos: que ela
 //   PEGA o que não está no SRD (a prova de que o instrumento enxerga) e solta o
 //   que o SRD escreve igual. E os extras do SRD 5.1: lista fechada com a flag,
-//   marca srd51, o que falta na lista e a varredura contra o texto do 5.1.
+//   marca srd51, o que falta na lista e a varredura contra o texto do 5.1. E a
+//   lista fechada do SRD 5.2 sem a flag (TC-0098): entra sem marca, a variante
+//   casa pela fonte de `inherits`, o que falta e o que o 5etools já marca.
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
@@ -202,5 +204,50 @@ describe('extras do SRD 5.1 (DDL-0107)', () => {
     const c51 = normalizeCorpus('it is said the drow of Lolth rule the dark');
     expect(scanProtected(entry(true), terms, c52, { legacyCorpus: c51 })).toHaveLength(0);
     expect(scanProtected(entry(false), terms, c52, { legacyCorpus: c51 })).toHaveLength(1);
+  });
+});
+
+describe('SRD 5.2 sem a flag srd52 (TC-0098)', () => {
+  const full = {
+    actions: {
+      action: [
+        { name: 'Dash', source: 'XPHB', srd52: true },
+        { name: 'Influence', source: 'XPHB', entries: ['See {@action Study|XPHB}.'] },
+        { name: 'Study', source: 'XPHB' },
+        { name: 'Improvising an Action', source: 'XPHB', basicRules2024: true },
+        { name: 'Utilize', source: 'XPHB', srd52: true },
+      ],
+    },
+    magicvariants: {
+      magicvariant: [
+        { name: 'Weapon of Warning', inherits: { source: 'DMG' } },
+        { name: 'Weapon of Warning', inherits: { source: 'XDMG' } },
+      ],
+    },
+  };
+  const unflagged = {
+    'actions.action': { 'Influence|XPHB': 'Influence', 'Study|XPHB': 'Study', 'Utilize|XPHB': 'Utilize', 'Search|XPHB': 'Search' },
+    'magicvariants.magicvariant': { 'Weapon of Warning|XDMG': 'Weapon of Warning' },
+  };
+  const { bundle, report } = buildSrdBundle(full, { unflagged });
+
+  it('entra o que está na lista, sem marca nenhuma, e o resto segue o filtro', () => {
+    expect(bundle.actions.action.map((a) => [a.name, !!a.srd51])).toEqual([
+      ['Dash', false], ['Influence', false], ['Study', false], ['Utilize', false],
+    ]);
+  });
+
+  it('a variante mágica casa pela fonte de inherits, e a de 2014 fica de fora', () => {
+    expect(bundle.magicvariants.magicvariant.map((v) => v.inherits.source)).toEqual(['XDMG']);
+  });
+
+  it('a tag para outra entrada da lista continua tag', () => {
+    expect(bundle.actions.action.find((a) => a.name === 'Influence').entries).toEqual(['See {@action Study|XPHB}.']);
+  });
+
+  it('pedida que não existe no dado sai em unflaggedMissing; a já marcada, em unflaggedFlagged', () => {
+    expect(report.unflaggedMissing).toEqual(['actions.action:Search|XPHB']);
+    expect(report.unflaggedFlagged).toEqual(['actions.action:Utilize|XPHB']);
+    expect(report.unflagged).toBe(4);
   });
 });

@@ -8,7 +8,7 @@
 // FUNÇÕES
 //   listCharacters(): todos, mais recentes primeiro, migrados.
 //   getCharacter(id), saveCharacter(character), removeCharacter(id): o CRUD;
-//     salvar carimba updatedAt.
+//     salvar carimba updatedAt; remover apaga junto o documento de jogo (play).
 //   duplicateCharacter(id): cópia com id novo, "(cópia)" no nome e datas novas.
 //   importCharacter(raw, db5e, out): importa um JSON com id novo.
 //
@@ -61,7 +61,10 @@ export async function saveCharacter(character) {
  * @param {string} id
  */
 export async function removeCharacter(id) {
-  await db.characters.delete(id);
+  await db.transaction('rw', db.characters, db.play, async () => {
+    await db.characters.delete(id);
+    await db.play.delete(id);
+  });
 }
 
 /**

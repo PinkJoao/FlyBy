@@ -5,8 +5,9 @@
 //   O conteúdo das janelinhas que os menus abrem (dialog.js, `menu()`), montado
 //   com o MenuList. É o PADRÃO de menu do app (DDL-0098): o dropdown fica curto
 //   (glossário, os grupos, feedback) e cada grupo abre uma janelinha.
-//     Settings (Home e ficha): o tema (src/theme.js), a Character Guidance padrão
-//       e os tutoriais.
+//     Settings (Home, ficha e play mode): o tema (src/theme.js), a Character
+//       Guidance padrão, os tutoriais, os recursos experimentais (DDL-0111) e,
+//       com eles ligados, a janela do histórico do play mode.
 //     Game data (Home): a fonte de dados (DDL-0091): trocar, atualizar e copiar o
 //       link da mesa.
 //     Export & import (ficha): Foundry, PDF e importar outro personagem.
@@ -25,6 +26,10 @@
 //   - Tema, guia e ligar tutoriais são escolhas com keepOpen: o tema muda na hora,
 //     com o submenu aberto, e serve de pré-visualização. "Replay tutorials" fecha,
 //     porque o tour dispara nas telas, não aqui.
+//   - A janela do histórico (HISTORY_EVENT_CHOICES, HISTORY_DAY_CHOICES) vale o
+//     que vier PRIMEIRO; o padrão do plano é 500 ações ou 30 dias (DDL-0108).
+//   - "Features in development" liga o que ainda não foi publicado (o play mode);
+//     desligado, nada dele aparece, nem a janela do histórico.
 //   - Update e o link da mesa só existem com fonte por URL: o SRD embutido não tem
 //     o que re-baixar nem endereço a passar.
 //   - A Character Guidance aparece duas vezes, de propósito: em Settings é o
@@ -46,6 +51,9 @@ const GUIDANCE_CHOICES = [
   { value: 'off', label: 'Never guided', sub: 'Go straight to the sheet' },
 ];
 
+const HISTORY_EVENT_CHOICES = [100, 500, 2000];
+const HISTORY_DAY_CHOICES = [7, 30, 90];
+
 /** As preferências do aparelho: tema, guia e tutoriais. */
 export function SettingsMenu({ onReplayTutorials }) {
   const theme = useSettingsStore((s) => s.theme);
@@ -54,6 +62,10 @@ export function SettingsMenu({ onReplayTutorials }) {
   const setGuidance = useSettingsStore((s) => s.setGuidance);
   const tutEnabled = useTutorialStore((s) => s.enabled);
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
+  const playHistory = useSettingsStore((s) => s.playHistory);
+  const setPlayHistory = useSettingsStore((s) => s.setPlayHistory);
+  const experimental = useSettingsStore((s) => s.experimental);
+  const setExperimental = useSettingsStore((s) => s.setExperimental);
 
   return (
     <MenuList
@@ -83,6 +95,29 @@ export function SettingsMenu({ onReplayTutorials }) {
           onClick: () => setTutEnabled(!tutEnabled),
         },
         { label: 'Replay tutorials', sub: 'Show them all again as you navigate', onClick: onReplayTutorials },
+        { heading: 'Experimental' },
+        {
+          label: 'Features in development',
+          sub: 'Turns on the play mode, which is still being built and may change',
+          checked: experimental,
+          toggle: true,
+          keepOpen: true,
+          onClick: () => setExperimental(!experimental),
+        },
+        ...(experimental ? [{ heading: 'Play history' }] : []),
+        ...(!experimental ? [] : HISTORY_EVENT_CHOICES).map((n) => ({
+          label: `Last ${n} actions`,
+          checked: playHistory.maxEvents === n,
+          keepOpen: true,
+          onClick: () => setPlayHistory({ maxEvents: n }),
+        })),
+        ...(!experimental ? [] : HISTORY_DAY_CHOICES).map((n) => ({
+          label: `Up to ${n} days old`,
+          sub: n === HISTORY_DAY_CHOICES[0] ? 'Older actions leave the history and can no longer be undone' : undefined,
+          checked: playHistory.maxAgeDays === n,
+          keepOpen: true,
+          onClick: () => setPlayHistory({ maxAgeDays: n }),
+        })),
       ]}
     />
   );

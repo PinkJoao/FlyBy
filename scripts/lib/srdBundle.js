@@ -15,6 +15,8 @@
 //   srdKeep(e): a entrada está no SRD 5.2 (`srd52`, ou `inherits.srd52`).
 //   legacyKey(e), legacyKeep(e, where, legacy): os extras do SRD 5.1, por lista
 //     fechada (DDL-0107).
+//   unflaggedKey(e), unflaggedKeep(e, where, unflagged): as entradas do SRD 5.2
+//     que o 5etools não marca com `srd52`, por lista fechada (TC-0098).
 //   entityKey(e): a chave de identidade (nome, fonte, classe, subclasse, nível).
 //   buildRenames(full, extra): nome antigo -> nome do SRD, das 33 entradas com
 //     `srd52` string (as variantes mágicas trazem o nome em `inherits.srd52`),
@@ -44,6 +46,13 @@
 //     lista E ter a flag; vira `srd51: true` no pacote, e a varredura confere o
 //     texto dele contra o SRD 5.1 (`legacyCorpus`), não contra o 5.2. Extra
 //     pedido que não existe mais no dado aparece em `legacyMissing`.
+//   - A flag `srd52` tem buracos: o SRD 5.2 publica entradas que o 5etools não
+//     marca (Influence e Study, TC-0098). Elas entram por `unflagged`, a lista
+//     FECHADA que o gerador confere contra o texto do SRD: a chave é "Nome|Fonte"
+//     (a fonte da variante mágica vem de `inherits`), a entrada não ganha marca
+//     nenhuma (é SRD 5.2 como as outras), e a pedida que não existe no dado sai
+//     em `unflaggedMissing`. A que o 5etools passou a marcar sai em
+//     `unflaggedFlagged`, para a lista encolher.
 //   - `srd52` como STRING é o nome com que o SRD publica a entrada ("Heward's
 //     Handy Haversack" -> "Handy Haversack"). A troca vale para o nome E para
 //     toda menção no texto de qualquer entrada mantida; em minúsculas (as
@@ -101,6 +110,14 @@ export const legacyKey = (e) => (e?.name ? `${e.name}|${e.source}` : `|${e?.sour
 /** A entrada é um extra pedido do SRD 5.1 (na lista E com a flag `srd` do 5etools). */
 export function legacyKeep(e, where, legacy) {
   return Boolean(e?.srd && legacy?.[where]?.includes(legacyKey(e)));
+}
+
+/** A chave de uma entrada SRD 5.2 sem a flag: "Nome|Fonte" (a variante mágica tem a fonte em `inherits`). */
+export const unflaggedKey = (e) => `${e?.name}|${e?.source ?? e?.inherits?.source}`;
+
+/** A entrada está na lista fechada do SRD 5.2 sem a flag `srd52` (`unflagged`: onde -> chave -> nome no SRD). */
+export function unflaggedKeep(e, where, unflagged) {
+  return Boolean(unflagged?.[where] && Object.hasOwn(unflagged[where], unflaggedKey(e)));
 }
 
 /** A chave de identidade: nome, fonte, classe, subclasse e nível. */
@@ -331,12 +348,14 @@ export function scanProtected(bundle, terms, corpus, { pad = 20, docNames = null
 /**
  * O pacote SRD inteiro a partir do compêndio completo.
  * @param {object} full
- * @param {{ textFixes?: Record<string, object[]>, extraRenames?: Record<string, string> }} [opts]
+ * @param {{ textFixes?: Record<string, object[]>, extraRenames?: Record<string, string>, legacy?: object, unflagged?: object }} [opts]
  * @returns {{ bundle: object, report: object }}
  */
-export function buildSrdBundle(full, { textFixes = {}, extraRenames = {}, legacy = null } = {}) {
+export function buildSrdBundle(full, { textFixes = {}, extraRenames = {}, legacy = null, unflagged = null } = {}) {
   const renames = buildRenames(full, extraRenames);
   const legacyFound = new Set();
+  const unflaggedFound = new Set();
+  const unflaggedFlagged = [];
   const keptNames = new Set();
   const keptKeys = new Set();
   const keptSpells = new Set();
@@ -357,9 +376,14 @@ export function buildSrdBundle(full, { textFixes = {}, extraRenames = {}, legacy
       if (!(isEntityArray(arr) || variant)) { outFile[ak] = arr; continue; }
       if (fk === 'items-base' && ak !== 'baseitem' && ak !== 'itemMastery') { outFile[ak] = arr; continue; }
       if (fk === 'languages' && ak === 'languageScript') { outFile[ak] = []; continue; }
+      const where = `${fk}.${ak}`;
+      for (const e of arr.filter((x) => unflaggedKeep(x, where, unflagged))) {
+        unflaggedFound.add(`${where}:${unflaggedKey(e)}`);
+        if (srdKeep(e)) unflaggedFlagged.push(`${where}:${unflaggedKey(e)}`);
+      }
       const keep = arr
-        .filter((e) => srdKeep(e) || legacyKeep(e, `${fk}.${ak}`, legacy))
-        .map((e) => (srdKeep(e) ? e : (legacyFound.add(`${fk}.${ak}:${legacyKey(e)}`), { ...e, srd51: true })));
+        .filter((e) => srdKeep(e) || unflaggedKeep(e, where, unflagged) || legacyKeep(e, where, legacy))
+        .map((e) => (srdKeep(e) || unflaggedKeep(e, where, unflagged) ? e : (legacyFound.add(`${where}:${legacyKey(e)}`), { ...e, srd51: true })));
       counts[`${fk}.${ak}`] = [keep.length, arr.length];
       for (const e of keep) {
         const name = typeof e.srd52 === 'string' ? e.srd52 : (typeof e.inherits?.srd52 === 'string' ? e.inherits.srd52 : e.name);
@@ -409,8 +433,14 @@ export function buildSrdBundle(full, { textFixes = {}, extraRenames = {}, legacy
   const legacyMissing = Object.entries(legacy ?? {})
     .flatMap(([where, keys]) => keys.map((k) => `${where}:${k}`))
     .filter((k) => !legacyFound.has(k));
+  const unflaggedMissing = Object.entries(unflagged ?? {})
+    .flatMap(([where, map]) => Object.keys(map).map((k) => `${where}:${k}`))
+    .filter((k) => !unflaggedFound.has(k));
   return {
     bundle,
-    report: { counts, renames: renames.size, renameMap: Object.fromEntries(renames), unusedFixes, legacy: legacyFound.size, legacyMissing },
+    report: {
+      counts, renames: renames.size, renameMap: Object.fromEntries(renames), unusedFixes, legacy: legacyFound.size, legacyMissing,
+      unflagged: unflaggedFound.size, unflaggedMissing, unflaggedFlagged,
+    },
   };
 }

@@ -17,6 +17,8 @@
 //
 // DECISÕES E ARMADILHAS
 //   Menu e guia
+//   - O d20 do topo abre o play mode, uma tela à parte (DDL-0004), só com os
+//     recursos experimentais ligados (DDL-0111).
 //   - O menu segue o padrão de menus do app (AppMenus, DDL-0098): glossário,
 //     Export & import, Character guide e Settings em janelinhas, e o feedback.
 //   - A aba nova entra deslizando do lado para onde se foi (openTab, motion.js).
@@ -55,6 +57,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useCharacterStore from '../store/characterStore';
+import useSettingsStore from '../store/settingsStore';
 import { useData } from '../data/dataContext';
 import useDerived from '../hooks/useDerived';
 import useCharacterImport from '../hooks/useCharacterImport';
@@ -157,6 +160,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     setActiveTab(tab);
   };
   const navigate = useNavigate();
+  const experimental = useSettingsStore((s) => s.experimental);
   const derived = useDerived(character);
   const active = guidanceActive(character);
   /** Liga ou desliga o guia; lê o personagem do store (o submenu fica aberto e ele muda). */
@@ -405,6 +409,17 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               </button>
             );
           })()}
+          {experimental && (
+            <button
+              type="button"
+              className={styles.menuBtn}
+              title="Play this character"
+              aria-label="Play"
+              onClick={() => navigate(`/play/${character.id}`)}
+            >
+              <span aria-hidden="true"><Icon name="dice" /></span>
+            </button>
+          )}
           <MenuButton
             buttonClassName={styles.menuBtn}
             buttonTitle="Menu"

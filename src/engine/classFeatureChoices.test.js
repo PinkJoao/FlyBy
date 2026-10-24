@@ -283,6 +283,63 @@ describe('cleanupClassEntry (level-down centralizado)', () => {
       expect(out.choices['feat@8']).toBeUndefined();
     });
   });
+
+  describe('escolha de optional feature que deixa de ser oferecida (TC-0096)', () => {
+    const fighter = { name: 'Fighter' };
+    const battleMaster = {
+      shortName: 'Battle Master',
+      optionalfeatureProgression: [{ name: 'Maneuver Options', featureType: ['MV:B'], progression: { 3: 3, 7: 5 } }],
+    };
+    const maneuvers = (level) => ({
+      uid: 'a', classId: 'fighter', level, subclassId: 'Battle Master', subclassSource: 'XPHB',
+      choices: {
+        'feat@1': { kind: 'feat', picks: ['Archery|XPHB'] },
+        'optfeat@MV:B': { kind: 'optionalfeature', picks: ['Rally|XPHB', 'Riposte|XPHB', 'Ambush|XPHB', 'Brace|TCE', 'Parry|XPHB'], sub: { x: { kind: 'skill', picks: ['ath'] } } },
+      },
+    });
+
+    it('abaixo do nível da subclasse, as manobras saem inteiras, com o sub-bag', () => {
+      return import('./classFeatureChoices').then(({ cleanupClassEntry }) => {
+        const out = cleanupClassEntry(maneuvers(2), { classObj: fighter, subclassObj: battleMaster, subclassLevel: 3 });
+        expect(out.subclassId).toBe(null);
+        expect(out.choices['optfeat@MV:B']).toBeUndefined();
+        expect(out.choices['feat@1']).toBeDefined();
+      });
+    });
+
+    it('com a subclasse, as manobras ficam e só se aparam ao count do nível', () => {
+      return import('./classFeatureChoices').then(({ cleanupClassEntry }) => {
+        const out = cleanupClassEntry(maneuvers(5), { classObj: fighter, subclassObj: battleMaster, subclassLevel: 3 });
+        expect(out.choices['optfeat@MV:B'].picks).toEqual(['Rally|XPHB', 'Riposte|XPHB', 'Ambush|XPHB']);
+      });
+    });
+
+    it('feature de CLASSE antes do nível dela também sai (Metamagic no 1), e volta a valer no 2', () => {
+      return import('./classFeatureChoices').then(({ cleanupClassEntry }) => {
+        const sorcerer = { name: 'Sorcerer', optionalfeatureProgression: [{ name: 'Metamagic', featureType: ['MM'], progression: { 2: 2, 10: 4 } }] };
+        const cls = (level) => ({ uid: 's', classId: 'sorcerer', level, subclassId: null, choices: { 'optfeat@MM': { kind: 'optionalfeature', picks: ['Quickened Spell|XPHB', 'Twinned Spell|XPHB'] } } });
+        expect(cleanupClassEntry(cls(1), { classObj: sorcerer, subclassObj: null }).choices['optfeat@MM']).toBeUndefined();
+        expect(cleanupClassEntry(cls(2), { classObj: sorcerer, subclassObj: null }).choices['optfeat@MM'].picks).toHaveLength(2);
+      });
+    });
+
+    it('o Fighting Style da subclasse (College of Swords) sai abaixo dela; Invocations do 1 ficam', () => {
+      return import('./classFeatureChoices').then(({ cleanupClassEntry }) => {
+        const swords = { shortName: 'Swords', optionalfeatureProgression: [{ name: 'Fighting Style', featureType: ['FS:B'], progression: { 3: 1 } }] };
+        const bard = cleanupClassEntry(
+          { uid: 'b', classId: 'bard', level: 2, subclassId: 'Swords', choices: { 'feat@fs@FS:B': { kind: 'feat', picks: ['Dueling|XPHB'] } } },
+          { classObj: { name: 'Bard' }, subclassObj: swords, subclassLevel: 3 },
+        );
+        expect(bard.choices['feat@fs@FS:B']).toBeUndefined();
+        const warlock = { name: 'Warlock', optionalfeatureProgression: [{ name: 'Eldritch Invocations', featureType: ['EI'], progression: [1, 3, 3] }] };
+        const kept = cleanupClassEntry(
+          { uid: 'w', classId: 'warlock', level: 1, subclassId: null, choices: { 'optfeat@EI': { kind: 'optionalfeature', picks: ['Pact of the Tome|XPHB'] } } },
+          { classObj: warlock, subclassObj: null },
+        );
+        expect(kept.choices['optfeat@EI'].picks).toEqual(['Pact of the Tome|XPHB']);
+      });
+    });
+  });
 });
 
 describe('optionalFeatureChoices + optionalFeatureCount', () => {

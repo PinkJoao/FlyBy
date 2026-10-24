@@ -8,7 +8,10 @@
 //
 // DECISÕES E ARMADILHAS
 //   - O Vitest exclui 'DnD Source Material/**': o snapshot do 5etools (DDL-0037)
-//     traz os testes jest DELES, e coletá-los quebra a suíte.
+//     traz os testes jest DELES, e coletá-los quebra a suíte. Exclui também
+//     '.claude/**': a worktree de outra sessão do agente mora em
+//     `.claude/worktrees/`, com uma cópia inteira do projeto, e a suíte rodava em
+//     dobro (e quebrava nos testes do 5etools da cópia) (2026-10-24).
 //   - Com o React Compiler, o grafo de módulos sobrevive a um reload no HMR: um
 //     aviso de ordem de hooks no dev pede uma ABA NOVA antes de virar bug (§6.1).
 //   - PWA: o service worker só existe no BUILD (o dev segue sem ele). Ele
@@ -67,6 +70,6 @@ export default defineConfig({
     }),
   ],
   test: {
-    exclude: [...configDefaults.exclude, 'DnD Source Material/**'],
+    exclude: [...configDefaults.exclude, 'DnD Source Material/**', '.claude/**'],
   },
 })

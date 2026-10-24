@@ -12,14 +12,34 @@
 //   slug(s): o slug de um título.
 //   featureUses(name, classId): o bloco `uses`, ou null (o chamador cai no
 //     overlay). O classId escolhe a linha quando o nome colide entre classes e
-//     monta a referência; sem ele, só a tabela plana (traços, talentos).
+//     monta a referência; sem ele, só a tabela plana (traços, talentos). Para um
+//     membro de pool compartilhado devolve NO_POOL, que o firstUses respeita.
+//   featUses(name): o pool curado de um TALENTO (FEAT_USES), ou null.
 //   hasActivityUses(activities): alguma activity já traz o pool dela?
 //   proseUses(name, classId, activities): o pool que SÓ a prosa declara, ou null;
 //     a última reserva, depois do overlay, e nunca com pool na activity.
 //   firstUses(...list): o primeiro bloco com `max`; sem nenhum, o primeiro que
-//     existe (o overlay sem máximo continua saindo como antes), ou o vazio.
+//     existe (o overlay sem máximo continua saindo como antes), ou o vazio. Um
+//     NO_POOL antes de qualquer máximo encerra a busca no vazio.
 //
 // DECISÕES E ARMADILHAS
+//   - SCOPED_USES (TC-0093, TC-0094): pools com nome que colide entre classes ou
+//     cuja escala mora na SUBCLASSE, por `classe|nome`, cada um conferido no texto
+//     do XPHB: Combat Superiority (todos no curto ou longo, `sr`), Psionic Power
+//     do Psi Warrior e do Soulknife (1 no curto, todos no longo), Warrior of the
+//     Gods (o pool de d12 do Zealot, na escala curada da subclasse), Fey
+//     Reinforcements (1 Summon Fey sem slot por descanso longo). O overlay
+//     descreve esses pools como `entryData.resources` (um "dicePool" que o
+//     Plutonium vira item à parte) e o nosso export não lia; sem o pool no DONO,
+//     as sub-features ficavam sem ter o que gastar.
+//   - SHARED_POOL_MEMBERS: as sub-features em que o overlay COPIA o máximo do
+//     pool do dono (Protective Field, Psionic Strike, Telekinetic Movement,
+//     Psi-Bolstered Knack, Psychic Whispers). Elas gastam o pool do Psionic Power;
+//     um pool próprio daria N contadores onde o livro tem um. Os usos grátis delas
+//     (uma vez por descanso) moram na ACTIVITY e ficam.
+//   - FEAT_USES: Ritual Caster (o Quick Ritual, 1 por descanso longo) e Boon of
+//     Recovery (o Recover Vitality, dez d10 por descanso longo; o Last Stand tem o
+//     pool na activity). O talento não passava pelo registro curado.
 //   - Precedência (TC-0068): este registro, depois a tabela GERADA do SRD
 //     (FEATURE_USES_BY_CLASS e FEATURE_USES_FLAT, por `npm run gen:uuids`), depois
 //     o overlay. O SRD vem antes por ser o próprio sistema de destino.
@@ -74,6 +94,26 @@ const FEATURE_USES = {
 };
 
 const REST = { lr: LR_FULL, sr: SR_FULL };
+
+export const NO_POOL = Object.freeze({ none: true });
+
+const SCOPED_USES = {
+  'fighter|combat superiority': { max: '@scale.battle-master.superiority.number', recovery: SR_FULL },
+  'fighter|psionic power': { max: '@scale.psi-warrior.die.number', recovery: LR_FULL_SR_ONE },
+  'rogue|psionic power': { max: '@scale.soulknife.die.number', recovery: LR_FULL_SR_ONE },
+  'barbarian|warrior of the gods': { max: '@scale.zealot.warrior-of-the-gods', recovery: LR_FULL },
+  'ranger|fey reinforcements': { max: '1', recovery: LR_FULL },
+};
+
+const SHARED_POOL_MEMBERS = new Set([
+  'fighter|protective field', 'fighter|psionic strike', 'fighter|telekinetic movement',
+  'rogue|psi-bolstered knack', 'rogue|psychic whispers',
+]);
+
+const FEAT_USES = {
+  'ritual caster': { max: '1', recovery: LR_FULL },
+  'boon of recovery': { max: '10', recovery: LR_FULL },
+};
 
 // ATENÇÃO: reserva de precedência MAIS BAIXA; regenere a lista com o survey, não por memória do livro.
 const PROSE_USES_BY_CLASS = {
@@ -305,6 +345,10 @@ export const NOT_A_POOL = new Set([
  */
 export function featureUses(name, classId) {
   const key = String(name ?? '').trim().toLowerCase();
+  const scopedKey = classId ? `${String(classId).toLowerCase()}|${key}` : null;
+  const scoped = scopedKey ? SCOPED_USES[scopedKey] : null;
+  if (scoped) return { max: scoped.max, spent: 0, recovery: scoped.recovery.map((r) => ({ ...r })) };
+  if (scopedKey && SHARED_POOL_MEMBERS.has(scopedKey)) return NO_POOL;
   const entry = FEATURE_USES[key];
   if (entry) {
     const max = entry.max ?? `@scale.${classId}.${entry.id ?? slug(entry.scale)}`;
@@ -331,7 +375,16 @@ export function proseUses(name, classId, activities = null) {
   return { max, spent: 0, recovery: REST[rest].map((r) => ({ ...r })) };
 }
 
+/** O pool curado de um talento, ou null. */
+export function featUses(name) {
+  const entry = FEAT_USES[String(name ?? '').trim().toLowerCase()];
+  return entry ? { max: entry.max, spent: 0, recovery: entry.recovery.map((r) => ({ ...r })) } : null;
+}
+
 /** O primeiro bloco `uses` com máximo; sem nenhum, o primeiro que existe (ou o vazio). */
 export function firstUses(...list) {
-  return list.find((u) => u?.max) ?? list.find(Boolean) ?? { max: '', spent: 0, recovery: [] };
+  const empty = { max: '', spent: 0, recovery: [] };
+  const hit = list.find((u) => u?.none || u?.max);
+  if (hit?.none) return empty;
+  return hit ?? list.find((u) => u && !u.none) ?? empty;
 }

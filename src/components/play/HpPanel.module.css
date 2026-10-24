@@ -1,0 +1,126 @@
+/* =============================================================================
+ * HpPanel.module.css: o diálogo de dano, cura e HP temporário
+ * =============================================================================
+ * CLASSES
+ *   .form, .now: a coluna e o HP de agora.
+ *   .amount: o número grande.
+ *   .row, .field, .label, .select, .trait: o tipo de dano e a defesa.
+ *   .check: as caixas (crítico, trocar o temporário).
+ *   .actions, .btn, .damage, .heal: os três botões.
+ * -------------------------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: min(320px, 78vw);
+}
+
+.now {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.amount {
+  font: inherit;
+  font-size: 34px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.amount:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 160px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.select {
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.trait {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  padding-bottom: 8px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.damage {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger-text);
+}
+
+.heal {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+}

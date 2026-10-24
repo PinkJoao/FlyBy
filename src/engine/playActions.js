@@ -18,7 +18,8 @@
 //
 // FUNÇÕES
 //   testParts(catalog, test): as partes de um teste (atributo, save, perícia,
-//     iniciativa).
+//     iniciativa); com as partes do catálogo, uma linha por peça (o atributo, a
+//     proficiência, o item: engine/playChecks).
 //   bonusParts(options): a parte do bônus livre, se houver.
 //   rngFor(options, rng): o rng com os dados físicos na frente.
 //   modeFlags(mode): vantagem e desvantagem do modo.
@@ -46,6 +47,7 @@
 
 import { d20Test, rollParts, sequenceRng, cryptoRng } from './dice';
 import { makeEvent } from './playState';
+import { checkPartsOf, partLabel } from './playChecks';
 
 /**
  * As partes de um teste de d20 do catálogo.
@@ -55,6 +57,8 @@ import { makeEvent } from './playState';
  */
 export function testParts(catalog, test) {
   const checks = catalog.checks ?? {};
+  const parts = checkPartsOf(catalog, test);
+  if (parts?.length) return parts.map((p) => ({ label: partLabel(p), formula: p.value }));
   switch (test.type) {
     case 'ability': {
       const a = checks.abilities?.find((x) => x.ability === test.id);

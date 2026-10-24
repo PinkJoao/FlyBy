@@ -19,6 +19,10 @@
 //   economyOp(state, cost, used): marca ou desmarca um custo do turno.
 //   economyEvent(args): marcar ou desmarcar um custo à mão, como evento.
 //   withRounds(modifier, state, rounds): o efeito com a duração em rodadas, se em combate.
+//   movementLeft(state, speed): os pés que sobram neste turno (o Dash soma um
+//     deslocamento inteiro).
+//   moveEvent(args), dashEvent(args), resetMoveEvent(args): andar, o Dash e
+//     zerar o movimento do turno.
 //
 // DECISÕES E ARMADILHAS
 //   - O combate é do PERSONAGEM, não da mesa: a rodada avança quando o jogador diz
@@ -28,6 +32,10 @@
 //     concentração da magia que expirou termina junto, com os efeitos dela.
 //   - A reação volta no começo do SEU turno (regra), junto com a ação e o bônus.
 //   - ECONOMY são os três custos que a barra mostra.
+//   - O MOVIMENTO do turno mora na economia (`used.move` em pés, `used.dash` em
+//     vezes): o "Next turn" o zera junto com a ação. O Dash marca a ação (quem usa
+//     o Cunning Action desmarca à mão e marca o bônus). Andar mais do que sobra
+//     é permitido e aparece negativo (liberdade com aviso).
 //   - Fora de combate, nada disso pesa: durações por rodada só nascem em combate,
 //     e a economia não é marcada.
 // -----------------------------------------------------------------------------
@@ -113,4 +121,37 @@ export function economyEvent({ state, cost, used, now = new Date() }) {
 export function withRounds(modifier, state, rounds) {
   if (!state.combat || !rounds) return modifier;
   return { ...modifier, rounds, startRound: state.combat.round };
+}
+
+/** Os pés que sobram neste turno; fora de combate, o deslocamento inteiro. */
+export function movementLeft(state, speed) {
+  const used = state.combat?.used ?? {};
+  return (speed ?? 0) * (1 + (used.dash ?? 0)) - (used.move ?? 0);
+}
+
+/** Andar `feet` pés neste turno. */
+export function moveEvent({ state, feet, speed, now = new Date() }) {
+  const used = state.combat?.used ?? {};
+  const move = Math.max(0, (used.move ?? 0) + Math.trunc(Number(feet) || 0));
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, move } } }] : [];
+  const left = (speed ?? 0) * (1 + (used.dash ?? 0)) - move;
+  return makeEvent('combat', { label: `Moved ${feet} ft`, ops, payload: { moved: Number(feet), left } }, now);
+}
+
+/** O Dash: mais um deslocamento neste turno, gastando a ação. */
+export function dashEvent({ state, speed, now = new Date() }) {
+  const used = state.combat?.used ?? {};
+  const dash = (used.dash ?? 0) + 1;
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, dash, action: true } } }] : [];
+  const left = (speed ?? 0) * (1 + dash) - (used.move ?? 0);
+  return makeEvent('combat', { label: 'Dash', ops, payload: { dash: true, left } }, now);
+}
+
+/** Zera o movimento do turno (e o Dash). */
+export function resetMoveEvent({ state, speed, now = new Date() }) {
+  const used = { ...(state.combat?.used ?? {}) };
+  delete used.move;
+  delete used.dash;
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used } }] : [];
+  return makeEvent('combat', { label: 'Movement reset', ops, payload: { left: speed ?? 0 } }, now);
 }

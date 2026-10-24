@@ -305,23 +305,32 @@ const play = {
     },
     {
       anchor: TUT.PLAY_STATS,
-      title: 'Your numbers',
+      title: 'Initiative, hit points and movement',
       body: {
-        desktop: 'Click Hit points for damage, healing or temporary hit points. Click Initiative to roll it.',
-        mobile: 'Tap Hit points for damage, healing or temporary hit points. Tap Initiative to roll it.',
+        desktop: 'Roll initiative starts combat. Click Hit points for damage, healing or temporary hit points, Armor Class for what makes it up, and Move for your speeds and your movement each turn.',
+        mobile: 'Roll initiative starts combat. Tap Hit points for damage, healing or temporary hit points, Armor Class for what makes it up, and Move for your speeds and your movement each turn.',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_ABILITIES,
+      title: 'Checks and saves',
+      body: {
+        desktop: 'Click an ability to open it. Check asks which skill (or none) and shows every bonus that applies; Save rolls the saving throw.',
+        mobile: 'Tap an ability to open it. Check asks which skill (or none) and shows every bonus that applies; Save rolls the saving throw.',
       },
       placement: 'bottom',
     },
     {
       anchor: TUT.PLAY_STATUS,
       title: 'Status and rests',
-      body: 'Conditions, effects and concentration show up here, next to your hit dice, the two rests and Start combat.',
+      body: 'Conditions, effects and concentration show up here, next to your hit dice and the two rests. In combat, the round bar appears here too.',
       placement: 'bottom',
     },
     {
       anchor: TUT.PLAY_TABS,
       title: 'Tabs',
-      body: 'Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Inventory, items and money; Checks, every ability check, save and skill.',
+      body: 'History keeps every roll (on a narrow screen); Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Inventory, items and money.',
       placement: 'bottom',
     },
     {
@@ -329,23 +338,14 @@ const play = {
       title: 'Rolling',
       body: {
         desktop: 'Click a roll to choose advantage, add a bonus or type in physical dice. Shift-click rolls right away.',
-        mobile: 'Tap a roll to choose advantage, add a bonus or type in physical dice. Hold it to roll right away.',
+        mobile: 'Tap a roll to choose advantage, add a bonus or type in physical dice.',
       },
       placement: 'auto',
     },
     {
-      anchor: TUT.PLAY_UNDO,
-      title: 'Undo and redo',
-      body: 'Undo takes back the last action, even a long rest or a potion you drank. Redo, next to it, puts it back.',
-      placement: 'bottom',
-    },
-    {
       anchor: TUT.PLAY_HISTORY,
       title: 'History',
-      body: {
-        desktop: 'Every roll and change lands here, like a chat log. Cards have follow-up buttons, such as Roll damage after a hit.',
-        mobile: 'This button opens the history: every roll and change, like a chat log, with follow-up buttons such as Roll damage after a hit.',
-      },
+      body: 'Every roll and change lands in the history, like a chat log, with follow-up buttons such as Roll damage after a hit. Undo and redo sit at its top: undo takes back the last action, even a long rest. On a wide screen it sits beside the sheet; otherwise it is the first tab.',
       placement: 'auto',
     },
   ],

@@ -17,7 +17,7 @@
 //
 // DECISÕES E ARMADILHAS
 //   Menu e guia
-//   - O d20 do topo abre o play mode, uma tela à parte (DDL-0004), só com os
+//   - O d20 ao lado do voltar abre o play mode, uma tela à parte (DDL-0004), só com os
 //     recursos experimentais ligados (DDL-0111).
 //   - O menu segue o padrão de menus do app (AppMenus, DDL-0098): glossário,
 //     Export & import, Character guide e Settings em janelinhas, e o feedback.
@@ -386,7 +386,20 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   return (
     <div className={`${styles.page} motion-page`}>
       <div className={styles.topBar}>
-        <BackButton to="/" label="characters" />
+        <div className={styles.topActions}>
+          <BackButton to="/" label="characters" />
+          {experimental && (
+            <button
+              type="button"
+              className={styles.menuBtn}
+              title="Play this character"
+              aria-label="Play"
+              onClick={() => navigate(`/play/${character.id}`)}
+            >
+              <span aria-hidden="true"><Icon name="dice" /></span>
+            </button>
+          )}
+        </div>
         <div className={styles.topActions}>
           {(() => {
             const guideShown = active && pend.total > 0;
@@ -409,17 +422,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
               </button>
             );
           })()}
-          {experimental && (
-            <button
-              type="button"
-              className={styles.menuBtn}
-              title="Play this character"
-              aria-label="Play"
-              onClick={() => navigate(`/play/${character.id}`)}
-            >
-              <span aria-hidden="true"><Icon name="dice" /></span>
-            </button>
-          )}
           <MenuButton
             buttonClassName={styles.menuBtn}
             buttonTitle="Menu"

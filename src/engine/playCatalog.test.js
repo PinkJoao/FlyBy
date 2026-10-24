@@ -263,9 +263,15 @@ describe('derivePlayCatalog', () => {
   it('dados das fórmulas, testes e números da ficha', () => {
     expect(catalog.rollData).toMatchObject({ prof: 3, abilities: { wis: { mod: 4 } }, classes: { cleric: { levels: 4 } }, 'scale.cleric.channel-divinity': 2 });
     expect(catalog.rollData.attributes.hd).toEqual({ largestAvailable: '1d10', smallestAvailable: '1d8' });
-    expect(catalog.checks.abilities.find((a) => a.ability === 'wis')).toEqual({ ability: 'wis', mod: 4, save: 7, saveProf: true });
-    expect(catalog.checks.skills.find((s) => s.skill === 'prc')).toMatchObject({ bonus: 7, prof: 1 });
-    expect(catalog.stats).toEqual({ ac: 16, hpMax: 38, profBonus: 3, level: 5, initiative: 2, speed: null });
+    expect(catalog.checks.abilities.find((a) => a.ability === 'wis')).toEqual({
+      ability: 'wis', score: 18, mod: 4, save: 7, saveProf: true,
+      checkParts: [{ kind: 'ability', ability: 'wis', value: 4 }],
+      saveParts: [{ kind: 'ability', ability: 'wis', value: 4 }, { kind: 'proficiency', level: 1, value: 3 }],
+    });
+    expect(catalog.checks.skills.find((s) => s.skill === 'prc')).toMatchObject({
+      bonus: 7, prof: 1, parts: [{ kind: 'ability', ability: 'wis', value: 4 }, { kind: 'proficiency', level: 1, value: 3 }],
+    });
+    expect(catalog.stats).toEqual({ ac: 16, acBreakdown: [], hpMax: 38, profBonus: 3, level: 5, initiative: 2, speed: null, speeds: {} });
     expect(catalog.attacks.map((a) => a.key)).toEqual(['unarmed']);
   });
 

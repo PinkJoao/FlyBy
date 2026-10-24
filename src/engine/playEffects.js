@@ -24,6 +24,8 @@
 //     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins.
 //     effectiveAc(catalog, state), effectiveSpeed(catalog, state): CA e
 //       deslocamento com condições e modificadores.
+//     effectiveSpeeds(catalog, state): cada deslocamento (voo, natação...) com as
+//       mesmas regras; o bônus de modificador vale só a pé.
 //   Modificadores
 //     makeModifier(fields): um modificador com id.
 //     featureModifier(action, catalog), spellModifier(spell, catalog): o efeito
@@ -246,6 +248,20 @@ export function effectiveSpeed(catalog, state) {
   if (ids.some((id) => CONDITIONS[id]?.speedZero)) return 0;
   const bonus = (state.modifiers ?? []).reduce((s, m) => s + (Number(m.speed) || 0), 0);
   return Math.max(0, base + bonus - 5 * exhaustion);
+}
+
+/** Cada deslocamento com condições e exaustão; o bônus de modificador só a pé. */
+export function effectiveSpeeds(catalog, state) {
+  const speeds = catalog.stats?.speeds ?? {};
+  const { ids, exhaustion } = conditionList(state);
+  const zero = ids.some((id) => CONDITIONS[id]?.speedZero);
+  const bonus = (state.modifiers ?? []).reduce((s, m) => s + (Number(m.speed) || 0), 0);
+  const out = {};
+  for (const [mode, s] of Object.entries(speeds)) {
+    const feet = zero ? 0 : Math.max(0, s.feet + (mode === 'walk' ? bonus : 0) - 5 * exhaustion);
+    out[mode] = { ...s, feet, base: s.feet };
+  }
+  return out;
 }
 
 /** Um modificador com id e os campos de sempre. */

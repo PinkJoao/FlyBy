@@ -7,8 +7,11 @@
 //   derivePlayCatalog(character, db) devolve:
 //     rollData   os dados das fórmulas (`@abilities.str.mod`, `@prof`,
 //                `@classes.x.levels`, `@scale.x.y`), para o engine/dice
-//     stats      CA, HP máximo, PB, nível, iniciativa, deslocamento
-//     checks     atributos, saves, perícias, iniciativa, morte, concentração
+//     stats      CA (e as peças dela), HP máximo, PB, nível, iniciativa, deslocamento
+//                a pé e todos os deslocamentos da espécie (voo, natação...)
+//     checks     atributos, saves, perícias, iniciativa, morte, concentração; cada
+//                teste com as PARTES do bônus (atributo, proficiência, item), que
+//                o engine/playChecks separa em fixo e condicional
 //     defenses   resistências, imunidades e vulnerabilidades a dano (com as de item)
 //     features   o nome (minúsculo) de toda feature do ator, para as passivas
 //     attacks    armas, ataque desarmado e cantrips de ataque ou salvaguarda
@@ -50,6 +53,7 @@
 //   Catálogo
 //     defensesOf(derived): as defesas a dano, com as de item.
 //     speedOf(character, db): o deslocamento a pé da espécie.
+//     speedsOf(character, db): todos os deslocamentos da espécie, em pés.
 //     spellRollData(spellcasting): os slots como dados de fórmula.
 //     buildRollData(character, derived, actor): os dados das fórmulas.
 //     checkList(derived, character): os testes.
@@ -619,6 +623,24 @@ function defensesOf(derived) {
   return { resist: join('resist'), immune: join('immune'), vulnerable: join('vulnerable') };
 }
 
+/** Todos os deslocamentos da espécie: { walk: { feet }, fly: { feet, note } }. */
+function speedsOf(character, db) {
+  if (!db || !character.species) return {};
+  const raceObj = resolveRaceObj(db, character.species.id, character.species.source, character.species.lineage);
+  const sp = parseSpecies(raceObj)?.speed ?? {};
+  const walk = typeof sp.walk === 'number' ? sp.walk : 0;
+  const out = {};
+  for (const mode of ['walk', 'fly', 'swim', 'climb', 'burrow']) {
+    const v = sp[mode];
+    if (v == null || v === false) continue;
+    const feet = v === true ? walk : typeof v === 'object' ? Number(v.number) : Number(v);
+    if (!Number.isFinite(feet) || feet <= 0) continue;
+    const note = typeof v === 'object' && v.condition ? String(v.condition).replace(/\{@\w+ ([^}|]+)[^}]*\}/g, '$1') : null;
+    out[mode] = note ? { feet, note } : { feet };
+  }
+  return out;
+}
+
 /** O deslocamento a pé da espécie, ou null (sem db ou sem espécie). */
 function speedOf(character, db) {
   if (!db || !character.species) return null;
@@ -661,18 +683,36 @@ function buildRollData(character, derived, actor) {
 /** Os testes: atributos, saves, perícias, iniciativa, morte, concentração. */
 function checkList(derived, character) {
   return {
-    abilities: ABILITIES.map((ability) => ({
-      ability,
-      mod: derived.modifiers?.[ability] ?? 0,
-      save: derived.saves?.[ability] ?? 0,
-      saveProf: (derived.proficientSaves ?? []).includes(ability),
-    })),
-    skills: Object.entries(SKILL_ABILITY).map(([skill, ability]) => ({
-      skill,
-      ability,
-      bonus: derived.skills?.[skill]?.bonus ?? 0,
-      prof: derived.skills?.[skill]?.proficiency ?? 0,
-    })),
+    abilities: ABILITIES.map((ability) => {
+      const mod = derived.modifiers?.[ability] ?? 0;
+      const saveProf = (derived.proficientSaves ?? []).includes(ability);
+      const items = (derived.itemSaveBonus?.sources ?? []).map((s) => ({ kind: 'item', label: s.name, value: s.value }));
+      return {
+        ability,
+        score: derived.scores?.[ability] ?? 10,
+        mod,
+        save: derived.saves?.[ability] ?? 0,
+        saveProf,
+        checkParts: [{ kind: 'ability', ability, value: mod }],
+        saveParts: [
+          { kind: 'ability', ability, value: mod },
+          ...(saveProf ? [{ kind: 'proficiency', level: 1, value: derived.proficiencyBonus ?? 0 }] : []),
+          ...items,
+        ],
+      };
+    }),
+    skills: Object.entries(SKILL_ABILITY).map(([skill, ability]) => {
+      const mod = derived.modifiers?.[ability] ?? 0;
+      const bonus = derived.skills?.[skill]?.bonus ?? 0;
+      const prof = derived.skills?.[skill]?.proficiency ?? 0;
+      return {
+        skill,
+        ability,
+        bonus,
+        prof,
+        parts: [{ kind: 'ability', ability, value: mod }, ...(prof ? [{ kind: 'proficiency', level: prof, value: bonus - mod }] : [])],
+      };
+    }),
     initiative: { bonus: initiativeBonus(character, derived) },
     deathSave: { bonus: 0 },
     concentration: { bonus: derived.saves?.con ?? 0 },
@@ -790,11 +830,13 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     rollData,
     stats: {
       ac: d.armorClass?.total ?? null,
+      acBreakdown: d.armorClass?.breakdown ?? [],
       hpMax: d.maxHp ?? 0,
       profBonus: d.proficiencyBonus ?? 0,
       level: d.level ?? 0,
       initiative: initiativeBonus(character, d),
       speed: speedOf(character, db),
+      speeds: speedsOf(character, db),
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),

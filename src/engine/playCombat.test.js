@@ -14,7 +14,10 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp } from './playState';
-import { roundsOf, costOfActivation, startCombatEvent, nextTurnEvent, endCombatEvent, economyOp, withRounds } from './playCombat';
+import {
+  roundsOf, costOfActivation, startCombatEvent, nextTurnEvent, endCombatEvent, economyOp, withRounds, movementLeft, moveEvent, dashEvent, resetMoveEvent,
+} from './playCombat';
+import { effectiveSpeeds } from './playEffects';
 import { castEvent } from './playCast';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -82,5 +85,29 @@ describe('combate', () => {
     const e = endCombatEvent({ state: s });
     expect(run(s, e).combat).toBeNull();
     expect(e.payload.rounds).toBe(4);
+  });
+});
+
+describe('movimento', () => {
+  it('andar, o Dash e o próximo turno', () => {
+    const s0 = st({ combat: { round: 1, used: {} } });
+    const s1 = run(s0, moveEvent({ state: s0, feet: 20, speed: 30 }));
+    expect(movementLeft(s1, 30)).toBe(10);
+    const d = dashEvent({ state: s1, speed: 30 });
+    expect(d.payload.left).toBe(40);
+    const s2 = run(s1, d);
+    expect(s2.combat.used).toEqual({ move: 20, dash: 1, action: true });
+    expect(movementLeft(run(s2, moveEvent({ state: s2, feet: 45, speed: 30 })), 30)).toBe(-5);
+    expect(run(s2, resetMoveEvent({ state: s2, speed: 30 })).combat.used).toEqual({ action: true });
+    expect(run(s2, nextTurnEvent({ state: s2 })).combat.used).toEqual({});
+  });
+
+  it('fora de combate não grava nada; os deslocamentos sentem a exaustão e o Grappled', () => {
+    expect(moveEvent({ state: st(), feet: 10, speed: 30 }).ops).toEqual([]);
+    const cat = { stats: { speeds: { walk: { feet: 30 }, fly: { feet: 30, note: 'not in heavy armor' } } } };
+    expect(effectiveSpeeds(cat, st({ conditions: { exhaustion: 2 } }))).toEqual({
+      walk: { feet: 20, base: 30 }, fly: { feet: 20, base: 30, note: 'not in heavy armor' },
+    });
+    expect(effectiveSpeeds(cat, st({ conditions: { grappled: 1 } })).fly.feet).toBe(0);
   });
 });

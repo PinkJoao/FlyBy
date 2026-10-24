@@ -18,6 +18,8 @@
 //   askSlotRecovery(props), askFontOfMagic(props): as recuperações especiais.
 //   askModifier(props): o modificador manual (ModifierPanel).
 //   askCurrency(props): gastar ou ganhar moedas (CurrencyPanel).
+//   askSkillCheck(props): a perícia do Check de um atributo (SkillCheckPanel).
+//   askMove(props): os deslocamentos e o movimento do turno (MovePanel).
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
@@ -28,6 +30,9 @@ import CastPanel from './CastPanel';
 import { SlotRecoveryPanel, FontOfMagicPanel } from './RecoveryPanels';
 import ModifierPanel from './ModifierPanel';
 import CurrencyPanel from './CurrencyPanel';
+import SkillCheckPanel from './SkillCheckPanel';
+import MovePanel from './MovePanel';
+import { ABILITY_FULL } from '../builder/labels';
 
 /** Abre um painel num diálogo; resolve com o que o painel fechar, ou null. */
 function openPanel(title, content, maxWidth) {
@@ -86,4 +91,14 @@ export function askModifier(props) {
 /** O diálogo do dinheiro; resolve com { delta, label }. */
 export function askCurrency(props) {
   return openPanel('Money', <CurrencyPanel {...props} />, 420);
+}
+
+/** O painel de movimento; resolve com { action, feet }. */
+export function askMove(props) {
+  return openPanel('Move', <MovePanel {...props} />, 400);
+}
+
+/** O seletor de perícia do Check; resolve com { test, name }. */
+export function askSkillCheck(props) {
+  return openPanel(`${ABILITY_FULL[props.ability] ?? props.ability} check`, <SkillCheckPanel {...props} />, 460);
 }

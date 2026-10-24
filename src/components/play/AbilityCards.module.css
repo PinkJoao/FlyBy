@@ -1,0 +1,59 @@
+/* =============================================================================
+ * AbilityCards.module.css: os botões Check e Save dos atributos do play mode
+ * =============================================================================
+ * CLASSES
+ *   .actions: a coluna dos dois botões dentro do card aberto.
+ *   .act, .actLabel, .actValue, .prof: um botão (rótulo e bônus); .prof é o save
+ *     com proficiência.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Os botões empilham (um por linha): no celular o card tem cerca de 1/3 da
+ *     tela, e lado a lado o bônus não caberia ao lado do rótulo.
+ *   - Fontes fluidas como as do card da ficha, com o mesmo teto.
+ * -------------------------------------------------------------------------- */
+
+.actions {
+  gap: 6px;
+  padding: 7px 6px;
+}
+
+.act {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px clamp(6px, 2.4vw, 10px);
+  font: inherit;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.act:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.actLabel {
+  font-size: clamp(11px, 3.2vw, 13px);
+  font-weight: 600;
+}
+
+.actValue {
+  font-size: clamp(13px, 3.8vw, 15px);
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.prof {
+  border-color: var(--accent-border);
+}
+
+.prof .actValue {
+  color: var(--accent);
+}

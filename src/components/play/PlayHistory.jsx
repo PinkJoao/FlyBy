@@ -125,6 +125,7 @@ function detailOf(event) {
     case 'combat':
       total = rolls.total ?? p.round ?? null;
       if (p.started) lines.push('Initiative');
+      if (p.moved != null || p.dash) lines.push(`${p.left} ft left this turn`);
       if (p.rounds) lines.push(`${p.rounds} round${p.rounds === 1 ? '' : 's'}`);
       for (const n of p.ended ?? []) lines.push(`${n} ended`);
       for (const t of p.effects ?? []) tags.push({ text: t });

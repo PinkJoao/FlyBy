@@ -1,0 +1,143 @@
+/* =============================================================================
+ * SegmentedControl.module.css: estilos do interruptor segmentado unificado
+ * =============================================================================
+ * CLASSES
+ *   .seg, .sm, .md, .lg: a trilha e suas três escalas (compacta, padrão e topo).
+ *   .auto, .equal, .block: o modo de colunas (ajustado ao texto, grade igual
+ *     inline ou largura total).
+ *   .on, .thumb: o botão ativo e o realce deslizante que corre por trás.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O realce (.thumb) fica atrás dos botões (z-index: 0) com borda
+ *     --accent-border e fundo --accent-bg (DDL-0097).
+ *   - Em `.equal` e `.block`, a largura e a posição do `.thumb` saem direto de
+ *     `--seg-count` e `--seg-index` via calc(); em `.auto`, usam `--thumb-w` e
+ *     `--thumb-x` medidos no DOM.
+ *   - A transição só liga quando `data-ready="true"` está presente na trilha,
+ *     evitando deslize inicial ao montar diálogos.
+ * -------------------------------------------------------------------------- */
+
+.seg {
+  position: relative;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+.auto {
+  display: inline-flex;
+  align-items: center;
+}
+
+.equal {
+  display: inline-grid;
+  grid-template-columns: repeat(var(--seg-count, 2), minmax(0, 1fr));
+}
+
+.block {
+  display: grid;
+  grid-template-columns: repeat(var(--seg-count, 2), minmax(0, 1fr));
+  width: 100%;
+}
+
+.lg {
+  border-radius: 10px;
+}
+
+.seg button {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.22s ease, background-color 0.15s ease;
+}
+
+.md button {
+  padding: 5px 11px;
+  font-size: 13px;
+}
+
+.equal.md button {
+  min-width: 62px;
+}
+
+.block.md button {
+  padding: 7px 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sm button {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.lg button {
+  min-width: 64px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.seg button:not(:disabled):not(.on):hover {
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+
+.seg button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.seg button.on {
+  color: var(--text-h);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  z-index: 0;
+  width: var(
+    --thumb-w,
+    calc((100% - 4px - (var(--seg-count, 2) - 1) * 2px) / var(--seg-count, 2))
+  );
+  transform: translateX(
+    var(--thumb-x, calc(var(--seg-index, 0) * (100% + 2px)))
+  );
+  box-sizing: border-box;
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  background: var(--accent-bg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lg .thumb {
+  border-radius: 8px;
+}
+
+.seg[data-active='true'] .thumb {
+  opacity: 1;
+}
+
+.seg[data-ready='true'] .thumb {
+  transition:
+    transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1.15),
+    width 0.28s cubic-bezier(0.3, 0.9, 0.3, 1.15),
+    opacity 0.15s ease;
+}

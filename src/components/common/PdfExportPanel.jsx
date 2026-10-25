@@ -25,6 +25,7 @@ import useSettingsStore from '../../store/settingsStore';
 import { applyPreset, presetOf, FEATURE_GROUPS } from '../../pdf/pdfOptions';
 import { useDialogClose } from './dialogContext';
 import Collapse from './Collapse';
+import SegmentedControl from './SegmentedControl';
 import styles from './PdfExportPanel.module.css';
 
 const FEATURE_LABEL = {
@@ -39,21 +40,13 @@ const DETAIL = [['off', 'Off'], ['titles', 'Titles'], ['full', 'Full text']];
 /** Um controle segmentado. */
 function Seg({ value, options, onChange, small = false }) {
   return (
-    <div className={`${styles.seg} ${small ? styles.segSmall : ''}`} role="radiogroup">
-      {options.map(([v, label, disabled]) => (
-        <button
-          key={v}
-          type="button"
-          role="radio"
-          aria-checked={value === v}
-          className={value === v ? styles.segOn : undefined}
-          disabled={disabled}
-          onClick={() => onChange(v)}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      value={value}
+      options={options}
+      onChange={onChange}
+      size={small ? 'sm' : 'md'}
+      role="radiogroup"
+    />
   );
 }
 

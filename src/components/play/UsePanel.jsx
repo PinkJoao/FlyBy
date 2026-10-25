@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { resolveCosts, left } from '../../engine/playUse';
 import { useDialogClose } from '../common/dialogContext';
+import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
 
 /**
@@ -94,13 +95,15 @@ export default function UsePanel({ catalog, state, activity }) {
         </label>
       )}
       {activity.attack && (
-        <div className={styles.seg}>
-          {['disadvantage', 'normal', 'advantage'].map((m) => (
-            <button key={m} type="button" className={mode === m ? `${styles.segBtn} ${styles.segOn}` : styles.segBtn} onClick={() => setMode(m)}>
-              {m[0].toUpperCase() + m.slice(1)}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          block
+          value={mode}
+          options={['disadvantage', 'normal', 'advantage'].map((m) => [
+            m,
+            m[0].toUpperCase() + m.slice(1),
+          ])}
+          onChange={setMode}
+        />
       )}
       {(activity.attack || activity.heal || (activity.damage ?? []).length > 0) && (
         <label className={styles.field}>

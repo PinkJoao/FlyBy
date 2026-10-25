@@ -29,6 +29,7 @@
 
 import { useState } from 'react';
 import { useDialogClose } from '../common/dialogContext';
+import SegmentedControl from '../common/SegmentedControl';
 import AmountStepper from './AmountStepper';
 import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
@@ -67,19 +68,13 @@ export function HealPanel({ vitals }) {
     >
       <p className={styles.now}>{vitals.current} / {vitals.max} HP{vitals.temp ? ` · ${vitals.temp} temporary` : ''}</p>
       <AmountStepper value={amount} onChange={setAmount} jumps={HP_JUMPS} />
-      <div className={panel.seg} role="group" aria-label="Kind of healing">
-        {HEAL_KINDS.map((k) => (
-          <button
-            key={k.value}
-            type="button"
-            className={kind === k.value ? `${panel.segBtn} ${panel.segOn}` : panel.segBtn}
-            aria-pressed={kind === k.value}
-            onClick={() => setKind(k.value)}
-          >
-            {k.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        block
+        ariaLabel="Kind of healing"
+        value={kind}
+        options={HEAL_KINDS}
+        onChange={setKind}
+      />
       {kind === 'temp' && (
         <label className={panel.check}>
           <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />

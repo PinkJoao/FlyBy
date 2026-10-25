@@ -242,7 +242,6 @@ function PortraitSourceModal({ onUpload, onSuggest, onUseUrl, onImage, onClose }
             onChange={setUrl}
             onImage={onImage}
             onSubmit={submitUrl}
-            autoFocus
           />
           <button type="submit" className={styles.sourceUrlBtn} disabled={!url.trim()}>
             Use URL

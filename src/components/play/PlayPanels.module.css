@@ -5,7 +5,6 @@
  *   .form, .note, .warn, .short: a coluna, as notas e os avisos em vermelho.
  *   .costs, .stepRow, .stepper, .stepValue, .smallBtn: os custos e os contadores.
  *   .field, .label, .input, .check: os campos.
- *   .seg, .segBtn, .segOn: as escolhas lado a lado (modo, criar ou converter).
  *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
  *   .actions, .btn, .primary: os botões.
  *   .coinGrid: as cinco moedas do diálogo de dinheiro.
@@ -110,34 +109,6 @@
   gap: 8px;
   font-size: 14px;
   cursor: pointer;
-}
-
-.seg {
-  display: flex;
-  gap: 4px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-soft);
-}
-
-.segBtn {
-  flex: 1 1 0;
-  padding: 7px 6px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.segOn {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
 }
 
 .options {

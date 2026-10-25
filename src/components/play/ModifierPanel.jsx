@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { validateFormula } from '../../engine/dice';
 import { makeModifier } from '../../engine/playEffects';
 import { useDialogClose } from '../common/dialogContext';
+import SegmentedControl from '../common/SegmentedControl';
 import { SKILL_LABEL } from '../builder/labels';
 import styles from './PlayPanels.module.css';
 
@@ -100,11 +101,12 @@ export default function ModifierPanel({ rollData, inCombat = false, initialLabel
         </select>
       </div>
 
-      <div className={styles.seg}>
-        {[['bonus', 'Bonus'], ['advantage', 'Advantage'], ['disadvantage', 'Disadvantage']].map(([v, l]) => (
-          <button key={v} type="button" className={mode === v ? `${styles.segBtn} ${styles.segOn}` : styles.segBtn} onClick={() => setMode(v)}>{l}</button>
-        ))}
-      </div>
+      <SegmentedControl
+        block
+        value={mode}
+        options={[['bonus', 'Bonus'], ['advantage', 'Advantage'], ['disadvantage', 'Disadvantage']]}
+        onChange={setMode}
+      />
       {mode === 'bonus' && (
         <label className={styles.field}>
           <span className={styles.label}>Bonus or penalty</span>

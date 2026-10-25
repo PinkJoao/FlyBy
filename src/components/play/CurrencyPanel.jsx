@@ -18,6 +18,7 @@
 
 import { useState } from 'react';
 import { useDialogClose } from '../common/dialogContext';
+import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
 
 const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
@@ -48,11 +49,12 @@ export default function CurrencyPanel({ currency }) {
 
   return (
     <form className={styles.form} onSubmit={submit}>
-      <div className={styles.seg}>
-        {[['spend', 'Spend'], ['gain', 'Gain']].map(([v, l]) => (
-          <button key={v} type="button" className={mode === v ? `${styles.segBtn} ${styles.segOn}` : styles.segBtn} onClick={() => setMode(v)}>{l}</button>
-        ))}
-      </div>
+      <SegmentedControl
+        block
+        value={mode}
+        options={[['spend', 'Spend'], ['gain', 'Gain']]}
+        onChange={setMode}
+      />
       <div className={styles.coinGrid}>
         {COINS.map((c) => (
           <label key={c} className={styles.field}>

@@ -22,6 +22,7 @@
 import { useState } from 'react';
 import { remainingOf } from '../../engine/playState';
 import { useDialogClose } from '../common/dialogContext';
+import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
 
 /**
@@ -82,10 +83,12 @@ export function FontOfMagicPanel({ catalog, state, rule }) {
 
   return (
     <div className={styles.form}>
-      <div className={styles.seg}>
-        <button type="button" className={mode === 'create' ? `${styles.segBtn} ${styles.segOn}` : styles.segBtn} onClick={() => setMode('create')}>Create a slot</button>
-        <button type="button" className={mode === 'convert' ? `${styles.segBtn} ${styles.segOn}` : styles.segBtn} onClick={() => setMode('convert')}>Slot to points</button>
-      </div>
+      <SegmentedControl
+        block
+        value={mode}
+        options={[['create', 'Create a slot'], ['convert', 'Slot to points']]}
+        onChange={setMode}
+      />
       <label className={styles.field}>
         <span className={styles.label}>Slot level</span>
         <select className={styles.input} value={level} onChange={(e) => setLevel(Number(e.target.value))}>

@@ -41,6 +41,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { validateFormula, resolveMode } from '../../engine/dice';
 import { useDialogClose } from '../common/dialogContext';
+import SegmentedControl from '../common/SegmentedControl';
 import styles from './RollPanel.module.css';
 
 const MODES = [
@@ -129,20 +130,14 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
       )}
 
       {kind === 'd20' && (
-        <div className={styles.seg} role="radiogroup" aria-label="Roll mode">
-          {MODES.map((m) => (
-            <button
-              key={m.value}
-              type="button"
-              role="radio"
-              aria-checked={mode === m.value}
-              className={mode === m.value ? `${styles.segBtn} ${styles.segOn}` : styles.segBtn}
-              onClick={() => setMode(m.value)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          block
+          role="radiogroup"
+          ariaLabel="Roll mode"
+          value={mode}
+          options={MODES}
+          onChange={setMode}
+        />
       )}
 
       {healOption && (

@@ -4,18 +4,13 @@
  * CLASSES
  *   .panel: a coluna do painel, na largura do diálogo.
  *   .row, .label: uma linha rótulo + controle (quebra no celular estreito).
- *   .seg, .segSmall, .segOn: o controle segmentado e o botão escolhido.
  *   .hint: a frase que explica o atalho escolhido.
  *   .more: o botão que abre o Customize.
  *   .custom, .heading, .checks, .check: o bloco de personalização.
  *   .actions, .primary: Cancel e Export.
  *
  * DECISÕES E ARMADILHAS
- *   - Cores só por token (DDL-0097): o escolhido é --accent-bg com a borda
- *     --accent-border, como o item marcado do MenuList.
- *   - .seg é uma TRILHA com folga interna, e cada botão tem a própria borda e o
- *     próprio raio. Antes o contêiner cortava os filhos (overflow + raio) e o
- *     anel do escolhido, de cantos retos, saía fatiado nas pontas.
+ *   - Os controles segmentados usam SegmentedControl (SegmentedControl.module.css).
  * -------------------------------------------------------------------------- */
 
 .panel {
@@ -37,49 +32,6 @@
 .label {
   font-size: 14px;
   color: var(--text-h);
-}
-
-.seg {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--bg);
-}
-
-.seg button {
-  appearance: none;
-  padding: 5px 11px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: none;
-  font: inherit;
-  font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.seg button:not(:disabled):not(.segOn):hover {
-  background: var(--bg-soft);
-}
-
-.seg button:disabled {
-  cursor: default;
-  opacity: 0.55;
-}
-
-.seg button.segOn {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--text-h);
-  font-weight: 600;
-  opacity: 1;
-}
-
-.segSmall button {
-  padding: 3px 8px;
-  font-size: 12px;
 }
 
 .hint {

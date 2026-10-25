@@ -36,6 +36,7 @@ import {
 } from '../../engine/portraitSuggestions';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from './Icon';
+import SegmentedControl from './SegmentedControl';
 import styles from './PortraitSuggestionsModal.module.css';
 
 const PAGE_SIZE = 24;
@@ -181,66 +182,24 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
           <div className={styles.quickRow}>
             <div className={styles.quickGroup}>
               <span className={styles.quickLabel}>Gender</span>
-              <div
-                className={styles.seg}
-                role="group"
-                aria-label="Gender"
-                data-pos={
-                  activeTags.includes('male')
-                    ? '0'
-                    : activeTags.includes('female')
-                      ? '1'
-                      : 'none'
-                }
-              >
-                <span className={styles.thumb} aria-hidden="true" />
-                {GENDER_GROUP.map((g) => {
-                  const isOn = activeTags.includes(g);
-                  return (
-                    <button
-                      key={g}
-                      type="button"
-                      className={isOn ? styles.segOn : undefined}
-                      aria-pressed={isOn}
-                      onClick={() => toggleExclusiveGroup(g, GENDER_GROUP)}
-                    >
-                      {tagLabelOf(g)}
-                    </button>
-                  );
-                })}
-              </div>
+              <SegmentedControl
+                equal
+                ariaLabel="Gender"
+                value={GENDER_GROUP.find((g) => activeTags.includes(g)) ?? null}
+                options={GENDER_GROUP.map((g) => [g, tagLabelOf(g)])}
+                onChange={(g) => toggleExclusiveGroup(g, GENDER_GROUP)}
+              />
             </div>
 
             <div className={styles.quickGroup}>
               <span className={styles.quickLabel}>Age</span>
-              <div
-                className={styles.seg}
-                role="group"
-                aria-label="Age"
-                data-pos={
-                  activeTags.includes('young')
-                    ? '0'
-                    : activeTags.includes('mature')
-                      ? '1'
-                      : 'none'
-                }
-              >
-                <span className={styles.thumb} aria-hidden="true" />
-                {AGE_GROUP.map((a) => {
-                  const isOn = activeTags.includes(a);
-                  return (
-                    <button
-                      key={a}
-                      type="button"
-                      className={isOn ? styles.segOn : undefined}
-                      aria-pressed={isOn}
-                      onClick={() => toggleExclusiveGroup(a, AGE_GROUP)}
-                    >
-                      {tagLabelOf(a)}
-                    </button>
-                  );
-                })}
-              </div>
+              <SegmentedControl
+                equal
+                ariaLabel="Age"
+                value={AGE_GROUP.find((a) => activeTags.includes(a)) ?? null}
+                options={AGE_GROUP.map((a) => [a, tagLabelOf(a)])}
+                onChange={(a) => toggleExclusiveGroup(a, AGE_GROUP)}
+              />
             </div>
           </div>
 

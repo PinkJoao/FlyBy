@@ -597,7 +597,6 @@ function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onImage, onRemove, on
             onChange={setUrl}
             onImage={onImage}
             onSubmit={submitUrl}
-            autoFocus
           />
           <button type="submit" className={styles.imgModalUrlBtn} disabled={!url.trim()}>
             Use URL

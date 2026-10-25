@@ -4,15 +4,13 @@
  * CLASSES
  *   .form: a coluna do diálogo.
  *   .formula, .note: a fórmula que vai ser rolada e a nota (a CD de um save).
- *   .seg, .segBtn, .segOn: desvantagem, normal, vantagem.
  *   .checks, .check: as caixas (crítico, versátil, dado físico).
  *   .effects, .effectNote: os efeitos que valem para a rolagem (condições, Bless).
  *   .field, .label, .input, .invalid, .error, .hint: os campos de texto.
  *   .actions, .btn, .primary: os botões, no padrão do DialogHost.
  *
  * DECISÕES E ARMADILHAS
- *   - O seletor de modo é uma trilha com botões de raio próprio, como o .seg do
- *     painel do PDF: a borda do botão marcado nunca é cortada pelo arredondamento.
+ *   - O seletor de modo usa SegmentedControl (SegmentedControl.module.css).
  * -------------------------------------------------------------------------- */
 
 .form {
@@ -39,39 +37,6 @@
   color: var(--text-muted);
   font-size: 13px;
   text-align: center;
-}
-
-.seg {
-  display: flex;
-  gap: 4px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-soft);
-}
-
-.segBtn {
-  appearance: none;
-  flex: 1 1 0;
-  padding: 7px 6px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.segBtn:hover {
-  color: var(--text-h);
-}
-
-.segOn {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
 }
 
 .effects {

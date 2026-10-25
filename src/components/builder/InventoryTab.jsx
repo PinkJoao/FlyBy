@@ -13,7 +13,7 @@
 //   groupRows(list, keyFn): agrupa uma lista ordenada (null é seção única).
 //   InventoryTab(props): a aba. Por dentro, moveInto guarda e tira.
 //   ItemThumb(props): arte do fluff ou o glyph do grupo.
-//   ImageSourceModal(props): upload, URL ou remover a imagem custom.
+//   ImageSourceModal(props): upload, URL, imagem colada ou remover a imagem custom.
 //   EquipToggle(props): o radio de equipar.
 //   CustomDetail(props): o detalhe de um item custom (HTML do Foundry).
 //   ItemRow(props): uma linha.
@@ -29,6 +29,9 @@
 //   - Remover um contêiner NÃO apaga o conteúdo: ele volta a ser solto.
 //   - O colapso das seções tem chave por aba e agrupamento.
 //   - O menos com quantidade 1 remove o item (a principal via de exclusão).
+//   - A imagem do item aceita imagem COLADA como o retrato: Ctrl+V com o
+//     escolhedor aberto (useImagePaste) ou, no celular, no campo de URL editável
+//     (ImageUrlField).
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -54,6 +57,8 @@ import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
 import SortButton from '../common/SortButton';
 import { NAME_SORT, sortName } from '../../sorting';
+import { useImagePaste } from '../common/imagePaste';
+import ImageUrlField from '../common/ImageUrlField';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -176,10 +181,8 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
     updateEntry(entry.uid, { attuned: !entry.attuned });
   };
 
-  const onItemImgFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file || !infoUid) return;
+  const applyItemImg = async (file) => {
+    if (!infoUid) return;
     try {
       updateEntry(infoUid, { customImg: await fileToPortrait(file) });
       setImgModalOpen(false);
@@ -187,6 +190,12 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
       // arquivo ilegível: mantém como está
     }
   };
+  const onItemImgFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) applyItemImg(file);
+  };
+  useImagePaste(applyItemImg, imgModalOpen);
   const setItemImgUrl = (url) => {
     if (infoUid) updateEntry(infoUid, { customImg: url });
     setImgModalOpen(false);
@@ -509,6 +518,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
               hasCustom={!!infoEntry.customImg}
               onUpload={() => imgFileRef.current?.click()}
               onUseUrl={setItemImgUrl}
+              onImage={applyItemImg}
               onRemove={clearItemImg}
               onClose={() => setImgModalOpen(false)}
             />
@@ -556,11 +566,11 @@ function ItemThumb({ src, group, alt }) {
 }
 
 /** O escolhedor da imagem do item. */
-function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onRemove, onClose }) {
+function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onImage, onRemove, onClose }) {
   const [url, setUrl] = useState('');
   useBackLayer(true, onClose);
   const submitUrl = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const trimmed = url.trim();
     if (trimmed) onUseUrl(trimmed);
   };
@@ -580,12 +590,13 @@ function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onRemove, onClose }) 
           <span>or</span>
         </div>
         <form className={styles.imgModalUrlRow} onSubmit={submitUrl}>
-          <input
-            type="url"
+          <ImageUrlField
             className={styles.imgModalUrlInput}
-            placeholder="https://example.com/item.webp"
+            placeholder="Paste an image or URL"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={setUrl}
+            onImage={onImage}
+            onSubmit={submitUrl}
             autoFocus
           />
           <button type="submit" className={styles.imgModalUrlBtn} disabled={!url.trim()}>

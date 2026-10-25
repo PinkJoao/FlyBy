@@ -5,7 +5,8 @@
 //   Lista as condições (Poisoned, Prone...), os status (Concentration, Surprised,
 //   Bloodied) e as doenças (Sewer Plague...) do `conditionsdiseases.json`, na
 //   edição mais nova, para o painel seletor do card de condições do play mode
-//   (DDL-0121). Filtro por tipo e por fonte; a prévia é o texto da regra.
+//   (DDL-0121). Filtro por tipo e por fonte; a prévia é o texto da regra. A
+//   ordem padrão é por tipo (status, condições, doenças); a outra é o nome.
 //
 // FUNÇÕES
 //   (nenhuma de topo: a entity é um objeto)
@@ -13,6 +14,9 @@
 // DECISÕES E ARMADILHAS
 //   - O tipo vai num campo próprio (`__kind`) da cópia da entrada: as três listas
 //     do arquivo não dizem o tipo em cada item.
+//   - A ordem por tipo é a `naturalSort` (o botão abre com ela) e segue a ordem
+//     de KINDS: o status (Concentration, Surprised) é o que mais se procura na
+//     mesa, e as doenças são raras. Dentro do tipo, o nome.
 //   - A lista é calculada uma vez por db (KIND_CACHE): o seletor chama `list` a
 //     cada render, e cópias novas a cada vez quebrariam o cache dos cards.
 // -----------------------------------------------------------------------------
@@ -20,10 +24,12 @@
 import { latestOnly } from '../reprints';
 
 const KINDS = [
-  ['condition', 'Condition'],
   ['status', 'Status'],
+  ['condition', 'Condition'],
   ['disease', 'Disease'],
 ];
+
+const KIND_RANK = Object.fromEntries(KINDS.map(([, label], i) => [label, i]));
 
 const KIND_CACHE = new WeakMap();
 
@@ -38,6 +44,14 @@ const conditionEntity = {
         latestOnly(db.conditionsdiseases?.[key] ?? []).map((c) => ({ ...c, __kind: label }))));
     }
     return KIND_CACHE.get(db);
+  },
+
+  naturalSort: {
+    value: 'type',
+    label: 'Type',
+    defaultDir: 'asc',
+    dirLabels: ['Status first', 'Diseases first'],
+    keyOf: (c) => KIND_RANK[c.__kind],
   },
 
   idOf: (c) => `${c.__kind}:${c.name}|${c.source}`,

@@ -79,7 +79,7 @@ export default function EffectsCard({ modifiers, combat, onAdd, onAddCustom, onR
 
       <Collapse open={open}>
         <div className={card.body}>
-          {list.length === 0 && <p className={card.empty}>No effects. Your own Rage or Bless turns on here when you use it; add what someone else casts on you, or a custom one from the DM.</p>}
+          {list.length === 0 && <p className={card.empty}>No effects. Can't find one in Add effect? Create a custom effect.</p>}
           <ul className={styles.list}>
             {list.map((m) => (
               <li key={m.id} className={styles.row}>

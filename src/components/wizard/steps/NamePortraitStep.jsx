@@ -3,14 +3,22 @@
 // =============================================================================
 // O QUE FAZ
 //   Grava `meta.name` e `meta.portrait` (o upload redimensionado por
-//   fileToPortrait, ou uma URL colada). Arquivo ilegível mantém o retrato atual.
+//   fileToPortrait, uma URL, ou uma imagem colada). Arquivo ilegível mantém o
+//   retrato atual.
 //
 // FUNÇÕES
 //   NamePortraitStep(props): o passo.
+//
+// DECISÕES E ARMADILHAS
+//   - Imagem colada como no retrato da página (CharacterIdentity): o Ctrl+V de uma
+//     imagem em qualquer lugar do passo (colar texto no nome segue normal) e, no
+//     celular, o campo de URL editável que recebe a imagem do teclado.
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
 import { fileToPortrait } from '../../common/imageFile';
+import { useImagePaste } from '../../common/imagePaste';
+import ImageUrlField from '../../common/ImageUrlField';
 import styles from './steps.module.css';
 import Icon from '../../common/Icon';
 
@@ -22,16 +30,19 @@ export default function NamePortraitStep({ character, onChange }) {
   const setName = (name) => onChange({ ...character, meta: { ...meta, name } });
   const setPortrait = (portrait) => onChange({ ...character, meta: { ...meta, portrait } });
 
-  const onFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const applyFile = async (file) => {
     try {
       setPortrait(await fileToPortrait(file));
     } catch {
       /* arquivo ilegível: mantém o retrato atual */
     }
   };
+  const onFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) applyFile(file);
+  };
+  useImagePaste(applyFile);
   const applyUrl = () => {
     const u = url.trim();
     if (u) setPortrait(u);
@@ -77,13 +88,13 @@ export default function NamePortraitStep({ character, onChange }) {
               </button>
             )}
             <div className={styles.urlRow}>
-              <input
+              <ImageUrlField
                 className={styles.textInput}
-                type="url"
                 value={url}
-                placeholder="…or paste an URL"
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && applyUrl()}
+                placeholder="…or paste an image or URL"
+                onChange={setUrl}
+                onImage={applyFile}
+                onSubmit={applyUrl}
               />
               <button type="button" className={styles.smallBtn} onClick={applyUrl} disabled={!url.trim()}>
                 Use

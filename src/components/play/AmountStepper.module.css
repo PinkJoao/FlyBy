@@ -1,0 +1,109 @@
+/* =============================================================================
+ * AmountStepper.module.css: o número grande dos painéis com menos e mais
+ * =============================================================================
+ * CLASSES
+ *   .stepper: a coluna (o número e os saltos).
+ *   .main, .side, .amount: o menos, o número e o mais na mesma linha.
+ *   .jumps, .jump, .minus, .split: os saltos embaixo (os de menos em tom
+ *     apagado; .split no último de menos, o respiro do meio).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Os botões dos lados têm a altura do número (52px): alvo de dedo folgado no
+ *     celular, e o número nunca fica espremido entre eles.
+ *   - Os saltos dividem a largura em partes iguais (--jumps, do componente), com
+ *     um respiro maior no meio separando os de menos dos de mais.
+ * -------------------------------------------------------------------------- */
+
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 8px;
+}
+
+.side,
+.jump {
+  font: inherit;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  touch-action: manipulation;
+}
+
+.side {
+  height: 52px;
+  font-size: 24px;
+}
+
+.side:hover:not(:disabled),
+.jump:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.side:active:not(:disabled),
+.jump:active:not(:disabled) {
+  background: var(--accent-bg);
+}
+
+.side:disabled,
+.jump:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.amount {
+  min-width: 0;
+  height: 52px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.amount::-webkit-outer-spin-button,
+.amount::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.amount:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.jumps {
+  display: grid;
+  grid-template-columns: repeat(var(--jumps), minmax(0, 1fr));
+  gap: 6px;
+}
+
+.split {
+  margin-right: 6px;
+}
+
+.jump {
+  height: 38px;
+  font-size: 15px;
+}
+
+.minus {
+  color: var(--text-muted);
+}

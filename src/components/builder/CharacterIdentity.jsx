@@ -3,18 +3,18 @@
 // =============================================================================
 // O QUE FAZ
 //   O bloco de identidade do topo da página (DDL-0119), o MESMO nos modos ficha e
-//   jogo: o retrato (adicionar por upload ou URL, ver em tela cheia, trocar, baixar,
-//   remover), o nome editável e a linha da classe. À direita fica um lugar vazio
+//   jogo: o retrato (adicionar por upload, URL ou imagem colada, ver em tela cheia,
+//   trocar, baixar, remover), o nome editável e a linha da classe. À direita fica um lugar vazio
 //   (`slotRef`) onde cada modo põe o seu controle: o nível na ficha, os descansos no
 //   jogo.
 //
 // FUNÇÕES
 //   CharacterIdentity(props): o bloco.
-//     rename(name), onPortraitFile(e), setPortraitUrl(url), clearPortrait(),
-//     onPortraitClick(): o nome e o retrato.
+//     rename(name), applyPortraitFile(file), onPortraitFile(e), setPortraitUrl(url),
+//     clearPortrait(), onPortraitClick(): o nome e o retrato.
 //   portraitFilename(name, src): o nome do arquivo para baixar o retrato.
 //   PortraitViewer(props): o retrato em tela cheia (trocar, baixar, remover).
-//   PortraitSourceModal(props): upload ou URL do retrato.
+//   PortraitSourceModal(props): upload, URL ou imagem colada.
 //
 // DECISÕES E ARMADILHAS
 //   - Nome e retrato são editáveis nos dois modos: não mudam a jogatina, e travar
@@ -24,11 +24,17 @@
 //   - O CSS é o da ficha (Builder.module.css): .identity e o resto continuam lá.
 //   - Retrato: o upload vira data-URL redimensionada; a URL da web é guardada
 //     direto (como o seletor de imagem do Foundry).
+//   - Imagem COLADA: com o escolhedor ou o retrato em tela cheia abertos, o Ctrl+V
+//     de uma imagem em qualquer lugar a usa (useImagePaste); no celular, o campo de
+//     URL é editável e recebe a imagem do teclado (ImageUrlField). As duas vão pelo
+//     mesmo caminho do upload (fileToPortrait).
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
 import { classSummary } from '../../schema/character';
 import { fileToPortrait } from '../common/imageFile';
+import { useImagePaste } from '../common/imagePaste';
+import ImageUrlField from '../common/ImageUrlField';
 import { useBackLayer } from '../../hooks/useBack';
 import { TUT } from '../../tutorial/anchors';
 import Icon from '../common/Icon';
@@ -45,18 +51,22 @@ export default function CharacterIdentity({ character, save, slotRef }) {
 
   const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
 
-  const onPortraitFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const applyPortraitFile = async (file) => {
     try {
       const portrait = await fileToPortrait(file);
       save({ ...character, meta: { ...character.meta, portrait } });
+      setPickerOpen(false);
       setViewerOpen(false);
     } catch {
       // arquivo ilegível/não-imagem: mantém como está
     }
   };
+  const onPortraitFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) applyPortraitFile(file);
+  };
+  useImagePaste(applyPortraitFile, pickerOpen || viewerOpen);
   const setPortraitUrl = (url) => {
     save({ ...character, meta: { ...character.meta, portrait: url } });
     setPickerOpen(false);
@@ -125,6 +135,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
             fileRef.current?.click();
           }}
           onUseUrl={setPortraitUrl}
+          onImage={applyPortraitFile}
           onClose={() => setPickerOpen(false)}
         />
       )}
@@ -170,12 +181,12 @@ function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
   );
 }
 
-/** O escolhedor da fonte do retrato: upload ou URL. */
-function PortraitSourceModal({ onUpload, onUseUrl, onClose }) {
+/** O escolhedor da fonte do retrato: upload, URL ou imagem colada. */
+function PortraitSourceModal({ onUpload, onUseUrl, onImage, onClose }) {
   const [url, setUrl] = useState('');
   useBackLayer(true, onClose);
   const submitUrl = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const trimmed = url.trim();
     if (trimmed) onUseUrl(trimmed);
   };
@@ -195,12 +206,13 @@ function PortraitSourceModal({ onUpload, onUseUrl, onClose }) {
           <span>or</span>
         </div>
         <form className={styles.sourceUrlRow} onSubmit={submitUrl}>
-          <input
-            type="url"
+          <ImageUrlField
             className={styles.sourceUrlInput}
-            placeholder="https://example.com/portrait.webp"
+            placeholder="Paste an image or URL"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={setUrl}
+            onImage={onImage}
+            onSubmit={submitUrl}
             autoFocus
           />
           <button type="submit" className={styles.sourceUrlBtn} disabled={!url.trim()}>

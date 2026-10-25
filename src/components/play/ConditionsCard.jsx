@@ -79,7 +79,7 @@ export default function ConditionsCard({ conditions, concentration, combat, onAd
 
       <Collapse open={open}>
         <div className={card.body}>
-          {count === 0 && <p className={card.empty}>No conditions. Add one when an effect, a spell or the DM gives it to you; concentrating on a spell shows up here too.</p>}
+          {count === 0 && <p className={card.empty}>No conditions.</p>}
           <ul className={styles.list}>
             {concentration && (
               <li className={styles.row}>

@@ -2,17 +2,23 @@
  * ModeSwitch.module.css: o seletor Sheet | Play
  * =============================================================================
  * CLASSES
- *   .seg, .on: a trilha e o modo escolhido.
+ *   .seg, .on, .thumb: a trilha, o modo escolhido e o realce que desliza até ele.
  *
  * DECISÕES E ARMADILHAS
  *   - O desenho é o do .seg do painel do PDF (uma trilha com folga interna e cada
  *     botão com a própria borda e raio), um pouco maior por ser o controle do topo:
  *     a altura total (38px) é a dos botões de ícone ao lado.
+ *   - O realce (.thumb) fica ATRÁS dos botões (z-index) e anda pela grade de
+ *     colunas iguais: a largura dele é a de um botão, e a ida é 100% mais o gap.
+ *     A curva passa um pouco do ponto e volta, o peso de um interruptor; com
+ *     "reduzir movimento" cai para 1 ms (motion.css).
  * -------------------------------------------------------------------------- */
 
 /* ATENÇÃO: os tokens espelham o .seg do PdfExportPanel.module.css: se mudarem lá, mude aqui. */
 .seg {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--border);
@@ -21,6 +27,8 @@
 }
 
 .seg button {
+  position: relative;
+  z-index: 1;
   appearance: none;
   min-width: 64px;
   height: 32px;
@@ -33,6 +41,7 @@
   font-weight: 600;
   color: var(--text);
   cursor: pointer;
+  transition: color 0.22s ease, background-color 0.15s ease;
 }
 
 .seg button:not(.on):hover {
@@ -40,7 +49,22 @@
 }
 
 .seg button.on {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
   color: var(--text-h);
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 6px) / 2);
+  box-sizing: border-box;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--accent-bg);
+  transition: transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1.15);
+}
+
+.seg[data-mode='play'] .thumb {
+  transform: translateX(calc(100% + 2px));
 }

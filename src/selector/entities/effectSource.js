@@ -5,10 +5,12 @@
 //   Para o card de efeitos do play mode (DDL-0121): o jogador procura o que causou
 //   o efeito (uma magia, uma feature, um talento, uma opção de feature, um item),
 //   sobretudo o que OUTRO jogador lançou nele. A lista é a do glossário
-//   (glossaryIndex) nessas categorias, e a prévia é a mesma do glossário.
+//   (glossaryIndex) nessas categorias, e a prévia é a mesma do glossário. A
+//   ordem padrão põe primeiro o que tem efeito CURADO, depois o resto por tipo;
+//   as outras são o nome, o tipo e o círculo da magia.
 //
 // FUNÇÕES
-//   (nenhuma de topo: a entity é um objeto)
+//   isAutomatic(e): se a entrada tem efeito curado (entra sozinha ao escolher).
 //
 // DECISÕES E ARMADILHAS
 //   - O índice do glossário já junta tudo isso com a edição 2024 na frente e é
@@ -18,12 +20,24 @@
 //     escolhido, ele entra sozinho; o resto abre o painel do efeito próprio com o
 //     nome e a duração já preenchidos.
 //   - A lista filtrada é guardada por db (LIST_CACHE), como a das condições.
+//   - "Automatic first" é a `naturalSort`: o curado no topo e o que abre o efeito
+//     próprio depois, este por tipo (magia, feature, talento e, no fim, os mais
+//     de 6000 itens, que sozinhos afogariam o resto pelo nome). O badge e a ordem
+//     leem o mesmo isAutomatic, para nunca discordarem. "Type" segue a ordem de CATEGORIES (a
+//     magia é o causador mais comum); "Spell level" deixa o que não é magia no fim.
 // -----------------------------------------------------------------------------
 
 import { glossaryIndexFor } from '../../components/common/glossaryIndex';
 import { sourceModifier } from '../../engine/playEffects';
 
-const CATEGORIES = new Set(['Spell', 'Class Feature', 'Subclass Feature', 'Feat', 'Feature Option', 'Item']);
+const CATEGORIES = ['Spell', 'Class Feature', 'Subclass Feature', 'Feature Option', 'Feat', 'Item'];
+
+const CATEGORY_SET = new Set(CATEGORIES);
+
+/** Se a entrada tem efeito curado: escolhida, entra sozinha. */
+export function isAutomatic(e) {
+  return e.categoryLabel === 'Spell' && !!sourceModifier(e.name);
+}
 
 const LIST_CACHE = new WeakMap();
 
@@ -34,10 +48,23 @@ const effectSourceEntity = {
   list: (db) => {
     if (!db) return [];
     if (!LIST_CACHE.has(db)) {
-      LIST_CACHE.set(db, glossaryIndexFor(db).entries.filter((e) => CATEGORIES.has(e.categoryLabel)));
+      LIST_CACHE.set(db, glossaryIndexFor(db).entries.filter((e) => CATEGORY_SET.has(e.categoryLabel)));
     }
     return LIST_CACHE.get(db);
   },
+
+  naturalSort: {
+    value: 'automatic',
+    label: 'Automatic first',
+    defaultDir: 'asc',
+    dirLabels: ['Automatic first', 'Custom first'],
+    keyOf: (e) => (isAutomatic(e) ? -1 : CATEGORIES.indexOf(e.categoryLabel)),
+  },
+
+  sorts: [
+    { value: 'type', label: 'Type', defaultDir: 'asc', dirLabels: ['Spells first', 'Items first'], keyOf: (e) => CATEGORIES.indexOf(e.categoryLabel) },
+    { value: 'level', label: 'Spell level', defaultDir: 'asc', keyOf: (e) => (e.categoryLabel === 'Spell' ? (e.raw?.level ?? null) : null) },
+  ],
 
   idOf: (e) => e.id,
 
@@ -60,7 +87,7 @@ const effectSourceEntity = {
   card: (e) => ({
     title: e.name,
     subtitle: e.subtitle || e.source,
-    badges: [e.categoryLabel, ...(e.categoryLabel === 'Spell' && sourceModifier(e.name) ? ['Automatic'] : [])],
+    badges: [e.categoryLabel, ...(isAutomatic(e) ? ['Automatic'] : [])],
   }),
 };
 

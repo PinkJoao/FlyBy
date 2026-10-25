@@ -10,16 +10,15 @@
 //     { amount, affectMax }.
 //   - HitDicePanel: quantos dados de vida rolar para curar; negativo devolve os
 //     gastos. Fecha com { count }.
-//   Cada um mostra antes o que vai acontecer.
+//   Cada um mostra antes o que vai acontecer. O número vem com menos, mais e
+//   saltos (AmountStepper): Heal e Hurt de 1 em 1 e saltos de 5 e 10, os dados de
+//   vida de 1 em 1.
 //
 // FUNÇÕES
 //   HealPanel(props), HurtPanel(props), HitDicePanel(props): os painéis.
-//   useAutoFocus(): o ref do campo que ganha o foco ao abrir.
-//   AmountInput(props): o número grande.
 //
 // DECISÕES E ARMADILHAS
-//   - O campo do número ganha o foco depois da montagem (setTimeout), pelo mesmo
-//     motivo do RollPanel: o DialogHost foca o próprio cartão no efeito dele.
+//   - O foco e o corte no mínimo são do AmountStepper (o foco só com mouse).
 //   - A prévia é uma conta da TELA, curta, para o jogador conferir; o que vale é o
 //     evento do engine (playHealth, playRest), que faz a mesma regra.
 //   - O Hurt não tem tipo de dano (pedido do usuário): resistência e imunidade não
@@ -28,8 +27,9 @@
 //   - Dados de vida: a maior face primeiro, ao gastar e ao devolver (engine/playRest).
 // -----------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useDialogClose } from '../common/dialogContext';
+import AmountStepper from './AmountStepper';
 import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
 
@@ -39,32 +39,7 @@ const HEAL_KINDS = [
   { value: 'max', label: 'Max HP' },
 ];
 
-/** O ref do campo que ganha o foco ao abrir o diálogo. */
-function useAutoFocus() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const t = setTimeout(() => ref.current?.focus(), 0);
-    return () => clearTimeout(t);
-  }, []);
-  return ref;
-}
-
-/** O número grande do painel. */
-function AmountInput({ inputRef, value, onChange, min = '0', label = 'Amount' }) {
-  return (
-    <input
-      ref={inputRef}
-      className={styles.amount}
-      type="number"
-      inputMode="numeric"
-      min={min}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="0"
-      aria-label={label}
-    />
-  );
-}
+const HP_JUMPS = [5, 10];
 
 /**
  * O painel de cura: HP, temporário ou máximo.
@@ -72,7 +47,6 @@ function AmountInput({ inputRef, value, onChange, min = '0', label = 'Amount' })
  */
 export function HealPanel({ vitals }) {
   const close = useDialogClose();
-  const inputRef = useAutoFocus();
   const [amount, setAmount] = useState('');
   const [kind, setKind] = useState('heal');
   const [replace, setReplace] = useState(false);
@@ -92,7 +66,7 @@ export function HealPanel({ vitals }) {
       }}
     >
       <p className={styles.now}>{vitals.current} / {vitals.max} HP{vitals.temp ? ` · ${vitals.temp} temporary` : ''}</p>
-      <AmountInput inputRef={inputRef} value={amount} onChange={setAmount} />
+      <AmountStepper value={amount} onChange={setAmount} jumps={HP_JUMPS} />
       <div className={panel.seg} role="group" aria-label="Kind of healing">
         {HEAL_KINDS.map((k) => (
           <button
@@ -127,7 +101,6 @@ export function HealPanel({ vitals }) {
  */
 export function HurtPanel({ vitals }) {
   const close = useDialogClose();
-  const inputRef = useAutoFocus();
   const [amount, setAmount] = useState('');
   const [affectMax, setAffectMax] = useState(false);
   const n = Math.max(0, Math.floor(Number(amount) || 0));
@@ -145,7 +118,7 @@ export function HurtPanel({ vitals }) {
       }}
     >
       <p className={styles.now}>{vitals.current} / {vitals.max} HP{vitals.temp ? ` · ${vitals.temp} temporary` : ''}</p>
-      <AmountInput inputRef={inputRef} value={amount} onChange={setAmount} />
+      <AmountStepper value={amount} onChange={setAmount} jumps={HP_JUMPS} />
       <label className={panel.check}>
         <input type="checkbox" checked={affectMax} onChange={(e) => setAffectMax(e.target.checked)} />
         <span>Also lowers the hit point maximum</span>
@@ -168,12 +141,10 @@ export function HurtPanel({ vitals }) {
  */
 export function HitDicePanel({ dice, vitals }) {
   const close = useDialogClose();
-  const inputRef = useAutoFocus();
   const [count, setCount] = useState('1');
   const n = Math.trunc(Number(count) || 0);
   const left = dice.reduce((s, d) => s + d.left, 0);
   const spent = dice.reduce((s, d) => s + d.max - d.left, 0);
-  const step = (delta) => setCount(String(n + delta));
 
   let preview = '';
   if (n > 0) preview = n > left ? `Only ${left} left to spend` : `Rolls ${n} and heals (${vitals.current} / ${vitals.max} now)`;
@@ -188,11 +159,7 @@ export function HitDicePanel({ dice, vitals }) {
       }}
     >
       <p className={styles.now}>{dice.map((d) => `${d.left}/${d.max} d${d.faces}`).join(' · ') || 'No hit dice'}</p>
-      <div className={styles.stepAmount}>
-        <button type="button" className={panel.smallBtn} onClick={() => step(-1)} aria-label="One less">-</button>
-        <AmountInput inputRef={inputRef} value={count} onChange={setCount} min={null} label="Hit dice" />
-        <button type="button" className={panel.smallBtn} onClick={() => step(1)} aria-label="One more">+</button>
-      </div>
+      <AmountStepper value={count} onChange={setCount} min={null} label="Hit dice" />
       <p className={panel.note}>Each die heals its roll plus your Constitution modifier (at least 1). A negative number gives spent dice back.</p>
       {preview && <p className={styles.preview}>{preview}</p>}
       <div className={panel.actions}>

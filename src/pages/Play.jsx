@@ -64,7 +64,7 @@
 //     consumeItem(entry), changeQuantity(entry, delta), spendMoney(): o inventário.
 //     startCombat(quick), nextTurn(), endCombat(), toggleEconomy(cost): o combate.
 //     rollInitiative(quick): o tile: fora de combate começa um; nele, só rola.
-//     moveFeet(dash): o Walk e o Dash do card de movimento (quantos pés).
+//     moveFeet(dash): o Move e o Dash do card de movimento (quantos pés).
 //     rollTool(name): o teste de uma ferramenta, com o atributo escolhido.
 //   AttackRow(props): uma linha da lista de ataques.
 //   HistoryHead(props): o título do histórico com desfazer e refazer.

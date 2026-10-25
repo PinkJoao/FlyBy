@@ -307,8 +307,8 @@ const play = {
       anchor: TUT.PLAY_STATS,
       title: 'Hit points, initiative and movement',
       body: {
-        desktop: 'Click Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Walk and Dash. Armor Class shows what makes it up.',
-        mobile: 'Tap Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Walk and Dash. Armor Class shows what makes it up.',
+        desktop: 'Click Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Move and Dash. Armor Class shows what makes it up.',
+        mobile: 'Tap Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Move and Dash. Armor Class shows what makes it up.',
       },
       placement: 'bottom',
     },

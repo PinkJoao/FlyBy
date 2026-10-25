@@ -111,7 +111,7 @@ export function askCurrency(props) {
 
 /** O painel de andar (ou correr, com `dash`); resolve com { feet }. */
 export function askMove(props) {
-  return openPanel(props.dash ? 'Dash' : 'Walk', <MovePanel {...props} />, 400);
+  return openPanel(props.dash ? 'Dash' : 'Move', <MovePanel {...props} />, 400);
 }
 
 /** O seletor de perícia do Check; resolve com { test, name }. */

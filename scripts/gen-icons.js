@@ -68,7 +68,7 @@ const ICONS = {
   heal: 'game:heart-plus',
   hurt: 'game:broken-heart',
   hitDice: 'game:rolling-dices',
-  walk: 'game:walk',
+  move: 'game:footprint',
   dash: 'game:sprint',
 
   itemAll: 'game:chest',

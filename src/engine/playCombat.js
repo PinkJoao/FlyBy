@@ -135,7 +135,7 @@ export function moveEvent({ state, feet, speed, now = new Date() }) {
   const move = Math.max(0, (used.move ?? 0) + Math.trunc(Number(feet) || 0));
   const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, move } } }] : [];
   const left = (speed ?? 0) * (1 + (used.dash ?? 0)) - move;
-  return makeEvent('combat', { label: `Walked ${feet} ft`, ops, payload: { moved: Number(feet), left } }, now);
+  return makeEvent('combat', { label: `Moved ${feet} ft`, ops, payload: { moved: Number(feet), left } }, now);
 }
 
 /** O Dash: mais um deslocamento neste turno, gastando a ação; `feet` já anda junto. */

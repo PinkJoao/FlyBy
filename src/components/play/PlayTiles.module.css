@@ -7,7 +7,8 @@
  *   .max: o "/38" do HP, menor.
  *   .note: a linha a mais (o HP temporário).
  *   .changed: o número mudado por condição ou efeito.
- *   .acts: a coluna dos botões do tile aberto (HP, movimento).
+ *   .acts: a coluna dos botões do tile aberto (HP, movimento), com o mesmo
+ *     respiro lateral das linhas do tile (.breakRow), longe das bordas do card.
  *   .act, .actIcon, .actLabel, .actValue: um botão do tile aberto.
  *   .heal, .hurt, .neutral: o tom do botão (a variável --tone).
  *
@@ -45,7 +46,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 4px 0;
+  padding: 6px clamp(6px, 2.6vw, 10px);
 }
 
 .act {

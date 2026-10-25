@@ -23,8 +23,9 @@
 //   - O ícone do canto diz o que o toque faz: o dado rola, a seta para baixo expande
 //     ali mesmo. HP e Move expandem como a CA (DDL-0120), e os botões de dentro
 //     abrem os painéis. Cada botão tem ícone e um TOM (DDL-0121): a cura verde, o
-//     dano vermelho, o resto na cor de destaque; o tom é a variável `--tone`.
-//   - Walk e Dash só valem em combate (o movimento do turno nasce no Roll
+//     dano vermelho, o resto na cor de destaque; o tom é a variável `--tone`. O
+//     botão é Move, não Walk (DDL-0121, adendo): o movimento pode ser a nado, em voo.
+//   - Move e Dash só valem em combate (o movimento do turno nasce no Roll
 //     initiative); fora dele ficam desativados, sem aviso (o title diz por quê).
 //   - Um número mudado por condição ou efeito (CA, deslocamento) leva a cor de
 //     destaque, como na antiga faixa de números.
@@ -131,7 +132,7 @@ export default function PlayTiles({
           </div>
         ))}
         <div className={styles.acts}>
-          <ActButton icon="walk" label="Walk" value={combat ? `${moveLeft} ft` : null} onClick={onMove} disabled={!combat} title={combat ? 'Walk this turn' : 'In combat (roll initiative first)'} />
+          <ActButton icon="move" label="Move" value={combat ? `${moveLeft} ft` : null} onClick={onMove} disabled={!combat} title={combat ? 'Move this turn (any speed)' : 'In combat (roll initiative first)'} />
           <ActButton icon="dash" label="Dash" value={combat && speed ? `+${speed}` : null} onClick={onDash} disabled={!combat} title={combat ? 'Dash: one more move this turn (uses your action)' : 'In combat (roll initiative first)'} />
         </div>
       </ExpandTile>

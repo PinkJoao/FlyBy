@@ -8,6 +8,8 @@
  *   .note: a linha a mais (o HP temporário).
  *   .changed: o número mudado por condição ou efeito.
  *   .acts: a coluna dos botões do tile aberto (HP, movimento).
+ *   .act, .actIcon, .actLabel, .actValue: um botão do tile aberto.
+ *   .heal, .hurt, .neutral: o tom do botão (a variável --tone).
  *
  * DECISÕES E ARMADILHAS
  *   - O tile de ação é um button com altura fixa (a do .tileHead da ficha); a nota
@@ -46,7 +48,70 @@
   padding: 4px 0;
 }
 
-.acts button:disabled {
+.act {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px 6px 6px;
+  font: inherit;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--border));
+  background: color-mix(in srgb, var(--tone) 9%, var(--bg-soft));
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.act:hover:not(:disabled) {
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 18%, var(--bg-soft));
+}
+
+.act:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.act:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.actIcon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 17px;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 18%, transparent);
+}
+
+.actLabel {
+  font-size: clamp(12px, 3.4vw, 14px);
+  font-weight: 700;
+}
+
+.actValue {
+  margin-left: auto;
+  font-size: clamp(12px, 3.4vw, 14px);
+  font-weight: 700;
+  color: var(--tone);
+  font-variant-numeric: tabular-nums;
+}
+
+.heal {
+  --tone: var(--success);
+}
+
+.hurt {
+  --tone: var(--danger);
+}
+
+.neutral {
+  --tone: var(--accent);
 }

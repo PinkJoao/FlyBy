@@ -12,7 +12,7 @@
 //   PlayTiles(props): os quatro tiles.
 //   RollTile(props): o tile que rola (a iniciativa).
 //   ExpandTile(props): um tile que expande ali mesmo (HP, movimento, CA).
-//   ActButton(props): um botão do tile aberto (rótulo e valor).
+//   ActButton(props): um botão do tile aberto (ícone, rótulo, valor e tom).
 //
 // DECISÕES E ARMADILHAS
 //   - A ORDEM é HP, Initiative, Move, Armor Class (DDL-0119), a mesma no desktop
@@ -22,9 +22,10 @@
 //     ficha): na troca de modo eles deslizam até o lugar novo, e os outros aparecem.
 //   - O ícone do canto diz o que o toque faz: o dado rola, a seta para baixo expande
 //     ali mesmo. HP e Move expandem como a CA (DDL-0120), e os botões de dentro
-//     abrem os painéis; os botões têm o estilo dos de Check e Save (AbilityCards).
-//   - Move e Dash só valem em combate (o movimento do turno nasce no Roll
-//     initiative); fora dele o tile aberto mostra os deslocamentos e o aviso.
+//     abrem os painéis. Cada botão tem ícone e um TOM (DDL-0121): a cura verde, o
+//     dano vermelho, o resto na cor de destaque; o tom é a variável `--tone`.
+//   - Walk e Dash só valem em combate (o movimento do turno nasce no Roll
+//     initiative); fora dele ficam desativados, sem aviso (o title diz por quê).
 //   - Um número mudado por condição ou efeito (CA, deslocamento) leva a cor de
 //     destaque, como na antiga faixa de números.
 // -----------------------------------------------------------------------------
@@ -36,7 +37,6 @@ import Collapse from '../common/Collapse';
 import AnimatedNumber from '../common/AnimatedNumber';
 import RollButton from './RollButton';
 import sheet from '../builder/StatsHeader.module.css';
-import acts from './AbilityCards.module.css';
 import styles from './PlayTiles.module.css';
 
 const SPEED_LABEL = { walk: 'Walk', fly: 'Fly', swim: 'Swim', climb: 'Climb', burrow: 'Burrow' };
@@ -72,12 +72,13 @@ function ExpandTile({ value, label, note, changed, flip, title, children }) {
   );
 }
 
-/** Um botão do tile aberto: o rótulo e, à direita, o valor. */
-function ActButton({ label, value, onClick, disabled, title }) {
+/** Um botão do tile aberto: o ícone, o rótulo, o valor à direita e o tom. */
+function ActButton({ icon, label, value, tone = 'neutral', onClick, disabled, title }) {
   return (
-    <button type="button" className={acts.act} onClick={onClick} disabled={disabled} title={title}>
-      <span className={acts.actLabel}>{label}</span>
-      {value != null && <span className={acts.actValue}>{value}</span>}
+    <button type="button" className={`${styles.act} ${styles[tone]}`} onClick={onClick} disabled={disabled} title={title}>
+      <span className={styles.actIcon} aria-hidden="true"><Icon name={icon} /></span>
+      <span className={styles.actLabel}>{label}</span>
+      {value != null && <span className={styles.actValue}>{value}</span>}
     </button>
   );
 }
@@ -103,9 +104,9 @@ export default function PlayTiles({
         title="Heal, hurt or spend hit dice"
       >
         <div className={styles.acts}>
-          <ActButton label="Heal" onClick={onHeal} title="Heal, temporary hit points or a higher maximum" />
-          <ActButton label="Hurt" onClick={onHurt} title="Damage taken" />
-          <ActButton label="Hit dice" value={diceMax ? `${diceLeft}/${diceMax}` : null} onClick={onHitDice} title="Spend hit dice to heal, or give spent ones back" />
+          <ActButton icon="heal" tone="heal" label="Heal" onClick={onHeal} title="Heal, temporary hit points or a higher maximum" />
+          <ActButton icon="hurt" tone="hurt" label="Hurt" onClick={onHurt} title="Damage taken" />
+          <ActButton icon="hitDice" label="Hit dice" value={diceMax ? `${diceLeft}/${diceMax}` : null} onClick={onHitDice} title="Spend hit dice to heal, or give spent ones back" />
         </div>
       </ExpandTile>
       <RollTile
@@ -130,10 +131,9 @@ export default function PlayTiles({
           </div>
         ))}
         <div className={styles.acts}>
-          <ActButton label="Move" value={combat ? `${moveLeft} ft` : null} onClick={onMove} disabled={!combat} title="Move this turn" />
-          <ActButton label="Dash" value={combat && speed ? `+${speed}` : null} onClick={onDash} disabled={!combat} title="Dash: one more move this turn (uses your action)" />
+          <ActButton icon="walk" label="Walk" value={combat ? `${moveLeft} ft` : null} onClick={onMove} disabled={!combat} title={combat ? 'Walk this turn' : 'In combat (roll initiative first)'} />
+          <ActButton icon="dash" label="Dash" value={combat && speed ? `+${speed}` : null} onClick={onDash} disabled={!combat} title={combat ? 'Dash: one more move this turn (uses your action)' : 'In combat (roll initiative first)'} />
         </div>
-        {!combat && <p className={sheet.emptyNote}>Movement each turn is tracked in combat. Roll initiative to start one.</p>}
       </ExpandTile>
       <ExpandTile flip="tile-ac" value={ac ?? '-'} label="Armor Class" changed={ac !== baseAc}>
         {acBreakdown.length === 0 && acEffects.length === 0 && <p className={sheet.emptyNote}>Equip armor or a shield in the sheet to change AC.</p>}

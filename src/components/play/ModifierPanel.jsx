@@ -15,6 +15,8 @@
 // DECISÕES E ARMADILHAS
 //   - O bônus é validado com os dados das fórmulas do catálogo, como o do diálogo
 //     de rolagem: "+@prof" vale; uma ref errada aparece na hora.
+//   - `initialLabel` e `initialRounds` preenchem o nome e a duração quando o
+//     efeito vem de um causador sem efeito curado (o Add effect, DDL-0121).
 //   - "N rounds" só aparece em combate: fecha com `rounds`, e a tela conta da
 //     rodada atual (playCombat.withRounds); o "Next turn" o tira ao passar.
 //   - Um modificador sem efeito nenhum (nem alvo com bônus ou vantagem, nem CA) não
@@ -43,18 +45,18 @@ const DURATIONS = [
 
 /**
  * O conteúdo do diálogo de modificador.
- * @param {{ rollData: object, inCombat?: boolean }} props
+ * @param {{ rollData: object, inCombat?: boolean, initialLabel?: string, initialRounds?: number|null }} props
  */
-export default function ModifierPanel({ rollData, inCombat = false }) {
+export default function ModifierPanel({ rollData, inCombat = false, initialLabel = '', initialRounds = null }) {
   const close = useDialogClose();
-  const [label, setLabel] = useState('');
+  const [label, setLabel] = useState(initialLabel);
   const [targets, setTargets] = useState(['attack']);
   const [skill, setSkill] = useState('');
   const [mode, setMode] = useState('bonus');
   const [formula, setFormula] = useState('');
   const [ac, setAc] = useState('');
-  const [duration, setDuration] = useState('manual');
-  const [rounds, setRounds] = useState('10');
+  const [duration, setDuration] = useState(inCombat && initialRounds ? 'rounds' : 'manual');
+  const [rounds, setRounds] = useState(String(initialRounds || 10));
 
   const formulaError = mode === 'bonus' && formula.trim() ? validateFormula(formula, rollData) : null;
   const allTargets = [...targets, ...(skill ? [`skill:${skill}`] : [])];

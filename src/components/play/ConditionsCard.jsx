@@ -4,8 +4,10 @@
 // O QUE FAZ
 //   Um card no estilo do de proficiências (o mesmo CSS), logo abaixo dele: o
 //   cabeçalho conta as condições ativas; aberto, lista cada uma com o que ela faz
-//   (lido do registro CONDITIONS, engine/playEffects), o nível da exaustão com os botões de menos e
-//   mais, o botão de tirar, e "Add condition".
+//   (lido do registro CONDITIONS, engine/playEffects), o nível da exaustão com os
+//   botões de menos e mais, o botão de tirar, e "Add condition" (que abre o painel
+//   seletor, na tela). Status e doenças também entram aqui, e a CONCENTRAÇÃO
+//   (DDL-0121), com o save e o fim dela; tocar no nome abre a regra.
 //
 // FUNÇÕES
 //   ConditionsCard(props): o card.
@@ -14,12 +16,14 @@
 // DECISÕES E ARMADILHAS
 //   - O texto do que a condição faz sai dos MESMOS campos que as rolagens usam
 //     (attack, check, speedZero, autoFail...): o card promete o que o engine aplica.
+//   - Uma condição fora do registro (Surprised, Sewer Plague) só tem o nome e a
+//     regra: não mexe em rolagem, então o card não promete efeito nenhum.
 //   - A exaustão 6 mata: o aviso fica no card, aberto ou não, porque é o fim do
 //     personagem e não um detalhe.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { CONDITIONS } from '../../engine/playEffects';
+import { CONDITIONS, conditionName } from '../../engine/playEffects';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
 import card from '../builder/ProficienciesCard.module.css';
@@ -45,11 +49,18 @@ function effectLines(c, level) {
 
 /**
  * O card das condições.
- * @param {{ conditions: object, onAdd: Function, onSet: Function }} props
+ * @param {{ conditions: object, concentration: object|null, combat: object|null, onAdd: Function, onSet: Function,
+ *   onInfo: Function, onConcentrationSave: Function, onConcentrationEnd: Function }} props
  */
-export default function ConditionsCard({ conditions, onAdd, onSet }) {
+export default function ConditionsCard({ conditions, concentration, combat, onAdd, onSet, onInfo, onConcentrationSave, onConcentrationEnd }) {
   const [open, setOpen] = useState(false);
   const active = Object.entries(conditions ?? {}).filter(([, level]) => level > 0);
+  const count = active.length + (concentration ? 1 : 0);
+  const names = [
+    ...(concentration ? [`Concentration (${concentration.name})`] : []),
+    ...active.map(([id, level]) => `${conditionName(id)}${CONDITIONS[id]?.levels ? ` ${level}` : ''}`),
+  ];
+  const roundsLeft = combat && concentration?.expiresRound ? concentration.expiresRound - combat.round : null;
   const dead = (conditions?.exhaustion ?? 0) >= 6;
 
   return (
@@ -58,26 +69,41 @@ export default function ConditionsCard({ conditions, onAdd, onSet }) {
         <span className={card.icon}><Icon name="condition" /></span>
         <span className={card.title}>Conditions</span>
         <span className={card.bonusWrap}>
-          <span className={card.bonusLabel}>{active.length ? 'Active' : 'None'}</span>
-          {active.length > 0 && <span className={card.bonus}>{active.length}</span>}
+          <span className={card.bonusLabel}>{count ? 'Active' : 'None'}</span>
+          {count > 0 && <span className={card.bonus}>{count}</span>}
         </span>
         <span className={card.chevron}><Icon name="chevron" /></span>
       </button>
-      {!open && active.length > 0 && (
-        <p className={styles.summary}>{active.map(([id, level]) => `${CONDITIONS[id]?.name ?? id}${CONDITIONS[id]?.levels ? ` ${level}` : ''}`).join(', ')}</p>
-      )}
+      {!open && count > 0 && <p className={styles.summary}>{names.join(', ')}</p>}
       {dead && <p className={styles.warn}>Exhaustion 6: the character dies.</p>}
 
       <Collapse open={open}>
         <div className={card.body}>
-          {active.length === 0 && <p className={card.empty}>No conditions. Add one when an effect, a spell or the DM gives it to you.</p>}
+          {count === 0 && <p className={card.empty}>No conditions. Add one when an effect, a spell or the DM gives it to you; concentrating on a spell shows up here too.</p>}
           <ul className={styles.list}>
+            {concentration && (
+              <li className={styles.row}>
+                <div className={styles.rowMain}>
+                  <button type="button" className={styles.rowName} onClick={() => onInfo('concentration')}>Concentration</button>
+                  <span className={styles.rowNote}>On {concentration.name}</span>
+                  {roundsLeft != null && <span className={styles.rowNote}>{roundsLeft} round{roundsLeft === 1 ? '' : 's'} left</span>}
+                </div>
+                <div className={styles.rowCtrl}>
+                  <button type="button" className={styles.ctrlBtn} onClick={onConcentrationSave} aria-label="Concentration save" title="Concentration save">
+                    <Icon name="dice" />
+                  </button>
+                  <button type="button" className={styles.ctrlBtn} onClick={onConcentrationEnd} aria-label="End concentration" title="End it">
+                    <Icon name="close" />
+                  </button>
+                </div>
+              </li>
+            )}
             {active.map(([id, level]) => {
               const c = CONDITIONS[id];
               return (
                 <li key={id} className={styles.row}>
                   <div className={styles.rowMain}>
-                    <span className={styles.rowName}>{c?.name ?? id}</span>
+                    <button type="button" className={styles.rowName} onClick={() => onInfo(id)}>{conditionName(id)}</button>
                     {effectLines(c, level).map((l) => <span key={l} className={styles.rowNote}>{l}</span>)}
                   </div>
                   <div className={styles.rowCtrl}>
@@ -88,7 +114,7 @@ export default function ConditionsCard({ conditions, onAdd, onSet }) {
                         <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, Math.min(c.levels, level + 1))} disabled={level >= c.levels} aria-label="One level more">+</button>
                       </>
                     ) : (
-                      <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, 0)} aria-label={`End ${c?.name ?? id}`} title="End it">
+                      <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, 0)} aria-label={`End ${conditionName(id)}`} title="End it">
                         <Icon name="close" />
                       </button>
                     )}

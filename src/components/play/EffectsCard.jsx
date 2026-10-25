@@ -5,7 +5,9 @@
 //   Um card no estilo do de proficiências (o mesmo CSS), logo abaixo do das
 //   condições: o cabeçalho conta os efeitos ligados (Rage, Bless, o do mestre);
 //   aberto, lista cada um com o que ele muda, quanto tempo falta e o botão de
-//   tirar, e "Add effect" (o ModifierPanel).
+//   tirar, e dois botões (DDL-0121): "Add effect" abre o painel seletor para
+//   achar o CAUSADOR (a magia, a feature que outro jogador usou em você) e
+//   "Add custom effect" o efeito livre (o bônus do mestre, ModifierPanel).
 //
 // FUNÇÕES
 //   EffectsCard(props): o card.
@@ -15,6 +17,8 @@
 // DECISÕES E ARMADILHAS
 //   - As rodadas que faltam só aparecem em combate (a duração em rodadas nasce
 //     nele, engine/playCombat); fora dele vale a duração escrita.
+//   - O que o próprio personagem lança ou usa (Bless, Rage) entra SOZINHO ao
+//     lançar ou usar; o Add effect é para o que vem de fora.
 //   - O efeito ligado por concentração diz que acaba com ela: tirar a concentração
 //     o tira junto (engine/playEffects).
 // -----------------------------------------------------------------------------
@@ -54,9 +58,9 @@ function effectLines(m, combat) {
 
 /**
  * O card dos efeitos.
- * @param {{ modifiers: object[], combat: object|null, onAdd: Function, onRemove: Function }} props
+ * @param {{ modifiers: object[], combat: object|null, onAdd: Function, onAddCustom: Function, onRemove: Function }} props
  */
-export default function EffectsCard({ modifiers, combat, onAdd, onRemove }) {
+export default function EffectsCard({ modifiers, combat, onAdd, onAddCustom, onRemove }) {
   const [open, setOpen] = useState(false);
   const list = modifiers ?? [];
 
@@ -75,7 +79,7 @@ export default function EffectsCard({ modifiers, combat, onAdd, onRemove }) {
 
       <Collapse open={open}>
         <div className={card.body}>
-          {list.length === 0 && <p className={card.empty}>No effects. Features like Rage and spells like Bless turn on here when used; add your own for anything else.</p>}
+          {list.length === 0 && <p className={card.empty}>No effects. Your own Rage or Bless turns on here when you use it; add what someone else casts on you, or a custom one from the DM.</p>}
           <ul className={styles.list}>
             {list.map((m) => (
               <li key={m.id} className={styles.row}>
@@ -91,7 +95,10 @@ export default function EffectsCard({ modifiers, combat, onAdd, onRemove }) {
               </li>
             ))}
           </ul>
-          <button type="button" className={styles.add} onClick={onAdd}>+ Add effect</button>
+          <div className={styles.adds}>
+            <button type="button" className={styles.add} onClick={onAdd} title="Find the spell or feature that caused it">+ Add effect</button>
+            <button type="button" className={styles.add} onClick={onAddCustom} title="A bonus or penalty of your own, like one from the DM">+ Add custom effect</button>
+          </div>
         </div>
       </Collapse>
     </div>

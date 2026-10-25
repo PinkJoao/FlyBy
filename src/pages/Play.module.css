@@ -7,11 +7,10 @@
  *     do menu da ficha.
  *   .historyHead, .historyActions: o título do histórico com desfazer e refazer.
  *   .restGroup, .restBtn: Short rest e Long rest no lugar do controle de nível.
- *   .status, .statusRow: a faixa de estado (morte, concentração, descansos).
+ *   .status: a faixa de estado (a morte e o combate; só aparece com um deles).
  *   .deathCard, .deadCard, .deathTitle, .pips, .pip, .pipOk, .pipBad,
  *     .deathHint: os testes contra a morte.
- *   .chip, .chipText, .chipBtn, .ghostBtn, .restBtns: a concentração e os botões
- *     do combate.
+ *   .ghostBtn, .restBtns: os botões do combate.
  *   .combatBar, .combatRound, .econ, .econBtn, .econUsed: a barra do combate
  *     (rodada, iniciativa, ação, bônus e reação gastos).
  *   .actionsTab, .heading, .hint: a aba Actions e os títulos.
@@ -101,13 +100,6 @@
   margin-top: 16px;
 }
 
-.statusRow {
-  display: flex;
-  align-items: center;
-  gap: 8px 12px;
-  flex-wrap: wrap;
-}
-
 .deathCard {
   display: flex;
   align-items: center;
@@ -162,27 +154,6 @@
   color: var(--text-muted);
 }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px 4px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  min-width: 0;
-}
-
-.chipText {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chipBtn,
 .ghostBtn {
   font: inherit;
   font-size: 13px;
@@ -195,7 +166,6 @@
   cursor: pointer;
 }
 
-.chipBtn:hover,
 .ghostBtn:hover {
   border-color: var(--accent-border);
   color: var(--accent);

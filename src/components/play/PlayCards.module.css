@@ -6,7 +6,8 @@
  *     aviso da exaustão 6.
  *   .list, .row, .rowMain, .rowName, .rowNote: uma condição ou efeito por linha.
  *   .rowCtrl, .ctrlBtn, .level: os controles (tirar, o nível com menos e mais).
- *   .add: o botão de acrescentar, no fim.
+ *   .add, .adds: o botão de acrescentar, no fim (e a fila deles, nos efeitos).
+ *   O nome da linha é um botão quando abre a regra (as condições).
  *
  * DECISÕES E ARMADILHAS
  *   - O resumo com o card fechado mostra os NOMES ativos: o jogador vê o que pesa
@@ -61,8 +62,30 @@
 }
 
 .rowName {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
   font-weight: 600;
   color: var(--text-h);
+  text-align: left;
+}
+
+button.rowName {
+  cursor: pointer;
+  text-decoration: underline dotted color-mix(in srgb, var(--text-h) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+button.rowName:hover {
+  color: var(--accent);
+}
+
+.adds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .rowNote {

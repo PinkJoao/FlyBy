@@ -52,6 +52,11 @@
 //       usar uma feature, as recuperações especiais e o ajuste à mão.
 //     checkAbility(ability), saveAbility(ability, quick): o Check (o seletor de
 //       perícia e então a rolagem) e o Save de um card de atributo.
+//     pickCondition(raw), conditionInfo(id): a condição escolhida no painel seletor
+//       (a concentração pergunta no quê) e a regra dela.
+//     pickEffectSource(source): o causador escolhido no Add effect (o efeito
+//       curado entra sozinho; o resto abre o efeito próprio já preenchido).
+//     addCustomEffect(): o efeito próprio (o do mestre).
 //     addCondition(), setCondition(id, level), addEffect(), removeEffect(id):
 //       condições e efeitos.
 //     castSpell(origin, spell), spellRoll(spellKey, level, kind),
@@ -59,7 +64,7 @@
 //     consumeItem(entry), changeQuantity(entry, delta), spendMoney(): o inventário.
 //     startCombat(quick), nextTurn(), endCombat(), toggleEconomy(cost): o combate.
 //     rollInitiative(quick): o tile: fora de combate começa um; nele, só rola.
-//     moveFeet(dash): o Move e o Dash do card de movimento (quantos pés).
+//     moveFeet(dash): o Walk e o Dash do card de movimento (quantos pés).
 //     rollTool(name): o teste de uma ferramenta, com o atributo escolhido.
 //   AttackRow(props): uma linha da lista de ataques.
 //   HistoryHead(props): o título do histórico com desfazer e refazer.
@@ -101,6 +106,11 @@
 //   - O Hurt do card de HP não tem tipo de dano (DDL-0120): só o número e se corta
 //     o máximo. Os dados de vida pelo card rolam sem diálogo de rolagem (são vários
 //     de uma vez) e vão inteiros para o evento.
+//   - Condições e efeitos (DDL-0121): o Add condition e o Add effect abrem o
+//     PAINEL SELETOR do app (SelectorPanel, `picker`), com as entities condition
+//     (condições, status e doenças) e effectSource (o causador). A concentração
+//     mora no card de condições; a faixa de estado só aparece com a morte ou o
+//     combate.
 //   - Ferramenta: o 2024 não fixa o atributo, então o jogador escolhe (Destreza
 //     primeiro, a mais comum nas ferramentas de ladrão e afins).
 //   - Descanso com 0 HP: a regra exige 1 HP, então a tela PERGUNTA (liberdade com
@@ -147,12 +157,12 @@ import { emptyPlayState } from '../engine/playState';
 import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
 import {
-  CONDITIONS, rollEffects, applyEffects, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent,
+  rollEffects, applyEffects, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
 import { itemUseEvent, quantityEvent, ammoOps, currencyEvent, itemCostOf, healOf } from '../engine/playInventory';
 import {
-  ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds,
+  ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
   movementLeft, moveEvent, dashEvent,
 } from '../engine/playCombat';
 import { askRoll } from '../components/play/rollDialog';
@@ -174,6 +184,10 @@ import ProficienciesCard from '../components/builder/ProficienciesCard';
 import ConditionsCard from '../components/play/ConditionsCard';
 import EffectsCard from '../components/play/EffectsCard';
 import { SKILL_LABEL } from '../components/builder/labels';
+import SelectorPanel from '../selector/SelectorPanel';
+import conditionEntity from '../selector/entities/condition';
+import effectSourceEntity from '../selector/entities/effectSource';
+import { showDetailPopup } from '../components/common/detailPopup';
 import sheetPage from './Builder.module.css';
 import sheetHeader from '../components/builder/StatsHeader.module.css';
 import styles from './Play.module.css';
@@ -294,6 +308,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     canNext: tabIndex < tabs.length - 1,
   });
   const [toast, setToast] = useState(null);
+  const [picker, setPicker] = useState(null);
 
 
   useEffect(() => {
@@ -417,23 +432,42 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   const endConcentration = () => record(concentrationEvent({ state }));
 
-  /** Liga uma condição escolhida da lista. */
-  const addCondition = async () => {
-    const free = Object.entries(CONDITIONS).filter(([id]) => !state.conditions?.[id]);
-    const r = await ask({
-      title: 'Add a condition',
-      fields: [{ type: 'select', name: 'id', label: 'Condition', options: free.map(([id, c]) => ({ label: c.name, value: id })) }],
-      actions: [{ label: 'Cancel', value: false }, { label: 'Add', value: true, tone: 'primary' }],
-    });
-    if (r?.action && r.values?.id) record(conditionEvent({ state, id: r.values.id, level: 1 }));
+  const addCondition = () => setPicker('condition');
+
+  /** A condição escolhida no painel seletor; a concentração pergunta no quê. */
+  const pickCondition = (raw) => {
+    setPicker(null);
+    if (raw.name === 'Concentration') {
+      startConcentration();
+      return;
+    }
+    const id = conditionId(raw.name);
+    if (!state.conditions?.[id]) record(conditionEvent({ state, id, level: 1 }));
+  };
+
+  /** A regra de uma condição, status ou doença, no popup do app. */
+  const conditionInfo = (id) => {
+    const raw = conditionEntity.list(db).find((c) => conditionId(c.name) === id);
+    if (raw) showDetailPopup({ entity: conditionEntity, raw, db });
   };
 
   const setCondition = (id, level) => record(conditionEvent({ state, id, level }));
 
-  /** Liga um efeito manual (o do mestre, ou o de uma magia sem registro). */
-  const addEffect = async () => {
-    const modifier = await askModifier({ rollData: catalog.rollData, inCombat: !!state.combat });
+  const addEffect = () => setPicker('effect');
+
+  /** Liga um efeito próprio (o do mestre), já preenchido quando vem de um causador. */
+  const addCustomEffect = async (initial = {}) => {
+    const modifier = await askModifier({ rollData: catalog.rollData, inCombat: !!state.combat, ...initial });
     if (modifier) record(modifierEvent({ modifier: withRounds(modifier, state, modifier.rounds) }));
+  };
+
+  /** O causador escolhido no Add effect: o efeito curado entra sozinho, o resto vai ao efeito próprio. */
+  const pickEffectSource = (source) => {
+    setPicker(null);
+    const rounds = source.kind === 'entity' ? roundsOf(source.raw?.duration) : null;
+    const curated = source.categoryLabel === 'Spell' ? sourceModifier(source.name) : null;
+    if (curated) record(modifierEvent({ modifier: withRounds(curated, state, rounds) }));
+    else addCustomEffect({ initialLabel: source.name, initialRounds: rounds });
   };
 
   const removeEffect = (id) => record(removeModifierEvent({ state, id }));
@@ -725,10 +759,20 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         />
       </div>
       <div className={sheetPage.stack} data-tour={TUT.PLAY_CONDITIONS}>
-        <ConditionsCard conditions={state.conditions} onAdd={addCondition} onSet={setCondition} />
-        <EffectsCard modifiers={state.modifiers} combat={state.combat} onAdd={addEffect} onRemove={removeEffect} />
+        <ConditionsCard
+          conditions={state.conditions}
+          concentration={state.concentration}
+          combat={state.combat}
+          onAdd={addCondition}
+          onSet={setCondition}
+          onInfo={conditionInfo}
+          onConcentrationSave={askConcentrationSave}
+          onConcentrationEnd={endConcentration}
+        />
+        <EffectsCard modifiers={state.modifiers} combat={state.combat} onAdd={addEffect} onAddCustom={() => addCustomEffect()} onRemove={removeEffect} />
       </div>
 
+      {(hp.current === 0 && hp.max > 0) || hp.death.dead || state.combat ? (
       <section className={styles.status} data-tour={TUT.PLAY_STATUS} data-flip="status">
         {(hp.current === 0 && hp.max > 0) || hp.death.dead ? (
           <div className={hp.death.dead ? `${styles.deathCard} ${styles.deadCard}` : styles.deathCard}>
@@ -773,18 +817,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             </span>
           </div>
         ) : null}
-        <div className={styles.statusRow}>
-          {state.concentration ? (
-            <span className={styles.chip}>
-              <span className={styles.chipText}>Concentrating: {state.concentration.name}{state.combat && state.concentration.expiresRound ? ` (${state.concentration.expiresRound - state.combat.round} rd)` : ''}</span>
-              <button type="button" className={styles.chipBtn} onClick={askConcentrationSave}>Save</button>
-              <button type="button" className={styles.chipBtn} onClick={endConcentration}>End</button>
-            </span>
-          ) : (
-            <button type="button" className={styles.ghostBtn} onClick={startConcentration}>+ Concentration</button>
-          )}
-        </div>
       </section>
+      ) : null}
 
       <nav className={sheetPage.tabBar} data-tour={TUT.PLAY_TABS} data-flip="tabs" data-flip-fade="">
         {tabs.map((t) => (
@@ -850,6 +884,30 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} />
         </div>,
         sideSlot,
+      )}
+
+      {picker === 'condition' && (
+        <SelectorPanel
+          entity={conditionEntity}
+          db={db}
+          currentId={null}
+          heading="Add a condition"
+          hint="Conditions, statuses like Concentration, and diseases."
+          exclude={(c) => c.name !== 'Concentration' && !!state.conditions?.[conditionId(c.name)]}
+          onSelect={pickCondition}
+          onClose={() => setPicker(null)}
+        />
+      )}
+      {picker === 'effect' && (
+        <SelectorPanel
+          entity={effectSourceEntity}
+          db={db}
+          currentId={null}
+          heading="What caused the effect?"
+          hint="Find the spell or feature someone used on you. Automatic ones turn on by themselves; the rest open a custom effect with the name filled in."
+          onSelect={pickEffectSource}
+          onClose={() => setPicker(null)}
+        />
       )}
 
       {toast && (

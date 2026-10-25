@@ -118,6 +118,6 @@ describe('Dash com deslocamento', () => {
     const d = dashEvent({ state: s, speed: 30, feet: 25 });
     expect(d.payload.left).toBe(25);
     expect(run(s, d).combat.used).toEqual({ move: 35, dash: 1, action: true });
-    expect(d.label).toBe('Dash, moved 25 ft');
+    expect(d.label).toBe('Dash, 25 ft');
   });
 });

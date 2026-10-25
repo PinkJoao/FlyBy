@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyOp } from './playState';
 import {
   conditionList, rollEffects, applyEffects, effectiveDefenses, effectiveAc, effectiveSpeed, makeModifier,
-  featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent,
+  featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier,
 } from './playEffects';
 
 const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
@@ -147,5 +147,27 @@ describe('modificadores manuais e duração', () => {
     expect(effectiveAc(catalog, on)).toBe(17);
     expect(effectiveSpeed(catalog, on)).toBe(60);
     expect(run(on, removeModifierEvent({ state: on, id: m.id })).modifiers).toEqual([]);
+  });
+});
+
+describe('status, doenças e efeitos de outros', () => {
+  it('a chave é o nome em minúsculas, e o nome volta com maiúsculas', () => {
+    expect(conditionId('Sewer Plague')).toBe('sewer plague');
+    expect(conditionName('sewer plague')).toBe('Sewer Plague');
+    expect(conditionName('poisoned')).toBe('Poisoned');
+  });
+
+  it('um status fora do registro aparece mas não mexe em rolagem', () => {
+    const s = applyOp(emptyPlayState(), { op: 'condition', id: 'surprised', level: 1 });
+    expect(rollEffects(s, { features: [] }, { kind: 'attack' })).toEqual([]);
+    expect(conditionEvent({ state: emptyPlayState(), id: 'surprised', level: 1 }).label).toBe('Surprised');
+  });
+
+  it('o Bless lançado por outro vira o efeito curado, sem concentração', () => {
+    const m = sourceModifier('Bless');
+    expect(m.label).toBe('Bless');
+    expect(m.source).toBe('spell');
+    expect(m.concentration).toBeUndefined();
+    expect(sourceModifier('Fireball')).toBeNull();
   });
 });

@@ -1,8 +1,8 @@
 // =============================================================================
-// MovePanel: quantos pés andar (Move) ou correr (Dash) neste turno
+// MovePanel: quantos pés andar (Walk) ou correr (Dash) neste turno
 // =============================================================================
 // O QUE FAZ
-//   O painel dos botões Move e Dash do card de movimento aberto: o jogador diz
+//   O painel dos botões Walk e Dash do card de movimento aberto: o jogador diz
 //   quantos pés se desloca, e o painel mostra quanto sobra agora e quanto vai
 //   sobrar. No Dash, o turno ganha mais um deslocamento inteiro antes de andar.
 //   Fecha com { feet }, ou null. Quem o abre é o playDialogs.jsx.
@@ -71,11 +71,11 @@ export default function MovePanel({ dash, speed, left }) {
         ))}
       </div>
       <p className={after < 0 ? `${styles.preview} ${panel.short}` : styles.preview}>
-        {after} ft left after {dash ? 'the Dash' : 'moving'}{after < 0 ? ' (more than you have)' : ''}
+        {after} ft left after {dash ? 'the Dash' : 'walking'}{after < 0 ? ' (more than you have)' : ''}
       </p>
       {dash && <p className={panel.note}>The Dash uses your action.</p>}
       <div className={panel.actions}>
-        <button type="submit" className={`${panel.btn} ${panel.primary}`} disabled={n <= 0 && !dash}>{dash ? 'Dash' : 'Move'}</button>
+        <button type="submit" className={`${panel.btn} ${panel.primary}`} disabled={n <= 0 && !dash}>{dash ? 'Dash' : 'Walk'}</button>
       </div>
     </form>
   );

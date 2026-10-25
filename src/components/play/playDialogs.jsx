@@ -101,7 +101,7 @@ export function askFontOfMagic(props) {
 
 /** O diálogo do modificador manual; resolve com o modificador pronto. */
 export function askModifier(props) {
-  return openPanel('Add an effect', <ModifierPanel {...props} />, 440);
+  return openPanel(props.initialLabel ? props.initialLabel : 'Custom effect', <ModifierPanel {...props} />, 440);
 }
 
 /** O diálogo do dinheiro; resolve com { delta, label }. */
@@ -111,7 +111,7 @@ export function askCurrency(props) {
 
 /** O painel de andar (ou correr, com `dash`); resolve com { feet }. */
 export function askMove(props) {
-  return openPanel(props.dash ? 'Dash' : 'Move', <MovePanel {...props} />, 400);
+  return openPanel(props.dash ? 'Dash' : 'Walk', <MovePanel {...props} />, 400);
 }
 
 /** O seletor de perícia do Check; resolve com { test, name }. */

@@ -65,6 +65,11 @@ const ICONS = {
   sparkles: 'game:sparkles',
   condition: 'game:knockout',
   effect: 'game:aura',
+  heal: 'game:heart-plus',
+  hurt: 'game:broken-heart',
+  hitDice: 'game:rolling-dices',
+  walk: 'game:walk',
+  dash: 'game:sprint',
 
   itemAll: 'game:chest',
   itemWeapon: 'game:crossed-swords',

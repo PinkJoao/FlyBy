@@ -15,6 +15,8 @@
 //   Registro
 //     conditionList(state): as condições ativas, com as incluídas (Paralyzed
 //       inclui Incapacitated), e o nível da exaustão.
+//     conditionId(name), conditionName(id): a chave de uma condição, status ou
+//       doença no estado, e o nome dela de volta.
 //   Rolagens
 //     rollEffects(state, catalog, roll): o que se aplica a uma rolagem.
 //     applyEffects(effects, enabledIds): vantagem, desvantagem, partes, piso,
@@ -30,6 +32,8 @@
 //     makeModifier(fields): um modificador com id.
 //     featureModifier(action, catalog), spellModifier(spell, catalog): o efeito
 //       curado de uma feature usada ou de uma magia lançada, ou null.
+//     sourceModifier(name): o efeito curado de uma magia lançada por OUTRO (o Add
+//       effect do card), sem ligação com a concentração do personagem, ou null.
 //     endConcentrationOps(state): termina a concentração e o que dependia dela.
 //     restModifierOps(state, period): o que um descanso tira.
 //     conditionEvent(args), modifierEvent(args), removeModifierEvent(args): os
@@ -49,6 +53,13 @@
 //     concentração, iniciativa) e -5 pés por nível; nível 6 é a morte (lembrete).
 //   - Incapacitated quebra a concentração e a Rage NO MESMO evento que o aplica.
 //   - Petrified: resistência a todo dano (`resistAll`).
+//   - Status e doença (Surprised, Sewer Plague) também são condições no estado
+//     (DDL-0121): a chave é o NOME em minúsculas (conditionId), e o que não está
+//     em CONDITIONS só aparece, sem mexer em rolagem. A concentração é a exceção:
+//     tem o campo próprio `concentration`, e a tela a mostra entre as condições.
+//   - Efeito de OUTRO jogador (sourceModifier): o mesmo registro SPELL_EFFECTS
+//     pelo nome, com `source` de magia (some no descanso), sem `concentration`:
+//     a concentração é de quem lançou, e tirar o efeito é à mão.
 //   Modificador (o `modifiers[]` do estado de jogo)
 //   - `{ id, label, source, duration, concentration?, endsOnIncapacitated?,
 //     effects: [{ targets, formula?, mode?, when?, optional? }], resist?, ac?,
@@ -133,6 +144,16 @@ export function conditionList(state) {
     for (const inc of CONDITIONS[id]?.includes ?? []) ids.add(inc);
   }
   return { ids: [...ids], exhaustion: state.conditions?.exhaustion ?? 0 };
+}
+
+/** A chave de uma condição, status ou doença no estado: o nome em minúsculas. */
+export function conditionId(name) {
+  return String(name ?? '').trim().toLowerCase();
+}
+
+/** O nome de uma condição pela chave (a do registro, ou a chave com maiúsculas). */
+export function conditionName(id) {
+  return CONDITIONS[id]?.name ?? String(id).replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 }
 
 /** Um efeito de modificador vale para esta rolagem? */
@@ -285,6 +306,12 @@ export function spellModifier(spell) {
   };
 }
 
+/** O efeito curado de uma magia lançada por outro, pelo nome, ou null. */
+export function sourceModifier(name) {
+  const entry = SPELL_EFFECTS[String(name ?? '').toLowerCase()];
+  return entry ? makeModifier({ ...entry.make(), source: 'spell' }) : null;
+}
+
 /** Termina a concentração e tira os modificadores que dependiam dela. */
 export function endConcentrationOps(state) {
   if (!state.concentration) return [];
@@ -312,7 +339,7 @@ export function conditionEvent({ state, id, level, now = new Date() }) {
     ops.push(...endConcentrationOps(state));
     ops.push(...(state.modifiers ?? []).filter((m) => m.endsOnIncapacitated).map((m) => ({ op: 'modifier', remove: m.id })));
   }
-  const name = c?.name ?? id;
+  const name = conditionName(id);
   const label = level > 0 ? (c?.levels ? `${name} ${level}` : name) : `${name} ended`;
   return makeEvent('condition', { label, ops, payload: { id, level } }, now);
 }

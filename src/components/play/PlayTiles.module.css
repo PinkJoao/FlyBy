@@ -2,6 +2,7 @@
  * PlayTiles.module.css: o que os tiles do play mode têm além dos da ficha
  * =============================================================================
  * CLASSES
+ *   .playTiles: anula no celular a reordenação dos tiles da ficha.
  *   .icon: o ícone do canto, sem a rotação do chevron da ficha.
  *   .max: o "/38" do HP, menor.
  *   .note: a linha a mais (o HP temporário).
@@ -11,6 +12,11 @@
  *   - O tile de ação é um button com altura fixa (a do .tileHead da ficha); a nota
  *     do HP temporário cabe embaixo do rótulo sem crescer o card.
  * -------------------------------------------------------------------------- */
+
+/* ATENÇÃO: duas classes para ganhar do `.tiles > :nth-child(n)` do StatsHeader.module.css. */
+.playTiles.playTiles > * {
+  order: 0;
+}
 
 .icon {
   transform: none;

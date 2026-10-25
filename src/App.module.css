@@ -10,6 +10,9 @@
  *   - O .main publica a própria rolagem como `--flyby-page` (scroll-timeline):
  *     é ela que move o fundo decorado (decor.css), que fica FORA dele. E corta o
  *     eixo X, porque abas e passos entram deslizando de lado (motion.css).
+ *   - O espaço da barra de rolagem fica SEMPRE reservado (scrollbar-gutter): sem
+ *     isso, uma página que passa a caber na tela (o modo jogo, mais curto que a
+ *     ficha) perde a barra e todo o conteúdo anda alguns pixels para o lado.
  * -------------------------------------------------------------------------- */
 
 .app {
@@ -24,5 +27,6 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
   scroll-timeline: --flyby-page block;
 }

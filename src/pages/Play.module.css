@@ -2,13 +2,10 @@
  * Play.module.css: a tela do play mode
  * =============================================================================
  * CLASSES
- *   .shell, .playPage, .side: a página da ficha (Builder.module.css) e, a partir
- *     de 1140px, a coluna do histórico ao lado dela.
+ *   .sideContent: o histórico dentro da coluna que a pages/Character põe ao lado.
  *   .iconBtn: os botões de ícone (o menu do topo, desfazer e refazer), do tamanho
  *     do menu da ficha.
  *   .historyHead, .historyActions: o título do histórico com desfazer e refazer.
- *   .portraitStatic, .nameText: o que o perfil da ficha muda aqui (o retrato não
- *     abre nada; o nome é um título, não um campo).
  *   .restGroup, .restBtn: Short rest e Long rest no lugar do controle de nível.
  *   .status, .statusRow: a faixa de estado (morte, concentração, descansos).
  *   .deathCard, .deadCard, .deathTitle, .pips, .pip, .pipOk, .pipBad,
@@ -29,14 +26,9 @@
  *     .stack vêm do Builder.module.css, com as mesmas larguras, margens e quebras.
  *     Daqui só sai o que é do play mode: o perfil, a faixa de estado, o histórico
  *     e o aviso. A coluna principal tem a largura da ficha em qualquer tela.
- *   - A partir de 1140px (760 da página, 360 da coluna e a barra de rolagem do
- *     desktop) o histórico vira a coluna .side
- *     AO LADO da página (o .shell é uma grade de duas colunas, centrada); abaixo
- *     disso o histórico é a PRIMEIRA aba (DDL-0115). Antes de 1140px a coluna
- *     apertaria a página: a ficha, nessa largura,
- *     ainda tem 760px.
- *   - .playPage só aumenta o espaço de baixo da página: o aviso da última rolagem
- *     não pode cobrir o fim da lista.
+ *   - A página, o topo e a coluna do histórico (posição, largura, quando aparece)
+ *     são da pages/Character (Character.module.css, DDL-0117); abaixo de 1140px o
+ *     histórico é a PRIMEIRA aba (DDL-0115).
  *   - O nome QUEBRA em vez de ser cortado: com overflow hidden e nowrap, a altura
  *     da linha cortava acentos e descendentes (mais ainda na Cinzel do tema papel).
  *   - O perfil é o da ficha (Builder.module.css .identity), empilhado e centrado
@@ -45,10 +37,6 @@
  *   - Os atributos usam os cards da ficha (AbilityCards, StatsHeader.module.css).
  *   - O aviso fica acima da área de gestos do celular (safe-area-inset-bottom).
  * -------------------------------------------------------------------------- */
-
-.shell .playPage {
-  padding-bottom: 96px;
-}
 
 .iconBtn {
   appearance: none;
@@ -75,19 +63,6 @@
   cursor: default;
 }
 
-.portraitStatic {
-  cursor: default;
-}
-
-.portraitStatic:hover {
-  border-color: var(--border);
-}
-
-.nameText {
-  margin: 0;
-  line-height: normal;
-  overflow-wrap: anywhere;
-}
 
 /* ATENÇÃO: os tokens espelham o .group do LevelControls.module.css: se mudarem lá, mude aqui. */
 .restGroup {
@@ -248,8 +223,10 @@
   margin-left: auto;
 }
 
-.side {
-  display: none;
+.sideContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .historyHead {
@@ -428,28 +405,6 @@
     width: 100%;
     justify-content: flex-end;
   }
-}
-
-@media (min-width: 1140px) {
-  .shell {
-    display: grid;
-    grid-template-columns: minmax(0, 760px) 360px;
-    justify-content: center;
-    align-items: start;
-  }
-
-  .side {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    position: sticky;
-    top: 24px;
-    margin-top: 24px;
-    padding-right: 24px;
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-  }
-
 }
 
 .combatBar {

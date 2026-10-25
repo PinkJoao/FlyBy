@@ -16,6 +16,8 @@
 //     modos serem o mesmo card; só os botões têm CSS daqui.
 //   - O Check não rola direto nem com Shift: antes vem a escolha da perícia (ou o
 //     teste puro), que é o que muda o bônus.
+//   - `data-flip` com a mesma identidade da ficha (ability-str): na troca de modo o
+//     card fechado é idêntico e não se mexe (DDL-0118).
 //   - O Save do atributo com proficiência leva a cor de destaque, como o ponto de
 //     proficiência das perícias.
 // -----------------------------------------------------------------------------
@@ -34,7 +36,7 @@ function AbilityCard({ ability, onCheck, onSave }) {
   const [open, setOpen] = useState(false);
   const name = ABILITY_FULL[ability.ability];
   return (
-    <div className={open ? `${sheet.ability} ${sheet.open}` : sheet.ability}>
+    <div className={open ? `${sheet.ability} ${sheet.open}` : sheet.ability} data-flip={`ability-${ability.ability}`}>
       <button type="button" className={sheet.abilityHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={sheet.chevron}><Icon name="chevron" /></span>
         <span className={sheet.name}>{name}</span>

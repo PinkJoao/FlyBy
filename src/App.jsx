@@ -8,7 +8,8 @@
 //   erro o ErrorScreen, que oferece voltar ao SRD embutido.
 //   Pronto, expõe o db pelo DataProvider e monta as rotas (Home, Builder, Wizard)
 //   mais as camadas globais (glossário, diálogos, imagem, tutorial).
-//   Rotas: Home, Builder, Wizard, Play (o play mode, DDL-0004) e About (os créditos).
+//   Rotas: Home, Character (a ficha em /build/:id e o jogo em /play/:id, a mesma
+//   página nos dois modos, DDL-0117), Wizard e About (os créditos).
 //
 // FUNÇÕES
 //   App(): o componente raiz.
@@ -25,9 +26,8 @@ import GlossaryOverlay from './components/common/GlossaryOverlay';
 import ImageViewer from './components/common/ImageViewer';
 import TutorialOverlay from './components/common/TutorialOverlay';
 import Home from './pages/Home';
-import Builder from './pages/Builder';
+import Character from './pages/Character';
 import WizardPage from './pages/WizardPage';
-import Play from './pages/Play';
 import About from './pages/About';
 import styles from './App.module.css';
 
@@ -50,9 +50,9 @@ export default function App() {
         <main className={styles.main}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/build/:id" element={<Builder />} />
+            <Route path="/build/:id" element={<Character />} />
             <Route path="/build/:id/wizard" element={<WizardPage />} />
-            <Route path="/play/:id" element={<Play />} />
+            <Route path="/play/:id" element={<Character />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

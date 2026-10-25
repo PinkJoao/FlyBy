@@ -1,10 +1,11 @@
 // =============================================================================
-// Play: o play mode, a ficha para jogar na mesa
+// Play: o modo jogo da página do personagem
 // =============================================================================
 // O QUE FAZ
-//   A interface PRÓPRIA do play mode (DDL-0004, docs/PLAY-MODE-PLAN.md 3.9),
-//   separada do builder: lê o mesmo personagem e a mesma derivação, mais o
-//   catálogo de jogo (engine/playCatalog) e o documento de jogo (usePlayDoc).
+//   O play mode (docs/PLAY-MODE-PLAN.md), o modo JOGO da página do personagem
+//   (pages/Character, DDL-0117: o seletor Sheet | Play no topo): lê o mesmo
+//   personagem e a mesma derivação, mais o catálogo de jogo (engine/playCatalog) e
+//   o documento de jogo (usePlayDoc).
 //   Fase C2: o topo (retrato, nome, HP, CA, iniciativa, deslocamento, PB), os
 //   testes (atributos, saves, perícias, iniciativa), os ataques com acerto e
 //   dano, o diálogo de rolagem e o histórico com desfazer e refazer.
@@ -26,10 +27,10 @@
 //   durações em rodadas, engine/playCombat) numa barra na faixa de estado.
 //
 // FUNÇÕES
-//   Play(): carrega o personagem (os hooks ficam no PlayInner); com os recursos
-//     experimentais desligados, mostra o aviso no lugar da tela.
 //   signed(n): o número com sinal.
-//   PlayInner(props): a tela.
+//   PlayInner(props): o modo jogo, com o personagem garantido (quem carrega é a
+//     pages/Character); o menu e a coluna do histórico entram por portal nos
+//     lugares dela (`actionsSlot`, `sideSlot`).
 //     roll(build, dialog, quick): pergunta (ou não), rola, grava e mostra.
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
@@ -47,7 +48,6 @@
 //       usar uma feature, as recuperações especiais e o ajuste à mão.
 //     checkAbility(ability), saveAbility(ability, quick): o Check (o seletor de
 //       perícia e então a rolagem) e o Save de um card de atributo.
-//     toSheet(): sai para a ficha do personagem (o voltar do app e do celular).
 //     addCondition(), setCondition(id, level), addEffect(), removeEffect(id):
 //       condições e efeitos.
 //     castSpell(origin, spell), spellRoll(spellKey, level, kind),
@@ -70,28 +70,28 @@
 //   - Desfazer e refazer moram no HISTÓRICO (HistoryHead, DDL-0116): no topo da
 //     coluna e da aba History, ao lado do que eles mexem. O topo da página fica com
 //     o voltar e o menu, como na ficha.
-//   - O PERFIL também é o da ficha (DDL-0115): retrato, nome e classe com as
-//     classes dela, e no lugar do controle de nível os botões Short rest e Long
-//     rest (o nome não é editável aqui, nem o retrato abre o visualizador).
+//   - O PERFIL é o da página (CharacterIdentity, DDL-0119), o mesmo da ficha e
+//     editável aqui também; no lugar do controle de nível entram os botões Short
+//     rest e Long rest (`levelSlot`).
 //   - O LAYOUT é o da ficha (DDL-0114): a página, o topo, os tiles e atributos no
 //     .header da ficha, o painel de proficiências no .stack, a barra de abas, o
 //     painel que entra deslizando (slideClass) e o arrastar para trocar de aba
 //     (useSwipeNav), tudo com as classes da própria ficha. Só o perfil, a faixa de
-//     estado (condições, efeitos, combate) e o histórico são do play mode; o
-//     histórico fica numa coluna ao lado da página a partir de 1140px.
-//   - O play mode é um recurso EXPERIMENTAL (DDL-0111): os botões Play só
-//     aparecem com "Features in development" ligado, e um link direto com ele
-//     desligado mostra o aviso com o botão de ligar (liberdade com aviso).
+//     estado (condições, efeitos, combate) e o histórico são do play mode; a
+//     coluna do histórico é posta pela pages/Character (sideSlot).
+//   - O play mode é um recurso EXPERIMENTAL (DDL-0111): sem "Features in
+//     development" ligado não há seletor nem botão Play, e /play/:id vira a ficha.
 //   - Os atributos são os mini cards da ficha (AbilityCards, o mesmo CSS): aberto,
 //     Check leva ao seletor de perícia (SkillCheckPanel, com os bônus em fixos,
 //     rolados e condicionais) e Save à rolagem. Não há mais aba Checks.
-//   - O voltar (o botão e o do celular) leva à FICHA, não à Home: a página tem uma
-//     camada no voltar (useBackLayer) que sai por useLeaveTo, desempilhando; vindo
-//     da Home, o histórico fica Home e ficha. "Edit sheet" sai do mesmo jeito.
+//   - `data-flip` marca o que a troca de modo anima (pages/Character, DDL-0118): os
+//     descansos, as proficiências, a faixa de estado, a barra de abas e o painel.
+//   - Ficha e jogo são MODOS da mesma página (DDL-0117): o voltar leva à lista de
+//     personagens, e "Edit sheet" no menu troca para o modo ficha (onEditSheet).
 //   - Rolar a iniciativa É começar o combate: o tile Roll initiative substitui o
 //     antigo "Start combat"; em combate, ele só rola (o combate segue).
-//   - O play mode NÃO edita decisões de build (pergunta 7 do plano): "Edit sheet"
-//     leva ao builder.
+//   - O play mode NÃO edita decisões de build (pergunta 7 do plano): elas são do
+//     modo ficha.
 //   - Dano sofrido com concentração abre logo o save de CON com a CD (como o
 //     aviso do Foundry); cancelar deixa o botão no cartão do dano para depois.
 //   - Descanso com 0 HP: a regra exige 1 HP, então a tela PERGUNTA (liberdade com
@@ -123,17 +123,12 @@
 // -----------------------------------------------------------------------------
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import useCharacterStore from '../store/characterStore';
-import useSettingsStore from '../store/settingsStore';
+import { createPortal } from 'react-dom';
 import { useData } from '../data/dataContext';
-import useDerived from '../hooks/useDerived';
 import usePlayDoc from '../hooks/usePlayDoc';
-import { useBackLayer, useLeaveTo } from '../hooks/useBack';
 import { useSwipeNav } from '../hooks/useSwipeNav';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
-import { classSummary } from '../schema/character';
 import { derivePlayCatalog } from '../engine/playCatalog';
 import {
   vitals as vitalsOf, damageEvent, healEvent, tempHpEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
@@ -158,7 +153,6 @@ import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
 import RollButton from '../components/play/RollButton';
 import PlayHistory from '../components/play/PlayHistory';
-import BackButton from '../components/common/BackButton';
 import MenuButton from '../components/common/MenuButton';
 import Icon from '../components/common/Icon';
 import { alert, ask, confirm, menu } from '../components/common/dialog';
@@ -189,42 +183,6 @@ const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
 /** O número do aviso de um evento: o total rolado, o dano, a cura ou o temporário. */
 const toastNumber = (e) => e.rolls?.total ?? e.payload?.taken ?? e.payload?.healed ?? e.payload?.to ?? e.payload?.round ?? e.payload?.left ?? null;
-
-export default function Play() {
-  const { id } = useParams();
-  const loaded = useCharacterStore((s) => s.loaded);
-  const load = useCharacterStore((s) => s.load);
-  const character = useCharacterStore((s) => s.getById(id));
-  const experimental = useSettingsStore((s) => s.experimental);
-  const setExperimental = useSettingsStore((s) => s.setExperimental);
-
-  useEffect(() => {
-    if (!loaded) load();
-  }, [loaded, load]);
-
-  if (!experimental) {
-    return (
-      <div className={sheetPage.page}>
-        <BackButton to="/" label="characters" />
-        <h1 className={styles.name}>Play mode</h1>
-        <p className={styles.hint}>
-          The play mode is still being built. It is behind Settings &gt; Experimental &gt; Features in development, and it may change.
-        </p>
-        <button type="button" className={styles.ghostBtn} onClick={() => setExperimental(true)}>Turn it on</button>
-      </div>
-    );
-  }
-  if (!loaded) return <div className={sheetPage.page}>Loading…</div>;
-  if (!character) {
-    return (
-      <div className={sheetPage.page}>
-        <p>Character not found.</p>
-        <BackButton to="/" label="characters" />
-      </div>
-    );
-  }
-  return <PlayInner key={character.id} character={character} />;
-}
 
 /** Uma linha da lista de ataques: acerto (ou CD) e dano, com os botões de rolar. */
 function AttackRow({ attack, onAttack, onDamage }) {
@@ -303,9 +261,8 @@ function HistoryHead({ onUndo, onRedo, canUndo, canRedo, lastLabel, nextLabel })
 }
 
 /** A tela do play mode, com o personagem garantido. */
-function PlayInner({ character }) {
+export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot, onEditSheet }) {
   const { db } = useData();
-  const derived = useDerived(character);
   const catalog = useMemo(() => derivePlayCatalog(character, db, { derived }), [character, db, derived]);
   const play = usePlayDoc(character.id);
   const wide = useMediaQuery(WIDE_QUERY);
@@ -329,10 +286,6 @@ function PlayInner({ character }) {
   });
   const [toast, setToast] = useState(null);
 
-  const leaveTo = useLeaveTo();
-  /** Sai para a ficha do personagem, desempilhando (o voltar do app e do celular). */
-  const toSheet = () => leaveTo(`/build/${character.id}`);
-  useBackLayer(true, toSheet);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -712,215 +665,202 @@ function PlayInner({ character }) {
   );
 
   return (
-    <div className={styles.shell}>
-      <div className={`${sheetPage.page} ${styles.playPage} motion-page`}>
-        <div className={sheetPage.topBar}>
-          <BackButton to={`/build/${character.id}`} label="sheet" />
-          <div className={sheetPage.topActions}>
-            <MenuButton
-              buttonClassName={styles.iconBtn}
-              buttonTitle="Menu"
-              items={[
-                { label: 'Edit sheet', sub: 'Choices, level, gear and spells', onClick: toSheet },
-                { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
-                { label: 'Settings', sub: 'Theme and play history', onClick: openSettings },
-              ]}
-            >
-              <span aria-hidden="true"><Icon name="menu" /></span>
-            </MenuButton>
-          </div>
-        </div>
+    <>
+      {actionsSlot && createPortal(
+        <MenuButton
+          buttonClassName={styles.iconBtn}
+          buttonTitle="Menu"
+          items={[
+            { label: 'Edit sheet', sub: 'Choices, level, gear and spells', onClick: onEditSheet },
+            { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
+            { label: 'Settings', sub: 'Theme and play history', onClick: openSettings },
+          ]}
+        >
+          <span aria-hidden="true"><Icon name="menu" /></span>
+        </MenuButton>,
+        actionsSlot,
+      )}
 
-        <div className={sheetPage.identity}>
-          <div className={sheetPage.portraitWrap}>
-            <div className={`${sheetPage.portrait} ${character.meta.portrait ? sheetPage.portraitFilled : ''} ${styles.portraitStatic}`}>
-              {character.meta.portrait ? <img src={character.meta.portrait} alt="Portrait" /> : <Icon name="portrait" />}
-            </div>
-          </div>
-          <div className={sheetPage.nameWrap}>
-            <h1 className={`${sheetPage.name} ${styles.nameText}`}>{character.meta.name || 'Unnamed'}</h1>
-            <p className={sheetPage.sub}>{classSummary(character) || 'No class set'}</p>
-          </div>
-          <div className={sheetPage.levelSlot}>
-            <div className={styles.restGroup}>
-              <button type="button" className={styles.restBtn} onClick={shortRest}>Short rest</button>
-              <button type="button" className={styles.restBtn} onClick={longRest}>Long rest</button>
-            </div>
-          </div>
-        </div>
+      {levelSlot && createPortal(
+        <div className={styles.restGroup} data-flip="slot-rest">
+          <button type="button" className={styles.restBtn} onClick={shortRest}>Short rest</button>
+          <button type="button" className={styles.restBtn} onClick={longRest}>Long rest</button>
+        </div>,
+        levelSlot,
+      )}
 
-        <div className={sheetHeader.header}>
-          <PlayTiles
-            hp={hp}
-            initiative={checks.initiative.bonus}
-            combat={state.combat}
-            ac={effectiveAc(catalog, state)}
-            baseAc={catalog.stats.ac}
-            acBreakdown={catalog.stats.acBreakdown ?? []}
-            acEffects={(state.modifiers ?? []).filter((m) => Number(m.ac)).map((m) => ({ label: m.label, value: Number(m.ac) }))}
-            speed={effectiveSpeed(catalog, state)}
-            baseSpeed={catalog.stats.speed}
-            moveLeft={movementLeft(state, effectiveSpeed(catalog, state))}
-            onInitiative={rollInitiative}
-            onHp={openHp}
-            onMove={openMove}
-            dataTour={TUT.PLAY_STATS}
-          />
+      <div className={sheetHeader.header}>
+        <PlayTiles
+          hp={hp}
+          initiative={checks.initiative.bonus}
+          combat={state.combat}
+          ac={effectiveAc(catalog, state)}
+          baseAc={catalog.stats.ac}
+          acBreakdown={catalog.stats.acBreakdown ?? []}
+          acEffects={(state.modifiers ?? []).filter((m) => Number(m.ac)).map((m) => ({ label: m.label, value: Number(m.ac) }))}
+          speed={effectiveSpeed(catalog, state)}
+          baseSpeed={catalog.stats.speed}
+          moveLeft={movementLeft(state, effectiveSpeed(catalog, state))}
+          onInitiative={rollInitiative}
+          onHp={openHp}
+          onMove={openMove}
+          dataTour={TUT.PLAY_STATS}
+        />
 
-          <AbilityCards abilities={checks.abilities} onCheck={checkAbility} onSave={saveAbility} dataTour={TUT.PLAY_ABILITIES} />
-        </div>
+        <AbilityCards abilities={checks.abilities} onCheck={checkAbility} onSave={saveAbility} dataTour={TUT.PLAY_ABILITIES} />
+      </div>
 
-        <div className={sheetPage.stack}>
-          <ProficienciesCard derived={derived} />
-        </div>
+      <div className={sheetPage.stack} data-flip="profs">
+        <ProficienciesCard derived={derived} />
+      </div>
 
-        <section className={styles.status} data-tour={TUT.PLAY_STATUS}>
-          {(hp.current === 0 && hp.max > 0) || hp.death.dead ? (
-            <div className={hp.death.dead ? `${styles.deathCard} ${styles.deadCard}` : styles.deathCard}>
-              <span className={styles.deathTitle}>{hp.death.dead ? 'Dead' : hp.death.stable ? 'Stable' : 'Dying'}</span>
-              {hp.dying && (
-                <>
-                  <span className={styles.pips} title="Successes">
-                    {[0, 1, 2].map((i) => <span key={i} className={i < hp.death.success ? `${styles.pip} ${styles.pipOk}` : styles.pip} />)}
-                  </span>
-                  <span className={styles.pips} title="Failures">
-                    {[0, 1, 2].map((i) => <span key={i} className={i < hp.death.failure ? `${styles.pip} ${styles.pipBad}` : styles.pip} />)}
-                  </span>
-                  <RollButton className={styles.rollBtn} title="Death saving throw" onRoll={rollDeathSave}>
-                    <span className={styles.rollLabel}>Death save</span>
-                    <Icon name="dice" />
-                  </RollButton>
-                </>
-              )}
-              <span className={styles.deathHint}>{hp.death.dead ? 'Healing or the DM can bring you back.' : 'Any healing brings you back.'}</span>
-            </div>
-          ) : null}
-          <div className={styles.statusRow}>
-            {Object.entries(state.conditions ?? {}).filter(([, level]) => level > 0).map(([id, level]) => (
-              <span key={id} className={`${styles.chip} ${styles.condChip}`} title={(CONDITIONS[id]?.notes ?? []).join('. ')}>
-                <span className={styles.chipText}>{CONDITIONS[id]?.name ?? id}{CONDITIONS[id]?.levels ? ` ${level}` : ''}</span>
-                {CONDITIONS[id]?.levels && (
-                  <>
-                    <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, level - 1)} aria-label="One level less">-</button>
-                    <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, Math.min(CONDITIONS[id].levels, level + 1))} aria-label="One level more">+</button>
-                  </>
-                )}
-                {!CONDITIONS[id]?.levels && <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, 0)} aria-label={`End ${CONDITIONS[id]?.name ?? id}`}>x</button>}
-              </span>
-            ))}
-            {(state.modifiers ?? []).map((m) => (
-              <span key={m.id} className={styles.chip} title={m.concentration ? 'Ends with your concentration' : undefined}>
-                <span className={styles.chipText}>{m.label}{state.combat && m.rounds && m.startRound != null ? ` (${m.startRound + m.rounds - state.combat.round} rd)` : ''}</span>
-                <button type="button" className={styles.chipBtn} onClick={() => removeEffect(m.id)} aria-label={`End ${m.label}`}>x</button>
-              </span>
-            ))}
-            <button type="button" className={styles.ghostBtn} onClick={addCondition}>+ Condition</button>
-            <button type="button" className={styles.ghostBtn} onClick={addEffect}>+ Effect</button>
-          </div>
-          {(state.conditions?.exhaustion ?? 0) >= 6 && <p className={styles.deathHint}>Exhaustion 6: the character dies.</p>}
-          {state.combat ? (
-            <div className={styles.combatBar} data-tour={TUT.PLAY_COMBAT}>
-              <span className={styles.combatRound}>Round {state.combat.round} · Init {state.combat.initiative}</span>
-              <span className={styles.econ}>
-                {ECONOMY.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className={state.combat.used?.[c] ? `${styles.econBtn} ${styles.econUsed}` : styles.econBtn}
-                    onClick={() => toggleEconomy(c)}
-                    aria-pressed={!!state.combat.used?.[c]}
-                    title={state.combat.used?.[c] ? `${ECONOMY_LABEL[c]} used (tap to give it back)` : `${ECONOMY_LABEL[c]} available (tap to mark it used)`}
-                  >
-                    {ECONOMY_LABEL[c]}
-                  </button>
-                ))}
-              </span>
-              <span className={styles.restBtns}>
-                <button type="button" className={styles.ghostBtn} onClick={nextTurn}>Next turn</button>
-                <button type="button" className={styles.ghostBtn} onClick={endCombat}>End combat</button>
-              </span>
-            </div>
-          ) : null}
-          <div className={styles.statusRow}>
-            {state.concentration ? (
-              <span className={styles.chip}>
-                <span className={styles.chipText}>Concentrating: {state.concentration.name}{state.combat && state.concentration.expiresRound ? ` (${state.concentration.expiresRound - state.combat.round} rd)` : ''}</span>
-                <button type="button" className={styles.chipBtn} onClick={askConcentrationSave}>Save</button>
-                <button type="button" className={styles.chipBtn} onClick={endConcentration}>End</button>
-              </span>
-            ) : (
-              <button type="button" className={styles.ghostBtn} onClick={startConcentration}>+ Concentration</button>
-            )}
-            <span className={styles.hitDice} title="Hit Point Dice left">
-              Hit dice {hitDice.map((h) => `${h.left}/${h.max} d${h.faces}`).join(' · ') || '-'}
-            </span>
-          </div>
-        </section>
-
-        <nav className={sheetPage.tabBar} data-tour={TUT.PLAY_TABS}>
-          {tabs.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => openTab(t)}
-              className={activeTab === t ? `${sheetPage.tab} ${sheetPage.tabActive}` : sheetPage.tab}
-              data-tour={t === 'History' ? TUT.PLAY_HISTORY : undefined}
-            >
-              {t}
-            </button>
-          ))}
-        </nav>
-
-        <div ref={swipeRef}>
-          <div key={activeTab} className={`${sheetPage.panel} ${slideClass(tabDir)}`}>
-            {activeTab === 'History' && (
+      <section className={styles.status} data-tour={TUT.PLAY_STATUS} data-flip="status">
+        {(hp.current === 0 && hp.max > 0) || hp.death.dead ? (
+          <div className={hp.death.dead ? `${styles.deathCard} ${styles.deadCard}` : styles.deathCard}>
+            <span className={styles.deathTitle}>{hp.death.dead ? 'Dead' : hp.death.stable ? 'Stable' : 'Dying'}</span>
+            {hp.dying && (
               <>
-                {historyHead}
-                <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} />
+                <span className={styles.pips} title="Successes">
+                  {[0, 1, 2].map((i) => <span key={i} className={i < hp.death.success ? `${styles.pip} ${styles.pipOk}` : styles.pip} />)}
+                </span>
+                <span className={styles.pips} title="Failures">
+                  {[0, 1, 2].map((i) => <span key={i} className={i < hp.death.failure ? `${styles.pip} ${styles.pipBad}` : styles.pip} />)}
+                </span>
+                <RollButton className={styles.rollBtn} title="Death saving throw" onRoll={rollDeathSave}>
+                  <span className={styles.rollLabel}>Death save</span>
+                  <Icon name="dice" />
+                </RollButton>
               </>
             )}
-
-            {activeTab === 'Actions' && (
-              <section className={styles.actionsTab}>
-                <h2 className={styles.heading}>Attacks</h2>
-                <ul className={styles.attacks} data-tour={TUT.PLAY_ROLLS}>
-                  {catalog.attacks.map((a) => (
-                    <AttackRow key={a.key} attack={a} onAttack={(x, quick) => rollAttack(x, quick, true)} onDamage={rollDamage} />
-                  ))}
-                </ul>
-                <p className={styles.hint}>Tap a roll to choose advantage, a bonus or physical dice.</p>
-              </section>
-            )}
-
-            {activeTab === 'Features' && (
-              <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} />
-            )}
-
-            {activeTab === 'Spells' && (
-              <SpellsTab catalog={catalog} state={state} onCast={castSpell} onAdjust={adjust} />
-            )}
-
-            {activeTab === 'Inventory' && (
-              <InventoryTab
-                catalog={catalog}
-                state={state}
-                character={character}
-                inventory={derived.inventory}
-                onUse={consumeItem}
-                onQuantity={changeQuantity}
-                onAdjust={adjust}
-                onMoney={spendMoney}
-              />
-            )}
+            <span className={styles.deathHint}>{hp.death.dead ? 'Healing or the DM can bring you back.' : 'Any healing brings you back.'}</span>
           </div>
+        ) : null}
+        <div className={styles.statusRow}>
+          {Object.entries(state.conditions ?? {}).filter(([, level]) => level > 0).map(([id, level]) => (
+            <span key={id} className={`${styles.chip} ${styles.condChip}`} title={(CONDITIONS[id]?.notes ?? []).join('. ')}>
+              <span className={styles.chipText}>{CONDITIONS[id]?.name ?? id}{CONDITIONS[id]?.levels ? ` ${level}` : ''}</span>
+              {CONDITIONS[id]?.levels && (
+                <>
+                  <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, level - 1)} aria-label="One level less">-</button>
+                  <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, Math.min(CONDITIONS[id].levels, level + 1))} aria-label="One level more">+</button>
+                </>
+              )}
+              {!CONDITIONS[id]?.levels && <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, 0)} aria-label={`End ${CONDITIONS[id]?.name ?? id}`}>x</button>}
+            </span>
+          ))}
+          {(state.modifiers ?? []).map((m) => (
+            <span key={m.id} className={styles.chip} title={m.concentration ? 'Ends with your concentration' : undefined}>
+              <span className={styles.chipText}>{m.label}{state.combat && m.rounds && m.startRound != null ? ` (${m.startRound + m.rounds - state.combat.round} rd)` : ''}</span>
+              <button type="button" className={styles.chipBtn} onClick={() => removeEffect(m.id)} aria-label={`End ${m.label}`}>x</button>
+            </span>
+          ))}
+          <button type="button" className={styles.ghostBtn} onClick={addCondition}>+ Condition</button>
+          <button type="button" className={styles.ghostBtn} onClick={addEffect}>+ Effect</button>
+        </div>
+        {(state.conditions?.exhaustion ?? 0) >= 6 && <p className={styles.deathHint}>Exhaustion 6: the character dies.</p>}
+        {state.combat ? (
+          <div className={styles.combatBar} data-tour={TUT.PLAY_COMBAT}>
+            <span className={styles.combatRound}>Round {state.combat.round} · Init {state.combat.initiative}</span>
+            <span className={styles.econ}>
+              {ECONOMY.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={state.combat.used?.[c] ? `${styles.econBtn} ${styles.econUsed}` : styles.econBtn}
+                  onClick={() => toggleEconomy(c)}
+                  aria-pressed={!!state.combat.used?.[c]}
+                  title={state.combat.used?.[c] ? `${ECONOMY_LABEL[c]} used (tap to give it back)` : `${ECONOMY_LABEL[c]} available (tap to mark it used)`}
+                >
+                  {ECONOMY_LABEL[c]}
+                </button>
+              ))}
+            </span>
+            <span className={styles.restBtns}>
+              <button type="button" className={styles.ghostBtn} onClick={nextTurn}>Next turn</button>
+              <button type="button" className={styles.ghostBtn} onClick={endCombat}>End combat</button>
+            </span>
+          </div>
+        ) : null}
+        <div className={styles.statusRow}>
+          {state.concentration ? (
+            <span className={styles.chip}>
+              <span className={styles.chipText}>Concentrating: {state.concentration.name}{state.combat && state.concentration.expiresRound ? ` (${state.concentration.expiresRound - state.combat.round} rd)` : ''}</span>
+              <button type="button" className={styles.chipBtn} onClick={askConcentrationSave}>Save</button>
+              <button type="button" className={styles.chipBtn} onClick={endConcentration}>End</button>
+            </span>
+          ) : (
+            <button type="button" className={styles.ghostBtn} onClick={startConcentration}>+ Concentration</button>
+          )}
+          <span className={styles.hitDice} title="Hit Point Dice left">
+            Hit dice {hitDice.map((h) => `${h.left}/${h.max} d${h.faces}`).join(' · ') || '-'}
+          </span>
+        </div>
+      </section>
+
+      <nav className={sheetPage.tabBar} data-tour={TUT.PLAY_TABS} data-flip="tabs" data-flip-fade="">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => openTab(t)}
+            className={activeTab === t ? `${sheetPage.tab} ${sheetPage.tabActive}` : sheetPage.tab}
+            data-tour={t === 'History' ? TUT.PLAY_HISTORY : undefined}
+          >
+            {t}
+          </button>
+        ))}
+      </nav>
+
+      <div ref={swipeRef} data-flip="panel-play">
+        <div key={activeTab} className={`${sheetPage.panel} ${slideClass(tabDir)}`}>
+          {activeTab === 'History' && (
+            <>
+              {historyHead}
+              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} />
+            </>
+          )}
+
+          {activeTab === 'Actions' && (
+            <section className={styles.actionsTab}>
+              <h2 className={styles.heading}>Attacks</h2>
+              <ul className={styles.attacks} data-tour={TUT.PLAY_ROLLS}>
+                {catalog.attacks.map((a) => (
+                  <AttackRow key={a.key} attack={a} onAttack={(x, quick) => rollAttack(x, quick, true)} onDamage={rollDamage} />
+                ))}
+              </ul>
+              <p className={styles.hint}>Tap a roll to choose advantage, a bonus or physical dice.</p>
+            </section>
+          )}
+
+          {activeTab === 'Features' && (
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} />
+          )}
+
+          {activeTab === 'Spells' && (
+            <SpellsTab catalog={catalog} state={state} onCast={castSpell} onAdjust={adjust} />
+          )}
+
+          {activeTab === 'Inventory' && (
+            <InventoryTab
+              catalog={catalog}
+              state={state}
+              character={character}
+              inventory={derived.inventory}
+              onUse={consumeItem}
+              onQuantity={changeQuantity}
+              onAdjust={adjust}
+              onMoney={spendMoney}
+            />
+          )}
         </div>
       </div>
 
-      {wide && (
-        <aside className={styles.side} data-tour={TUT.PLAY_HISTORY}>
+      {wide && sideSlot && createPortal(
+        <div className={styles.sideContent} data-tour={TUT.PLAY_HISTORY}>
           {historyHead}
           <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} />
-        </aside>
+        </div>,
+        sideSlot,
       )}
 
       {toast && (
@@ -933,6 +873,6 @@ function PlayInner({ character }) {
           {toast.rolls?.isFumble && <span className={styles.toastTag}>Natural 1</span>}
         </button>
       )}
-    </div>
+    </>
   );
 }

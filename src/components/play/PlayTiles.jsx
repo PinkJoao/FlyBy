@@ -14,9 +14,11 @@
 //   AcTile(props): a CA, expansível com as peças.
 //
 // DECISÕES E ARMADILHAS
-//   - A ORDEM do DOM é a da ficha (Level, HP, AC, Alignment), com a iniciativa no
-//     lugar do nível e o Move no do alinhamento: o CSS da ficha põe os dois em cima
-//     e HP e CA lado a lado embaixo no celular, sem regra nova.
+//   - A ORDEM é HP, Initiative, Move, Armor Class (DDL-0119), a mesma no desktop
+//     (uma linha) e no celular (2x2, lida em linhas): o .playTiles anula a
+//     reordenação que o CSS da ficha faz no celular.
+//   - `data-flip` marca cada tile pela identidade (tile-hp, tile-ac são os mesmos da
+//     ficha): na troca de modo eles deslizam até o lugar novo, e os outros aparecem.
 //   - O ícone do canto diz o que o toque faz: o dado rola, a seta para o lado abre
 //     uma janela, a seta para baixo expande ali mesmo.
 //   - Um número mudado por condição ou efeito (CA, deslocamento) leva a cor de
@@ -33,7 +35,7 @@ import sheet from '../builder/StatsHeader.module.css';
 import styles from './PlayTiles.module.css';
 
 /** Um tile que é um botão: o ícone no canto, o valor e o rótulo. */
-function ActionTile({ icon, value, label, note, changed, onClick, onRoll, title }) {
+function ActionTile({ icon, value, label, note, changed, onClick, onRoll, title, flip }) {
   const content = (
     <>
       <span className={`${sheet.tileChevron} ${styles.icon}`}><Icon name={icon} /></span>
@@ -43,7 +45,7 @@ function ActionTile({ icon, value, label, note, changed, onClick, onRoll, title 
     </>
   );
   return (
-    <div className={sheet.tile}>
+    <div className={sheet.tile} data-flip={flip}>
       {onRoll ? (
         <RollButton className={sheet.tileHead} title={title} onRoll={onRoll}>{content}</RollButton>
       ) : (
@@ -57,7 +59,7 @@ function ActionTile({ icon, value, label, note, changed, onClick, onRoll, title 
 function AcTile({ ac, base, breakdown, effects }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={open ? `${sheet.tile} ${sheet.open}` : sheet.tile}>
+    <div className={open ? `${sheet.tile} ${sheet.open}` : sheet.tile} data-flip="tile-ac">
       <button type="button" className={sheet.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={sheet.tileChevron}><Icon name="chevron" /></span>
         <span className={ac !== base ? `${sheet.value} ${styles.changed}` : sheet.value}>{ac ?? '-'}</span>
@@ -90,9 +92,19 @@ function AcTile({ ac, base, breakdown, effects }) {
  */
 export default function PlayTiles({ hp, initiative, combat, ac, baseAc, acBreakdown, acEffects, speed, baseSpeed, moveLeft, onInitiative, onHp, onMove, dataTour }) {
   return (
-    <div className={`${sheet.tiles} ${styles.tiles}`} data-tour={dataTour}>
+    <div className={`${sheet.tiles} ${styles.playTiles}`} data-tour={dataTour}>
+      <ActionTile
+        icon="chevronRight"
+        flip="tile-hp"
+        value={<><AnimatedNumber value={hp.current} /><span className={styles.max}>/{hp.max}</span></>}
+        label="Hit Points"
+        note={hp.temp > 0 ? `+${hp.temp} temporary` : null}
+        title="Damage, healing or temporary hit points"
+        onClick={onHp}
+      />
       <ActionTile
         icon="dice"
+        flip="tile-init"
         value={combat ? combat.initiative : formatBonus(initiative)}
         label={combat ? `Initiative · round ${combat.round}` : 'Roll initiative'}
         title={combat ? 'Roll initiative again (combat goes on)' : 'Roll initiative and start combat'}
@@ -100,21 +112,14 @@ export default function PlayTiles({ hp, initiative, combat, ac, baseAc, acBreakd
       />
       <ActionTile
         icon="chevronRight"
-        value={<><AnimatedNumber value={hp.current} /><span className={styles.max}>/{hp.max}</span></>}
-        label="Hit Points"
-        note={hp.temp > 0 ? `+${hp.temp} temporary` : null}
-        title="Damage, healing or temporary hit points"
-        onClick={onHp}
-      />
-      <AcTile ac={ac} base={baseAc} breakdown={acBreakdown} effects={acEffects} />
-      <ActionTile
-        icon="chevronRight"
+        flip="tile-move"
         value={speed == null ? '-' : `${combat ? moveLeft : speed} ft`}
         label={combat ? 'Move · left this turn' : 'Move'}
         changed={speed !== baseSpeed || (combat && moveLeft < 0)}
         title="Your speeds, and your movement this turn in combat"
         onClick={onMove}
       />
+      <AcTile ac={ac} base={baseAc} breakdown={acBreakdown} effects={acEffects} />
     </div>
   );
 }

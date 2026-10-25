@@ -1,0 +1,46 @@
+/* =============================================================================
+ * ModeSwitch.module.css: o seletor Sheet | Play
+ * =============================================================================
+ * CLASSES
+ *   .seg, .on: a trilha e o modo escolhido.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O desenho é o do .seg do painel do PDF (uma trilha com folga interna e cada
+ *     botão com a própria borda e raio), um pouco maior por ser o controle do topo:
+ *     a altura total (38px) é a dos botões de ícone ao lado.
+ * -------------------------------------------------------------------------- */
+
+/* ATENÇÃO: os tokens espelham o .seg do PdfExportPanel.module.css: se mudarem lá, mude aqui. */
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.seg button {
+  appearance: none;
+  min-width: 64px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.seg button:not(.on):hover {
+  background: var(--bg-soft);
+}
+
+.seg button.on {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-h);
+}

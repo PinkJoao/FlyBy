@@ -1,24 +1,24 @@
 // =============================================================================
-// Builder: a ficha completa
+// Builder: o modo ficha da página do personagem
 // =============================================================================
 // O QUE FAZ
 //   O shell da ficha: retrato e nome, o cabeçalho de stats DERIVADOS, o card de
 //   proficiências e as abas (Species, Background, Class, Inventory, Spellbook,
 //   Biography). Perícias não têm aba própria: ficam para o play mode (DDL-0004).
-//   É aqui que as mudanças das abas viram `save`.
+//   É aqui que as mudanças das abas viram `save`. A página em volta (o topo, o
+//   seletor Sheet | Play, a troca de modo) é a pages/Character (DDL-0117).
 //
 // FUNÇÕES
-//   Builder(): carrega o personagem.
-//   BuilderInner(props): a ficha, com o personagem garantido (os hooks ficam aqui
-//     para não haver hook depois de um return).
-//   portraitFilename(name, src): o nome do arquivo para baixar o retrato.
-//   PortraitViewer(props): o retrato em tela cheia (trocar, baixar, remover).
-//   PortraitSourceModal(props): upload ou URL do retrato.
+//   BuilderInner(props): a ficha, com o personagem e a derivação garantidos (quem
+//     carrega é a pages/Character); o menu entra por portal no topo dela
+//     (`actionsSlot`) e o controle de nível no lugar ao lado do nome (`levelSlot`).
 //
 // DECISÕES E ARMADILHAS
 //   Menu e guia
-//   - O d20 ao lado do voltar abre o play mode, uma tela à parte (DDL-0004), só com os
-//     recursos experimentais ligados (DDL-0111).
+//   - `data-flip` marca o que a troca de modo anima (pages/Character, DDL-0118): o
+//     controle de nível, as proficiências, a barra de abas e o painel.
+//   - O play mode é o OUTRO MODO desta página (o seletor Sheet | Play no topo,
+//     DDL-0117), só com os recursos experimentais ligados (DDL-0111).
 //   - O menu segue o padrão de menus do app (AppMenus, DDL-0098): glossário,
 //     Export & import, Character guide e Settings em janelinhas, e o feedback.
 //   - A aba nova entra deslizando do lado para onde se foi (openTab, motion.js).
@@ -50,21 +50,18 @@
 //   - Comprar faz MERGE em stacks do mesmo item que não estejam equipados nem
 //     atunados, e só no MESMO destino (a corda comprada com a mochila aberta não
 //     empilha na corda solta).
-//   - Retrato: o upload vira data-URL redimensionada; a URL da web é guardada
-//     direto (como o seletor de imagem do Foundry).
+//   - Retrato, nome e o botão do guia são da pages/Character (DDL-0119), os mesmos
+//     nos dois modos; o guia aberto no modo jogo chega aqui como `guideRequest`, e
+//     a ficha o abre ao montar e avisa (`onGuideHandled`) para não reabrir.
 // -----------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import useCharacterStore from '../store/characterStore';
-import useSettingsStore from '../store/settingsStore';
-import { useData } from '../data/dataContext';
-import useDerived from '../hooks/useDerived';
 import useCharacterImport from '../hooks/useCharacterImport';
-import { classSummary } from '../schema/character';
 import { assembleFoundryActor } from '../engine/foundryActor';
 import { seedStartingGold } from '../engine/startingGold';
-import { fileToPortrait } from '../components/common/imageFile';
 import MenuButton from '../components/common/MenuButton';
 import { SettingsMenu, SheetFilesMenu, SheetGuideMenu } from '../components/common/AppMenus';
 import { menu } from '../components/common/dialog';
@@ -74,7 +71,6 @@ import { openGlossary } from '../store/glossaryStore';
 import { FEEDBACK_URL } from '../feedback';
 import useTutorialStore, { startTutorial, maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
-import BackButton from '../components/common/BackButton';
 import LevelControls from '../components/builder/LevelControls';
 import LevelUpWizard from '../components/wizard/LevelUpWizard';
 import { buildFixupSteps, firstClassWithFixup } from '../components/wizard/fixupSteps';
@@ -91,7 +87,6 @@ import ClassTab from '../components/builder/ClassTab';
 import InventoryTab from '../components/builder/InventoryTab';
 import SpellbookTab from '../components/builder/SpellbookTab';
 import styles from './Builder.module.css';
-import { useBackLayer } from '../hooks/useBack';
 import Icon from '../components/common/Icon';
 import { showPdfExport } from '../components/common/pdfExportDialog';
 
@@ -106,44 +101,8 @@ const TAB_TOUR = {
   Biography: 'tab-biography',
 };
 
-export default function Builder() {
-  const { id } = useParams();
-  const { db } = useData();
-
-  const loaded = useCharacterStore((s) => s.loaded);
-  const load = useCharacterStore((s) => s.load);
-  const character = useCharacterStore((s) => s.getById(id));
-  const save = useCharacterStore((s) => s.save);
-
-  const [activeTab, setActiveTab] = useState('Species');
-
-  useEffect(() => {
-    if (!loaded) load();
-  }, [loaded, load]);
-
-  if (!loaded) return <div className={styles.page}>Loading…</div>;
-  if (!character) {
-    return (
-      <div className={styles.page}>
-        <p>Character not found.</p>
-        <BackButton to="/" label="characters" />
-      </div>
-    );
-  }
-
-  return (
-    <BuilderInner
-      key={character.id}
-      character={character}
-      db={db}
-      save={save}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />
-  );
-}
-
-function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
+/** O modo ficha da página do personagem. */
+export function BuilderInner({ character, db, save, derived, activeTab, setActiveTab, actionsSlot, levelSlot, guideRequest, onGuideHandled }) {
   const [tabDir, setTabDir] = useState(null);
   const swipeRef = useRef(null);
   const tabIndex = TABS.indexOf(activeTab);
@@ -160,8 +119,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     setActiveTab(tab);
   };
   const navigate = useNavigate();
-  const experimental = useSettingsStore((s) => s.experimental);
-  const derived = useDerived(character);
   const active = guidanceActive(character);
   /** Liga ou desliga o guia; lê o personagem do store (o submenu fica aberto e ele muda). */
   const setGuided = (guided) => {
@@ -170,9 +127,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   };
   const pend = guidancePendencies(db, character, derived);
   const { inputRef: importRef, onFileChange: onImportFile, pickFile: pickImport } = useCharacterImport();
-  const fileRef = useRef(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const setTutEnabled = useTutorialStore((s) => s.setEnabled);
   const resetTutorials = useTutorialStore((s) => s.resetSeen);
@@ -187,7 +141,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   }, []);
 
   const hasSpellcasting = (derived.spellcasting?.origins?.length ?? 0) > 0;
-  const tourAnchor = useTutorialStore((s) => (s.tourId ? s.steps[s.index]?.anchor ?? null : null));
   useEffect(() => {
     const id = TAB_TOUR[activeTab];
     if (!id) return undefined;
@@ -195,34 +148,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     const t = setTimeout(() => maybeStartTutorial(id), 300);
     return () => clearTimeout(t);
   }, [activeTab, hasSpellcasting]);
-
-  const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
-
-  const onPortraitFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const portrait = await fileToPortrait(file);
-      save({ ...character, meta: { ...character.meta, portrait } });
-      setViewerOpen(false);
-    } catch {
-      // arquivo ilegível/não-imagem: mantém como está
-    }
-  };
-  const setPortraitUrl = (url) => {
-    save({ ...character, meta: { ...character.meta, portrait: url } });
-    setPickerOpen(false);
-    setViewerOpen(false);
-  };
-  const clearPortrait = () => {
-    save({ ...character, meta: { ...character.meta, portrait: null } });
-    setViewerOpen(false);
-  };
-  const onPortraitClick = () => {
-    if (character.meta.portrait) setViewerOpen(true);
-    else setPickerOpen(true);
-  };
 
   const setBaseScore = (ability, value) =>
     save({ ...character, scores: { ...character.scores, [ability]: value } });
@@ -280,6 +205,16 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
     const cls = firstClassWithFixup(db, character, derived);
     if (cls) setOverlay({ classUid: cls.uid });
   };
+
+  const onGuideRequest = useEffectEvent(() => {
+    openGuide();
+    onGuideHandled?.();
+  });
+  useEffect(() => {
+    if (!guideRequest) return undefined;
+    const t = setTimeout(onGuideRequest, 0);
+    return () => clearTimeout(t);
+  }, [guideRequest]);
 
   const revertLevelUp = () => {
     if (!overlay?.toLevel) return;
@@ -384,44 +319,9 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
   };
 
   return (
-    <div className={`${styles.page} motion-page`}>
-      <div className={styles.topBar}>
-        <div className={styles.topActions}>
-          <BackButton to="/" label="characters" />
-          {experimental && (
-            <button
-              type="button"
-              className={styles.menuBtn}
-              title="Play this character"
-              aria-label="Play"
-              onClick={() => navigate(`/play/${character.id}`)}
-            >
-              <span aria-hidden="true"><Icon name="dice" /></span>
-            </button>
-          )}
-        </div>
-        <div className={styles.topActions}>
-          {(() => {
-            const guideShown = active && pend.total > 0;
-            const guideDemo = !guideShown && tourAnchor === TUT.SHEET_GUIDE;
-            if (!guideShown && !guideDemo) return null;
-            return (
-              <button
-                type="button"
-                className={`${styles.guideBtn} ${styles.guideBtnAlert}`}
-                onClick={guideShown ? openGuide : undefined}
-                data-tour={TUT.SHEET_GUIDE}
-                title={
-                  guideShown
-                    ? `${pend.total} choice${pend.total > 1 ? 's' : ''} left - open the guide`
-                    : 'The guide button (shown here for the tutorial)'
-                }
-              >
-                <span aria-hidden="true"><Icon name="guide" /></span>
-                {pend.total > 0 && <span className={styles.guideBadge}>{pend.total}</span>}
-              </button>
-            );
-          })()}
+    <>
+      {actionsSlot && createPortal(
+        <>
           <MenuButton
             buttonClassName={styles.menuBtn}
             buttonTitle="Menu"
@@ -437,49 +337,23 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
           >
             <span aria-hidden="true"><Icon name="menu" /></span>
           </MenuButton>
-        </div>
-      </div>
+        </>,
+        actionsSlot,
+      )}
 
-      <div className={styles.identity} data-tour={TUT.SHEET_IDENTITY}>
-        <div className={styles.portraitWrap}>
-          <button
-            type="button"
-            className={
-              character.meta.portrait ? `${styles.portrait} ${styles.portraitFilled}` : styles.portrait
-            }
-            title={character.meta.portrait ? 'View portrait' : 'Add a portrait'}
-            onClick={onPortraitClick}
-          >
-            {character.meta.portrait ? <img src={character.meta.portrait} alt="Portrait" /> : <Icon name="portrait" />}
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={onPortraitFile}
-          />
-        </div>
-        <input
-          ref={importRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={onImportFile}
-        />
-        <div className={styles.nameWrap}>
-          <input
-            className={styles.name}
-            value={character.meta.name}
-            onChange={(e) => rename(e.target.value)}
-            placeholder="Character name"
-          />
-          <p className={styles.sub}>{classSummary(character) || 'No class set'}</p>
-        </div>
-        <div className={styles.levelSlot} data-tour={TUT.SHEET_LEVEL}>
+      <input
+        ref={importRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={onImportFile}
+      />
+      {levelSlot && createPortal(
+        <div data-flip="slot-level">
           <LevelControls character={character} onChangeClasses={setClasses} />
-        </div>
-      </div>
+        </div>,
+        levelSlot,
+      )}
 
       <StatsHeader
         derived={derived}
@@ -492,11 +366,11 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         hpRolled={hpRolled}
       />
 
-      <div className={styles.stack} data-tour={TUT.SHEET_PROFICIENCIES}>
+      <div className={styles.stack} data-tour={TUT.SHEET_PROFICIENCIES} data-flip="profs">
         <ProficienciesCard derived={derived} />
       </div>
 
-      <nav className={styles.tabBar} data-tour={TUT.SHEET_TABS}>
+      <nav className={styles.tabBar} data-tour={TUT.SHEET_TABS} data-flip="tabs" data-flip-fade="">
         {TABS.map((tab) => (
           <button
             key={tab}
@@ -509,7 +383,7 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         ))}
       </nav>
 
-      <div ref={swipeRef}>
+      <div ref={swipeRef} data-flip="panel-sheet">
         <div key={activeTab} className={`${styles.panel} ${slideClass(tabDir)}`}>
           {activeTab === 'Species' && (
             <SpeciesTab
@@ -550,30 +424,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
         </div>
       </div>
 
-      {viewerOpen && character.meta.portrait && (
-        <PortraitViewer
-          src={character.meta.portrait}
-          name={character.meta.name}
-          onChange={() => {
-            setViewerOpen(false);
-            setPickerOpen(true);
-          }}
-          onRemove={clearPortrait}
-          onClose={() => setViewerOpen(false)}
-        />
-      )}
-
-      {pickerOpen && (
-        <PortraitSourceModal
-          onUpload={() => {
-            setPickerOpen(false);
-            fileRef.current?.click();
-          }}
-          onUseUrl={setPortraitUrl}
-          onClose={() => setPickerOpen(false)}
-        />
-      )}
-
       {overlay && (
         <LevelUpWizard
           character={character}
@@ -585,86 +435,6 @@ function BuilderInner({ character, db, save, activeTab, setActiveTab }) {
           onRevert={revertLevelUp}
         />
       )}
-    </div>
-  );
-}
-
-/** O nome do arquivo para baixar o retrato. */
-function portraitFilename(name, src) {
-  let ext = 'png';
-  if (/^data:/.test(src)) {
-    const mime = String(src).slice(5, String(src).indexOf(';'));
-    ext = (mime.split('/')[1] || 'png').replace('jpeg', 'jpg');
-  } else {
-    const m = String(src).match(/\.([a-zA-Z0-9]{2,4})(?:[?#]|$)/);
-    if (m) ext = m[1].toLowerCase();
-  }
-  const base = (name || 'character').trim().replace(/[^\w-]+/g, '-').toLowerCase() || 'character';
-  return `${base}-portrait.${ext}`;
-}
-
-/** O retrato em tela cheia: trocar, baixar, remover. */
-function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
-  useBackLayer(true, onClose);
-  return (
-    <div className={styles.viewerOverlay} onClick={onClose}>
-      <img className={styles.viewerImg} src={src} alt="Portrait" onClick={(e) => e.stopPropagation()} />
-      <div className={styles.viewerActions} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.viewerBtn} onClick={onChange}>
-          Change
-        </button>
-        <a className={styles.viewerBtn} href={src} download={portraitFilename(name, src)}>
-          Download
-        </a>
-        <button type="button" className={`${styles.viewerBtn} ${styles.viewerDanger}`} onClick={onRemove}>
-          Remove
-        </button>
-      </div>
-      <button type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">
-        <Icon name="close" />
-      </button>
-    </div>
-  );
-}
-
-/** O escolhedor da fonte do retrato: upload ou URL. */
-function PortraitSourceModal({ onUpload, onUseUrl, onClose }) {
-  const [url, setUrl] = useState('');
-  useBackLayer(true, onClose);
-  const submitUrl = (e) => {
-    e.preventDefault();
-    const trimmed = url.trim();
-    if (trimmed) onUseUrl(trimmed);
-  };
-  return (
-    <div className={styles.sourceOverlay} onClick={onClose}>
-      <div className={styles.sourcePanel} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.sourceHead}>
-          <h2>Add portrait</h2>
-          <button type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
-        </div>
-        <button type="button" className={styles.sourceUploadBtn} onClick={onUpload}>
-          Upload from device
-        </button>
-        <div className={styles.sourceDivider}>
-          <span>or</span>
-        </div>
-        <form className={styles.sourceUrlRow} onSubmit={submitUrl}>
-          <input
-            type="url"
-            className={styles.sourceUrlInput}
-            placeholder="https://example.com/portrait.webp"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            autoFocus
-          />
-          <button type="submit" className={styles.sourceUrlBtn} disabled={!url.trim()}>
-            Use URL
-          </button>
-        </form>
-      </div>
-    </div>
+    </>
   );
 }

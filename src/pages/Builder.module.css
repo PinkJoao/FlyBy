@@ -2,8 +2,9 @@
  * Builder.module.css: a página da ficha
  * =============================================================================
  * CLASSES
- *   .page, .topBar, .topActions: o topo; à esquerda o voltar (e o Play), à direita o
- *     guia e o menu, centrados na vertical (o voltar tem 36px, os outros 38).
+ *   .page, .topBar, .topActions: a página e o topo; quem os monta é a pages/Character
+ *     (o voltar, o seletor Sheet | Play e os botões do modo), centrados na vertical
+ *     (o voltar tem 36px, os outros 38).
  *   .levelSlot: o stepper de nível no bloco de identidade; no desktop o
  *     margin-left: auto o empurra à direita, no mobile empilha sob o nome.
  *   .menuBtn: o menu sanduíche (substituiu o botão Export).

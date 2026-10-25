@@ -20,6 +20,9 @@
 //     vaza); o dos atributos (6-up no desktop, 3-up no mobile) tem botões e fonte
 //     menores, senão o número era espremido a zero.
 //   - Cor do alinhamento pelo eixo moral; em tela estreita, só o código (LG).
+//   - `data-flip` marca cada tile e cada atributo pela IDENTIDADE (tile-hp,
+//     ability-str): na troca para o modo jogo (pages/Character, DDL-0118) o que
+//     existe nos dois modos desliza para o lugar novo, e o resto aparece.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -114,10 +117,10 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function ExpandableTile({ label, value, children }) {
+function ExpandableTile({ label, value, children, flip }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile}>
+    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile} data-flip={flip}>
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.tileChevron}><Icon name="chevron" /></span>
         <AnimatedNumber value={value} className={styles.value} />
@@ -137,7 +140,7 @@ function cap(s) {
 function LevelTile({ level, classBreakdown }) {
   const named = classBreakdown.filter((c) => c.classId);
   return (
-    <ExpandableTile label="Level" value={level || '-'}>
+    <ExpandableTile label="Level" value={level || '-'} flip="tile-level">
       {named.length === 0 ? (
         <p className={styles.emptyNote}>No classes yet.</p>
       ) : (
@@ -161,7 +164,7 @@ function HpTile({ maxHp, classBreakdown, hpBonus, rolled, onRoll, onAverage, onC
   const conBonus = named.reduce((s, c) => s + (c.con ?? 0), 0);
   const baseValue = hitDiceBase + (hpBonus ?? 0);
   return (
-    <ExpandableTile label="Hit Points" value={maxHp ?? '0'}>
+    <ExpandableTile label="Hit Points" value={maxHp ?? '0'} flip="tile-hp">
       {named.length === 0 ? (
         <p className={styles.emptyNote}>Add a class to track hit points.</p>
       ) : (
@@ -214,7 +217,7 @@ function HpTile({ maxHp, classBreakdown, hpBonus, rolled, onRoll, onAverage, onC
 function AcTile({ ac }) {
   const breakdown = ac?.breakdown ?? [];
   return (
-    <ExpandableTile label="Armor Class" value={ac ? ac.total : '-'}>
+    <ExpandableTile label="Armor Class" value={ac ? ac.total : '-'} flip="tile-ac">
       {breakdown.length === 0 ? (
         <p className={styles.emptyNote}>Equip armor or a shield to change AC.</p>
       ) : (
@@ -236,7 +239,7 @@ function AlignmentTile({ current, onSelect }) {
   const [open, setOpen] = useState(false);
   const value = ALIGNMENT_LABEL[current] || 'Unaligned';
   return (
-    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile}>
+    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile} data-flip="tile-align">
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.tileChevron}><Icon name="chevron" /></span>
         <span className={`${styles.value} ${styles.small}`}>{value}</span>
@@ -277,7 +280,7 @@ function AbilityCard({ ability, total, base, mod, onStep }) {
   const bonus = total - base;
 
   return (
-    <div className={open ? `${styles.ability} ${styles.open}` : styles.ability}>
+    <div className={open ? `${styles.ability} ${styles.open}` : styles.ability} data-flip={`ability-${ability}`}>
       <button type="button" className={styles.abilityHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.chevron}><Icon name="chevron" /></span>
         <span className={styles.name}>{ABILITY_FULL[ability]}</span>

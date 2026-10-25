@@ -32,3 +32,6 @@ DnD Source Material/
 # Local tooling
 .agents/
 skills-lock.json
+scripts/.portraits-state.json
+scripts/.portraits.log
+*.tmp

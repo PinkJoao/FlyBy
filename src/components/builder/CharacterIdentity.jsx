@@ -14,7 +14,8 @@
 //     clearPortrait(), onPortraitClick(): o nome e o retrato.
 //   portraitFilename(name, src): o nome do arquivo para baixar o retrato.
 //   PortraitViewer(props): o retrato em tela cheia (trocar, baixar, remover).
-//   PortraitSourceModal(props): upload, URL ou imagem colada.
+//   PortraitSourceModal(props): upload, sugestões (experimental), URL ou imagem
+//     colada.
 //
 // DECISÕES E ARMADILHAS
 //   - Nome e retrato são editáveis nos dois modos: não mudam a jogatina, e travar
@@ -24,6 +25,8 @@
 //   - O CSS é o da ficha (Builder.module.css): .identity e o resto continuam lá.
 //   - Retrato: o upload vira data-URL redimensionada; a URL da web é guardada
 //     direto (como o seletor de imagem do Foundry).
+//   - Sugestões de retrato (PortraitSuggestionsModal): só aparecem com
+//     `experimental` ligado em settingsStore (DDL-0111, DDL-0124).
 //   - Imagem COLADA: com o escolhedor ou o retrato em tela cheia abertos, o Ctrl+V
 //     de uma imagem em qualquer lugar a usa (useImagePaste); no celular, o campo de
 //     URL é editável e recebe a imagem do teclado (ImageUrlField). As duas vão pelo
@@ -32,9 +35,11 @@
 
 import { useRef, useState } from 'react';
 import { classSummary } from '../../schema/character';
+import useSettingsStore from '../../store/settingsStore';
 import { fileToPortrait } from '../common/imageFile';
 import { useImagePaste } from '../common/imagePaste';
 import ImageUrlField from '../common/ImageUrlField';
+import PortraitSuggestionsModal from '../common/PortraitSuggestionsModal';
 import { useBackLayer } from '../../hooks/useBack';
 import { TUT } from '../../tutorial/anchors';
 import Icon from '../common/Icon';
@@ -48,6 +53,8 @@ export default function CharacterIdentity({ character, save, slotRef }) {
   const fileRef = useRef(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const experimental = useSettingsStore((s) => s.experimental);
 
   const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
 
@@ -71,6 +78,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
     save({ ...character, meta: { ...character.meta, portrait: url } });
     setPickerOpen(false);
     setViewerOpen(false);
+    setSuggestionsOpen(false);
   };
   const clearPortrait = () => {
     save({ ...character, meta: { ...character.meta, portrait: null } });
@@ -134,9 +142,25 @@ export default function CharacterIdentity({ character, save, slotRef }) {
             setPickerOpen(false);
             fileRef.current?.click();
           }}
+          onSuggest={
+            experimental
+              ? () => {
+                  setPickerOpen(false);
+                  setSuggestionsOpen(true);
+                }
+              : null
+          }
           onUseUrl={setPortraitUrl}
           onImage={applyPortraitFile}
           onClose={() => setPickerOpen(false)}
+        />
+      )}
+
+      {suggestionsOpen && experimental && (
+        <PortraitSuggestionsModal
+          character={character}
+          onSelect={setPortraitUrl}
+          onClose={() => setSuggestionsOpen(false)}
         />
       )}
     </>
@@ -181,8 +205,8 @@ function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
   );
 }
 
-/** O escolhedor da fonte do retrato: upload, URL ou imagem colada. */
-function PortraitSourceModal({ onUpload, onUseUrl, onImage, onClose }) {
+/** O escolhedor da fonte do retrato: upload, sugestões, URL ou imagem colada. */
+function PortraitSourceModal({ onUpload, onSuggest, onUseUrl, onImage, onClose }) {
   const [url, setUrl] = useState('');
   useBackLayer(true, onClose);
   const submitUrl = (e) => {
@@ -202,6 +226,11 @@ function PortraitSourceModal({ onUpload, onUseUrl, onImage, onClose }) {
         <button type="button" className={styles.sourceUploadBtn} onClick={onUpload}>
           Upload from device
         </button>
+        {onSuggest && (
+          <button type="button" className={styles.sourceUploadBtn} onClick={onSuggest}>
+            Suggested portraits
+          </button>
+        )}
         <div className={styles.sourceDivider}>
           <span>or</span>
         </div>

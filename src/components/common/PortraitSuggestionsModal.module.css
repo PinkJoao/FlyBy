@@ -3,13 +3,13 @@
  * =============================================================================
  * O QUE FAZ
  *   Estilos do modal de sugestões de retratos: cabeçalho, barra de filtros
- *   rápidos (gênero, idade, armadura, sortear), chips de tags da ficha com busca
- *   para adicionar tags extras e grade responsiva de cartões de retrato.
+ *   rápidos (gênero e idade), chips de tags da ficha com busca para adicionar
+ *   tags extras e grade responsiva de cartões de retrato.
  *
  * CLASSES
  *   .overlay, .panel, .head*, .closeBtn: a estrutura do modal e cabeçalho.
- *   .controls, .quickRow, .quickGroup, .quickLabel, .pill*, .shuffleBtn: a
- *     barra de filtros rápidos e o botão de sortear.
+ *   .controls, .quickRow, .quickGroup, .quickLabel, .pill*: a barra de filtros
+ *     rápidos de gênero e idade.
  *   .tagsSection, .tagsRow, .tagChip*, .resetBtn, .addWrap, .addInput,
  *     .suggestionsDropdown, .suggestionOption*: os chips ativos e a busca de
  *     tags adicionais.
@@ -147,27 +147,6 @@
   color: var(--accent);
 }
 
-.shuffleBtn {
-  margin-left: auto;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.shuffleBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
-
 .tagsSection {
   display: flex;
   flex-wrap: wrap;
@@ -224,7 +203,7 @@
 
 .addWrap {
   position: relative;
-  min-width: 170px;
+  min-width: 120px;
 }
 
 .addInput {

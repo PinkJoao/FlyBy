@@ -5,8 +5,9 @@
 //   Exibe a galeria de retratos sugeridos para o personagem a partir do índice
 //   estático (`src/data/portraitsIndex.json`, carregado via import dinâmico só
 //   ao abrir o modal). Pré-marca as tags extraídas da ficha (espécie, linhagem,
-//   classe, subclasse, armadura, armas e focos) e permite alternar gênero,
-//   faixa etária, armadura, adicionar/remover tags e embaralhar os resultados.
+//   classe, subclasse, armadura, armas e focos), embaralha a ordem dentro de
+//   cada faixa de relevância a cada abertura do modal e permite alternar gênero
+//   e faixa etária ou adicionar/remover tags livremente.
 //
 // FUNÇÕES
 //   loadPortraitIndex(): importa e mantém em cache o portraitsIndex.json.
@@ -17,7 +18,11 @@
 //   - Carregamento sob demanda (`import('../../data/portraitsIndex.json')`): não
 //     pesa no pacote inicial do app; baixa apenas quando o usuário abre a galeria.
 //   - Liberdade com filtros pré-marcados (§6.4): a galeria abre com as tags da
-//     ficha ativas, mas qualquer chip pode ser removido ou adicionado livremente.
+//     ficha ativas (incluindo armadura equipada como chip normal), mas qualquer
+//     chip pode ser removido ou adicionado livremente.
+//   - Embaralhamento automático ao abrir: `seed` nasce com um inteiro aleatório a
+//     cada montagem do modal, renovando os retratos de mesma pontuação sem botão
+//     manual de Shuffle.
 //   - Imagens que falharem no carregamento (`onError`) entram em `brokenHashes` e
 //     somem da grade na hora, sem ícone de imagem quebrada.
 // -----------------------------------------------------------------------------
@@ -36,8 +41,8 @@ import styles from './PortraitSuggestionsModal.module.css';
 const PAGE_SIZE = 24;
 const GENDER_GROUP = ['male', 'female'];
 const AGE_GROUP = ['young', 'mature'];
-const ARMOR_GROUP = ['heavy-armor', 'light-armor', 'robes'];
-const QUICK_SET = new Set([...GENDER_GROUP, ...AGE_GROUP, ...ARMOR_GROUP]);
+const ARMOR_GROUP = ['heavy-armor', 'medium-armor', 'light-armor', 'robes'];
+const QUICK_SET = new Set([...GENDER_GROUP, ...AGE_GROUP]);
 
 let cachedIndexPromise = null;
 
@@ -67,7 +72,7 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
   const [activeTags, setActiveTags] = useState(() => defaultTags);
   const [indexData, setIndexData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [seed, setSeed] = useState(0);
+  const [seed] = useState(() => Math.floor(Math.random() * 100000));
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [tagQuery, setTagQuery] = useState('');
   const [brokenHashes, setBrokenHashes] = useState(() => new Set());
@@ -122,11 +127,6 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
     setVisibleCount(PAGE_SIZE);
   };
 
-  const shuffle = () => {
-    setSeed((s) => s + 1);
-    setVisibleCount(PAGE_SIZE);
-  };
-
   const ranked = useMemo(() => {
     if (!indexData) return { totalMatched: 0, items: [] };
     return rankPortraits(indexData, activeTags, { seed, limit: 240 });
@@ -146,7 +146,8 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
     const q = tagQuery.trim().toLowerCase();
     if (!q || !indexData?.tags) return [];
     const activeSet = new Set(activeTags);
-    return indexData.tags
+    const pool = [...new Set([...indexData.tags, ...ARMOR_GROUP])];
+    return pool
       .filter((t) => !activeSet.has(t))
       .filter((t) => t.includes(q) || tagLabelOf(t).toLowerCase().includes(q))
       .slice(0, 12);
@@ -205,25 +206,6 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
                 </button>
               ))}
             </div>
-
-            <div className={styles.quickGroup}>
-              <span className={styles.quickLabel}>Armor</span>
-              {ARMOR_GROUP.map((ar) => (
-                <button
-                  key={ar}
-                  type="button"
-                  className={activeTags.includes(ar) ? `${styles.pill} ${styles.pillActive}` : styles.pill}
-                  onClick={() => toggleExclusiveGroup(ar, ARMOR_GROUP)}
-                >
-                  {ar === 'heavy-armor' ? 'Heavy' : ar === 'light-armor' ? 'Light' : 'Robes'}
-                </button>
-              ))}
-            </div>
-
-            <button type="button" className={styles.shuffleBtn} onClick={shuffle} title="Shuffle top matches">
-              <Icon name="dice" />
-              <span>Shuffle</span>
-            </button>
           </div>
 
           <div className={styles.tagsSection}>
@@ -253,7 +235,7 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
               <input
                 type="text"
                 className={styles.addInput}
-                placeholder="+ Add tag (weapon, race, class…)"
+                placeholder="+ Add tag"
                 value={tagQuery}
                 onChange={(e) => setTagQuery(e.target.value)}
               />

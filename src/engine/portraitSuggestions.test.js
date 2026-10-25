@@ -74,6 +74,23 @@ describe('portraitSuggestions', () => {
       'holy-symbol',
     ]);
 
+    expect(
+      equipmentTagsOf(
+        [
+          { itemId: 'Half Plate Armor', equipped: true, quantity: 1 },
+          { itemId: 'Longbow', equipped: true, quantity: 1 },
+        ],
+        [{ classId: 'ranger' }],
+      ),
+    ).toEqual(['medium-armor', 'bow']);
+
+    expect(
+      equipmentTagsOf(
+        [{ itemId: 'Studded Leather Armor', equipped: true, quantity: 1 }],
+        [{ classId: 'rogue' }],
+      ),
+    ).toEqual(['light-armor']);
+
     expect(equipmentTagsOf([], [{ classId: 'wizard' }])).toEqual(['robes']);
   });
 
@@ -107,6 +124,7 @@ describe('portraitSuggestions', () => {
 
   it('classifica e formata rótulos de tags corretamente', () => {
     expect(tagCategoryOf('female')).toBe('gender');
+    expect(tagCategoryOf('medium-armor')).toBe('armor');
     expect(tagCategoryOf('drow')).toBe('lineage');
     expect(tagCategoryOf('tiefling')).toBe('species');
     expect(tagCategoryOf('hexblade')).toBe('subclass');

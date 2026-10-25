@@ -33,13 +33,13 @@
 //     armas iguais nunca passe à frente de um Tiefling ou Dragonborn.
 //   - Quando o usuário filtra um único gênero (male ou female), retratos marcados
 //     apenas com o gênero oposto recebem penalidade (-45).
-//   - O desempate usa hashTieBreaker(hash, seed): clicar em Shuffle apenas soma 1
-//     na semente, renovando a vitrine dentro do mesmo degrau de relevância.
+//   - O desempate usa hashTieBreaker(hash, seed): abrir o modal sorteia uma semente
+//     inicial, renovando a vitrine dentro do mesmo degrau de relevância.
 // -----------------------------------------------------------------------------
 
 const GENDERS = new Set(['male', 'female']);
 const AGES = new Set(['young', 'mature']);
-const ARMORS = new Set(['heavy-armor', 'light-armor', 'robes']);
+const ARMORS = new Set(['heavy-armor', 'medium-armor', 'light-armor', 'robes']);
 
 const CLASSES = new Set([
   'artificer',
@@ -457,10 +457,17 @@ export function equipmentTagsOf(inventory, classes = []) {
     const name = String(entry?.itemId || entry?.customName || '').toLowerCase();
     if (!name) continue;
 
-    if (/\b(plate|chain mail|splint|ring mail)\b/.test(name)) {
+    if (
+      /\b(half[-\s]?plate|breastplate|scale[-\s]?mail|scalemail|chain[-\s]?shirt|hide armor|brigandine)\b|^hide$/.test(
+        name,
+      )
+    ) {
+      add('medium-armor');
+      hasArmor = true;
+    } else if (/\b(plate|chain[-\s]?mail|splint|ring[-\s]?mail)\b/.test(name)) {
       add('heavy-armor');
       hasArmor = true;
-    } else if (/\b(leather|padded|hide armor|scale mail|breastplate|chain shirt)\b/.test(name)) {
+    } else if (/\b(leather|studded leather|padded)\b/.test(name)) {
       add('light-armor');
       hasArmor = true;
     } else if (/\b(robe|vestments|clothes)\b/.test(name)) {
@@ -647,7 +654,15 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
     tagToIdx.set(tagsDict[i], i);
   }
 
-  const cleanActive = [...new Set(activeTags.filter((t) => tagToIdx.has(t)))];
+  const expandedInput = [];
+  for (const t of activeTags) {
+    if (t === 'medium-armor' && !tagToIdx.has('medium-armor')) {
+      expandedInput.push('light-armor', 'heavy-armor');
+    } else {
+      expandedInput.push(t);
+    }
+  }
+  const cleanActive = [...new Set(expandedInput.filter((t) => tagToIdx.has(t)))];
   if (cleanActive.length === 0) {
     const sample = rawItems.slice(0, Math.min(rawItems.length, limit * 3)).map(([hash, idxs]) => ({
       hash,

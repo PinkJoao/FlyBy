@@ -16,14 +16,17 @@
 //   - O @react-pdf só lê PNG e JPEG, e o retrato do app é WebP (o upload é
 //     reduzido para WebP em imageFile.js) ou GIF: sem a conversão ele sumia da
 //     ficha. A conversão é do navegador (canvas), por isso mora aqui e não no
-//     sheetModel, que é puro. Retrato remoto que o navegador não deixa ler (CORS)
-//     sai sem imagem, nunca derruba a ficha.
+//     sheetModel, que é puro.
+//   - Retrato remoto sem CORS (todo retrato sugerido, do i.pinimg.com) é lido pelo
+//     cache wsrv.nl (loadCorsImage, DDL-0127); se nem assim, sai sem imagem e nunca
+//     derruba a ficha.
 // -----------------------------------------------------------------------------
 
 import { pdf } from '@react-pdf/renderer';
 import CharacterSheet from './CharacterSheetDoc';
 import { buildSheetModel } from './sheetModel';
 import { registerPdfFonts } from './fonts';
+import { loadCorsImage } from '../data/imageProxy';
 
 /** Um nome de arquivo seguro. */
 const safeName = (character) => (character.meta?.name || 'character').replace(/[^\w.-]+/g, '_');
@@ -35,10 +38,7 @@ async function pdfPortrait(src) {
   if (!src) return null;
   if (/^data:image\/(png|jpe?g);/i.test(src)) return src;
   try {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = src;
-    await img.decode();
+    const img = await loadCorsImage(src);
     const scale = Math.min(1, PORTRAIT_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));

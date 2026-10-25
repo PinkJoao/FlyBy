@@ -5,16 +5,20 @@
  *   .overlay, .stage, .img, .close: o lightbox; o .stage deixa espaço para o X, os
  *     créditos e os pontinhos, e o swipe horizontal para o carrossel.
  *   .arrow, .arrowL, .arrowR: as setas, fixas nas EXTREMIDADES da tela.
- *   .actions, .actionBtn, .actionDanger: os botões sob a imagem (Trocar, Remover
- *     do item do inventário), no molde do visualizador do retrato.
- *   .credit, .dots, .dot, .dotOn.
+ *   .bar, .barArrow: a barra sob a imagem; no celular ela leva as setas nas pontas.
+ *   .actions, .actionBtn, .actionDanger: os botões de texto sob a imagem (Trocar,
+ *     Remover do item do inventário), no molde do visualizador do retrato.
+ *   .roundBtn, .roundSuccess, .roundDanger: as ações redondas com ícone (o check verde
+ *     e o X vermelho da prévia dos retratos sugeridos).
+ *   .credit, .dots, .dot, .dotOn, .counter: o crédito e a posição no carrossel
+ *     (pontinhos, ou o contador "n / total" quando são muitas imagens).
  *
  * DECISÕES E ARMADILHAS
  *   - O z-index fica acima dos diálogos (DialogHost, 1000), de onde costuma abrir.
  *   - No desktop (700px ou mais) há calhas laterais, e as setas presas ao overlay
  *     (não à imagem) nunca cobrem a arte nem se deslocam quando a proporção muda.
- *   - No mobile as setas somem: a navegação é por SWIPE e pontinhos, e sem as
- *     calhas elas ficariam justamente sobre a arte.
+ *   - No mobile as setas laterais somem (sem as calhas elas ficariam sobre a
+ *     arte) e aparecem as da barra (.barArrow), nas pontas, junto do deslize.
  * -------------------------------------------------------------------------- */
 
 .overlay {
@@ -118,9 +122,81 @@
   }
 }
 
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.bar:empty {
+  display: none;
+}
+
+.barArrow {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: none;
+  place-items: center;
+}
+
+.barArrow:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 699px) {
+  .bar {
+    justify-content: space-between;
+  }
+
+  .barArrow {
+    display: grid;
+  }
+}
+
+.roundBtn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.roundBtn:hover {
+  filter: brightness(1.1);
+}
+
+.roundBtn:active {
+  transform: scale(0.94);
+}
+
+.roundSuccess {
+  background: var(--success);
+}
+
+.roundDanger {
+  background: var(--danger);
+}
+
 .actions {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 18px;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -151,6 +227,13 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.65);
   text-align: center;
+}
+
+.counter {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .dots {

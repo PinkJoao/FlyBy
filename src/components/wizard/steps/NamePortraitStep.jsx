@@ -13,8 +13,9 @@
 //   - Imagem colada como no retrato da página (CharacterIdentity): o Ctrl+V de uma
 //     imagem em qualquer lugar do passo (colar texto no nome segue normal) e, no
 //     celular, o campo de URL editável que recebe a imagem do teclado.
-//   - Sugestões de retrato (PortraitSuggestionsModal): só aparecem com
-//     `experimental` ligado em settingsStore (DDL-0111, DDL-0124).
+//   - Sugestões de retrato: a faixa (PortraitSuggestionStrip) sob o retrato, com
+//     "See all" para a galeria (PortraitSuggestionsModal); só com `experimental`
+//     ligado em settingsStore (DDL-0111, DDL-0124, DDL-0127).
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -23,6 +24,7 @@ import { fileToPortrait } from '../../common/imageFile';
 import { useImagePaste } from '../../common/imagePaste';
 import ImageUrlField from '../../common/ImageUrlField';
 import PortraitSuggestionsModal from '../../common/PortraitSuggestionsModal';
+import PortraitSuggestionStrip from '../../common/PortraitSuggestionStrip';
 import styles from './steps.module.css';
 import Icon from '../../common/Icon';
 
@@ -88,11 +90,6 @@ export default function NamePortraitStep({ character, onChange }) {
             <button type="button" className={styles.smallBtn} onClick={() => fileRef.current?.click()}>
               Upload image
             </button>
-            {experimental && (
-              <button type="button" className={styles.smallBtn} onClick={() => setSuggestionsOpen(true)}>
-                Suggested portraits
-              </button>
-            )}
             {meta.portrait && (
               <button type="button" className={styles.smallBtn} onClick={() => setPortrait(null)}>
                 Remove
@@ -113,6 +110,13 @@ export default function NamePortraitStep({ character, onChange }) {
             </div>
           </div>
         </div>
+        {experimental && (
+          <PortraitSuggestionStrip
+            character={character}
+            onSelect={setPortrait}
+            onSeeAll={() => setSuggestionsOpen(true)}
+          />
+        )}
       </div>
 
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />

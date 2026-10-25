@@ -1,0 +1,90 @@
+/* =============================================================================
+ * PortraitSuggestionStrip.module.css: a faixa de retratos sugeridos
+ * =============================================================================
+ * CLASSES
+ *   .strip, .head, .title, .seeAll: o bloco e o topo com "See all".
+ *   .row, .thumb, .placeholder: a fileira rolável de miniaturas sem corte.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A miniatura tem ALTURA fixa e largura natural (`width: auto`): a imagem
+ *     inteira aparece, como na galeria (DDL-0127). O placeholder guarda 3/4.
+ *   - Cores só por token (DDL-0097).
+ * -------------------------------------------------------------------------- */
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.title svg {
+  color: var(--accent);
+}
+
+.seeAll {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.thumb,
+.placeholder {
+  flex-shrink: 0;
+  height: 104px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.thumb {
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.thumb:hover {
+  border-color: var(--accent);
+}
+
+.thumb img {
+  display: block;
+  height: 100%;
+  width: auto;
+  min-width: 60px;
+}
+
+.placeholder {
+  aspect-ratio: 3 / 4;
+}

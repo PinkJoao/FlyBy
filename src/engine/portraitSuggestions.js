@@ -20,10 +20,13 @@
 //   tagCategoryOf(tag): classifica uma tag em gender, age, armor, lineage,
 //     species, subclass, class ou weapon.
 //   tagLabelOf(tag): formata o rótulo legível em inglês de uma tag.
-//   hashTieBreaker(hash, seed): gera um inteiro determinístico em [0..999] para
-//     embaralhar empates de pontuação conforme a semente.
+//   hashTieBreaker(hash, seed): gera um inteiro determinístico de 32 bits (FNV-1a
+//     sobre o hash inteiro) para embaralhar empates de pontuação conforme a semente.
 //   rankPortraits(indexData, activeTags, opts): pontua e ordena o catálogo de
-//     retratos para as tags ativas.
+//     retratos para as tags ativas; `full` marca quem casa TODAS as tags.
+//   subclassClassOf(tag): a classe dona de uma tag de subclasse.
+//   portraitTagGroups(indexData): os grupos do seletor visual de tags (espécie,
+//     linhagem, classe, subclasse, armadura, armas), com contagem e representante.
 //
 // DECISÕES E ARMADILHAS
 //   - Espécie e gênero são traços anatômicos excludentes: quando há uma espécie
@@ -34,12 +37,34 @@
 //   - Quando o usuário filtra um único gênero (male ou female), retratos marcados
 //     apenas com o gênero oposto recebem penalidade (-45).
 //   - O desempate usa hashTieBreaker(hash, seed): abrir o modal sorteia uma semente
-//     inicial, renovando a vitrine dentro do mesmo degrau de relevância.
+//     inicial, renovando a vitrine dentro do mesmo degrau de relevância. Usar só
+//     12 caracteres e `% 1000` deixava milhares de empates na ordem do catálogo.
+//   - SUBCLASS_MAP é chaveado por `classe:shortName` do 5etools, e o personagem
+//     pode ter a subclasse LEGADA pelo chassi 2024: "Abjuration", "Bladesinging",
+//     "Aberrant Mind", "Wild" e afins têm linha própria (medido contra todos os
+//     `class-*.json`, 2026-10-25).
+//   - Armadura é UMA tag (a mais pesada achada, `ARMOR_BY_RANK`): sem item
+//     equipado o pool é o inventário inteiro, e roupa comum junto da cota de
+//     malha punha `robes` e `heavy-armor` ao mesmo tempo. `dual-wield` exige duas
+//     armas leves (uma espada curta sozinha não é duas armas).
+//   - Idade numérica decide sozinha; o texto ("old", "grizzled") só vale sem número,
+//     senão "19 years old" virava `young` e `mature` juntos. Cabelo grisalho só conta
+//     no campo `hair` (pele cinza de Duergar ou Goliath não é idade).
+//   - A pontuação SOMA qualquer tag que case, então marcar mais uma tag AUMENTAVA o
+//     total ("629" virava "3.503" ao marcar Female). `full` separa quem casa todas
+//     as tags (sempre na frente, a faixa "Matches every tag") dos parecidos, e o
+//     total que a tela mostra é o `fullMatched`.
+//   - O representante de cada tag (portraitTagGroups) é o retrato com MENOS
+//     espécies marcadas (classes, no caso de uma classe): um retrato de "elf" que
+//     também é "human" e "orc" ilustra mal o elfo. Cache por índice (WeakMap).
+//   - LINEAGE_PARENTS é transitivo (flamekin -> fire-genasi -> genasi), na extração
+//     e na penalidade de espécie.
 // -----------------------------------------------------------------------------
 
 const GENDERS = new Set(['male', 'female']);
 const AGES = new Set(['young', 'mature']);
 const ARMORS = new Set(['heavy-armor', 'medium-armor', 'light-armor', 'robes']);
+const ARMOR_BY_RANK = [null, 'robes', 'light-armor', 'medium-armor', 'heavy-armor'];
 
 const CLASSES = new Set([
   'artificer',
@@ -246,9 +271,11 @@ const SUBCLASS_MAP = {
   'fighter:arcane archer': 'arcane-archer',
   'fighter:cavalier': 'cavalier',
   'fighter:banneret': 'banneret',
+  'fighter:purple dragon knight (banneret)': 'banneret',
   'monk:open hand': 'open-hand',
   'monk:shadow': 'shadow-monk',
   'monk:elements': 'elements-monk',
+  'monk:four elements': 'elements-monk',
   'monk:mercy': 'mercy-monk',
   'monk:astral self': 'astral-self',
   'monk:kensei': 'kensei',
@@ -287,9 +314,12 @@ const SUBCLASS_MAP = {
   'rogue:scout': 'scout-rogue',
   'rogue:scion of the three': 'scion-rogue',
   'sorcerer:aberrant': 'aberrant-sorcerer',
+  'sorcerer:aberrant mind': 'aberrant-sorcerer',
   'sorcerer:clockwork': 'clockwork-sorcerer',
+  'sorcerer:clockwork soul': 'clockwork-sorcerer',
   'sorcerer:draconic': 'draconic-sorcerer',
   'sorcerer:wild magic': 'wild-magic-sorcerer',
+  'sorcerer:wild': 'wild-magic-sorcerer',
   'sorcerer:shadow': 'shadow-sorcerer',
   'sorcerer:storm': 'storm-sorcerer',
   'sorcerer:divine soul': 'divine-soul',
@@ -306,10 +336,15 @@ const SUBCLASS_MAP = {
   'warlock:undead': 'undead-warlock',
   'warlock:undying': 'undead-warlock',
   'wizard:abjurer': 'abjurer',
+  'wizard:abjuration': 'abjurer',
   'wizard:bladesinger': 'bladesinger',
+  'wizard:bladesinging': 'bladesinger',
   'wizard:diviner': 'diviner',
+  'wizard:divination': 'diviner',
   'wizard:evoker': 'evoker',
+  'wizard:evocation': 'evoker',
   'wizard:illusionist': 'illusionist',
+  'wizard:illusion': 'illusionist',
   'wizard:necromancy': 'necromancer',
   'wizard:necromancer': 'necromancer',
   'wizard:chronurgy': 'chronurgist',
@@ -322,6 +357,21 @@ const SUBCLASS_MAP = {
 };
 
 const ALL_SUBCLASS_TAGS = new Set(Object.values(SUBCLASS_MAP));
+const SUBCLASS_CLASS = {};
+for (const [key, tag] of Object.entries(SUBCLASS_MAP)) {
+  if (!SUBCLASS_CLASS[tag]) SUBCLASS_CLASS[tag] = key.split(':')[0];
+}
+
+const TAG_GROUPS = [
+  { id: 'species', label: 'Species', icon: 'originSpecies', visual: true },
+  { id: 'lineage', label: 'Lineages', icon: 'originSpecies', visual: true },
+  { id: 'class', label: 'Classes', icon: 'originClass', visual: true },
+  { id: 'subclass', label: 'Subclasses', icon: 'originClass', visual: false },
+  { id: 'armor', label: 'Armor', icon: 'itemArmor', visual: true },
+  { id: 'weapon', label: 'Weapons & focus', icon: 'itemWeapon', visual: false },
+];
+
+const groupCache = new WeakMap();
 
 /**
  * Reconstrói a URL da CDN do Pinterest a partir do hash hexadecimal de 32 caracteres.
@@ -397,12 +447,14 @@ export function speciesTagsOf(species) {
   else if (cleanBase === 'naga') add('yuan-ti');
   else if (cleanBase === 'khenra') add('shifter');
   else if (cleanBase === 'vampire') add('dhampir');
+  else if (cleanBase === 'yuan-ti-pureblood') add('yuan-ti');
+  else if (cleanBase === 'faerie') add('fairy');
   else if (BASE_SPECIES.has(cleanBase) || cleanBase in LINEAGE_PARENTS) {
     add(cleanBase);
   }
 
-  for (const t of [...out]) {
-    const parent = LINEAGE_PARENTS[t];
+  for (let i = 0; i < out.length; i++) {
+    const parent = LINEAGE_PARENTS[out[i]];
     if (parent) add(parent);
   }
 
@@ -450,8 +502,11 @@ export function equipmentTagsOf(inventory, classes = []) {
     if (t && !out.includes(t)) out.push(t);
   };
 
-  let hasArmor = false;
+  let armorRank = 0;
   let lightMeleeCount = 0;
+  const wear = (rank) => {
+    armorRank = Math.max(armorRank, rank);
+  };
 
   for (const entry of pool) {
     const name = String(entry?.itemId || entry?.customName || '').toLowerCase();
@@ -462,17 +517,13 @@ export function equipmentTagsOf(inventory, classes = []) {
         name,
       )
     ) {
-      add('medium-armor');
-      hasArmor = true;
+      wear(3);
     } else if (/\b(plate|chain[-\s]?mail|splint|ring[-\s]?mail)\b/.test(name)) {
-      add('heavy-armor');
-      hasArmor = true;
+      wear(4);
     } else if (/\b(leather|studded leather|padded)\b/.test(name)) {
-      add('light-armor');
-      hasArmor = true;
+      wear(2);
     } else if (/\b(robe|vestments|clothes)\b/.test(name)) {
-      add('robes');
-      hasArmor = true;
+      wear(1);
     }
 
     if (/\bgreatsword\b/.test(name)) add('greatsword');
@@ -480,7 +531,6 @@ export function equipmentTagsOf(inventory, classes = []) {
     if (/\bshield\b/.test(name)) add('shield');
     if (/\b(scimitar|shortsword)\b/.test(name)) {
       lightMeleeCount += Number(entry?.quantity) || 1;
-      add('dual-wield');
     }
     if (/\b(dagger|sickle)\b/.test(name)) {
       lightMeleeCount += Number(entry?.quantity) || 1;
@@ -510,8 +560,9 @@ export function equipmentTagsOf(inventory, classes = []) {
   }
 
   if (lightMeleeCount >= 2) add('dual-wield');
+  if (armorRank > 0) out.unshift(ARMOR_BY_RANK[armorRank]);
 
-  if (!hasArmor && Array.isArray(classes)) {
+  if (armorRank === 0 && Array.isArray(classes)) {
     const cids = classes.map((c) => String(c?.classId || '').toLowerCase());
     if (cids.some((id) => id === 'wizard' || id === 'sorcerer' || id === 'monk')) {
       add('robes');
@@ -538,15 +589,18 @@ export function identityTagsOf(identity) {
 
   const ageText = String(identity.age || '').toLowerCase().trim();
   const appText = String(identity.appearance || '').toLowerCase().trim();
-  const combined = `${ageText} ${appText}`;
+  const hairText = String(identity.hair || '').toLowerCase().trim();
+  const combined = `${ageText} ${appText}`.replace(/\byears?[-\s]old\b/g, ' ');
 
   const ageNum = parseInt(ageText, 10);
   if (!Number.isNaN(ageNum)) {
     if (ageNum > 0 && ageNum <= 22) add('young');
     else if (ageNum >= 55) add('mature');
-  }
-  if (/\b(young|youth|teen|adolescent|boy|girl)\b/.test(combined)) add('young');
-  else if (/\b(old|elder|elderly|mature|veteran|aged|grizzled|gray hair|grey hair|white beard)\b/.test(combined)) {
+  } else if (/\b(young|youth|teen|adolescent|boy|girl)\b/.test(combined)) add('young');
+  else if (
+    /\b(old|elder|elderly|mature|veteran|aged|grizzled|gr[ae]y hair|white beard)\b/.test(combined) ||
+    /\bgr[ae]y(ing)?\b/.test(hairText)
+  ) {
     add('mature');
   }
 
@@ -627,13 +681,12 @@ export function tagLabelOf(tag) {
  * @returns {number}
  */
 export function hashTieBreaker(hash, seed = 0) {
-  let h = (2166136261 ^ (seed * 16777619)) >>> 0;
-  const len = Math.min(12, hash.length);
-  for (let i = 0; i < len; i++) {
+  let h = (2166136261 ^ Math.imul(seed | 0, 16777619)) >>> 0;
+  for (let i = 0; i < hash.length; i++) {
     h ^= hash.charCodeAt(i);
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return h % 1000;
+  return h;
 }
 
 /**
@@ -641,7 +694,7 @@ export function hashTieBreaker(hash, seed = 0) {
  * @param {{ tags: string[], items: Array<[string, number[]]> }} indexData
  * @param {string[]} activeTags
  * @param {{ seed?: number, limit?: number }} [opts]
- * @returns {{ totalMatched: number, items: Array<{ hash: string, url: string, score: number, matchedTags: string[] }> }}
+ * @returns {{ totalMatched: number, fullMatched: number, items: Array<{ hash: string, url: string, score: number, matchedTags: string[], full: boolean }> }}
  */
 export function rankPortraits(indexData, activeTags = [], opts = {}) {
   const tagsDict = indexData?.tags ?? [];
@@ -670,9 +723,10 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
       score: 1,
       tie: hashTieBreaker(hash, seed),
       matchedTags: idxs.slice(0, 4).map((i) => tagsDict[i]).filter(Boolean),
+      full: true,
     }));
     sample.sort((a, b) => b.tie - a.tie);
-    return { totalMatched: rawItems.length, items: sample.slice(0, limit) };
+    return { totalMatched: rawItems.length, fullMatched: rawItems.length, items: sample.slice(0, limit) };
   }
 
   const activeSet = new Set(cleanActive);
@@ -689,8 +743,9 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
   for (const sp of activeSpecies) {
     const idx = tagToIdx.get(sp);
     if (idx !== undefined) allowedSpeciesIndices.add(idx);
-    const parent = LINEAGE_PARENTS[sp];
-    if (parent && tagToIdx.has(parent)) allowedSpeciesIndices.add(tagToIdx.get(parent));
+    for (let parent = LINEAGE_PARENTS[sp]; parent; parent = LINEAGE_PARENTS[parent]) {
+      if (tagToIdx.has(parent)) allowedSpeciesIndices.add(tagToIdx.get(parent));
+    }
   }
 
   const allSpeciesIndices = new Set();
@@ -754,20 +809,84 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
       score,
       tie: hashTieBreaker(hash, seed),
       matchedTags,
+      full: matchedTags.length === cleanActive.length,
     });
   }
 
-  scored.sort((a, b) => b.score - a.score || b.tie - a.tie);
+  scored.sort((a, b) => Number(b.full) - Number(a.full) || b.score - a.score || b.tie - a.tie);
 
   const top = scored.slice(0, limit).map((item) => ({
     hash: item.hash,
     url: portraitUrlFromHash(item.hash),
     score: item.score,
     matchedTags: item.matchedTags,
+    full: item.full,
   }));
 
   return {
     totalMatched: scored.length,
+    fullMatched: scored.reduce((n, item) => n + (item.full ? 1 : 0), 0),
     items: top,
   };
+}
+
+/**
+ * A classe dona de uma tag de subclasse ("hexblade" -> "warlock"), ou null.
+ * @param {string} tag
+ */
+export function subclassClassOf(tag) {
+  return SUBCLASS_CLASS[tag] ?? null;
+}
+
+/**
+ * Os grupos de tags do seletor visual, com contagem e um retrato representante.
+ * @param {{ tags: string[], items: Array<[string, number[]]> }} indexData
+ * @returns {Array<{ id: string, label: string, icon: string, visual: boolean, tags: Array<{ tag: string, label: string, count: number, thumb: string, parent: string|null }> }>}
+ */
+export function portraitTagGroups(indexData) {
+  if (!indexData?.tags) return [];
+  if (groupCache.has(indexData)) return groupCache.get(indexData);
+  const tagsDict = indexData.tags;
+  const rawItems = indexData.items ?? [];
+  const count = new Array(tagsDict.length).fill(0);
+  const best = new Array(tagsDict.length).fill(null);
+  const bestRank = new Array(tagsDict.length).fill(Infinity);
+  const cats = tagsDict.map((t) => tagCategoryOf(t));
+  const isSpecies = cats.map((c) => c === 'species' || c === 'lineage');
+  const isClass = cats.map((c) => c === 'class');
+
+  for (const [hash, idxs] of rawItems) {
+    let speciesN = 0;
+    let classN = 0;
+    for (const i of idxs) {
+      if (isSpecies[i]) speciesN++;
+      if (isClass[i]) classN++;
+    }
+    for (const i of idxs) {
+      count[i]++;
+      const rank = isSpecies[i] ? speciesN : isClass[i] ? classN + speciesN * 0.1 : idxs.length;
+      if (rank < bestRank[i]) {
+        bestRank[i] = rank;
+        best[i] = hash;
+      }
+    }
+  }
+
+  const groups = TAG_GROUPS.map((g) => ({ ...g, tags: [] }));
+  const byId = Object.fromEntries(groups.map((g) => [g.id, g]));
+  tagsDict.forEach((tag, i) => {
+    const group = byId[cats[i]];
+    if (!group || count[i] === 0) return;
+    group.tags.push({
+      tag,
+      label: tagLabelOf(tag),
+      count: count[i],
+      thumb: best[i] ? portraitUrlFromHash(best[i], '236x') : '',
+      parent: cats[i] === 'subclass' ? subclassClassOf(tag) : cats[i] === 'lineage' ? LINEAGE_PARENTS[tag] : null,
+    });
+  });
+  for (const g of groups) g.tags.sort((a, b) => a.label.localeCompare(b.label));
+  const out = groups.filter((g) => g.tags.length > 0);
+  groupCache.set(indexData, out);
+  return out;
 }

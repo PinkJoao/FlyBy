@@ -50,7 +50,7 @@ function load() {
 
 function persist(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf, playHistory: state.playHistory, experimental: !!state.experimental }));
+    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf, playHistory: state.playHistory, experimental: !!state.experimental}));
   } catch {
     // localStorage indisponível (modo privado): as preferências ficam só em memória.
   }

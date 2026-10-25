@@ -3,57 +3,80 @@
 // =============================================================================
 // O QUE FAZ
 //   Exibe a galeria de retratos sugeridos para o personagem a partir do índice
-//   estático (`src/data/portraitsIndex.json`, carregado via import dinâmico só
-//   ao abrir o modal). Pré-marca as tags extraídas da ficha (espécie, linhagem,
-//   classe, subclasse, armadura, armas e focos), embaralha a ordem dentro de
-//   cada faixa de relevância a cada abertura do modal e permite alternar gênero
-//   e faixa etária ou adicionar/remover tags livremente.
+//   estático (`src/data/portraitsIndex.json`, via usePortraitIndex). Pré-marca as
+//   tags extraídas da ficha (espécie, linhagem, classe, subclasse, armadura, armas
+//   e focos), embaralha a ordem dentro de cada faixa de relevância a cada abertura
+//   e permite alternar gênero e idade e escolher tags no seletor visual
+//   (PortraitTagPicker). A grade mostra a imagem INTEIRA (colunas no estilo
+//   alvenaria), em duas faixas: "Matches every tag" e "Close matches". Tocar num
+//   retrato abre a prévia em tela cheia (openPortraitPreview): carrossel com
+//   deslize e setas, X para recusar e check para usar.
 //
 // FUNÇÕES
-//   loadPortraitIndex(): importa e mantém em cache o portraitsIndex.json.
 //   sameTagSet(a, b): verifica se duas listas de tags possuem os mesmos itens.
 //   PortraitSuggestionsModal(props): o componente do modal.
+//     requestClose, toggleExclusiveGroup, toggleTag, resetTags, openPreview,
+//     onBodyScroll: a saída animada, os filtros, a prévia e o recolher dos
+//     controles.
+//   useColumnCount(ref, minWidth): quantas colunas cabem na largura do elemento.
+//   MasonryGrid(props): distribui os cartões em colunas, na ordem de relevância.
+//   PortraitCard(props): o cartão com placeholder animado até a imagem carregar.
 //
 // DECISÕES E ARMADILHAS
-//   - Carregamento sob demanda (`import('../../data/portraitsIndex.json')`): não
-//     pesa no pacote inicial do app; baixa apenas quando o usuário abre a galeria.
-//   - Liberdade com filtros pré-marcados (§6.4): a galeria abre com as tags da
-//     ficha ativas (incluindo armadura equipada como chip normal), mas qualquer
-//     chip pode ser removido ou adicionado livremente.
+//   - Sem corte (DDL-0127): `object-fit: cover` num cartão 3/4 cortava rosto e
+//     cabeça. As colunas recebem os itens em rodízio (i % colunas), então a leitura
+//     por linhas segue a relevância; cada imagem tem a altura natural. Antes de
+//     carregar, o cartão guarda 3/4 com o placeholder, para não nascer com altura 0.
+//   - Faixas: a pontuação soma qualquer tag que case, então o total CRESCIA ao
+//     marcar mais uma tag. A contagem do topo é a de quem casa TODAS (`full`); os
+//     outros vêm depois, como parecidos, com os selos do que casaram (na primeira
+//     faixa os selos seriam iguais em todo cartão, então não aparecem).
+//   - Prévia antes de aplicar: um toque sem querer ao rolar no celular trocava o
+//     retrato. O carrossel da prévia é a lista ranqueada inteira (setas e swipe),
+//     não só os cartões já montados.
+//   - Saída animada como a dos diálogos (DialogHost): `requestClose` põe .closing
+//     por EXIT_MS e só então fecha; com "reduzir movimento", fecha na hora. O
+//     voltar do celular, o X, o clique fora e o Escape passam todos por ela.
+//   - Rolagem infinita por IntersectionObserver com a própria grade como raiz; o
+//     ranqueamento devolve até RANK_LIMIT.
+//   - Controles recolhem ao rolar para baixo no celular (`compact`, com histerese
+//     de SCROLL_SLACK px) e voltam ao rolar para cima ou no topo: no celular eles
+//     ocupavam 40% da altura.
 //   - Embaralhamento automático ao abrir: `seed` nasce com um inteiro aleatório a
-//     cada montagem do modal, renovando os retratos de mesma pontuação sem botão
-//     manual de Shuffle.
+//     cada montagem do modal.
+//   - Escape e o voltar do celular fecham a camada de cima: o seletor de tags tem
+//     a própria (useBackLayer e Escape nele), e o modal ignora o Escape enquanto o
+//     seletor está aberto.
 //   - Imagens que falharem no carregamento (`onError`) entram em `brokenHashes` e
 //     somem da grade na hora, sem ícone de imagem quebrada.
 // -----------------------------------------------------------------------------
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   characterPortraitTags,
+  portraitTagGroups,
   rankPortraits,
-  tagCategoryOf,
   tagLabelOf,
 } from '../../engine/portraitSuggestions';
 import { useBackLayer } from '../../hooks/useBack';
+import useMediaQuery from '../../hooks/useMediaQuery';
+import { reducedMotion } from '../../motion';
+import { openPortraitPreview } from './portraitPreview';
+import Collapse from './Collapse';
 import Icon from './Icon';
+import PortraitTagPicker from './PortraitTagPicker';
 import SegmentedControl from './SegmentedControl';
+import { usePortraitIndex } from './usePortraitIndex';
 import styles from './PortraitSuggestionsModal.module.css';
 
 const PAGE_SIZE = 24;
+const RANK_LIMIT = 600;
+const SCROLL_SLACK = 32;
+const EXIT_MS = 120;
 const GENDER_GROUP = ['male', 'female'];
 const AGE_GROUP = ['young', 'mature'];
 const ARMOR_GROUP = ['heavy-armor', 'medium-armor', 'light-armor', 'robes'];
 const QUICK_SET = new Set([...GENDER_GROUP, ...AGE_GROUP]);
-
-let cachedIndexPromise = null;
-
-/** Carrega e mantém em cache o índice estático de retratos. */
-function loadPortraitIndex() {
-  if (!cachedIndexPromise) {
-    cachedIndexPromise = import('../../data/portraitsIndex.json').then((m) => m.default ?? m);
-  }
-  return cachedIndexPromise;
-}
 
 /** Verifica se duas listas de tags contêm exatamente os mesmos elementos. */
 function sameTagSet(a, b) {
@@ -67,150 +90,160 @@ function sameTagSet(a, b) {
  * @param {{ character: object, onSelect: (url: string) => void, onClose: () => void }} props
  */
 export default function PortraitSuggestionsModal({ character, onSelect, onClose }) {
-  useBackLayer(true, onClose);
+  const [closing, setClosing] = useState(false);
+  const requestClose = () => {
+    if (closing) return;
+    if (reducedMotion()) {
+      onClose();
+      return;
+    }
+    setClosing(true);
+    setTimeout(onClose, EXIT_MS);
+  };
+  useBackLayer(true, requestClose);
+  const narrow = useMediaQuery('(max-width: 560px)');
+  const { data: indexData, loading, failed, retry } = usePortraitIndex();
 
   const defaultTags = useMemo(() => characterPortraitTags(character), [character]);
   const [activeTags, setActiveTags] = useState(() => defaultTags);
-  const [indexData, setIndexData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [seed] = useState(() => Math.floor(Math.random() * 100000));
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [tagQuery, setTagQuery] = useState('');
   const [brokenHashes, setBrokenHashes] = useState(() => new Set());
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const bodyRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const scrollRef = useRef({ last: 0, anchor: 0, down: true });
 
   useEffect(() => {
-    let alive = true;
-    loadPortraitIndex()
-      .then((data) => {
-        if (!alive) return;
-        setIndexData(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!alive) return;
-        setLoading(false);
-      });
-    return () => {
-      alive = false;
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (!pickerOpen) requestClose();
     };
-  }, []);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  const changeTags = (fn) => {
+    setActiveTags(fn);
+    setVisibleCount(PAGE_SIZE);
+    bodyRef.current?.scrollTo({ top: 0 });
+  };
 
   const toggleExclusiveGroup = (tag, group) => {
-    setActiveTags((prev) => {
+    changeTags((prev) => {
       const has = prev.includes(tag);
       const withoutGroup = prev.filter((t) => !group.includes(t));
       return has ? withoutGroup : [...withoutGroup, tag];
     });
-    setVisibleCount(PAGE_SIZE);
   };
 
-  const removeTag = (tag) => {
-    setActiveTags((prev) => prev.filter((t) => t !== tag));
-    setVisibleCount(PAGE_SIZE);
-  };
-
-  const addTag = (tag) => {
-    if (GENDER_GROUP.includes(tag)) {
-      toggleExclusiveGroup(tag, GENDER_GROUP);
-    } else if (AGE_GROUP.includes(tag)) {
-      toggleExclusiveGroup(tag, AGE_GROUP);
-    } else if (ARMOR_GROUP.includes(tag)) {
+  const toggleTag = (tag) => {
+    if (ARMOR_GROUP.includes(tag)) {
       toggleExclusiveGroup(tag, ARMOR_GROUP);
-    } else {
-      setActiveTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
-      setVisibleCount(PAGE_SIZE);
+      return;
     }
-    setTagQuery('');
+    changeTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   };
 
-  const resetTags = () => {
-    setActiveTags(defaultTags);
-    setVisibleCount(PAGE_SIZE);
-  };
+  const resetTags = () => changeTags(() => defaultTags);
 
   const ranked = useMemo(() => {
-    if (!indexData) return { totalMatched: 0, items: [] };
-    return rankPortraits(indexData, activeTags, { seed, limit: 240 });
+    if (!indexData) return { totalMatched: 0, fullMatched: 0, items: [] };
+    return rankPortraits(indexData, activeTags, { seed, limit: RANK_LIMIT });
   }, [indexData, activeTags, seed]);
+
+  const tagGroups = useMemo(() => portraitTagGroups(indexData), [indexData]);
 
   const filteredItems = useMemo(
     () => ranked.items.filter((item) => !brokenHashes.has(item.hash)),
     [ranked.items, brokenHashes],
   );
+  const visibleItems = useMemo(() => filteredItems.slice(0, visibleCount), [filteredItems, visibleCount]);
+  const fullItems = visibleItems.filter((item) => item.full);
+  const closeItems = visibleItems.filter((item) => !item.full);
+  const hasMore = visibleCount < filteredItems.length;
 
-  const visibleItems = useMemo(
-    () => filteredItems.slice(0, visibleCount),
-    [filteredItems, visibleCount],
-  );
+  useEffect(() => {
+    const root = bodyRef.current;
+    const target = sentinelRef.current;
+    if (!root || !target || !hasMore || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setVisibleCount((c) => c + PAGE_SIZE);
+      },
+      { root, rootMargin: '600px 0px' },
+    );
+    io.observe(target);
+    return () => io.disconnect();
+  }, [hasMore, visibleItems.length]);
 
-  const matchingSuggestions = useMemo(() => {
-    const q = tagQuery.trim().toLowerCase();
-    if (!q || !indexData?.tags) return [];
-    const activeSet = new Set(activeTags);
-    const pool = [...new Set([...indexData.tags, ...ARMOR_GROUP])];
-    return pool
-      .filter((t) => !activeSet.has(t))
-      .filter((t) => t.includes(q) || tagLabelOf(t).toLowerCase().includes(q))
-      .slice(0, 12);
-  }, [tagQuery, indexData, activeTags]);
+  const onBodyScroll = (e) => {
+    if (!narrow) return;
+    const top = e.currentTarget.scrollTop;
+    const s = scrollRef.current;
+    const down = top > s.last;
+    if (down !== s.down) {
+      s.down = down;
+      s.anchor = s.last;
+    }
+    if (top < 8) setCompact(false);
+    else if (down && top - s.anchor > SCROLL_SLACK) setCompact(true);
+    else if (!down && s.anchor - top > SCROLL_SLACK) setCompact(false);
+    s.last = top;
+  };
+
+  const openPreview = (item) => openPortraitPreview(filteredItems, filteredItems.indexOf(item), onSelect);
+
+  const markBroken = (hash) => {
+    setBrokenHashes((prev) => new Set(prev).add(hash));
+  };
 
   const chipTags = activeTags.filter((t) => !QUICK_SET.has(t));
   const isModified = !sameTagSet(activeTags, defaultTags);
-
-  const markBroken = (hash) => {
-    setBrokenHashes((prev) => {
-      const next = new Set(prev);
-      next.add(hash);
-      return next;
-    });
-  };
+  const closeCount = ranked.totalMatched - ranked.fullMatched;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={closing ? `${styles.overlay} ${styles.closing}` : styles.overlay} onClick={requestClose}>
       <div className={`${styles.panel} motion-pop`} onClick={(e) => e.stopPropagation()}>
         <div className={styles.head}>
           <h2 className={styles.headTitle}>
             <Icon name="sparkles" />
             <span>Suggested portraits</span>
           </h2>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
+          <button type="button" className={styles.closeBtn} onClick={requestClose} aria-label="Close">
             <Icon name="close" />
           </button>
         </div>
 
-        <div className={styles.controls}>
-          <div className={styles.quickRow}>
-            <div className={styles.quickGroup}>
-              <span className={styles.quickLabel}>Gender</span>
+        <Collapse open={!narrow || !compact}>
+          <div className={styles.controls}>
+            <div className={styles.quickRow}>
               <SegmentedControl
                 equal
+                size="sm"
                 ariaLabel="Gender"
                 value={GENDER_GROUP.find((g) => activeTags.includes(g)) ?? null}
                 options={GENDER_GROUP.map((g) => [g, tagLabelOf(g)])}
                 onChange={(g) => toggleExclusiveGroup(g, GENDER_GROUP)}
               />
-            </div>
-
-            <div className={styles.quickGroup}>
-              <span className={styles.quickLabel}>Age</span>
               <SegmentedControl
                 equal
+                size="sm"
                 ariaLabel="Age"
                 value={AGE_GROUP.find((a) => activeTags.includes(a)) ?? null}
                 options={AGE_GROUP.map((a) => [a, tagLabelOf(a)])}
                 onChange={(a) => toggleExclusiveGroup(a, AGE_GROUP)}
               />
             </div>
-          </div>
 
-          <div className={styles.tagsSection}>
             <div className={styles.tagsRow}>
               {chipTags.map((t) => (
                 <button
                   key={t}
                   type="button"
                   className={styles.tagChip}
-                  onClick={() => removeTag(t)}
+                  onClick={() => toggleTag(t)}
                   title={`Remove ${tagLabelOf(t)}`}
                 >
                   <span>{tagLabelOf(t)}</span>
@@ -219,100 +252,169 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
                   </span>
                 </button>
               ))}
+              <button
+                type="button"
+                className={styles.addChip}
+                onClick={() => setPickerOpen(true)}
+                disabled={!indexData}
+              >
+                <Icon name="plus" />
+                <span>Tag</span>
+              </button>
               {isModified && (
                 <button type="button" className={styles.resetBtn} onClick={resetTags}>
                   Reset to sheet
                 </button>
               )}
             </div>
-
-            <div className={styles.addWrap}>
-              <input
-                type="text"
-                className={styles.addInput}
-                placeholder="+ Add tag"
-                value={tagQuery}
-                onChange={(e) => setTagQuery(e.target.value)}
-              />
-              {matchingSuggestions.length > 0 && (
-                <div className={styles.suggestionsDropdown}>
-                  {matchingSuggestions.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      className={styles.suggestionOption}
-                      onClick={() => addTag(t)}
-                    >
-                      <span>{tagLabelOf(t)}</span>
-                      <span className={styles.suggestionOptionCat}>{tagCategoryOf(t)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
-        </div>
+        </Collapse>
 
         <div className={styles.statusRow}>
           <span className={styles.countText}>
             {loading
               ? 'Loading portrait catalog…'
-              : `${ranked.totalMatched.toLocaleString('en-US')} matching portraits · sorted by relevance`}
+              : failed
+                ? 'The portrait catalog could not be loaded.'
+                : `${ranked.fullMatched.toLocaleString('en-US')} match every tag${
+                    closeCount > 0 ? ` · ${closeCount.toLocaleString('en-US')} close` : ''
+                  }`}
           </span>
         </div>
 
-        <div className={styles.body}>
+        <div className={styles.body} ref={bodyRef} onScroll={onBodyScroll}>
           {loading ? (
-            <div className={styles.emptyState}>Loading suggestions…</div>
+            <div className={styles.skeletonGrid} aria-hidden="true">
+              {Array.from({ length: 8 }, (_, i) => (
+                <span key={i} className={styles.skeleton} />
+              ))}
+            </div>
+          ) : failed ? (
+            <div className={styles.emptyState}>
+              <p>Could not load the portrait catalog. Check your connection and try again.</p>
+              <button type="button" className={styles.moreBtn} onClick={retry}>
+                Try again
+              </button>
+            </div>
           ) : visibleItems.length === 0 ? (
             <div className={styles.emptyState}>
-              No portraits matched this combination. Try removing a filter or resetting to the sheet.
+              No portraits matched this combination. Try removing a tag or resetting to the sheet.
             </div>
           ) : (
             <>
-              <div className={styles.grid}>
-                {visibleItems.map((item) => (
-                  <button
-                    key={item.hash}
-                    type="button"
-                    className={styles.card}
-                    onClick={() => onSelect(item.url)}
-                    title={item.matchedTags.map(tagLabelOf).join(' · ')}
-                  >
-                    <img
-                      className={styles.cardImg}
-                      src={item.url}
-                      alt="Suggested portrait"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      onError={() => markBroken(item.hash)}
-                    />
-                    <div className={styles.cardBadges}>
-                      {item.matchedTags.slice(0, 3).map((t) => (
-                        <span key={t} className={styles.cardBadge}>
-                          {tagLabelOf(t)}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {visibleCount < filteredItems.length && (
-                <div className={styles.moreRow}>
-                  <button
-                    type="button"
-                    className={styles.moreBtn}
-                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                  >
-                    Show more ({filteredItems.length - visibleCount} more)
-                  </button>
-                </div>
+              {fullItems.length > 0 && (
+                <>
+                  {closeItems.length > 0 && <h3 className={styles.tierTitle}>Matches every tag</h3>}
+                  <MasonryGrid
+                    items={fullItems}
+                    renderItem={(item) => (
+                      <PortraitCard key={item.hash} item={item} onOpen={openPreview} onBroken={markBroken} />
+                    )}
+                  />
+                </>
               )}
+              {closeItems.length > 0 && (
+                <>
+                  <h3 className={styles.tierTitle}>
+                    {fullItems.length > 0 ? 'Close matches' : 'Nothing matches every tag · close matches'}
+                  </h3>
+                  <MasonryGrid
+                    items={closeItems}
+                    renderItem={(item) => (
+                      <PortraitCard
+                        key={item.hash}
+                        item={item}
+                        badges={item.matchedTags}
+                        onOpen={openPreview}
+                        onBroken={markBroken}
+                      />
+                    )}
+                  />
+                </>
+              )}
+              {hasMore && <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />}
             </>
           )}
         </div>
+
+        {pickerOpen && tagGroups.length > 0 && (
+          <PortraitTagPicker
+            groups={tagGroups}
+            activeTags={activeTags}
+            onToggle={toggleTag}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Quantas colunas de pelo menos `minWidth` px cabem na largura do elemento.
+ * @param {{ current: HTMLElement|null }} ref
+ * @param {number} minWidth
+ */
+function useColumnCount(ref, minWidth) {
+  const [cols, setCols] = useState(2);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      setCols(Math.max(2, Math.min(6, Math.floor((w + 10) / (minWidth + 10)))));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, minWidth]);
+  return cols;
+}
+
+/** Distribui os cartões em colunas por rodízio, preservando a ordem por linhas. */
+function MasonryGrid({ items, renderItem }) {
+  const ref = useRef(null);
+  const cols = useColumnCount(ref, 150);
+  const columns = Array.from({ length: cols }, () => []);
+  items.forEach((item, i) => columns[i % cols].push(item));
+  return (
+    <div ref={ref} className={styles.masonry}>
+      {columns.map((col, c) => (
+        <div key={c} className={styles.column}>
+          {col.map(renderItem)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** O cartão de um retrato: placeholder animado até carregar, depois a imagem inteira. */
+function PortraitCard({ item, badges, onOpen, onBroken }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <button
+      type="button"
+      className={loaded ? `${styles.card} ${styles.cardLoaded}` : styles.card}
+      onClick={() => onOpen(item)}
+      title={item.matchedTags.map(tagLabelOf).join(' · ')}
+    >
+      <img
+        className={styles.cardImg}
+        src={item.url}
+        alt="Suggested portrait"
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => onBroken(item.hash)}
+      />
+      {badges?.length > 0 && (
+        <span className={styles.cardBadges}>
+          {badges.slice(0, 3).map((t) => (
+            <span key={t} className={styles.cardBadge}>
+              {tagLabelOf(t)}
+            </span>
+          ))}
+        </span>
+      )}
+    </button>
   );
 }

@@ -33,5 +33,7 @@ DnD Source Material/
 .agents/
 skills-lock.json
 scripts/.portraits-state.json
+scripts/.portraits.lock
+scripts/.portraits-control
 scripts/.portraits.log
 *.tmp

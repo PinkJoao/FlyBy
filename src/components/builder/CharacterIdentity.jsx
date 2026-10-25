@@ -13,9 +13,10 @@
 //     rename(name), applyPortraitFile(file), onPortraitFile(e), setPortraitUrl(url),
 //     clearPortrait(), onPortraitClick(): o nome e o retrato.
 //   portraitFilename(name, src): o nome do arquivo para baixar o retrato.
+//   downloadRemote(src, filename): baixa um retrato de outro domínio como arquivo.
 //   PortraitViewer(props): o retrato em tela cheia (trocar, baixar, remover).
-//   PortraitSourceModal(props): upload, sugestões (experimental), URL ou imagem
-//     colada.
+//   PortraitSourceModal(props): upload, a faixa de sugestões (experimental,
+//     PortraitSuggestionStrip, com "See all" para a galeria), URL ou imagem colada.
 //
 // DECISÕES E ARMADILHAS
 //   - Nome e retrato são editáveis nos dois modos: não mudam a jogatina, e travar
@@ -25,7 +26,12 @@
 //   - O CSS é o da ficha (Builder.module.css): .identity e o resto continuam lá.
 //   - Retrato: o upload vira data-URL redimensionada; a URL da web é guardada
 //     direto (como o seletor de imagem do Foundry).
-//   - Sugestões de retrato (PortraitSuggestionsModal): só aparecem com
+//   - Download de retrato que é URL de OUTRO domínio: o navegador ignora o
+//     atributo `download` e o link levava a aba do app para a imagem (perdendo a
+//     página). downloadRemote baixa o arquivo (direto ou pelo cache wsrv.nl,
+//     fetchImageBlob, porque o i.pinimg.com não manda CORS) e salva com o nome do
+//     personagem; se nada der, abre numa aba nova (DDL-0127).
+//   - Sugestões de retrato (a faixa no escolhedor e a galeria): só aparecem com
 //     `experimental` ligado em settingsStore (DDL-0111, DDL-0124).
 //   - Imagem COLADA: com o escolhedor ou o retrato em tela cheia abertos, o Ctrl+V
 //     de uma imagem em qualquer lugar a usa (useImagePaste); no celular, o campo de
@@ -37,9 +43,11 @@ import { useRef, useState } from 'react';
 import { classSummary } from '../../schema/character';
 import useSettingsStore from '../../store/settingsStore';
 import { fileToPortrait } from '../common/imageFile';
+import { fetchImageBlob } from '../../data/imageProxy';
 import { useImagePaste } from '../common/imagePaste';
 import ImageUrlField from '../common/ImageUrlField';
 import PortraitSuggestionsModal from '../common/PortraitSuggestionsModal';
+import PortraitSuggestionStrip from '../common/PortraitSuggestionStrip';
 import { useBackLayer } from '../../hooks/useBack';
 import { TUT } from '../../tutorial/anchors';
 import Icon from '../common/Icon';
@@ -138,6 +146,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
 
       {pickerOpen && (
         <PortraitSourceModal
+          character={character}
           onUpload={() => {
             setPickerOpen(false);
             fileRef.current?.click();
@@ -181,6 +190,23 @@ function portraitFilename(name, src) {
   return `${base}-portrait.${ext}`;
 }
 
+/** Baixa um retrato de outro domínio como arquivo; sem como ler, abre numa aba nova. */
+async function downloadRemote(src, filename) {
+  try {
+    const blob = await fetchImageBlob(src);
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  } catch {
+    window.open(src, '_blank', 'noopener,noreferrer');
+  }
+}
+
 /** O retrato em tela cheia: trocar, baixar, remover. */
 function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
   useBackLayer(true, onClose);
@@ -191,7 +217,16 @@ function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
         <button type="button" className={styles.viewerBtn} onClick={onChange}>
           Change
         </button>
-        <a className={styles.viewerBtn} href={src} download={portraitFilename(name, src)}>
+        <a
+          className={styles.viewerBtn}
+          href={src}
+          download={portraitFilename(name, src)}
+          onClick={(e) => {
+            if (/^(data|blob):/.test(src)) return;
+            e.preventDefault();
+            downloadRemote(src, portraitFilename(name, src));
+          }}
+        >
           Download
         </a>
         <button type="button" className={`${styles.viewerBtn} ${styles.viewerDanger}`} onClick={onRemove}>
@@ -206,7 +241,7 @@ function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
 }
 
 /** O escolhedor da fonte do retrato: upload, sugestões, URL ou imagem colada. */
-function PortraitSourceModal({ onUpload, onSuggest, onUseUrl, onImage, onClose }) {
+function PortraitSourceModal({ character, onUpload, onSuggest, onUseUrl, onImage, onClose }) {
   const [url, setUrl] = useState('');
   useBackLayer(true, onClose);
   const submitUrl = (e) => {
@@ -227,9 +262,7 @@ function PortraitSourceModal({ onUpload, onSuggest, onUseUrl, onImage, onClose }
           Upload from device
         </button>
         {onSuggest && (
-          <button type="button" className={styles.sourceUploadBtn} onClick={onSuggest}>
-            Suggested portraits
-          </button>
+          <PortraitSuggestionStrip character={character} onSelect={onUseUrl} onSeeAll={onSuggest} />
         )}
         <div className={styles.sourceDivider}>
           <span>or</span>

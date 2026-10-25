@@ -6,8 +6,10 @@
 //   montado UMA vez no App) só LÊ, e que qualquer imagem clicável aciona. Guarda o
 //   array inteiro, para o carrossel navegar em tela cheia, e o índice atual.
 //   `images` é uma lista de `{ src, alt?, credit? }`. `actions` são botões
-//   opcionais sob a imagem (`{ label, onClick, tone? }`), como o Trocar/Remover
-//   da imagem de item do inventário.
+//   opcionais sob a imagem (`{ label, onClick?, tone?, icon? }`; com `icon` o botão
+//   é redondo, e `tone` 'success' ou 'danger' o pinta), como o Trocar/Remover
+//   da imagem de item do inventário; `onClick(image, index)` recebe a imagem que
+//   está na tela.
 //
 // FUNÇÕES
 //   useImageViewerStore: o store: show(images, index, actions), hide() e

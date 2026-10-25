@@ -181,30 +181,66 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
           <div className={styles.quickRow}>
             <div className={styles.quickGroup}>
               <span className={styles.quickLabel}>Gender</span>
-              {GENDER_GROUP.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  className={activeTags.includes(g) ? `${styles.pill} ${styles.pillActive}` : styles.pill}
-                  onClick={() => toggleExclusiveGroup(g, GENDER_GROUP)}
-                >
-                  {tagLabelOf(g)}
-                </button>
-              ))}
+              <div
+                className={styles.seg}
+                role="group"
+                aria-label="Gender"
+                data-pos={
+                  activeTags.includes('male')
+                    ? '0'
+                    : activeTags.includes('female')
+                      ? '1'
+                      : 'none'
+                }
+              >
+                <span className={styles.thumb} aria-hidden="true" />
+                {GENDER_GROUP.map((g) => {
+                  const isOn = activeTags.includes(g);
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      className={isOn ? styles.segOn : undefined}
+                      aria-pressed={isOn}
+                      onClick={() => toggleExclusiveGroup(g, GENDER_GROUP)}
+                    >
+                      {tagLabelOf(g)}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className={styles.quickGroup}>
               <span className={styles.quickLabel}>Age</span>
-              {AGE_GROUP.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  className={activeTags.includes(a) ? `${styles.pill} ${styles.pillActive}` : styles.pill}
-                  onClick={() => toggleExclusiveGroup(a, AGE_GROUP)}
-                >
-                  {tagLabelOf(a)}
-                </button>
-              ))}
+              <div
+                className={styles.seg}
+                role="group"
+                aria-label="Age"
+                data-pos={
+                  activeTags.includes('young')
+                    ? '0'
+                    : activeTags.includes('mature')
+                      ? '1'
+                      : 'none'
+                }
+              >
+                <span className={styles.thumb} aria-hidden="true" />
+                {AGE_GROUP.map((a) => {
+                  const isOn = activeTags.includes(a);
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      className={isOn ? styles.segOn : undefined}
+                      aria-pressed={isOn}
+                      onClick={() => toggleExclusiveGroup(a, AGE_GROUP)}
+                    >
+                      {tagLabelOf(a)}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

@@ -1,0 +1,128 @@
+/* =============================================================================
+ * PlayCards.module.css: os cards de condições e efeitos, além do de proficiências
+ * =============================================================================
+ * CLASSES
+ *   .summary, .warn: a linha embaixo do cabeçalho fechado (os nomes ativos) e o
+ *     aviso da exaustão 6.
+ *   .list, .row, .rowMain, .rowName, .rowNote: uma condição ou efeito por linha.
+ *   .rowCtrl, .ctrlBtn, .level: os controles (tirar, o nível com menos e mais).
+ *   .add: o botão de acrescentar, no fim.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O resumo com o card fechado mostra os NOMES ativos: o jogador vê o que pesa
+ *     sem abrir, e o card não cresce (uma linha, com reticências).
+ * -------------------------------------------------------------------------- */
+
+.summary {
+  margin: -6px 16px 12px 62px;
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.warn {
+  margin: -6px 16px 12px 62px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger-text);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list:empty {
+  display: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowName {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.rowNote {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rowCtrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.ctrlBtn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.ctrlBtn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.ctrlBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.level {
+  min-width: 1.4em;
+  text-align: center;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.add {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.add:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}

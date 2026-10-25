@@ -305,10 +305,10 @@ const play = {
     },
     {
       anchor: TUT.PLAY_STATS,
-      title: 'Initiative, hit points and movement',
+      title: 'Hit points, initiative and movement',
       body: {
-        desktop: 'Roll initiative starts combat. Click Hit points for damage, healing or temporary hit points, Armor Class for what makes it up, and Move for your speeds and your movement each turn.',
-        mobile: 'Roll initiative starts combat. Tap Hit points for damage, healing or temporary hit points, Armor Class for what makes it up, and Move for your speeds and your movement each turn.',
+        desktop: 'Click Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Move and Dash. Armor Class shows what makes it up.',
+        mobile: 'Tap Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Move and Dash. Armor Class shows what makes it up.',
       },
       placement: 'bottom',
     },
@@ -322,9 +322,15 @@ const play = {
       placement: 'bottom',
     },
     {
+      anchor: TUT.PLAY_CONDITIONS,
+      title: 'Conditions and effects',
+      body: 'Open these to add or end a condition or an effect; rolls take them into account. In Proficiencies above, a save, skill or tool rolls when you tap it.',
+      placement: 'bottom',
+    },
+    {
       anchor: TUT.PLAY_STATUS,
-      title: 'Status and rests',
-      body: 'Conditions, effects and concentration show up here, next to your hit dice and the two rests. In combat, the round bar appears here too.',
+      title: 'Concentration and combat',
+      body: 'Concentration shows up here, and so does dying at 0 hit points. In combat, the round bar appears here too. The two rests sit next to your name.',
       placement: 'bottom',
     },
     {

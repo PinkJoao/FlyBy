@@ -63,3 +63,13 @@ describe('playChecks', () => {
     expect(save.total).toBe(6);
   });
 });
+
+describe('teste de ferramenta', () => {
+  it('soma o atributo escolhido e a proficiência inteira', () => {
+    const c = { ...catalog, stats: { profBonus: 2 } };
+    const test = { type: 'tool', id: "Thieves' Tools", ability: 'dex' };
+    expect(testParts(c, test)).toEqual([{ label: 'Dexterity', formula: 3 }, { label: 'Proficiency', formula: 2 }]);
+    expect(rollOf(c, test)).toEqual({ kind: 'check', ability: 'dex', tool: "Thieves' Tools", proficient: true });
+    expect(testBreakdown(c, st(), test).total).toBe(5);
+  });
+});

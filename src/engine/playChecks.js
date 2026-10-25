@@ -24,6 +24,9 @@
 //     de estar vestido e sintonizado, como o usuário classificou os itens mágicos.
 //   - O total soma só números: o fixo e o condicional numérico LIGADOS por padrão.
 //     Um dado (rolado) aparece à parte, como "+1d4", e um efeito opcional não soma.
+//   - Teste de FERRAMENTA (`{ type: 'tool', id: nome, ability }`): o jogador
+//     escolhe o atributo (a ferramenta não tem um fixo no 2024), e soma a
+//     proficiência inteira, porque só ferramentas proficientes aparecem para rolar.
 //   - Proficiência guardada como nível (0.5, 1, 2), com o valor já calculado pelo
 //     catálogo: a meia proficiência sai como "Half proficiency".
 // -----------------------------------------------------------------------------
@@ -49,6 +52,11 @@ export function checkPartsOf(catalog, test) {
   if (test.type === 'ability') return checks.abilities?.find((a) => a.ability === test.id)?.checkParts ?? null;
   if (test.type === 'save') return checks.abilities?.find((a) => a.ability === test.id)?.saveParts ?? null;
   if (test.type === 'skill') return checks.skills?.find((s) => s.skill === test.id)?.parts ?? null;
+  if (test.type === 'tool') {
+    const a = checks.abilities?.find((x) => x.ability === test.ability);
+    const base = a?.checkParts ?? [{ kind: 'ability', ability: test.ability, value: a?.mod ?? 0 }];
+    return [...base, { kind: 'proficiency', level: 1, value: catalog.stats?.profBonus ?? 0 }];
+  }
   return null;
 }
 
@@ -56,6 +64,7 @@ export function checkPartsOf(catalog, test) {
 export function rollOf(catalog, test) {
   if (test.type === 'save') return { kind: 'save', ability: test.id };
   if (test.type === 'initiative') return { kind: 'initiative', ability: 'dex' };
+  if (test.type === 'tool') return { kind: 'check', ability: test.ability, tool: test.id, proficient: true };
   if (test.type === 'skill') {
     const s = catalog.checks?.skills?.find((x) => x.skill === test.id);
     return { kind: 'check', ability: s?.ability, skill: test.id, proficient: (s?.prof ?? 0) >= 1 };

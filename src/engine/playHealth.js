@@ -17,13 +17,23 @@
 //   healOutcome(state, catalog, amount): o que uma cura faz.
 //   tempHpOutcome(state, amount, opts): o temporário novo, sem somar.
 //   deathSaveOutcome(state, catalog, roll): o que um teste contra a morte faz.
-//   damageEvent(args), healEvent(args), tempHpEvent(args): os eventos.
+//   maxHpOutcome(state, catalog, amount): subir o HP máximo (e o atual junto).
+//   hurtOutcome(state, catalog, opts): o dano do painel Hurt, que pode cortar
+//     o máximo junto.
+//   damageEvent(args), healEvent(args), tempHpEvent(args), maxHpEvent(args),
+//     hurtEvent(args): os eventos.
 //   deathSaveEvent(args): rola o teste contra a morte e monta o evento.
 //   concentrationEvent(args): começa ou termina a concentração.
 //   concentrationCheckEvent(args): o save de CON para manter a concentração.
 //
 // DECISÕES E ARMADILHAS
 //   Regras medidas no texto do XPHB (data/book/book-xphb.json, 2026-10-24)
+//   - HP máximo: subir (Aid) sobe o atual junto, porque o estado guarda o DANO; o
+//     corte do Hurt com "afeta o máximo" (o dreno de um vampiro) desce o máximo
+//     pelo que passou do temporário, o atual fica no máximo novo se passar dele, e
+//     o máximo em 0 mata. O descanso longo desfaz o ajuste (playRest).
+//   - O painel Hurt não tem tipo de dano: resistência e imunidade não entram
+//     (quem quer o tipo usa o dano de um ataque, que já vem com ele).
 //   - Temporário é gasto PRIMEIRO; não soma com outro temporário (o jogador
 //     escolhe: o padrão é ficar com o MAIOR, `replace` força o novo); cura não o
 //     restaura; some no descanso longo.
@@ -176,6 +186,39 @@ export function deathSaveOutcome(state, catalog, { natural, total }) {
   return { ops: [{ op: 'death', success: 1 }], result: 'Success' };
 }
 
+/** Subir o HP máximo em `amount`: o atual sobe junto; saindo do zero, limpa a morte. */
+export function maxHpOutcome(state, catalog, amount) {
+  const v = vitals(state, catalog);
+  const n = Math.max(0, Math.floor(Number(amount) || 0));
+  const ops = n ? [{ op: 'hp', max: n }] : [];
+  const deathMarked = v.death.success || v.death.failure || v.death.stable || v.death.dead;
+  if (n > 0 && v.current === 0 && deathMarked) ops.push({ op: 'death', reset: true });
+  return { ops, summary: { amount: n, from: v.max, to: v.max + n, current: v.current + n } };
+}
+
+/**
+ * O dano do painel Hurt; com `affectMax`, o máximo cai pelo que passou do temporário.
+ * @param {{ amount: number, affectMax?: boolean }} opts
+ */
+export function hurtOutcome(state, catalog, { amount, affectMax = false }) {
+  const out = damageOutcome(state, catalog, { amount });
+  if (!affectMax) return out;
+  const v = vitals(state, catalog);
+  const { summary } = out;
+  const cut = Math.min(v.max, summary.taken - summary.toTemp);
+  if (cut <= 0) return out;
+  const max = v.max - cut;
+  const current = Math.min(v.current - summary.toHp, max);
+  const ops = out.ops.filter((o) => o.op !== 'hp');
+  ops.unshift({ op: 'hp', damage: (max - current) - state.damage, temp: -summary.toTemp, max: -cut });
+  const notes = [...summary.notes];
+  if (max === 0 && !ops.some((o) => o.op === 'death' && o.set?.dead)) {
+    ops.push({ op: 'death', set: { dead: true } });
+    notes.push('Dies (hit point maximum 0)');
+  }
+  return { ops, summary: { ...summary, notes, maxCut: cut, maxTo: max } };
+}
+
 /** O evento de um dano sofrido. */
 export function damageEvent({ state, catalog, amount, type, critical, label = 'Damage taken', now = new Date() }) {
   const { ops, summary } = damageOutcome(state, catalog, { amount, type, critical });
@@ -192,6 +235,18 @@ export function healEvent({ state, catalog, amount, label = 'Healing', now = new
 export function tempHpEvent({ state, amount, replace = false, label = 'Temporary hit points', now = new Date() }) {
   const { ops, summary } = tempHpOutcome(state, amount, { replace });
   return makeEvent('tempHp', { label, ops, payload: summary }, now);
+}
+
+/** O evento de subir o HP máximo. */
+export function maxHpEvent({ state, catalog, amount, label = 'Hit point maximum', now = new Date() }) {
+  const { ops, summary } = maxHpOutcome(state, catalog, amount);
+  return makeEvent('maxHp', { label, ops, payload: summary }, now);
+}
+
+/** O evento do painel Hurt (dano sem tipo, que pode cortar o máximo). */
+export function hurtEvent({ state, catalog, amount, affectMax = false, label = 'Damage taken', now = new Date() }) {
+  const { ops, summary } = hurtOutcome(state, catalog, { amount, affectMax });
+  return makeEvent('damage', { label, ops, payload: { ...summary, critical: false } }, now);
 }
 
 /** Rola o teste contra a morte (d20 puro, mais o bônus do diálogo) e monta o evento. */

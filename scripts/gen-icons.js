@@ -63,6 +63,8 @@ const ICONS = {
   proficiency: 'game:skills',
   portrait: 'game:cowled',
   sparkles: 'game:sparkles',
+  condition: 'game:knockout',
+  effect: 'game:aura',
 
   itemAll: 'game:chest',
   itemWeapon: 'game:crossed-swords',

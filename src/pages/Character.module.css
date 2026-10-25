@@ -4,8 +4,8 @@
  * CLASSES
  *   .shell, .withSide, .side: a página e, no jogo, a coluna do histórico.
  *   .playPage: o espaço de baixo a mais no jogo (o aviso da última rolagem).
- *   .bar, .right, .slot: o topo em três partes (voltar, seletor, e à direita o guia
- *     e o lugar onde cada modo põe os seus botões, sem caixa própria).
+ *   .bar, .right: o topo em três partes (voltar, seletor, e à direita o guia e o
+ *     menu).
  *
  * DECISÕES E ARMADILHAS
  *   - A página é o .page da ficha (Builder.module.css), 760px centrados; tudo aqui
@@ -40,9 +40,6 @@
   align-items: center;
 }
 
-.slot {
-  display: contents;
-}
 
 .shell .playPage {
   padding-bottom: 96px;

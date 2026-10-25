@@ -21,8 +21,8 @@
 //   withRounds(modifier, state, rounds): o efeito com a duração em rodadas, se em combate.
 //   movementLeft(state, speed): os pés que sobram neste turno (o Dash soma um
 //     deslocamento inteiro).
-//   moveEvent(args), dashEvent(args), resetMoveEvent(args): andar, o Dash e
-//     zerar o movimento do turno.
+//   moveEvent(args), dashEvent(args), resetMoveEvent(args): andar, o Dash (que
+//     pode já andar `feet` pés no mesmo evento) e zerar o movimento do turno.
 //
 // DECISÕES E ARMADILHAS
 //   - O combate é do PERSONAGEM, não da mesa: a rodada avança quando o jogador diz
@@ -138,13 +138,15 @@ export function moveEvent({ state, feet, speed, now = new Date() }) {
   return makeEvent('combat', { label: `Moved ${feet} ft`, ops, payload: { moved: Number(feet), left } }, now);
 }
 
-/** O Dash: mais um deslocamento neste turno, gastando a ação. */
-export function dashEvent({ state, speed, now = new Date() }) {
+/** O Dash: mais um deslocamento neste turno, gastando a ação; `feet` já anda junto. */
+export function dashEvent({ state, speed, feet = 0, now = new Date() }) {
   const used = state.combat?.used ?? {};
   const dash = (used.dash ?? 0) + 1;
-  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, dash, action: true } } }] : [];
-  const left = (speed ?? 0) * (1 + dash) - (used.move ?? 0);
-  return makeEvent('combat', { label: 'Dash', ops, payload: { dash: true, left } }, now);
+  const moved = Math.max(0, Math.trunc(Number(feet) || 0));
+  const move = (used.move ?? 0) + moved;
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, dash, move, action: true } } }] : [];
+  const left = (speed ?? 0) * (1 + dash) - move;
+  return makeEvent('combat', { label: moved ? `Dash, moved ${moved} ft` : 'Dash', ops, payload: { dash: true, moved, left } }, now);
 }
 
 /** Zera o movimento do turno (e o Dash). */

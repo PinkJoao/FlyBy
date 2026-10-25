@@ -12,6 +12,8 @@
 //   rollHitDie(args): rola um dado de vida com a CON (mínimo 1).
 //   hitDiceLeft(catalog, state): os dados de vida que sobram, por face.
 //   shortRestEvent(args): o descanso curto com os dados de vida gastos.
+//   hitDiceEvent(args): gastar dados de vida fora do descanso (cura) ou, com
+//     um número negativo, devolver os gastos.
 //   longRestEvent(args): o descanso longo.
 //
 // DECISÕES E ARMADILHAS
@@ -26,6 +28,10 @@
 //     efeitos de feature e de magia e os manuais com duração de descanso somem
 //     (playEffects.restModifierOps). Recupera o que é de descanso
 //     curto também (o dnd5e faz o mesmo com o período `sr`).
+//   - O ajuste do HP máximo (`maxHpDelta`, do painel de cura ou do Hurt) volta a
+//     zero no longo: Aid dura 8 horas e o dreno do vampiro acaba no descanso longo.
+//   - Dados de vida pelo card de HP (`hitDiceEvent`): a maior face primeiro, ao
+//     gastar e ao devolver; pedir mais do que sobra gasta o que houver.
 //   - Períodos: o curto recupera `sr`; o longo, `lr`, `sr`, `day`, `dawn` e
 //     `dusk` (o "1 por dia" da magia concedida e do item volta no longo).
 //     Recuperação `recoverAll` devolve tudo; `formula` devolve o valor da
@@ -123,14 +129,61 @@ export function shortRestEvent({ state, catalog, spends = [], rng, now = new Dat
   }, now);
 }
 
+/**
+ * Gastar `count` dados de vida (rolados aqui, curando) ou, negativo, devolver os gastos.
+ * @param {{ state: object, catalog: object, count: number, rng?: Function, now?: Date }} args
+ */
+export function hitDiceEvent({ state, catalog, count, rng = cryptoRng, now = new Date() }) {
+  const n = Math.trunc(Number(count) || 0);
+  const dice = hitDiceLeft(catalog, state).sort((a, b) => b.faces - a.faces);
+  const ops = [];
+  const byFace = {};
+  if (n < 0) {
+    let want = -n;
+    for (const d of dice) {
+      const back = Math.min(want, d.max - d.left);
+      if (back > 0) {
+        ops.push({ op: 'restore', key: d.key, amount: back });
+        byFace[d.faces] = back;
+        want -= back;
+      }
+    }
+    const restored = Object.values(byFace).reduce((s, v) => s + v, 0);
+    return makeEvent('hitDice', { label: 'Hit dice recovered', ops, payload: { restored, dice: byFace } }, now);
+  }
+  const spends = [];
+  let want = n;
+  for (const d of dice) {
+    for (let i = 0; i < d.left && want > 0; i++, want--) spends.push(rollHitDie({ catalog, faces: d.faces, rng }));
+  }
+  for (const s of spends) byFace[s.faces] = (byFace[s.faces] ?? 0) + 1;
+  for (const d of dice) if (byFace[d.faces]) ops.push({ op: 'spend', key: d.key, amount: byFace[d.faces] });
+  const heal = healOutcome(state, catalog, spends.reduce((sum, s) => sum + s.healed, 0));
+  ops.push(...heal.ops);
+  return makeEvent('hitDice', {
+    label: 'Hit dice',
+    ops,
+    payload: { spent: spends.length, asked: n, dice: byFace, healed: heal.summary.healed, from: heal.summary.from, to: heal.summary.to },
+    rolls: {
+      total: heal.summary.healed,
+      parts: spends.map((s) => ({ label: `d${s.faces} + Con`, formula: s.rolls.formula, total: s.healed, groups: s.rolls.groups })),
+    },
+  }, now);
+}
+
 /** O descanso longo: HP, dados de vida, recursos, exaustão, morte e concentração. */
 export function longRestEvent({ state, catalog, rng, now = new Date() }) {
   const hp = hpView(state, catalog.stats?.hpMax ?? 0);
   const ops = [];
   const lines = [];
+  const baseMax = Math.max(0, catalog.stats?.hpMax ?? 0);
+  if (state.maxHpDelta) {
+    ops.push({ op: 'hp', max: -state.maxHpDelta });
+    lines.push({ name: 'Hit point maximum', detail: `${hp.max} to ${baseMax}` });
+  }
   if (state.damage) {
     ops.push({ op: 'hp', damage: -state.damage });
-    lines.push({ name: 'Hit points', detail: `${hp.current} to ${hp.max}` });
+    lines.push({ name: 'Hit points', detail: `${hp.current} to ${baseMax}` });
   }
   if (state.tempHp) ops.push({ op: 'hp', temp: -state.tempHp });
   const d = state.death ?? {};

@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent } from './playRest';
+import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent, hitDiceEvent } from './playRest';
 
 const seq = (...values) => sequenceRng(values, () => {
   throw new Error('rolou um dado a mais');
@@ -109,5 +109,37 @@ describe('descanso longo', () => {
 
   it('descansado, o longo não muda nada', () => {
     expect(longRestEvent({ state: st(), catalog }).ops).toEqual([]);
+  });
+});
+
+describe('hitDiceEvent', () => {
+  it('gasta da maior face para a menor e cura', () => {
+    const s = st({ damage: 20 });
+    const ev = hitDiceEvent({ state: s, catalog, count: 4, rng: seq(5, 6, 7, 3) });
+    expect(ev.ops.filter((o) => o.op === 'spend')).toEqual([{ op: 'spend', key: 'hd:d10', amount: 3 }, { op: 'spend', key: 'hd:d8', amount: 1 }]);
+    expect(ev.rolls.parts.map((p) => p.total)).toEqual([7, 8, 9, 5]);
+    expect(ev.payload.healed).toBe(20);
+    expect(hpView(run(s, ev), 30).current).toBe(30);
+  });
+
+  it('pedir mais do que sobra gasta o que houver', () => {
+    const s = st({ damage: 5, spent: { 'hd:d10': 3, 'hd:d8': 1 } });
+    const ev = hitDiceEvent({ state: s, catalog, count: 3, rng: seq(1) });
+    expect(ev.payload.spent).toBe(1);
+    expect(run(s, ev).spent).toEqual({ 'hd:d10': 3, 'hd:d8': 2 });
+  });
+
+  it('negativo devolve os gastos, a maior face primeiro', () => {
+    const s = st({ spent: { 'hd:d10': 1, 'hd:d8': 2 } });
+    const ev = hitDiceEvent({ state: s, catalog, count: -2 });
+    expect(ev.payload.restored).toBe(2);
+    expect(run(s, ev).spent).toEqual({ 'hd:d8': 1 });
+  });
+
+  it('o descanso longo desfaz o ajuste do máximo', () => {
+    const s = st({ maxHpDelta: 5, damage: 10 });
+    const s1 = run(s, longRestEvent({ state: s, catalog }));
+    expect(s1.maxHpDelta).toBe(0);
+    expect(hpView(s1, 30)).toEqual({ max: 30, current: 30, temp: 0 });
   });
 });

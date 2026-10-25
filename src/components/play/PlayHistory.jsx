@@ -42,6 +42,8 @@ const KIND_LABEL = {
   damage: 'Hurt',
   heal: 'Healing',
   tempHp: 'Temp HP',
+  maxHp: 'Max HP',
+  hitDice: 'Hit dice',
   deathSave: 'Death save',
   concentration: 'Concentration',
   concentrationCheck: 'Concentration',
@@ -82,11 +84,23 @@ function detailOf(event) {
       if (p.trait) tags.push({ text: TRAIT_WORD[p.trait] ?? p.trait });
       if (p.critical) tags.push({ text: 'Critical', tone: 'crit' });
       if (p.toTemp) lines.push(`${p.toTemp} from temporary hit points`);
+      if (p.maxCut) lines.push(`Hit point maximum -${p.maxCut} (now ${p.maxTo})`);
       for (const n of p.notes ?? []) lines.push(n);
       break;
     case 'heal':
       total = p.healed;
       lines.push(`${p.from} to ${p.to} hit points`);
+      break;
+    case 'maxHp':
+      total = p.amount;
+      lines.push(`Maximum ${p.from} to ${p.to}`);
+      break;
+    case 'hitDice':
+      total = p.restored != null ? p.restored : p.healed;
+      lines.push(Object.entries(p.dice ?? {}).map(([f, k]) => `${k}d${f}`).join(' + ') || 'No hit dice');
+      if (p.restored != null) lines.push('Recovered');
+      else if (p.spent) lines.push(`${p.from} to ${p.to} hit points`);
+      if (p.asked > (p.spent ?? 0)) lines.push(`Only ${p.spent} left to spend`);
       break;
     case 'tempHp':
       total = p.to;

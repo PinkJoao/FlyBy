@@ -1,0 +1,61 @@
+/* =============================================================================
+ * HpPanels.module.css: o que os painéis do card de HP têm além do PlayPanels
+ * =============================================================================
+ * CLASSES
+ *   .now, .preview: o HP de agora e o que vai acontecer.
+ *   .amount, .stepAmount: o número grande (com os botões de menos e mais nos dados de vida).
+ *   .damage, .heal: os tons do botão de aplicar.
+ * -------------------------------------------------------------------------- */
+
+.now {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.preview {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.amount {
+  min-width: 0;
+  font: inherit;
+  font-size: 34px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.amount:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.stepAmount {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.damage {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger-text);
+}
+
+.heal {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+}

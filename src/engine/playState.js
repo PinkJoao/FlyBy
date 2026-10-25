@@ -40,7 +40,9 @@
 //
 // DECISÕES E ARMADILHAS
 //   Operações (`op`)
-//   - `hp` { damage, temp }: somas, cada uma com piso em 0. `spend` { key,
+//   - `hp` { damage, temp, max }: somas; dano e temporário com piso em 0; `max`
+//     soma ao ajuste do HP máximo (`maxHpDelta`: Aid sobe, um dreno desce), que o
+//     hpView aplica sobre o máximo da ficha. `spend` { key,
 //     amount }: soma ao gasto (negativo devolve), piso 0, a chave some no 0.
 //     `restore` { key, amount? }: devolve `amount` ou tudo. `death` { success,
 //     failure, set, reset }: `set` troca campos ({ success, failure, stable, dead })
@@ -83,6 +85,7 @@ export function emptyPlayState() {
   return {
     damage: 0,
     tempHp: 0,
+    maxHpDelta: 0,
     death: { ...NO_DEATH },
     spent: {},
     conditions: {},
@@ -101,6 +104,7 @@ export function applyOp(state, op) {
         ...state,
         damage: Math.max(0, state.damage + num(op.damage)),
         tempHp: Math.max(0, state.tempHp + num(op.temp)),
+        ...(op.max ? { maxHpDelta: num(state.maxHpDelta) + num(op.max) } : {}),
       };
     case 'spend':
     case 'restore': {
@@ -158,7 +162,7 @@ export function applyEvent(state, event) {
 
 /** HP máximo, atual (o máximo menos o dano, preso no intervalo) e temporário. */
 export function hpView(state, maxHp) {
-  const max = Math.max(0, num(maxHp));
+  const max = Math.max(0, num(maxHp) + num(state.maxHpDelta));
   return { max, current: clamp(max - state.damage, 0, max), temp: state.tempHp };
 }
 
@@ -185,6 +189,7 @@ export function normalizePlayDoc(raw, characterId) {
     ...b,
     damage: Math.max(0, num(b.damage)),
     tempHp: Math.max(0, num(b.tempHp)),
+    maxHpDelta: num(b.maxHpDelta),
     death: { ...NO_DEATH, ...(b.death ?? {}) },
     spent: b.spent && typeof b.spent === 'object' ? { ...b.spent } : {},
     conditions: b.conditions && typeof b.conditions === 'object' ? { ...b.conditions } : {},

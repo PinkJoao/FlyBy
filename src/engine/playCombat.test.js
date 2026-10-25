@@ -111,3 +111,13 @@ describe('movimento', () => {
     expect(effectiveSpeeds(cat, st({ conditions: { grappled: 1 } })).fly.feet).toBe(0);
   });
 });
+
+describe('Dash com deslocamento', () => {
+  it('o Dash anda junto no mesmo evento', () => {
+    const s = st({ combat: { round: 1, used: { move: 10 } } });
+    const d = dashEvent({ state: s, speed: 30, feet: 25 });
+    expect(d.payload.left).toBe(25);
+    expect(run(s, d).combat.used).toEqual({ move: 35, dash: 1, action: true });
+    expect(d.label).toBe('Dash, moved 25 ft');
+  });
+});

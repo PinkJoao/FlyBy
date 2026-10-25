@@ -18,7 +18,7 @@
 //
 // FUNÇÕES
 //   testParts(catalog, test): as partes de um teste (atributo, save, perícia,
-//     iniciativa); com as partes do catálogo, uma linha por peça (o atributo, a
+//     ferramenta, iniciativa); com as partes do catálogo, uma linha por peça (o atributo, a
 //     proficiência, o item: engine/playChecks).
 //   bonusParts(options): a parte do bônus livre, se houver.
 //   rngFor(options, rng): o rng com os dados físicos na frente.
@@ -52,7 +52,7 @@ import { checkPartsOf, partLabel } from './playChecks';
 /**
  * As partes de um teste de d20 do catálogo.
  * @param {object} catalog
- * @param {{ type: 'ability'|'save'|'skill'|'initiative', id?: string }} test
+ * @param {{ type: 'ability'|'save'|'skill'|'tool'|'initiative', id?: string, ability?: string }} test
  * @returns {{ label: string, formula: number }[]}
  */
 export function testParts(catalog, test) {

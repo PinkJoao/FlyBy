@@ -10,8 +10,8 @@
 //
 // FUNÇÕES
 //   BuilderInner(props): a ficha, com o personagem e a derivação garantidos (quem
-//     carrega é a pages/Character); o menu entra por portal no topo dela
-//     (`actionsSlot`) e o controle de nível no lugar ao lado do nome (`levelSlot`).
+//     carrega é a pages/Character); o controle de nível entra por portal no lugar
+//     ao lado do nome (`levelSlot`).
 //
 // DECISÕES E ARMADILHAS
 //   Menu e guia
@@ -19,8 +19,7 @@
 //     controle de nível, as proficiências, a barra de abas e o painel.
 //   - O play mode é o OUTRO MODO desta página (o seletor Sheet | Play no topo,
 //     DDL-0117), só com os recursos experimentais ligados (DDL-0111).
-//   - O menu segue o padrão de menus do app (AppMenus, DDL-0098): glossário,
-//     Export & import, Character guide e Settings em janelinhas, e o feedback.
+//   - O menu é da pages/Character (CharacterMenu, DDL-0120), o mesmo nos dois modos.
 //   - A aba nova entra deslizando do lado para onde se foi (openTab, motion.js).
 //     No celular, arrastar o conteúdo para o lado troca de aba (useSwipeNav, num
 //     contêiner estável em volta do painel, que remonta a cada troca).
@@ -41,9 +40,7 @@
 //     magias preparadas são reconciliadas (reconcileClassSpells).
 //   - HP: o único nível fixo é o 1 da classe ORIGINAL; o reset volta à fórmula e
 //     zera também o ajuste manual; o ajuste não desce abaixo do derivado sem bônus.
-//   Export, espécie e inventário
-//   - Foundry é o ÚNICO formato de export e import (DDL-0005). O PDF é importado
-//     dinamicamente, fora do bundle principal.
+//   Espécie e inventário
 //   - Trocar a linhagem reseta as escolhas de espécie.
 //   - O balde de carga usa as operações puras do engine (unassignedSpells), cada
 //     uma um único save.
@@ -58,18 +55,10 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import useCharacterStore from '../store/characterStore';
-import useCharacterImport from '../hooks/useCharacterImport';
-import { assembleFoundryActor } from '../engine/foundryActor';
 import { seedStartingGold } from '../engine/startingGold';
-import MenuButton from '../components/common/MenuButton';
-import { SettingsMenu, SheetFilesMenu, SheetGuideMenu } from '../components/common/AppMenus';
-import { menu } from '../components/common/dialog';
 import { directionOf, slideClass } from '../motion';
 import { useSwipeNav } from '../hooks/useSwipeNav';
-import { openGlossary } from '../store/glossaryStore';
-import { FEEDBACK_URL } from '../feedback';
-import useTutorialStore, { startTutorial, maybeStartTutorial } from '../store/tutorialStore';
+import { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import LevelControls from '../components/builder/LevelControls';
 import LevelUpWizard from '../components/wizard/LevelUpWizard';
@@ -87,8 +76,6 @@ import ClassTab from '../components/builder/ClassTab';
 import InventoryTab from '../components/builder/InventoryTab';
 import SpellbookTab from '../components/builder/SpellbookTab';
 import styles from './Builder.module.css';
-import Icon from '../components/common/Icon';
-import { showPdfExport } from '../components/common/pdfExportDialog';
 
 const TABS = ['Species', 'Background', 'Class', 'Inventory', 'Spellbook', 'Biography'];
 
@@ -102,7 +89,7 @@ const TAB_TOUR = {
 };
 
 /** O modo ficha da página do personagem. */
-export function BuilderInner({ character, db, save, derived, activeTab, setActiveTab, actionsSlot, levelSlot, guideRequest, onGuideHandled }) {
+export function BuilderInner({ character, db, save, derived, activeTab, setActiveTab, levelSlot, guideRequest, onGuideHandled }) {
   const [tabDir, setTabDir] = useState(null);
   const swipeRef = useRef(null);
   const tabIndex = TABS.indexOf(activeTab);
@@ -120,21 +107,7 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
   };
   const navigate = useNavigate();
   const active = guidanceActive(character);
-  /** Liga ou desliga o guia; lê o personagem do store (o submenu fica aberto e ele muda). */
-  const setGuided = (guided) => {
-    const latest = useCharacterStore.getState().getById(character.id) ?? character;
-    save({ ...latest, meta: { ...latest.meta, guided } });
-  };
   const pend = guidancePendencies(db, character, derived);
-  const { inputRef: importRef, onFileChange: onImportFile, pickFile: pickImport } = useCharacterImport();
-
-  const setTutEnabled = useTutorialStore((s) => s.setEnabled);
-  const resetTutorials = useTutorialStore((s) => s.resetSeen);
-  const replayTutorials = () => {
-    setTutEnabled(true);
-    resetTutorials();
-    startTutorial('sheet');
-  };
 
   useEffect(() => {
     maybeStartTutorial('sheet');
@@ -244,45 +217,6 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
   );
   const changeHpBonus = (delta) => save({ ...character, hpBonus: (character.hpBonus ?? 0) + delta });
 
-  const safeName = () => (character.meta.name || 'character').replace(/[^\w.-]+/g, '_');
-  const download = (data, suffix) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${safeName()}${suffix}`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-  /** Os submenus do menu sanduíche (AppMenus, o padrão de menus do app). */
-  const openFiles = () =>
-    menu({
-      title: 'Export & import',
-      content: <SheetFilesMenu onExportFoundry={exportFoundry} onExportPdf={exportPdf} onImport={pickImport} />,
-    });
-  const openGuideMenu = () =>
-    menu({
-      title: 'Character guide',
-      content: (
-        <SheetGuideMenu
-          characterId={character.id}
-          onRerun={() => {
-            save({ ...character, meta: { ...character.meta, creating: true } });
-            navigate(`/build/${character.id}/wizard`);
-          }}
-          onSetGuided={setGuided}
-        />
-      ),
-    });
-  const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
-
-  const exportFoundry = () => download(assembleFoundryActor(character, db), '.json');
-  const exportPdf = () =>
-    showPdfExport(async (options) => {
-      const { exportCharacterPdf } = await import('../pdf/exportPdf');
-      await exportCharacterPdf(character, derived, db, options);
-    });
-
   const pickSpecies = (race) =>
     save({ ...character, species: { id: race.name.toLowerCase(), source: race.source, choices: {}, lineage: null } });
   const clearSpecies = () => save({ ...character, species: null });
@@ -320,34 +254,6 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
 
   return (
     <>
-      {actionsSlot && createPortal(
-        <>
-          <MenuButton
-            buttonClassName={styles.menuBtn}
-            buttonTitle="Menu"
-            dataTour={TUT.SHEET_MENU}
-            items={[
-              { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
-              { label: 'Export & import', sub: 'Foundry VTT, PDF, or open another character', onClick: openFiles },
-              { label: 'Character guide', sub: 'Re-run the creation guide, guide on or off', onClick: openGuideMenu },
-              { label: 'Settings', sub: 'Theme, creation guide and tutorials', onClick: openSettings },
-              { label: 'About FlyBy', sub: 'Version, credits and licenses', onClick: () => navigate('/about') },
-              { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
-            ]}
-          >
-            <span aria-hidden="true"><Icon name="menu" /></span>
-          </MenuButton>
-        </>,
-        actionsSlot,
-      )}
-
-      <input
-        ref={importRef}
-        type="file"
-        accept="application/json,.json"
-        hidden
-        onChange={onImportFile}
-      />
       {levelSlot && createPortal(
         <div data-flip="slot-level">
           <LevelControls character={character} onChangeClasses={setClasses} />

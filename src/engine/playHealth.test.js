@@ -19,7 +19,7 @@ import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
   vitals, traitFor, adjustDamage, concentrationDc, damageOutcome, healOutcome, tempHpOutcome, deathSaveOutcome,
-  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
+  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent, maxHpOutcome, hurtOutcome, hurtEvent,
 } from './playHealth';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -184,5 +184,44 @@ describe('dano com efeitos', () => {
   it('terminar a concentração tira o que dependia dela', () => {
     const s = st({ concentration: { name: 'Bless' }, modifiers: [{ id: 'b', label: 'Bless', concentration: 'k', effects: [] }] });
     expect(after(s, concentrationEvent({ state: s })).modifiers).toEqual([]);
+  });
+});
+
+describe('HP máximo e o painel Hurt', () => {
+  it('subir o máximo sobe o atual junto, e o descanso desfaz pelo playRest', () => {
+    const s = st({ damage: 4 });
+    const out = maxHpOutcome(s, catalog(12), 5);
+    expect(out.ops).toEqual([{ op: 'hp', max: 5 }]);
+    const s1 = after(s, out);
+    expect(hpView(s1, 12)).toEqual({ max: 17, current: 13, temp: 0 });
+  });
+
+  it('Hurt sem afetar o máximo é o dano comum, sem tipo', () => {
+    const s = st({ tempHp: 3 });
+    const s1 = after(s, hurtOutcome(s, catalog(12), { amount: 5 }));
+    expect(hpView(s1, 12)).toEqual({ max: 12, current: 10, temp: 0 });
+  });
+
+  it('Hurt afetando o máximo corta o que passou do temporário', () => {
+    const s = st({ tempHp: 3 });
+    const out = hurtOutcome(s, catalog(12), { amount: 5, affectMax: true });
+    expect(out.summary.maxCut).toBe(2);
+    const s1 = after(s, out);
+    expect(hpView(s1, 12)).toEqual({ max: 10, current: 10, temp: 0 });
+    expect(s1.maxHpDelta).toBe(-2);
+  });
+
+  it('com o atual abaixo do novo máximo, o atual cai só pelo dano', () => {
+    const s = st({ damage: 6 });
+    const s1 = after(s, hurtOutcome(s, catalog(12), { amount: 2, affectMax: true }));
+    expect(hpView(s1, 12)).toEqual({ max: 10, current: 4, temp: 0 });
+  });
+
+  it('o máximo em 0 mata', () => {
+    const s = st();
+    const ev = hurtEvent({ state: s, catalog: catalog(12), amount: 12, affectMax: true });
+    const s1 = ev.ops.reduce(applyOp, s);
+    expect(hpView(s1, 12).max).toBe(0);
+    expect(s1.death.dead).toBe(true);
   });
 });

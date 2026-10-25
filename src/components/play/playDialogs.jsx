@@ -2,8 +2,8 @@
 // playDialogs: abre os painéis de diálogo do play mode (HP, descanso, uso, magia)
 // =============================================================================
 // O QUE FAZ
-//   Os atalhos que a tela do play mode chama: o HpPanel (dano, cura,
-//   temporário), o ShortRestPanel (dados de vida), o UsePanel (usar uma
+//   Os atalhos que a tela do play mode chama: os HpPanels (cura, dano, dados
+//   de vida), o ShortRestPanel (dados de vida), o UsePanel (usar uma
 //   feature), o CastPanel (lançar uma magia) e os RecoveryPanels (recuperar
 //   slots, Font of Magic), cada um dentro de um diálogo do app.
 //   Cada um resolve com o que o painel devolveu, ou null se cancelado. Arquivo à
@@ -12,18 +12,18 @@
 //
 // FUNÇÕES
 //   openPanel(title, content, maxWidth): abre um painel num diálogo.
-//   askHp(props): o HpPanel.
+//   askHeal(props), askHurt(props), askHitDice(props): os painéis do card de HP.
 //   askShortRest(props): o ShortRestPanel.
 //   askUse(props), askCast(props): usar uma feature, lançar uma magia.
 //   askSlotRecovery(props), askFontOfMagic(props): as recuperações especiais.
 //   askModifier(props): o modificador manual (ModifierPanel).
 //   askCurrency(props): gastar ou ganhar moedas (CurrencyPanel).
 //   askSkillCheck(props): a perícia do Check de um atributo (SkillCheckPanel).
-//   askMove(props): os deslocamentos e o movimento do turno (MovePanel).
+//   askMove(props): quantos pés andar ou correr no turno (MovePanel).
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
-import HpPanel from './HpPanel';
+import { HealPanel, HurtPanel, HitDicePanel } from './HpPanels';
 import ShortRestPanel from './ShortRestPanel';
 import UsePanel from './UsePanel';
 import CastPanel from './CastPanel';
@@ -48,11 +48,27 @@ function openPanel(title, content, maxWidth) {
 }
 
 /**
- * O diálogo de dano, cura e HP temporário.
- * @returns {Promise<{ action: 'damage'|'heal'|'temp', amount: number, type: string, critical: boolean, replace: boolean }|null>}
+ * O diálogo de cura: HP, temporário ou máximo.
+ * @returns {Promise<{ kind: 'heal'|'temp'|'max', amount: number, replace: boolean }|null>}
  */
-export function askHp(props) {
-  return openPanel('Hit points', <HpPanel {...props} />, 420);
+export function askHeal(props) {
+  return openPanel('Heal', <HealPanel {...props} />, 420);
+}
+
+/**
+ * O diálogo de dano sofrido.
+ * @returns {Promise<{ amount: number, affectMax: boolean }|null>}
+ */
+export function askHurt(props) {
+  return openPanel('Hurt', <HurtPanel {...props} />, 420);
+}
+
+/**
+ * O diálogo dos dados de vida.
+ * @returns {Promise<{ count: number }|null>}
+ */
+export function askHitDice(props) {
+  return openPanel('Hit dice', <HitDicePanel {...props} />, 420);
 }
 
 /**
@@ -93,9 +109,9 @@ export function askCurrency(props) {
   return openPanel('Money', <CurrencyPanel {...props} />, 420);
 }
 
-/** O painel de movimento; resolve com { action, feet }. */
+/** O painel de andar (ou correr, com `dash`); resolve com { feet }. */
 export function askMove(props) {
-  return openPanel('Move', <MovePanel {...props} />, 400);
+  return openPanel(props.dash ? 'Dash' : 'Move', <MovePanel {...props} />, 400);
 }
 
 /** O seletor de perícia do Check; resolve com { test, name }. */

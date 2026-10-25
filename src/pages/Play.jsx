@@ -16,7 +16,7 @@
 //   automático, recuperações especiais, engine/playUse) e a aba Spells (slots,
 //   lançar escolhendo a forma, e o ataque, o dano e a cura da magia no círculo
 //   lançado, engine/playCast).
-//   Fase C5: condições e efeitos (engine/playEffects) na faixa de estado; cada
+//   Fase C5: condições e efeitos (engine/playEffects), hoje em cards próprios; cada
 //   rolagem leva os efeitos que valem para ela (o diálogo mostra cada um para
 //   desligar); a CA e o deslocamento já saem com eles.
 //   Polimento (DDL-0112, DDL-0113): o topo é o da ficha, os tiles (iniciativa,
@@ -25,12 +25,15 @@
 //   Fase C6: a aba Inventory (consumíveis, munição, cargas, moedas, engine/
 //   playInventory) e o combate leve (iniciativa, rodada, economia do turno e
 //   durações em rodadas, engine/playCombat) numa barra na faixa de estado.
+//   DDL-0120: o card de HP expande com Heal, Hurt e Hit dice, o de movimento com
+//   Move e Dash; Conditions e Effects viram cards expansíveis abaixo do de
+//   proficiências, e saves, perícias e ferramentas desse card rolam ao toque.
 //
 // FUNÇÕES
 //   signed(n): o número com sinal.
 //   PlayInner(props): o modo jogo, com o personagem garantido (quem carrega é a
-//     pages/Character); o menu e a coluna do histórico entram por portal nos
-//     lugares dela (`actionsSlot`, `sideSlot`).
+//     pages/Character); os descansos e a coluna do histórico entram por portal nos
+//     lugares dela (`levelSlot`, `sideSlot`).
 //     roll(build, dialog, quick): pergunta (ou não), rola, grava e mostra.
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
@@ -40,7 +43,8 @@
 //     moveCursor(fn, verb), undo(), redo(): mexem no cursor e avisam um
 //       conflito de inventário.
 //     record(event, cost): grava (marcando o custo do turno, em combate) e mostra o aviso.
-//     openHp(): o painel de HP; com concentração, o dano já pede o save.
+//     openHeal(), openHurt(), openHitDice(): os botões do card de HP; com
+//       concentração, o dano já pede o save.
 //     rollDeathSave(quick), rollConcentration(dc, quick), askConcentrationSave(),
 //       startConcentration(), endConcentration(): morte e concentração.
 //     shortRest(), longRest(): os descansos.
@@ -55,8 +59,8 @@
 //     consumeItem(entry), changeQuantity(entry, delta), spendMoney(): o inventário.
 //     startCombat(quick), nextTurn(), endCombat(), toggleEconomy(cost): o combate.
 //     rollInitiative(quick): o tile: fora de combate começa um; nele, só rola.
-//     openMove(): o painel de movimento (deslocamentos, andar, Dash, zerar).
-//     replayTutorials(), openSettings(): o submenu Settings (o replay abre o tour do play).
+//     moveFeet(dash): o Move e o Dash do card de movimento (quantos pés).
+//     rollTool(name): o teste de uma ferramenta, com o atributo escolhido.
 //   AttackRow(props): uma linha da lista de ataques.
 //   HistoryHead(props): o título do histórico com desfazer e refazer.
 //   toastNumber(event): o número do aviso de um evento.
@@ -87,13 +91,18 @@
 //   - `data-flip` marca o que a troca de modo anima (pages/Character, DDL-0118): os
 //     descansos, as proficiências, a faixa de estado, a barra de abas e o painel.
 //   - Ficha e jogo são MODOS da mesma página (DDL-0117): o voltar leva à lista de
-//     personagens, e "Edit sheet" no menu troca para o modo ficha (onEditSheet).
+//     personagens, e o menu é o da página, o mesmo da ficha (DDL-0120).
 //   - Rolar a iniciativa É começar o combate: o tile Roll initiative substitui o
 //     antigo "Start combat"; em combate, ele só rola (o combate segue).
 //   - O play mode NÃO edita decisões de build (pergunta 7 do plano): elas são do
 //     modo ficha.
 //   - Dano sofrido com concentração abre logo o save de CON com a CD (como o
 //     aviso do Foundry); cancelar deixa o botão no cartão do dano para depois.
+//   - O Hurt do card de HP não tem tipo de dano (DDL-0120): só o número e se corta
+//     o máximo. Os dados de vida pelo card rolam sem diálogo de rolagem (são vários
+//     de uma vez) e vão inteiros para o evento.
+//   - Ferramenta: o 2024 não fixa o atributo, então o jogador escolhe (Destreza
+//     primeiro, a mais comum nas ferramentas de ladrão e afins).
 //   - Descanso com 0 HP: a regra exige 1 HP, então a tela PERGUNTA (liberdade com
 //     aviso, §6.4). O longo mostra o que vai voltar antes de gravar.
 //   - Usar uma feature sem nada a escolher (um utilitário que só gasta) grava
@@ -131,9 +140,9 @@ import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
 import { derivePlayCatalog } from '../engine/playCatalog';
 import {
-  vitals as vitalsOf, damageEvent, healEvent, tempHpEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
+  vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
-import { shortRestEvent, longRestEvent, hitDiceLeft } from '../engine/playRest';
+import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState } from '../engine/playState';
 import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
@@ -144,27 +153,27 @@ import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent
 import { itemUseEvent, quantityEvent, ammoOps, currencyEvent, itemCostOf, healOf } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds,
-  movementLeft, moveEvent, dashEvent, resetMoveEvent,
+  movementLeft, moveEvent, dashEvent,
 } from '../engine/playCombat';
 import { askRoll } from '../components/play/rollDialog';
-import { askHp, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askCurrency, askSkillCheck, askMove } from '../components/play/playDialogs';
+import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askCurrency, askSkillCheck, askMove } from '../components/play/playDialogs';
 import FeaturesTab from '../components/play/FeaturesTab';
 import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
 import RollButton from '../components/play/RollButton';
 import PlayHistory from '../components/play/PlayHistory';
-import MenuButton from '../components/common/MenuButton';
 import Icon from '../components/common/Icon';
-import { alert, ask, confirm, menu } from '../components/common/dialog';
-import { SettingsMenu } from '../components/common/AppMenus';
-import { openGlossary } from '../store/glossaryStore';
-import useTutorialStore, { maybeStartTutorial, startTutorial } from '../store/tutorialStore';
+import { alert, ask, confirm } from '../components/common/dialog';
+import { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import { ABILITY_FULL, ABILITY_SHORT } from '../components/builder/labels';
 import { rollOf } from '../engine/playChecks';
 import AbilityCards from '../components/play/AbilityCards';
 import PlayTiles from '../components/play/PlayTiles';
 import ProficienciesCard from '../components/builder/ProficienciesCard';
+import ConditionsCard from '../components/play/ConditionsCard';
+import EffectsCard from '../components/play/EffectsCard';
+import { SKILL_LABEL } from '../components/builder/labels';
 import sheetPage from './Builder.module.css';
 import sheetHeader from '../components/builder/StatsHeader.module.css';
 import styles from './Play.module.css';
@@ -261,7 +270,7 @@ function HistoryHead({ onUndo, onRedo, canUndo, canRedo, lastLabel, nextLabel })
 }
 
 /** A tela do play mode, com o personagem garantido. */
-export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot, onEditSheet }) {
+export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const { db } = useData();
   const catalog = useMemo(() => derivePlayCatalog(character, db, { derived }), [character, db, derived]);
   const play = usePlayDoc(character.id);
@@ -336,21 +345,28 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
     if (conflicts?.length) alert({ title: 'Not applied to the sheet', message: 'The sheet does not have that much, so the item or coins were left as they are.' });
   };
 
-  /** O painel de HP; com concentração, o dano já pede o save de CON. */
-  const openHp = async () => {
-    const r = await askHp({ catalog, vitals: hp });
+  /** O Heal do card de HP: curar, temporário ou máximo. */
+  const openHeal = async () => {
+    const r = await askHeal({ vitals: hp });
     if (!r) return;
-    if (r.action === 'heal') {
-      record(healEvent({ state, catalog, amount: r.amount }));
-      return;
-    }
-    if (r.action === 'temp') {
-      record(tempHpEvent({ state, amount: r.amount, replace: r.replace }));
-      return;
-    }
-    const event = damageEvent({ state, catalog, amount: r.amount, type: r.type, critical: r.critical });
+    if (r.kind === 'temp') record(tempHpEvent({ state, amount: r.amount, replace: r.replace }));
+    else if (r.kind === 'max') record(maxHpEvent({ state, catalog, amount: r.amount }));
+    else record(healEvent({ state, catalog, amount: r.amount }));
+  };
+
+  /** O Hurt do card de HP; com concentração, o dano já pede o save de CON. */
+  const openHurt = async () => {
+    const r = await askHurt({ vitals: hp });
+    if (!r) return;
+    const event = hurtEvent({ state, catalog, amount: r.amount, affectMax: r.affectMax });
     record(event);
     if (event.payload.concentrationDc) rollConcentration(event.payload.concentrationDc);
+  };
+
+  /** O Hit dice do card de HP: gastar (rolando) ou devolver. */
+  const openHitDice = async () => {
+    const r = await askHitDice({ dice: hitDice, vitals: hp });
+    if (r) record(hitDiceEvent({ state, catalog, count: r.count }));
   };
 
   const rollDeathSave = (quick) =>
@@ -535,6 +551,18 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
 
   const saveAbility = (ability, quick) => rollTest({ type: 'save', id: ability }, `${ABILITY_FULL[ability]} save`, quick);
 
+  /** O teste de uma ferramenta: pergunta o atributo e rola. */
+  const rollTool = async (name) => {
+    const r = await ask({
+      title: name,
+      message: 'Which ability does this check use? The DM says; Dexterity is the usual one for hands-on tools.',
+      fields: [{ type: 'select', name: 'ability', label: 'Ability', default: 'dex', options: ['dex', 'int', 'wis', 'str', 'con', 'cha'].map((a) => ({ label: ABILITY_FULL[a], value: a })) }],
+      actions: [{ label: 'Cancel', value: false }, { label: 'Next', value: true, tone: 'primary' }],
+    });
+    const ability = r?.values?.ability;
+    if (r?.action && ability) rollTest({ type: 'tool', id: name, ability }, `${name} (${ABILITY_FULL[ability]})`);
+  };
+
   const rollAttack = (attack, quick, spend = false) =>
     roll(
       (options) => {
@@ -620,14 +648,12 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
 
   const rollInitiative = (quick) => (state.combat ? rollTest({ type: 'initiative' }, 'Initiative', quick) : startCombat(quick));
 
-  /** O painel de movimento: os deslocamentos e, em combate, andar, Dash e zerar. */
-  const openMove = async () => {
+  /** O Move e o Dash do card de movimento: quantos pés, e quanto sobra. */
+  const moveFeet = async (dash) => {
     const speed = effectiveSpeed(catalog, state) ?? 0;
-    const r = await askMove({ speeds: effectiveSpeeds(catalog, state), combat: state.combat, left: movementLeft(state, speed), speed });
+    const r = await askMove({ dash, speed, left: movementLeft(state, speed) });
     if (!r) return;
-    if (r.action === 'move') record(moveEvent({ state, feet: r.feet, speed }));
-    else if (r.action === 'dash') record(dashEvent({ state, speed }));
-    else if (r.action === 'reset') record(resetMoveEvent({ state, speed }));
+    record(dash ? dashEvent({ state, speed, feet: r.feet }) : moveEvent({ state, feet: r.feet, speed }));
   };
 
   const nextTurn = () => record(nextTurnEvent({ state }));
@@ -649,16 +675,6 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
   const lastApplied = play.doc && play.doc.cursor > 0 ? play.doc.events[play.doc.cursor - 1] : null;
   const nextUndone = play.doc && play.doc.cursor < play.doc.events.length ? play.doc.events[play.doc.cursor] : null;
 
-  const setTutEnabled = useTutorialStore((s) => s.setEnabled);
-  const resetTutorials = useTutorialStore((s) => s.resetSeen);
-  /** Liga e zera os tutoriais e abre o tour do play mode; os outros voltam nas telas deles. */
-  const replayTutorials = () => {
-    setTutEnabled(true);
-    resetTutorials();
-    startTutorial('play');
-  };
-  const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
-
   const checks = catalog.checks;
   const historyHead = (
     <HistoryHead onUndo={undo} onRedo={redo} canUndo={play.canUndo} canRedo={play.canRedo} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} />
@@ -666,21 +682,6 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
 
   return (
     <>
-      {actionsSlot && createPortal(
-        <MenuButton
-          buttonClassName={styles.iconBtn}
-          buttonTitle="Menu"
-          items={[
-            { label: 'Edit sheet', sub: 'Choices, level, gear and spells', onClick: onEditSheet },
-            { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
-            { label: 'Settings', sub: 'Theme and play history', onClick: openSettings },
-          ]}
-        >
-          <span aria-hidden="true"><Icon name="menu" /></span>
-        </MenuButton>,
-        actionsSlot,
-      )}
-
       {levelSlot && createPortal(
         <div className={styles.restGroup} data-flip="slot-rest">
           <button type="button" className={styles.restBtn} onClick={shortRest}>Short rest</button>
@@ -692,6 +693,7 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
       <div className={sheetHeader.header}>
         <PlayTiles
           hp={hp}
+          hitDice={hitDice}
           initiative={checks.initiative.bonus}
           combat={state.combat}
           ac={effectiveAc(catalog, state)}
@@ -700,10 +702,14 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
           acEffects={(state.modifiers ?? []).filter((m) => Number(m.ac)).map((m) => ({ label: m.label, value: Number(m.ac) }))}
           speed={effectiveSpeed(catalog, state)}
           baseSpeed={catalog.stats.speed}
+          speeds={effectiveSpeeds(catalog, state)}
           moveLeft={movementLeft(state, effectiveSpeed(catalog, state))}
           onInitiative={rollInitiative}
-          onHp={openHp}
-          onMove={openMove}
+          onHeal={openHeal}
+          onHurt={openHurt}
+          onHitDice={openHitDice}
+          onMove={() => moveFeet(false)}
+          onDash={() => moveFeet(true)}
           dataTour={TUT.PLAY_STATS}
         />
 
@@ -711,7 +717,16 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
       </div>
 
       <div className={sheetPage.stack} data-flip="profs">
-        <ProficienciesCard derived={derived} />
+        <ProficienciesCard
+          derived={derived}
+          onSave={saveAbility}
+          onSkill={(skill) => rollTest({ type: 'skill', id: skill }, `${SKILL_LABEL[skill] ?? skill} check`)}
+          onTool={rollTool}
+        />
+      </div>
+      <div className={sheetPage.stack} data-tour={TUT.PLAY_CONDITIONS}>
+        <ConditionsCard conditions={state.conditions} onAdd={addCondition} onSet={setCondition} />
+        <EffectsCard modifiers={state.modifiers} combat={state.combat} onAdd={addEffect} onRemove={removeEffect} />
       </div>
 
       <section className={styles.status} data-tour={TUT.PLAY_STATUS} data-flip="status">
@@ -735,29 +750,6 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
             <span className={styles.deathHint}>{hp.death.dead ? 'Healing or the DM can bring you back.' : 'Any healing brings you back.'}</span>
           </div>
         ) : null}
-        <div className={styles.statusRow}>
-          {Object.entries(state.conditions ?? {}).filter(([, level]) => level > 0).map(([id, level]) => (
-            <span key={id} className={`${styles.chip} ${styles.condChip}`} title={(CONDITIONS[id]?.notes ?? []).join('. ')}>
-              <span className={styles.chipText}>{CONDITIONS[id]?.name ?? id}{CONDITIONS[id]?.levels ? ` ${level}` : ''}</span>
-              {CONDITIONS[id]?.levels && (
-                <>
-                  <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, level - 1)} aria-label="One level less">-</button>
-                  <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, Math.min(CONDITIONS[id].levels, level + 1))} aria-label="One level more">+</button>
-                </>
-              )}
-              {!CONDITIONS[id]?.levels && <button type="button" className={styles.chipBtn} onClick={() => setCondition(id, 0)} aria-label={`End ${CONDITIONS[id]?.name ?? id}`}>x</button>}
-            </span>
-          ))}
-          {(state.modifiers ?? []).map((m) => (
-            <span key={m.id} className={styles.chip} title={m.concentration ? 'Ends with your concentration' : undefined}>
-              <span className={styles.chipText}>{m.label}{state.combat && m.rounds && m.startRound != null ? ` (${m.startRound + m.rounds - state.combat.round} rd)` : ''}</span>
-              <button type="button" className={styles.chipBtn} onClick={() => removeEffect(m.id)} aria-label={`End ${m.label}`}>x</button>
-            </span>
-          ))}
-          <button type="button" className={styles.ghostBtn} onClick={addCondition}>+ Condition</button>
-          <button type="button" className={styles.ghostBtn} onClick={addEffect}>+ Effect</button>
-        </div>
-        {(state.conditions?.exhaustion ?? 0) >= 6 && <p className={styles.deathHint}>Exhaustion 6: the character dies.</p>}
         {state.combat ? (
           <div className={styles.combatBar} data-tour={TUT.PLAY_COMBAT}>
             <span className={styles.combatRound}>Round {state.combat.round} · Init {state.combat.initiative}</span>
@@ -791,9 +783,6 @@ export function PlayInner({ character, derived, actionsSlot, sideSlot, levelSlot
           ) : (
             <button type="button" className={styles.ghostBtn} onClick={startConcentration}>+ Concentration</button>
           )}
-          <span className={styles.hitDice} title="Hit Point Dice left">
-            Hit dice {hitDice.map((h) => `${h.left}/${h.max} d${h.faces}`).join(' · ') || '-'}
-          </span>
         </div>
       </section>
 

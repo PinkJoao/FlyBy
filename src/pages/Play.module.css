@@ -10,9 +10,8 @@
  *   .status, .statusRow: a faixa de estado (morte, concentração, descansos).
  *   .deathCard, .deadCard, .deathTitle, .pips, .pip, .pipOk, .pipBad,
  *     .deathHint: os testes contra a morte.
- *   .chip, .condChip, .chipText, .chipBtn, .ghostBtn, .hitDice, .restBtns: condições,
- *     efeitos, concentração,
- *     dados de vida e os botões de descanso.
+ *   .chip, .chipText, .chipBtn, .ghostBtn, .restBtns: a concentração e os botões
+ *     do combate.
  *   .combatBar, .combatRound, .econ, .econBtn, .econUsed: a barra do combate
  *     (rodada, iniciativa, ação, bônus e reação gastos).
  *   .actionsTab, .heading, .hint: a aba Actions e os títulos.
@@ -174,15 +173,6 @@
   min-width: 0;
 }
 
-.condChip {
-  border-color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-}
-
-.condChip .chipText {
-  color: var(--danger-text);
-}
-
 .chipText {
   font-size: 13px;
   font-weight: 600;
@@ -209,12 +199,6 @@
 .ghostBtn:hover {
   border-color: var(--accent-border);
   color: var(--accent);
-}
-
-.hitDice {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .restBtns {

@@ -5,6 +5,7 @@
  *   .card, .head, .icon, .title, .bonus*, .chevron, .open: o cabeçalho colapsável;
  *     o .icon é uma caixa justa ao glifo, para centralizar exato.
  *   .body, .section, .sectionTitle, .pills, .pill, .pillBonus, .empty: o corpo.
+ *   .pillRoll, .pillDice: o item que rola, no play mode (botão com o dado).
  * -------------------------------------------------------------------------- */
 
 .card {
@@ -117,6 +118,24 @@
   padding: 4px 9px;
   font-size: 13px;
   color: var(--text-h);
+}
+
+.pillRoll {
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pillRoll:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.pillDice {
+  display: inline-flex;
+  font-size: 11px;
+  color: var(--accent);
+  opacity: 0.8;
 }
 
 .pill .pillBonus {

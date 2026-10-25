@@ -5,7 +5,7 @@
 //   Uma página só para montar e para jogar (DDL-0117). Carrega o personagem, lê o
 //   modo do ENDEREÇO (/build/:id é a ficha, /play/:id o jogo) e monta o que os dois
 //   modos dividem: a página da ficha, o topo (voltar, o seletor Sheet | Play no
-//   centro, o botão do guia e os botões do modo à direita), o bloco de identidade
+//   centro, o botão do guia e o menu à direita), o bloco de identidade
 //   (CharacterIdentity: retrato e nome, editáveis nos dois) e, no jogo em tela
 //   larga, a coluna do histórico. A derivação é feita UMA vez aqui e passada ao modo. O conteúdo de cada modo é o BuilderInner (pages/Builder) ou o
 //   PlayInner (pages/Play), que entram com uma animação leve na troca.
@@ -25,9 +25,10 @@
 //     voltar também leva sempre à lista.
 //   - Sem os recursos experimentais (DDL-0111) não há seletor, e /play/:id vira
 //     /build/:id.
-//   - O topo NÃO remonta na troca: os botões da direita e a coluna do histórico são
-//     de cada modo, e entram por portal nos lugares que esta página reserva
-//     (`actionsSlot`, `sideSlot`).
+//   - O topo NÃO remonta na troca. O MENU é um só nos dois modos (CharacterMenu,
+//     DDL-0120: o que não mexe na jogatina não muda entre eles); a coluna do
+//     histórico é do jogo e entra por portal no lugar que esta página reserva
+//     (`sideSlot`).
 //   - A TROCA de modo só anima o que muda (DDL-0118). Cada pedaço marcado com
 //     `data-flip` tem uma identidade (tile-hp, ability-str, tabs); antes da troca a
 //     página guarda onde cada um estava (snapshot), e depois (flip): o que existe
@@ -65,6 +66,7 @@ import { TUT } from '../tutorial/anchors';
 import { guidancePendencies, guidanceActive } from '../components/wizard/guidancePendencies';
 import Icon from '../components/common/Icon';
 import CharacterIdentity from '../components/builder/CharacterIdentity';
+import CharacterMenu from '../components/builder/CharacterMenu';
 import BackButton from '../components/common/BackButton';
 import ModeSwitch from '../components/common/ModeSwitch';
 import { BuilderInner } from './Builder';
@@ -148,7 +150,6 @@ export default function Character() {
   const mode = wantsPlay && experimental ? 'play' : 'sheet';
   const [sheetTab, setSheetTab] = useState('Species');
   const derived = useMemo(() => (character ? deriveFromDb(character, db) : null), [character, db]);
-  const [actionsSlot, setActionsSlot] = useState(null);
   const [levelSlot, setLevelSlot] = useState(null);
   const [guideRequest, setGuideRequest] = useState(0);
   const [sideSlot, setSideSlot] = useState(null);
@@ -205,7 +206,7 @@ export default function Character() {
           {experimental ? <ModeSwitch mode={mode} onChange={switchMode} /> : <span />}
           <div className={`${sheetPage.topActions} ${styles.right}`}>
             <GuideButton character={character} db={db} derived={derived} onOpen={openGuide} />
-            <span ref={setActionsSlot} className={styles.slot} />
+            <CharacterMenu character={character} db={db} derived={derived} save={save} mode={mode} />
           </div>
         </div>
         <CharacterIdentity character={character} save={save} slotRef={setLevelSlot} />
@@ -215,10 +216,8 @@ export default function Character() {
               key={character.id}
               character={character}
               derived={derived}
-              actionsSlot={actionsSlot}
               sideSlot={sideSlot}
               levelSlot={levelSlot}
-              onEditSheet={() => switchMode('sheet')}
             />
           ) : (
             <BuilderInner
@@ -229,7 +228,6 @@ export default function Character() {
               derived={derived}
               activeTab={sheetTab}
               setActiveTab={setSheetTab}
-              actionsSlot={actionsSlot}
               levelSlot={levelSlot}
               guideRequest={guideRequest}
               onGuideHandled={() => setGuideRequest(0)}

@@ -7,6 +7,7 @@
  *   .max: o "/38" do HP, menor.
  *   .note: a linha a mais (o HP temporário).
  *   .changed: o número mudado por condição ou efeito.
+ *   .acts: a coluna dos botões do tile aberto (HP, movimento).
  *
  * DECISÕES E ARMADILHAS
  *   - O tile de ação é um button com altura fixa (a do .tileHead da ficha); a nota
@@ -36,4 +37,16 @@
 
 .changed {
   color: var(--accent);
+}
+
+.acts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.acts button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

@@ -12,8 +12,8 @@
 //   ficha (retrato, nível, tiles, atributos, proficiências, abas, o botão do guia e
 //   o menu); e as abas, com os elementos estáveis de cada uma (Class: sub-abas e o
 //   card de classe; Inventory: moedas e carga, busca e loja; Spellbook: os cards,
-//   as sub-abas de origem, busca e preparar); e o play mode (os números, a faixa
-//   de estado, as abas, as rolagens, o histórico e a barra de combate).
+//   as sub-abas de origem, busca e preparar); e o play mode (os números, os cards
+//   de condições e efeitos, a faixa de estado, as abas, as rolagens, o histórico e a barra de combate).
 //   O histórico tem a MESMA chave na coluna (desktop) e no botão da gaveta
 //   (celular): o overlay acende o que está visível.
 // -----------------------------------------------------------------------------
@@ -53,6 +53,7 @@ export const TUT = {
 
   PLAY_STATS: 'play-stats',
   PLAY_ABILITIES: 'play-abilities',
+  PLAY_CONDITIONS: 'play-conditions',
   PLAY_STATUS: 'play-status',
   PLAY_TABS: 'play-tabs',
   PLAY_ROLLS: 'play-rolls',

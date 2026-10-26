@@ -32,8 +32,8 @@
 //     baixa o arquivo (direto ou pelo cache wsrv.nl, fetchImageBlob, porque o
 //     i.pinimg.com não manda CORS) e salva com o nome do personagem; se nada der,
 //     abre numa aba nova (DDL-0127).
-//   - Sugestões de retrato (a faixa no escolhedor e a galeria): só aparecem com
-//     `experimental` ligado em settingsStore (DDL-0111, DDL-0124).
+//   - Sugestões de retrato (a faixa no escolhedor e a galeria): a faixa entra como
+//     `extra` no showImageSource e abre a galeria completa (DDL-0124, DDL-0127).
 //   - Imagem COLADA: com o escolhedor aberto, o Ctrl+V de uma imagem em qualquer
 //     lugar a usa (ImageSourcePanel); no celular, o campo de URL é editável e recebe
 //     a imagem do teclado (ImageUrlField). As duas vão pelo caminho do upload.
@@ -41,7 +41,6 @@
 
 import { useRef, useState } from 'react';
 import { classSummary } from '../../schema/character';
-import useSettingsStore from '../../store/settingsStore';
 import { showImageViewer } from '../../store/imageViewerStore';
 import { fileToPortrait } from '../common/imageFile';
 import { fetchImageBlob } from '../../data/imageProxy';
@@ -59,7 +58,6 @@ import styles from '../../pages/Builder.module.css';
 export default function CharacterIdentity({ character, save, slotRef }) {
   const fileRef = useRef(null);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const experimental = useSettingsStore((s) => s.experimental);
 
   const rename = (name) => save({ ...character, meta: { ...character.meta, name } });
 
@@ -88,21 +86,19 @@ export default function CharacterIdentity({ character, save, slotRef }) {
       onUpload: () => fileRef.current?.click(),
       onUseUrl: setPortraitUrl,
       onImage: applyPortraitFile,
-      extra: experimental
-        ? (close) => (
-            <PortraitSuggestionStrip
-              character={character}
-              onSelect={(url) => {
-                close();
-                setPortraitUrl(url);
-              }}
-              onSeeAll={() => {
-                close();
-                setSuggestionsOpen(true);
-              }}
-            />
-          )
-        : undefined,
+      extra: (close) => (
+        <PortraitSuggestionStrip
+          character={character}
+          onSelect={(url) => {
+            close();
+            setPortraitUrl(url);
+          }}
+          onSeeAll={() => {
+            close();
+            setSuggestionsOpen(true);
+          }}
+        />
+      ),
     });
 
   const openViewer = () => {
@@ -148,7 +144,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
         <div ref={slotRef} className={styles.levelSlot} data-tour={TUT.SHEET_LEVEL} />
       </div>
 
-      {suggestionsOpen && experimental && (
+      {suggestionsOpen && (
         <PortraitSuggestionsModal
           character={character}
           onSelect={setPortraitUrl}

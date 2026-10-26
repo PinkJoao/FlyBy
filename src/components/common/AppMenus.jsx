@@ -98,7 +98,7 @@ export function SettingsMenu({ onReplayTutorials }) {
         { heading: 'Experimental' },
         {
           label: 'Features in development',
-          sub: 'Turns on the play mode and portrait suggestions, which are still being built and may change',
+          sub: 'Turns on the play mode, which is still being built and may change',
           checked: experimental,
           toggle: true,
           keepOpen: true,

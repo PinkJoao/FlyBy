@@ -14,12 +14,10 @@
 //     imagem em qualquer lugar do passo (colar texto no nome segue normal) e, no
 //     celular, o campo de URL editável que recebe a imagem do teclado.
 //   - Sugestões de retrato: a faixa (PortraitSuggestionStrip) sob o retrato, com
-//     "See all" para a galeria (PortraitSuggestionsModal); só com `experimental`
-//     ligado em settingsStore (DDL-0111, DDL-0124, DDL-0127).
+//     "See all" para a galeria (PortraitSuggestionsModal, DDL-0124, DDL-0127).
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
-import useSettingsStore from '../../../store/settingsStore';
 import { fileToPortrait } from '../../common/imageFile';
 import { useImagePaste } from '../../common/imagePaste';
 import ImageUrlField from '../../common/ImageUrlField';
@@ -33,7 +31,6 @@ export default function NamePortraitStep({ character, onChange }) {
   const fileRef = useRef(null);
   const [url, setUrl] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const experimental = useSettingsStore((s) => s.experimental);
 
   const setName = (name) => onChange({ ...character, meta: { ...meta, name } });
   const setPortrait = (portrait) => onChange({ ...character, meta: { ...meta, portrait } });
@@ -110,18 +107,16 @@ export default function NamePortraitStep({ character, onChange }) {
             </div>
           </div>
         </div>
-        {experimental && (
-          <PortraitSuggestionStrip
-            character={character}
-            onSelect={setPortrait}
-            onSeeAll={() => setSuggestionsOpen(true)}
-          />
-        )}
+        <PortraitSuggestionStrip
+          character={character}
+          onSelect={setPortrait}
+          onSeeAll={() => setSuggestionsOpen(true)}
+        />
       </div>
 
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
 
-      {suggestionsOpen && experimental && (
+      {suggestionsOpen && (
         <PortraitSuggestionsModal
           character={character}
           onSelect={(selectedUrl) => {

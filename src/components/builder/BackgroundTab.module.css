@@ -12,6 +12,10 @@
  *     removíveis e botão de adicionar.
  *   .chips, .chip*: as perícias.
  *   .story: o texto livre da origem contada em prosa.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Chips são PÍLULAS (999px), como no resto do app (DDL-0129); o .addBtn segue
+ *     com o raio de botão.
  * -------------------------------------------------------------------------- */
 
 .tab {
@@ -138,7 +142,7 @@
   gap: 6px;
   border: 1px solid var(--accent-border);
   background: var(--accent-bg);
-  border-radius: 9px;
+  border-radius: 999px;
   padding: 6px 6px 6px 12px;
   font-size: 13px;
   color: var(--text-h);
@@ -194,7 +198,7 @@
   font: inherit;
   font-size: 13px;
   padding: 7px 12px;
-  border-radius: 9px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
   color: var(--text);

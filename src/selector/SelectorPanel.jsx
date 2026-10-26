@@ -74,6 +74,7 @@ import { useBackLayer } from '../hooks/useBack';
 import Icon from '../components/common/Icon';
 import SortButton from '../components/common/SortButton';
 import { NAME_SORT, sortList } from '../sorting';
+import CloseButton from '../components/common/CloseButton';
 
 const DRAWER_CLOSE_PX = 70;
 
@@ -354,9 +355,7 @@ export default function SelectorPanel({
             <h2>{shownTitle}</h2>
             {hint && <p className={styles.hint}>{hint}</p>}
           </div>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
+          <CloseButton onClick={onClose} />
         </header>
 
         {multi && multi.chosen.length > 0 && (

@@ -17,6 +17,8 @@
 //     depois não baixa de novo.
 //   - Prefere os que casam todas as tags da ficha (o ranqueamento já os põe na
 //     frente).
+//   - A roda do mouse rola a fileira de lado sem Shift (`data-wheel-x`, o ouvinte
+//     global de src/wheelScroll.js, DDL-0130).
 //   - Sem índice (carregando ou com erro) a faixa mostra placeholders ou some;
 //     "See all" continua lá e a galeria trata o erro com "Try again".
 // -----------------------------------------------------------------------------
@@ -24,6 +26,7 @@
 import { useMemo, useState } from 'react';
 import { characterPortraitTags, portraitUrlFromHash, rankPortraits } from '../../engine/portraitSuggestions';
 import { openPortraitPreview } from './portraitPreview';
+import Button from './Button';
 import Icon from './Icon';
 import { usePortraitIndex } from './usePortraitIndex';
 import styles from './PortraitSuggestionStrip.module.css';
@@ -51,12 +54,12 @@ export default function PortraitSuggestionStrip({ character, onSelect, onSeeAll 
           <Icon name="sparkles" />
           Suggested for this character
         </span>
-        <button type="button" className={styles.seeAll} onClick={onSeeAll}>
+        <Button variant="link" size="sm" onClick={onSeeAll}>
           See all
-        </button>
+        </Button>
       </div>
       {!failed && (
-        <div className={styles.row}>
+        <div className={styles.row} data-wheel-x="">
           {items.length === 0
             ? Array.from({ length: 4 }, (_, i) => <span key={i} className={styles.placeholder} />)
             : items.map((it, i) => (

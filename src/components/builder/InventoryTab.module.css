@@ -20,12 +20,11 @@
  *   .equipRadio, .equipDot, .equipRadioOn: o toggle de equipar, SÓ o círculo (área
  *     de toque 28px, dote 16px; preenchido = equipado).
  *   Overlay do item
- *   .infoOverlay, .infoPanel, .infoHead, .infoClose, .infoScroll, .infoUnresolved:
+ *   .infoOverlay, .infoPanel, .infoHead, .infoScroll, .infoUnresolved:
  *     o detalhe do item, no padrão do (i) do PickerField.
  *   .custom*: o detalhe de um item CUSTOM (importado, sem entrada no catálogo).
  *   .infoActions, .infoRight, .infoValue*, .infoBtn*: o rodapé fixo com as ações
  *     (equipar, atunar, remover): contador à esquerda, valor e botões à direita.
- *   .imgModal*: a escolha da imagem do item (upload, URL, remover).
  *   .contents*: o mini-inventário do contêiner, dentro do .infoScroll.
  *   .picker*: a multi-seleção (guardar e tirar do contêiner).
  *
@@ -561,22 +560,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.infoClose {
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text);
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-}
-
-.infoClose:hover {
-  background: var(--bg-soft);
-}
-
 .infoScroll {
   flex: 1;
   overflow-y: auto;
@@ -672,131 +655,6 @@
   border-color: var(--accent);
   background: var(--accent-bg);
   color: var(--accent);
-}
-
-.imgModalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  z-index: 120;
-}
-
-.imgModalPanel {
-  width: 100%;
-  max-width: 420px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
-
-.imgModalHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.imgModalHead h3 {
-  margin: 0;
-  font-size: 16px;
-  color: var(--text-h);
-}
-
-.imgModalUpload {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  width: 100%;
-  padding: 11px;
-  border-radius: 10px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.imgModalUpload:hover {
-  filter: brightness(1.1);
-}
-
-.imgModalDivider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-  font-size: 12px;
-  opacity: 0.5;
-}
-
-.imgModalDivider::before,
-.imgModalDivider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.imgModalUrlRow {
-  display: flex;
-  gap: 8px;
-}
-
-.imgModalUrlInput {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  font-size: 14px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-}
-
-.imgModalUrlInput:focus {
-  outline: none;
-  border-color: var(--accent-border);
-}
-
-.imgModalUrlBtn {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 9px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--accent-border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.imgModalUrlBtn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.imgModalRemove {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  width: 100%;
-  margin-top: 12px;
-  padding: 9px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--danger);
-  cursor: pointer;
-}
-
-.imgModalRemove:hover {
-  border-color: var(--danger);
 }
 
 @media (max-width: 760px) {

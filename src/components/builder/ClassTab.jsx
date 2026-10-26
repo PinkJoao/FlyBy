@@ -122,7 +122,7 @@ export default function ClassTab({ character, db, onChange }) {
 
   return (
     <div className={styles.tab}>
-      <nav className={styles.subTabs} data-tour={TUT.TAB_CLASS_TABS}>
+      <nav className={styles.subTabs} data-wheel-x="" data-tour={TUT.TAB_CLASS_TABS}>
         {classes.map((cl, i) => (
           <button
             key={cl.uid}

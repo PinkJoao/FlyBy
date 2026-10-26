@@ -18,6 +18,8 @@
  *     Tome), já que os chips ficam acima e pode haver mais de uma.
  *
  * DECISÕES E ARMADILHAS
+ *   - Chips são PÍLULAS (999px), como no resto do app (DDL-0129); os botões
+ *     (.addBtn, .modeBtn) seguem com o raio de botão.
  *   - Sem capitalize nos chips (TC-0040): os rótulos já chegam com a grafia certa
  *     (SKILL_LABEL, titleCase do engine ou o nome real da entidade), e capitalizar
  *     de novo quebrava as partículas ("Pact Of The Blade").
@@ -84,7 +86,7 @@
   font: inherit;
   font-size: 13px;
   padding: 7px 12px;
-  border-radius: 9px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
   color: var(--text);
@@ -126,7 +128,7 @@
   gap: 6px;
   border: 1px solid var(--accent-border);
   background: var(--accent-bg);
-  border-radius: 9px;
+  border-radius: 999px;
   padding: 6px 6px 6px 12px;
   font-size: 13px;
   color: var(--text-h);

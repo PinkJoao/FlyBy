@@ -1,0 +1,66 @@
+/* =============================================================================
+ * ImageSourcePanel.module.css: o corpo do diálogo de escolher imagem
+ * =============================================================================
+ * CLASSES
+ *   .panel: a coluna, com o espaçamento dos diálogos (12px).
+ *   .divider: o "or" entre as fontes.
+ *   .urlRow, .urlInput: o campo de URL ou imagem colada e o "Use URL".
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O .menuBody do DialogHost encosta nas bordas (margem de -8px, para as
+ *     listas de menu); o padding de 8px aqui devolve o respiro do card.
+ *   - `min-width: 0` em toda a cadeia: a faixa de sugestões rola de lado DENTRO do
+ *     card, sem alargar o diálogo para fora da tela estreita (DDL-0129).
+ *   - O campo usa --bg: o card do diálogo é --bg-soft e um campo --bg-soft sumiria.
+ * -------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(380px, calc(100vw - 72px));
+  min-width: 0;
+  padding: 0 8px 8px;
+  box-sizing: content-box;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.urlRow {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.urlInput {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.urlInput:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}

@@ -43,6 +43,7 @@ import { useBackLayer } from '../../hooks/useBack';
 import { useSwipeNav } from '../../hooks/useSwipeNav';
 import Icon from './Icon';
 import { slideClass } from '../../motion';
+import CloseButton from './CloseButton';
 
 const MAX_DOTS = 12;
 
@@ -129,9 +130,7 @@ function ViewerBody({ images, index, actions, hide, setIndex }) {
       }}
       onKeyDown={onKeyDown}
     >
-      <button type="button" className={styles.close} onClick={hide} aria-label="Close">
-        <Icon name="close" />
-      </button>
+      <CloseButton onClick={hide} variant="floating" className={styles.close} />
 
       {multi && (
         <>

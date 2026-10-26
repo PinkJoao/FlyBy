@@ -4,7 +4,7 @@
  * CLASSES
  *   .box, .scrollWrap, .scroll: o frame com scroll horizontal.
  *   .expand: o botão de tela cheia, no canto INFERIOR direito, só quando rola.
- *   .overlay, .sheet, .sheetHead, .close, .sheetScroll: a tela cheia.
+ *   .overlay, .sheet, .sheetHead, .sheetScroll: a tela cheia (o X é o CloseButton).
  * -------------------------------------------------------------------------- */
 
 .box {
@@ -77,25 +77,6 @@
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   flex: none;
-}
-
-.close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.close:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
 }
 
 .sheetScroll {

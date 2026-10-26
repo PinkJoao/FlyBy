@@ -26,9 +26,9 @@ import { createPortal } from 'react-dom';
 import useDialogStore from '../../store/dialogStore';
 import { DialogCloseContext } from './dialogContext';
 import { reducedMotion } from '../../motion';
-import Icon from './Icon';
 import { useBackLayer } from '../../hooks/useBack';
 import styles from './DialogHost.module.css';
+import CloseButton from './CloseButton';
 
 const EXIT_MS = 120;
 
@@ -148,9 +148,7 @@ function DialogCard({ dialog, onResolve }) {
         onKeyDown={onKeyDown}
       >
         {showClose && (
-          <button type="button" className={styles.close} aria-label="Close" onClick={dismiss}>
-            <Icon name="close" />
-          </button>
+          <CloseButton onClick={dismiss} className={styles.close} />
         )}
         {title && (
           <h2 id={`${id}-title`} className={styles.title}>

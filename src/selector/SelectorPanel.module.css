@@ -3,7 +3,7 @@
  * =============================================================================
  * CLASSES
  *   Painel
- *   .overlay, .panel, .header, .headerText, .hint, .close: o painel; .hint é a
+ *   .overlay, .panel, .header, .headerText, .hint: o painel (o X é o CloseButton); .hint é a
  *     dica opcional sob o título (glossário).
  *   .chosenStrip, .chosenLabel, .chosenChip, .chosenRemove: a faixa do que já
  *     foi escolhido numa escolha múltipla, com desfazer.
@@ -162,21 +162,6 @@
   color: var(--text);
   opacity: 0.8;
 }
-.close {
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: var(--text);
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-}
-.close:hover {
-  background: var(--bg-soft);
-}
-
 .searchBar {
   display: flex;
   gap: 8px;

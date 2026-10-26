@@ -62,12 +62,14 @@ import { useBackLayer } from '../../hooks/useBack';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { reducedMotion } from '../../motion';
 import { openPortraitPreview } from './portraitPreview';
+import Button from './Button';
+import Chip from './Chip';
 import Collapse from './Collapse';
-import Icon from './Icon';
 import PortraitTagPicker from './PortraitTagPicker';
 import SegmentedControl from './SegmentedControl';
 import { usePortraitIndex } from './usePortraitIndex';
 import styles from './PortraitSuggestionsModal.module.css';
+import CloseButton from './CloseButton';
 
 const PAGE_SIZE = 24;
 const RANK_LIMIT = 600;
@@ -206,67 +208,41 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
   return (
     <div className={closing ? `${styles.overlay} ${styles.closing}` : styles.overlay} onClick={requestClose}>
       <div className={`${styles.panel} motion-pop`} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.head}>
-          <h2 className={styles.headTitle}>
-            <Icon name="sparkles" />
-            <span>Suggested portraits</span>
-          </h2>
-          <button type="button" className={styles.closeBtn} onClick={requestClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
-        </div>
+        <header className={styles.head}>
+          <h2 className={styles.headTitle}>Suggested portraits</h2>
+          <CloseButton onClick={requestClose} />
+        </header>
 
         <Collapse open={!narrow || !compact}>
           <div className={styles.controls}>
-            <div className={styles.quickRow}>
-              <SegmentedControl
-                equal
-                size="sm"
-                ariaLabel="Gender"
-                value={GENDER_GROUP.find((g) => activeTags.includes(g)) ?? null}
-                options={GENDER_GROUP.map((g) => [g, tagLabelOf(g)])}
-                onChange={(g) => toggleExclusiveGroup(g, GENDER_GROUP)}
-              />
-              <SegmentedControl
-                equal
-                size="sm"
-                ariaLabel="Age"
-                value={AGE_GROUP.find((a) => activeTags.includes(a)) ?? null}
-                options={AGE_GROUP.map((a) => [a, tagLabelOf(a)])}
-                onChange={(a) => toggleExclusiveGroup(a, AGE_GROUP)}
-              />
-            </div>
-
-            <div className={styles.tagsRow}>
-              {chipTags.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={styles.tagChip}
-                  onClick={() => toggleTag(t)}
-                  title={`Remove ${tagLabelOf(t)}`}
-                >
-                  <span>{tagLabelOf(t)}</span>
-                  <span className={styles.tagChipRemove}>
-                    <Icon name="close" />
-                  </span>
-                </button>
-              ))}
-              <button
-                type="button"
-                className={styles.addChip}
-                onClick={() => setPickerOpen(true)}
-                disabled={!indexData}
-              >
-                <Icon name="plus" />
-                <span>Tag</span>
-              </button>
-              {isModified && (
-                <button type="button" className={styles.resetBtn} onClick={resetTags}>
-                  Reset to sheet
-                </button>
-              )}
-            </div>
+            <SegmentedControl
+              size="sm"
+              ariaLabel="Gender"
+              value={GENDER_GROUP.find((g) => activeTags.includes(g)) ?? null}
+              options={GENDER_GROUP.map((g) => [g, tagLabelOf(g)])}
+              onChange={(g) => toggleExclusiveGroup(g, GENDER_GROUP)}
+            />
+            <SegmentedControl
+              size="sm"
+              ariaLabel="Age"
+              value={AGE_GROUP.find((a) => activeTags.includes(a)) ?? null}
+              options={AGE_GROUP.map((a) => [a, tagLabelOf(a)])}
+              onChange={(a) => toggleExclusiveGroup(a, AGE_GROUP)}
+            />
+            <span className={styles.divider} aria-hidden="true" />
+            {chipTags.map((t) => (
+              <Chip key={t} onRemove={() => toggleTag(t)}>
+                {tagLabelOf(t)}
+              </Chip>
+            ))}
+            <Chip icon="plus" onClick={() => setPickerOpen(true)} disabled={!indexData}>
+              Tag
+            </Chip>
+            {isModified && (
+              <Button variant="link" size="sm" onClick={resetTags}>
+                Reset to sheet
+              </Button>
+            )}
           </div>
         </Collapse>
 
@@ -292,9 +268,7 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
           ) : failed ? (
             <div className={styles.emptyState}>
               <p>Could not load the portrait catalog. Check your connection and try again.</p>
-              <button type="button" className={styles.moreBtn} onClick={retry}>
-                Try again
-              </button>
+              <Button onClick={retry}>Try again</Button>
             </div>
           ) : visibleItems.length === 0 ? (
             <div className={styles.emptyState}>
@@ -409,9 +383,9 @@ function PortraitCard({ item, badges, onOpen, onBroken }) {
       {badges?.length > 0 && (
         <span className={styles.cardBadges}>
           {badges.slice(0, 3).map((t) => (
-            <span key={t} className={styles.cardBadge}>
+            <Chip key={t} size="sm" onCard className={styles.cardBadge}>
               {tagLabelOf(t)}
-            </span>
+            </Chip>
           ))}
         </span>
       )}

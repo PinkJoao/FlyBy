@@ -5,6 +5,7 @@
 //   Carrega as fontes e o CSS global, aplica o tema gravado (o script inline do
 //   index.html já pôs o `data-theme`; aqui entra a cor da barra do sistema) e
 //   passa a acompanhar o modo do aparelho para a escolha 'system' (src/theme.js).
+//   Liga a roda do mouse nas faixas que rolam de lado (src/wheelScroll.js).
 //
 // DECISÕES E ARMADILHAS
 //   - As fontes do tema papel (Cinzel e Alegreya, OFL-1.1, via @fontsource) são
@@ -25,9 +26,11 @@ import './decor.css'
 import App from './App.jsx'
 import useSettingsStore from './store/settingsStore'
 import { applyTheme, watchSystemTheme } from './theme'
+import { installWheelToHorizontal } from './wheelScroll'
 
 applyTheme(useSettingsStore.getState().theme)
 watchSystemTheme(() => useSettingsStore.getState().theme)
+installWheelToHorizontal()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

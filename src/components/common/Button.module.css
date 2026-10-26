@@ -1,0 +1,94 @@
+/* =============================================================================
+ * Button.module.css: o botão de ação padrão
+ * =============================================================================
+ * CLASSES
+ *   .btn: a base (14px, 600, 8px 16px, raio 8, fundo --bg).
+ *   .default, .primary, .danger, .link: as variantes.
+ *   .sm, .block: compacto e de linha inteira.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Os valores são os de .btn/.primary/.danger do DialogHost, a referência que já
+ *     existia (DDL-0129): a primária tem borda accent e fundo neutro.
+ *   - .link não tem caixa: é texto clicável, para não competir com a ação principal.
+ * -------------------------------------------------------------------------- */
+
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: border-color 0.12s ease, filter 0.12s ease, background-color 0.12s ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.default:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.primary {
+  border-color: var(--accent-border);
+}
+
+.primary:hover:not(:disabled) {
+  border-color: var(--accent);
+  filter: brightness(1.15);
+}
+
+.danger {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger-text);
+}
+
+.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+.link {
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.sm {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.sm.link {
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}

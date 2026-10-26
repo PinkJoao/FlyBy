@@ -15,6 +15,7 @@ import { nameOf, metaParts, cap, RARITY_COLOR, GROUP_ICONS, thumbOf } from './in
 import styles from './InventoryTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
+import CloseButton from '../common/CloseButton';
 
 export default function ItemPickerModal({ title, entries, confirmLabel, emptyText, db, onConfirm, onClose }) {
   const [picked, setPicked] = useState(() => new Set());
@@ -36,9 +37,7 @@ export default function ItemPickerModal({ title, entries, confirmLabel, emptyTex
       <div className={`${styles.pickerPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
         <div className={styles.pickerHead}>
           <h3 className={styles.pickerTitle}>{title}</h3>
-          <button type="button" className={styles.infoClose} onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
+          <CloseButton onClick={onClose} />
         </div>
 
         {sorted.length === 0 ? (

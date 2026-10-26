@@ -1,0 +1,160 @@
+/* =============================================================================
+ * Chip.module.css: a pílula padrão (filtro, escolhida removível, estado)
+ * =============================================================================
+ * CLASSES
+ *   .chip, .sm, .onCard: a pílula, o tamanho compacto e o fundo dentro de card.
+ *   .active: acesa (filtro ligado, ou escolhida).
+ *   .info, .warning, .danger: os tons de estado (color-mix sobre o token).
+ *   .static: só leitura (sem cursor nem realce).
+ *   .removable, .labelBtn, .remove: a escolhida com o X redondo.
+ *   .label, .count: o rótulo e o número esmaecido.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Medidas do filtro do SelectorPanel e da faixa "Chosen", a forma que a maior
+ *     parte do app já usava (DDL-0129): pílula de 999px, 13px, 5px 11px.
+ *   - Sem font-weight na acesa: a pílula não muda de largura ao acender.
+ * -------------------------------------------------------------------------- */
+
+.chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.chip:focus-visible,
+.labelBtn:focus-visible,
+.remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.sm {
+  font-size: 12px;
+  padding: 2px 8px;
+  gap: 4px;
+}
+
+.onCard {
+  background: var(--bg);
+}
+
+.active {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.active:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.info {
+  border-color: color-mix(in srgb, var(--info) 55%, transparent);
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  color: var(--info-text);
+}
+
+.warning {
+  border-color: color-mix(in srgb, var(--warning) 60%, transparent);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--text-h);
+}
+
+.danger {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger-text);
+}
+
+.static {
+  cursor: default;
+}
+
+.static:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.removable {
+  gap: 2px;
+  padding: 3px 4px 3px 11px;
+  color: var(--text-h);
+  cursor: default;
+}
+
+.removable:hover {
+  color: var(--text-h);
+}
+
+.labelBtn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+
+button.labelBtn {
+  cursor: pointer;
+}
+
+.remove {
+  appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: color-mix(in srgb, var(--text) 14%, transparent);
+  color: var(--text-h);
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}

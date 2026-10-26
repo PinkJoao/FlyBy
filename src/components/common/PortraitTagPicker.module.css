@@ -2,21 +2,23 @@
  * PortraitTagPicker.module.css: o seletor visual de tags dos retratos sugeridos
  * =============================================================================
  * CLASSES
- *   .picker, .head, .title, .doneBtn: o painel que cobre a galeria e o topo.
+ *   .picker, .head, .title: o painel que cobre a galeria e o cabeçalho (o "Done"
+ *     é um Button).
  *   .closing: a saída (desce e esmaece, no tempo do DialogHost).
- *   .search: o campo de busca com o ícone.
- *   .cats, .cat, .catOn: as categorias, uma faixa que rola na horizontal.
+ *   .searchBar, .search: a busca, nas medidas da do SelectorPanel.
+ *   .cats: as categorias (Chip), numa faixa que rola na horizontal.
  *   .body, .section, .sectionTitle, .empty: a lista rolável por categoria.
  *   .tiles, .tile, .tileOn, .tileImg, .tileCheck, .tileLabel, .tileCount: os
  *     cartões com retrato das tags visuais.
- *   .subGroup, .subTitle, .chips, .chip, .chipOn, .chipCount: as subclasses (por
- *     classe), armas e focos.
+ *   .subGroup, .subTitle, .chips: as subclasses (por classe), armas e focos, em
+ *     Chip.
  *
  * DECISÕES E ARMADILHAS
  *   - O painel é `position: absolute` dentro do .panel da galeria (que é o
- *     contêiner posicionado): cobre a galeria sem abrir outra camada de voltar.
- *   - Cores só por token (DDL-0097); o realce do selecionado é o mesmo
- *     --accent-bg/--accent-border dos chips da galeria.
+ *     contêiner posicionado): cobre a galeria; o voltar do celular fecha só ele
+ *     (useBackLayer no componente).
+ *   - Cores só por token (DDL-0097); o cartão aceso usa a borda accent e o
+ *     check redondo preenchido (accent cheio é de indicador, DDL-0129).
  *   - A faixa de categorias rola sem barra visível no celular, com a máscara
  *     de fade na borda direita indicando que tem mais.
  * -------------------------------------------------------------------------- */
@@ -47,89 +49,44 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 20px;
   color: var(--text-h);
 }
 
-.doneBtn {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 7px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-  cursor: pointer;
+.searchBar {
+  padding: 12px 20px 0;
 }
 
 .search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 16px;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-soft);
-  color: var(--text-muted);
-}
-
-.search:focus-within {
-  border-color: var(--accent);
-}
-
-.search input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
+  box-sizing: border-box;
+  width: 100%;
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
   color: var(--text-h);
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--accent-border);
 }
 
 .cats {
   display: flex;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 10px 20px 12px;
   overflow-x: auto;
   scrollbar-width: none;
   mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
-}
-
-.cats::-webkit-scrollbar {
-  display: none;
-}
-
-.cat {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.catOn {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--text-h);
 }
 
 .body {
@@ -137,7 +94,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   touch-action: pan-y;
-  padding: 4px 16px 20px;
+  padding: 4px 20px 20px;
   border-top: 1px solid var(--border);
 }
 
@@ -263,37 +220,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
-}
-
-.chip:hover {
-  border-color: var(--accent-border);
-}
-
-.chipOn {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-}
-
-.chipCount {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 560px) {

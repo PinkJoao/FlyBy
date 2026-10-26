@@ -10,6 +10,8 @@
  *   .actions, .primary: Cancel e Export.
  *
  * DECISÕES E ARMADILHAS
+ *   - O Export é a ação primária no padrão do app (DDL-0129): borda accent, fundo
+ *     neutro. Accent preenchido é de indicador, não de botão.
  *   - Os controles segmentados usam SegmentedControl (SegmentedControl.module.css).
  * -------------------------------------------------------------------------- */
 
@@ -108,8 +110,11 @@
 }
 
 .actions button.primary {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
+  border-color: var(--accent-border);
   font-weight: 600;
+}
+
+.actions button.primary:hover {
+  border-color: var(--accent);
+  filter: brightness(1.15);
 }

@@ -25,7 +25,7 @@
  *     equipado, .rowUnprepared recua para o segundo plano.
  *   .prepRadio, .prepDot, .prepRadioOn: o toggle de preparar, igual ao de equipar.
  *   Overlay da magia
- *   .infoOverlay, .infoPanel, .infoHead, .infoClose, .infoScroll, .infoFooter,
+ *   .infoOverlay, .infoPanel, .infoHead, .infoScroll, .infoFooter,
  *     .grantedChip, .infoNote: o detalhe, no padrão do item.
  *   .changeBtn, .removeBtn: o par do rodapé; o margin-left: auto do .changeBtn
  *     junta os dois à direita.
@@ -667,22 +667,6 @@
   justify-content: flex-end;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
-}
-
-.infoClose {
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text);
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-}
-
-.infoClose:hover {
-  background: var(--bg-soft);
 }
 
 .infoScroll {

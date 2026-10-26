@@ -13,7 +13,6 @@
 //   groupRows(list, keyFn): agrupa uma lista ordenada (null é seção única).
 //   InventoryTab(props): a aba. Por dentro, moveInto guarda e tira.
 //   ItemThumb(props): arte do fluff ou o glyph do grupo.
-//   ImageSourceModal(props): upload, URL, imagem colada ou remover a imagem custom.
 //   EquipToggle(props): o radio de equipar.
 //   CustomDetail(props): o detalhe de um item custom (HTML do Foundry).
 //   ItemRow(props): uma linha.
@@ -29,9 +28,9 @@
 //   - Remover um contêiner NÃO apaga o conteúdo: ele volta a ser solto.
 //   - O colapso das seções tem chave por aba e agrupamento.
 //   - O menos com quantidade 1 remove o item (a principal via de exclusão).
-//   - A imagem do item aceita imagem COLADA como o retrato: Ctrl+V com o
-//     escolhedor aberto (useImagePaste) ou, no celular, no campo de URL editável
-//     (ImageUrlField).
+//   - A imagem do item é escolhida no diálogo padrão (showImageSource, o mesmo do
+//     retrato, DDL-0129), que aceita upload, URL e imagem colada (Ctrl+V ou, no
+//     celular, o campo de URL editável).
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -57,8 +56,8 @@ import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
 import SortButton from '../common/SortButton';
 import { NAME_SORT, sortName } from '../../sorting';
-import { useImagePaste } from '../common/imagePaste';
-import ImageUrlField from '../common/ImageUrlField';
+import { showImageSource } from '../common/imageSourceDialog';
+import CloseButton from '../common/CloseButton';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -116,7 +115,6 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const [infoUid, setInfoUid] = useState(null);
   useBackLayer(infoUid != null, () => setInfoUid(null));
   const [collapsed, setCollapsed] = useState(() => new Set());
-  const [imgModalOpen, setImgModalOpen] = useState(false);
   const [picker, setPicker] = useState(null);
   const imgFileRef = useRef(null);
 
@@ -185,7 +183,6 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
     if (!infoUid) return;
     try {
       updateEntry(infoUid, { customImg: await fileToPortrait(file) });
-      setImgModalOpen(false);
     } catch {
       // arquivo ilegível: mantém como está
     }
@@ -195,15 +192,21 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
     e.target.value = '';
     if (file) applyItemImg(file);
   };
-  useImagePaste(applyItemImg, imgModalOpen);
   const setItemImgUrl = (url) => {
     if (infoUid) updateEntry(infoUid, { customImg: url });
-    setImgModalOpen(false);
   };
   const clearItemImg = () => {
     if (infoUid) updateEntry(infoUid, { customImg: null });
-    setImgModalOpen(false);
   };
+  const openItemImage = (hasCustom) =>
+    showImageSource({
+      title: hasCustom ? 'Change item image' : 'Add item image',
+      onUpload: () => imgFileRef.current?.click(),
+      onUseUrl: setItemImgUrl,
+      onImage: applyItemImg,
+      onRemove: hasCustom ? clearItemImg : undefined,
+      removeLabel: 'Remove custom image',
+    });
 
   let visible = activeGroup === 'all' ? loose : loose.filter((e) => e.group === activeGroup);
   const q = query.trim().toLowerCase();
@@ -295,7 +298,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
         <EquipmentShop character={character} db={db} onPurchase={onPurchase} />
       </div>
 
-      <nav className={styles.subTabs}>
+      <nav className={styles.subTabs} data-wheel-x="">
         <button
           type="button"
           className={activeGroup === 'all' ? `${styles.subTab} ${styles.subTabActive}` : styles.subTab}
@@ -389,9 +392,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoUid(null)}>
           <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
-              <button type="button" className={styles.infoClose} onClick={() => setInfoUid(null)} aria-label="Close">
-                <Icon name="close" />
-              </button>
+              <CloseButton onClick={() => setInfoUid(null)} />
             </div>
             <div className={styles.infoScroll}>
               {infoEntry.raw ? (
@@ -401,7 +402,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                   db={db}
                   capImage
                   customImg={infoEntry.customImg}
-                  onImgClick={() => setImgModalOpen(true)}
+                  onImgClick={() => openItemImage(!!infoEntry.customImg)}
                   onImgRemove={clearItemImg}
                 />
               ) : infoEntry.isCustom ? (
@@ -513,16 +514,6 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
           </div>
 
           <input ref={imgFileRef} type="file" accept="image/*" hidden onChange={onItemImgFile} />
-          {imgModalOpen && (
-            <ImageSourceModal
-              hasCustom={!!infoEntry.customImg}
-              onUpload={() => imgFileRef.current?.click()}
-              onUseUrl={setItemImgUrl}
-              onImage={applyItemImg}
-              onRemove={clearItemImg}
-              onClose={() => setImgModalOpen(false)}
-            />
-          )}
 
           {picker === 'stow' && (
             <ItemPickerModal
@@ -562,53 +553,6 @@ function ItemThumb({ src, group, alt }) {
     <span className={styles.thumbGlyph} aria-hidden="true">
       <Icon name={GROUP_ICONS[group] ?? GROUP_ICONS.other} />
     </span>
-  );
-}
-
-/** O escolhedor da imagem do item. */
-function ImageSourceModal({ hasCustom, onUpload, onUseUrl, onImage, onRemove, onClose }) {
-  const [url, setUrl] = useState('');
-  useBackLayer(true, onClose);
-  const submitUrl = (e) => {
-    e?.preventDefault();
-    const trimmed = url.trim();
-    if (trimmed) onUseUrl(trimmed);
-  };
-  return (
-    <div className={styles.imgModalOverlay} onClick={onClose}>
-      <div className={styles.imgModalPanel} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.imgModalHead}>
-          <h3>{hasCustom ? 'Change item image' : 'Add item image'}</h3>
-          <button type="button" className={styles.infoClose} onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
-        </div>
-        <button type="button" className={styles.imgModalUpload} onClick={onUpload}>
-          Upload from device
-        </button>
-        <div className={styles.imgModalDivider}>
-          <span>or</span>
-        </div>
-        <form className={styles.imgModalUrlRow} onSubmit={submitUrl}>
-          <ImageUrlField
-            className={styles.imgModalUrlInput}
-            placeholder="Paste an image or URL"
-            value={url}
-            onChange={setUrl}
-            onImage={onImage}
-            onSubmit={submitUrl}
-          />
-          <button type="submit" className={styles.imgModalUrlBtn} disabled={!url.trim()}>
-            Use URL
-          </button>
-        </form>
-        {hasCustom && (
-          <button type="button" className={styles.imgModalRemove} onClick={onRemove}>
-            Remove custom image
-          </button>
-        )}
-      </div>
-    </div>
   );
 }
 

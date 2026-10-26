@@ -1,0 +1,62 @@
+/* =============================================================================
+ * CloseButton.module.css: o X padrão (plain e floating)
+ * =============================================================================
+ * CLASSES
+ *   .close: a base (centra o ícone, sem aparência nativa).
+ *   .plain: diálogos, painéis e folhas; sem borda, 32px, accent ao passar.
+ *   .floating: sobre mídia em tela cheia; redondo, 40px, com fundo e borda.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O realce do plain é --accent-bg, não --bg-soft: num card --bg-soft (os
+ *     diálogos) um realce --bg-soft some (DDL-0129).
+ *   - Sem posição aqui: quem usa põe a sua pelo className.
+ * -------------------------------------------------------------------------- */
+
+.close {
+  appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font: inherit;
+  line-height: 0;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, opacity 0.12s ease, border-color 0.12s ease;
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.plain {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: 18px;
+  opacity: 0.65;
+}
+
+.plain:hover {
+  opacity: 1;
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+.floating {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 17px;
+}
+
+.floating:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}

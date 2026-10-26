@@ -4,7 +4,7 @@
  * CLASSES
  *   .field, .trigger, .name, .source, .ph, .clearX: o campo.
  *   .infoBtn: o botão (i), a descrição do item selecionado.
- *   .infoOverlay, .infoPanel, .infoHead, .infoClose, .infoScroll, .infoMuted: o
+ *   .infoOverlay, .infoPanel, .infoHead, .infoScroll, .infoMuted: o
  *     overlay da descrição (z-index 110).
  *
  * DECISÕES E ARMADILHAS
@@ -126,22 +126,6 @@
   justify-content: flex-end;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
-}
-
-.infoClose {
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text);
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-}
-
-.infoClose:hover {
-  background: var(--bg-soft);
 }
 
 .infoScroll {

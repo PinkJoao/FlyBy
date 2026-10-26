@@ -11,12 +11,9 @@
 // FUNÇÕES
 //   CharacterIdentity(props): o bloco.
 //     rename(name), applyPortraitFile(file), onPortraitFile(e), setPortraitUrl(url),
-//     clearPortrait(), onPortraitClick(): o nome e o retrato.
+//     clearPortrait(), openPicker(), openViewer(): o nome e o retrato.
 //   portraitFilename(name, src): o nome do arquivo para baixar o retrato.
-//   downloadRemote(src, filename): baixa um retrato de outro domínio como arquivo.
-//   PortraitViewer(props): o retrato em tela cheia (trocar, baixar, remover).
-//   PortraitSourceModal(props): upload, a faixa de sugestões (experimental,
-//     PortraitSuggestionStrip, com "See all" para a galeria), URL ou imagem colada.
+//   downloadPortrait(src, filename): baixa o retrato (data-URL ou de outro domínio).
 //
 // DECISÕES E ARMADILHAS
 //   - Nome e retrato são editáveis nos dois modos: não mudam a jogatina, e travar
@@ -26,29 +23,31 @@
 //   - O CSS é o da ficha (Builder.module.css): .identity e o resto continuam lá.
 //   - Retrato: o upload vira data-URL redimensionada; a URL da web é guardada
 //     direto (como o seletor de imagem do Foundry).
+//   - Padrões do app (DDL-0129): escolher a imagem é o diálogo padrão
+//     (showImageSource, o mesmo da imagem de item), e ver em tela cheia é o
+//     ImageViewer global com Change, Download e Remove. Antes eram um overlay e um
+//     visualizador próprios, com X redondo e margens diferentes do resto.
 //   - Download de retrato que é URL de OUTRO domínio: o navegador ignora o
-//     atributo `download` e o link levava a aba do app para a imagem (perdendo a
-//     página). downloadRemote baixa o arquivo (direto ou pelo cache wsrv.nl,
-//     fetchImageBlob, porque o i.pinimg.com não manda CORS) e salva com o nome do
-//     personagem; se nada der, abre numa aba nova (DDL-0127).
+//     atributo `download` e o link levava a aba do app para a imagem. downloadPortrait
+//     baixa o arquivo (direto ou pelo cache wsrv.nl, fetchImageBlob, porque o
+//     i.pinimg.com não manda CORS) e salva com o nome do personagem; se nada der,
+//     abre numa aba nova (DDL-0127).
 //   - Sugestões de retrato (a faixa no escolhedor e a galeria): só aparecem com
 //     `experimental` ligado em settingsStore (DDL-0111, DDL-0124).
-//   - Imagem COLADA: com o escolhedor ou o retrato em tela cheia abertos, o Ctrl+V
-//     de uma imagem em qualquer lugar a usa (useImagePaste); no celular, o campo de
-//     URL é editável e recebe a imagem do teclado (ImageUrlField). As duas vão pelo
-//     mesmo caminho do upload (fileToPortrait).
+//   - Imagem COLADA: com o escolhedor aberto, o Ctrl+V de uma imagem em qualquer
+//     lugar a usa (ImageSourcePanel); no celular, o campo de URL é editável e recebe
+//     a imagem do teclado (ImageUrlField). As duas vão pelo caminho do upload.
 // -----------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
 import { classSummary } from '../../schema/character';
 import useSettingsStore from '../../store/settingsStore';
+import { showImageViewer } from '../../store/imageViewerStore';
 import { fileToPortrait } from '../common/imageFile';
 import { fetchImageBlob } from '../../data/imageProxy';
-import { useImagePaste } from '../common/imagePaste';
-import ImageUrlField from '../common/ImageUrlField';
+import { showImageSource } from '../common/imageSourceDialog';
 import PortraitSuggestionsModal from '../common/PortraitSuggestionsModal';
 import PortraitSuggestionStrip from '../common/PortraitSuggestionStrip';
-import { useBackLayer } from '../../hooks/useBack';
 import { TUT } from '../../tutorial/anchors';
 import Icon from '../common/Icon';
 import styles from '../../pages/Builder.module.css';
@@ -59,8 +58,6 @@ import styles from '../../pages/Builder.module.css';
  */
 export default function CharacterIdentity({ character, save, slotRef }) {
   const fileRef = useRef(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const experimental = useSettingsStore((s) => s.experimental);
 
@@ -70,8 +67,6 @@ export default function CharacterIdentity({ character, save, slotRef }) {
     try {
       const portrait = await fileToPortrait(file);
       save({ ...character, meta: { ...character.meta, portrait } });
-      setPickerOpen(false);
-      setViewerOpen(false);
     } catch {
       // arquivo ilegível/não-imagem: mantém como está
     }
@@ -81,20 +76,42 @@ export default function CharacterIdentity({ character, save, slotRef }) {
     e.target.value = '';
     if (file) applyPortraitFile(file);
   };
-  useImagePaste(applyPortraitFile, pickerOpen || viewerOpen);
   const setPortraitUrl = (url) => {
     save({ ...character, meta: { ...character.meta, portrait: url } });
-    setPickerOpen(false);
-    setViewerOpen(false);
     setSuggestionsOpen(false);
   };
-  const clearPortrait = () => {
-    save({ ...character, meta: { ...character.meta, portrait: null } });
-    setViewerOpen(false);
-  };
-  const onPortraitClick = () => {
-    if (character.meta.portrait) setViewerOpen(true);
-    else setPickerOpen(true);
+  const clearPortrait = () => save({ ...character, meta: { ...character.meta, portrait: null } });
+
+  const openPicker = () =>
+    showImageSource({
+      title: character.meta.portrait ? 'Change portrait' : 'Add portrait',
+      onUpload: () => fileRef.current?.click(),
+      onUseUrl: setPortraitUrl,
+      onImage: applyPortraitFile,
+      extra: experimental
+        ? (close) => (
+            <PortraitSuggestionStrip
+              character={character}
+              onSelect={(url) => {
+                close();
+                setPortraitUrl(url);
+              }}
+              onSeeAll={() => {
+                close();
+                setSuggestionsOpen(true);
+              }}
+            />
+          )
+        : undefined,
+    });
+
+  const openViewer = () => {
+    const src = character.meta.portrait;
+    showImageViewer([{ src, alt: 'Portrait' }], 0, [
+      { label: 'Change', onClick: openPicker },
+      { label: 'Download', onClick: () => downloadPortrait(src, portraitFilename(character.meta.name, src)) },
+      { label: 'Remove', tone: 'danger', onClick: clearPortrait },
+    ]);
   };
 
   return (
@@ -107,7 +124,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
               character.meta.portrait ? `${styles.portrait} ${styles.portraitFilled}` : styles.portrait
             }
             title={character.meta.portrait ? 'View portrait' : 'Add a portrait'}
-            onClick={onPortraitClick}
+            onClick={character.meta.portrait ? openViewer : openPicker}
           >
             {character.meta.portrait ? <img src={character.meta.portrait} alt="Portrait" /> : <Icon name="portrait" />}
           </button>
@@ -130,40 +147,6 @@ export default function CharacterIdentity({ character, save, slotRef }) {
         </div>
         <div ref={slotRef} className={styles.levelSlot} data-tour={TUT.SHEET_LEVEL} />
       </div>
-
-      {viewerOpen && character.meta.portrait && (
-        <PortraitViewer
-          src={character.meta.portrait}
-          name={character.meta.name}
-          onChange={() => {
-            setViewerOpen(false);
-            setPickerOpen(true);
-          }}
-          onRemove={clearPortrait}
-          onClose={() => setViewerOpen(false)}
-        />
-      )}
-
-      {pickerOpen && (
-        <PortraitSourceModal
-          character={character}
-          onUpload={() => {
-            setPickerOpen(false);
-            fileRef.current?.click();
-          }}
-          onSuggest={
-            experimental
-              ? () => {
-                  setPickerOpen(false);
-                  setSuggestionsOpen(true);
-                }
-              : null
-          }
-          onUseUrl={setPortraitUrl}
-          onImage={applyPortraitFile}
-          onClose={() => setPickerOpen(false)}
-        />
-      )}
 
       {suggestionsOpen && experimental && (
         <PortraitSuggestionsModal
@@ -190,97 +173,25 @@ function portraitFilename(name, src) {
   return `${base}-portrait.${ext}`;
 }
 
-/** Baixa um retrato de outro domínio como arquivo; sem como ler, abre numa aba nova. */
-async function downloadRemote(src, filename) {
-  try {
-    const blob = await fetchImageBlob(src);
-    const href = URL.createObjectURL(blob);
+/** Baixa o retrato: data-URL direto; de outro domínio, pelo arquivo (direto ou wsrv.nl), senão abre numa aba. */
+async function downloadPortrait(src, filename) {
+  const save = (href) => {
     const a = document.createElement('a');
     a.href = href;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
+  };
+  if (/^(data|blob):/.test(src)) {
+    save(src);
+    return;
+  }
+  try {
+    const href = URL.createObjectURL(await fetchImageBlob(src));
+    save(href);
     setTimeout(() => URL.revokeObjectURL(href), 1000);
   } catch {
     window.open(src, '_blank', 'noopener,noreferrer');
   }
-}
-
-/** O retrato em tela cheia: trocar, baixar, remover. */
-function PortraitViewer({ src, name, onChange, onRemove, onClose }) {
-  useBackLayer(true, onClose);
-  return (
-    <div className={styles.viewerOverlay} onClick={onClose}>
-      <img className={styles.viewerImg} src={src} alt="Portrait" onClick={(e) => e.stopPropagation()} />
-      <div className={styles.viewerActions} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.viewerBtn} onClick={onChange}>
-          Change
-        </button>
-        <a
-          className={styles.viewerBtn}
-          href={src}
-          download={portraitFilename(name, src)}
-          onClick={(e) => {
-            if (/^(data|blob):/.test(src)) return;
-            e.preventDefault();
-            downloadRemote(src, portraitFilename(name, src));
-          }}
-        >
-          Download
-        </a>
-        <button type="button" className={`${styles.viewerBtn} ${styles.viewerDanger}`} onClick={onRemove}>
-          Remove
-        </button>
-      </div>
-      <button type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">
-        <Icon name="close" />
-      </button>
-    </div>
-  );
-}
-
-/** O escolhedor da fonte do retrato: upload, sugestões, URL ou imagem colada. */
-function PortraitSourceModal({ character, onUpload, onSuggest, onUseUrl, onImage, onClose }) {
-  const [url, setUrl] = useState('');
-  useBackLayer(true, onClose);
-  const submitUrl = (e) => {
-    e?.preventDefault();
-    const trimmed = url.trim();
-    if (trimmed) onUseUrl(trimmed);
-  };
-  return (
-    <div className={styles.sourceOverlay} onClick={onClose}>
-      <div className={styles.sourcePanel} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.sourceHead}>
-          <h2>Add portrait</h2>
-          <button type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
-        </div>
-        <button type="button" className={styles.sourceUploadBtn} onClick={onUpload}>
-          Upload from device
-        </button>
-        {onSuggest && (
-          <PortraitSuggestionStrip character={character} onSelect={onUseUrl} onSeeAll={onSuggest} />
-        )}
-        <div className={styles.sourceDivider}>
-          <span>or</span>
-        </div>
-        <form className={styles.sourceUrlRow} onSubmit={submitUrl}>
-          <ImageUrlField
-            className={styles.sourceUrlInput}
-            placeholder="Paste an image or URL"
-            value={url}
-            onChange={setUrl}
-            onImage={onImage}
-            onSubmit={submitUrl}
-          />
-          <button type="submit" className={styles.sourceUrlBtn} disabled={!url.trim()}>
-            Use URL
-          </button>
-        </form>
-      </div>
-    </div>
-  );
 }

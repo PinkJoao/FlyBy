@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import styles from './TableViewer.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from './Icon';
+import CloseButton from './CloseButton';
 
 export default function TableViewer({ children, footer = null, fullscreenChildren = null }) {
   const [full, setFull] = useState(false);
@@ -58,9 +59,7 @@ export default function TableViewer({ children, footer = null, fullscreenChildre
         <div className={`${styles.overlay} motion-page`} onClick={() => setFull(false)}>
           <div className={`${styles.sheet} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.sheetHead}>
-              <button type="button" className={styles.close} onClick={() => setFull(false)} aria-label="Close">
-                <Icon name="close" />
-              </button>
+              <CloseButton onClick={() => setFull(false)} />
             </div>
             <div className={styles.sheetScroll}>{fullscreenChildren ?? children}</div>
           </div>

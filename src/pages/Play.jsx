@@ -820,7 +820,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       </section>
       ) : null}
 
-      <nav className={sheetPage.tabBar} data-tour={TUT.PLAY_TABS} data-flip="tabs" data-flip-fade="">
+      <nav className={sheetPage.tabBar} data-wheel-x="" data-tour={TUT.PLAY_TABS} data-flip="tabs" data-flip-fade="">
         {tabs.map((t) => (
           <button
             key={t}

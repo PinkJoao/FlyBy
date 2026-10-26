@@ -125,6 +125,7 @@ import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
 import SortButton from '../common/SortButton';
 import { NAME_SORT } from '../../sorting';
+import CloseButton from '../common/CloseButton';
 
 const ORIGIN_ICONS = { class: 'originClass', race: 'originSpecies', feat: 'originFeat', unassigned: 'itemAll' };
 
@@ -669,7 +670,7 @@ export default function SpellbookTab({
         )}
       </div>
 
-      <nav className={styles.subTabs} data-tour={TUT.TAB_SPELL_ORIGINS}>
+      <nav className={styles.subTabs} data-wheel-x="" data-tour={TUT.TAB_SPELL_ORIGINS}>
         {origins.map((o) => (
           <button
             key={o.key}
@@ -716,7 +717,7 @@ export default function SpellbookTab({
         )}
       </div>
 
-      <nav className={styles.categories}>
+      <nav className={styles.categories} data-wheel-x="">
         <button
           type="button"
           className={category === 'all' ? `${styles.category} ${styles.categoryActive}` : styles.category}
@@ -813,9 +814,7 @@ export default function SpellbookTab({
         <div className={`${styles.infoOverlay} motion-page`} onClick={() => setInfoKey(null)}>
           <div className={`${styles.infoPanel} motion-pop`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.infoHead}>
-              <button type="button" className={styles.infoClose} onClick={() => setInfoKey(null)} aria-label="Close">
-                <Icon name="close" />
-              </button>
+              <CloseButton onClick={() => setInfoKey(null)} />
             </div>
             <div className={styles.infoScroll}>
               <DetailView entity={spellEntity} raw={infoEntry.raw} db={db} capImage />

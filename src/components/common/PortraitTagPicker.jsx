@@ -16,6 +16,9 @@
 //   ChipList(props): os chips das tags sem imagem.
 //
 // DECISÕES E ARMADILHAS
+//   - Componentes comuns (DDL-0129): categorias e tags sem imagem são Chip, "Done"
+//     é o Button primário (borda accent, nunca preenchido), a busca tem as medidas
+//     da do SelectorPanel; só os cartões com retrato são próprios desta tela.
 //   - Busca SEM foco automático: no celular o teclado cobriria os cartões, que são
 //     o jeito principal de escolher (§6.4).
 //   - A categoria filtra; com texto na busca, a categoria é ignorada e procura em
@@ -34,6 +37,8 @@ import { tagLabelOf } from '../../engine/portraitSuggestions';
 import { useBackLayer } from '../../hooks/useBack';
 import { useSwipeNav } from '../../hooks/useSwipeNav';
 import { directionOf, reducedMotion, slideClass } from '../../motion';
+import Button from './Button';
+import Chip from './Chip';
 import Icon from './Icon';
 import styles from './PortraitTagPicker.module.css';
 
@@ -117,16 +122,16 @@ export default function PortraitTagPicker({ groups, activeTags, onToggle, onClos
       role="dialog"
       aria-label="Add tags"
     >
-      <div className={styles.head}>
-        <h3 className={styles.title}>Add tags</h3>
-        <button type="button" className={styles.doneBtn} onClick={requestClose}>
+      <header className={styles.head}>
+        <h2 className={styles.title}>Add tags</h2>
+        <Button variant="primary" size="sm" onClick={requestClose}>
           Done
-        </button>
-      </div>
+        </Button>
+      </header>
 
-      <label className={styles.search}>
-        <Icon name="search" />
+      <div className={styles.searchBar}>
         <input
+          className={styles.search}
           type="search"
           value={query}
           placeholder="Search species, classes, gear…"
@@ -138,21 +143,13 @@ export default function PortraitTagPicker({ groups, activeTags, onToggle, onClos
             }
           }}
         />
-      </label>
+      </div>
 
-      <div className={styles.cats} role="tablist" aria-label="Tag category">
+      <div className={styles.cats} data-wheel-x="" role="group" aria-label="Tag category">
         {[{ id: 'all', label: 'All', icon: 'sparkles' }, ...groups].map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            role="tab"
-            aria-selected={category === g.id}
-            className={category === g.id ? `${styles.cat} ${styles.catOn}` : styles.cat}
-            onClick={() => goCategory(g.id)}
-          >
-            <Icon name={g.icon} />
-            <span>{g.label}</span>
-          </button>
+          <Chip key={g.id} icon={g.icon} active={category === g.id} onClick={() => goCategory(g.id)}>
+            {g.label}
+          </Chip>
         ))}
       </div>
 
@@ -228,22 +225,11 @@ function TagTile({ entry, on, onToggle }) {
 function ChipList({ entries, active, onToggle }) {
   return (
     <div className={styles.chips}>
-      {entries.map((t) => {
-        const on = active.has(t.tag);
-        return (
-          <button
-            key={t.tag}
-            type="button"
-            className={on ? `${styles.chip} ${styles.chipOn}` : styles.chip}
-            aria-pressed={on}
-            onClick={() => onToggle(t.tag)}
-          >
-            {on && <Icon name="check" />}
-            <span>{t.label}</span>
-            <span className={styles.chipCount}>{t.count.toLocaleString('en-US')}</span>
-          </button>
-        );
-      })}
+      {entries.map((t) => (
+        <Chip key={t.tag} active={active.has(t.tag)} count={t.count} onClick={() => onToggle(t.tag)}>
+          {t.label}
+        </Chip>
+      ))}
     </div>
   );
 }

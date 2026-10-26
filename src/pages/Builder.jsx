@@ -276,7 +276,7 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
         <ProficienciesCard derived={derived} />
       </div>
 
-      <nav className={styles.tabBar} data-tour={TUT.SHEET_TABS} data-flip="tabs" data-flip-fade="">
+      <nav className={styles.tabBar} data-wheel-x="" data-tour={TUT.SHEET_TABS} data-flip="tabs" data-flip-fade="">
         {TABS.map((tab) => (
           <button
             key={tab}

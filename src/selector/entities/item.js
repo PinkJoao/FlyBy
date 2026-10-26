@@ -9,7 +9,8 @@
 //
 // FUNÇÕES
 //   cap(s), stripSrc(s): texto ("V|XPHB" vira "V").
-//   rarityLabel(raw): o rótulo da raridade.
+//   rarityLabel(raw), rarityRank(raw): o rótulo e a posição na escala de raridade
+//     (mundano antes de comum).
 //   findProperty(db, code), findMastery(db, code), propertyName(db, code): as
 //     propriedades e maestrias de arma, do db.
 //   weaponDamage(raw): "1d8 Slashing (1d10 two-handed)".
@@ -18,8 +19,11 @@
 //   Exporta itemEntity.
 //
 // DECISÕES E ARMADILHAS
-//   - `sorts`: Price (o derivado também, `itemValue`), Weight e Rarity; item sem
-//     preço, peso ou raridade fica no fim nos dois sentidos (src/sorting.js).
+//   - `naturalSort` é Rarity (do mundano ao artefato, e alfabético dentro de cada
+//     raridade pelo `sortList`): sem isso os ~4000 itens mágicos abrem a loja na
+//     frente do equipamento básico. `sorts` traz Price (o derivado também,
+//     `itemValue`) e Weight; item sem preço, sem peso ou de raridade desconhecida/
+//     variável fica no fim nos dois sentidos (src/sorting.js).
 //   - RARITY_LABEL existe porque o `cap` genérico fazia "very rare" virar "Very
 //     rare", que não casava com o chip "Very Rare": 732 itens inalcançáveis. Os três
 //     valores que não são tier (unknown, unknown (magic), varies) também têm opção,
@@ -49,7 +53,7 @@ const RARITY_COLOR = {
 };
 
 const RARITY_TIERS = new Set(['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact']);
-const RARITY_RANK = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
+const RARITY_RANK = ['none', 'common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
 
 const DAMAGE_TYPES = {
   A: 'Acid', B: 'Bludgeoning', C: 'Cold', F: 'Fire', O: 'Force', L: 'Lightning',
@@ -87,6 +91,12 @@ const RARITY_LABEL = {
 function rarityLabel(raw) {
   const r = raw?.rarity ?? 'none';
   return RARITY_LABEL[r] ?? cap(r);
+}
+
+/** A posição na escala de raridade (mundano antes de comum; desconhecido/variável = null). */
+function rarityRank(raw) {
+  const i = RARITY_RANK.indexOf(raw?.rarity ?? 'none');
+  return i === -1 ? null : i;
 }
 
 /** A definição de uma propriedade de arma no db. */
@@ -158,12 +168,14 @@ const itemEntity = {
     const info = itemTypeInfo(r);
     const attune = attunementInfo(r);
     const isWeapon = info.group === 'weapon';
+    const isArmor = info.group === 'armor';
     return {
       searchText: `${r.name} ${r.source} ${info.groupLabel}`.toLowerCase(),
       filterValues: {
         type: [info.groupLabel],
         rarity: [rarityLabel(r)],
         attunement: attune.required ? ['Requires Attunement'] : [],
+        armorCategory: isArmor && info.armorSlot ? [cap(info.armorSlot)] : [],
         category: isWeapon && r.weaponCategory ? [cap(r.weaponCategory)] : [],
         kind: isWeapon ? [info.kind === 'ranged' ? 'Ranged' : 'Melee'] : [],
         property: isWeapon
@@ -178,22 +190,24 @@ const itemEntity = {
     };
   },
 
+  naturalSort: {
+    value: 'rarity',
+    label: 'Rarity',
+    defaultDir: 'asc',
+    dirLabels: ['Most common first', 'Rarest first'],
+    keyOf: rarityRank,
+  },
+
   sorts: [
     { value: 'price', label: 'Price', defaultDir: 'asc', keyOf: (r, db) => itemValue(r, db) ?? null },
     { value: 'weight', label: 'Weight', defaultDir: 'asc', dirLabels: ['Lightest first', 'Heaviest first'], keyOf: (r) => r.weight ?? null },
-    {
-      value: 'rarity',
-      label: 'Rarity',
-      defaultDir: 'asc',
-      dirLabels: ['Most common first', 'Rarest first'],
-      keyOf: (r) => (RARITY_TIERS.has(r.rarity) ? RARITY_RANK.indexOf(r.rarity) : null),
-    },
   ],
 
   filters: [
     { id: 'type', header: 'Type', derive: true },
     { id: 'rarity', header: 'Rarity', options: RARITY_OPTIONS },
     { id: 'attunement', header: 'Attunement', options: ['Requires Attunement'] },
+    { id: 'armorCategory', header: 'Armor Category', options: ['Light', 'Medium', 'Heavy', 'Shield'] },
     { id: 'category', header: 'Weapon Category', options: ['Simple', 'Martial'] },
     { id: 'kind', header: 'Melee / Ranged', options: ['Melee', 'Ranged'] },
     { id: 'property', header: 'Weapon Property', derive: true },

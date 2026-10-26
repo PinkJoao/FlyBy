@@ -71,7 +71,7 @@ export function sortList(list, { option, dir, rawOf = (x) => x, nameOf = (x) => 
       if (emptyX !== emptyY) return emptyX ? 1 : -1;
       const c = compareValues(x.key, y.key) * sign;
       if (c !== 0) return c;
-      const n = COLLATOR.compare(String(nameOf(x.item)), String(nameOf(y.item)));
+      const n = COLLATOR.compare(sortName(nameOf(x.item)), sortName(nameOf(y.item)));
       return n !== 0 ? n : x.index - y.index;
     })
     .map((x) => x.item);

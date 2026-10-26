@@ -59,8 +59,9 @@ describe('sortList', () => {
     expect(sortList(wrapped, { option: WEIGHT, dir: 'desc', rawOf: (x) => x.raw }).map((x) => x.raw.name)[0]).toBe('Anvil');
   });
 
-  it('"+1 Arrow" ordena como "Arrow +1", ao lado da flecha comum', () => {
-    const shop = [{ name: '+1 Arrow' }, { name: 'Battleaxe' }, { name: 'Arrow' }, { name: '+2 Arrow' }];
+  it('"+1 Arrow" ordena como "Arrow +1", ao lado da flecha comum, inclusive no desempate', () => {
+    const shop = [{ name: '+1 Arrow', weight: 1 }, { name: 'Battleaxe', weight: 1 }, { name: 'Arrow', weight: 1 }, { name: '+2 Arrow', weight: 1 }];
     expect(sortList(shop, { option: NAME_SORT, dir: 'asc' }).map((x) => x.name)).toEqual(['Arrow', '+1 Arrow', '+2 Arrow', 'Battleaxe']);
+    expect(sortList(shop, { option: WEIGHT, dir: 'asc' }).map((x) => x.name)).toEqual(['Arrow', '+1 Arrow', '+2 Arrow', 'Battleaxe']);
   });
 });

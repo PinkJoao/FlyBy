@@ -19,8 +19,8 @@
  *     (useBackLayer no componente).
  *   - Cores só por token (DDL-0097); o cartão aceso usa a borda accent e o
  *     check redondo preenchido (accent cheio é de indicador, DDL-0129).
- *   - A faixa de categorias rola sem barra visível no celular, com a máscara
- *     de fade na borda direita indicando que tem mais.
+ *   - A faixa de categorias rola sem barra; o esmaecido das bordas é o global das
+ *     faixas `data-wheel-x` (DDL-0131).
  * -------------------------------------------------------------------------- */
 
 .picker {
@@ -85,8 +85,12 @@
   gap: 6px;
   padding: 10px 20px 12px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
-  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+
+.cats::-webkit-scrollbar {
+  display: none;
 }
 
 .body {

@@ -9,6 +9,8 @@
  *   - A miniatura tem ALTURA fixa e largura natural (`width: auto`): a imagem
  *     inteira aparece, como na galeria (DDL-0127). O placeholder guarda 3/4.
  *   - Cores só por token (DDL-0097).
+ *   - Sem barra, como as outras faixas laterais: rola com a roda, o arrasto e o
+ *     toque, e o esmaecido de borda global mostra que tem mais (DDL-0131).
  * -------------------------------------------------------------------------- */
 
 .strip {
@@ -46,8 +48,13 @@
   overscroll-behavior-x: contain;
   gap: 6px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 4px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
 }
 
 .thumb,

@@ -36,4 +36,7 @@ scripts/.portraits-state.json
 scripts/.portraits.lock
 scripts/.portraits-control
 scripts/.portraits.log
+scripts/.portraits-night.log
+scripts/.portraits-night.json
+scripts/.portraits-night-rehearsal.md
 *.tmp

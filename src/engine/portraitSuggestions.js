@@ -22,8 +22,10 @@
 //   tagLabelOf(tag): formata o rótulo legível em inglês de uma tag.
 //   hashTieBreaker(hash, seed): gera um inteiro determinístico de 32 bits (FNV-1a
 //     sobre o hash inteiro) para embaralhar empates de pontuação conforme a semente.
+//   catalogItems(indexData): o catálogo como objetos ({ key, idxs, bucket, thumb,
+//     url, credit }); o formato antigo `[hash, idxs]` é convertido (cache por índice).
 //   rankPortraits(indexData, activeTags, opts): pontua e ordena o catálogo de
-//     retratos para as tags ativas; `full` marca quem casa TODAS as tags.
+//     retratos para as tags ativas; `full` marca quem casa o núcleo sem contradizer.
 //   subclassClassOf(tag): a classe dona de uma tag de subclasse.
 //   portraitTagGroups(indexData): os grupos do seletor visual de tags (espécie,
 //     linhagem, classe, subclasse, armadura, armas), com contagem e representante.
@@ -54,6 +56,15 @@
 //     total ("629" virava "3.503" ao marcar Female). `full` separa quem casa todas
 //     as tags (sempre na frente, a faixa "Matches every tag") dos parecidos, e o
 //     total que a tela mostra é o `fullMatched`.
+//   - `full` (DDL-0137): com espécie ou classe ativas, é quem casa o NÚCLEO (uma
+//     espécie permitida e uma classe ativa, ou a dona da subclasse ativa) e não
+//     CONTRADIZ nenhuma outra tag ativa (gênero oposto, outra espécie, a outra idade,
+//     outra armadura). Tag que o item não tem é neutra: item do Reddit só tem
+//     espécie e classe e entra em "Matches every tag". Sem núcleo ativo, vale a
+//     regra antiga (casar todas).
+//   - Dentro de cada faixa a ordem é o degrau de prioridade do item (`bucket`, 0..7,
+//     tema x integridade jurídica, calculado na release), depois a pontuação, depois
+//     o sorteio por semente. Pinterest sem autor fica atrás sem regra por fonte.
 //   - O representante de cada tag (portraitTagGroups) é o retrato com MENOS
 //     espécies marcadas (classes, no caso de uma classe): um retrato de "elf" que
 //     também é "human" e "orc" ilustra mal o elfo. Cache por índice (WeakMap).
@@ -372,6 +383,7 @@ const TAG_GROUPS = [
 ];
 
 const groupCache = new WeakMap();
+const itemsCache = new WeakMap();
 
 /**
  * Reconstrói a URL da CDN do Pinterest a partir do hash hexadecimal de 32 caracteres.
@@ -690,17 +702,46 @@ export function hashTieBreaker(hash, seed = 0) {
 }
 
 /**
+ * O catálogo como lista de objetos; o formato antigo (`[hash, idxs]`) vira objeto.
+ * @param {{ tags: string[], items: Array<any> }} indexData
+ * @returns {Array<{ key: string, idxs: number[], bucket: number, thumb: string, url: string, credit: object|null }>}
+ */
+export function catalogItems(indexData) {
+  const raw = indexData?.items ?? [];
+  if (!Array.isArray(raw[0])) return raw;
+  if (itemsCache.has(indexData)) return itemsCache.get(indexData);
+  const out = raw.map(([hash, idxs]) => ({
+    key: hash,
+    idxs,
+    bucket: 0,
+    thumb: portraitUrlFromHash(hash, '236x'),
+    url: portraitUrlFromHash(hash),
+    credit: null,
+  }));
+  itemsCache.set(indexData, out);
+  return out;
+}
+
+/**
  * Pontua e ordena os retratos do catálogo com base nas tags ativas.
- * @param {{ tags: string[], items: Array<[string, number[]]> }} indexData
+ * @param {{ tags: string[], items: Array<any> }} indexData
  * @param {string[]} activeTags
  * @param {{ seed?: number, limit?: number }} [opts]
- * @returns {{ totalMatched: number, fullMatched: number, items: Array<{ hash: string, url: string, score: number, matchedTags: string[], full: boolean }> }}
+ * @returns {{ totalMatched: number, fullMatched: number, items: Array<{ hash: string, url: string, thumb: string, credit: object|null, score: number, matchedTags: string[], full: boolean }> }}
  */
 export function rankPortraits(indexData, activeTags = [], opts = {}) {
   const tagsDict = indexData?.tags ?? [];
-  const rawItems = indexData?.items ?? [];
+  const rawItems = catalogItems(indexData);
   const seed = Number(opts.seed) || 0;
   const limit = Number(opts.limit) || 240;
+  const view = (item, extra) => ({
+    hash: item.key,
+    url: item.url,
+    thumb: item.thumb,
+    card: item.card ?? item.url,
+    credit: item.credit ?? null,
+    ...extra,
+  });
 
   const tagToIdx = new Map();
   for (let i = 0; i < tagsDict.length; i++) {
@@ -717,16 +758,18 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
   }
   const cleanActive = [...new Set(expandedInput.filter((t) => tagToIdx.has(t)))];
   if (cleanActive.length === 0) {
-    const sample = rawItems.slice(0, Math.min(rawItems.length, limit * 3)).map(([hash, idxs]) => ({
-      hash,
-      url: portraitUrlFromHash(hash),
-      score: 1,
-      tie: hashTieBreaker(hash, seed),
-      matchedTags: idxs.slice(0, 4).map((i) => tagsDict[i]).filter(Boolean),
-      full: true,
+    const sample = rawItems.map((item) => ({
+      item,
+      tie: hashTieBreaker(item.key, seed),
     }));
-    sample.sort((a, b) => b.tie - a.tie);
-    return { totalMatched: rawItems.length, fullMatched: rawItems.length, items: sample.slice(0, limit) };
+    sample.sort((a, b) => (b.item.bucket ?? 0) - (a.item.bucket ?? 0) || b.tie - a.tie);
+    return {
+      totalMatched: rawItems.length,
+      fullMatched: rawItems.length,
+      items: sample.slice(0, limit).map(({ item }) =>
+        view(item, { score: 1, matchedTags: item.idxs.slice(0, 4).map((i) => tagsDict[i]).filter(Boolean), full: true }),
+      ),
+    };
   }
 
   const activeSet = new Set(cleanActive);
@@ -734,6 +777,11 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
   const wantFemale = activeSet.has('female') && !activeSet.has('male');
   const maleIdx = tagToIdx.get('male');
   const femaleIdx = tagToIdx.get('female');
+  const wantAge = activeSet.has('young') !== activeSet.has('mature') ? (activeSet.has('young') ? 'young' : 'mature') : null;
+  const otherAgeIdx = wantAge ? tagToIdx.get(wantAge === 'young' ? 'mature' : 'young') : undefined;
+  const activeArmor = cleanActive.filter((t) => ARMORS.has(t));
+  const armorIndices = new Set([...ARMORS].map((t) => tagToIdx.get(t)).filter((i) => i !== undefined));
+  const activeArmorIndices = new Set(activeArmor.map((t) => tagToIdx.get(t)));
 
   const activeSpecies = cleanActive.filter((t) => {
     const cat = tagCategoryOf(t);
@@ -747,6 +795,18 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
       if (tagToIdx.has(parent)) allowedSpeciesIndices.add(tagToIdx.get(parent));
     }
   }
+
+  const activeClassLike = cleanActive.filter((t) => {
+    const cat = tagCategoryOf(t);
+    return cat === 'class' || cat === 'subclass';
+  });
+  const classIndices = new Set();
+  for (const t of activeClassLike) {
+    classIndices.add(tagToIdx.get(t));
+    const owner = subclassClassOf(t);
+    if (owner && tagToIdx.has(owner)) classIndices.add(tagToIdx.get(owner));
+  }
+  const hasCore = activeSpecies.length > 0 || activeClassLike.length > 0;
 
   const allSpeciesIndices = new Set();
   for (let i = 0; i < tagsDict.length; i++) {
@@ -768,18 +828,29 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
 
   const scored = [];
   for (let r = 0; r < rawItems.length; r++) {
-    const [hash, idxs] = rawItems[r];
+    const item = rawItems[r];
+    const idxs = item.idxs;
     let score = 0;
     let hasMale = false;
     let hasFemale = false;
     let matchedAllowedSpecies = false;
     let hasAnySpeciesTag = false;
+    let matchedClass = false;
+    let otherAge = false;
+    let hasArmor = false;
+    let matchedArmor = false;
     const matchedTags = [];
 
     for (let j = 0; j < idxs.length; j++) {
       const idx = idxs[j];
       if (idx === maleIdx) hasMale = true;
       else if (idx === femaleIdx) hasFemale = true;
+      if (idx === otherAgeIdx) otherAge = true;
+      if (armorIndices.has(idx)) {
+        hasArmor = true;
+        if (activeArmorIndices.has(idx)) matchedArmor = true;
+      }
+      if (classIndices.has(idx)) matchedClass = true;
 
       if (allSpeciesIndices.has(idx)) {
         hasAnySpeciesTag = true;
@@ -795,38 +866,39 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
 
     if (matchedTags.length === 0) continue;
 
-    if (wantMale && hasFemale && !hasMale) score -= 45;
-    if (wantFemale && hasMale && !hasFemale) score -= 45;
-
-    if (allowedSpeciesIndices.size > 0 && !matchedAllowedSpecies && hasAnySpeciesTag) {
-      score -= 35;
-    }
+    const wrongGender = (wantMale && hasFemale && !hasMale) || (wantFemale && hasMale && !hasFemale);
+    const wrongSpecies = allowedSpeciesIndices.size > 0 && !matchedAllowedSpecies && hasAnySpeciesTag;
+    if (wrongGender) score -= 45;
+    if (wrongSpecies) score -= 35;
 
     if (score <= 0) continue;
 
+    const contradicts = wrongGender || wrongSpecies || otherAge || (activeArmor.length > 0 && hasArmor && !matchedArmor);
+    const coreOk = hasCore
+      ? (activeSpecies.length === 0 || matchedAllowedSpecies) && (activeClassLike.length === 0 || matchedClass)
+      : matchedTags.length === cleanActive.length;
+
     scored.push({
-      hash,
+      item,
       score,
-      tie: hashTieBreaker(hash, seed),
+      tie: hashTieBreaker(item.key, seed),
       matchedTags,
-      full: matchedTags.length === cleanActive.length,
+      full: coreOk && !contradicts,
     });
   }
 
-  scored.sort((a, b) => Number(b.full) - Number(a.full) || b.score - a.score || b.tie - a.tie);
-
-  const top = scored.slice(0, limit).map((item) => ({
-    hash: item.hash,
-    url: portraitUrlFromHash(item.hash),
-    score: item.score,
-    matchedTags: item.matchedTags,
-    full: item.full,
-  }));
+  scored.sort(
+    (a, b) =>
+      Number(b.full) - Number(a.full) ||
+      (b.item.bucket ?? 0) - (a.item.bucket ?? 0) ||
+      b.score - a.score ||
+      b.tie - a.tie,
+  );
 
   return {
     totalMatched: scored.length,
-    fullMatched: scored.reduce((n, item) => n + (item.full ? 1 : 0), 0),
-    items: top,
+    fullMatched: scored.reduce((n, x) => n + (x.full ? 1 : 0), 0),
+    items: scored.slice(0, limit).map((x) => view(x.item, { score: x.score, matchedTags: x.matchedTags, full: x.full })),
   };
 }
 
@@ -847,7 +919,7 @@ export function portraitTagGroups(indexData) {
   if (!indexData?.tags) return [];
   if (groupCache.has(indexData)) return groupCache.get(indexData);
   const tagsDict = indexData.tags;
-  const rawItems = indexData.items ?? [];
+  const rawItems = catalogItems(indexData);
   const count = new Array(tagsDict.length).fill(0);
   const best = new Array(tagsDict.length).fill(null);
   const bestRank = new Array(tagsDict.length).fill(Infinity);
@@ -855,7 +927,7 @@ export function portraitTagGroups(indexData) {
   const isSpecies = cats.map((c) => c === 'species' || c === 'lineage');
   const isClass = cats.map((c) => c === 'class');
 
-  for (const [hash, idxs] of rawItems) {
+  for (const { thumb, idxs } of rawItems) {
     let speciesN = 0;
     let classN = 0;
     for (const i of idxs) {
@@ -867,7 +939,7 @@ export function portraitTagGroups(indexData) {
       const rank = isSpecies[i] ? speciesN : isClass[i] ? classN + speciesN * 0.1 : idxs.length;
       if (rank < bestRank[i]) {
         bestRank[i] = rank;
-        best[i] = hash;
+        best[i] = thumb;
       }
     }
   }
@@ -881,7 +953,7 @@ export function portraitTagGroups(indexData) {
       tag,
       label: tagLabelOf(tag),
       count: count[i],
-      thumb: best[i] ? portraitUrlFromHash(best[i], '236x') : '',
+      thumb: best[i] ?? '',
       parent: cats[i] === 'subclass' ? subclassClassOf(tag) : cats[i] === 'lineage' ? LINEAGE_PARENTS[tag] : null,
     });
   });

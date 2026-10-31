@@ -13,6 +13,7 @@
  *   .controls, .divider: a barra de filtros numa linha que quebra.
  *   .statusRow, .countText: a contagem das faixas.
  *   .body, .tierTitle, .masonry, .column, .sentinel: a grade rolável por faixas.
+ *   .searchMore: a busca guiada no fim da lista (DDL-0137).
  *   .card, .cardLoaded, .cardImg, .cardBadges, .cardBadge: o cartão do retrato.
  *   .skeletonGrid, .skeleton: o placeholder animado enquanto o catálogo carrega.
  *   .emptyState: vazio e erro (o "Try again" é um Button).
@@ -157,6 +158,12 @@
 
 .sentinel {
   height: 1px;
+}
+
+.searchMore {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
 }
 
 .card {

@@ -1,0 +1,30 @@
+/* =============================================================================
+ * PortraitSearchLinks.module.css: a linha "Search more on"
+ * =============================================================================
+ * CLASSES
+ *   .links, .label: a linha que quebra no celular e o rótulo com a lupa.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Texto pequeno e apagado: é rodapé das sugestões, não compete com elas.
+ *   - Cores só por token (DDL-0097).
+ * -------------------------------------------------------------------------- */
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  font-size: 12px;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.label svg {
+  width: 13px;
+  height: 13px;
+}

@@ -15,6 +15,8 @@
 //   ActionButton(props): uma ação, de texto ou redonda com ícone.
 //
 // DECISÕES E ARMADILHAS
+//   - Uma ação pode ter `when(cur)` (só aparece para certas imagens, como o "View
+//     post" de um retrato com autor) e `keepOpen` (não fecha o visualizador).
 //   - Esc e foco seguem o DialogHost: o overlay se foca e trata as teclas com
 //     stopPropagation, então um Esc não fecha também o diálogo de baixo. O foco
 //     volta ao elemento anterior.
@@ -118,6 +120,8 @@ function ViewerBody({ images, index, actions, hide, setIndex }) {
     </button>
   );
 
+  const shown = actions.filter((a) => !a.when || a.when(cur));
+
   return (
     <div
       className={styles.overlay}
@@ -176,18 +180,18 @@ function ViewerBody({ images, index, actions, hide, setIndex }) {
         </div>
       )}
 
-      {(multi || actions.length > 0) && (
+      {(multi || shown.length > 0) && (
         <div className={styles.bar}>
           {multi && prevBtn(styles.barArrow)}
-          {actions.length > 0 && (
+          {shown.length > 0 && (
             <div className={styles.actions}>
-              {actions.map((a, i) => (
+              {shown.map((a, i) => (
                 <ActionButton
                   key={`${a.label}-${i}`}
                   action={a}
                   onClick={() => {
                     a.onClick?.(cur, index);
-                    hide();
+                    if (!a.keepOpen) hide();
                   }}
                 />
               ))}

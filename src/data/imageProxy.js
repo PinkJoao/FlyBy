@@ -10,6 +10,7 @@
 //
 // FUNÇÕES
 //   corsProxyUrl(src): a URL do wsrv.nl para uma imagem http(s), ou null.
+//   registerNoCorsHost(host): acrescenta um domínio sem CORS em tempo de execução.
 //   knownNoCors(src): o domínio da imagem está em NO_CORS_HOSTS.
 //   decodeCors(src): carrega com `crossOrigin = 'anonymous'` e espera decodificar.
 //   loadCorsImage(src): uma <img> decodificada e legível pelo canvas (direto, depois
@@ -24,11 +25,18 @@
 //   - data: e blob: são do próprio app: vão direto, sem proxy.
 //   - Uma tentativa direta que falha por CORS deixa um erro no console e custa uma
 //     ida e volta: os domínios que SABIDAMENTE não mandam CORS (NO_CORS_HOSTS,
-//     medidos) vão direto ao proxy; o resto tenta direto primeiro.
+//     medidos) vão direto ao proxy; o resto tenta direto primeiro. Uma fonte do
+//     catálogo de retratos com `cors: false` no manifesto entra aqui em tempo de
+//     execução (registerNoCorsHost, DDL-0137).
 // -----------------------------------------------------------------------------
 
 const PROXY = 'https://wsrv.nl/?url=';
 const NO_CORS_HOSTS = new Set(['i.pinimg.com']);
+
+/** Acrescenta um domínio que sabidamente não manda CORS (fonte do catálogo de retratos). */
+export function registerNoCorsHost(host) {
+  if (host) NO_CORS_HOSTS.add(host);
+}
 
 /** O domínio da imagem sabidamente não manda CORS. */
 function knownNoCors(src) {

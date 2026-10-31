@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   Cobre portraitUrlFromHash, speciesTagsOf, classTagsOf, equipmentTagsOf,
-//   identityTagsOf, characterPortraitTags e rankPortraits.
+//   identityTagsOf, characterPortraitTags, rankPortraits (com o núcleo e o degrau
+//   de prioridade do DDL-0137) e portraitTagGroups.
 //
 // FUNÇÕES
 //   (nenhuma: suíte Vitest).
@@ -210,6 +211,33 @@ describe('portraitSuggestions', () => {
     expect(res.totalMatched).toBe(3);
     expect(res.items[0]).toMatchObject({ hash: '22222222222222222222222222222222', full: true });
     expect(res.items.slice(1).every((x) => !x.full)).toBe(true);
+  });
+
+  it('tag desconhecida é neutra e contradição tira da primeira faixa (DDL-0137)', () => {
+    const mockIndex = {
+      tags: ['female', 'male', 'elf', 'wizard', 'staff'],
+      items: [
+        { key: 'reddit:a', idxs: [2, 3], bucket: 5, thumb: 't', url: 'u', credit: { by: 'u/a', link: 'l' } },
+        { key: 'pin:b', idxs: [0, 2, 3, 4], bucket: 1, thumb: 't', url: 'u', credit: null },
+        { key: 'pin:c', idxs: [1, 2, 3, 4], bucket: 1, thumb: 't', url: 'u', credit: null },
+      ],
+    };
+    const res = rankPortraits(mockIndex, ['female', 'elf', 'wizard', 'staff']);
+    expect(res.items.map((x) => [x.hash, x.full])).toEqual([
+      ['reddit:a', true],
+      ['pin:b', true],
+      ['pin:c', false],
+    ]);
+    expect(res.items[0].credit).toEqual({ by: 'u/a', link: 'l' });
+    expect(res.fullMatched).toBe(2);
+  });
+
+  it('a subclasse ativa aceita a classe dona no núcleo', () => {
+    const mockIndex = {
+      tags: ['tiefling', 'warlock', 'hexblade'],
+      items: [{ key: 'r:1', idxs: [0, 1], bucket: 4, thumb: 't', url: 'u', credit: null }],
+    };
+    expect(rankPortraits(mockIndex, ['tiefling', 'hexblade', 'warlock']).items[0].full).toBe(true);
   });
 
   it('agrupa as tags do seletor com contagem e o representante mais limpo', () => {

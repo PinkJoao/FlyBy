@@ -248,7 +248,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-6. Not affiliated
+6. Battle for Wesnoth portraits (GNU GPL v2 or later)
+----------------------------------------------------
+
+Files: public/portraits-licensed/*.webp, src/data/portraitsLicensed.json
+
+Portraits from Battle for Wesnoth (https://www.wesnoth.org), copyright the Battle
+for Wesnoth project and its artists, reduced to 360 px. They are distributed
+under the GNU General Public License, version 2 or (at your option) any later
+version: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html. The original
+files (the preferred form for modification) are in the Wesnoth repository at
+commit 09421930308054c5415fbc1968caebbd27db0724, under
+data/core/images/portraits/; each entry of portraitsLicensed.json names its
+original path. They are a separate work aggregated with this project and do not
+change the license of its source code.
+
+
+7. Not affiliated
 -----------------
 
 FlyBy is an unofficial fan-made tool. It is not affiliated with, endorsed,

@@ -19,6 +19,9 @@
 //     rede; o compêndio de uma fonte do usuário NÃO entra no cache dele (já mora
 //     no IndexedDB, com o sync por SHA). Por isso o limite de tamanho sobe: o
 //     chunk principal e o pacote SRD passam dos 2 MB padrão do Workbox.
+//   - Os retratos GPL embutidos (public/portraits-licensed/, DDL-0137) são WebP e
+//     ficam FORA do precache (2,7 MB): entram no cache em tempo de execução quando
+//     aparecem numa faixa (CacheFirst), e daí em diante abrem sem rede.
 //   - Das fontes do tema papel, só o subconjunto LATINO entra no precache (cerca
 //     de 113 KB): os outros alfabetos só aparecem em nome raro e vêm sob demanda.
 //   - `autoUpdate`: um deploy novo assume na próxima abertura, sem perguntar. O
@@ -66,6 +69,13 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/portraits-licensed/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'portraits-licensed', expiration: { maxEntries: 300 } },
+          },
+        ],
       },
     }),
   ],

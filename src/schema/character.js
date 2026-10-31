@@ -27,6 +27,8 @@
 //
 // CAMPOS (as regras que o tipo sozinho não diz)
 //   - AbilityScores são os scores BASE, antes de qualquer bônus.
+//   - meta.portraitCredit (aditivo, DDL-0137): o artista do retrato escolhido
+//     (`{ by, link }`), ou null; sem migração, ficha antiga não tem crédito.
 //   - meta.creating: criação guiada em andamento; a Home retoma o wizard em vez
 //     de abrir a ficha, e o Finish do wizard o zera. meta.guided: guidance POR
 //     personagem; `false` desliga o botão do guia e o overlay de level-up ("just
@@ -117,6 +119,7 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  * @typedef {Object} CharacterMeta
  * @property {string} name
  * @property {string|null} portrait
+ * @property {{ by: string|null, link: string|null }|null} [portraitCredit]
  * @property {string} createdAt
  * @property {string} updatedAt
  * @property {string[]} tags

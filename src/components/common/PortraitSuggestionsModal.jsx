@@ -14,7 +14,9 @@
 //
 // FUNÇÕES
 //   sameTagSet(a, b): verifica se duas listas de tags possuem os mesmos itens.
-//   PortraitSuggestionsModal(props): o componente do modal.
+//   PortraitSuggestionsModal(props): o modal, dentro de uma barreira de erro que o
+//     fecha se ele quebrar (DDL-0137).
+//   GalleryBody(props): o corpo do modal.
 //     requestClose, toggleExclusiveGroup, toggleTag, resetTags, openPreview,
 //     onBodyScroll: a saída animada, os filtros, a prévia e o recolher dos
 //     controles.
@@ -47,6 +49,8 @@
 //   - Escape e o voltar do celular fecham a camada de cima: o seletor de tags tem
 //     a própria (useBackLayer e Escape nele), e o modal ignora o Escape enquanto o
 //     seletor está aberto.
+//   - No fim da lista (e quando nada casa) vem a busca guiada (PortraitSearchLinks,
+//     DDL-0137) com as tags ATIVAS, não só as da ficha.
 //   - Imagens que falharem no carregamento (`onError`) entram em `brokenHashes` e
 //     somem da grade na hora, sem ícone de imagem quebrada.
 // -----------------------------------------------------------------------------
@@ -61,7 +65,9 @@ import {
 import { useBackLayer } from '../../hooks/useBack';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { reducedMotion } from '../../motion';
+import ErrorBoundary from './ErrorBoundary';
 import { openPortraitPreview } from './portraitPreview';
+import PortraitSearchLinks from './PortraitSearchLinks';
 import Button from './Button';
 import Chip from './Chip';
 import Collapse from './Collapse';
@@ -89,9 +95,18 @@ function sameTagSet(a, b) {
 
 /**
  * Modal de sugestões de retratos baseado nas escolhas do personagem.
- * @param {{ character: object, onSelect: (url: string) => void, onClose: () => void }} props
+ * @param {{ character: object, onSelect: (item: object) => void, onClose: () => void }} props
  */
-export default function PortraitSuggestionsModal({ character, onSelect, onClose }) {
+export default function PortraitSuggestionsModal(props) {
+  return (
+    <ErrorBoundary onError={props.onClose}>
+      <GalleryBody {...props} />
+    </ErrorBoundary>
+  );
+}
+
+/** O corpo da galeria (dentro da barreira de erro). */
+function GalleryBody({ character, onSelect, onClose }) {
   const [closing, setClosing] = useState(false);
   const requestClose = () => {
     if (closing) return;
@@ -273,6 +288,9 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
           ) : visibleItems.length === 0 ? (
             <div className={styles.emptyState}>
               No portraits matched this combination. Try removing a tag or resetting to the sheet.
+              <div className={styles.searchMore}>
+                <PortraitSearchLinks tags={activeTags} />
+              </div>
             </div>
           ) : (
             <>
@@ -306,7 +324,13 @@ export default function PortraitSuggestionsModal({ character, onSelect, onClose 
                   />
                 </>
               )}
-              {hasMore && <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />}
+              {hasMore ? (
+                <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />
+              ) : (
+                <div className={styles.searchMore}>
+                  <PortraitSearchLinks tags={activeTags} />
+                </div>
+              )}
             </>
           )}
         </div>
@@ -373,7 +397,7 @@ function PortraitCard({ item, badges, onOpen, onBroken }) {
     >
       <img
         className={styles.cardImg}
-        src={item.url}
+        src={item.card ?? item.url}
         alt="Suggested portrait"
         loading="lazy"
         referrerPolicy="no-referrer"

@@ -50,6 +50,7 @@ const ICONS = {
   up: 'lucide:arrow-up',
   fullscreen: 'lucide:maximize-2',
   search: 'lucide:search',
+  external: 'lucide:external-link',
   cart: 'lucide:shopping-cart',
   addImage: 'lucide:image-plus',
   idea: 'lucide:lightbulb',

@@ -16,6 +16,9 @@
 //   downloadPortrait(src, filename): baixa o retrato (data-URL ou de outro domínio).
 //
 // DECISÕES E ARMADILHAS
+//   - O retrato grava o crédito do artista (`portraitCredit`, portraitChoice):
+//     link do Reddit colado vira a imagem com o autor; upload e imagem colada o
+//     zeram. O visualizador mostra "Art: u/autor" e "View post" (DDL-0137).
 //   - Nome e retrato são editáveis nos dois modos: não mudam a jogatina, e travar
 //     no modo jogo só obrigaria a trocar de modo para corrigir um nome.
 //   - O bloco vive na pages/Character, FORA do conteúdo de cada modo: não remonta na
@@ -45,6 +48,7 @@ import { showImageViewer } from '../../store/imageViewerStore';
 import { fileToPortrait } from '../common/imageFile';
 import { fetchImageBlob } from '../../data/imageProxy';
 import { showImageSource } from '../common/imageSourceDialog';
+import { portraitFromSuggestion, portraitFromText, portraitViewerImage } from '../common/portraitChoice';
 import PortraitSuggestionsModal from '../common/PortraitSuggestionsModal';
 import PortraitSuggestionStrip from '../common/PortraitSuggestionStrip';
 import { TUT } from '../../tutorial/anchors';
@@ -64,7 +68,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
   const applyPortraitFile = async (file) => {
     try {
       const portrait = await fileToPortrait(file);
-      save({ ...character, meta: { ...character.meta, portrait } });
+      save({ ...character, meta: { ...character.meta, portrait, portraitCredit: null } });
     } catch {
       // arquivo ilegível/não-imagem: mantém como está
     }
@@ -74,11 +78,13 @@ export default function CharacterIdentity({ character, save, slotRef }) {
     e.target.value = '';
     if (file) applyPortraitFile(file);
   };
-  const setPortraitUrl = (url) => {
-    save({ ...character, meta: { ...character.meta, portrait: url } });
+  const setPortraitFields = (fields) => {
+    save({ ...character, meta: { ...character.meta, ...fields } });
     setSuggestionsOpen(false);
   };
-  const clearPortrait = () => save({ ...character, meta: { ...character.meta, portrait: null } });
+  const setPortraitUrl = async (text) => setPortraitFields(await portraitFromText(text));
+  const setPortraitSuggestion = async (item) => setPortraitFields(await portraitFromSuggestion(item));
+  const clearPortrait = () => save({ ...character, meta: { ...character.meta, portrait: null, portraitCredit: null } });
 
   const openPicker = () =>
     showImageSource({
@@ -89,9 +95,9 @@ export default function CharacterIdentity({ character, save, slotRef }) {
       extra: (close) => (
         <PortraitSuggestionStrip
           character={character}
-          onSelect={(url) => {
+          onSelect={(item) => {
             close();
-            setPortraitUrl(url);
+            setPortraitSuggestion(item);
           }}
           onSeeAll={() => {
             close();
@@ -103,7 +109,9 @@ export default function CharacterIdentity({ character, save, slotRef }) {
 
   const openViewer = () => {
     const src = character.meta.portrait;
-    showImageViewer([{ src, alt: 'Portrait' }], 0, [
+    const link = character.meta.portraitCredit?.link;
+    showImageViewer([portraitViewerImage(character.meta)], 0, [
+      ...(link ? [{ label: 'View post', onClick: () => window.open(link, '_blank', 'noopener') }] : []),
       { label: 'Change', onClick: openPicker },
       { label: 'Download', onClick: () => downloadPortrait(src, portraitFilename(character.meta.name, src)) },
       { label: 'Remove', tone: 'danger', onClick: clearPortrait },
@@ -147,7 +155,7 @@ export default function CharacterIdentity({ character, save, slotRef }) {
       {suggestionsOpen && (
         <PortraitSuggestionsModal
           character={character}
-          onSelect={setPortraitUrl}
+          onSelect={setPortraitSuggestion}
           onClose={() => setSuggestionsOpen(false)}
         />
       )}

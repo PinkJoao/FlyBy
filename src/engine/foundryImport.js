@@ -61,6 +61,8 @@
 //     Não é erro, mas o jogador precisa saber (DDL-0080).
 //   - As ações básicas saem antes de qualquer leitura, pela MARCA
 //     `flags.builder5e.basicAction`, nunca pelo nome; são derivadas.
+//   - O crédito do retrato volta de `flags.builder5e.portraitCredit` só junto de
+//     um retrato aproveitado (DDL-0137).
 //   - webImage: o `img` do ator vira retrato só se abrir fora do Foundry. Caminho
 //     relativo é do servidor dele e vira imagem quebrada aqui: as 48 premades
 //     (`systems/dnd5e/tokens/...`) e as 5 Plutonium (`worlds/...`) trazem só essa
@@ -945,6 +947,10 @@ export function foundryToCharacter(rawActor, db, out = null) {
   const char = createCharacter({ name: actor?.name || 'Imported Character' });
   const portrait = webImage(actor?.img);
   if (portrait) char.meta.portrait = portrait;
+  const credit = actor?.flags?.builder5e?.portraitCredit;
+  if (portrait && credit && typeof credit === 'object') {
+    char.meta.portraitCredit = { by: credit.by ?? null, link: credit.link ?? null };
+  }
 
   const det = actor?.system?.details ?? {};
   char.identity = {

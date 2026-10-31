@@ -10,6 +10,8 @@
 //   NamePortraitStep(props): o passo.
 //
 // DECISÕES E ARMADILHAS
+//   - URL colada passa por portraitFromText: link de post do Reddit vira a imagem
+//     com o crédito do autor (DDL-0137).
 //   - Imagem colada como no retrato da página (CharacterIdentity): o Ctrl+V de uma
 //     imagem em qualquer lugar do passo (colar texto no nome segue normal) e, no
 //     celular, o campo de URL editável que recebe a imagem do teclado.
@@ -19,6 +21,7 @@
 
 import { useRef, useState } from 'react';
 import { fileToPortrait } from '../../common/imageFile';
+import { portraitFromSuggestion, portraitFromText } from '../../common/portraitChoice';
 import { useImagePaste } from '../../common/imagePaste';
 import ImageUrlField from '../../common/ImageUrlField';
 import PortraitSuggestionsModal from '../../common/PortraitSuggestionsModal';
@@ -33,7 +36,8 @@ export default function NamePortraitStep({ character, onChange }) {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const setName = (name) => onChange({ ...character, meta: { ...meta, name } });
-  const setPortrait = (portrait) => onChange({ ...character, meta: { ...meta, portrait } });
+  const setPortrait = (portrait, portraitCredit = null) =>
+    onChange({ ...character, meta: { ...meta, portrait, portraitCredit } });
 
   const applyFile = async (file) => {
     try {
@@ -48,10 +52,12 @@ export default function NamePortraitStep({ character, onChange }) {
     if (file) applyFile(file);
   };
   useImagePaste(applyFile);
+  const applySuggestion = (item) =>
+    portraitFromSuggestion(item).then((f) => setPortrait(f.portrait, f.portraitCredit));
   const applyUrl = () => {
     const u = url.trim();
-    if (u) setPortrait(u);
     setUrl('');
+    if (u) portraitFromText(u).then((f) => setPortrait(f.portrait, f.portraitCredit));
   };
 
   return (
@@ -109,7 +115,7 @@ export default function NamePortraitStep({ character, onChange }) {
         </div>
         <PortraitSuggestionStrip
           character={character}
-          onSelect={setPortrait}
+          onSelect={applySuggestion}
           onSeeAll={() => setSuggestionsOpen(true)}
         />
       </div>
@@ -119,8 +125,8 @@ export default function NamePortraitStep({ character, onChange }) {
       {suggestionsOpen && (
         <PortraitSuggestionsModal
           character={character}
-          onSelect={(selectedUrl) => {
-            setPortrait(selectedUrl);
+          onSelect={(item) => {
+            applySuggestion(item);
             setSuggestionsOpen(false);
           }}
           onClose={() => setSuggestionsOpen(false)}

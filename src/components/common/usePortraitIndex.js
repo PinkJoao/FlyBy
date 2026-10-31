@@ -2,32 +2,35 @@
 // usePortraitIndex: o catálogo de retratos sugeridos, carregado sob demanda
 // =============================================================================
 // O QUE FAZ
-//   Importa `src/data/portraitsIndex.json` (2 MB) só quando uma tela de sugestões
-//   abre, guarda a promise para as outras telas (a faixa do escolhedor e o modal
-//   da galeria usam a mesma) e expõe o estado de carga com um "tentar de novo".
+//   Monta o catálogo (loadPortraitCatalog: release v3 de fora do app, cache do
+//   aparelho, fatia licenciada embutida) só quando uma tela de sugestões abre,
+//   guarda a promise para as outras telas (a faixa do escolhedor e o modal da
+//   galeria usam a mesma) e expõe o estado de carga com um "tentar de novo".
 //
 // FUNÇÕES
-//   loadPortraitIndex(): importa e mantém em cache o índice; esquece a promise
-//     rejeitada.
+//   loadPortraitIndex(): carrega e mantém em cache o catálogo; esquece a promise
+//     rejeitada ou vazia.
 //   usePortraitIndex(): { data, loading, failed, retry } para um componente.
 //
 // DECISÕES E ARMADILHAS
-//   - Import dinâmico: o índice não pesa no pacote inicial do app.
-//   - Falha no import (offline, deploy novo com o chunk trocado) não fica em cache:
-//     a próxima chamada tenta de novo, e `retry` a dispara (DDL-0127).
+//   - Carga sob demanda: o catálogo não pesa no pacote inicial do app.
+//   - loadPortraitCatalog não rejeita (DDL-0137); um catálogo VAZIO conta como falha
+//     e não fica em cache: a próxima chamada tenta de novo, e `retry` a dispara.
 // -----------------------------------------------------------------------------
 
 import { useEffect, useState } from 'react';
+import { loadPortraitCatalog } from '../../data/portraitCatalog';
 
 let cachedIndexPromise = null;
 let cachedIndex = null;
 
-/** Carrega e mantém em cache o índice estático de retratos. */
+/** Carrega e mantém em cache o catálogo de retratos. */
 export function loadPortraitIndex() {
   if (!cachedIndexPromise) {
-    cachedIndexPromise = import('../../data/portraitsIndex.json')
-      .then((m) => {
-        cachedIndex = m.default ?? m;
+    cachedIndexPromise = loadPortraitCatalog()
+      .then((catalog) => {
+        if (!catalog?.items?.length) throw new Error('catálogo de retratos vazio');
+        cachedIndex = catalog;
         return cachedIndex;
       })
       .catch((err) => {

@@ -7,8 +7,9 @@
 //   o app traz de terceiros: o SRD 5.2 e os extras do SRD 5.1 (CC BY 4.0,
 //   DDL-0107), o formato de dados do
 //   5etools (MIT), o sistema dnd5e do Foundry (MIT), os ícones (game-icons.net,
-//   CC BY 3.0, por autor; Lucide, ISC), as fontes do tema papel (OFL 1.1) e as
-//   bibliotecas. O NOTICE na raiz do repositório traz as licenças por extenso.
+//   CC BY 3.0, por autor; Lucide, ISC), as fontes do tema papel (OFL 1.1), as
+//   sugestões de retrato (links com crédito, os retratos GPL do Wesnoth e o pedido
+//   de remoção, DDL-0137) e as bibliotecas. O NOTICE na raiz do repositório traz as licenças por extenso.
 //
 // FUNÇÕES
 //   About(): a página.
@@ -138,6 +139,24 @@ export default function About() {
           Interface icons from <ExtLink href="https://lucide.dev">Lucide</ExtLink> (ISC License, Lucide Icons and
           Contributors), some of them derived from <ExtLink href="https://feathericons.com">Feather</ExtLink> (MIT
           License, Cole Bemis). License texts in the <ExtLink href="https://lucide.dev/license">Lucide license</ExtLink>.
+        </p>
+      </Section>
+
+      <Section title="Portrait suggestions">
+        <p>
+          Suggested portraits are links to artwork hosted by its original sites; FlyBy does not host or sell them. When
+          the artist is known, the preview shows their name and a link to the original post, and a portrait you choose
+          keeps that credit. Art made by AI is filtered out where the source allows it.
+        </p>
+        <p>
+          Some portraits come from <ExtLink href="https://www.wesnoth.org">Battle for Wesnoth</ExtLink>, used under the{' '}
+          <ExtLink href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU GPL v2 or later</ExtLink>; the
+          originals are in the <ExtLink href="https://github.com/wesnoth/wesnoth">Wesnoth repository</ExtLink>.
+        </p>
+        <p>
+          Artists who want a work removed from the suggestions can ask through the{' '}
+          <ExtLink href="https://github.com/PinkJoao/FlyBy/issues">project&apos;s issue tracker</ExtLink>; removals are
+          applied quickly, without needing an app update.
         </p>
       </Section>
 

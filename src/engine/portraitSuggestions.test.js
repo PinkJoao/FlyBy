@@ -102,7 +102,7 @@ describe('portraitSuggestions', () => {
       'female',
     ]);
     expect(identityTagsOf({ age: '70', appearance: 'Grizzled bearded veteran' })).toEqual([
-      'mature',
+      'elder',
       'male',
     ]);
   });
@@ -181,10 +181,27 @@ describe('portraitSuggestions', () => {
     expect(armorTagsOf(unequipped, [{ classId: 'fighter' }])).toEqual(['heavy-armor']);
   });
 
+  it('idade em três faixas e gênero other', () => {
+    expect(identityTagsOf({ age: '35', appearance: 'Androgynous wanderer' })).toEqual(['adult', 'other']);
+    expect(identityTagsOf({ age: '', appearance: 'A middle-aged woman' })).toEqual(['adult', 'female']);
+  });
+
+  it('com um gênero e uma idade ativos, outro gênero ou outra idade contradiz', () => {
+    const idx = { tags: ['elf', 'other', 'female', 'elder', 'young'], items: [
+      { key: 'r:a', idxs: [0, 1], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:b', idxs: [0, 2], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:c', idxs: [0, 1, 3], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:d', idxs: [0], bucket: 1, thumb: 't', url: 'u', credit: null },
+    ] };
+    const full = (tags) => Object.fromEntries(rankPortraits(idx, tags).items.map((i) => [i.hash, i.full]));
+    expect(full(['elf', 'other'])).toEqual({ 'r:a': true, 'r:c': true, 'r:d': true });
+    expect(full(['elf', 'other', 'young'])).toMatchObject({ 'r:a': true, 'r:c': false });
+  });
+
   it('não marca jovem e maduro juntos quando a idade numérica vem com texto', () => {
     expect(identityTagsOf({ age: '19 years old', appearance: '' })).toEqual(['young']);
     expect(identityTagsOf({ age: '', appearance: 'Gray skin and a calm stare', hair: 'black' })).toEqual([]);
-    expect(identityTagsOf({ age: '', appearance: '', hair: 'Greying, short' })).toEqual(['mature']);
+    expect(identityTagsOf({ age: '', appearance: '', hair: 'Greying, short' })).toEqual(['elder']);
   });
 
   it('penaliza outra espécie mesmo quando a ativa é uma linhagem de dois níveis', () => {

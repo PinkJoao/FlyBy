@@ -21,7 +21,7 @@
 //   partsFromRelease(release): as fontes ligadas da release, como partes do catálogo.
 //   licensedPart(data): a fatia licenciada embutida, como parte do catálogo.
 //   mergeParts(parts): um catálogo só, com o dicionário de tags unido (sem armas e
-//     focos antigos; `robes` vira `clothes`).
+//     focos antigos; `robes` vira `clothes`, `mature` vira `elder`).
 //   loadPortraitCatalog(deps): o catálogo pronto; nunca rejeita.
 //
 // DECISÕES E ARMADILHAS
@@ -50,7 +50,7 @@ import licensedData from './portraitsLicensed.json';
 
 const CACHE_KEY = 'portraits:release';
 const RAW_VARS = new Set(['src', 'thumbSrc']);
-const TAG_ALIASES = { robes: 'clothes' };
+const TAG_ALIASES = { robes: 'clothes', mature: 'elder' };
 
 export const CATALOG_URLS = String(import.meta.env?.VITE_PORTRAIT_CATALOG_URL ?? '')
   .split(',')

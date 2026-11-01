@@ -37,8 +37,10 @@
 //     +18 na linhagem específica), e retratos marcados apenas com outra espécie
 //     incompatível são penalizados (-35) para que um Guerreiro Humano cheio de
 //     armas iguais nunca passe à frente de um Tiefling ou Dragonborn.
-//   - Quando o usuário filtra um único gênero (male ou female), retratos marcados
-//     apenas com o gênero oposto recebem penalidade (-45).
+//   - Gênero (male, female, other) e idade (young, adult, elder) são um de cada
+//     (2026-10-31): com um só gênero ativo, retrato marcado só com OUTRO gênero
+//     perde 45 e contradiz; com uma só idade ativa, retrato só de outra idade
+//     contradiz. `elder` era `mature` (sempre quis dizer velhice); mergeParts troca.
 //   - O desempate usa hashTieBreaker(hash, seed): abrir o modal sorteia uma semente
 //     inicial, renovando a vitrine dentro do mesmo degrau de relevância. Usar só
 //     12 caracteres e `% 1000` deixava milhares de empates na ordem do catálogo.
@@ -56,7 +58,8 @@
 //     `clothes` quando há inventário ou a classe é Mago, Feiticeiro ou Monge (ficha
 //     nova, sem inventário, não ganha armadura nenhuma).
 //   - Idade numérica decide sozinha; o texto ("old", "grizzled") só vale sem número,
-//     senão "19 years old" virava `young` e `mature` juntos. Cabelo grisalho só conta
+//     senão "19 years old" virava `young` e `elder` juntos. Número: até 22 é young,
+//     de 55 em diante elder, no meio adult. Cabelo grisalho só conta
 //     no campo `hair` (pele cinza de Duergar ou Goliath não é idade).
 //   - A pontuação SOMA qualquer tag que case, então marcar mais uma tag AUMENTAVA o
 //     total ("629" virava "3.503" ao marcar Female). `full` separa quem casa todas
@@ -78,8 +81,8 @@
 //     e na penalidade de espécie.
 // -----------------------------------------------------------------------------
 
-const GENDERS = new Set(['male', 'female']);
-const AGES = new Set(['young', 'mature']);
+const GENDERS = new Set(['male', 'female', 'other']);
+const AGES = new Set(['young', 'adult', 'elder']);
 const ARMORS = new Set(['heavy-armor', 'medium-armor', 'light-armor', 'clothes']);
 const ARMOR_BY_RANK = [null, 'clothes', 'light-armor', 'medium-armor', 'heavy-armor'];
 
@@ -561,16 +564,20 @@ export function identityTagsOf(identity) {
   const ageNum = parseInt(ageText, 10);
   if (!Number.isNaN(ageNum)) {
     if (ageNum > 0 && ageNum <= 22) add('young');
-    else if (ageNum >= 55) add('mature');
+    else if (ageNum >= 55) add('elder');
+    else if (ageNum > 22) add('adult');
   } else if (/\b(young|youth|teen|adolescent|boy|girl)\b/.test(combined)) add('young');
+  else if (/\bmiddle[-\s]aged\b/.test(combined)) add('adult');
   else if (
-    /\b(old|elder|elderly|mature|veteran|aged|grizzled|gr[ae]y hair|white beard)\b/.test(combined) ||
+    /\b(old|elder|elderly|veteran|aged|grizzled|gr[ae]y hair|white beard)\b/.test(combined) ||
     /\bgr[ae]y(ing)?\b/.test(hairText)
   ) {
-    add('mature');
-  }
+    add('elder');
+  } else if (/\b(adult|middle[-\s]aged|mature)\b/.test(combined)) add('adult');
 
-  if (/\b(female|woman|girl|she|her)\b/.test(appText) && !/\b(male|man|boy|he|his)\b/.test(appText)) {
+  if (/\b(non[-\s]?binary|androgynous|genderless|genderfluid|enby)\b/.test(appText)) {
+    add('other');
+  } else if (/\b(female|woman|girl|she|her)\b/.test(appText) && !/\b(male|man|boy|he|his)\b/.test(appText)) {
     add('female');
   } else if (/\b(male|man|boy|he|his|bearded)\b/.test(appText) && !/\b(female|woman|girl|she|her)\b/.test(appText)) {
     add('male');
@@ -727,12 +734,13 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
   }
 
   const activeSet = new Set(cleanActive);
-  const wantMale = activeSet.has('male') && !activeSet.has('female');
-  const wantFemale = activeSet.has('female') && !activeSet.has('male');
-  const maleIdx = tagToIdx.get('male');
-  const femaleIdx = tagToIdx.get('female');
-  const wantAge = activeSet.has('young') !== activeSet.has('mature') ? (activeSet.has('young') ? 'young' : 'mature') : null;
-  const otherAgeIdx = wantAge ? tagToIdx.get(wantAge === 'young' ? 'mature' : 'young') : undefined;
+  const oneOf = (group) => {
+    const on = [...group].filter((t) => activeSet.has(t));
+    if (on.length !== 1) return null;
+    return { want: tagToIdx.get(on[0]), others: new Set([...group].filter((t) => t !== on[0]).map((t) => tagToIdx.get(t))) };
+  };
+  const genderPick = oneOf(GENDERS);
+  const agePick = oneOf(AGES);
   const activeArmor = cleanActive.filter((t) => ARMORS.has(t));
   const armorIndices = new Set([...ARMORS].map((t) => tagToIdx.get(t)).filter((i) => i !== undefined));
   const activeArmorIndices = new Set(activeArmor.map((t) => tagToIdx.get(t)));
@@ -784,21 +792,27 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
     const item = rawItems[r];
     const idxs = item.idxs;
     let score = 0;
-    let hasMale = false;
-    let hasFemale = false;
+    let hasWantedGender = false;
+    let hasOtherGender = false;
+    let hasWantedAge = false;
+    let hasOtherAge = false;
     let matchedAllowedSpecies = false;
     let hasAnySpeciesTag = false;
     let matchedClass = false;
-    let otherAge = false;
     let hasArmor = false;
     let matchedArmor = false;
     const matchedTags = [];
 
     for (let j = 0; j < idxs.length; j++) {
       const idx = idxs[j];
-      if (idx === maleIdx) hasMale = true;
-      else if (idx === femaleIdx) hasFemale = true;
-      if (idx === otherAgeIdx) otherAge = true;
+      if (genderPick) {
+        if (idx === genderPick.want) hasWantedGender = true;
+        else if (genderPick.others.has(idx)) hasOtherGender = true;
+      }
+      if (agePick) {
+        if (idx === agePick.want) hasWantedAge = true;
+        else if (agePick.others.has(idx)) hasOtherAge = true;
+      }
       if (armorIndices.has(idx)) {
         hasArmor = true;
         if (activeArmorIndices.has(idx)) matchedArmor = true;
@@ -819,7 +833,8 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
 
     if (matchedTags.length === 0) continue;
 
-    const wrongGender = (wantMale && hasFemale && !hasMale) || (wantFemale && hasMale && !hasFemale);
+    const wrongGender = hasOtherGender && !hasWantedGender;
+    const otherAge = hasOtherAge && !hasWantedAge;
     const wrongSpecies = allowedSpeciesIndices.size > 0 && !matchedAllowedSpecies && hasAnySpeciesTag;
     if (wrongGender) score -= 45;
     if (wrongSpecies) score -= 35;

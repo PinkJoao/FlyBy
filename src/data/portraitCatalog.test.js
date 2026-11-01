@@ -73,7 +73,6 @@ function memoryCache(initial = null) {
   };
 }
 
-const noLegacy = null;
 
 describe('peças', () => {
   it('fill troca as variáveis e os pedaços do id', () => {
@@ -110,7 +109,6 @@ describe('loadPortraitCatalog', () => {
         'https://main.example/pinterest-1.json': pinShard,
       }),
       cache,
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toEqual(['wesnoth', 'reddit', 'pinterest']);
@@ -131,7 +129,6 @@ describe('loadPortraitCatalog', () => {
         'https://mirror.example/pinterest-1.json': pinShard,
       }),
       cache: memoryCache(),
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.items).toHaveLength(3);
@@ -147,7 +144,6 @@ describe('loadPortraitCatalog', () => {
         'https://mirror.example/reddit-1.json': redditShard,
       }),
       cache: memoryCache(),
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toContain('reddit');
@@ -162,7 +158,6 @@ describe('loadPortraitCatalog', () => {
         throw new Error('offline');
       },
       cache: memoryCache(cached),
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toEqual(['wesnoth', 'reddit', 'pinterest']);
@@ -173,21 +168,19 @@ describe('loadPortraitCatalog', () => {
       urls: ['https://main.example/portraits-manifest.json'],
       fetchImpl: fakeFetch({}),
       cache: memoryCache(),
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toEqual(['wesnoth']);
     expect(cat.items).toHaveLength(1);
   });
 
-  it('sem endereço configurado: o índice antigo entra no lugar da release', async () => {
+  it('sem endereço configurado e sem cache: só a fatia licenciada', async () => {
     const cat = await loadPortraitCatalog({
       urls: [],
       cache: memoryCache(),
-      legacy: async () => ({ source: 'pinterest', items: [{ id: 'h', tags: ['elf'], bucket: 1, thumb: 't', url: 'u', credit: null }] }),
       licensed: LICENSED,
     });
-    expect(cat.sources).toEqual(['wesnoth', 'pinterest']);
+    expect(cat.sources).toEqual(['wesnoth']);
   });
 
   it('manifesto inválido e cache quebrado não estouram', async () => {
@@ -195,7 +188,6 @@ describe('loadPortraitCatalog', () => {
       urls: ['https://main.example/portraits-manifest.json'],
       fetchImpl: fakeFetch({ 'https://main.example/portraits-manifest.json': '{"format":2}' }),
       cache: { read: async () => ({ manifest: { format: 1 } }), write: async () => {} },
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toEqual(['wesnoth']);
@@ -211,7 +203,6 @@ describe('loadPortraitCatalog', () => {
         'https://main.example/pinterest-1.json': pinShard,
       }),
       cache: memoryCache(),
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toEqual(['wesnoth', 'pinterest']);
@@ -226,7 +217,6 @@ describe('loadPortraitCatalog', () => {
         'https://main.example/pinterest-1.json': pinShard,
       }),
       cache: memoryCache(),
-      legacy: noLegacy,
       licensed: LICENSED,
     });
     expect(cat.sources).toEqual(['wesnoth', 'pinterest']);

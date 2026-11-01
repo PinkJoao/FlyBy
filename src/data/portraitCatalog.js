@@ -6,8 +6,8 @@
 //   release v3 publicada fora do app (Reddit, Pinterest, ...) com a fatia de licença
 //   livre que vem no próprio app (Wesnoth, src/data/portraitsLicensed.json). A
 //   cascata (DDL-0137, §4 do estudo de fontes): manifesto do host configurado, senão
-//   dos espelhos, senão a última release guardada no aparelho, senão (enquanto
-//   existir) o índice antigo embutido; a fatia licenciada entra sempre.
+//   dos espelhos, senão a última release guardada no aparelho; a fatia licenciada
+//   entra sempre.
 //
 // FUNÇÕES
 //   CATALOG_URLS: os endereços de manifesto de VITE_PORTRAIT_CATALOG_URL (vírgulas).
@@ -20,14 +20,16 @@
 //   loadRemote(urls, fetchImpl): { manifest, shards } da primeira base que responder.
 //   partsFromRelease(release): as fontes ligadas da release, como partes do catálogo.
 //   licensedPart(data): a fatia licenciada embutida, como parte do catálogo.
-//   legacyPart(): o índice antigo embutido (Pinterest), como parte do catálogo.
 //   mergeParts(parts): um catálogo só, com o dicionário de tags unido.
 //   loadPortraitCatalog(deps): o catálogo pronto; nunca rejeita.
 //
 // DECISÕES E ARMADILHAS
 //   - Nada aqui lança para fora: host fora, manifesto inválido, fatia com sha256
 //     errado ou cache vazio só tiram aquela parte. O pior caso é só a fatia
-//     licenciada (e a busca guiada, que não depende do catálogo).
+//     licenciada (e a busca guiada, que não depende do catálogo): é o que vê um
+//     aparelho novo sem rede e um build sem VITE_PORTRAIT_CATALOG_URL (o espelho
+//     público, um fork). O índice antigo embutido (portraitsIndex.json, 2,5 MB)
+//     saiu em 2026-10-31, com o catálogo já publicado.
 //   - Tempo-limite de 4 s por manifesto e 15 s por fatia; a fatia é baixada da
 //     MESMA base do manifesto que respondeu, e dos espelhos se ela falhar.
 //   - `enabled: false` no manifesto é o interruptor remoto: a fonte some do app sem
@@ -190,22 +192,6 @@ export function licensedPart(data = licensedData) {
   return { source: data?.source ?? 'licensed', items };
 }
 
-/** O índice antigo embutido (Pinterest, só tags), como parte do catálogo. */
-export async function legacyPart() {
-  // ATENÇÃO: sai junto com src/data/portraitsIndex.json, quando o catálogo estiver publicado.
-  const m = await import('./portraitsIndex.json');
-  const data = m.default ?? m;
-  const items = (data.items ?? []).map(([hash, idxs]) => ({
-    id: hash,
-    tags: idxs.map((i) => data.tags[i]).filter(Boolean),
-    bucket: 1,
-    thumb: `https://i.pinimg.com/236x/${hash.slice(0, 2)}/${hash.slice(2, 4)}/${hash.slice(4, 6)}/${hash}.jpg`,
-    url: `https://i.pinimg.com/736x/${hash.slice(0, 2)}/${hash.slice(2, 4)}/${hash.slice(4, 6)}/${hash}.jpg`,
-    credit: null,
-  }));
-  return { source: 'pinterest', items };
-}
-
 /**
  * Junta as partes num catálogo só, com o dicionário de tags unido.
  * @param {Array<{ source: string, items: Array<{ id: string, tags: string[], bucket: number, thumb: string, url: string, credit: object|null }> }>} parts
@@ -247,13 +233,12 @@ const defaultCache = {
 
 /**
  * O catálogo pronto, pela cascata; nunca rejeita.
- * @param {{ urls?: string[], fetchImpl?: typeof fetch, cache?: { read: () => Promise<any>, write: (v: any) => Promise<any> }, legacy?: (() => Promise<object>)|null, licensed?: object }} [deps]
+ * @param {{ urls?: string[], fetchImpl?: typeof fetch, cache?: { read: () => Promise<any>, write: (v: any) => Promise<any> }, licensed?: object }} [deps]
  */
 export async function loadPortraitCatalog({
   urls = CATALOG_URLS,
   fetchImpl = (...a) => fetch(...a),
   cache = defaultCache,
-  legacy = legacyPart,
   licensed = licensedData,
 } = {}) {
   const parts = [];
@@ -265,10 +250,6 @@ export async function loadPortraitCatalog({
     if (release && !validManifest(release.manifest)) release = null;
   }
   if (release) parts.push(...partsFromRelease(release));
-  else if (legacy) {
-    const part = await legacy().catch(() => null);
-    if (part) parts.push(part);
-  }
   parts.unshift(licensedPart(licensed));
   return mergeParts(parts);
 }

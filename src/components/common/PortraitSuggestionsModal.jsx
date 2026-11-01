@@ -2,8 +2,8 @@
 // PortraitSuggestionsModal: galeria de sugestões de retrato a partir da ficha
 // =============================================================================
 // O QUE FAZ
-//   Exibe a galeria de retratos sugeridos para o personagem a partir do índice
-//   estático (`src/data/portraitsIndex.json`, via usePortraitIndex). Pré-marca as
+//   Exibe a galeria de retratos sugeridos para o personagem a partir do catálogo
+//   (`loadPortraitCatalog`, via usePortraitIndex). Pré-marca as
 //   tags extraídas da ficha (espécie, linhagem, classe, subclasse, armadura, armas
 //   e focos), embaralha a ordem dentro de cada faixa de relevância a cada abertura
 //   e permite alternar gênero e idade e escolher tags no seletor visual

@@ -4,7 +4,7 @@
 // O QUE FAZ
 //   Converte as decisões da ficha do personagem (espécie, linhagem, classes,
 //   subclasses, armadura, armas, focos de conjuração e identidade) em tags do
-//   catálogo (`src/data/portraitsIndex.json`) e ranqueia os retratos em memória.
+//   catálogo (`loadPortraitCatalog`, `src/data/portraitCatalog.js`) e ranqueia os retratos em memória.
 //
 // FUNÇÕES
 //   portraitUrlFromHash(hash, size): reconstrói a URL da CDN i.pinimg.com a

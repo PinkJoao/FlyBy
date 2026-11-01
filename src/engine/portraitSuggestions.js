@@ -3,7 +3,7 @@
 // =============================================================================
 // O QUE FAZ
 //   Converte as decisões da ficha do personagem (espécie, linhagem, classes,
-//   subclasses, armadura, armas, focos de conjuração e identidade) em tags do
+//   subclasses, armadura e identidade) em tags do
 //   catálogo (`loadPortraitCatalog`, `src/data/portraitCatalog.js`) e ranqueia os retratos em memória.
 //
 // FUNÇÕES
@@ -11,14 +11,15 @@
 //     partir do hash hexadecimal de 32 caracteres.
 //   speciesTagsOf(species): extrai as tags de espécie e linhagem da ficha.
 //   classTagsOf(classes): extrai as tags de classe e subclasse da ficha.
-//   equipmentTagsOf(inventory, classes): extrai as tags de armadura, armas e
-//     focos de conjuração a partir do inventário e das classes.
+//   armorTagsOf(inventory, classes): a tag de armadura (heavy, medium, light ou
+//     clothes) a partir do inventário e das classes.
 //   identityTagsOf(identity): extrai tags explícitas de idade ou gênero nos
 //     campos livres de identidade.
 //   characterPortraitTags(character): devolve a lista sem duplicatas de tags
 //     sugeridas pela ficha.
 //   tagCategoryOf(tag): classifica uma tag em gender, age, armor, lineage,
-//     species, subclass, class ou weapon.
+//     species, subclass, class ou equipment (antiga, ignorada).
+//   portraitTagAllowed(tag): a tag ainda vale no catálogo (não é arma nem foco)?
 //   tagLabelOf(tag): formata o rótulo legível em inglês de uma tag.
 //   hashTieBreaker(hash, seed): gera um inteiro determinístico de 32 bits (FNV-1a
 //     sobre o hash inteiro) para embaralhar empates de pontuação conforme a semente.
@@ -28,7 +29,7 @@
 //     retratos para as tags ativas; `full` marca quem casa o núcleo sem contradizer.
 //   subclassClassOf(tag): a classe dona de uma tag de subclasse.
 //   portraitTagGroups(indexData): os grupos do seletor visual de tags (espécie,
-//     linhagem, classe, subclasse, armadura, armas), com contagem e representante.
+//     linhagem, classe, subclasse, armadura), com contagem e representante.
 //
 // DECISÕES E ARMADILHAS
 //   - Espécie e gênero são traços anatômicos excludentes: quando há uma espécie
@@ -45,10 +46,15 @@
 //     pode ter a subclasse LEGADA pelo chassi 2024: "Abjuration", "Bladesinging",
 //     "Aberrant Mind", "Wild" e afins têm linha própria (medido contra todos os
 //     `class-*.json`, 2026-10-25).
+//   - Tags de armas e focos saíram (2026-10-31, pedido do dono): a ficha só dá
+//     espécie, classe, subclasse, armadura e identidade. Uma release antiga em cache
+//     e a fatia embutida ainda podem trazê-las: portraitTagAllowed as tira na carga
+//     (mergeParts) e `robes` vira `clothes` lá.
 //   - Armadura é UMA tag (a mais pesada achada, `ARMOR_BY_RANK`): sem item
 //     equipado o pool é o inventário inteiro, e roupa comum junto da cota de
-//     malha punha `robes` e `heavy-armor` ao mesmo tempo. `dual-wield` exige duas
-//     armas leves (uma espada curta sozinha não é duas armas).
+//     malha punha `clothes` e `heavy-armor` ao mesmo tempo. Sem armadura nenhuma é
+//     `clothes` quando há inventário ou a classe é Mago, Feiticeiro ou Monge (ficha
+//     nova, sem inventário, não ganha armadura nenhuma).
 //   - Idade numérica decide sozinha; o texto ("old", "grizzled") só vale sem número,
 //     senão "19 years old" virava `young` e `mature` juntos. Cabelo grisalho só conta
 //     no campo `hair` (pele cinza de Duergar ou Goliath não é idade).
@@ -74,8 +80,8 @@
 
 const GENDERS = new Set(['male', 'female']);
 const AGES = new Set(['young', 'mature']);
-const ARMORS = new Set(['heavy-armor', 'medium-armor', 'light-armor', 'robes']);
-const ARMOR_BY_RANK = [null, 'robes', 'light-armor', 'medium-armor', 'heavy-armor'];
+const ARMORS = new Set(['heavy-armor', 'medium-armor', 'light-armor', 'clothes']);
+const ARMOR_BY_RANK = [null, 'clothes', 'light-armor', 'medium-armor', 'heavy-armor'];
 
 const CLASSES = new Set([
   'artificer',
@@ -93,7 +99,7 @@ const CLASSES = new Set([
   'wizard',
 ]);
 
-const WEAPONS_AND_FOCUSES = new Set([
+const OLD_EQUIPMENT = new Set([
   'greatsword',
   'longsword',
   'shield',
@@ -379,7 +385,6 @@ const TAG_GROUPS = [
   { id: 'class', label: 'Classes', icon: 'originClass', visual: true },
   { id: 'subclass', label: 'Subclasses', icon: 'originClass', visual: false },
   { id: 'armor', label: 'Armor', icon: 'itemArmor', visual: true },
-  { id: 'weapon', label: 'Weapons & focus', icon: 'itemWeapon', visual: false },
 ];
 
 const groupCache = new WeakMap();
@@ -499,92 +504,41 @@ export function classTagsOf(classes) {
 }
 
 /**
- * Extrai as tags de armadura, armas e focos de conjuração do inventário.
+ * A tag de armadura do inventário (a mais pesada achada), ou clothes sem armadura.
  * @param {Array<object>|null|undefined} inventory
  * @param {Array<object>|null|undefined} [classes]
  * @returns {string[]}
  */
-export function equipmentTagsOf(inventory, classes = []) {
+export function armorTagsOf(inventory, classes = []) {
   const items = Array.isArray(inventory) ? inventory : [];
   const equipped = items.filter((i) => i?.equipped);
   const pool = equipped.length > 0 ? equipped : items;
-
-  const out = [];
-  const add = (t) => {
-    if (t && !out.includes(t)) out.push(t);
-  };
-
   let armorRank = 0;
-  let lightMeleeCount = 0;
-  const wear = (rank) => {
-    armorRank = Math.max(armorRank, rank);
-  };
-
   for (const entry of pool) {
     const name = String(entry?.itemId || entry?.customName || '').toLowerCase();
     if (!name) continue;
-
-    if (
-      /\b(half[-\s]?plate|breastplate|scale[-\s]?mail|scalemail|chain[-\s]?shirt|hide armor|brigandine)\b|^hide$/.test(
-        name,
-      )
-    ) {
-      wear(3);
+    if (/\b(half[-\s]?plate|breastplate|scale[-\s]?mail|scalemail|chain[-\s]?shirt|hide armor|brigandine)\b|^hide$/.test(name)) {
+      armorRank = Math.max(armorRank, 3);
     } else if (/\b(plate|chain[-\s]?mail|splint|ring[-\s]?mail)\b/.test(name)) {
-      wear(4);
+      armorRank = Math.max(armorRank, 4);
     } else if (/\b(leather|studded leather|padded)\b/.test(name)) {
-      wear(2);
+      armorRank = Math.max(armorRank, 2);
     } else if (/\b(robe|vestments|clothes)\b/.test(name)) {
-      wear(1);
-    }
-
-    if (/\bgreatsword\b/.test(name)) add('greatsword');
-    else if (/\b(longsword|broadsword)\b/.test(name)) add('longsword');
-    if (/\bshield\b/.test(name)) add('shield');
-    if (/\b(scimitar|shortsword)\b/.test(name)) {
-      lightMeleeCount += Number(entry?.quantity) || 1;
-    }
-    if (/\b(dagger|sickle)\b/.test(name)) {
-      lightMeleeCount += Number(entry?.quantity) || 1;
-      add('dagger');
-    }
-    if (/\brapier\b/.test(name)) add('rapier');
-    if (/\b(greataxe|battleaxe|handaxe)\b/.test(name)) add('axe');
-    if (/\b(warhammer|maul|light hammer)\b/.test(name)) add('hammer');
-    if (/\b(mace|flail|morningstar|club|greatclub)\b/.test(name)) add('mace');
-    if (/\b(halberd|glaive|pike|spear|trident|lance|javelin)\b/.test(name)) add('polearm');
-    if (/\b(longbow|shortbow)\b/.test(name)) add('bow');
-    if (/\bcrossbow\b/.test(name)) add('crossbow');
-    if (/\bquarterstaff\b/.test(name)) add('quarterstaff');
-    if (/\b(pistol|musket|rifle|firearm)\b/.test(name)) add('firearm');
-    if (/\bwhip\b/.test(name)) add('whip');
-    if (/\b(staff|arcane focus)\b/.test(name) && !/\bquarterstaff\b/.test(name)) add('staff');
-    if (/\b(wand|rod)\b/.test(name) && !/\byew wand\b/.test(name)) add('wand');
-    if (/\b(orb|crystal)\b/.test(name)) add('orb');
-    if (/\bspellbook\b/.test(name)) add('spellbook');
-    if (/\b(holy symbol|amulet|emblem|reliquary)\b/.test(name)) add('holy-symbol');
-    if (/\b(lute|flute|lyre|horn|viol|drum|bagpipes|shawm|dulcimer|pan flute|instrument)\b/.test(name)) {
-      add('instrument');
-    }
-    if (/\b(druidic focus|totem|yew wand|wooden staff|mistletoe)\b/.test(name)) {
-      add('druidic-focus');
+      armorRank = Math.max(armorRank, 1);
     }
   }
+  if (armorRank > 0) return [ARMOR_BY_RANK[armorRank]];
+  const cids = (Array.isArray(classes) ? classes : []).map((c) => String(c?.classId || '').toLowerCase());
+  const caster = cids.some((id) => id === 'wizard' || id === 'sorcerer' || id === 'monk');
+  return items.length > 0 || caster ? ['clothes'] : [];
+}
 
-  if (lightMeleeCount >= 2) add('dual-wield');
-  if (armorRank > 0) out.unshift(ARMOR_BY_RANK[armorRank]);
-
-  if (armorRank === 0 && Array.isArray(classes)) {
-    const cids = classes.map((c) => String(c?.classId || '').toLowerCase());
-    if (cids.some((id) => id === 'wizard' || id === 'sorcerer' || id === 'monk')) {
-      add('robes');
-    }
-    if (cids.includes('monk') && out.length === 1 && out[0] === 'robes') {
-      add('unarmed');
-    }
-  }
-
-  return out;
+/**
+ * A tag ainda vale no catálogo? Armas e focos de releases antigas saem.
+ * @param {string} tag
+ */
+export function portraitTagAllowed(tag) {
+  return tagCategoryOf(tag) !== 'equipment';
 }
 
 /**
@@ -641,14 +595,14 @@ export function characterPortraitTags(character) {
   addAll(identityTagsOf(character.identity));
   addAll(speciesTagsOf(character.species));
   addAll(classTagsOf(character.classes));
-  addAll(equipmentTagsOf(character.inventory, character.classes));
+  addAll(armorTagsOf(character.inventory, character.classes));
   return out;
 }
 
 /**
  * Classifica uma tag do catálogo em sua categoria semântica.
  * @param {string} tag
- * @returns {'gender'|'age'|'armor'|'lineage'|'species'|'subclass'|'class'|'weapon'}
+ * @returns {'gender'|'age'|'armor'|'lineage'|'species'|'subclass'|'class'|'equipment'}
  */
 export function tagCategoryOf(tag) {
   if (GENDERS.has(tag)) return 'gender';
@@ -658,7 +612,7 @@ export function tagCategoryOf(tag) {
   if (BASE_SPECIES.has(tag)) return 'species';
   if (CLASSES.has(tag)) return 'class';
   if (ALL_SUBCLASS_TAGS.has(tag)) return 'subclass';
-  if (WEAPONS_AND_FOCUSES.has(tag)) return 'weapon';
+  if (OLD_EQUIPMENT.has(tag) || tag === 'robes') return 'equipment';
   return 'species';
 }
 
@@ -822,7 +776,6 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
     else if (cat === 'species') activeWeights.set(tagToIdx.get(t), 28);
     else if (cat === 'subclass') activeWeights.set(tagToIdx.get(t), 18);
     else if (cat === 'class') activeWeights.set(tagToIdx.get(t), 15);
-    else if (cat === 'weapon') activeWeights.set(tagToIdx.get(t), 8);
     else activeWeights.set(tagToIdx.get(t), 6);
   }
 

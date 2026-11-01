@@ -83,7 +83,7 @@ const SCROLL_SLACK = 32;
 const EXIT_MS = 120;
 const GENDER_GROUP = ['male', 'female'];
 const AGE_GROUP = ['young', 'mature'];
-const ARMOR_GROUP = ['heavy-armor', 'medium-armor', 'light-armor', 'robes'];
+const ARMOR_GROUP = ['heavy-armor', 'medium-armor', 'light-armor', 'clothes'];
 const QUICK_SET = new Set([...GENDER_GROUP, ...AGE_GROUP]);
 
 /** Verifica se duas listas de tags contêm exatamente os mesmos elementos. */

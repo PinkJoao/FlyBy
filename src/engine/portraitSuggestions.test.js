@@ -2,7 +2,7 @@
 // portraitSuggestions.test: testes da extração de tags e ranqueamento
 // =============================================================================
 // O QUE FAZ
-//   Cobre portraitUrlFromHash, speciesTagsOf, classTagsOf, equipmentTagsOf,
+//   Cobre portraitUrlFromHash, speciesTagsOf, classTagsOf, armorTagsOf,
 //   identityTagsOf, characterPortraitTags, rankPortraits (com o núcleo e o degrau
 //   de prioridade do DDL-0137) e portraitTagGroups.
 //
@@ -12,7 +12,7 @@
 // DECISÕES E ARMADILHAS
 //   - Verifica explicitamente que um retrato de outra espécie incompatível ou do
 //     gênero oposto perde para um retrato da espécie e gênero corretos mesmo que o
-//     incompatível tenha mais armas em comum.
+//     incompatível tenha mais tags em comum.
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
@@ -20,7 +20,8 @@ import {
   portraitUrlFromHash,
   speciesTagsOf,
   classTagsOf,
-  equipmentTagsOf,
+  armorTagsOf,
+  portraitTagAllowed,
   identityTagsOf,
   characterPortraitTags,
   tagCategoryOf,
@@ -65,36 +66,34 @@ describe('portraitSuggestions', () => {
     ]);
   });
 
-  it('extrai tags de armadura, armas e focos a partir do inventário', () => {
+  it('extrai só a armadura do inventário (armas e focos não viram tag)', () => {
     const inv = [
       { itemId: 'Plate Armor', equipped: true, quantity: 1 },
       { itemId: 'Greatsword', equipped: true, quantity: 1 },
       { itemId: 'Holy Symbol', equipped: true, quantity: 1 },
     ];
-    expect(equipmentTagsOf(inv, [{ classId: 'paladin' }])).toEqual([
-      'heavy-armor',
-      'greatsword',
-      'holy-symbol',
-    ]);
+    expect(armorTagsOf(inv, [{ classId: 'paladin' }])).toEqual(['heavy-armor']);
 
     expect(
-      equipmentTagsOf(
+      armorTagsOf(
         [
           { itemId: 'Half Plate Armor', equipped: true, quantity: 1 },
           { itemId: 'Longbow', equipped: true, quantity: 1 },
         ],
         [{ classId: 'ranger' }],
       ),
-    ).toEqual(['medium-armor', 'bow']);
+    ).toEqual(['medium-armor']);
 
     expect(
-      equipmentTagsOf(
+      armorTagsOf(
         [{ itemId: 'Studded Leather Armor', equipped: true, quantity: 1 }],
         [{ classId: 'rogue' }],
       ),
     ).toEqual(['light-armor']);
 
-    expect(equipmentTagsOf([], [{ classId: 'wizard' }])).toEqual(['robes']);
+    expect(armorTagsOf([], [{ classId: 'wizard' }])).toEqual(['clothes']);
+    expect(armorTagsOf([{ itemId: 'Longsword', equipped: true }], [{ classId: 'fighter' }])).toEqual(['clothes']);
+    expect(armorTagsOf([], [{ classId: 'fighter' }])).toEqual([]);
   });
 
   it('extrai tags de identidade quando idade ou gênero são informados', () => {
@@ -121,7 +120,7 @@ describe('portraitSuggestions', () => {
       'tiefling',
       'hexblade',
       'warlock',
-      'longsword',
+      'clothes',
     ]);
   });
 
@@ -132,7 +131,11 @@ describe('portraitSuggestions', () => {
     expect(tagCategoryOf('tiefling')).toBe('species');
     expect(tagCategoryOf('hexblade')).toBe('subclass');
     expect(tagCategoryOf('warlock')).toBe('class');
-    expect(tagCategoryOf('greatsword')).toBe('weapon');
+    expect(tagCategoryOf('clothes')).toBe('armor');
+    expect(tagCategoryOf('greatsword')).toBe('equipment');
+    expect(portraitTagAllowed('greatsword')).toBe(false);
+    expect(portraitTagAllowed('robes')).toBe(false);
+    expect(portraitTagAllowed('heavy-armor')).toBe(true);
     expect(tagLabelOf('high-elf')).toBe('High Elf');
     expect(tagLabelOf('yuan-ti')).toBe('Yuan-Ti');
   });
@@ -169,14 +172,13 @@ describe('portraitSuggestions', () => {
     expect(speciesTagsOf({ id: 'yuan-ti pureblood', lineage: null })).toEqual(['yuan-ti']);
   });
 
-  it('escolhe uma armadura só, a mais pesada, e exige duas armas leves para dual-wield', () => {
+  it('escolhe uma armadura só, a mais pesada', () => {
     const unequipped = [
       { itemId: "Traveler's Clothes", equipped: false, quantity: 1 },
       { itemId: 'Chain Mail', equipped: false, quantity: 1 },
       { itemId: 'Shortsword', equipped: false, quantity: 1 },
     ];
-    expect(equipmentTagsOf(unequipped, [{ classId: 'fighter' }])).toEqual(['heavy-armor']);
-    expect(equipmentTagsOf([{ itemId: 'Scimitar', equipped: true, quantity: 2 }])).toEqual(['dual-wield']);
+    expect(armorTagsOf(unequipped, [{ classId: 'fighter' }])).toEqual(['heavy-armor']);
   });
 
   it('não marca jovem e maduro juntos quando a idade numérica vem com texto', () => {
@@ -250,7 +252,7 @@ describe('portraitSuggestions', () => {
       ],
     };
     const groups = portraitTagGroups(mockIndex);
-    expect(groups.map((g) => g.id)).toEqual(['species', 'lineage', 'class', 'subclass', 'weapon']);
+    expect(groups.map((g) => g.id)).toEqual(['species', 'lineage', 'class', 'subclass']);
     const elf = groups[0].tags.find((t) => t.tag === 'elf');
     expect(elf.count).toBe(3);
     expect(elf.thumb).toContain('/236x/22/22/22/');

@@ -20,7 +20,8 @@
 //   loadRemote(urls, fetchImpl): { manifest, shards } da primeira base que responder.
 //   partsFromRelease(release): as fontes ligadas da release, como partes do catálogo.
 //   licensedPart(data): a fatia licenciada embutida, como parte do catálogo.
-//   mergeParts(parts): um catálogo só, com o dicionário de tags unido.
+//   mergeParts(parts): um catálogo só, com o dicionário de tags unido (sem armas e
+//     focos antigos; `robes` vira `clothes`).
 //   loadPortraitCatalog(deps): o catálogo pronto; nunca rejeita.
 //
 // DECISÕES E ARMADILHAS
@@ -43,11 +44,13 @@
 // -----------------------------------------------------------------------------
 
 import db from './db';
+import { portraitTagAllowed } from '../engine/portraitSuggestions';
 import { registerNoCorsHost } from './imageProxy';
 import licensedData from './portraitsLicensed.json';
 
 const CACHE_KEY = 'portraits:release';
 const RAW_VARS = new Set(['src', 'thumbSrc']);
+const TAG_ALIASES = { robes: 'clothes' };
 
 export const CATALOG_URLS = String(import.meta.env?.VITE_PORTRAIT_CATALOG_URL ?? '')
   .split(',')
@@ -204,7 +207,8 @@ export function mergeParts(parts) {
   for (const part of parts) {
     for (const it of part.items) {
       const idxs = [];
-      for (const t of it.tags) {
+      const itemTags = new Set(it.tags.map((t) => TAG_ALIASES[t] ?? t).filter(portraitTagAllowed));
+      for (const t of itemTags) {
         if (!index.has(t)) {
           index.set(t, tags.length);
           tags.push(t);

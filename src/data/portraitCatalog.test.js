@@ -222,3 +222,10 @@ describe('loadPortraitCatalog', () => {
     expect(cat.sources).toEqual(['wesnoth', 'pinterest']);
   });
 });
+
+describe('mergeParts', () => {
+  it('tira armas e focos antigos e troca robes por clothes', () => {
+    const cat = mergeParts([{ source: 'old', items: [{ id: 'a', tags: ['elf', 'robes', 'longsword', 'spellbook', 'wizard'], bucket: 1, thumb: 't', url: 'u', credit: null }] }]);
+    expect(cat.items[0].idxs.map((i) => cat.tags[i])).toEqual(['elf', 'clothes', 'wizard']);
+  });
+});

@@ -221,6 +221,19 @@ describe('portraitSuggestions', () => {
     expect(full(['human', 'warlock'])).toBe(false);
   });
 
+  it('aparência humana: aasimar recebe humano como parecida; meio-elfo e meio-orc como exata', () => {
+    const idx = { tags: ['human', 'aasimar', 'elf', 'half-elf', 'cleric'], items: [
+      { key: 'r:human', idxs: [0, 4], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:aasimar', idxs: [1, 4], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:elf', idxs: [2, 4], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:none', idxs: [4], bucket: 1, thumb: 't', url: 'u', credit: null },
+    ] };
+    const view = (tags) => rankPortraits(idx, tags).items.map((i) => [i.hash, i.full]);
+    expect(view(['aasimar', 'cleric'])).toEqual([['r:aasimar', true], ['r:human', false], ['r:none', false]]);
+    expect(view(['half-elf', 'elf', 'cleric'])).toEqual([['r:elf', true], ['r:human', true], ['r:none', false]]);
+    expect(view(['human', 'cleric']).map(([k]) => k)).not.toContain('r:aasimar');
+  });
+
   it('não marca jovem e maduro juntos quando a idade numérica vem com texto', () => {
     expect(identityTagsOf({ age: '19 years old', appearance: '' })).toEqual(['young']);
     expect(identityTagsOf({ age: '', appearance: 'Gray skin and a calm stare', hair: 'black' })).toEqual([]);

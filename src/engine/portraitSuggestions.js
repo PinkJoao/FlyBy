@@ -82,6 +82,11 @@
 //   - Linhagem na imagem vale também como a espécie-mãe (2026-11-01, DDL-0141): para
 //     uma ficha eladrin, a imagem só `eladrin` soma eladrin + elf e fica ACIMA da só
 //     `elf` (antes ficava abaixo: 37 contra 43). Cada tag conta uma vez por imagem.
+//   - Aparência humana (LOOKS_LIKE, 2026-11-01): aasimar, dhampir, kalashtar e
+//     reborn recebem imagens `human` em "Close matches"; half-elf e half-orc recebem
+//     `human` como exata, igual à outra metade (que já vem pelo pai). A imagem da
+//     parecida soma 14 (metade do peso de espécie): fica abaixo da imagem da própria
+//     espécie e acima da imagem sem espécie.
 //   - Para baixo é parecida, não exata: ficha `elf` comum recebe a imagem só `drow`
 //     ou só `eladrin` em "Close matches" (família, sem a penalidade de outra
 //     espécie); "Matches every tag" continua exigindo a espécie da ficha ou um pai.
@@ -176,6 +181,15 @@ const LINEAGE_PARENTS = {
   verdan: 'goblin',
   lupin: 'shifter',
   aven: 'aarakocra',
+};
+
+const LOOKS_LIKE = {
+  aasimar: { close: ['human'] },
+  dhampir: { close: ['human'] },
+  kalashtar: { close: ['human'] },
+  reborn: { close: ['human'] },
+  'half-elf': { full: ['human'] },
+  'half-orc': { full: ['human'] },
 };
 
 const BASE_SPECIES = new Set([
@@ -756,11 +770,25 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
     return cat === 'species' || cat === 'lineage';
   });
   const allowedSpeciesIndices = new Set();
+  const lookalikeIndices = new Set();
+  const closeLookIndices = new Set();
   for (const sp of activeSpecies) {
     const idx = tagToIdx.get(sp);
     if (idx !== undefined) allowedSpeciesIndices.add(idx);
     for (let parent = LINEAGE_PARENTS[sp]; parent; parent = LINEAGE_PARENTS[parent]) {
       if (tagToIdx.has(parent)) allowedSpeciesIndices.add(tagToIdx.get(parent));
+    }
+    for (const t of LOOKS_LIKE[sp]?.full ?? []) {
+      if (tagToIdx.has(t)) {
+        allowedSpeciesIndices.add(tagToIdx.get(t));
+        lookalikeIndices.add(tagToIdx.get(t));
+      }
+    }
+    for (const t of LOOKS_LIKE[sp]?.close ?? []) {
+      if (tagToIdx.has(t)) {
+        closeLookIndices.add(tagToIdx.get(t));
+        lookalikeIndices.add(tagToIdx.get(t));
+      }
     }
   }
 
@@ -810,6 +838,7 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
     let hasOtherAge = false;
     let matchedAllowedSpecies = false;
     let familySpecies = false;
+    let lookBonus = false;
     let hasAnySpeciesTag = false;
     let matchedClass = false;
     let hasArmor = false;
@@ -843,7 +872,11 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
       if (allSpeciesIndices.has(idx)) {
         hasAnySpeciesTag = true;
         if (allowedSpeciesIndices.has(idx)) matchedAllowedSpecies = true;
-        else if (ancestorIdx.get(idx)?.some((a) => allowedSpeciesIndices.has(a))) familySpecies = true;
+        else if (closeLookIndices.has(idx) || ancestorIdx.get(idx)?.some((a) => allowedSpeciesIndices.has(a))) familySpecies = true;
+        if (lookalikeIndices.has(idx) && !lookBonus) {
+          lookBonus = true;
+          score += 14;
+        }
       }
 
       count(idx);

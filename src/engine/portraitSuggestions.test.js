@@ -198,6 +198,29 @@ describe('portraitSuggestions', () => {
     expect(full(['elf', 'other', 'young'])).toMatchObject({ 'r:a': true, 'r:c': false });
   });
 
+  it('linhagem na imagem vale como a espécie-mãe; para baixo é parecida', () => {
+    const idx = { tags: ['elf', 'eladrin', 'drow', 'wizard'], items: [
+      { key: 'r:elf', idxs: [0, 3], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:eladrin', idxs: [1, 3], bucket: 1, thumb: 't', url: 'u', credit: null },
+      { key: 'r:drow', idxs: [2, 3], bucket: 1, thumb: 't', url: 'u', credit: null },
+    ] };
+    const view = (tags) => rankPortraits(idx, tags).items.map((i) => [i.hash, i.full]);
+    expect(view(['eladrin', 'elf', 'wizard'])).toEqual([['r:eladrin', true], ['r:elf', true], ['r:drow', false]]);
+    expect(view(['elf', 'wizard'])).toEqual([['r:elf', true], ['r:eladrin', false], ['r:drow', false]]);
+  });
+
+  it('subclasse na imagem vale só para ela: alma divina sim, outro feiticeiro não', () => {
+    const idx = { tags: ['human', 'cleric', 'divine-soul', 'celestial-warlock', 'sorcerer', 'warlock', 'draconic-sorcerer', 'life-cleric'], items: [
+      { key: 'r:img', idxs: [0, 1, 2, 3], bucket: 1, thumb: 't', url: 'u', credit: null },
+    ] };
+    const full = (tags) => rankPortraits(idx, tags).items[0]?.full ?? null;
+    expect(full(['human', 'sorcerer', 'divine-soul'])).toBe(true);
+    expect(full(['human', 'warlock', 'celestial-warlock'])).toBe(true);
+    expect(full(['human', 'cleric', 'life-cleric'])).toBe(true);
+    expect(full(['human', 'sorcerer', 'draconic-sorcerer'])).toBe(false);
+    expect(full(['human', 'warlock'])).toBe(false);
+  });
+
   it('não marca jovem e maduro juntos quando a idade numérica vem com texto', () => {
     expect(identityTagsOf({ age: '19 years old', appearance: '' })).toEqual(['young']);
     expect(identityTagsOf({ age: '', appearance: 'Gray skin and a calm stare', hair: 'black' })).toEqual([]);

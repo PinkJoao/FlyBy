@@ -79,6 +79,12 @@
 //     também é "human" e "orc" ilustra mal o elfo. Cache por índice (WeakMap).
 //   - LINEAGE_PARENTS é transitivo (flamekin -> fire-genasi -> genasi), na extração
 //     e na penalidade de espécie.
+//   - Linhagem na imagem vale também como a espécie-mãe (2026-11-01, DDL-0141): para
+//     uma ficha eladrin, a imagem só `eladrin` soma eladrin + elf e fica ACIMA da só
+//     `elf` (antes ficava abaixo: 37 contra 43). Cada tag conta uma vez por imagem.
+//   - Para baixo é parecida, não exata: ficha `elf` comum recebe a imagem só `drow`
+//     ou só `eladrin` em "Close matches" (família, sem a penalidade de outra
+//     espécie); "Matches every tag" continua exigindo a espécie da ficha ou um pai.
 // -----------------------------------------------------------------------------
 
 const GENDERS = new Set(['male', 'female', 'other']);
@@ -771,9 +777,15 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
   const hasCore = activeSpecies.length > 0 || activeClassLike.length > 0;
 
   const allSpeciesIndices = new Set();
+  const ancestorIdx = new Map();
   for (let i = 0; i < tagsDict.length; i++) {
     const cat = tagCategoryOf(tagsDict[i]);
     if (cat === 'species' || cat === 'lineage') allSpeciesIndices.add(i);
+    const up = [];
+    for (let parent = LINEAGE_PARENTS[tagsDict[i]]; parent; parent = LINEAGE_PARENTS[parent]) {
+      if (tagToIdx.has(parent)) up.push(tagToIdx.get(parent));
+    }
+    if (up.length) ancestorIdx.set(i, up);
   }
 
   const activeWeights = new Map();
@@ -797,11 +809,20 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
     let hasWantedAge = false;
     let hasOtherAge = false;
     let matchedAllowedSpecies = false;
+    let familySpecies = false;
     let hasAnySpeciesTag = false;
     let matchedClass = false;
     let hasArmor = false;
     let matchedArmor = false;
     const matchedTags = [];
+    const counted = new Set();
+    const count = (i) => {
+      const w = activeWeights.get(i);
+      if (w === undefined || counted.has(i)) return;
+      counted.add(i);
+      score += w;
+      matchedTags.push(tagsDict[i]);
+    };
 
     for (let j = 0; j < idxs.length; j++) {
       const idx = idxs[j];
@@ -822,20 +843,18 @@ export function rankPortraits(indexData, activeTags = [], opts = {}) {
       if (allSpeciesIndices.has(idx)) {
         hasAnySpeciesTag = true;
         if (allowedSpeciesIndices.has(idx)) matchedAllowedSpecies = true;
+        else if (ancestorIdx.get(idx)?.some((a) => allowedSpeciesIndices.has(a))) familySpecies = true;
       }
 
-      const w = activeWeights.get(idx);
-      if (w !== undefined) {
-        score += w;
-        matchedTags.push(tagsDict[idx]);
-      }
+      count(idx);
+      for (const a of ancestorIdx.get(idx) ?? []) count(a);
     }
 
     if (matchedTags.length === 0) continue;
 
     const wrongGender = hasOtherGender && !hasWantedGender;
     const otherAge = hasOtherAge && !hasWantedAge;
-    const wrongSpecies = allowedSpeciesIndices.size > 0 && !matchedAllowedSpecies && hasAnySpeciesTag;
+    const wrongSpecies = allowedSpeciesIndices.size > 0 && !matchedAllowedSpecies && !familySpecies && hasAnySpeciesTag;
     if (wrongGender) score -= 45;
     if (wrongSpecies) score -= 35;
 

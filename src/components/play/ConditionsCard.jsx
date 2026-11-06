@@ -64,7 +64,7 @@ export default function ConditionsCard({ conditions, concentration, combat, onAd
   const dead = (conditions?.exhaustion ?? 0) >= 6;
 
   return (
-    <div className={open ? `${card.card} ${card.open}` : card.card} data-flip="conditions">
+    <div className={open ? `${card.card} ${card.open}` : card.card} data-flip="conditions" data-flip-scale="" data-flip-after="">
       <button type="button" className={card.head} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={card.icon}><Icon name="condition" /></span>
         <span className={card.title}>Conditions</span>

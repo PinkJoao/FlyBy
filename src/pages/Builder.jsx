@@ -255,9 +255,7 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
   return (
     <>
       {levelSlot && createPortal(
-        <div data-flip="slot-level">
-          <LevelControls character={character} onChangeClasses={setClasses} />
-        </div>,
+        <LevelControls character={character} onChangeClasses={setClasses} flip="slot-mode" />,
         levelSlot,
       )}
 
@@ -289,7 +287,7 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
         ))}
       </nav>
 
-      <div ref={swipeRef} data-flip="panel-sheet">
+      <div ref={swipeRef} data-flip="panel-sheet" data-flip-after="">
         <div key={activeTab} className={`${styles.panel} ${slideClass(tabDir)}`}>
           {activeTab === 'Species' && (
             <SpeciesTab

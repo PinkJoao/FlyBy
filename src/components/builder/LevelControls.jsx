@@ -12,7 +12,8 @@
 //   classLabel(cls): "Warlock (level 5)".
 //   pickClass(classes, title): o uid escolhido, ou null (com uma opção, não
 //     pergunta).
-//   LevelControls(props): os botões.
+//   LevelControls(props): os botões. `flip` é a identidade da troca de modo
+//     (pages/Character): a pílula vira os descansos do jogo crescendo, e volta.
 // -----------------------------------------------------------------------------
 
 import { ask } from '../common/dialog';
@@ -56,7 +57,7 @@ async function pickClass(classes, title) {
  * @param {import('../../schema/character').Character} props.character
  * @param {(classes: object[]) => void} props.onChangeClasses
  */
-export default function LevelControls({ character, onChangeClasses }) {
+export default function LevelControls({ character, onChangeClasses, flip }) {
   const classes = (character.classes ?? []).filter((c) => c.classId);
   const total = totalLevel(character);
 
@@ -80,7 +81,7 @@ export default function LevelControls({ character, onChangeClasses }) {
   };
 
   return (
-    <div className={styles.group} role="group" aria-label="Character level">
+    <div className={styles.group} role="group" aria-label="Character level" data-flip={flip} data-flip-morph={flip ? '' : undefined}>
       <button
         type="button"
         className={styles.btn}

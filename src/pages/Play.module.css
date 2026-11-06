@@ -31,7 +31,9 @@
  *     da linha cortava acentos e descendentes (mais ainda na Cinzel do tema papel).
  *   - O perfil é o da ficha (Builder.module.css .identity), empilhado e centrado
  *     até 560px como lá; .restGroup copia os tokens do controle de nível
- *     (LevelControls.module.css) para ocupar o mesmo lugar com o mesmo peso.
+ *     (LevelControls.module.css) para ocupar o mesmo lugar com o mesmo peso, e a
+ *     MESMA altura fixa (37px): na troca de modo as duas são uma peça que só muda de
+ *     largura (DDL-0144). Os botões não encolhem (flex: none) nem quebram linha.
  *   - Os atributos usam os cards da ficha (AbilityCards, StatsHeader.module.css).
  *   - O aviso fica acima da área de gestos do celular (safe-area-inset-bottom).
  * -------------------------------------------------------------------------- */
@@ -67,6 +69,7 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  height: 37px;
   padding: 2px;
   box-sizing: border-box;
   background: var(--bg);
@@ -76,6 +79,7 @@
 }
 
 .restBtn {
+  flex: none;
   height: 31px;
   padding: 0 12px;
   border: none;

@@ -65,7 +65,7 @@ export default function EffectsCard({ modifiers, combat, onAdd, onAddCustom, onR
   const list = modifiers ?? [];
 
   return (
-    <div className={open ? `${card.card} ${card.open}` : card.card} data-flip="effects">
+    <div className={open ? `${card.card} ${card.open}` : card.card} data-flip="effects" data-flip-scale="" data-flip-after="">
       <button type="button" className={card.head} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={card.icon}><Icon name="effect" /></span>
         <span className={card.title}>Effects</span>

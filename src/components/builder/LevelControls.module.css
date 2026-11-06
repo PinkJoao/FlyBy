@@ -8,6 +8,9 @@
  *     importa: este controle vive fora de um card rotulado).
  *
  * DECISÕES E ARMADILHAS
+ *   - Altura FIXA de 37px, a mesma do .restGroup do play mode (Play.module.css): as
+ *     duas são a mesma peça na troca de modo (DDL-0144) e só a largura anima. Com a
+ *     altura vinda do conteúdo (36,95 aqui, 36,6 lá) o conteúdo tremia na vertical.
  *   - É um componente à parte do Stepper porque o "valor" é derivado das classes e
  *     o clique pode abrir um diálogo.
  * -------------------------------------------------------------------------- */
@@ -18,6 +21,7 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
+  height: 37px;
   padding: 2px;
   box-sizing: border-box;
   background: var(--bg);
@@ -60,8 +64,9 @@
   align-items: center;
   justify-content: center;
   gap: 1px;
+  flex: none;
   min-width: 40px;
-  padding: 2px 4px;
+  padding: 0 4px;
 }
 
 .levelValue {

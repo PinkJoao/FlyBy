@@ -717,7 +717,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   return (
     <>
       {levelSlot && createPortal(
-        <div className={styles.restGroup} data-flip="slot-rest">
+        <div className={styles.restGroup} data-flip="slot-mode" data-flip-morph="">
           <button type="button" className={styles.restBtn} onClick={shortRest}>Short rest</button>
           <button type="button" className={styles.restBtn} onClick={longRest}>Long rest</button>
         </div>,
@@ -773,7 +773,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       </div>
 
       {(hp.current === 0 && hp.max > 0) || hp.death.dead || state.combat ? (
-      <section className={styles.status} data-tour={TUT.PLAY_STATUS} data-flip="status">
+      <section className={styles.status} data-tour={TUT.PLAY_STATUS} data-flip="status" data-flip-scale="" data-flip-after="">
         {(hp.current === 0 && hp.max > 0) || hp.death.dead ? (
           <div className={hp.death.dead ? `${styles.deathCard} ${styles.deadCard}` : styles.deathCard}>
             <span className={styles.deathTitle}>{hp.death.dead ? 'Dead' : hp.death.stable ? 'Stable' : 'Dying'}</span>
@@ -834,7 +834,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         ))}
       </nav>
 
-      <div ref={swipeRef} data-flip="panel-play">
+      <div ref={swipeRef} data-flip="panel-play" data-flip-after="">
         <div key={activeTab} className={`${sheetPage.panel} ${slideClass(tabDir)}`}>
           {activeTab === 'History' && (
             <>

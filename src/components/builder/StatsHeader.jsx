@@ -120,7 +120,7 @@ function clamp(n, lo, hi) {
 function ExpandableTile({ label, value, children, flip }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile} data-flip={flip}>
+    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile} data-flip={flip} data-flip-scale="">
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.tileChevron}><Icon name="chevron" /></span>
         <AnimatedNumber value={value} className={styles.value} />
@@ -239,7 +239,7 @@ function AlignmentTile({ current, onSelect }) {
   const [open, setOpen] = useState(false);
   const value = ALIGNMENT_LABEL[current] || 'Unaligned';
   return (
-    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile} data-flip="tile-align">
+    <div className={open ? `${styles.tile} ${styles.open}` : styles.tile} data-flip="tile-align" data-flip-scale="">
       <button type="button" className={styles.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.tileChevron}><Icon name="chevron" /></span>
         <span className={`${styles.value} ${styles.small}`}>{value}</span>

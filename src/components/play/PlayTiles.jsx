@@ -3,9 +3,9 @@
 // =============================================================================
 // O QUE FAZ
 //   Os tiles da ficha (o mesmo CSS, StatsHeader.module.css) no lugar da antiga faixa
-//   de números: Hit points (expande com Heal, Hurt e Hit dice), Roll initiative (o
-//   bônus; rolar começa o combate), Move (expande com os deslocamentos e os botões
-//   Move e Dash) e Armor Class (expande com as peças, como na ficha). Em combate, a
+//   de números: Hit points (expande com Heal, Hurt e Hit dice), Armor Class (expande
+//   com as peças, como na ficha), Move (expande com os deslocamentos e os botões
+//   Move e Dash) e Roll initiative (o bônus; rolar começa o combate). Em combate, a
 //   iniciativa mostra o valor rolado e a rodada, e o Move os pés que sobram no turno.
 //
 // FUNÇÕES
@@ -15,11 +15,14 @@
 //   ActButton(props): um botão do tile aberto (ícone, rótulo, valor e tom).
 //
 // DECISÕES E ARMADILHAS
-//   - A ORDEM é HP, Initiative, Move, Armor Class (DDL-0119), a mesma no desktop
+//   - A ORDEM é HP, Armor Class, Move, Initiative (DDL-0144; antes HP, Initiative,
+//     Move, CA, DDL-0119): HP e CA ficam nas mesmas posições relativas da ficha e
+//     só andam uma casa na troca de modo. A mesma ordem no desktop
 //     (uma linha) e no celular (2x2, lida em linhas): o .playTiles anula a
 //     reordenação que o CSS da ficha faz no celular.
 //   - `data-flip` marca cada tile pela identidade (tile-hp, tile-ac são os mesmos da
-//     ficha): na troca de modo eles deslizam até o lugar novo, e os outros aparecem.
+//     ficha): na troca de modo eles deslizam até o lugar novo; `data-flip-scale` faz
+//     os que só existem num modo encolherem ao sumir e crescerem ao surgir.
 //   - O ícone do canto diz o que o toque faz: o dado rola, a seta para baixo expande
 //     ali mesmo. HP e Move expandem como a CA (DDL-0120), e os botões de dentro
 //     abrem os painéis. Cada botão tem ícone e um TOM (DDL-0121): a cura verde, o
@@ -45,7 +48,7 @@ const SPEED_LABEL = { walk: 'Walk', fly: 'Fly', swim: 'Swim', climb: 'Climb', bu
 /** O tile que rola: o dado no canto, o valor e o rótulo. */
 function RollTile({ value, label, onRoll, title, flip }) {
   return (
-    <div className={sheet.tile} data-flip={flip}>
+    <div className={sheet.tile} data-flip={flip} data-flip-scale="">
       <RollButton className={sheet.tileHead} title={title} onRoll={onRoll}>
         <span className={`${sheet.tileChevron} ${styles.icon}`}><Icon name="dice" /></span>
         <span className={sheet.value}>{value}</span>
@@ -59,7 +62,7 @@ function RollTile({ value, label, onRoll, title, flip }) {
 function ExpandTile({ value, label, note, changed, flip, title, children }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={open ? `${sheet.tile} ${sheet.open}` : sheet.tile} data-flip={flip}>
+    <div className={open ? `${sheet.tile} ${sheet.open}` : sheet.tile} data-flip={flip} data-flip-scale="">
       <button type="button" className={sheet.tileHead} onClick={() => setOpen((v) => !v)} aria-expanded={open} title={title}>
         <span className={sheet.tileChevron}><Icon name="chevron" /></span>
         <span className={changed ? `${sheet.value} ${styles.changed}` : sheet.value}>{value}</span>
@@ -110,13 +113,21 @@ export default function PlayTiles({
           <ActButton icon="hitDice" label="Hit dice" value={diceMax ? `${diceLeft}/${diceMax}` : null} onClick={onHitDice} title="Spend hit dice to heal, or give spent ones back" />
         </div>
       </ExpandTile>
-      <RollTile
-        flip="tile-init"
-        value={combat ? combat.initiative : formatBonus(initiative)}
-        label={combat ? `Initiative · round ${combat.round}` : 'Roll initiative'}
-        title={combat ? 'Roll initiative again (combat goes on)' : 'Roll initiative and start combat'}
-        onRoll={onInitiative}
-      />
+      <ExpandTile flip="tile-ac" value={ac ?? '-'} label="Armor Class" changed={ac !== baseAc}>
+        {acBreakdown.length === 0 && acEffects.length === 0 && <p className={sheet.emptyNote}>Equip armor or a shield in the sheet to change AC.</p>}
+        {acBreakdown.map((b, i) => (
+          <div className={sheet.breakRow} key={`${b.label}-${i}`}>
+            <span className={sheet.bName}>{b.label}</span>
+            <span className={sheet.bVal}>{b.note === 'dex' || b.note === 'item' ? formatBonus(b.value) : b.value}</span>
+          </div>
+        ))}
+        {acEffects.map((e) => (
+          <div className={sheet.breakRow} key={e.label}>
+            <span className={sheet.bName}>{e.label}</span>
+            <span className={`${sheet.bVal} ${styles.changed}`}>{formatBonus(e.value)}</span>
+          </div>
+        ))}
+      </ExpandTile>
       <ExpandTile
         flip="tile-move"
         value={speed == null ? '-' : `${combat ? moveLeft : speed} ft`}
@@ -136,21 +147,13 @@ export default function PlayTiles({
           <ActButton icon="dash" label="Dash" value={combat && speed ? `+${speed}` : null} onClick={onDash} disabled={!combat} title={combat ? 'Dash: one more move this turn (uses your action)' : 'In combat (roll initiative first)'} />
         </div>
       </ExpandTile>
-      <ExpandTile flip="tile-ac" value={ac ?? '-'} label="Armor Class" changed={ac !== baseAc}>
-        {acBreakdown.length === 0 && acEffects.length === 0 && <p className={sheet.emptyNote}>Equip armor or a shield in the sheet to change AC.</p>}
-        {acBreakdown.map((b, i) => (
-          <div className={sheet.breakRow} key={`${b.label}-${i}`}>
-            <span className={sheet.bName}>{b.label}</span>
-            <span className={sheet.bVal}>{b.note === 'dex' || b.note === 'item' ? formatBonus(b.value) : b.value}</span>
-          </div>
-        ))}
-        {acEffects.map((e) => (
-          <div className={sheet.breakRow} key={e.label}>
-            <span className={sheet.bName}>{e.label}</span>
-            <span className={`${sheet.bVal} ${styles.changed}`}>{formatBonus(e.value)}</span>
-          </div>
-        ))}
-      </ExpandTile>
+      <RollTile
+        flip="tile-init"
+        value={combat ? combat.initiative : formatBonus(initiative)}
+        label={combat ? `Initiative · round ${combat.round}` : 'Roll initiative'}
+        title={combat ? 'Roll initiative again (combat goes on)' : 'Roll initiative and start combat'}
+        onRoll={onInitiative}
+      />
     </div>
   );
 }

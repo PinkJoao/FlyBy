@@ -1,0 +1,28 @@
+/* =============================================================================
+ * DiceTrayOverlay.module.css: a bandeja de dados por cima da tela
+ * =============================================================================
+ * CLASSES
+ *   .tray: a camada (o fundo vem do .overlay do D20Overlay), em coluna.
+ *   .canvas: a área onde os dados caem, a tela toda menos a faixa do resultado.
+ *   .result: a faixa do resultado, embaixo.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O canvas não cobre a faixa do resultado: os dados nunca param em cima do total.
+ * ----------------------------------------------------------------------------- */
+
+.tray {
+  display: flex;
+  flex-direction: column;
+  place-items: stretch;
+}
+
+.canvas {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.result {
+  flex: none;
+  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+}

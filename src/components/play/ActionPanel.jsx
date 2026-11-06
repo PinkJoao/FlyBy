@@ -79,7 +79,7 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
   const readied = state.combat?.used?.readied ?? null;
 
   const attacks = item.name === 'Opportunity Attack' ? ctx.melee : item.name === 'Two-Weapon Fighting' ? ctx.light : ctx.attacks;
-  const attackDetail = (a) => [a.toHit ? `${formatBonus(a.toHit.total)} to hit` : null, a.damage ? `${a.damage.dice}${a.damage.bonus ? formatBonus(a.damage.bonus) : ''} ${a.damage.types?.[0] ?? ''}`.trim() : null].filter(Boolean).join(', ');
+  const attackDetail = (a) => [a.toHit ? `${formatBonus(a.toHit.total)} to hit` : null, a.damage ? `${a.damage.dice ? `${a.damage.dice}${a.damage.bonus ? formatBonus(a.damage.bonus) : ''}` : Math.max(0, a.damage.bonus ?? 0)} ${a.damage.types?.[0] ?? ''}`.trim() : null].filter(Boolean).join(', ');
 
   return (
     <div className={styles.panel}>

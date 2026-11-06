@@ -19,7 +19,8 @@
 //   experimental: os recursos ainda em desenvolvimento ligados (DDL-0111); hoje,
 //   o play mode. Desligado por padrão.
 //   diceAnimation: a animação dos dados do play mode (src/dice3d, DDL-0152): 'd20'
-//   (o padrão, o d20 em destaque) ou 'off'. A fase D2 acrescenta todos os dados.
+//   (o padrão, o d20 em destaque), 'all' (também a bandeja com os outros dados,
+//   DDL-0153) ou 'off'.
 //
 // FUNÇÕES
 //   load(), persist(state): leitura e escrita no localStorage. Sem localStorage
@@ -92,7 +93,7 @@ const useSettingsStore = create((set, get) => ({
     persist(get());
   },
 
-  /** A animação dos dados do play mode ('d20' ou 'off'). */
+  /** A animação dos dados do play mode ('d20', 'all' ou 'off'). */
   setDiceAnimation: (diceAnimation) => {
     set({ diceAnimation });
     persist(get());

@@ -10,7 +10,6 @@
 //   Tocar pula a rolagem; tocar de novo fecha. O voltar do celular fecha.
 //
 // FUNÇÕES
-//   tokenColors(): as cores do dado, dos tokens do tema.
 //   Sparks(): as faíscas do crítico.
 //   D20Overlay(props): a camada.
 //
@@ -28,24 +27,12 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useBackLayer } from '../hooks/useBack';
 import { createD20 } from './d20Canvas';
+import { tokenColors } from './colors';
 import styles from './D20Overlay.module.css';
 
 const SPIN_MS = 1300;
 const HOLD_MS = 1100;
 const HOLD_SPECIAL_MS = 1700;
-
-/** As cores do dado, dos tokens do tema atual. */
-function tokenColors() {
-  const css = getComputedStyle(document.documentElement);
-  const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
-  return {
-    face: read('--accent', '#8b5cf6'),
-    gold: read('--warning', '#e0a02e'),
-    red: read('--danger', '#e05050'),
-    edge: 'rgba(255, 255, 255, 0.35)',
-    text: '#fff',
-  };
-}
 
 /** As faíscas do crítico, em volta do dado. */
 function Sparks() {

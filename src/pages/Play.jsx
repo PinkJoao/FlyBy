@@ -51,8 +51,9 @@
 //     moveCursor(fn, verb), undo(), redo(): mexem no cursor e avisam um
 //       conflito de inventário.
 //     record(event, cost): grava (marcando o custo do turno, em combate) e mostra o aviso;
-//       um teste de d20 do app abre antes o d20 em destaque (D20Overlay, DDL-0152), e o
-//       aviso vem quando ele fecha (closeRoll).
+//       um teste de d20 do app abre antes o d20 em destaque (D20Overlay, DDL-0152) e,
+//       com "All dice", o resto abre a bandeja (DiceTrayOverlay, DDL-0153); o aviso
+//       vem quando a camada fecha (closeRoll).
 //     openHeal(), openHurt(), openHitDice(): os botões do card de HP; com
 //       concentração, o dano já pede o save.
 //     rollDeathSave(quick), rollConcentration(dc, quick), askConcentrationSave(),
@@ -203,8 +204,9 @@ import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
 import useSettingsStore from '../store/settingsStore';
 import { reducedMotion } from '../motion';
-import { d20Show, shouldAnimate } from '../dice3d/rollShow';
+import { d20Show, shouldAnimate, shouldTray, trayShow } from '../dice3d/rollShow';
 import D20Overlay from '../dice3d/D20Overlay';
+import DiceTrayOverlay from '../dice3d/DiceTrayOverlay';
 import sheetPage from './Builder.module.css';
 import sheetHeader from '../components/builder/StatsHeader.module.css';
 import styles from './Play.module.css';
@@ -330,10 +332,15 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const op = cost ? economyOp(state, cost) : null;
     const final = op ? { ...event, ops: [...event.ops, op] } : event;
     const conflicts = play.record(final);
+    const motion = { setting: diceAnimation, reduced: reducedMotion() };
     const show = d20Show(final);
-    if (shouldAnimate(show, { setting: diceAnimation, reduced: reducedMotion() })) {
+    const tray = show ? null : trayShow(final);
+    if (shouldAnimate(show, motion)) {
       setToast(null);
-      setRollShow({ show, event: final });
+      setRollShow({ show, event: final, kind: 'd20' });
+    } else if (shouldTray(tray, motion)) {
+      setToast(null);
+      setRollShow({ show: tray, event: final, kind: 'tray' });
     } else setToast(final);
     if (conflicts?.length) alert({ title: 'Not applied to the sheet', message: 'The sheet does not have that much, so the item or coins were left as they are.' });
   };
@@ -925,7 +932,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         />
       )}
 
-      {rollShow && <D20Overlay key={rollShow.event.id} show={rollShow.show} onDone={closeRoll} />}
+      {rollShow?.kind === 'd20' && <D20Overlay key={rollShow.event.id} show={rollShow.show} onDone={closeRoll} />}
+      {rollShow?.kind === 'tray' && <DiceTrayOverlay key={rollShow.event.id} show={rollShow.show} onDone={closeRoll} />}
 
       {toast && (
         <button key={toast.id} type="button" className={`${styles.toast} motion-pop`} onClick={() => { setToast(null); if (!wide) openTab('History'); }}>

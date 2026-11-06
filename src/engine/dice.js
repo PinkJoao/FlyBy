@@ -28,7 +28,8 @@
 //   rollFormula(text, opts): rola uma fórmula.
 //   validateFormula(text, data): null se a fórmula é válida, senão a mensagem.
 //   rollParts(parts, opts): rola partes rotuladas (atributo, PB, Bless...) com o
-//     mesmo rng e o mesmo crítico, e soma.
+//     mesmo rng e o mesmo crítico, e soma; um rng marcado `physical` (o dado da
+//     mesa, rngFor do playActions) marca o resultado.
 //   resolveMode(advantage, disadvantage): vantagem e desvantagem se anulam.
 //   d20Test(opts): um teste de d20 com modo, natural, crítico e falha crítica;
 //     `physical` marca o resultado do dado de mesa (a animação do d20 não roda).
@@ -86,12 +87,13 @@ export function cryptoRng(faces) {
  */
 export function sequenceRng(values, fallback = cryptoRng) {
   const queue = [...values];
-  return (faces) => {
+  const rng = (faces) => {
     if (!queue.length) return fallback(faces);
     const v = queue.shift();
     if (!Number.isInteger(v) || v < 1 || v > faces) throw new DiceError(`${v} is not a valid result for a d${faces}.`);
     return v;
   };
+  return rng;
 }
 
 /** O valor de um caminho ("abilities.str.mod") num objeto plano ou aninhado. */
@@ -402,7 +404,7 @@ export function rollParts(parts, { data = {}, rng = cryptoRng, critical = false 
     const r = rollFormula(formula, { data, rng, critical });
     rolled.push({ label: part.label ?? '', formula: r.formula, total: r.total, groups: r.groups });
   }
-  return { total: rolled.reduce((s, r) => s + r.total, 0), parts: rolled, critical };
+  return { total: rolled.reduce((s, r) => s + r.total, 0), parts: rolled, critical, ...(rng.physical ? { physical: true } : {}) };
 }
 
 /** O modo de um teste: qualquer vantagem com qualquer desvantagem dá normal. */
@@ -432,6 +434,6 @@ export function d20Test({ parts = [], advantage = 0, disadvantage = 0, critThres
     isFumble: natural === 1,
     total: rolled.total,
     parts: rolled.parts,
-    ...(physical ? { physical: true } : {}),
+    ...(physical || rolled.physical ? { physical: true } : {}),
   };
 }

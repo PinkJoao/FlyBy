@@ -89,7 +89,10 @@ export function bonusParts(options = {}) {
 /** O rng com os dados físicos digitados na frente (os que faltarem, o app rola). */
 export function rngFor(options = {}, rng = cryptoRng) {
   const manual = (options.manual ?? []).filter((v) => Number.isFinite(v));
-  return manual.length ? sequenceRng(manual, rng) : rng;
+  if (!manual.length) return rng;
+  const seq = sequenceRng(manual, rng);
+  seq.physical = true;
+  return seq;
 }
 
 /** Vantagem e desvantagem do modo do diálogo. */

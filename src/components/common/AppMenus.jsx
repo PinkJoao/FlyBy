@@ -109,7 +109,8 @@ export function SettingsMenu({ onReplayTutorials }) {
         ...(experimental
           ? [
               { heading: 'Dice animation' },
-              { label: 'Animated d20', sub: 'A 3D d20 rolls on the screen for every d20 test', checked: diceAnimation !== 'off', keepOpen: true, onClick: () => setDiceAnimation('d20') },
+              { label: 'Animated d20', sub: 'A 3D d20 rolls on the screen for every d20 test', checked: diceAnimation === 'd20', keepOpen: true, onClick: () => setDiceAnimation('d20') },
+              { label: 'All dice', sub: 'Damage, healing and hit dice also roll in a tray', checked: diceAnimation === 'all', keepOpen: true, onClick: () => setDiceAnimation('all') },
               { label: 'Off', sub: 'Only the result appears', checked: diceAnimation === 'off', keepOpen: true, onClick: () => setDiceAnimation('off') },
             ]
           : []),

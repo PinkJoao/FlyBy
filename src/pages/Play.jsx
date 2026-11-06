@@ -28,9 +28,16 @@
 //   DDL-0120: o card de HP expande com Heal, Hurt e Hit dice, o de movimento com
 //   Move e Dash; Conditions e Effects viram cards expansíveis abaixo do de
 //   proficiências, e saves, perícias e ferramentas desse card rolam ao toque.
+//   DDL-0147 (docs/PLAY-MODE-V2-PLAN.md): a aba Actions são as ações básicas do
+//   livro (ActionsTab, engine/playBasicActions) que o personagem tem o que fazer,
+//   com os custos dele; tocar abre o ActionPanel (o custo e o meio), e takeAction
+//   executa pelo fluxo que já existe (rollAttack, castSpell, rollTest, moveFeet,
+//   consumeItem, applyFeature). O custo que vem de uma feature com gasto (o Focus do
+//   monge) vai NUM evento só com a ação (withOps): em dois, o segundo partiria do
+//   estado antigo e apagaria o custo marcado pelo primeiro. A lista de ataques
+//   solta saiu: ela é o "como" da ação Attack.
 //
 // FUNÇÕES
-//   signed(n): o número com sinal.
 //   PlayInner(props): o modo jogo, com o personagem garantido (quem carrega é a
 //     pages/Character); os descansos e a coluna do histórico entram por portal nos
 //     lugares dela (`levelSlot`, `sideSlot`).
@@ -66,7 +73,8 @@
 //     rollInitiative(quick): o tile: fora de combate começa um; nele, só rola.
 //     moveFeet(dash): o Move e o Dash do card de movimento (quantos pés).
 //     rollTool(name): o teste de uma ferramenta, com o atributo escolhido.
-//   AttackRow(props): uma linha da lista de ataques.
+//   withOps(event, ops): o evento com operações a mais na frente (o gasto de Focus
+//     ou dos usos da feature que deu o custo alternativo, num evento só).
 //   HistoryHead(props): o título do histórico com desfazer e refazer.
 //   toastNumber(event): o número do aviso de um evento.
 //
@@ -163,10 +171,12 @@ import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent
 import { itemUseEvent, quantityEvent, ammoOps, currencyEvent, itemCostOf, healOf } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
-  movementLeft, moveEvent, dashEvent,
+  movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
 } from '../engine/playCombat';
 import { askRoll } from '../components/play/rollDialog';
-import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askCurrency, askSkillCheck, askMove } from '../components/play/playDialogs';
+import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askCurrency, askSkillCheck, askMove, askAction } from '../components/play/playDialogs';
+import ActionsTab from '../components/play/ActionsTab';
+import { actionContext, basicActionList } from '../engine/playBasicActions';
 import FeaturesTab from '../components/play/FeaturesTab';
 import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
@@ -176,7 +186,7 @@ import Icon from '../components/common/Icon';
 import { alert, ask, confirm } from '../components/common/dialog';
 import { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
-import { ABILITY_FULL, ABILITY_SHORT } from '../components/builder/labels';
+import { ABILITY_FULL } from '../components/builder/labels';
 import { rollOf } from '../engine/playChecks';
 import AbilityCards from '../components/play/AbilityCards';
 import PlayTiles from '../components/play/PlayTiles';
@@ -201,56 +211,11 @@ const ECONOMY_LABEL = { action: 'Action', bonus: 'Bonus', reaction: 'Reaction' }
 
 const TOAST_MS = 4000;
 
-/** O número com sinal ("+3", "-1"). */
-const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
-
 /** O número do aviso de um evento: o total rolado, o dano, a cura ou o temporário. */
 const toastNumber = (e) => e.rolls?.total ?? e.payload?.taken ?? e.payload?.healed ?? e.payload?.to ?? e.payload?.round ?? e.payload?.left ?? null;
 
-/** Uma linha da lista de ataques: acerto (ou CD) e dano, com os botões de rolar. */
-function AttackRow({ attack, onAttack, onDamage }) {
-  const hit = attack.toHit ? signed(attack.toHit.total) : attack.attack ? signed(attack.attack.bonus ?? 0) : null;
-  const dmg = attack.damage
-    ? `${attack.damage.dice ?? ''}${attack.damage.bonus ? (attack.damage.dice ? signed(attack.damage.bonus) : attack.damage.bonus) : ''}`
-    : '';
-  const notes = [
-    attack.kind === 'cantrip' ? 'Cantrip' : null,
-    attack.mastery ? `Mastery: ${attack.mastery}` : null,
-    attack.versatile ? `Versatile ${attack.versatile}` : null,
-    attack.distance ? `${attack.distance} ft` : null,
-    attack.kind === 'weapon' && !attack.equipped ? 'Not equipped' : null,
-  ].filter(Boolean);
-  return (
-    <li className={styles.attack}>
-      <div className={styles.attackInfo}>
-        <span className={styles.attackName}>{attack.name}</span>
-        <span className={styles.attackSub}>
-          {dmg} {(attack.damage?.types ?? []).join('/')}
-          {notes.length > 0 && <span className={styles.attackNotes}> · {notes.join(' · ')}</span>}
-        </span>
-      </div>
-      <div className={styles.attackButtons}>
-        {hit != null ? (
-          <RollButton className={styles.rollBtn} title={`${attack.name}: attack roll`} onRoll={(quick) => onAttack(attack, quick)}>
-            <span className={styles.rollLabel}>Hit</span>
-            <span className={styles.rollValue}>{hit}</span>
-          </RollButton>
-        ) : attack.save ? (
-          <span className={styles.dc} title="The target makes this saving throw">
-            <span className={styles.rollLabel}>DC</span>
-            <span className={styles.rollValue}>{attack.save.dc ?? '?'} {ABILITY_SHORT[attack.save.ability] ?? ''}</span>
-          </span>
-        ) : null}
-        {attack.damage && (
-          <RollButton className={styles.rollBtn} title={`${attack.name}: damage`} onRoll={(quick) => onDamage(attack, {}, quick)}>
-            <span className={styles.rollLabel}>Damage</span>
-            <Icon name="dice" />
-          </RollButton>
-        )}
-      </div>
-    </li>
-  );
-}
+/** O evento com operações a mais na frente (o gasto da feature que deu o custo). */
+const withOps = (event, ops = []) => (ops.length ? { ...event, ops: [...ops, ...event.ops] } : event);
 
 /** O título do histórico com desfazer e refazer (na coluna e na aba). */
 function HistoryHead({ onUndo, onRedo, canUndo, canRedo, lastLabel, nextLabel }) {
@@ -569,12 +534,13 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
 
-  const rollTest = (test, name, quick) =>
+  const rollTest = (test, name, quick, cost = null, extraOps = []) =>
     roll(
-      (options) => rollTestEvent({ catalog, test, name, options }),
+      (options) => withOps(rollTestEvent({ catalog, test, name, options }), extraOps),
       { title: name, kind: 'd20', parts: testParts(catalog, test), rollData: catalog.rollData },
       quick,
       rollEffects(state, catalog, rollOf(catalog, test)),
+      cost,
     );
 
   /** O Check de um atributo: escolhe a perícia (ou o teste puro) e rola. */
@@ -597,10 +563,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (r?.action && ability) rollTest({ type: 'tool', id: name, ability }, `${name} (${ABILITY_FULL[ability]})`);
   };
 
-  const rollAttack = (attack, quick, spend = false) =>
+  const rollAttack = (attack, quick, spend = false, cost = 'action', extraOps = []) =>
     roll(
       (options) => {
-        const event = rollAttackEvent({ catalog, attack, options });
+        const event = withOps(rollAttackEvent({ catalog, attack, options }), extraOps);
         if (!spend) return event;
         const ammo = ammoOps({ character, derivedInventory: derived.inventory, attack });
         return { ...event, ops: [...event.ops, ...ammo.ops], payload: { ...event.payload, ammo: ammo.ammo, ammoLeft: ammo.left, ammoMissing: ammo.missing } };
@@ -613,7 +579,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       },
       quick,
       rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', attackAbility: attack.ability }),
-      spend ? 'action' : null,
+      spend ? cost : null,
     );
 
   const rollDamage = (attack, { critical = false } = {}, quick = false) =>
@@ -683,11 +649,41 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const rollInitiative = (quick) => (state.combat ? rollTest({ type: 'initiative' }, 'Initiative', quick) : startCombat(quick));
 
   /** O Move e o Dash do card de movimento: quantos pés, e quanto sobra. */
-  const moveFeet = async (dash) => {
+  const moveFeet = async (dash, cost = 'action', extraOps = []) => {
     const speed = effectiveSpeed(catalog, state) ?? 0;
-    const r = await askMove({ dash, speed, left: movementLeft(state, speed) });
+    const r = await askMove({ dash, speed, left: movementLeft(state, speed), cost: dash ? cost : null });
     if (!r) return;
-    record(dash ? dashEvent({ state, speed, feet: r.feet }) : moveEvent({ state, feet: r.feet, speed }));
+    record(dash ? withOps(dashEvent({ state, speed, feet: r.feet, cost }), extraOps) : moveEvent({ state, feet: r.feet, speed }));
+  };
+
+  const inventoryUsable = derived.inventory;
+  const actionCtx = useMemo(() => actionContext(catalog, state, inventoryUsable), [catalog, state, inventoryUsable]);
+  const basicActions = useMemo(() => basicActionList(catalog, state, actionCtx), [catalog, state, actionCtx]);
+
+  /** Uma ação básica da aba Actions: pergunta como, e usa o fluxo que já existe. */
+  const takeAction = async (item) => {
+    const rule = (db?.actions?.action ?? []).find((a) => a.name === item.name && a.source === 'XPHB') ?? null;
+    const r = await askAction({ item, ctx: actionCtx, catalog, state, rule });
+    if (!r) return;
+    const owner = r.cost.via ? catalog.actions.find((a) => a.key === r.cost.via.action) : null;
+    const activity = owner?.activities.find((x) => x.id === r.cost.via.activity) ?? null;
+    const viaEvent = owner && activity ? activityEvent({ catalog, state, action: owner, activity }) : null;
+    const extra = viaEvent?.ops ?? [];
+    const cost = ECONOMY.includes(r.cost.cost) ? r.cost.cost : null;
+    if (r.kind === 'attack') rollAttack(r.attack, false, true, cost ?? 'action', extra);
+    else if (r.kind === 'spell') castSpell(r.origin, r.spell);
+    else if (r.kind === 'charge') record(adjustResourceEvent({ catalog, key: r.resource.key, delta: -1 }), cost);
+    else if (r.kind === 'item') consumeItem(r.entry);
+    else if (r.kind === 'skill') rollTest({ type: 'skill', id: r.skill }, r.name, false, cost, extra);
+    else if (r.kind === 'dash') moveFeet(true, cost, extra);
+    else if (r.kind === 'ready') record(withOps(readyEvent({ state, trigger: r.trigger, cost }), extra));
+    else if (r.kind === 'readiedReaction') record(readiedReactionEvent({ state }));
+    else if (r.kind === 'endConcentration') endConcentration();
+    else if (viaEvent) record(viaEvent, cost);
+    else {
+      const basic = item.action.activities[0];
+      applyFeature(item.action, { ...basic, activation: { ...basic.activation, type: r.cost.cost } });
+    }
   };
 
   const nextTurn = () => record(nextTurnEvent({ state }));
@@ -843,17 +839,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             </>
           )}
 
-          {activeTab === 'Actions' && (
-            <section className={styles.actionsTab}>
-              <h2 className={styles.heading}>Attacks</h2>
-              <ul className={styles.attacks} data-tour={TUT.PLAY_ROLLS}>
-                {catalog.attacks.map((a) => (
-                  <AttackRow key={a.key} attack={a} onAttack={(x, quick) => rollAttack(x, quick, true)} onDamage={rollDamage} />
-                ))}
-              </ul>
-              <p className={styles.hint}>Tap a roll to choose advantage, a bonus or physical dice.</p>
-            </section>
-          )}
+          {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
             <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} />

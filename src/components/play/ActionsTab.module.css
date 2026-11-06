@@ -1,0 +1,109 @@
+/* =============================================================================
+ * ActionsTab.module.css: os cards das ações básicas do play mode
+ * =============================================================================
+ * CLASSES
+ *   .tab, .hint, .grid: a aba, o aviso do combate e a grade dos cards.
+ *   .card, .spent, .name, .costs, .costUsed, .readied: um card (apagado quando nada
+ *     sobra no turno), o nome, as pílulas de custo (a gasta, apagada) e o gatilho
+ *     guardado do Ready.
+ *   .otherHead, .chev, .chevOpen: o cabeçalho do grupo "Other", recolhível.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O card é o mesmo cartão do play mode (--bg-soft, borda, raio 10) e a pílula é
+ *     o Chip do app (DDL-0129); só o apagado do "gasto" é daqui.
+ *   - Duas colunas no celular, mais no desktop (auto-fill de 140px): os nomes cabem
+ *     numa linha e as pílulas quebram embaixo.
+ * -------------------------------------------------------------------------- */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.15s;
+}
+
+.card:hover {
+  border-color: var(--accent-border);
+}
+
+.spent {
+  opacity: 0.55;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.costUsed {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.readied {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.otherHead {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 6px 2px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chev {
+  display: inline-flex;
+  transition: transform 0.2s;
+}
+
+.chevOpen {
+  transform: rotate(180deg);
+}

@@ -13,10 +13,8 @@
  *   .ghostBtn, .restBtns: os botões do combate.
  *   .combatBar, .combatRound, .econ, .econBtn, .econUsed: a barra do combate
  *     (rodada, iniciativa, ação, bônus e reação gastos).
- *   .actionsTab, .heading, .hint: a aba Actions e os títulos.
- *   .attacks, .attack, .attackInfo, .attackName, .attackSub, .attackNotes,
- *     .attackButtons, .dc: a lista de ataques.
- *   .rollBtn, .rollLabel, .rollValue: o botão de rolar com rótulo e valor.
+ *   .heading: os títulos.
+ *   .rollBtn, .rollLabel: o botão de rolar com rótulo (o teste contra a morte).
  *   .toast, .toastLabel, .toastTotal, .toastTag: o aviso da última rolagem.
  *
  * DECISÕES E ARMADILHAS
@@ -200,12 +198,6 @@
   gap: 8px;
 }
 
-.actionsTab {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .heading {
   margin: 6px 0 0;
   font-size: 12px;
@@ -215,60 +207,7 @@
   color: var(--text-muted);
 }
 
-.hint {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.attacks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.attack {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-soft);
-}
-
-.attackInfo {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.attackName {
-  font-weight: 600;
-  color: var(--text-h);
-}
-
-.attackSub {
-  font-size: 13px;
-  color: var(--text);
-}
-
-.attackNotes {
-  color: var(--text-muted);
-}
-
-.attackButtons {
-  flex: none;
-  display: flex;
-  gap: 6px;
-}
-
-.rollBtn,
-.dc {
+.rollBtn {
   appearance: none;
   display: inline-flex;
   flex-direction: column;
@@ -306,12 +245,6 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-
-.rollValue {
-  font-size: 16px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
 .toast {

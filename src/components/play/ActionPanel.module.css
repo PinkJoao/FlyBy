@@ -1,0 +1,147 @@
+/* =============================================================================
+ * ActionPanel.module.css: o painel de "como usar" uma ação básica
+ * =============================================================================
+ * CLASSES
+ *   .panel, .costs, .used, .warn, .note: a coluna, as pílulas de custo (a gasta,
+ *     apagada), o aviso de custo gasto e a nota da feature.
+ *   .group, .heading, .list, .pick, .pickMain, .pickName, .pickDetail, .pickValue:
+ *     os grupos (círculos de magia) e as linhas tocáveis.
+ *   .field, .input: o gatilho do Ready.
+ *   .rulesHead, .rules: o texto da regra, recolhido.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A linha é a mesma do SkillCheckPanel (borda, raio 10, --bg-soft): um toque
+ *     escolhe e fecha.
+ * -------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.used {
+  opacity: 0.5;
+}
+
+.warn,
+.note {
+  margin: 0;
+  font-size: 13px;
+}
+
+.warn {
+  color: var(--warning);
+}
+
+.note {
+  color: var(--text-muted);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heading {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pick {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick:hover {
+  border-color: var(--accent-border);
+}
+
+.pickMain {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pickName {
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.pickDetail {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pickValue {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.input {
+  font: inherit;
+  font-size: 15px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.rulesHead {
+  appearance: none;
+  align-self: flex-start;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rules {
+  font-size: 14px;
+}

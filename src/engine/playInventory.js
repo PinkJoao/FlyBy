@@ -21,7 +21,8 @@
 //   quantityEvent(args): mudar a quantidade à mão.
 //   ammoOps(args): o gasto de 1 munição num ataque, com o aviso se não há.
 //   currencyEvent(args): gastar ou ganhar moedas.
-//   chargeResources(derivedInventory): as cargas dos itens, como recursos.
+//   chargeResources(derivedInventory): as cargas dos itens, como recursos (com o
+//     nome do item em `item`, para listar o item e não "X charges").
 //
 // DECISÕES E ARMADILHAS
 //   - A operação guarda a entrada CRUA do personagem (`character.inventory`), não a
@@ -160,6 +161,7 @@ export function chargeResources(derivedInventory) {
       key: `charges:${e.uid}`,
       kind: 'charges',
       name: `${e.raw.name} charges`,
+      item: e.raw.name,
       uid: e.uid,
       max,
       recovery: period ? [amount ? { period, type: 'formula', formula: amount } : { period, type: 'recoverAll' }] : [],

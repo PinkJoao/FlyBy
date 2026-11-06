@@ -335,10 +335,10 @@ const play = {
     },
     {
       anchor: TUT.PLAY_ROLLS,
-      title: 'Rolling',
+      title: 'Actions',
       body: {
-        desktop: 'Click a roll to choose advantage, add a bonus or type in physical dice. Shift-click rolls right away.',
-        mobile: 'Tap a roll to choose advantage, add a bonus or type in physical dice.',
+        desktop: 'The basic actions you can take, with what each one costs you. Click one to choose how: which weapon, which spell, which skill. In combat, a cost you already used this turn fades.',
+        mobile: 'The basic actions you can take, with what each one costs you. Tap one to choose how: which weapon, which spell, which skill. In combat, a cost you already used this turn fades.',
       },
       placement: 'auto',
     },

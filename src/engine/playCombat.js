@@ -22,7 +22,11 @@
 //   movementLeft(state, speed): os pés que sobram neste turno (o Dash soma um
 //     deslocamento inteiro).
 //   moveEvent(args), dashEvent(args), resetMoveEvent(args): andar, o Dash (que
-//     pode já andar `feet` pés no mesmo evento) e zerar o movimento do turno.
+//     pode já andar `feet` pés no mesmo evento, e gasta o `cost` dado: a ação, a
+//     Bonus Action do Cunning Action, ou nada quando uma feature já gastou) e zerar
+//     o movimento do turno.
+//   readyEvent(args), readiedReactionEvent(args): o Ready (gasta o custo e guarda o
+//     gatilho em `used.readied`) e o gatilho acontecendo (gasta a reação).
 //
 // DECISÕES E ARMADILHAS
 //   - O combate é do PERSONAGEM, não da mesa: a rodada avança quando o jogador diz
@@ -36,6 +40,8 @@
 //     vezes): o "Next turn" o zera junto com a ação. O Dash marca a ação (quem usa
 //     o Cunning Action desmarca à mão e marca o bônus). Andar mais do que sobra
 //     é permitido e aparece negativo (liberdade com aviso).
+//   - O gatilho do Ready mora em `used.readied`: o "Next turn" zera `used` e ele
+//     some junto, como manda a regra (vale até o começo do seu próximo turno).
 //   - Fora de combate, nada disso pesa: durações por rodada só nascem em combate,
 //     e a economia não é marcada.
 // -----------------------------------------------------------------------------
@@ -139,14 +145,36 @@ export function moveEvent({ state, feet, speed, now = new Date() }) {
 }
 
 /** O Dash: mais um deslocamento neste turno, gastando a ação; `feet` já anda junto. */
-export function dashEvent({ state, speed, feet = 0, now = new Date() }) {
+export function dashEvent({ state, speed, feet = 0, cost = 'action', now = new Date() }) {
   const used = state.combat?.used ?? {};
   const dash = (used.dash ?? 0) + 1;
   const moved = Math.max(0, Math.trunc(Number(feet) || 0));
   const move = (used.move ?? 0) + moved;
-  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, dash, move, action: true } } }] : [];
+  const spent = ECONOMY.includes(cost) ? { [cost]: true } : {};
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, dash, move, ...spent } } }] : [];
   const left = (speed ?? 0) * (1 + dash) - move;
   return makeEvent('combat', { label: moved ? `Dash, ${moved} ft` : 'Dash', ops, payload: { dash: true, moved, left } }, now);
+}
+
+/**
+ * O Ready: gasta o custo agora e guarda o gatilho até o seu próximo turno.
+ * @param {{ state: object, trigger: string, cost?: string, now?: Date }} args
+ */
+export function readyEvent({ state, trigger, cost = 'action', now = new Date() }) {
+  const text = String(trigger ?? '').trim() || 'a trigger';
+  const used = state.combat?.used ?? {};
+  const spent = ECONOMY.includes(cost) ? { [cost]: true } : {};
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, ...spent, readied: text } } }] : [];
+  return makeEvent('combat', { label: `Ready: ${text}`, ops, payload: { readied: text } }, now);
+}
+
+/** O gatilho do Ready aconteceu: gasta a reação e esquece o gatilho. */
+export function readiedReactionEvent({ state, now = new Date() }) {
+  const used = { ...(state.combat?.used ?? {}) };
+  const text = used.readied ?? null;
+  delete used.readied;
+  const ops = state.combat ? [{ op: 'combat', value: { ...state.combat, used: { ...used, reaction: true } } }] : [];
+  return makeEvent('combat', { label: text ? `Readied action: ${text}` : 'Readied action', ops, payload: { readied: text } }, now);
 }
 
 /** Zera o movimento do turno (e o Dash). */

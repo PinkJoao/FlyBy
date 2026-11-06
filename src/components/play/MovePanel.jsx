@@ -29,9 +29,9 @@ const FEET_JUMPS = [10, 30];
 
 /**
  * O painel de andar ou correr.
- * @param {{ dash: boolean, speed: number, left: number }} props
+ * @param {{ dash: boolean, speed: number, left: number, cost?: string|null }} props
  */
-export default function MovePanel({ dash, speed, left }) {
+export default function MovePanel({ dash, speed, left, cost = 'action' }) {
   const close = useDialogClose();
   const [feet, setFeet] = useState('');
   const n = Math.max(0, Math.trunc(Number(feet) || 0));
@@ -53,7 +53,7 @@ export default function MovePanel({ dash, speed, left }) {
       <p className={after < 0 ? `${styles.preview} ${panel.short}` : styles.preview}>
         {after} ft left after {dash ? 'the Dash' : 'moving'}{after < 0 ? ' (more than you have)' : ''}
       </p>
-      {dash && <p className={panel.note}>The Dash uses your action.</p>}
+      {dash && cost && <p className={panel.note}>The Dash uses your {cost === 'bonus' ? 'bonus action' : cost}.</p>}
       <div className={panel.actions}>
         <button type="submit" className={`${panel.btn} ${panel.primary}`} disabled={n <= 0 && !dash}>{dash ? 'Dash' : 'Move'}</button>
       </div>

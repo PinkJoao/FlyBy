@@ -10,6 +10,8 @@
 // FUNÇÕES
 //   leftOf(catalog, state, key): o que sobra de um recurso, com o máximo.
 //   castWays(catalog, state, spell): as formas de lançar, com o que sobra de cada.
+//   slotPoolsFor(catalog, state, level): os espaços que o cabeçalho de um círculo
+//     mostra (o do círculo e o pacto, se ele cabe), com o que sobra.
 //   castEvent(args): o evento de conjurar.
 //   spellAttackOf(origin, spell, level): a magia como "ataque" do playActions
 //     (acerto da origem, dano com o upcast), para rolar acerto e dano.
@@ -26,6 +28,11 @@
 //     multiclasse usa o pacto para qualquer magia de classe). O círculo lançado
 //     manda no upcast: o pacto lança no círculo do pacto.
 //   - Ritual: sem slot (os 10 minutos a mais são da mesa).
+//   - slotPoolsFor é o RESUMO do cabeçalho (docs/PLAY-MODE-V2-PLAN.md §6): o espaço
+//     do próprio círculo e o do pacto quando o pacto é igual ou maior (o bruxo 5 vê o
+//     pacto nos grupos 1, 2 e 3). Os círculos MAIORES, que também servem, só aparecem
+//     no painel de lançar (castWays): no cabeçalho de cada grupo repetiriam tudo. O
+//     Mystic Arcanum não é espaço: o uso aparece na linha da magia.
 //   - Magia com efeito curado (playEffects.spellModifier: Bless, Hunter's Mark)
 //     liga o modificador no MESMO evento: sempre, se a magia é só em si mesmo;
 //     com `onSelf`, se o jogador disse que ela o inclui.
@@ -77,6 +84,20 @@ export function castWays(catalog, state, spell) {
   }
   if (spell.ritual) ways.push({ id: 'ritual', label: 'As a ritual (no slot, 10 minutes longer)', level: spell.level, key: null, left: null });
   return ways;
+}
+
+/**
+ * Os espaços que o cabeçalho de um círculo mostra: o do círculo e o pacto, se cabe.
+ * @returns {{ key: string, kind: 'slot'|'pact', label: string, level: number, left: number, max: number }[]}
+ */
+export function slotPoolsFor(catalog, state, level) {
+  if (!(level > 0)) return [];
+  const out = [];
+  for (const r of catalog?.resources ?? []) {
+    if (r.kind === 'slot' && r.level === level) out.push({ key: r.key, kind: 'slot', label: `Level ${level} slots`, level, left: remainingOf(state, r.key, r.max), max: r.max });
+    if (r.kind === 'pact' && r.level >= level) out.push({ key: r.key, kind: 'pact', label: `Pact slots (level ${r.level})`, level: r.level, left: remainingOf(state, r.key, r.max), max: r.max });
+  }
+  return out;
 }
 
 /**

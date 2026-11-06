@@ -9,6 +9,8 @@
 //   aponta para um pool, fórmula que não resolve, CD sem origem. Deve dar 0
 //   (docs/PLAY-MODE-PLAN.md, C1). As classes são conferidas nos níveis 1, 3, 5,
 //   11, 17 e 20; as espécies, no 5.
+//   Confere o registro ACTION_COSTS (engine/playBasicActions): a feature presente
+//   cuja atividade citada não existe vira problema (o registro envelheceu).
 //   Também conta o lado que TEM de aparecer (§6.1, a sonda não pode estar cega):
 //   pools, ações de feature com consumo e ataques por unidade.
 //   Com --list, imprime cada problema com a unidade; sem ele, agrupa pela
@@ -38,6 +40,7 @@ import { hashSeed } from './lib/rng';
 import { resolveClassObj, resolveSubclassObj } from '../src/engine/resolve';
 import { cleanupClassEntry } from '../src/engine/classFeatureChoices';
 import { derivePlayCatalog } from '../src/engine/playCatalog';
+import { ACTION_COSTS, altCostsFor } from '../src/engine/playBasicActions';
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {
@@ -73,11 +76,18 @@ function survey(db, unit, character, out) {
   out.pools += catalog.resources.filter((r) => r.kind === 'pool').length;
   out.consuming += catalog.actions.filter((a) => a.activities.some((x) => x.consumes.length)).length;
   out.attacks += catalog.attacks.length;
+  out.altCosts += [...altCostsFor(catalog).values()].reduce((n, l) => n + l.length, 0);
+  const features = new Set(catalog.features.map((x) => x.toLowerCase()));
+  for (const r of ACTION_COSTS) {
+    if (!r.activity || !features.has(r.feature)) continue;
+    const owner = catalog.actions.find((a) => a.name.toLowerCase() === r.feature);
+    if (!owner?.activities.some((x) => r.activity === '*' || x.name.toLowerCase() === r.activity)) out.problems.push({ unit, where: r.feature, message: `ACTION_COSTS: activity "${r.activity}" not found` });
+  }
   for (const p of catalog.problems) out.problems.push({ unit, ...p });
 }
 
 const db = loadDb();
-const out = { units: 0, pools: 0, consuming: 0, attacks: 0, problems: [] };
+const out = { units: 0, pools: 0, consuming: 0, attacks: 0, altCosts: 0, problems: [] };
 const species = defaultSpecies(db);
 
 for (const row of classMatrix(db)) {
@@ -104,7 +114,7 @@ const open = out.problems.filter((p) => {
   return !gap;
 });
 
-console.log(`unidades: ${out.units} | pools: ${out.pools} | ações com consumo: ${out.consuming} | ataques: ${out.attacks}`);
+console.log(`unidades: ${out.units} | pools: ${out.pools} | ações com consumo: ${out.consuming} | ataques: ${out.attacks} | custos alternativos de ação: ${out.altCosts}`);
 console.log(`lacunas nomeadas: ${[...known].map(([tc, n]) => `${tc} ${n}`).join(' | ')}`);
 console.log(`problemas sem explicação: ${open.length}`);
 if (args.list) {

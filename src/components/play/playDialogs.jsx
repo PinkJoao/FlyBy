@@ -20,6 +20,7 @@
 //   askCurrency(props): gastar ou ganhar moedas (CurrencyPanel).
 //   askSkillCheck(props): a perícia do Check de um atributo (SkillCheckPanel).
 //   askMove(props): quantos pés andar ou correr no turno (MovePanel).
+//   askAction(props): como usar uma ação básica da aba Actions (ActionPanel).
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
@@ -32,6 +33,7 @@ import ModifierPanel from './ModifierPanel';
 import CurrencyPanel from './CurrencyPanel';
 import SkillCheckPanel from './SkillCheckPanel';
 import MovePanel from './MovePanel';
+import ActionPanel from './ActionPanel';
 import { ABILITY_FULL } from '../builder/labels';
 
 /** Abre um painel num diálogo; resolve com o que o painel fechar, ou null. */
@@ -117,4 +119,12 @@ export function askMove(props) {
 /** O seletor de perícia do Check; resolve com { test, name }. */
 export function askSkillCheck(props) {
   return openPanel(`${ABILITY_FULL[props.ability] ?? props.ability} check`, <SkillCheckPanel {...props} />, 460);
+}
+
+/**
+ * Como usar uma ação básica (o custo e o meio).
+ * @returns {Promise<{ cost: object, kind: string }|null>}
+ */
+export function askAction(props) {
+  return openPanel(props.item.name, <ActionPanel {...props} />, 460);
 }

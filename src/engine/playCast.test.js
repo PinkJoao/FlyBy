@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from './playCast';
+import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent } from './playCast';
 import { rollDamageEvent } from './playActions';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -60,6 +60,26 @@ describe('castWays', () => {
     expect(castWays(catalog, st(), spell({ level: 6, arcanum: true, uses: 'granted:race|Misty Step' })).map((w) => w.id)).toEqual(['uses']);
     expect(castWays(catalog, st(), spell({ level: 1, castType: 'will' })).map((w) => w.id)[0]).toBe('free');
     expect(castWays(catalog, st(), spell({ level: 1, ritual: true })).map((w) => w.id)).toContain('ritual');
+  });
+});
+
+describe('slotPoolsFor (cabeçalho do círculo)', () => {
+  const pools = (cat, level, state = st()) => slotPoolsFor(cat, state, level).map((p) => `${p.label} ${p.left}/${p.max}`);
+  it('multiclasse com bruxo: o espaço do círculo e o pacto, que serve até o círculo dele', () => {
+    expect(pools(catalog, 1)).toEqual(['Level 1 slots 4/4', 'Pact slots (level 2) 1/1']);
+    expect(pools(catalog, 2)).toEqual(['Level 2 slots 2/2', 'Pact slots (level 2) 1/1']);
+    expect(pools(catalog, 3)).toEqual([]);
+    expect(pools(catalog, 0)).toEqual([]);
+  });
+  it('bruxo puro 5: pacto 2x círculo 3 em todos os grupos até o 3; o gasto aparece', () => {
+    const warlock = { resources: [{ key: 'pact', kind: 'pact', level: 3, max: 2 }] };
+    expect([1, 2, 3, 4].map((l) => pools(warlock, l).length)).toEqual([1, 1, 1, 0]);
+    expect(pools(warlock, 2, st({ spent: { pact: 1 } }))).toEqual(['Pact slots (level 3) 1/2']);
+  });
+  it('bruxo 11: o Mystic Arcanum não é espaço (o grupo 6 não mostra nada)', () => {
+    const warlock = { resources: [{ key: 'pact', kind: 'pact', level: 5, max: 3 }, { key: 'granted:class:warlock|Circle of Death', kind: 'granted', max: 1 }] };
+    expect(pools(warlock, 5)).toEqual(['Pact slots (level 5) 3/3']);
+    expect(pools(warlock, 6)).toEqual([]);
   });
 });
 

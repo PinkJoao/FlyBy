@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp } from './playState';
 import {
-  roundsOf, costOfActivation, startCombatEvent, nextTurnEvent, endCombatEvent, economyOp, withRounds, movementLeft, moveEvent, dashEvent, resetMoveEvent,
+  roundsOf, costOfActivation, startCombatEvent, nextTurnEvent, endCombatEvent, economyOp, withRounds, movementLeft, moveEvent, dashEvent, resetMoveEvent, readyEvent, readiedReactionEvent,
 } from './playCombat';
 import { effectiveSpeeds } from './playEffects';
 import { castEvent } from './playCast';
@@ -121,3 +121,29 @@ describe('Dash com deslocamento', () => {
     expect(d.label).toBe('Dash, 25 ft');
   });
 });
+
+describe('Dash com outro custo e Ready', () => {
+  const inCombat = (used = {}) => ({ ...emptyPlayState('x'), combat: { round: 2, initiative: 14, used } });
+  const combatOf = (state, e) => e.ops.find((o) => o.op === 'combat').value;
+  it('o Dash gasta o custo dado: a ação, a Bonus Action, ou nada', () => {
+    expect(combatOf(null, dashEvent({ state: inCombat(), speed: 30 })).used).toMatchObject({ action: true, dash: 1 });
+    const bonus = combatOf(null, dashEvent({ state: inCombat(), speed: 30, cost: 'bonus' })).used;
+    expect(bonus).toMatchObject({ bonus: true, dash: 1 });
+    expect(bonus.action).toBeUndefined();
+    const free = combatOf(null, dashEvent({ state: inCombat({ bonus: true }), speed: 30, cost: null })).used;
+    expect(free).toMatchObject({ bonus: true, dash: 1 });
+    expect(free.action).toBeUndefined();
+  });
+  it('o Ready gasta a ação e guarda o gatilho; o gatilho gasta a reação; o Next turn o esquece', () => {
+    const s = inCombat();
+    const r = readyEvent({ state: s, trigger: 'the goblin opens the door' });
+    expect(r.label).toBe('Ready: the goblin opens the door');
+    const after = { ...s, combat: combatOf(s, r) };
+    expect(after.combat.used).toMatchObject({ action: true, readied: 'the goblin opens the door' });
+    const fired = combatOf(after, readiedReactionEvent({ state: after }));
+    expect(fired.used).toMatchObject({ action: true, reaction: true });
+    expect(fired.used.readied).toBeUndefined();
+    expect(combatOf(after, nextTurnEvent({ state: after })).used).toEqual({});
+  });
+});
+

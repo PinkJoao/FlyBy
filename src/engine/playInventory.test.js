@@ -95,7 +95,7 @@ describe('dinheiro e cargas', () => {
   it('as cargas da varinha viram recurso, com a recarga do amanhecer pelo dado', () => {
     const wand = { uid: 'w', raw: { name: 'Wand of Magic Missiles', charges: 7, recharge: 'dawn', rechargeAmount: '{@dice 1d6 + 1}' } };
     expect(chargeResources([wand, derivedInventory[0]])).toEqual([{
-      key: 'charges:w', kind: 'charges', name: 'Wand of Magic Missiles charges', uid: 'w', max: 7,
+      key: 'charges:w', kind: 'charges', name: 'Wand of Magic Missiles charges', item: 'Wand of Magic Missiles', uid: 'w', max: 7,
       recovery: [{ period: 'dawn', type: 'formula', formula: '1d6 + 1' }],
     }]);
   });

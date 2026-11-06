@@ -1,0 +1,215 @@
+/* =============================================================================
+ * D20Overlay.module.css: a camada do d20 em destaque
+ * =============================================================================
+ * O QUE FAZ
+ *   O fundo translúcido sobre a tela do jogo, o palco com o dado (ou os dois), o
+ *   total que aparece quando o dado para, e os efeitos do crítico (brilho dourado,
+ *   faíscas) e da falha (tremor, rachadura).
+ *
+ * CLASSES
+ *   .overlay, .stage: a camada e o palco central.
+ *   .dice, .die, .canvas, .canvasPair, .dropped: os dados; o descartado esmaece.
+ *   .result, .resultOn, .label, .total, .tag: o rótulo, o total e o selo.
+ *   .crit, .fumble: o palco no crítico e na falha.
+ *   .sparks, .spark: as faíscas do crítico.
+ *   .crack: a rachadura da falha.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Cores só por token (--warning é o ouro, --danger o vermelho), com color-mix
+ *     para os tons (DDL-0097).
+ *   - O "reduzir movimento" do sistema nem abre a camada (rollShow), então aqui não
+ *     há regra própria para ele.
+ * ----------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+}
+
+.dice {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.die {
+  position: relative;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.canvas {
+  width: min(84vw, 340px);
+  height: min(84vw, 340px);
+  transition: filter 0.3s ease;
+}
+
+.canvasPair {
+  width: min(47vw, 250px);
+  height: min(47vw, 250px);
+}
+
+.dropped {
+  opacity: 0.3;
+  transform: scale(0.82);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 96px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.resultOn {
+  opacity: 1;
+  transform: none;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.total {
+  font-size: 52px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  margin-top: 4px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+}
+
+.crit .die:not(.dropped) .canvas {
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--warning) 75%, transparent));
+}
+
+.crit .total,
+.crit .tag {
+  color: var(--warning);
+}
+
+.crit .tag {
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.fumble .die:not(.dropped) {
+  animation: d20-shake 0.42s ease-in-out;
+}
+
+.fumble .die:not(.dropped) .canvas {
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--danger) 60%, transparent));
+}
+
+.fumble .total,
+.fumble .tag {
+  color: var(--danger-text);
+}
+
+.fumble .tag {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 8px var(--warning);
+  opacity: 0;
+  animation: d20-spark 0.9s ease-out var(--d) forwards;
+}
+
+.crack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: none;
+  stroke: color-mix(in srgb, var(--bg) 85%, black);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: d20-crack 0.35s ease-out 0.12s forwards;
+}
+
+@keyframes d20-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateX(30px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(min(40vw, 170px)) scale(0.3);
+  }
+}
+
+@keyframes d20-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-9px) rotate(-3deg);
+  }
+  45% {
+    transform: translateX(8px) rotate(2deg);
+  }
+  70% {
+    transform: translateX(-5px) rotate(-1deg);
+  }
+}
+
+@keyframes d20-crack {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

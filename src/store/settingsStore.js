@@ -18,6 +18,8 @@
 //   engine/playState); o que passa dela é dobrado no estado-base (DDL-0108).
 //   experimental: os recursos ainda em desenvolvimento ligados (DDL-0111); hoje,
 //   o play mode. Desligado por padrão.
+//   diceAnimation: a animação dos dados do play mode (src/dice3d, DDL-0152): 'd20'
+//   (o padrão, o d20 em destaque) ou 'off'. A fase D2 acrescenta todos os dados.
 //
 // FUNÇÕES
 //   load(), persist(state): leitura e escrita no localStorage. Sem localStorage
@@ -27,7 +29,7 @@
 //     setTheme(value) grava o tema e o aplica no documento; setPdfOptions(opts)
 //     grava as opções da ficha PDF; setPlayHistory(patch) muda a janela do
 //     histórico do play mode; setExperimental(on) liga ou desliga os recursos em
-//     desenvolvimento.
+//     desenvolvimento; setDiceAnimation(value) muda a animação dos dados.
 // -----------------------------------------------------------------------------
 
 import { create } from 'zustand';
@@ -37,7 +39,7 @@ import { normalizeLimits } from '../engine/playState';
 
 const KEY = 'builder5e:settings';
 
-const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false, theme: 'system', experimental: false };
+const DEFAULTS = { guidance: 'ask', samsungHintDismissed: false, theme: 'system', experimental: false, diceAnimation: 'd20' };
 
 function load() {
   try {
@@ -50,7 +52,7 @@ function load() {
 
 function persist(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf, playHistory: state.playHistory, experimental: !!state.experimental}));
+    localStorage.setItem(KEY, JSON.stringify({ guidance: state.guidance, samsungHintDismissed: state.samsungHintDismissed, theme: state.theme, pdf: state.pdf, playHistory: state.playHistory, experimental: !!state.experimental, diceAnimation: state.diceAnimation }));
   } catch {
     // localStorage indisponível (modo privado): as preferências ficam só em memória.
   }
@@ -87,6 +89,12 @@ const useSettingsStore = create((set, get) => ({
   /** Liga ou desliga os recursos em desenvolvimento (o play mode). */
   setExperimental: (on) => {
     set({ experimental: !!on });
+    persist(get());
+  },
+
+  /** A animação dos dados do play mode ('d20' ou 'off'). */
+  setDiceAnimation: (diceAnimation) => {
+    set({ diceAnimation });
     persist(get());
   },
 

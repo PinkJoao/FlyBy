@@ -30,7 +30,8 @@
 //   rollParts(parts, opts): rola partes rotuladas (atributo, PB, Bless...) com o
 //     mesmo rng e o mesmo crítico, e soma.
 //   resolveMode(advantage, disadvantage): vantagem e desvantagem se anulam.
-//   d20Test(opts): um teste de d20 com modo, natural, crítico e falha crítica.
+//   d20Test(opts): um teste de d20 com modo, natural, crítico e falha crítica;
+//     `physical` marca o resultado do dado de mesa (a animação do d20 não roda).
 //
 // DECISÕES E ARMADILHAS
 //   - Refs ANTES do parse: `@x` vira o número ou `(fórmula)` (uma ScaleValue de
@@ -417,7 +418,7 @@ export function resolveMode(advantage, disadvantage) {
  * Um teste de d20: o d20 do modo e as partes, com natural, crítico e falha crítica.
  * @param {{ parts?: { label: string, formula: string|number }[], advantage?: number|boolean, disadvantage?: number|boolean, critThreshold?: number, d20Min?: number, data?: object, rng?: (faces: number) => number }} opts
  */
-export function d20Test({ parts = [], advantage = 0, disadvantage = 0, critThreshold = 20, d20Min = null, data = {}, rng = cryptoRng } = {}) {
+export function d20Test({ parts = [], advantage = 0, disadvantage = 0, critThreshold = 20, d20Min = null, physical = false, data = {}, rng = cryptoRng } = {}) {
   const mode = resolveMode(advantage, disadvantage);
   const base = mode === 'advantage' ? '2d20kh' : mode === 'disadvantage' ? '2d20kl' : '1d20';
   const die = d20Min ? `${base}min${d20Min}` : base;
@@ -431,5 +432,6 @@ export function d20Test({ parts = [], advantage = 0, disadvantage = 0, critThres
     isFumble: natural === 1,
     total: rolled.total,
     parts: rolled.parts,
+    ...(physical ? { physical: true } : {}),
   };
 }

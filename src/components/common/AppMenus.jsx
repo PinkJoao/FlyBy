@@ -66,6 +66,8 @@ export function SettingsMenu({ onReplayTutorials }) {
   const setPlayHistory = useSettingsStore((s) => s.setPlayHistory);
   const experimental = useSettingsStore((s) => s.experimental);
   const setExperimental = useSettingsStore((s) => s.setExperimental);
+  const diceAnimation = useSettingsStore((s) => s.diceAnimation);
+  const setDiceAnimation = useSettingsStore((s) => s.setDiceAnimation);
 
   return (
     <MenuList
@@ -104,6 +106,13 @@ export function SettingsMenu({ onReplayTutorials }) {
           keepOpen: true,
           onClick: () => setExperimental(!experimental),
         },
+        ...(experimental
+          ? [
+              { heading: 'Dice animation' },
+              { label: 'Animated d20', sub: 'A 3D d20 rolls on the screen for every d20 test', checked: diceAnimation !== 'off', keepOpen: true, onClick: () => setDiceAnimation('d20') },
+              { label: 'Off', sub: 'Only the result appears', checked: diceAnimation === 'off', keepOpen: true, onClick: () => setDiceAnimation('off') },
+            ]
+          : []),
         ...(experimental ? [{ heading: 'Play history' }] : []),
         ...(!experimental ? [] : HISTORY_EVENT_CHOICES).map((n) => ({
           label: `Last ${n} actions`,

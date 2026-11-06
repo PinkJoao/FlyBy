@@ -23,7 +23,8 @@
 //   bonusParts(options): a parte do bônus livre, se houver.
 //   rngFor(options, rng): o rng com os dados físicos na frente.
 //   modeFlags(mode): vantagem e desvantagem do modo.
-//   d20Options(options): o modo somado aos efeitos, o piso e o limiar.
+//   d20Options(options): o modo somado aos efeitos, o piso e o limiar, e `physical`
+//     quando o jogador digitou o dado da mesa.
 //   rollTestEvent(args): o evento de um teste de d20.
 //   rollAttackEvent(args): o evento do acerto de um ataque.
 //   damageParts(attack, options): as partes do dano de um ataque.
@@ -105,6 +106,7 @@ export function d20Options(options = {}) {
     disadvantage: m.disadvantage + (a.disadvantage ?? 0),
     d20Min: a.d20Min ?? null,
     critThreshold: options.critThreshold ?? a.critThreshold ?? 20,
+    physical: (options.manual ?? []).some((v) => Number.isFinite(v)),
   };
 }
 

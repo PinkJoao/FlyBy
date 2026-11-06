@@ -50,7 +50,9 @@
 //       lado certo).
 //     moveCursor(fn, verb), undo(), redo(): mexem no cursor e avisam um
 //       conflito de inventário.
-//     record(event, cost): grava (marcando o custo do turno, em combate) e mostra o aviso.
+//     record(event, cost): grava (marcando o custo do turno, em combate) e mostra o aviso;
+//       um teste de d20 do app abre antes o d20 em destaque (D20Overlay, DDL-0152), e o
+//       aviso vem quando ele fecha (closeRoll).
 //     openHeal(), openHurt(), openHitDice(): os botões do card de HP; com
 //       concentração, o dano já pede o save.
 //     rollDeathSave(quick), rollConcentration(dc, quick), askConcentrationSave(),
@@ -199,6 +201,10 @@ import SelectorPanel from '../selector/SelectorPanel';
 import conditionEntity from '../selector/entities/condition';
 import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
+import useSettingsStore from '../store/settingsStore';
+import { reducedMotion } from '../motion';
+import { d20Show, shouldAnimate } from '../dice3d/rollShow';
+import D20Overlay from '../dice3d/D20Overlay';
 import sheetPage from './Builder.module.css';
 import sheetHeader from '../components/builder/StatsHeader.module.css';
 import styles from './Play.module.css';
@@ -274,6 +280,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     canNext: tabIndex < tabs.length - 1,
   });
   const [toast, setToast] = useState(null);
+  const [rollShow, setRollShow] = useState(null);
+  const diceAnimation = useSettingsStore((s) => s.diceAnimation);
   const [picker, setPicker] = useState(null);
 
 
@@ -322,8 +330,18 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const op = cost ? economyOp(state, cost) : null;
     const final = op ? { ...event, ops: [...event.ops, op] } : event;
     const conflicts = play.record(final);
-    setToast(final);
+    const show = d20Show(final);
+    if (shouldAnimate(show, { setting: diceAnimation, reduced: reducedMotion() })) {
+      setToast(null);
+      setRollShow({ show, event: final });
+    } else setToast(final);
     if (conflicts?.length) alert({ title: 'Not applied to the sheet', message: 'The sheet does not have that much, so the item or coins were left as they are.' });
+  };
+
+  /** Fecha o d20 em destaque e mostra o aviso da rolagem. */
+  const closeRoll = () => {
+    setToast(rollShow?.event ?? null);
+    setRollShow(null);
   };
 
   /** O Heal do card de HP: curar, temporário ou máximo. */
@@ -906,6 +924,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           onClose={() => setPicker(null)}
         />
       )}
+
+      {rollShow && <D20Overlay key={rollShow.event.id} show={rollShow.show} onDone={closeRoll} />}
 
       {toast && (
         <button key={toast.id} type="button" className={`${styles.toast} motion-pop`} onClick={() => { setToast(null); if (!wide) openTab('History'); }}>

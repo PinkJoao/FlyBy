@@ -37,6 +37,8 @@
 //     weaponProficient(entry, weaponProfs), weaponAttacks(character, derived): as
 //       armas do inventário, equipadas primeiro.
 //     unarmedStrike(derived): o ataque desarmado.
+//     diceAverage(dice), withMartialArts(attacks, ctx): o Martial Arts do monge sobre
+//       o desarmado e as armas de monge (o dado da tabela e a DES).
 //     scaledDice(raw, level), textDice(raw), textHealDice(raw), upcastDice(raw),
 //       spellMechanics(raw, level): a mecânica de uma magia pelo dado.
 //     cantripAttacks(spellcasting, level): os cantrips que atacam ou pedem save.
@@ -128,6 +130,12 @@
 //     Mystic Arcanum é 1 por descanso longo.
 //   - Iniciativa: Destreza, mais o PB com o Alert (o 2024 dá "Initiative
 //     Proficiency"); a mesma conta que o PDF fazia.
+//   - Martial Arts (XPHB, withMartialArts, 2026-11-06): o desarmado e as armas de
+//     monge (corpo a corpo simples, ou marcial com Light) usam DES se for maior e
+//     rolam o dado da coluna da tabela (`@scale.monk.die`, o mesmo do SRD), ou o da
+//     arma quando a média dele é maior ("in place of" é opção do jogador; a maior é
+//     a que ele escolheria). Com armadura ou escudo, nada muda. Sem isso o monge
+//     rolava 1 + FOR no desarmado.
 // -----------------------------------------------------------------------------
 
 import { ABILITIES } from '../schema/character';
@@ -262,6 +270,7 @@ export function weaponAttacks(character, derived) {
       name: raw.name,
       uid: e.uid ?? null,
       range: e.kind === 'ranged' ? 'ranged' : 'melee',
+      category: e.category ?? null,
       equipped: e.equipped === true,
       ability,
       proficient,
@@ -276,6 +285,42 @@ export function weaponAttacks(character, derived) {
       ammunition: props.includes('A') || props.includes('AF'),
       ammoType: raw.ammoType ?? null,
       distance: raw.range ?? null,
+    };
+  });
+}
+
+/** A média de um dado "NdM" (0 sem dado). */
+function diceAverage(dice) {
+  const m = /^(\d*)d(\d+)$/.exec(String(dice ?? '').trim());
+  return m ? (Number(m[1] || 1) * (Number(m[2]) + 1)) / 2 : 0;
+}
+
+/**
+ * Martial Arts (XPHB): sem armadura nem escudo, o desarmado e as armas de monge usam
+ * DES se for maior e rolam o dado da tabela (ou o da arma, se maior).
+ */
+export function withMartialArts(attacks, { derived, rollData, features }) {
+  const die = rollData?.['scale.monk.die'];
+  if (!die || !(features ?? []).includes('martial arts')) return attacks;
+  if (derived.armorClass?.hasArmor || derived.armorClass?.hasShield) return attacks;
+  const mods = derived.modifiers ?? {};
+  return attacks.map((a) => {
+    const monkWeapon = a.kind === 'weapon' && a.range === 'melee'
+      && (a.category === 'simple' || (a.category === 'martial' && (a.properties ?? []).includes('L')));
+    if (a.kind !== 'unarmed' && !monkWeapon) return a;
+    const before = mods[a.ability] ?? 0;
+    const ability = (mods.dex ?? 0) > before ? 'dex' : a.ability;
+    const mod = mods[ability] ?? 0;
+    const label = ability === 'dex' ? 'Dexterity' : 'Strength';
+    const parts = a.toHit.parts.map((p, i) => (i === 0 ? { label, formula: mod } : p));
+    const extra = a.kind === 'unarmed' ? 0 : (a.damage?.bonus ?? before) - before;
+    const dice = a.damage?.dice && diceAverage(a.damage.dice) >= diceAverage(die) ? a.damage.dice : die;
+    return {
+      ...a,
+      ability,
+      martialArts: true,
+      toHit: { total: a.toHit.total - before + mod, parts },
+      damage: { dice, bonus: mod + extra, types: a.damage?.types ?? ['bludgeoning'] },
     };
   });
 }
@@ -819,9 +864,9 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     spellDc: spellDcs.length ? Math.max(...spellDcs) : null,
   };
 
+  const features = [...new Set((a?.items ?? []).filter((i) => i.type === 'feat' && !isBasicActionItem(i)).map((i) => norm(i.name)))];
   const attacks = [
-    ...weaponAttacks(character, d),
-    unarmedStrike(d),
+    ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features }),
     ...cantripAttacks(d.spellcasting, level),
   ];
   for (const at of attacks) {
@@ -844,7 +889,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),
-    features: [...new Set((a?.items ?? []).filter((i) => i.type === 'feat' && !isBasicActionItem(i)).map((i) => norm(i.name)))],
+    features,
     featureList: a ? featureList(a, character, db) : [],
     attacks,
     actions: a ? featureActions(a, ctx) : [],

@@ -18,7 +18,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   evalUses, scaleValues, scaleRollData, actorResources, weaponAttacks, unarmedStrike, cantripAttacks,
-  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog,
+  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts,
 } from './playCatalog';
 
 const feat = (name, system = {}, extra = {}) => ({ type: 'feat', name, system: { identifier: '', uses: { max: '' }, ...system }, ...extra });
@@ -281,3 +281,37 @@ describe('derivePlayCatalog', () => {
     expect(c.problems[0].where).toBe('actor');
   });
 });
+
+describe('withMartialArts', () => {
+  const derived = { modifiers: { str: -1, dex: 4 }, armorClass: { hasArmor: false, hasShield: false } };
+  const rollData = { 'scale.monk.die': '1d8' };
+  const weapon = (name, extra) => ({ kind: 'weapon', name, range: 'melee', category: 'simple', ability: 'str', properties: [], toHit: { total: 2, parts: [{ label: 'Strength', formula: -1 }, { label: 'Proficiency', formula: 3 }] }, damage: { dice: '1d6', bonus: -1, types: ['piercing'] }, ...extra });
+  const unarmed = { kind: 'unarmed', name: 'Unarmed Strike', range: 'melee', ability: 'str', toHit: { total: 2, parts: [{ label: 'Strength', formula: -1 }, { label: 'Proficiency', formula: 3 }] }, damage: { dice: null, bonus: 0, types: ['bludgeoning'] } };
+  const ctx = { derived, rollData, features: ['martial arts'] };
+
+  it('o desarmado rola o dado da tabela com DES, sem o 1 fixo', () => {
+    const [u] = withMartialArts([unarmed], ctx);
+    expect(u).toMatchObject({ ability: 'dex', martialArts: true, toHit: { total: 7 }, damage: { dice: '1d8', bonus: 4, types: ['bludgeoning'] } });
+    expect(u.toHit.parts[0]).toEqual({ label: 'Dexterity', formula: 4 });
+  });
+
+  it('arma de monge troca o dado pelo maior e guarda o bônus mágico', () => {
+    const [j] = withMartialArts([weapon('Javelin', { damage: { dice: '1d6', bonus: 0, types: ['piercing'] } })], ctx);
+    expect(j.damage).toEqual({ dice: '1d8', bonus: 5, types: ['piercing'] });
+    const [q] = withMartialArts([weapon('Quarterstaff', { damage: { dice: '1d10', bonus: -1, types: ['bludgeoning'] } })], ctx);
+    expect(q.damage.dice).toBe('1d10');
+  });
+
+  it('marcial pesada, à distância, com armadura ou sem a feature ficam como estão', () => {
+    const heavy = weapon('Greatsword', { category: 'martial', properties: ['H', '2H'] });
+    const shortsword = weapon('Shortsword', { category: 'martial', properties: ['F', 'L'] });
+    const bow = weapon('Shortbow', { range: 'ranged' });
+    const out = withMartialArts([heavy, shortsword, bow], ctx);
+    expect(out[0]).toBe(heavy);
+    expect(out[1].martialArts).toBe(true);
+    expect(out[2]).toBe(bow);
+    expect(withMartialArts([unarmed], { ...ctx, derived: { ...derived, armorClass: { hasArmor: true } } })[0]).toBe(unarmed);
+    expect(withMartialArts([unarmed], { ...ctx, features: [] })[0]).toBe(unarmed);
+  });
+});
+

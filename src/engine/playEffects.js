@@ -73,7 +73,9 @@
 //   Registros curados (texto do XPHB)
 //   - FEATURE_EFFECTS: Rage (resistência a contundente, perfurante e cortante;
 //     vantagem em testes e saves de FOR; dano extra da escala em ataque com FOR;
-//     termina incapacitado; em combate dura no máximo 10 minutos, `maxRounds`).
+//     termina incapacitado; em combate dura no máximo 10 minutos, `maxRounds`) e
+//     Dodge (vantagem em saves de DES, e a nota "ataques contra você têm
+//     desvantagem", que é do atacante: até o começo do seu próximo turno, 1 rodada).
 //   - SPELL_EFFECTS: Bless (+1d4 em ataques e saves), Shield of Faith (+2 CA),
 //     Divine Favor (+1d4 radiante com arma), Hunter's Mark (+1d6 de força no alvo
 //     marcado), Hex (+1d6 necrótico no alvo amaldiçoado). `self` diz se a magia é
@@ -118,6 +120,15 @@ const FEATURE_EFFECTS = {
       { targets: ['damage'], formula: catalog.rollData?.['scale.barbarian.rage-damage'] != null ? '@scale.barbarian.rage-damage' : '2', when: 'strAttack', label: 'Rage damage' },
       { targets: ['check:str', 'save:str'], mode: 'advantage', label: 'Rage' },
     ],
+  }),
+
+  'action:dodge': () => ({
+    label: 'Dodge',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 1,
+    notes: ['Attacks against you have Disadvantage'],
+    effects: [{ targets: ['save:dex'], mode: 'advantage', label: 'Dodge' }],
   }),
 };
 

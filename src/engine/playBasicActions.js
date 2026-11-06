@@ -32,6 +32,15 @@
 //     delas, itens com carga, pergaminhos, consumíveis, escudo, agarrado, concentração).
 //   actionRelevant(name, ctx): a ação tem o que fazer? (só então aparece)
 //   basicActionList(catalog, state, ctx): as ações da aba, com custos e o que sobra.
+//   actionMeans(item, ctx): os meios de uma ação (os ataques, as magias e itens, os
+//     consumíveis, as perícias), ou o único meio das que não escolhem nada.
+//   actionChoice(item, ctx): precisa do painel? Senão, a escolha pronta (o custo e o
+//     meio únicos), que a tela usa direto.
+//   attacksPerAction(catalog): quantos ataques a ação Attack dá.
+//   attackProgress(catalog, state): os ataques feitos na ação Attack em curso.
+//   attackStepOp(catalog, state): a operação de mais um ataque (o primeiro gasta a
+//     ação, os do Extra Attack só contam).
+//   offhandAttack(attack, catalog): o ataque da outra mão no Two-Weapon Fighting.
 //   costAvailable(cost, state): o custo está livre neste turno?
 //
 // DECISÕES E ARMADILHAS
@@ -67,6 +76,22 @@
 //   - Magic ganha os custos das magias que o personagem lança (Bonus Action do Misty
 //     Step, Reaction do Shield): no livro de 2024 elas não são a ação Magic, mas é
 //     por ela que o jogador as procura na aba; o painel lança cada uma no tempo dela.
+//   - Extra Attack (DDL-0148): a ação Attack conta os ataques em `used.attacks`; o
+//     primeiro gasta a ação, os seguintes (até o máximo: 2, 3 com Two Extra Attacks,
+//     4 com Three) não gastam nada, e o card mostra "1 of 2". O "Next turn" zera
+//     `used` e a conta junto. Thirsting Blade (bruxo) conta como Extra Attack.
+//   - Two-Weapon Fighting: a segunda arma não soma o modificador positivo no dano
+//     (propriedade Light, XPHB), menos com o estilo de luta Two-Weapon Fighting. O
+//     ataque leva a chave `<chave>#offhand`, que o "Roll damage" do histórico
+//     reconhece.
+//   - Sem escolha, sem painel (pedido do dono, 2026-11-06, DDL-0149): actionChoice
+//     só pede o painel com mais de um custo, mais de um meio, ou o gatilho do Ready.
+//     Dodge, Help e Disengage de quem não tem outro custo são usados no toque; Hide
+//     com só Stealth vai direto para a rolagem; o Hide do ladino (Action ou Bonus
+//     Action) abre o painel para o custo. A regra é CONTADA, não uma lista de ações:
+//     quando um efeito de magia, item mágico ou feature passiva acrescentar um custo
+//     (por ACTION_COSTS ou uma atividade) ou um meio (uma perícia a mais em
+//     ACTION_SKILLS, um item com carga), o painel passa a aparecer sozinho.
 //   - O pergaminho é Magic (ler um é a ação Magic, playInventory); a poção é Utilize,
 //     com o custo dela (Bonus Action).
 //   - Disponibilidade só em combate (a economia do turno só existe nele, engine/
@@ -170,6 +195,40 @@ export function altCostsFor(catalog) {
   return out;
 }
 
+/** Quantos ataques a ação Attack dá (Extra Attack, Two e Three Extra Attacks, Thirsting Blade). */
+export function attacksPerAction(catalog) {
+  const f = new Set((catalog?.features ?? []).map(lower));
+  if (f.has('three extra attacks')) return 4;
+  if (f.has('two extra attacks')) return 3;
+  return f.has('extra attack') || f.has('thirsting blade') ? 2 : 1;
+}
+
+/** Os ataques feitos na ação Attack em curso, e o máximo; null fora de combate. */
+export function attackProgress(catalog, state) {
+  if (!state?.combat) return null;
+  return { done: state.combat.used?.attacks ?? 0, max: attacksPerAction(catalog) };
+}
+
+/**
+ * A operação de mais um ataque da ação Attack: o primeiro gasta a ação, os outros
+ * (Extra Attack) só contam. Devolve null fora de combate.
+ */
+export function attackStepOp(catalog, state) {
+  const p = attackProgress(catalog, state);
+  if (!p) return null;
+  const used = state.combat.used ?? {};
+  const continuing = used.action && p.done > 0 && p.done < p.max;
+  return { op: 'combat', value: { ...state.combat, used: { ...used, action: true, attacks: continuing ? p.done + 1 : 1 } } };
+}
+
+/** O ataque da arma da outra mão: sem o modificador no dano (se positivo), menos com o estilo. */
+export function offhandAttack(attack, catalog) {
+  const styled = (catalog?.features ?? []).map(lower).includes('two-weapon fighting');
+  const mod = catalog?.rollData?.abilities?.[attack.ability]?.mod ?? 0;
+  const damage = attack.damage && !styled && mod > 0 ? { ...attack.damage, bonus: attack.damage.bonus - mod } : attack.damage;
+  return { ...attack, key: `${attack.key}#offhand`, name: `${attack.name} (off-hand)`, damage, offhand: true };
+}
+
 /** O custo está livre neste turno? (fora de combate, sempre) */
 export function costAvailable(cost, state) {
   if (!state?.combat || !ECONOMY.includes(cost)) return true;
@@ -220,6 +279,39 @@ export function actionRelevant(name, ctx) {
 }
 
 /**
+ * Os MEIOS de uma ação (o que o painel deixaria escolher), da mesma fonte que o painel lê.
+ * @returns {Array<{ kind: string } & Record<string, any>>}
+ */
+export function actionMeans(item, ctx) {
+  const means = ACTION_MEANS[item.name] ?? 'mark';
+  if (means === 'attack') {
+    const list = item.name === 'Opportunity Attack' ? ctx.melee : item.name === 'Two-Weapon Fighting' ? ctx.light : ctx.attacks;
+    return list.map((attack) => ({ kind: 'attack', attack }));
+  }
+  if (means === 'magic') {
+    return [
+      ...ctx.spells.map(({ origin, spell }) => ({ kind: 'spell', origin, spell })),
+      ...ctx.charged.map((resource) => ({ kind: 'charge', resource })),
+      ...ctx.scrolls.map((entry) => ({ kind: 'item', entry })),
+    ];
+  }
+  if (means === 'item') return ctx.usable.map((entry) => ({ kind: 'item', entry }));
+  if (means === 'skill') return (ACTION_SKILLS[item.name] ?? []).map((skill) => ({ kind: 'skill', skill }));
+  return [{ kind: means }];
+}
+
+/**
+ * A ação precisa do painel? Só quando há o que escolher: mais de um custo, mais de um
+ * meio, ou um texto (o gatilho do Ready). Senão, devolve a escolha pronta.
+ * @returns {{ needsPrompt: boolean, choice: object|null }}
+ */
+export function actionChoice(item, ctx) {
+  const means = actionMeans(item, ctx);
+  if (item.name === 'Ready' || item.costs.length !== 1 || means.length !== 1) return { needsPrompt: true, choice: null };
+  return { needsPrompt: false, choice: { cost: item.costs[0], ...means[0] } };
+}
+
+/**
  * As ações da aba Actions, na ordem do livro, só as que têm o que fazer, com os custos.
  * @param {object} catalog o catálogo de jogo (derivePlayCatalog)
  * @param {object} state o estado de jogo
@@ -233,8 +325,10 @@ export function basicActionList(catalog, state, ctx = actionContext(catalog, sta
     if (!action || !actionRelevant(name, ctx)) return null;
     const base = { cost: costOf(action), source: null, via: null, with: [], note: null };
     const extra = name === 'Magic' ? ['bonus', 'reaction'].filter((c) => ctx.spellCosts.has(c)).map((cost) => ({ cost, source: 'a spell', via: null, with: [], note: null })) : [];
-    const costs = [base, ...extra, ...(alts.get(name) ?? [])].map((c) => ({ ...c, label: costLabel(c.cost), available: costAvailable(c.cost, state) }));
-    return { key: action.key, name, group, action, costs, available: costs.some((c) => c.available) };
+    const progress = name === 'Attack' ? attackProgress(catalog, state) : null;
+    const continuing = progress && progress.done > 0 && progress.done < progress.max;
+    const costs = [base, ...extra, ...(alts.get(name) ?? [])].map((c) => ({ ...c, label: costLabel(c.cost), available: (continuing && c === base) || costAvailable(c.cost, state) }));
+    return { key: action.key, name, group, action, costs, available: costs.some((c) => c.available), attacks: progress && progress.max > 1 && progress.done > 0 ? progress : null };
   };
   return [...MAIN_ACTIONS.map((n) => build(n, 'main')), ...OTHER_ACTIONS.map((n) => build(n, 'other'))].filter(Boolean);
 }

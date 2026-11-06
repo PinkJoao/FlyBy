@@ -15,7 +15,9 @@
 //   ItemThumb(props): arte do fluff ou o glyph do grupo.
 //   EquipToggle(props): o radio de equipar.
 //   CustomDetail(props): o detalhe de um item custom (HTML do Foundry).
-//   ItemRow(props): uma linha.
+//   ItemRow(props): uma linha. Exportada para a aba Inventory do play mode, que passa
+//     `readOnly` (sem quantidade nem equipar: só o "x3"), `onUse` (o botão de usar)
+//     e `usesLeft` (as cargas que sobram).
 //
 // DECISÕES E ARMADILHAS
 //   - Só grupos que se vestem ou empunham mostram o equipar.
@@ -591,8 +593,8 @@ function CustomDetail({ entry, name, meta }) {
   );
 }
 
-function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEquip = false }) {
-  const canEquip = !hideEquip && EQUIPPABLE_GROUPS.has(entry.group);
+export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEquip = false, readOnly = false, onUse, useLabel = 'Use', usesLeft = null }) {
+  const canEquip = !readOnly && !hideEquip && EQUIPPABLE_GROUPS.has(entry.group);
   const rarity = entry.rarity ?? null;
   const rarityColor = rarity ? RARITY_COLOR[rarity] : null;
   const meta = metaParts(entry);
@@ -631,14 +633,24 @@ function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEquip = f
 
       <div className={styles.rowSide}>
         <span className={styles.rowWeight}>{entry.lineWeight} lb</span>
-        <Stepper
-          value={entry.quantity}
-          min={1}
-          maxDigits={4}
-          onChange={onQty}
-          onMinReached={onRemove}
-          ariaLabel={`Quantity of ${nameOf(entry)}`}
-        />
+        {readOnly ? (
+          (entry.quantity ?? 1) > 1 && <span className={styles.rowQty}>x{entry.quantity}</span>
+        ) : (
+          <Stepper
+            value={entry.quantity}
+            min={1}
+            maxDigits={4}
+            onChange={onQty}
+            onMinReached={onRemove}
+            ariaLabel={`Quantity of ${nameOf(entry)}`}
+          />
+        )}
+        {usesLeft && <span className={styles.rowQty} title="Charges left">{usesLeft}</span>}
+        {onUse && (
+          <button type="button" className={styles.useBtn} onClick={onUse} title={`${useLabel} ${nameOf(entry)}`}>
+            {useLabel}
+          </button>
+        )}
         {canEquip && <EquipToggle equipped={entry.equipped} onClick={onEquip} name={nameOf(entry)} />}
       </div>
     </li>

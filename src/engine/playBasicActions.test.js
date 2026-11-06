@@ -20,7 +20,8 @@
 // -----------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
-import { MAIN_ACTIONS, OTHER_ACTIONS, actionContext, actionRelevant, altCostsFor, basicActionList, costLabel, costOf } from './playBasicActions';
+import { MAIN_ACTIONS, OTHER_ACTIONS, actionChoice, actionContext, actionRelevant, altCostsFor, attackStepOp, attacksPerAction, basicActionList, costLabel, costOf, offhandAttack } from './playBasicActions';
+import { featureModifier } from './playEffects';
 
 const TYPES = { 'Opportunity Attack': 'reaction', 'Two-Weapon Fighting': 'bonus', 'End Concentration': 'special', 'Improvising an Action': 'special' };
 const basic = (name, type = TYPES[name] ?? 'action') => ({ key: `action:${name.toLowerCase().replace(/ /g, '-')}`, name, group: 'basic', activities: [{ id: 'a', name, activation: { type } }] });
@@ -106,5 +107,65 @@ describe('ações básicas', () => {
     expect(dash.costs.map((c) => c.available)).toEqual([false, true]);
     expect(dash.available).toBe(true);
     expect(list.find((a) => a.name === 'Dodge').available).toBe(false);
+  });
+});
+
+describe('Extra Attack, Two-Weapon Fighting e Dodge', () => {
+  const inCombat = (used = {}) => ({ combat: { round: 3, used }, conditions: {} });
+  it('quantos ataques a ação Attack dá', () => {
+    expect(attacksPerAction({ features: [] })).toBe(1);
+    expect(attacksPerAction({ features: ['extra attack'] })).toBe(2);
+    expect(attacksPerAction({ features: ['extra attack', 'two extra attacks'] })).toBe(3);
+    expect(attacksPerAction({ features: ['three extra attacks'] })).toBe(4);
+    expect(attacksPerAction({ features: ['thirsting blade'] })).toBe(2);
+  });
+  it('o primeiro ataque gasta a ação; o do Extra Attack só conta, e o card segue livre', () => {
+    const cat = catalogWith([], ['extra attack']);
+    const first = attackStepOp(cat, inCombat()).value.used;
+    expect(first).toMatchObject({ action: true, attacks: 1 });
+    const mid = inCombat(first);
+    const attack = basicActionList(cat, mid).find((a) => a.name === 'Attack');
+    expect(attack.available).toBe(true);
+    expect(attack.attacks).toEqual({ done: 1, max: 2 });
+    expect(attackStepOp(cat, mid).value.used).toMatchObject({ action: true, attacks: 2 });
+    const done = inCombat({ action: true, attacks: 2 });
+    expect(basicActionList(cat, done).find((a) => a.name === 'Attack').available).toBe(false);
+    expect(attackStepOp(cat, done).value.used.attacks).toBe(1);
+    expect(attackStepOp(cat, {})).toBeNull();
+  });
+  it('a outra mão não soma o modificador positivo, a não ser com o estilo', () => {
+    const sword = { key: 'weapon:s', name: 'Shortsword', ability: 'dex', damage: { dice: '1d6', bonus: 4 } };
+    const cat = { features: [], rollData: { abilities: { dex: { mod: 3 } } } };
+    expect(offhandAttack(sword, cat)).toMatchObject({ key: 'weapon:s#offhand', name: 'Shortsword (off-hand)', damage: { bonus: 1 } });
+    expect(offhandAttack(sword, { ...cat, features: ['two-weapon fighting'] }).damage.bonus).toBe(4);
+    expect(offhandAttack({ ...sword, damage: { dice: '1d6', bonus: -1 } }, { features: [], rollData: { abilities: { dex: { mod: -1 } } } }).damage.bonus).toBe(-1);
+  });
+  it('o Dodge liga o efeito até o próximo turno', () => {
+    const m = featureModifier({ key: 'action:dodge' }, {});
+    expect(m).toMatchObject({ label: 'Dodge', maxRounds: 1, notes: ['Attacks against you have Disadvantage'] });
+    expect(m.effects[0]).toMatchObject({ targets: ['save:dex'], mode: 'advantage' });
+  });
+});
+
+describe('quando a ação precisa do painel', () => {
+  const pick = (list, n) => list.find((a) => a.name === n);
+  it('sem escolha, sem painel: Dodge e Help usam o único custo; Hide vai direto para Stealth', () => {
+    const cat = catalogWith([], [], { ...everything, attacks: [sword] });
+    const ctx = actionContext(cat, {}, []);
+    const list = basicActionList(cat, {}, ctx);
+    expect(actionChoice(pick(list, 'Dodge'), ctx)).toMatchObject({ needsPrompt: false, choice: { kind: 'mark', cost: { cost: 'action' } } });
+    expect(actionChoice(pick(list, 'Help'), ctx).needsPrompt).toBe(false);
+    expect(actionChoice(pick(list, 'Hide'), ctx)).toMatchObject({ needsPrompt: false, choice: { kind: 'skill', skill: 'ste' } });
+    expect(actionChoice(pick(list, 'Attack'), ctx)).toMatchObject({ needsPrompt: false, choice: { kind: 'attack', attack: { name: 'Shortsword' } } });
+  });
+  it('com escolha, com painel: o ladino (dois custos), duas armas, várias perícias, o Ready', () => {
+    const rogue = catalogWith([cunning], ['cunning action']);
+    const ctx = actionContext(rogue, {}, []);
+    const list = basicActionList(rogue, {}, ctx);
+    expect(actionChoice(pick(list, 'Hide'), ctx).needsPrompt).toBe(true);
+    expect(actionChoice(pick(list, 'Disengage'), ctx).needsPrompt).toBe(true);
+    expect(actionChoice(pick(list, 'Attack'), ctx).needsPrompt).toBe(true);
+    expect(actionChoice(pick(list, 'Influence'), ctx).needsPrompt).toBe(true);
+    expect(actionChoice(pick(list, 'Ready'), ctx).needsPrompt).toBe(true);
   });
 });

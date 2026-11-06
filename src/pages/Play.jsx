@@ -31,7 +31,8 @@
 //   DDL-0147 (docs/PLAY-MODE-V2-PLAN.md): a aba Actions são as ações básicas do
 //   livro (ActionsTab, engine/playBasicActions) que o personagem tem o que fazer,
 //   com os custos dele; tocar abre o ActionPanel (o custo e o meio), e takeAction
-//   executa pelo fluxo que já existe (rollAttack, castSpell, rollTest, moveFeet,
+//   executa pelo fluxo que já existe (sem painel quando não há o que escolher,
+//   actionChoice, DDL-0149) (rollAttack, castSpell, rollTest, moveFeet,
 //   consumeItem, applyFeature). O custo que vem de uma feature com gasto (o Focus do
 //   monge) vai NUM evento só com a ação (withOps): em dois, o segundo partiria do
 //   estado antigo e apagaria o custo marcado pelo primeiro. A lista de ataques
@@ -165,10 +166,10 @@ import { emptyPlayState } from '../engine/playState';
 import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
-import { itemUseEvent, quantityEvent, ammoOps, currencyEvent, itemCostOf, healOf } from '../engine/playInventory';
+import { itemUseEvent, ammoOps, currencyEvent, itemCostOf, healOf } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
   movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
@@ -176,7 +177,7 @@ import {
 import { askRoll } from '../components/play/rollDialog';
 import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askCurrency, askSkillCheck, askMove, askAction } from '../components/play/playDialogs';
 import ActionsTab from '../components/play/ActionsTab';
-import { actionContext, basicActionList } from '../engine/playBasicActions';
+import { actionChoice, actionContext, attackStepOp, basicActionList, offhandAttack } from '../engine/playBasicActions';
 import FeaturesTab from '../components/play/FeaturesTab';
 import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
@@ -600,7 +601,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** O "Roll damage" do cartão de um ataque no histórico. */
   const damageFromHistory = (attackKey, opts) => {
-    const attack = catalog.attacks.find((a) => a.key === attackKey);
+    const offhand = String(attackKey).endsWith('#offhand');
+    const base = catalog.attacks.find((a) => a.key === (offhand ? String(attackKey).slice(0, -'#offhand'.length) : attackKey));
+    const attack = base && offhand ? offhandAttack(base, catalog) : base;
     if (!attack) {
       alert({ title: 'Attack not found', message: 'This attack is no longer on the sheet.' });
       return;
@@ -630,7 +633,6 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     record(event, itemCostOf(entry.raw));
   };
 
-  const changeQuantity = (entry, delta) => record(quantityEvent({ character, entry, delta }));
 
   /** Gastar ou ganhar moedas pelo diálogo. */
   const spendMoney = async () => {
@@ -660,26 +662,35 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const actionCtx = useMemo(() => actionContext(catalog, state, inventoryUsable), [catalog, state, inventoryUsable]);
   const basicActions = useMemo(() => basicActionList(catalog, state, actionCtx), [catalog, state, actionCtx]);
 
+  /** Gasta uma carga de um item mágico (delta positivo gasta), com o custo do turno. */
+  const spendCharge = (resource, cost = 'action') => record(adjustResourceEvent({ catalog, key: resource.key, delta: 1 }), cost);
+
   /** Uma ação básica da aba Actions: pergunta como, e usa o fluxo que já existe. */
   const takeAction = async (item) => {
     const rule = (db?.actions?.action ?? []).find((a) => a.name === item.name && a.source === 'XPHB') ?? null;
-    const r = await askAction({ item, ctx: actionCtx, catalog, state, rule });
+    const direct = actionChoice(item, actionCtx);
+    const r = direct.needsPrompt ? await askAction({ item, ctx: actionCtx, catalog, state, rule }) : direct.choice;
     if (!r) return;
+    if (r.kind === 'skill' && !r.name) r.name = `${item.name}: ${SKILL_LABEL[r.skill] ?? r.skill}${item.name === 'Hide' ? ' (DC 15)' : ''}`;
     const owner = r.cost.via ? catalog.actions.find((a) => a.key === r.cost.via.action) : null;
     const activity = owner?.activities.find((x) => x.id === r.cost.via.activity) ?? null;
     const viaEvent = owner && activity ? activityEvent({ catalog, state, action: owner, activity }) : null;
-    const extra = viaEvent?.ops ?? [];
+    const effect = viaEvent ? featureModifier(item.action, catalog) : null;
+    const extra = [...(viaEvent?.ops ?? []), ...(effect ? [{ op: 'modifier', add: withRounds(effect, state, effect.maxRounds) }] : [])];
     const cost = ECONOMY.includes(r.cost.cost) ? r.cost.cost : null;
-    if (r.kind === 'attack') rollAttack(r.attack, false, true, cost ?? 'action', extra);
+    const step = r.kind === 'attack' && item.name === 'Attack' && !r.cost.via ? attackStepOp(catalog, state) : null;
+    if (r.kind === 'attack' && step) rollAttack(r.attack, false, true, null, [...extra, step]);
+    else if (r.kind === 'attack' && item.name === 'Two-Weapon Fighting') rollAttack(offhandAttack(r.attack, catalog), false, true, cost ?? 'bonus', extra);
+    else if (r.kind === 'attack') rollAttack(r.attack, false, true, cost ?? 'action', extra);
     else if (r.kind === 'spell') castSpell(r.origin, r.spell);
-    else if (r.kind === 'charge') record(adjustResourceEvent({ catalog, key: r.resource.key, delta: -1 }), cost);
+    else if (r.kind === 'charge') spendCharge(r.resource, cost);
     else if (r.kind === 'item') consumeItem(r.entry);
     else if (r.kind === 'skill') rollTest({ type: 'skill', id: r.skill }, r.name, false, cost, extra);
     else if (r.kind === 'dash') moveFeet(true, cost, extra);
     else if (r.kind === 'ready') record(withOps(readyEvent({ state, trigger: r.trigger, cost }), extra));
     else if (r.kind === 'readiedReaction') record(readiedReactionEvent({ state }));
     else if (r.kind === 'endConcentration') endConcentration();
-    else if (viaEvent) record(viaEvent, cost);
+    else if (viaEvent) record(withOps(viaEvent, extra.slice(viaEvent.ops.length)), cost);
     else {
       const basic = item.action.activities[0];
       applyFeature(item.action, { ...basic, activation: { ...basic.activation, type: r.cost.cost } });
@@ -846,7 +857,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           )}
 
           {activeTab === 'Spells' && (
-            <SpellsTab catalog={catalog} state={state} onCast={castSpell} onAdjust={adjust} />
+            <SpellsTab catalog={catalog} state={state} derived={derived} db={db} onCast={castSpell} />
           )}
 
           {activeTab === 'Inventory' && (
@@ -855,9 +866,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
               state={state}
               character={character}
               inventory={derived.inventory}
+              db={db}
               onUse={consumeItem}
-              onQuantity={changeQuantity}
-              onAdjust={adjust}
+              onCharge={(r) => spendCharge(r)}
               onMoney={spendMoney}
             />
           )}

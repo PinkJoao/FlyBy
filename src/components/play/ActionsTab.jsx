@@ -7,8 +7,8 @@
 //   (engine/playBasicActions), cada uma num card com os custos possíveis em pílulas
 //   (Action, e Bonus Action quando uma feature dá). Em combate, a pílula de um custo
 //   já gasto no turno fica apagada, e o card inteiro esmaece quando nenhum custo
-//   sobra. Tocar abre o painel de "como usar" (ActionPanel). As ações menos comuns
-//   ficam no grupo "Other", recolhido.
+//   sobra. Tocar usa a ação, abrindo o painel de "como usar" (ActionPanel) só quando
+//   há o que escolher. As ações menos comuns ficam no grupo "Other".
 //
 // FUNÇÕES
 //   ActionCard(props): o card de uma ação.
@@ -19,7 +19,10 @@
 //     (liberdade com aviso, §6.4 do manual).
 //   - Pílula de custo que vem de feature leva o nome dela no title (o toque longo
 //     não existe no app; o nome também aparece no painel).
-//   - O Ready com gatilho guardado mostra o gatilho no card até o próximo turno.
+//   - O Ready com gatilho guardado mostra o gatilho no card até o próximo turno; o
+//     Attack com Extra Attack em curso mostra "1 of 2 attacks".
+//   - O grupo Other nasce ABERTO (pedido do dono, 2026-11-06); o cabeçalho ainda o
+//     recolhe.
 //   - As ações de feature (Rage, Second Wind) não entram aqui: ficam na aba Features
 //     (resposta P3 do dono).
 // -----------------------------------------------------------------------------
@@ -50,6 +53,7 @@ function ActionCard({ item, readied, inCombat, onAct }) {
         ))}
       </span>
       {readied && <span className={styles.readied}>Readied: {readied}</span>}
+      {item.attacks && <span className={styles.readied}>{item.attacks.done} of {item.attacks.max} attacks</span>}
     </button>
   );
 }
@@ -59,7 +63,7 @@ function ActionCard({ item, readied, inCombat, onAct }) {
  * @param {{ list: object[], state: object, onAct: (item: object) => void, dataTour?: string }} props
  */
 export default function ActionsTab({ list, state, onAct, dataTour }) {
-  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherOpen, setOtherOpen] = useState(true);
   const inCombat = !!state.combat;
   const readied = state.combat?.used?.readied ?? null;
   const main = list.filter((a) => a.group === 'main');

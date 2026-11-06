@@ -32,7 +32,9 @@
 //     inClassList(raw), excludeFromPicker(raw): os recortes do seletor.
 //   PreparedToggle(props): o radio de preparação (o mesmo átomo do EquipToggle).
 //   SpellThumb(props): arte do fluff, senão o glyph da escola.
-//   SpellRow(props): uma linha da lista.
+//   SpellRow(props): uma linha da lista. Exportada para a aba Spells do play mode
+//     (components/play/SpellsTab), que passa `onCast` (o botão de lançar) e
+//     `usesLeft` (os usos grátis que sobram) e não passa preparar nem trocar.
 //
 // DECISÕES E ARMADILHAS
 //   - "Prepare spell" abre o seletor em modo MÚLTIPLO: segue aberto enquanto
@@ -919,7 +921,7 @@ function SpellThumb({ src, school, alt }) {
   );
 }
 
-function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, onAssign, assignDisabled }) {
+export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, onAssign, assignDisabled, onCast, castLabel = 'Cast', castDisabled = false, usesLeft = null }) {
   const raw = entry.raw;
   const meta = [schoolName(raw.school), castingTimeLabel(raw), rangeLabel(raw)].filter(Boolean);
   const cast = castTypeLabel(entry);
@@ -966,6 +968,12 @@ function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, 
             aria-label={`Replace ${raw.name}`}
           >
             <Icon name="swap" />
+          </button>
+        )}
+        {usesLeft && <span className={styles.chip} title="Free uses left">{usesLeft}</span>}
+        {onCast && (
+          <button type="button" className={styles.castBtn} onClick={onCast} disabled={castDisabled} title={`${castLabel} ${raw.name}`}>
+            {castLabel}
           </button>
         )}
         {onAssign && (

@@ -17,6 +17,7 @@
  *     inventário.
  *   .controls, .searchBox, .search, .filters, .select*: busca, e o Group
  *     ocupando a linha com o botão de ordenar (SortButton) à direita.
+ *   .castBtn: o "Cast" da linha no play mode (o mesmo tom do Use das abas de jogo).
  *   .prepareBtn: "Prepare spell", no padrão do Shop; no limite (R11) não some,
  *     fica indisponível.
  *   Painéis
@@ -740,6 +741,26 @@
 
 .removeBtn:hover {
   border-color: var(--danger);
+}
+
+.castBtn {
+  appearance: none;
+  flex: none;
+  height: 30px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.castBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .swapBtn {

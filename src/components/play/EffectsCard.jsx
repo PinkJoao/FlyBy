@@ -53,6 +53,7 @@ function effectLines(m, combat) {
     lines.push(DURATION[m.duration]);
   }
   if (m.concentration) lines.push('Ends with your concentration');
+  for (const n of m.notes ?? []) lines.push(n);
   return lines;
 }
 

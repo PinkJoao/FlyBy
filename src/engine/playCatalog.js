@@ -13,8 +13,11 @@
 //                teste com as PARTES do bônus (atributo, proficiência, item), que
 //                o engine/playChecks separa em fixo e condicional
 //     defenses   resistências, imunidades e vulnerabilidades a dano (com as de item)
-//     features   o nome (minúsculo) de toda feature do ator, para as passivas
-//     attacks    armas, ataque desarmado e cantrips de ataque ou salvaguarda
+//     features   o nome (minúsculo) de toda feature do ator, para as passivas (sem
+//                as ações básicas: "two-weapon fighting" é o estilo de luta, não a ação)
+//     featureList as features para a aba Features do jogo, com tipo, seção e texto
+//                (engine/playFeatures, DDL-0151)
+//     attacks   armas, ataque desarmado e cantrips de ataque ou salvaguarda
 //     actions    as ações básicas e as das features, com custo e consumo
 //     resources  dados de vida, slots, pacto, pools de feature, cargas de item
 //                (engine/playInventory) e usos de magia
@@ -137,6 +140,7 @@ import { SKILL_ABILITY } from './proficiency';
 import { validateFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
+import { featureList } from './playFeatures';
 
 export const DAMAGE_NAME = {
   A: 'acid', B: 'bludgeoning', C: 'cold', F: 'fire', O: 'force', L: 'lightning',
@@ -840,7 +844,8 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),
-    features: [...new Set((a?.items ?? []).filter((i) => i.type === 'feat').map((i) => norm(i.name)))],
+    features: [...new Set((a?.items ?? []).filter((i) => i.type === 'feat' && !isBasicActionItem(i)).map((i) => norm(i.name)))],
+    featureList: a ? featureList(a, character, db) : [],
     attacks,
     actions: a ? featureActions(a, ctx) : [],
     resources,

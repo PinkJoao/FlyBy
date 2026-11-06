@@ -94,6 +94,10 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
       )}
       {state.combat && cost && !cost.available && ECON_NAME[cost.cost] && <p className={styles.warn}>Your {ECON_NAME[cost.cost]} is already used this turn.</p>}
       {cost?.note && <p className={styles.note}>{cost.source}: {cost.note}.</p>}
+      {item.attacks && item.attacks.done < item.attacks.max && (
+        <p className={styles.note}>Attack {item.attacks.done + 1} of {item.attacks.max}: your Extra Attack, no new action.</p>
+      )}
+      {item.name === 'Two-Weapon Fighting' && <p className={styles.note}>The extra attack adds no ability modifier to its damage, unless you have the Two-Weapon Fighting style.</p>}
 
       {means === 'attack' && (
         <ul className={styles.list}>
@@ -151,7 +155,7 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
               name={SKILL_LABEL[skill] ?? skill}
               detail={item.name === 'Hide' ? 'DC 15' : null}
               value={formatBonus(testBreakdown(catalog, state, { type: 'skill', id: skill }).total)}
-              onPick={() => done({ kind: 'skill', skill, name: `${item.name}: ${SKILL_LABEL[skill] ?? skill}` })}
+              onPick={() => done({ kind: 'skill', skill, name: `${item.name}: ${SKILL_LABEL[skill] ?? skill}${item.name === 'Hide' ? ' (DC 15)' : ''}` })}
             />
           ))}
         </ul>

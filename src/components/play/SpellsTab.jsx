@@ -1,112 +1,198 @@
 // =============================================================================
-// SpellsTab: os slots e as magias do play mode
+// SpellsTab: as magias do play mode, no desenho da aba da ficha
 // =============================================================================
 // O QUE FAZ
-//   A aba "Spells" da tela do play mode: os slots de cada círculo e os de pacto
-//   (com o ajuste à mão), e as magias de cada origem (classe, espécie, talento)
-//   com a CD, o ataque e o botão de lançar. Mostra só as PREPARADAS; "Show
-//   unprepared" traz o resto do grimório, só para consulta.
+//   A aba "Spells" do play mode (docs/PLAY-MODE-V2-PLAN.md §6, DDL-0148): o mesmo
+//   desenho da aba Spellbook da ficha (o CSS dela, a linha SpellRow, as sub-abas por
+//   origem, a busca, os círculos e as seções recolhíveis), mas só para USAR: cada
+//   magia preparada tem o "Cast", e o cabeçalho de cada círculo mostra os espaços que
+//   servem para ele (o do círculo e o pacto, slotPoolsFor) com o que sobra. Tocar na
+//   linha abre o detalhe da magia. "Show unprepared spells" traz o resto do
+//   grimório, só para consulta.
 //
 // FUNÇÕES
+//   rawIndex(origin): as magias cruas da origem derivada, pelo nome.
+//   PoolChip(props): um espaço no cabeçalho do círculo (o que sobra e o máximo).
 //   SpellsTab(props): a aba.
-//     tagsOf(spell): as marcas de uma magia (ritual, concentração, usos).
 //
 // DECISÕES E ARMADILHAS
-//   - Preparar e trocar magia é decisão de build: fica no builder (pergunta 7 do
-//     plano). Aqui a magia não preparada aparece desligada.
-//   - O botão de lançar abre o painel de formas (engine/playCast); a magia sem
-//     escolha (cantrip) lança direto.
+//   - Sem preparar, sem trocar, sem quantidade (definição do dono, DDL-0146): isso é
+//     da ficha. Também sem o ajuste à mão dos espaços: o gasto é o "Cast", e o
+//     histórico desfaz.
+//   - A magia vem do catálogo de jogo (o que lança e o que gasta) e a parte "de
+//     livro" (arte, escola, tempo, alcance) da origem derivada, pelo nome: a linha é
+//     a SpellRow da ficha, que lê o `raw`.
+//   - Mystic Arcanum e magia concedida com usos mostram os usos que sobram na linha;
+//     o arcanum não é espaço e não aparece no cabeçalho.
+//   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
+import { slotPoolsFor } from '../../engine/playCast';
 import { remainingOf } from '../../engine/playState';
-import { ABILITY_SHORT } from '../builder/labels';
-import { Pips } from './FeaturesTab';
-import styles from './PlayTabs.module.css';
+import { spellLevelLabel } from '../../engine/spells';
+import spellEntity from '../../selector/entities/spell';
+import { imgUrl } from '../common/media';
+import { showDetailPopup } from '../common/detailPopup';
+import Collapse from '../common/Collapse';
+import Icon from '../common/Icon';
+import { SpellRow } from '../builder/SpellbookTab';
+import styles from '../builder/SpellbookTab.module.css';
+import play from './PlayTabs.module.css';
+
+/** As magias cruas da origem derivada, pelo nome (com granted e castType). */
+function rawIndex(origin) {
+  const out = new Map();
+  for (const s of [...(origin?.cantrips ?? []), ...(origin?.prepared ?? []), ...(origin?.unprepared ?? []), ...(origin?.arcanumSpells ?? [])]) if (s.raw) out.set(s.raw.name, { ...s, granted: false });
+  for (const s of origin?.alwaysPrepared ?? []) if (s.raw) out.set(s.raw.name, s);
+  return out;
+}
+
+/** Um espaço no cabeçalho do círculo: "Level 1 slots 3/4". */
+function PoolChip({ pool }) {
+  return (
+    <span className={pool.left > 0 ? styles.slot : `${styles.slot} ${styles.slotEmpty}`} title={pool.label}>
+      <span className={styles.slotLevel}>{pool.kind === 'pact' ? `Pact ${pool.level}` : 'Slots'}</span>
+      <span className={styles.slotCount}>
+        {pool.left}/{pool.max}
+      </span>
+    </span>
+  );
+}
 
 /**
- * A aba de magias.
- * @param {{ catalog: object, state: object, onCast: Function, onAdjust: Function }} props
+ * A aba de magias do jogo.
+ * @param {{ catalog: object, state: object, derived: object, db: object, onCast: Function }} props
  */
-export default function SpellsTab({ catalog, state, onCast, onAdjust }) {
+export default function SpellsTab({ catalog, state, derived, db, onCast }) {
+  const origins = (catalog.spells ?? []).filter((o) => o.spells.length);
+  const [originKey, setOriginKey] = useState(origins[0]?.key ?? null);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('all');
   const [showAll, setShowAll] = useState(false);
-  const slots = (catalog.resources ?? []).filter((r) => r.kind === 'slot' || r.kind === 'pact');
-  const origins = catalog.spells.filter((o) => o.spells.length);
+  const [collapsed, setCollapsed] = useState(() => new Set());
+  const origin = origins.find((o) => o.key === originKey) ?? origins[0];
+  const raws = rawIndex((derived?.spellcasting?.origins ?? []).find((o) => o.key === origin?.key));
 
-  /** As marcas de uma magia: ritual, concentração e os usos que sobram. */
-  const tagsOf = (spell) => [
-    spell.ritual ? 'Ritual' : null,
-    spell.concentration ? 'Concentration' : null,
-    spell.castType === 'will' ? 'At will' : null,
-    spell.uses ? `${remainingOf(state, spell.uses, (catalog.resources ?? []).find((r) => r.key === spell.uses)?.max ?? 0)} free` : null,
+  if (!origin) return <p className={styles.empty}>This character has no spells.</p>;
+
+  const needle = query.trim().toLowerCase();
+  const visible = origin.spells
+    .filter((s) => (showAll || s.prepared !== false) && raws.has(s.name))
+    .filter((s) => !needle || s.name.toLowerCase().includes(needle))
+    .filter((s) => category === 'all' || s.level === category)
+    .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  const levels = [...new Set(origin.spells.filter((s) => showAll || s.prepared !== false).map((s) => s.level))].sort((a, b) => a - b);
+  const sections = levels.filter((lv) => category === 'all' || lv === category).map((lv) => [lv, visible.filter((s) => s.level === lv)]).filter(([, list]) => list.length);
+  const toggle = (lv) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(lv)) next.delete(lv);
+      else next.add(lv);
+      return next;
+    });
+  const stats = [
+    origin.saveDc != null ? { key: 'dc', label: 'Save DC', value: origin.saveDc } : null,
+    origin.attackBonus != null ? { key: 'atk', label: 'Attack', value: `${origin.attackBonus >= 0 ? '+' : ''}${origin.attackBonus}` } : null,
   ].filter(Boolean);
 
-  if (!origins.length) return <section className={styles.panel}><p className={styles.empty}>This character has no spells.</p></section>;
-
   return (
-    <section className={styles.panel}>
-      {slots.length > 0 && (
-        <>
-          <h2 className={styles.heading}>Spell slots</h2>
-          <ul className={styles.list}>
-            {slots.map((s) => {
-              const left = remainingOf(state, s.key, s.max);
-              return (
-                <li key={s.key} className={styles.row}>
-                  <span className={styles.rowMain}>
-                    <span className={styles.name}>{s.kind === 'pact' ? `Pact (level ${s.level})` : `Level ${s.level}`}</span>
+    <div className={styles.tab}>
+      {stats.length > 0 && (
+        <div className={styles.header}>
+          <div className={styles.card}>
+            <span className={styles.cardLabel}>{origin.label}</span>
+            <div className={styles.stats}>
+              {stats.map((s, i) => (
+                <span key={s.key} className={styles.statCell}>
+                  {i > 0 && <span className={styles.statDivider} role="presentation" />}
+                  <span className={styles.stat}>
+                    <span className={styles.statValue}>{s.value}</span>
+                    <span className={styles.statLabel}>{s.label}</span>
                   </span>
-                  <Pips left={left} max={s.max} />
-                  <span className={styles.adjust}>
-                    <button type="button" className={styles.smallBtn} onClick={() => onAdjust(s.key, 1)} disabled={left <= 0} aria-label="Spend one slot">-</button>
-                    <button type="button" className={styles.smallBtn} onClick={() => onAdjust(s.key, -1)} disabled={left >= s.max} aria-label="Regain one slot">+</button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
-      {origins.map((o) => {
-        const list = o.spells.filter((s) => showAll || s.prepared !== false).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
-        return (
-          <div key={o.key} className={styles.group}>
-            <h2 className={styles.heading}>
+      {origins.length > 1 && (
+        <nav className={styles.subTabs} data-wheel-x="">
+          {origins.map((o) => (
+            <button key={o.key} type="button" className={o.key === origin.key ? `${styles.subTab} ${styles.subTabActive}` : styles.subTab} onClick={() => setOriginKey(o.key)}>
               {o.label}
-              {o.saveDc != null && <span className={styles.headNote}> · DC {o.saveDc} · attack {o.attackBonus >= 0 ? '+' : ''}{o.attackBonus}</span>}
-            </h2>
-            <ul className={styles.list}>
-              {list.map((s) => (
-                <li key={s.key} className={s.prepared === false ? `${styles.row} ${styles.off}` : styles.row}>
-                  <span className={styles.level}>{s.level === 0 ? 'C' : s.level}</span>
-                  <span className={styles.rowMain}>
-                    <span className={styles.name}>{s.name}</span>
-                    <span className={styles.sub}>
-                      {[
-                        ...tagsOf(s),
-                        s.mechanics?.save ? `${ABILITY_SHORT[s.mechanics.save] ?? s.mechanics.save} save` : null,
-                        s.mechanics?.attack ? 'Spell attack' : null,
-                        s.mechanics?.damage?.dice ? `${s.mechanics.damage.dice} ${(s.mechanics.damage.types ?? []).join('/')}` : null,
-                        s.mechanics?.heal?.dice ? `Heals ${s.mechanics.heal.dice}` : null,
-                        s.prepared === false ? 'Not prepared' : null,
-                      ].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                  <button type="button" className={styles.useBtn} disabled={s.prepared === false} onClick={() => onCast(o, s)}>
-                    Cast
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+            </button>
+          ))}
+        </nav>
+      )}
+
+      <div className={styles.controls}>
+        <div className={styles.searchBox}>
+          <input type="search" className={styles.search} placeholder="Search spells…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </div>
+      </div>
+
+      <nav className={styles.categories} data-wheel-x="">
+        <button type="button" className={category === 'all' ? `${styles.category} ${styles.categoryActive}` : styles.category} onClick={() => setCategory('all')}>
+          All
+        </button>
+        {levels.map((lv) => (
+          <button key={lv} type="button" className={category === lv ? `${styles.category} ${styles.categoryActive}` : styles.category} onClick={() => setCategory(lv)}>
+            {spellLevelLabel(lv)}
+          </button>
+        ))}
+      </nav>
+
+      {sections.length === 0 && <p className={styles.empty}>{needle ? 'No spells match your search.' : 'No prepared spells here.'}</p>}
+
+      {sections.map(([lv, list]) => {
+        const pools = slotPoolsFor(catalog, state, lv);
+        const isCollapsed = collapsed.has(lv);
+        return (
+          <section key={lv} className={styles.panel}>
+            <button type="button" className={styles.panelHead} onClick={() => toggle(lv)} aria-expanded={!isCollapsed}>
+              <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
+              {pools.length > 0 && (
+                <span className={styles.slots}>
+                  {pools.map((p) => (
+                    <PoolChip key={p.key} pool={p} />
+                  ))}
+                </span>
+              )}
+              <span className={styles.panelCount}>{list.length}</span>
+              <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
+                <Icon name="chevron" />
+              </span>
+            </button>
+            <Collapse open={!isCollapsed}>
+              <ul className={styles.list}>
+                {list.map((s) => {
+                  const entry = { ...raws.get(s.name), prepared: s.prepared };
+                  const uses = s.uses ? (catalog.resources ?? []).find((r) => r.key === s.uses) : null;
+                  return (
+                    <SpellRow
+                      key={s.key}
+                      entry={entry}
+                      arcanum={!!s.arcanum}
+                      thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
+                      onInfo={() => showDetailPopup({ entity: spellEntity, raw: entry.raw, db })}
+                      onCast={() => onCast(origin, s)}
+                      castDisabled={s.prepared === false}
+                      usesLeft={uses ? `${remainingOf(state, uses.key, uses.max)}/${uses.max}` : null}
+                    />
+                  );
+                })}
+              </ul>
+            </Collapse>
+          </section>
         );
       })}
 
-      <label className={styles.toggle}>
+      <label className={play.toggle}>
         <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
         <span>Show unprepared spells</span>
       </label>
-    </section>
+    </div>
   );
 }

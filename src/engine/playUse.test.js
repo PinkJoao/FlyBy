@@ -151,3 +151,27 @@ describe('efeito curado da feature', () => {
     expect(e.payload.effect).toBe('Rage');
   });
 });
+
+describe('rolar só o ataque ou só o efeito', () => {
+  const breath = {
+    key: 'action:claw', name: 'Claw',
+    activities: [{ id: 'c', type: 'attack', name: 'Claw', consumes: [{ key: 'pool:second-wind', amount: 1 }], attack: { ability: 'str' }, damage: [{ formula: '1d6', types: ['slashing'] }] }],
+  };
+  const act = breath.activities[0];
+
+  it('only attack rola o d20 e gasta; o efeito fica de fora', () => {
+    const e = activityEvent({ catalog, state: st(), action: breath, activity: act, options: { only: 'attack' }, rng: seq(15, 4) });
+    expect(e.rolls.parts.map((p) => p.label)).toEqual(['d20', 'Modifier', 'Proficiency']);
+    expect(e.rolls.damage).toBeNull();
+    expect(e.payload.only).toBe('attack');
+    expect(e.ops).toContainEqual({ op: 'spend', key: 'pool:second-wind', amount: 1 });
+  });
+
+  it('only effect com free (o cartão do histórico) rola o dano sem gastar', () => {
+    const e = activityEvent({ catalog, state: st(), action: breath, activity: act, options: { only: 'effect', free: true }, rng: seq(4) });
+    expect(e.rolls.parts.map((p) => p.label)).toEqual(['slashing']);
+    expect(e.rolls.total).toBe(4);
+    expect(e.ops.filter((o) => o.op === 'spend')).toEqual([]);
+  });
+});
+

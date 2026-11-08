@@ -4,10 +4,10 @@
  * CLASSES
  *   .form: a coluna do diálogo.
  *   .formula, .note: a fórmula que vai ser rolada e a nota (a CD de um save).
- *   .checks, .check: as caixas (crítico, versátil, dado físico).
+ *   .check: as caixas (os efeitos, curar a si mesmo).
  *   .effects, .effectNote: os efeitos que valem para a rolagem (condições, Bless).
  *   .field, .label, .input, .invalid, .error, .hint: os campos de texto.
- *   .actions, .btn, .primary: os botões, no padrão do DialogHost.
+ *   .actions: a fila dos botões (o Button do app, DDL-0160).
  *
  * DECISÕES E ARMADILHAS
  *   - O seletor de modo usa SegmentedControl (SegmentedControl.module.css).
@@ -51,12 +51,6 @@
 .effectNote {
   color: var(--text-muted);
   font-size: 12px;
-}
-
-.checks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
 }
 
 .check {
@@ -119,36 +113,4 @@
   margin-top: 4px;
 }
 
-.btn {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 18px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-}
 
-.btn:hover:not(:disabled) {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.primary {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-@media (max-width: 480px) {
-  .btn {
-    flex: 1 1 auto;
-  }
-}

@@ -1,0 +1,36 @@
+/* =============================================================================
+ * econ.module.css: a cor de cada gasto do turno, em qualquer etiqueta de custo
+ * =============================================================================
+ * CLASSES
+ *   .action, .bonus, .reaction: põem a cor do gasto em --econ (azul, verde e
+ *     amarelo, os tokens --econ-*).
+ *   .tag: a etiqueta de custo (o Chip da aba Actions, a pílula da aba Features)
+ *     tingida pela cor do gasto.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Um lugar só para a cor dos gastos (DDL-0163): os botões de combate, as
+ *     etiquetas das abas Actions e Features e as linhas de "How do you pay for it?"
+ *     usam a mesma cor para o mesmo gasto, no celular e no desktop.
+ *   - .tag usa dois seletores (.tag.action) para vencer o estilo do Chip sem depender
+ *     da ordem em que as folhas carregam.
+ * ----------------------------------------------------------------------------- */
+
+.action {
+  --econ: var(--econ-action);
+}
+
+.bonus {
+  --econ: var(--econ-bonus);
+}
+
+.reaction {
+  --econ: var(--econ-reaction);
+}
+
+.tag.action,
+.tag.bonus,
+.tag.reaction {
+  border-color: color-mix(in srgb, var(--econ) 55%, transparent);
+  background: color-mix(in srgb, var(--econ) 14%, transparent);
+  color: var(--econ);
+}

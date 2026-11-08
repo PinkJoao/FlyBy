@@ -330,7 +330,7 @@ const play = {
     {
       anchor: TUT.PLAY_TABS,
       title: 'Tabs',
-      body: 'History keeps every roll (on a narrow screen); Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Inventory, items and money.',
+      body: 'History keeps every roll (on a narrow screen); Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Inventory, items to use.',
       placement: 'bottom',
     },
     {

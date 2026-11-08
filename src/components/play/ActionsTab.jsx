@@ -7,8 +7,8 @@
 //   (engine/playBasicActions), cada uma num card com os custos possíveis em pílulas
 //   (Action, e Bonus Action quando uma feature dá). Em combate, a pílula de um custo
 //   já gasto no turno fica apagada, e o card inteiro esmaece quando nenhum custo
-//   sobra. Tocar usa a ação, abrindo o painel de "como usar" (ActionPanel) só quando
-//   há o que escolher. As ações menos comuns ficam no grupo "Other".
+//   sobra. Tocar abre o painel de "como usar" (ActionPanel), sempre (DDL-0158): ali o
+//   jogador escolhe, lê a regra ou cancela. As ações menos comuns ficam no grupo "Other".
 //
 // FUNÇÕES
 //   ActionCard(props): o card de uma ação.
@@ -23,12 +23,15 @@
 //     Attack com Extra Attack em curso mostra "1 of 2 attacks".
 //   - O grupo Other nasce ABERTO (pedido do dono, 2026-11-06); o cabeçalho ainda o
 //     recolhe.
+//   - A etiqueta de custo tem a cor do gasto (econ.module.css, DDL-0163): azul a
+//     ação, verde a bônus, amarelo a reação, as mesmas dos botões de combate.
 //   - As ações de feature (Rage, Second Wind) não entram aqui: ficam na aba Features
 //     (resposta P3 do dono).
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
 import Chip from '../common/Chip';
+import econ from './econ.module.css';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import styles from './ActionsTab.module.css';
@@ -47,7 +50,7 @@ function ActionCard({ item, readied, inCombat, onAct }) {
       <span className={styles.name}>{item.name}</span>
       <span className={styles.costs}>
         {costs.map((c) => (
-          <Chip key={`${c.cost}|${c.available}`} size="sm" className={inCombat && !c.available ? styles.costUsed : undefined} title={c.source ? `${c.label}, from ${c.source}` : c.label}>
+          <Chip key={`${c.cost}|${c.available}`} size="sm" className={[econ.tag, econ[c.cost], inCombat && !c.available ? styles.costUsed : null].filter(Boolean).join(' ')} title={c.source ? `${c.label}, from ${c.source}` : c.label}>
             {c.label}
           </Chip>
         ))}

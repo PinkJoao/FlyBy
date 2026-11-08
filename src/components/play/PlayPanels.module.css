@@ -6,8 +6,7 @@
  *   .costs, .stepRow, .stepper, .stepValue, .smallBtn: os custos e os contadores.
  *   .field, .label, .input, .check: os campos.
  *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
- *   .actions, .btn, .primary: os botões.
- *   .coinGrid: as cinco moedas do diálogo de dinheiro.
+ *   .actions: a fila dos botões (o Button do app, DDL-0160).
  * -------------------------------------------------------------------------- */
 
 .form {
@@ -149,33 +148,4 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
-}
-
-.btn {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 18px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.primary {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-.coinGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 8px;
 }

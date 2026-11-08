@@ -22,6 +22,9 @@
 //   - A magia vem do catálogo de jogo (o que lança e o que gasta) e a parte "de
 //     livro" (arte, escola, tempo, alcance) da origem derivada, pelo nome: a linha é
 //     a SpellRow da ficha, que lê o `raw`.
+//   - Cada magia leva as etiquetas dos gastos com que pode ser lançada, na cor do
+//     gasto (spellCosts, econ.module.css, DDL-0165): o tempo dela e os das features
+//     (Quickened Spell, Mantle of Majesty...). A mesma magia pode ter duas.
 //   - Mystic Arcanum e magia concedida com usos mostram os usos que sobram na linha;
 //     o arcanum não é espaço e não aparece no cabeçalho.
 //   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
@@ -29,6 +32,7 @@
 
 import { useState } from 'react';
 import { slotPoolsFor } from '../../engine/playCast';
+import { spellCosts } from '../../engine/playBasicActions';
 import { remainingOf } from '../../engine/playState';
 import { spellLevelLabel } from '../../engine/spells';
 import spellEntity from '../../selector/entities/spell';
@@ -39,6 +43,7 @@ import Icon from '../common/Icon';
 import { SpellRow } from '../builder/SpellbookTab';
 import styles from '../builder/SpellbookTab.module.css';
 import play from './PlayTabs.module.css';
+import econ from './econ.module.css';
 
 /** As magias cruas da origem derivada, pelo nome (com granted e castType). */
 function rawIndex(origin) {
@@ -180,6 +185,12 @@ export default function SpellsTab({ catalog, state, derived, db, onCast }) {
                       onCast={() => onCast(origin, s)}
                       castDisabled={s.prepared === false}
                       usesLeft={uses ? `${remainingOf(state, uses.key, uses.max)}/${uses.max}` : null}
+                      costTags={spellCosts(s, catalog).map((c) => ({
+                        key: `${c.cost}|${c.source ?? ''}`,
+                        label: c.label,
+                        className: [econ.tag, econ[c.cost]].filter(Boolean).join(' '),
+                        title: c.source ? `${c.label} with ${c.source}${c.spend ? ` (${c.spend.amount} ${c.spend.name})` : ''}` : `Cast as ${c.label}`,
+                      }))}
                     />
                   );
                 })}

@@ -34,8 +34,8 @@
 //   Ficha
 //     initiativeBonus(character, derived): DES, mais o PB com o Alert.
 //     hitDiceByFace(derived): os dados de vida agregados por face.
-//     weaponProficient(entry, weaponProfs), weaponAttacks(character, derived): as
-//       armas do inventário, equipadas primeiro.
+//     weaponProficient(entry, weaponProfs, weaponNames), weaponAttacks(character,
+//       derived): as armas do inventário, equipadas primeiro.
 //     unarmedStrike(derived): o ataque desarmado.
 //     diceAverage(dice), withMartialArts(attacks, ctx): o Martial Arts do monge sobre
 //       o desarmado e as armas de monge (o dado da tabela e a DES).
@@ -130,6 +130,11 @@
 //     Mystic Arcanum é 1 por descanso longo.
 //   - Iniciativa: Destreza, mais o PB com o Alert (o 2024 dá "Initiative
 //     Proficiency"); a mesma conta que o PDF fazia.
+//   - A proficiência da arma olha também `derived.weaponNames` (2026-11-07, DDL-0159):
+//     a regra condicional do 2024 ("Martial weapons that have the Finesse or Light
+//     property" do ladino, "Light" do monge) chega como FRASE em `weapons` e como a
+//     lista das armas em `weaponNames` (autoProficiencies, a mesma que o export usa).
+//     Sem isso o Shortsword do ladino atacava sem o PB.
 //   - Martial Arts (XPHB, withMartialArts, 2026-11-06): o desarmado e as armas de
 //     monge (corpo a corpo simples, ou marcial com Light) usam DES se for maior e
 //     rolam o dado da coluna da tabela (`@scale.monk.die`, o mesmo do SRD), ou o da
@@ -225,9 +230,9 @@ export function hitDiceByFace(derived) {
   return Object.keys(count).map(Number).sort((a, b) => b - a).map((faces) => ({ faces, count: count[faces] }));
 }
 
-/** O personagem é proficiente com a arma? */
-function weaponProficient(entry, weaponProfs) {
-  const profs = (weaponProfs ?? []).map((w) => w.toLowerCase());
+/** O personagem é proficiente com a arma? Também pelas armas que uma regra condicional enumera. */
+function weaponProficient(entry, weaponProfs, weaponNames = []) {
+  const profs = [...(weaponProfs ?? []), ...(weaponNames ?? [])].map((w) => String(w).toLowerCase());
   const cat = entry.category ? `${entry.category} weapons`.toLowerCase() : null;
   const name = (entry.raw?.name ?? '').toLowerCase();
   return profs.some((p) => p === cat || p === name || p === `${name}s`);
@@ -254,7 +259,7 @@ export function weaponAttacks(character, derived) {
     const ability = e.kind === 'ranged' ? 'dex' : finesse && dex > str ? 'dex' : 'str';
     const mod = ability === 'dex' ? dex : str;
     const magic = Number(raw.bonusWeapon ?? 0) || 0;
-    const proficient = weaponProficient(e, derived.weapons);
+    const proficient = weaponProficient(e, derived.weapons, derived.weaponNames);
     const prof = proficient ? derived.proficiencyBonus : 0;
     const toHitParts = [
       { label: ability === 'dex' ? 'Dexterity' : 'Strength', formula: mod },

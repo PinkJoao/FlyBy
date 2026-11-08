@@ -23,6 +23,7 @@ import { resolveCosts, left } from '../../engine/playUse';
 import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
+import Button from '../common/Button';
 
 /**
  * O conteúdo do diálogo de usar uma feature.
@@ -113,8 +114,8 @@ export default function UsePanel({ catalog, state, activity }) {
       )}
 
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button ref={btnRef} type="submit" className={`${styles.btn} ${styles.primary}`}>Use</button>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button ref={btnRef} type="submit" variant="primary">Use</Button>
       </div>
     </form>
   );

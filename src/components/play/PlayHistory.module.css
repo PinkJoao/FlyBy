@@ -8,8 +8,11 @@
  *   .body, .total, .tags, .tag, .crit, .fumble: o total e as marcas.
  *   .lines: o resumo de um evento de vida ou descanso.
  *   .parts, .part, .partLabel, .partFormula, .partTotal: as partes da rolagem.
- *   .dice, .die, .dropped, .nat20, .nat1: os dados.
- *   .action, .actionRow: os botões do cartão (rolar o dano, o ataque da magia).
+ *   .dice, .die, .d4 a .d20, .other, .base, .face, .shade, .dropped, .adjusted,
+ *     .nat20, .nat1: os dados, cada um na silhueta SVG colorida da forma dele
+ *     (DieShape, DDL-0158 e DDL-0160), com a cor do token do tipo.
+ *   .action, .actionRow: o lugar dos botões do cartão (rolar o dano, o ataque da
+ *     magia), que são o Button do app (DDL-0160).
  * -------------------------------------------------------------------------- */
 
 .list {
@@ -174,31 +177,62 @@
 }
 
 .die {
-  min-width: 22px;
-  padding: 1px 5px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  --die: var(--die-other);
+}
+
+.d4 { --die: var(--die-d4); }
+.d6 { --die: var(--die-d6); }
+.d8 { --die: var(--die-d8); }
+.d10 { --die: var(--die-d10); }
+.d12 { --die: var(--die-d12); }
+.d20 { --die: var(--die-d20); }
+.other { --die: var(--die-other); }
+
+.base {
+  fill: var(--die);
+  stroke: color-mix(in srgb, var(--die) 70%, black);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
+
+.face {
+  fill: color-mix(in srgb, var(--die) 72%, white);
+}
+
+.shade {
+  fill: color-mix(in srgb, var(--die) 70%, black);
+}
+
+.die text {
+  fill: var(--die-text);
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: middle;
   font-variant-numeric: tabular-nums;
-  color: var(--text-h);
+  paint-order: stroke;
+  stroke: color-mix(in srgb, var(--die) 60%, black);
+  stroke-width: 1.2px;
+}
+
+.adjusted .base {
+  stroke: var(--die-text);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 2;
 }
 
 .dropped {
-  opacity: 0.5;
-  text-decoration: line-through;
+  opacity: 0.4;
 }
 
 .nat20 {
-  border-color: var(--success);
-  color: var(--success);
+  filter: drop-shadow(0 0 3px var(--success));
 }
 
 .nat1 {
-  border-color: var(--danger);
-  color: var(--danger-text);
+  filter: drop-shadow(0 0 3px var(--danger));
 }
 
 .actionRow {
@@ -209,17 +243,4 @@
 
 .action {
   align-self: flex-start;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.action:hover {
-  border-color: var(--accent);
 }

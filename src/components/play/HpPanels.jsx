@@ -33,6 +33,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import AmountStepper from './AmountStepper';
 import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
+import Button from '../common/Button';
 
 const HEAL_KINDS = [
   { value: 'heal', label: 'Heal' },
@@ -84,7 +85,7 @@ export function HealPanel({ vitals }) {
       {kind === 'max' && <p className={panel.note}>Like Aid: lasts until your next Long Rest.</p>}
       {n > 0 && <p className={styles.preview}>{preview}</p>}
       <div className={panel.actions}>
-        <button type="submit" className={`${panel.btn} ${styles.heal}`} disabled={n <= 0}>Apply</button>
+        <Button type="submit" variant="primary" disabled={n <= 0}>Apply</Button>
       </div>
     </form>
   );
@@ -124,7 +125,7 @@ export function HurtPanel({ vitals }) {
         </p>
       )}
       <div className={panel.actions}>
-        <button type="submit" className={`${panel.btn} ${styles.damage}`} disabled={n <= 0}>Apply</button>
+        <Button type="submit" variant="danger" disabled={n <= 0}>Apply</Button>
       </div>
     </form>
   );
@@ -158,7 +159,7 @@ export function HitDicePanel({ dice, vitals }) {
       <p className={panel.note}>Each die heals its roll plus your Constitution modifier (at least 1). A negative number gives spent dice back.</p>
       {preview && <p className={styles.preview}>{preview}</p>}
       <div className={panel.actions}>
-        <button type="submit" className={`${panel.btn} ${panel.primary}`} disabled={n === 0}>{n < 0 ? 'Recover' : 'Roll'}</button>
+        <Button type="submit" variant="primary" disabled={n === 0}>{n < 0 ? 'Recover' : 'Roll'}</Button>
       </div>
     </form>
   );

@@ -31,6 +31,7 @@
 //     makeEvent(kind, fields, now): um evento com id e data.
 //     recordEvent(doc, event): grava, descartando o ramo refazível.
 //     undoEvent(doc), redoEvent(doc), canUndo(doc), canRedo(doc): o cursor.
+//     clearPlayHistory(doc): limpa o histórico, guardando o estado atual.
 //     normalizeLimits(limits), compactPlayDoc(doc, limits, now): a janela.
 //   Personagem (inventário e moedas)
 //     characterOps(event): as operações do evento que tocam o personagem.
@@ -232,6 +233,11 @@ export function undoEvent(doc) {
 export function redoEvent(doc) {
   if (!canRedo(doc)) return null;
   return { doc: { ...doc, cursor: doc.cursor + 1 }, event: doc.events[doc.cursor] };
+}
+
+/** Limpa o histórico: o estado no cursor vira o baseline; o ramo desfeito some. */
+export function clearPlayHistory(doc) {
+  return { ...doc, baseline: currentPlayState(doc), events: [], cursor: 0 };
 }
 
 /** Há evento aplicado para desfazer? */

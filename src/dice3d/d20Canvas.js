@@ -7,7 +7,8 @@
 //   pedida (o engine decide o número; o dado só encena, docs/PLAY-MODE-V2-PLAN.md §2).
 //
 // FUNÇÕES
-//   createD20(canvas, colors): o dado num canvas; devolve { draw, spinTo, finish,
+//   createD20(canvas, colors, sides): o dado num canvas (d20, ou o dado pequeno de
+//     um bônus rolado, como o d4 do Bless); devolve { draw, spinTo, finish,
 //     stop, setTint, die }: finish pula a rolagem em curso direto para a face final.
 //   easeOut(t): a curva de desaceleração da rolagem.
 //
@@ -35,8 +36,8 @@ export function easeOut(t) {
  * O d20 num canvas. `colors`: { face, edge, text } em CSS.
  * @returns {{ draw: Function, spinTo: (n: number, ms?: number) => Promise<void>, finish: Function, stop: Function, setTint: Function, die: object }}
  */
-export function createD20(canvas, colors) {
-  const die = makeDie(20);
+export function createD20(canvas, colors, sides = 20) {
+  const die = makeDie(sides);
   const ctx = canvas.getContext('2d');
   let q = quatAxis([1, 1, 0], 0.6);
   let frame = 0;

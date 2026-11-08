@@ -15,8 +15,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { DIE_SIDES, dieQuat, makeDie, quatAxis, quatRotate, quatSlerp, twistToward } from './geometry';
-import { d20Show, shouldAnimate, shouldTray, trayShow, TRAY_MAX } from './rollShow';
-import { traySize } from './diceTray';
+import { bonusesOf, d20Show, shouldAnimate, shouldTray, trayShow, TRAY_MAX } from './rollShow';
+import { gridOf, traySize } from './diceTray';
 
 const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-9);
 const event = (results, extra = {}) => ({
@@ -154,3 +154,35 @@ describe('rollShow', () => {
     expect(shouldAnimate(null)).toBe(false);
   });
 });
+
+describe('bônus do d20', () => {
+  it('fixos e rolados na ordem; parte fixa zerada fica de fora', () => {
+    const parts = [
+      { label: 'Dexterity', total: 4, groups: [] },
+      { label: 'Proficiency', total: 0, groups: [] },
+      { label: 'Bless', total: 3, groups: [{ faces: 4, results: [{ value: 3, kept: true }] }] },
+    ];
+    expect(bonusesOf(parts)).toEqual([
+      { label: 'Dexterity', total: 4, dice: [] },
+      { label: 'Bless', total: 3, dice: [{ sides: 4, value: 3, kept: true }] },
+    ]);
+  });
+
+  it('d20Show começa no valor do d20 e soma até o total gravado', () => {
+    const e = { kind: 'check', label: 'Stealth', rolls: { natural: 12, total: 19, isCritical: false, isFumble: false, parts: [
+      { label: 'd20', total: 12, groups: [{ faces: 20, results: [{ value: 12, kept: true }] }] },
+      { label: 'Dexterity', total: 4, groups: [] },
+      { label: 'Bless', total: 3, groups: [{ faces: 4, results: [{ value: 3, kept: true }] }] },
+    ] } };
+    const show = d20Show(e);
+    expect(show.base + show.bonuses.reduce((s, b) => s + b.total, 0)).toBe(show.total);
+  });
+
+  it('a grade da bandeja cabe todos os dados', () => {
+    for (const n of [1, 2, 5, 12, 24]) {
+      const g = gridOf(n, 375, 600);
+      expect(g.cols * g.rows).toBeGreaterThanOrEqual(n);
+    }
+  });
+});
+

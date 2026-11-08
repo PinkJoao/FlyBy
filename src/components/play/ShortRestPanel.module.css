@@ -5,7 +5,7 @@
  *   .panel, .now, .warn: a coluna, o HP (de agora e o que vai ficar) e o aviso.
  *   .rows, .row, .die, .left, .typed, .spend, .error: uma linha por face.
  *   .rolled, .chip, .link: os dados já rolados e o "desfazer o último".
- *   .actions, .btn, .primary: os botões.
+ *   .actions: a fila dos botões (o Button do app, DDL-0160).
  * -------------------------------------------------------------------------- */
 
 .panel {
@@ -126,20 +126,3 @@
   gap: 8px;
 }
 
-.btn {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.primary {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  color: var(--accent);
-}

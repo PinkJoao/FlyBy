@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
-import { MAIN_ACTIONS, OTHER_ACTIONS, actionChoice, actionContext, actionRelevant, altCostsFor, attackStepOp, attacksPerAction, basicActionList, costLabel, costOf, offhandAttack } from './playBasicActions';
+import { MAIN_ACTIONS, OTHER_ACTIONS, actionContext, slotChoices, actionRelevant, altCostsFor, attackStepOp, attacksPerAction, basicActionList, costLabel, costOf, offhandAttack } from './playBasicActions';
 import { featureModifier } from './playEffects';
 
 const TYPES = { 'Opportunity Attack': 'reaction', 'Two-Weapon Fighting': 'bonus', 'End Concentration': 'special', 'Improvising an Action': 'special' };
@@ -147,25 +147,36 @@ describe('Extra Attack, Two-Weapon Fighting e Dodge', () => {
   });
 });
 
-describe('quando a ação precisa do painel', () => {
-  const pick = (list, n) => list.find((a) => a.name === n);
-  it('sem escolha, sem painel: Dodge e Help usam o único custo; Hide vai direto para Stealth', () => {
-    const cat = catalogWith([], [], { ...everything, attacks: [sword] });
+describe('o que cada gasto do turno paga', () => {
+  const secondWind = { key: 'action:second-wind', name: 'Second Wind', group: 'class', activities: [{ id: 'sw', name: 'Second Wind', activation: { type: 'bonus' }, consumes: [] }] };
+  it('bônus: as ações básicas com esse custo e as features, sem repetir o Cunning Action', () => {
+    const cat = catalogWith([cunning, secondWind], ['cunning action']);
     const ctx = actionContext(cat, {}, []);
     const list = basicActionList(cat, {}, ctx);
-    expect(actionChoice(pick(list, 'Dodge'), ctx)).toMatchObject({ needsPrompt: false, choice: { kind: 'mark', cost: { cost: 'action' } } });
-    expect(actionChoice(pick(list, 'Help'), ctx).needsPrompt).toBe(false);
-    expect(actionChoice(pick(list, 'Hide'), ctx)).toMatchObject({ needsPrompt: false, choice: { kind: 'skill', skill: 'ste' } });
-    expect(actionChoice(pick(list, 'Attack'), ctx)).toMatchObject({ needsPrompt: false, choice: { kind: 'attack', attack: { name: 'Shortsword' } } });
+    const r = slotChoices('bonus', list, cat, {});
+    expect(r.basics.map((b) => b.name)).toEqual(expect.arrayContaining(['Dash', 'Disengage', 'Hide']));
+    expect(r.basics.every((b) => b.item.costs.every((c) => c.cost === 'bonus'))).toBe(true);
+    expect(r.features.map((x) => x.name)).toEqual(['Second Wind']);
+    expect(r.available).toBe(true);
   });
-  it('com escolha, com painel: o ladino (dois custos), duas armas, várias perícias, o Ready', () => {
-    const rogue = catalogWith([cunning], ['cunning action']);
-    const ctx = actionContext(rogue, {}, []);
-    const list = basicActionList(rogue, {}, ctx);
-    expect(actionChoice(pick(list, 'Hide'), ctx).needsPrompt).toBe(true);
-    expect(actionChoice(pick(list, 'Disengage'), ctx).needsPrompt).toBe(true);
-    expect(actionChoice(pick(list, 'Attack'), ctx).needsPrompt).toBe(true);
-    expect(actionChoice(pick(list, 'Influence'), ctx).needsPrompt).toBe(true);
-    expect(actionChoice(pick(list, 'Ready'), ctx).needsPrompt).toBe(true);
+  it('o "Use an Object" do Fast Hands não repete o Utilize pela bônus', () => {
+    const fastHands = { key: 'action:fast-hands', name: 'Fast Hands', group: 'subclass', activities: [
+      { id: 'u', name: 'Use an Object', activation: { type: 'bonus' }, consumes: [] },
+      { id: 's', name: 'Sleight of Hand', activation: { type: 'bonus' }, consumes: [] },
+    ] };
+    const cat = catalogWith([fastHands], ['fast hands'], { ...everything, usable: [] });
+    const list = basicActionList(cat, {}, actionContext(cat, {}, [{ group: 'consumable', raw: { name: 'Potion of Healing', type: 'P' }, quantity: 1 }]));
+    const r = slotChoices('bonus', list, cat, {});
+    expect(r.features.map((x) => x.name)).toEqual(['Fast Hands: Sleight of Hand']);
+  });
+  it('gasto usado desliga, a não ser o Attack que continua (Extra Attack)', () => {
+    const cat = catalogWith([], ['extra attack'], { ...everything, attacks: [sword] });
+    const state = { combat: { round: 1, used: { action: true, attacks: 1 } }, conditions: {} };
+    const list = basicActionList(cat, state, actionContext(cat, state, []));
+    expect(slotChoices('action', list, cat, state).available).toBe(true);
+    const spent = { combat: { round: 1, used: { reaction: true } }, conditions: {} };
+    const after = basicActionList(cat, spent, actionContext(cat, spent, []));
+    expect(slotChoices('reaction', after, cat, spent).available).toBe(false);
   });
 });
+

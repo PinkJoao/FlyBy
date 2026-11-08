@@ -11,7 +11,9 @@
 //   num "Rules" recolhido. Fecha com { cost, kind, ... } e a tela executa.
 //
 // FUNÇÕES
-//   costText(c): o rótulo de um custo, com a feature e a ação junto (o Focus).
+//   costSource(c): de onde vem um custo e o que vem junto (o Focus, o Disengage).
+//   CostRow(props): uma forma de pagar, em linha grande com rádio e "Used"; exportada
+//     para o CostPanel (o gasto de lançar uma magia, DDL-0165).
 //   Pick(props): uma linha tocável (nome, detalhe, valor à direita).
 //   ActionPanel(props): o painel.
 //
@@ -19,6 +21,12 @@
 //   - O painel só ESCOLHE; quem grava é a tela (pages/Play, takeAction), que já
 //     sabe rolar, lançar e usar. Assim cada ação reaproveita o fluxo que existe.
 //   - O custo começa no primeiro LIVRE; gasto continua escolhível, com aviso.
+//   - As formas de pagar são LINHAS grandes com rádio (CostRow, DDL-0158), não
+//     pílulas: no celular as pílulas com "Bonus Action (Step of the Wind, also
+//     Disengage)" ficavam miúdas e difíceis de acertar. O custo em cima, a origem
+//     embaixo, "Used" à direita quando aquela parte do turno já foi.
+//   - O painel abre para TODA ação (DDL-0158): o jogador pode cancelar ou abrir a
+//     regra antes; com um custo e um meio só, é um toque no botão.
 //   - Two-Weapon Fighting lista só as armas leves equipadas; o Opportunity Attack,
 //     só as de corpo a corpo (actionContext).
 //   - Magic lista as magias PREPARADAS (o resto do grimório é da ficha), cada uma
@@ -34,18 +42,36 @@ import { formatBonus } from '../../engine/math';
 import { SKILL_LABEL } from '../builder/labels';
 import { useDialogClose } from '../common/dialogContext';
 import Button from '../common/Button';
-import Chip from '../common/Chip';
 import Collapse from '../common/Collapse';
 import EntryContent from '../common/EntryContent';
 import styles from './ActionPanel.module.css';
+import econ from './econ.module.css';
 
 const TIME = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', minute: '1 minute', hour: '1 hour' };
 const ECON_NAME = { action: 'action', bonus: 'bonus action', reaction: 'reaction' };
 
-/** O rótulo de um custo, com a feature e a ação que vem junto. */
-function costText(c) {
-  const extra = c.with?.length ? `, also ${c.with.join(' and ')}` : '';
-  return c.source && c.source !== 'a spell' ? `${c.label} (${c.source}${extra})` : c.label;
+/** De onde vem um custo e o que vem junto ("Cunning Action", "Step of the Wind, also Disengage"). */
+function costSource(c) {
+  const parts = [c.source && c.source !== 'a spell' ? c.source : null, c.with?.length ? `also ${c.with.join(' and ')}` : null].filter(Boolean);
+  return parts.join(', ');
+}
+
+/** Uma forma de pagar a ação: linha grande, com o custo, a origem e se já foi gasta. */
+export function CostRow({ cost, selected, inCombat, onPick }) {
+  const source = costSource(cost);
+  const spent = inCombat && !cost.available;
+  return (
+    <li>
+      <button type="button" role="radio" aria-checked={selected} className={[styles.costRow, selected ? styles.costRowOn : null, econ[cost.cost]].filter(Boolean).join(' ')} onClick={onPick}>
+        <span className={selected ? `${styles.radio} ${styles.radioOn}` : styles.radio} aria-hidden="true" />
+        <span className={styles.pickMain}>
+          <span className={styles.pickName}>{cost.label}</span>
+          {source && <span className={styles.pickDetail}>{source}</span>}
+        </span>
+        {spent && <span className={styles.spent}>Used</span>}
+      </button>
+    </li>
+  );
 }
 
 /** Uma linha tocável. */
@@ -84,12 +110,13 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
   return (
     <div className={styles.panel}>
       {item.costs.length > 1 && (
-        <div className={styles.costs} role="radiogroup" aria-label="Cost">
-          {item.costs.map((c, i) => (
-            <Chip key={`${c.cost}-${c.source}-${i}`} active={i === costIdx} onClick={() => setCostIdx(i)} className={state.combat && !c.available ? styles.used : undefined}>
-              {costText(c)}
-            </Chip>
-          ))}
+        <div className={styles.group}>
+          <h3 className={styles.heading}>How do you pay for it?</h3>
+          <ul className={styles.list} role="radiogroup" aria-label="Cost">
+            {item.costs.map((c, i) => (
+              <CostRow key={`${c.cost}-${c.source}-${i}`} cost={c} selected={i === costIdx} inCombat={!!state.combat} onPick={() => setCostIdx(i)} />
+            ))}
+          </ul>
         </div>
       )}
       {state.combat && cost && !cost.available && ECON_NAME[cost.cost] && <p className={styles.warn}>Your {ECON_NAME[cost.cost]} is already used this turn.</p>}

@@ -25,6 +25,7 @@ import { castWays } from '../../engine/playCast';
 import { spellModifier } from '../../engine/playEffects';
 import { useDialogClose } from '../common/dialogContext';
 import styles from './PlayPanels.module.css';
+import Button from '../common/Button';
 
 /**
  * O conteúdo do diálogo de lançar.
@@ -77,8 +78,8 @@ export default function CastPanel({ catalog, state, origin, spell }) {
         </label>
       )}
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button ref={btnRef} type="submit" className={`${styles.btn} ${styles.primary}`} disabled={!pick}>Cast</button>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button ref={btnRef} type="submit" variant="primary" disabled={!pick}>Cast</Button>
       </div>
     </form>
   );

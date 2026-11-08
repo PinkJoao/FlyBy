@@ -14,11 +14,21 @@
 // FUNÇÕES
 //   dayLabel(iso), timeLabel(iso): a data e a hora do evento.
 //   detailOf(event): o número, as marcas e as linhas de um evento.
+//   DieShape(props): um dado na silhueta colorida da forma dele, com o valor;
+//     DIE_SHAPES guarda o contorno, a face e a faceta de cada tipo.
 //   DiceList(props): os dados de um grupo.
 //   RollCard(props): o cartão de um evento.
 //   PlayHistory(props): a lista, com os separadores de dia.
 //
 // DECISÕES E ARMADILHAS
+//   - Cada dado aparece na SILHUETA da forma dele (DieShape, DDL-0158): com 2d4 e
+//     2d8 na mesma parte, dá para ver qual é qual. Desde o DDL-0160, no estilo do
+//     rolador do Google que o dono mandou: cada tipo com a cor dele (tokens
+//     --die-d4 a --die-d20, mais sóbrios no tema papel), a face da frente mais clara e
+//     a faceta de baixo mais escura. O d100 usa o d10; um dado sem forma, o círculo. O que o piso mudou (Reliable Talent) leva o
+//     contorno tracejado e o valor que conta; o título diz o que caiu.
+//   - O cartão de uma feature que rolou só o ataque (`payload.only`, DDL-0156) tem o
+//     "Roll damage" (ou "Roll healing"), que rola sem gastar de novo.
 //   - O cartão do ATAQUE tem o botão "Roll damage" (como o do chat do Foundry),
 //     com o crítico pré-marcado quando o acerto foi crítico; o do DANO SOFRIDO,
 //     o "Concentration save" com a CD, enquanto houver concentração; o da MAGIA
@@ -34,6 +44,7 @@
 
 import { ABILITY_FULL } from '../builder/labels';
 import styles from './PlayHistory.module.css';
+import Button from '../common/Button';
 
 const KIND_LABEL = {
   check: 'Check',
@@ -180,24 +191,84 @@ function detailOf(event) {
 }
 
 /** Os dados de um grupo: o mantido em destaque, o descartado riscado. */
+/**
+ * A silhueta de cada dado, no estilo do rolador do Google (DDL-0160): o contorno, a
+ * face da frente (mais clara) e a faceta de baixo (mais escura).
+ */
+const DIE_SHAPES = {
+  4: {
+    base: '16,1.5 31,29.5 1,29.5',
+    face: null,
+    shade: null,
+    y: 21.5
+  },
+  6: {
+    base: '3,3 29,3 29,29 3,29',
+    face: null,
+    shade: null,
+    y: 16.5
+  },
+  8: {
+    base: '16,1 30,9 30,23 16,31 2,23 2,9',
+    face: '16,1 30,23 2,23',
+    shade: '2,23 30,23 16,31',
+    y: 17
+  },
+  10: {
+    base: '16,1 30,12 30,19 16,31 2,19 2,12',
+    face: '16,1 26,16 16,25 6,16',
+    shade: '2,19 6,16 16,25 26,16 30,19 16,31',
+    y: 16
+  },
+  12: {
+    base: '16.0,1.0 24.8,3.9 30.3,11.4 30.3,20.6 24.8,28.1 16.0,31.0 7.2,28.1 1.7,20.6 1.7,11.4 7.2,3.9',
+    face: '16.0,7.5 24.1,13.4 21.0,22.9 11.0,22.9 7.9,13.4',
+    shade: null,
+    y: 16.5
+  },
+  20: {
+    base: '16,1 29.5,8.5 29.5,23.5 16,31 2.5,23.5 2.5,8.5',
+    face: '16,6 26,23 6,23',
+    shade: '2.5,23.5 6,23 26,23 29.5,23.5 16,31',
+    y: 17.5
+  }
+};
+
+/** Um dado na silhueta colorida da forma dele (d4 triângulo verde, d20 hexágono laranja...), com o valor dentro. */
+function DieShape({ faces, value, className, title }) {
+  const shape = DIE_SHAPES[faces === 100 ? 10 : faces];
+  const text = String(value);
+  const kind = shape ? `d${faces === 100 ? 10 : faces}` : 'other';
+  return (
+    <svg className={`${className} ${styles[kind]}`} viewBox="0 0 32 32" role="img" aria-label={`d${faces}: ${text}`}>
+      {title && <title>{title}</title>}
+      {shape ? <polygon className={styles.base} points={shape.base} /> : <circle className={styles.base} cx="16" cy="16" r="14.5" />}
+      {shape?.face && <polygon className={styles.face} points={shape.face} />}
+      {shape?.shade && <polygon className={styles.shade} points={shape.shade} />}
+      <text x="16" y={shape?.y ?? 16.5} fontSize={text.length > 2 ? 9 : text.length > 1 ? 11 : 13}>{text}</text>
+    </svg>
+  );
+}
+
+/** Os dados de um grupo, cada um na silhueta do dado. */
 function DiceList({ group }) {
   return (
     <span className={styles.dice}>
       {group.results.map((r, i) => (
-        <span
+        <DieShape
           key={i}
-          className={[styles.die, !r.kept && styles.dropped, group.faces === 20 && r.kept && (r.raw ?? r.value) === 20 && styles.nat20, group.faces === 20 && r.kept && (r.raw ?? r.value) === 1 && styles.nat1].filter(Boolean).join(' ')}
-          title={r.raw != null ? `Rolled ${r.raw}, counts as ${r.value}` : undefined}
-        >
-          {r.raw != null ? `${r.raw}>${r.value}` : r.value}
-        </span>
+          faces={group.faces}
+          value={r.value}
+          className={[styles.die, !r.kept && styles.dropped, r.raw != null && styles.adjusted, group.faces === 20 && r.kept && (r.raw ?? r.value) === 20 && styles.nat20, group.faces === 20 && r.kept && (r.raw ?? r.value) === 1 && styles.nat1].filter(Boolean).join(' ')}
+          title={r.raw != null ? `Rolled ${r.raw}, counts as ${r.value}` : `d${group.faces}`}
+        />
       ))}
     </span>
   );
 }
 
 /** O cartão de um evento. */
-function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell }) {
+function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect }) {
   const rolls = event.rolls ?? {};
   const critical = event.kind === 'damageRoll' ? event.payload?.critical : rolls.isCritical;
   const save = event.kind === 'damageRoll' ? event.payload?.save : null;
@@ -245,27 +316,32 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
         </ul>
       )}
       {event.kind === 'attack' && !undone && onDamage && (
-        <button type="button" className={styles.action} onClick={() => onDamage(event.payload?.attackKey, { critical: !!critical })}>
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onDamage(event.payload?.attackKey, { critical: !!critical })}>
           Roll damage{critical ? ' (critical)' : ''}
-        </button>
+        </Button>
+      )}
+      {event.kind === 'use' && event.payload?.only === 'attack' && !undone && onFeatureEffect && (
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onFeatureEffect(event)}>
+          {(event.payload?.types ?? []).length ? 'Roll damage' : 'Roll healing'}{event.payload?.attack?.critical ? ' (critical)' : ''}
+        </Button>
       )}
       {event.kind === 'cast' && !undone && onSpell && (
         <span className={styles.actionRow}>
           {event.payload?.attack != null && (
-            <button type="button" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'attack')}>Attack</button>
+            <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'attack')}>Attack</Button>
           )}
           {event.payload?.damage && (
-            <button type="button" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'damage')}>Damage</button>
+            <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'damage')}>Damage</Button>
           )}
           {event.payload?.heal && (
-            <button type="button" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'heal')}>Healing</button>
+            <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'heal')}>Healing</Button>
           )}
         </span>
       )}
       {dc && !undone && concentrating && onConcentration && (
-        <button type="button" className={styles.action} onClick={() => onConcentration(dc)}>
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onConcentration(dc)}>
           Concentration save (DC {dc})
-        </button>
+        </Button>
       )}
     </li>
   );
@@ -273,9 +349,9 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
 
 /**
  * O histórico: do mais novo para o mais velho, separado por dia.
- * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function }} props
+ * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function }} props
  */
-export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell }) {
+export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect }) {
   const events = doc?.events ?? [];
   if (!events.length) {
     return <p className={styles.empty}>Nothing rolled yet. Your rolls and actions show up here, and you can undo them.</p>;
@@ -298,6 +374,7 @@ export default function PlayHistory({ doc, onDamage, onConcentration, concentrat
         onConcentration={onConcentration}
         concentrating={concentrating}
         onSpell={onSpell}
+        onFeatureEffect={onFeatureEffect}
       />,
     );
   }

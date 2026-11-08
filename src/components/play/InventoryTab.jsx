@@ -2,18 +2,19 @@
 // InventoryTab: o inventário do play mode, no desenho da aba da ficha
 // =============================================================================
 // O QUE FAZ
-//   A aba "Inventory" do play mode (docs/PLAY-MODE-V2-PLAN.md §6, DDL-0150): as
-//   moedas com o botão de gastar ou ganhar, a busca, as sub-abas por grupo (as da
-//   ficha) e as seções por tipo, com a linha ItemRow da ficha só para USAR: o
+//   A aba "Inventory" do play mode (docs/PLAY-MODE-V2-PLAN.md §6, DDL-0150): a
+//   busca, as sub-abas por grupo (as da ficha) e as seções por tipo, com a linha ItemRow da ficha só para USAR: o
 //   consumível (poção, pergaminho, comida) tem "Use", o item com cargas mostra o que
-//   sobra e o "Use" gasta uma. Tocar na linha abre o detalhe do item.
+//   sobra e o "Use" gasta uma, e a arma tem "Attack" (DDL-0165), o mesmo ataque da
+//   aba Actions. Tocar na linha abre o detalhe do item.
 //
 // FUNÇÕES
 //   InventoryTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
 //   - Sem loja, sem quantidade, sem equipar, sem guardar em contêiner (definições do
-//     dono, DDL-0146 e P6): isso é da ficha. A quantidade aparece só lida ("x3"); o
+//     dono, DDL-0146 e P6): isso é da ficha. As moedas também saíram (DDL-0160): no
+//     jogo quase não servem, e a ficha as edita. A quantidade aparece só lida ("x3"); o
 //     gasto é o uso (a poção bebida, a flecha do ataque, a carga da varinha).
 //   - Mostra TUDO, solto ou guardado, numa lista só: no jogo o que importa é achar o
 //     item, não onde ele está (a ficha mostra os contêineres).
@@ -31,21 +32,18 @@ import Icon from '../common/Icon';
 import { GROUP_ICONS, nameOf, thumbOf } from '../builder/inventoryDisplay';
 import { ItemRow } from '../builder/InventoryTab';
 import styles from '../builder/InventoryTab.module.css';
-import play from './PlayTabs.module.css';
-
-const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'];
 
 /**
  * A aba de inventário do jogo.
- * @param {{ catalog: object, state: object, character: object, inventory: object[], db: object, onUse: Function, onCharge: Function, onMoney: Function }} props
+ * @param {{ catalog: object, state: object, inventory: object[], db: object, onUse: Function, onCharge: Function, onAttack: Function }} props
  */
-export default function InventoryTab({ catalog, state, character, inventory, db, onUse, onCharge, onMoney }) {
+export default function InventoryTab({ catalog, state, inventory, db, onUse, onCharge, onAttack }) {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('all');
   const [collapsed, setCollapsed] = useState(() => new Set());
   const items = (inventory ?? []).filter((e) => e && (e.raw || e.isCustom));
   const charges = new Map((catalog.resources ?? []).filter((r) => r.kind === 'charges').map((r) => [r.uid, r]));
-  const coins = character.currency ?? {};
+  const attacks = new Map((catalog.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid).map((a) => [a.uid, a]));
   const presentGroups = GROUP_ORDER.map((g) => ({ key: g, label: items.find((e) => e.group === g)?.groupLabel })).filter((g) => g.label);
   const needle = query.trim().toLowerCase();
   const shown = items
@@ -63,6 +61,7 @@ export default function InventoryTab({ catalog, state, character, inventory, db,
 
   const row = (entry) => {
     const charge = charges.get(entry.uid);
+    const attack = attacks.get(entry.uid);
     return (
       <ItemRow
         key={entry.uid ?? nameOf(entry)}
@@ -70,7 +69,8 @@ export default function InventoryTab({ catalog, state, character, inventory, db,
         thumb={thumbOf(entry, db)}
         readOnly
         onInfo={() => entry.raw && showDetailPopup({ entity: itemEntity, raw: entry.raw, db })}
-        onUse={isUsable(entry.raw) ? () => onUse(entry) : charge ? () => onCharge(charge) : undefined}
+        onUse={isUsable(entry.raw) ? () => onUse(entry) : charge ? () => onCharge(charge) : attack ? () => onAttack(attack) : undefined}
+        useLabel={!isUsable(entry.raw) && !charge && attack ? 'Attack' : 'Use'}
         usesLeft={charge ? `${remainingOf(state, charge.key, charge.max)}/${charge.max}` : null}
       />
     );
@@ -78,20 +78,6 @@ export default function InventoryTab({ catalog, state, character, inventory, db,
 
   return (
     <div className={styles.tab}>
-      <div className={play.row}>
-        <span className={play.coins}>
-          {COINS.map((c) => (
-            <span key={c} className={play.coin}>
-              <span className={play.coinValue}>{coins[c] ?? 0}</span>
-              <span className={play.coinName}>{c}</span>
-            </span>
-          ))}
-        </span>
-        <button type="button" className={play.useBtn} onClick={onMoney}>
-          Spend or gain
-        </button>
-      </div>
-
       <div className={styles.controls}>
         <div className={styles.searchBox}>
           <input type="search" className={styles.search} placeholder="Search inventory…" value={query} onChange={(e) => setQuery(e.target.value)} />

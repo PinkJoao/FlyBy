@@ -31,12 +31,11 @@
 //   DDL-0147 (docs/PLAY-MODE-V2-PLAN.md): a aba Actions são as ações básicas do
 //   livro (ActionsTab, engine/playBasicActions) que o personagem tem o que fazer,
 //   com os custos dele; tocar abre o ActionPanel (o custo e o meio), e takeAction
-//   executa pelo fluxo que já existe (sem painel quando não há o que escolher,
-//   actionChoice, DDL-0149) (rollAttack, castSpell, rollTest, moveFeet,
-//   consumeItem, applyFeature). O custo que vem de uma feature com gasto (o Focus do
-//   monge) vai NUM evento só com a ação (withOps): em dois, o segundo partiria do
-//   estado antigo e apagaria o custo marcado pelo primeiro. A lista de ataques
-//   solta saiu: ela é o "como" da ação Attack.
+//   executa pelo fluxo que já existe (rollAttack, castSpell, rollTest, moveFeet,
+//   consumeItem, applyFeature); o painel abre sempre (DDL-0158). O custo que vem de
+//   uma feature com gasto (o Focus do monge) vai NUM evento só com a ação (withOps):
+//   em dois, o segundo partiria do estado antigo e apagaria o custo marcado pelo
+//   primeiro. A lista de ataques solta saiu: ela é o "como" da ação Attack.
 //
 // FUNÇÕES
 //   PlayInner(props): o modo jogo, com o personagem garantido (quem carrega é a
@@ -46,6 +45,14 @@
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
 //     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque.
+//     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
+//     askRollKind(opts), damageText(attack): a pergunta "d20 ou os outros dados" e o
+//       texto do dano (DDL-0156).
+//     attackOrDamage(attack, cost, extraOps), withAmmo(event, attack): o ataque da
+//       aba Actions, que pergunta o que rolar; a munição no mesmo evento (nada com
+//       Settings > Track ammunition desligado, DDL-0161).
+//     featureEffectFromHistory(event): o dano ou a cura de uma feature que rolou só o
+//       ataque, sem gastar de novo.
 //     openTab(tab): troca de aba lembrando a direção (para o painel entrar do
 //       lado certo).
 //     moveCursor(fn, verb), undo(), redo(): mexem no cursor e avisam um
@@ -70,16 +77,19 @@
 //     addCustomEffect(): o efeito próprio (o do mestre).
 //     addCondition(), setCondition(id, level), addEffect(), removeEffect(id):
 //       condições e efeitos.
-//     castSpell(origin, spell), spellRoll(spellKey, level, kind),
+//     castSpell(origin, spell), spellRoll(spellKey, level, kind): lançar (com o gasto
+//       do turno escolhido entre os de spellCosts, e o recurso dele, DDL-0165),
 //       rollSpellHeal(origin, spell, level): lançar e as rolagens da magia.
-//     consumeItem(entry), changeQuantity(entry, delta), spendMoney(): o inventário.
-//     startCombat(quick), nextTurn(), endCombat(), toggleEconomy(cost): o combate.
+//     consumeItem(entry): usar um item do inventário.
+//     startCombat(quick), nextTurn(), endCombat(): o combate.
+//     slotInfo, pickSlot(slot): o que a ação, a bônus e a reação pagam, e o toque nos
+//       botões de combate (CombatControls, DDL-0161).
 //     rollInitiative(quick): o tile: fora de combate começa um; nele, só rola.
 //     moveFeet(dash): o Move e o Dash do card de movimento (quantos pés).
 //     rollTool(name): o teste de uma ferramenta, com o atributo escolhido.
 //   withOps(event, ops): o evento com operações a mais na frente (o gasto de Focus
 //     ou dos usos da feature que deu o custo alternativo, num evento só).
-//   HistoryHead(props): o título do histórico com desfazer e refazer.
+//   HistoryHead(props): o título do histórico com desfazer, refazer e limpar.
 //   toastNumber(event): o número do aviso de um evento.
 //
 // DECISÕES E ARMADILHAS
@@ -172,19 +182,20 @@ import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
-import { itemUseEvent, ammoOps, currencyEvent, itemCostOf, healOf } from '../engine/playInventory';
+import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
   movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
 } from '../engine/playCombat';
 import { askRoll } from '../components/play/rollDialog';
-import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askCurrency, askSkillCheck, askMove, askAction } from '../components/play/playDialogs';
+import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askSkillCheck, askMove, askAction, askSlot, askCost } from '../components/play/playDialogs';
 import ActionsTab from '../components/play/ActionsTab';
-import { actionChoice, actionContext, attackStepOp, basicActionList, offhandAttack } from '../engine/playBasicActions';
+import { actionContext, attackStepOp, basicActionList, costAvailable, offhandAttack, slotChoices, spellCosts } from '../engine/playBasicActions';
 import FeaturesTab from '../components/play/FeaturesTab';
 import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
 import RollButton from '../components/play/RollButton';
+import { CombatDock, CombatFloat, RoundBadge } from '../components/play/CombatControls';
 import PlayHistory from '../components/play/PlayHistory';
 import Icon from '../components/common/Icon';
 import { alert, ask, confirm } from '../components/common/dialog';
@@ -203,6 +214,7 @@ import conditionEntity from '../selector/entities/condition';
 import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
 import useSettingsStore from '../store/settingsStore';
+import { formatBonus } from '../engine/math';
 import { reducedMotion } from '../motion';
 import { d20Show, shouldAnimate, shouldTray, trayShow } from '../dice3d/rollShow';
 import D20Overlay from '../dice3d/D20Overlay';
@@ -216,21 +228,47 @@ const TABS = ['Actions', 'Features', 'Spells', 'Inventory'];
 // ATENÇÃO: o mesmo número do @media do .shell no Play.module.css.
 const WIDE_QUERY = '(min-width: 1140px)';
 
-const ECONOMY_LABEL = { action: 'Action', bonus: 'Bonus', reaction: 'Reaction' };
+const SLOT_LABEL = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction' };
 
 const TOAST_MS = 4000;
 
 /** O número do aviso de um evento: o total rolado, o dano, a cura ou o temporário. */
 const toastNumber = (e) => e.rolls?.total ?? e.payload?.taken ?? e.payload?.healed ?? e.payload?.to ?? e.payload?.round ?? e.payload?.left ?? null;
 
+/**
+ * O que rolar, quando a coisa tem o d20 e outros dados (dano, cura): resolve
+ * 'attack', 'effect' ou null (cancelou).
+ */
+const askRollKind = ({ title, attack, effect, effectLabel = 'Damage' }) =>
+  ask({
+    title,
+    message: 'Roll the attack (d20) or the other dice?',
+    actions: [
+      { label: 'Cancel', value: null },
+      { label: `${effectLabel}${effect ? ` (${effect})` : ''}`, value: 'effect' },
+      { label: `Attack${attack ? ` (${attack})` : ''}`, value: 'attack', tone: 'primary' },
+    ],
+  });
+
+/** O texto curto do dano de um ataque ("1d8 + 4"). */
+const damageText = (attack) => {
+  const d = attack?.damage;
+  if (!d) return '';
+  const bonus = d.bonus ? `${d.bonus > 0 ? ' + ' : ' - '}${Math.abs(d.bonus)}` : '';
+  return d.dice ? `${d.dice}${bonus}` : String(Math.max(0, d.bonus ?? 0));
+};
+
 /** O evento com operações a mais na frente (o gasto da feature que deu o custo). */
 const withOps = (event, ops = []) => (ops.length ? { ...event, ops: [...ops, ...event.ops] } : event);
 
 /** O título do histórico com desfazer e refazer (na coluna e na aba). */
-function HistoryHead({ onUndo, onRedo, canUndo, canRedo, lastLabel, nextLabel }) {
+function HistoryHead({ onUndo, onRedo, onClear, canUndo, canRedo, canClear, lastLabel, nextLabel, round = null }) {
   return (
     <div className={styles.historyHead}>
-      <h2 className={styles.heading}>History</h2>
+      <span className={styles.historyTitle}>
+        <h2 className={styles.heading}>History</h2>
+        {round != null && <RoundBadge round={round} />}
+      </span>
       <span className={styles.historyActions}>
         <button
           type="button"
@@ -251,6 +289,9 @@ function HistoryHead({ onUndo, onRedo, canUndo, canRedo, lastLabel, nextLabel })
           aria-label="Redo"
         >
           <Icon name="redo" />
+        </button>
+        <button type="button" className={styles.iconBtn} onClick={onClear} disabled={!canClear} title="Clear the history" aria-label="Clear the history">
+          <Icon name="trash" />
         </button>
       </span>
     </div>
@@ -284,6 +325,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const [toast, setToast] = useState(null);
   const [rollShow, setRollShow] = useState(null);
   const diceAnimation = useSettingsStore((s) => s.diceAnimation);
+  const trackAmmo = useSettingsStore((s) => s.trackAmmo);
   const [picker, setPicker] = useState(null);
 
 
@@ -474,7 +516,12 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** Usa uma feature: pergunta o que ela precisa, avisa o que falta, grava. */
-  const applyFeature = async (action, activity) => {
+  const applyFeature = async (action, activity, extra = {}) => {
+    let only = extra.only ?? null;
+    if (!only && activity.attack && (activity.heal || (activity.damage ?? []).length)) {
+      only = await askRollKind({ title: action.name, effect: (activity.damage ?? []).map((p) => p.formula).join(' + ') || activity.heal?.formula, effectLabel: activity.heal ? 'Healing' : 'Damage' });
+      if (!only) return;
+    }
     const needs = activity.scalable || activity.heal || activity.attack || (activity.damage ?? []).length > 0
       || (activity.consumes ?? []).some((c) => c.spellSlot != null);
     let options = {};
@@ -487,12 +534,23 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     let event;
     try {
       const applied = activity.attack ? applyEffects(rollEffects(state, catalog, { kind: 'attack', attackAbility: activity.attack.ability })) : undefined;
-      event = activityEvent({ catalog, state, action, activity, options: { ...options, applied } });
+      event = activityEvent({ catalog, state, action, activity, options: { ...options, applied, only, free: !!extra.free, critical: options.critical || !!extra.critical } });
     } catch (e) {
       await alert({ title: 'Could not use it', message: String(e?.message ?? e) });
       return;
     }
-    record(event, costOfActivation(activity.activation?.type));
+    record(event, extra.free ? null : costOfActivation(activity.activation?.type));
+  };
+
+  /** O "Roll damage" do cartão de uma feature que rolou só o ataque: sem gastar de novo. */
+  const featureEffectFromHistory = (event) => {
+    const action = catalog.actions.find((a) => a.key === event.payload?.actionKey);
+    const activity = action?.activities.find((x) => x.id === event.payload?.activityId);
+    if (!activity) {
+      alert({ title: 'Feature not found', message: 'This feature is no longer on the sheet.' });
+      return;
+    }
+    applyFeature(action, activity, { only: 'effect', free: true, critical: !!event.payload?.attack?.critical });
   };
 
   /** As recuperações especiais: Arcane Recovery, Natural Recovery, Font of Magic. */
@@ -510,8 +568,16 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** Lança uma magia: escolhe a forma, grava e abre a rolagem dela. */
   const castSpell = async (origin, spell) => {
+    const costs = spellCosts(spell, catalog);
+    let cost = costs[0];
+    if (costs.length > 1) {
+      cost = await askCost({ title: spell.name, costs: costs.map((c) => ({ ...c, available: costAvailable(c.cost, state) })), inCombat: !!state.combat });
+      if (!cost) return;
+    }
+    if (cost.spend && leftOf(catalog, state, cost.spend.key) < cost.spend.amount
+      && !(await confirm({ title: `Not enough ${cost.spend.name}`, message: `${cost.source} costs ${cost.spend.amount} ${cost.spend.name}. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
     const ways = castWays(catalog, state, spell);
-    let way = ways.length === 1 && ways[0].left == null ? ways[0] : null;
+    let way = cost.noSlot ? { id: 'free', label: cost.source, level: spell.level, key: null, left: null } : ways.length === 1 && ways[0].left == null ? ways[0] : null;
     let onSelf = false;
     if (!way) {
       const r = await askCast({ catalog, state, origin, spell });
@@ -520,8 +586,13 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       onSelf = !!r.onSelf;
     }
     if (way.key && (way.left ?? 0) < 1 && !(await confirm({ title: 'Nothing left', message: `No ${way.label.toLowerCase()} is left. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
-    record(castEvent({ catalog, state, origin, spell, way, onSelf }), costOfActivation(spell.time));
-    if (spell.mechanics?.attack) rollAttack(spellAttackOf(origin, spell, way.level));
+    record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), costOfActivation(cost.cost));
+    if (spell.mechanics?.attack && spell.mechanics?.damage?.dice) {
+      const atk = spellAttackOf(origin, spell, way.level);
+      const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus) : '', effect: damageText(atk) });
+      if (kind === 'attack') rollAttack(atk);
+      else if (kind === 'effect') rollDamage(atk);
+    } else if (spell.mechanics?.attack) rollAttack(spellAttackOf(origin, spell, way.level));
     else if (spell.mechanics?.damage?.dice) rollDamage(spellAttackOf(origin, spell, way.level));
     else if (spell.mechanics?.heal?.dice) rollSpellHeal(origin, spell, way.level);
   };
@@ -593,9 +664,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     roll(
       (options) => {
         const event = withOps(rollAttackEvent({ catalog, attack, options }), extraOps);
-        if (!spend) return event;
-        const ammo = ammoOps({ character, derivedInventory: derived.inventory, attack });
-        return { ...event, ops: [...event.ops, ...ammo.ops], payload: { ...event.payload, ammo: ammo.ammo, ammoLeft: ammo.left, ammoMissing: ammo.missing } };
+        return spend ? withAmmo(event, attack) : event;
       },
       {
         title: `${attack.name}: attack`,
@@ -608,9 +677,19 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       spend ? cost : null,
     );
 
-  const rollDamage = (attack, { critical = false } = {}, quick = false) =>
+  /** A munição gasta pelo ataque, no mesmo evento. */
+  const withAmmo = (event, attack) => {
+    if (trackAmmo === false) return event;
+    const ammo = ammoOps({ character, derivedInventory: derived.inventory, attack });
+    return { ...event, ops: [...event.ops, ...ammo.ops], payload: { ...event.payload, ammo: ammo.ammo, ammoLeft: ammo.left, ammoMissing: ammo.missing } };
+  };
+
+  const rollDamage = (attack, { critical = false } = {}, quick = false, spend = false, cost = null, extraOps = []) =>
     roll(
-      (options) => rollDamageEvent({ catalog, attack, options }),
+      (options) => {
+        const event = withOps(rollDamageEvent({ catalog, attack, options }), extraOps);
+        return spend ? withAmmo(event, attack) : event;
+      },
       {
         title: `${attack.name}: damage`,
         kind: 'damage',
@@ -622,7 +701,26 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       },
       quick,
       rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', attackAbility: attack.ability }),
+      spend ? cost : null,
     );
+
+  /**
+   * Um ataque da aba Actions: pergunta se rola o d20 ou o dano (DDL-0156); o custo do
+   * turno, o passo do Extra Attack e a munição vão em quem for rolado.
+   */
+  const attackOrDamage = async (attack, cost, extraOps = []) => {
+    const kind = attack.damage
+      ? await askRollKind({ title: attack.name, attack: attack.toHit ? formatBonus(attack.toHit.total) : '', effect: damageText(attack) })
+      : 'attack';
+    if (kind === 'attack') rollAttack(attack, false, true, cost, extraOps);
+    else if (kind === 'effect') rollDamage(attack, {}, false, true, cost, extraOps);
+  };
+
+  /** O "Attack" de uma arma na aba Inventory: o mesmo da ação Attack (o passo do Extra Attack, o gasto, a munição). */
+  const attackFromInventory = (attack) => {
+    const step = attackStepOp(catalog, state);
+    attackOrDamage(attack, step ? null : 'action', step ? [step] : []);
+  };
 
   /** O "Roll damage" do cartão de um ataque no histórico. */
   const damageFromHistory = (attackKey, opts) => {
@@ -659,11 +757,6 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
 
-  /** Gastar ou ganhar moedas pelo diálogo. */
-  const spendMoney = async () => {
-    const r = await askCurrency({ currency: character.currency ?? {} });
-    if (r) record(currencyEvent(r));
-  };
 
   const startCombat = (quick) =>
     roll(
@@ -693,8 +786,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   /** Uma ação básica da aba Actions: pergunta como, e usa o fluxo que já existe. */
   const takeAction = async (item) => {
     const rule = (db?.actions?.action ?? []).find((a) => a.name === item.name && a.source === 'XPHB') ?? null;
-    const direct = actionChoice(item, actionCtx);
-    const r = direct.needsPrompt ? await askAction({ item, ctx: actionCtx, catalog, state, rule }) : direct.choice;
+    const r = await askAction({ item, ctx: actionCtx, catalog, state, rule });
     if (!r) return;
     if (r.kind === 'skill' && !r.name) r.name = `${item.name}: ${SKILL_LABEL[r.skill] ?? r.skill}${item.name === 'Hide' ? ' (DC 15)' : ''}`;
     const owner = r.cost.via ? catalog.actions.find((a) => a.key === r.cost.via.action) : null;
@@ -704,9 +796,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const extra = [...(viaEvent?.ops ?? []), ...(effect ? [{ op: 'modifier', add: withRounds(effect, state, effect.maxRounds) }] : [])];
     const cost = ECONOMY.includes(r.cost.cost) ? r.cost.cost : null;
     const step = r.kind === 'attack' && item.name === 'Attack' && !r.cost.via ? attackStepOp(catalog, state) : null;
-    if (r.kind === 'attack' && step) rollAttack(r.attack, false, true, null, [...extra, step]);
-    else if (r.kind === 'attack' && item.name === 'Two-Weapon Fighting') rollAttack(offhandAttack(r.attack, catalog), false, true, cost ?? 'bonus', extra);
-    else if (r.kind === 'attack') rollAttack(r.attack, false, true, cost ?? 'action', extra);
+    if (r.kind === 'attack' && step) attackOrDamage(r.attack, null, [...extra, step]);
+    else if (r.kind === 'attack' && item.name === 'Two-Weapon Fighting') attackOrDamage(offhandAttack(r.attack, catalog), cost ?? 'bonus', extra);
+    else if (r.kind === 'attack') attackOrDamage(r.attack, cost ?? 'action', extra);
     else if (r.kind === 'spell') castSpell(r.origin, r.spell);
     else if (r.kind === 'charge') spendCharge(r.resource, cost);
     else if (r.kind === 'item') consumeItem(r.entry);
@@ -726,7 +818,17 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   const endCombat = () => record(endCombatEvent({ state }));
 
-  const toggleEconomy = (cost) => record(economyEvent({ state, cost, used: !state.combat?.used?.[cost] }));
+  const slotInfo = Object.fromEntries(ECONOMY.map((slot) => [slot, slotChoices(slot, basicActions, catalog, state)]));
+  const slotAvailable = Object.fromEntries(ECONOMY.map((slot) => [slot, slotInfo[slot].available]));
+
+  /** Um botão de combate (ação, bônus, reação): o que aquele gasto paga, e faz. */
+  const pickSlot = async (slot) => {
+    const r = await askSlot({ slotLabel: SLOT_LABEL[slot], choices: slotInfo[slot] });
+    if (!r) return;
+    if (r.kind === 'basic') takeAction(r.item);
+    else if (r.kind === 'feature') applyFeature(r.action, r.activity);
+    else if (r.kind === 'mark') record(economyEvent({ state, cost: slot, used: true }));
+  };
 
   /** Desfaz ou refaz e avisa se um item do inventário não pôde voltar. */
   const moveCursor = (fn, verb) => {
@@ -736,6 +838,16 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
   };
   const undo = () => moveCursor(play.undo, 'undo');
+  /** Limpa o histórico depois de confirmar (o estado atual fica; o desfazer acaba). */
+  const clearHistory = async () => {
+    const ok = await confirm({
+      title: 'Clear the history?',
+      message: 'Hit points, resources and everything else stay as they are now, but the actions so far can no longer be undone.',
+      confirmLabel: 'Clear',
+      danger: true,
+    });
+    if (ok) play.clear();
+  };
   const redo = () => moveCursor(play.redo, 'redo');
 
   const lastApplied = play.doc && play.doc.cursor > 0 ? play.doc.events[play.doc.cursor - 1] : null;
@@ -743,7 +855,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   const checks = catalog.checks;
   const historyHead = (
-    <HistoryHead onUndo={undo} onRedo={redo} canUndo={play.canUndo} canRedo={play.canRedo} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} />
+    <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} />
   );
 
   return (
@@ -804,7 +916,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         <EffectsCard modifiers={state.modifiers} combat={state.combat} onAdd={addEffect} onAddCustom={() => addCustomEffect()} onRemove={removeEffect} />
       </div>
 
-      {(hp.current === 0 && hp.max > 0) || hp.death.dead || state.combat ? (
+      {(hp.current === 0 && hp.max > 0) || hp.death.dead ? (
       <section className={styles.status} data-tour={TUT.PLAY_STATUS} data-flip="status" data-flip-scale="" data-flip-after="">
         {(hp.current === 0 && hp.max > 0) || hp.death.dead ? (
           <div className={hp.death.dead ? `${styles.deathCard} ${styles.deadCard}` : styles.deathCard}>
@@ -824,29 +936,6 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
               </>
             )}
             <span className={styles.deathHint}>{hp.death.dead ? 'Healing or the DM can bring you back.' : 'Any healing brings you back.'}</span>
-          </div>
-        ) : null}
-        {state.combat ? (
-          <div className={styles.combatBar} data-tour={TUT.PLAY_COMBAT}>
-            <span className={styles.combatRound}>Round {state.combat.round} · Init {state.combat.initiative}</span>
-            <span className={styles.econ}>
-              {ECONOMY.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={state.combat.used?.[c] ? `${styles.econBtn} ${styles.econUsed}` : styles.econBtn}
-                  onClick={() => toggleEconomy(c)}
-                  aria-pressed={!!state.combat.used?.[c]}
-                  title={state.combat.used?.[c] ? `${ECONOMY_LABEL[c]} used (tap to give it back)` : `${ECONOMY_LABEL[c]} available (tap to mark it used)`}
-                >
-                  {ECONOMY_LABEL[c]}
-                </button>
-              ))}
-            </span>
-            <span className={styles.restBtns}>
-              <button type="button" className={styles.ghostBtn} onClick={nextTurn}>Next turn</button>
-              <button type="button" className={styles.ghostBtn} onClick={endCombat}>End combat</button>
-            </span>
           </div>
         ) : null}
       </section>
@@ -871,7 +960,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'History' && (
             <>
               {historyHead}
-              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} />
+              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} />
             </>
           )}
 
@@ -889,12 +978,11 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             <InventoryTab
               catalog={catalog}
               state={state}
-              character={character}
               inventory={derived.inventory}
               db={db}
               onUse={consumeItem}
               onCharge={(r) => spendCharge(r)}
-              onMoney={spendMoney}
+              onAttack={attackFromInventory}
             />
           )}
         </div>
@@ -902,10 +990,19 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
       {wide && sideSlot && createPortal(
         <div className={styles.sideContent} data-tour={TUT.PLAY_HISTORY}>
-          {historyHead}
-          <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} />
+          <div className={styles.sideHead}>
+            <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} round={state.combat ? state.combat.round : null} />
+          </div>
+          <div className={styles.sideScroll}>
+            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} />
+            {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} />}
+          </div>
         </div>,
         sideSlot,
+      )}
+
+      {!wide && state.combat && (
+        <CombatFloat round={state.combat.round} available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} />
       )}
 
       {picker === 'condition' && (

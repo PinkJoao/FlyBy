@@ -17,10 +17,11 @@
 //   askUse(props), askCast(props): usar uma feature, lançar uma magia.
 //   askSlotRecovery(props), askFontOfMagic(props): as recuperações especiais.
 //   askModifier(props): o modificador manual (ModifierPanel).
-//   askCurrency(props): gastar ou ganhar moedas (CurrencyPanel).
 //   askSkillCheck(props): a perícia do Check de um atributo (SkillCheckPanel).
 //   askMove(props): quantos pés andar ou correr no turno (MovePanel).
 //   askAction(props): como usar uma ação básica da aba Actions (ActionPanel).
+//   askSlot(props): o que a ação, a bônus ou a reação paga (SlotPanel, DDL-0161).
+//   askCost(props): com que gasto do turno lançar (CostPanel, DDL-0165).
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
@@ -30,10 +31,11 @@ import UsePanel from './UsePanel';
 import CastPanel from './CastPanel';
 import { SlotRecoveryPanel, FontOfMagicPanel } from './RecoveryPanels';
 import ModifierPanel from './ModifierPanel';
-import CurrencyPanel from './CurrencyPanel';
 import SkillCheckPanel from './SkillCheckPanel';
 import MovePanel from './MovePanel';
 import ActionPanel from './ActionPanel';
+import SlotPanel from './SlotPanel';
+import CostPanel from './CostPanel';
 import { ABILITY_FULL } from '../builder/labels';
 
 /** Abre um painel num diálogo; resolve com o que o painel fechar, ou null. */
@@ -106,11 +108,6 @@ export function askModifier(props) {
   return openPanel(props.initialLabel ? props.initialLabel : 'Custom effect', <ModifierPanel {...props} />, 440);
 }
 
-/** O diálogo do dinheiro; resolve com { delta, label }. */
-export function askCurrency(props) {
-  return openPanel('Money', <CurrencyPanel {...props} />, 420);
-}
-
 /** O painel de andar (ou correr, com `dash`); resolve com { feet }. */
 export function askMove(props) {
   return openPanel(props.dash ? 'Dash' : 'Move', <MovePanel {...props} />, 400);
@@ -127,4 +124,14 @@ export function askSkillCheck(props) {
  */
 export function askAction(props) {
   return openPanel(props.item.name, <ActionPanel {...props} />, 460);
+}
+
+/** O que um gasto do turno paga; o título é o gasto. */
+export function askSlot({ slotLabel, ...props }) {
+  return openPanel(slotLabel, <SlotPanel slotLabel={slotLabel} {...props} />, 440);
+}
+
+/** Com que gasto do turno fazer algo; o título é o que se faz. */
+export function askCost({ title, ...props }) {
+  return openPanel(title, <CostPanel {...props} />, 440);
 }

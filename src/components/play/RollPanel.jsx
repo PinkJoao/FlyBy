@@ -6,8 +6,9 @@
 //   mostra a fórmula que vai ser rolada e deixa o jogador mudar o que o mestre
 //   impõe antes de rolar. Num teste de d20: desvantagem, normal ou vantagem. Em
 //   todos: um bônus livre em fórmula ("+1d4", "-2"), conferido ao digitar. No
-//   dano: crítico e o dado versátil. E, opcional, os dados rolados na mesa
-//   ("Physical dice"), em ordem; os que faltarem, o app rola.
+//   dano: crítico e o dado versátil, no controle segmentado (DDL-0158). E os dados
+//   rolados na mesa, quando Settings > Physical dice pede (só o d20, ou todos): o
+//   campo aparece direto, em ordem; os que faltarem, o app rola.
 //   Fecha com { mode, bonus, manual, critical, versatile, applyHeal }, ou null se
 //   cancelado; `healOption` mostra o "Heal myself" (a cura de uma magia).
 //   `effects` são os efeitos que valem para esta rolagem (engine/playEffects:
@@ -36,13 +37,23 @@
 //     com o botão de rolar desligado, nunca um erro depois.
 //   - Dado físico fora da face (um 7 num d6) só é pego ao rolar (o sequenceRng
 //     do dice.js); quem abre o diálogo mostra o erro num alerta.
+//   - Os dados da mesa saíram do diálogo para as configurações (DDL-0158): com "Only
+//     the d20", o campo só aparece nos testes de d20, e o d20 digitado é o primeiro
+//     da fila (o Bless e o resto o app rola). Campo vazio, o app rola tudo.
 // -----------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
 import { validateFormula, resolveMode } from '../../engine/dice';
 import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
+import useSettingsStore from '../../store/settingsStore';
 import styles from './RollPanel.module.css';
+import Button from '../common/Button';
+
+const HITS = [
+  { value: 'normal', label: 'Normal hit' },
+  { value: 'critical', label: 'Critical hit' },
+];
 
 const MODES = [
   { value: 'disadvantage', label: 'Disadvantage' },
@@ -77,7 +88,8 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
   const [bonus, setBonus] = useState('');
   const [critical, setCritical] = useState(defaultCritical);
   const [versatile, setVersatile] = useState(false);
-  const [physical, setPhysical] = useState(false);
+  const physicalDice = useSettingsStore((s) => s.physicalDice);
+  const physical = physicalDice === 'all' || (physicalDice === 'd20' && kind === 'd20');
   const [manualText, setManualText] = useState('');
   const [applyHeal, setApplyHeal] = useState(false);
   const [effectIds, setEffectIds] = useState(() => effects.filter((e) => e.defaultOn).map((e) => e.id));
@@ -148,18 +160,27 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
       )}
 
       {kind === 'damage' && !healOption && (
-        <div className={styles.checks}>
-          <label className={styles.check}>
-            <input type="checkbox" checked={critical} onChange={(e) => setCritical(e.target.checked)} />
-            <span>Critical hit</span>
-          </label>
-          {versatileDice && (
-            <label className={styles.check}>
-              <input type="checkbox" checked={versatile} onChange={(e) => setVersatile(e.target.checked)} />
-              <span>Two hands ({versatileDice})</span>
-            </label>
-          )}
-        </div>
+        <SegmentedControl
+          block
+          role="radiogroup"
+          ariaLabel="Critical hit"
+          value={critical ? 'critical' : 'normal'}
+          options={HITS}
+          onChange={(v) => setCritical(v === 'critical')}
+        />
+      )}
+      {kind === 'damage' && !healOption && versatileDice && (
+        <SegmentedControl
+          block
+          role="radiogroup"
+          ariaLabel="Grip"
+          value={versatile ? 'two' : 'one'}
+          options={[
+            { value: 'one', label: `One hand (${parts[0]?.formula ?? ''})` },
+            { value: 'two', label: `Two hands (${versatileDice})` },
+          ]}
+          onChange={(v) => setVersatile(v === 'two')}
+        />
       )}
 
       <label className={styles.field}>
@@ -174,32 +195,28 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
         {bonusError && <span className={styles.error}>{bonusError}</span>}
       </label>
 
-      <label className={styles.check}>
-        <input type="checkbox" checked={physical} onChange={(e) => setPhysical(e.target.checked)} />
-        <span>I rolled physical dice</span>
-      </label>
       {physical && (
         <label className={styles.field}>
-          <span className={styles.label}>Dice results, in order</span>
+          <span className={styles.label}>{physicalDice === 'all' ? 'Dice you rolled, in order' : kind === 'd20' && netMode !== 'normal' ? 'Your two d20s' : 'Your d20'}</span>
           <input
             className={manualError ? `${styles.input} ${styles.invalid}` : styles.input}
             value={manualText}
             onChange={(e) => setManualText(e.target.value)}
-            placeholder="e.g. 17 4"
+            placeholder={kind === 'd20' && netMode !== 'normal' ? 'e.g. 17 4' : kind === 'd20' && physicalDice === 'd20' ? 'e.g. 17' : 'e.g. 6 3'}
             autoComplete="off"
             inputMode="numeric"
           />
           <span className={manualError ? styles.error : styles.hint}>
-            {manualError ?? 'Any dice you leave out are rolled by the app.'}
+            {manualError ?? 'Leave it empty, or leave dice out, and the app rolls them.'}
           </span>
         </label>
       )}
 
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button ref={rollRef} type="submit" className={`${styles.btn} ${styles.primary}`} disabled={!!(bonusError || manualError)}>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button ref={rollRef} type="submit" variant="primary" disabled={!!(bonusError || manualError)}>
           Roll
-        </button>
+        </Button>
       </div>
     </form>
   );

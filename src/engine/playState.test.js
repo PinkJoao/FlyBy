@@ -17,7 +17,7 @@ import { describe, it, expect } from 'vitest';
 import {
   emptyPlayState, applyOp, hpView, remainingOf, createPlayDoc, normalizePlayDoc,
   currentPlayState, makeEvent, recordEvent, undoEvent, redoEvent, canUndo, canRedo,
-  compactPlayDoc, normalizeLimits, characterOps, deepEqual, applyCharacterOps, HISTORY_LIMITS,
+  compactPlayDoc, normalizeLimits, characterOps, deepEqual, applyCharacterOps, HISTORY_LIMITS, clearPlayHistory,
 } from './playState';
 
 const at = (day, hour = 12) => new Date(Date.UTC(2026, 9, day, hour));
@@ -274,3 +274,21 @@ describe('operações de personagem', () => {
     expect(deepEqual(null, {})).toBe(false);
   });
 });
+
+describe('clearPlayHistory', () => {
+  it('guarda o estado atual e esvazia o log, descartando o ramo desfeito', () => {
+    let doc = createPlayDoc('c1');
+    doc = recordEvent(doc, makeEvent('hurt', { ops: [{ op: 'hp', damage: 5 }] })).doc;
+    doc = recordEvent(doc, makeEvent('hurt', { ops: [{ op: 'hp', damage: 3 }] })).doc;
+    doc = undoEvent(doc).doc;
+    const before = currentPlayState(doc);
+    const cleared = clearPlayHistory(doc);
+    expect(cleared.events).toEqual([]);
+    expect(cleared.cursor).toBe(0);
+    expect(currentPlayState(cleared)).toEqual(before);
+    expect(currentPlayState(cleared).damage).toBe(5);
+    expect(canUndo(cleared)).toBe(false);
+    expect(canRedo(cleared)).toBe(false);
+  });
+});
+

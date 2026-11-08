@@ -17,8 +17,8 @@
  *   .list, .row*, .thumb*, .rowText, .metaDot: as linhas flat, separadas por
  *     divisor; .rowHit é a área clicável que abre o item, .rowSub a sublinha de
  *     tipo e badges, .rowSide o lado direito (peso, quantidade, equipar, menu).
- *   .rowQty, .useBtn: no play mode, a quantidade só lida ("x3") e as cargas, e o
- *     botão de usar (o mesmo tom do Cast da aba de magias).
+ *   .rowQty: no play mode, a quantidade só lida ("x3") e as cargas (o botão de usar
+ *     é o Button do app, DDL-0160).
  *   .equipRadio, .equipDot, .equipRadioOn: o toggle de equipar, SÓ o círculo (área
  *     de toque 28px, dote 16px; preenchido = equipado).
  *   Overlay do item
@@ -496,20 +496,6 @@
   color: var(--text-muted);
 }
 
-.useBtn {
-  appearance: none;
-  flex: none;
-  height: 30px;
-  padding: 0 12px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  border-radius: 8px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
-  cursor: pointer;
-}
 
 .rowWeight {
   font-size: 12px;

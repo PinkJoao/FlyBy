@@ -38,6 +38,10 @@
 //   - Consumo de DADO DE VIDA: `largest`/`smallest` (Durable) olham os que SOBRAM.
 //   - Feature com efeito curado (playEffects.featureModifier: Rage) liga o
 //     modificador no mesmo evento do uso.
+//   - `options.only` ('attack' ou 'effect') rola só o d20 do ataque ou só o dano e a
+//     cura (DDL-0156: a tela pergunta qual); `options.free` é a segunda rolagem, do
+//     cartão do histórico: não gasta de novo nem liga o efeito outra vez. Os dois vão
+//     no payload, para o cartão saber o que falta rolar.
 //   - A cura vai para o próprio personagem quando a activity mira ele mesmo
 //     (`selfTarget`) ou quando o jogador marca; senão só rola e mostra.
 //   - SPECIAL_RECOVERY (XPHB): Arcane Recovery devolve slots que somem até a
@@ -111,7 +115,9 @@ export function resolveCosts(catalog, state, activity, { scaling = 1, slotLevel 
  * @param {{ catalog: object, state: object, action: object, activity: object, options?: object, rng?: Function, now?: Date }} args
  */
 export function activityEvent({ catalog, state, action, activity, options = {}, rng = cryptoRng, now = new Date() }) {
-  const costs = resolveCosts(catalog, state, activity, options);
+  const free = !!options.free;
+  const only = options.only === 'attack' || options.only === 'effect' ? options.only : null;
+  const costs = free ? [] : resolveCosts(catalog, state, activity, options);
   const ops = costs.map((c) => (c.amount >= 0
     ? { op: 'spend', key: c.key, amount: c.amount }
     : { op: 'restore', key: c.key, amount: -c.amount }));
@@ -124,7 +130,7 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
   const r = rngFor(options, rng);
   const parts = [];
   let attack = null;
-  if (activity.attack) {
+  if (activity.attack && only !== 'effect') {
     attack = d20Test({
       parts: [
         { label: 'Modifier', formula: ability ? mods[ability]?.mod ?? 0 : 0 },
@@ -137,13 +143,13 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
       rng: r,
     });
   }
-  if (activity.heal) parts.push({ label: 'Healing', formula: activity.heal.formula });
-  for (const p of activity.damage ?? []) parts.push({ label: (p.types ?? []).join('/') || 'Damage', formula: p.formula });
+  if (activity.heal && only !== 'attack') parts.push({ label: 'Healing', formula: activity.heal.formula });
+  for (const p of only === 'attack' ? [] : activity.damage ?? []) parts.push({ label: (p.types ?? []).join('/') || 'Damage', formula: p.formula });
   const rolls = parts.length
     ? rollParts([...parts, ...(attack ? [] : bonusParts(options))], { data, rng: r, critical: !!(options.critical || attack?.isCritical) })
     : null;
 
-  const effect = featureModifier(action, catalog);
+  const effect = free ? null : featureModifier(action, catalog);
   if (effect) ops.push({ op: 'modifier', add: withRounds(effect, state, effect.maxRounds) });
 
   const healSelf = activity.heal && (options.applyHeal ?? activity.selfTarget);
@@ -168,6 +174,8 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
       healed,
       attack: attack ? { total: attack.total, natural: attack.natural, critical: attack.isCritical } : null,
       effect: effect?.label ?? null,
+      only,
+      free,
     },
     rolls: attack ? { ...attack, parts: [...attack.parts, ...(rolls?.parts ?? [])], total: attack.total, damage: rolls?.total ?? null } : rolls,
   }, now);

@@ -30,6 +30,7 @@ import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import { SKILL_LABEL } from '../builder/labels';
 import styles from './PlayPanels.module.css';
+import Button from '../common/Button';
 
 const TARGETS = [
   { value: 'attack', label: 'Attack rolls' },
@@ -135,8 +136,8 @@ export default function ModifierPanel({ rollData, inCombat = false, initialLabel
       )}
 
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button type="submit" className={`${styles.btn} ${styles.primary}`} disabled={!ok}>Add</button>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button type="submit" variant="primary" disabled={!ok}>Add</Button>
       </div>
     </form>
   );

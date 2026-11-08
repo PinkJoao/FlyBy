@@ -68,6 +68,12 @@ export function SettingsMenu({ onReplayTutorials }) {
   const setExperimental = useSettingsStore((s) => s.setExperimental);
   const diceAnimation = useSettingsStore((s) => s.diceAnimation);
   const setDiceAnimation = useSettingsStore((s) => s.setDiceAnimation);
+  const diceSound = useSettingsStore((s) => s.diceSound);
+  const setDiceSound = useSettingsStore((s) => s.setDiceSound);
+  const physicalDice = useSettingsStore((s) => s.physicalDice);
+  const setPhysicalDice = useSettingsStore((s) => s.setPhysicalDice);
+  const trackAmmo = useSettingsStore((s) => s.trackAmmo);
+  const setTrackAmmo = useSettingsStore((s) => s.setTrackAmmo);
 
   return (
     <MenuList
@@ -109,9 +115,17 @@ export function SettingsMenu({ onReplayTutorials }) {
         ...(experimental
           ? [
               { heading: 'Dice animation' },
-              { label: 'Animated d20', sub: 'A 3D d20 rolls on the screen for every d20 test', checked: diceAnimation === 'd20', keepOpen: true, onClick: () => setDiceAnimation('d20') },
-              { label: 'All dice', sub: 'Damage, healing and hit dice also roll in a tray', checked: diceAnimation === 'all', keepOpen: true, onClick: () => setDiceAnimation('all') },
+              { label: 'All dice', sub: 'Every roll shows its dice: the d20 up close, the rest in a tray', checked: diceAnimation === 'all', keepOpen: true, onClick: () => setDiceAnimation('all') },
+              { label: 'Only the d20', sub: 'Damage, healing and hit dice show just the result', checked: diceAnimation === 'd20', keepOpen: true, onClick: () => setDiceAnimation('d20') },
               { label: 'Off', sub: 'Only the result appears', checked: diceAnimation === 'off', keepOpen: true, onClick: () => setDiceAnimation('off') },
+              { heading: 'Physical dice' },
+              { label: 'Off', sub: 'The app rolls every die', checked: physicalDice === 'off', keepOpen: true, onClick: () => setPhysicalDice('off') },
+              { label: 'Only the d20', sub: 'Type the d20 you rolled at the table; the app rolls the rest', checked: physicalDice === 'd20', keepOpen: true, onClick: () => setPhysicalDice('d20') },
+              { label: 'All rolls', sub: 'Type every die you rolled at the table', checked: physicalDice === 'all', keepOpen: true, onClick: () => setPhysicalDice('all') },
+              { heading: 'Ammunition' },
+              { label: 'Track ammunition', sub: 'Each shot spends an arrow, bolt or bullet from the inventory', checked: trackAmmo !== false, toggle: true, keepOpen: true, onClick: () => setTrackAmmo(trackAmmo === false) },
+              { heading: 'Sound' },
+              { label: 'Dice sounds', sub: 'Rolling, landing, bonuses, natural 20 and natural 1', checked: diceSound !== false, toggle: true, keepOpen: true, onClick: () => setDiceSound(diceSound === false) },
             ]
           : []),
         ...(experimental ? [{ heading: 'Play history' }] : []),

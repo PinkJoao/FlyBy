@@ -56,6 +56,12 @@ const ICONS = {
   idea: 'lucide:lightbulb',
   undo: 'lucide:undo-2',
   redo: 'lucide:redo-2',
+  trash: 'lucide:trash',
+  econAction: 'lucide:circle',
+  econBonus: 'lucide:triangle',
+  econReaction: 'lucide:zap',
+  nextTurn: 'lucide:skip-forward',
+  endCombat: 'lucide:flag',
   history: 'lucide:scroll-text',
   edit: 'lucide:pencil',
 

@@ -2,8 +2,10 @@
  * ActionPanel.module.css: o painel de "como usar" uma ação básica
  * =============================================================================
  * CLASSES
- *   .panel, .costs, .used, .warn, .note: a coluna, as pílulas de custo (a gasta,
- *     apagada), o aviso de custo gasto e a nota da feature.
+ *   .panel, .warn, .note: a coluna, o aviso de custo gasto e a nota da feature.
+ *   .costRow, .costRowOn, .radio, .radioOn, .spent: as formas de pagar, em linhas
+ *     grandes com rádio e "Used" (DDL-0158); o rádio tem a cor do gasto (--econ,
+ *     do econ.module.css, DDL-0163).
  *   .group, .heading, .list, .pick, .pickMain, .pickName, .pickDetail, .pickValue:
  *     os grupos (círculos de magia) e as linhas tocáveis.
  *   .field, .input: o gatilho do Ready.
@@ -18,16 +20,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.costs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.used {
-  opacity: 0.5;
 }
 
 .warn,
@@ -144,4 +136,51 @@
 
 .rules {
   font-size: 14px;
+}
+
+.costRow {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.costRowOn {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.radio {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--econ, var(--text-muted));
+}
+
+.radioOn {
+  border-color: var(--econ, var(--accent));
+  box-shadow: inset 0 0 0 3px var(--bg-soft), inset 0 0 0 9px var(--econ, var(--accent));
+}
+
+.spent {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--warning);
+}
+
+.pick:disabled {
+  opacity: 0.45;
+  cursor: default;
 }

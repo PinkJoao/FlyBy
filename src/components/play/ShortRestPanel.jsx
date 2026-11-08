@@ -29,6 +29,7 @@ import { sequenceRng } from '../../engine/dice';
 import { hpView } from '../../engine/playState';
 import { useDialogClose } from '../common/dialogContext';
 import styles from './ShortRestPanel.module.css';
+import Button from '../common/Button';
 
 /**
  * O conteúdo do diálogo do descanso curto.
@@ -99,10 +100,10 @@ export default function ShortRestPanel({ catalog, state }) {
       )}
 
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button type="button" className={`${styles.btn} ${styles.primary}`} onClick={() => close({ spends })}>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button variant="primary" onClick={() => close({ spends })}>
           Finish rest{healed > 0 ? ` (+${healed} HP)` : ''}
-        </button>
+        </Button>
       </div>
     </div>
   );

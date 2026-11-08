@@ -60,6 +60,7 @@ import SortButton from '../common/SortButton';
 import { NAME_SORT, sortName } from '../../sorting';
 import { showImageSource } from '../common/imageSourceDialog';
 import CloseButton from '../common/CloseButton';
+import Button from '../common/Button';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -647,9 +648,9 @@ export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEq
         )}
         {usesLeft && <span className={styles.rowQty} title="Charges left">{usesLeft}</span>}
         {onUse && (
-          <button type="button" className={styles.useBtn} onClick={onUse} title={`${useLabel} ${nameOf(entry)}`}>
+          <Button size="sm" variant="primary" onClick={onUse} title={`${useLabel} ${nameOf(entry)}`}>
             {useLabel}
-          </button>
+          </Button>
         )}
         {canEquip && <EquipToggle equipped={entry.equipped} onClick={onEquip} name={nameOf(entry)} />}
       </div>

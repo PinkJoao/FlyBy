@@ -126,6 +126,17 @@ describe('ataques', () => {
     expect(rapier.toHit.total).toBe(3);
   });
 
+  it('a regra condicional do ladino (marcial com Finesse ou Light) dá o PB pela lista de armas', () => {
+    const rogue = {
+      ...derived,
+      weapons: ['Simple Weapons', 'Martial weapons that have the Finesse or Light property'],
+      weaponNames: ['Rapier', 'Scimitar', 'Shortsword'],
+    };
+    const rapier = weaponAttacks(character, rogue).find((a) => a.name === 'Rapier');
+    expect(rapier).toMatchObject({ proficient: true });
+    expect(rapier.toHit.parts.map((p) => p.label)).toContain('Proficiency');
+  });
+
   it('o desarmado é 1 + FOR de concussão, com o PB', () => {
     expect(unarmedStrike(derived)).toMatchObject({ toHit: { total: 6 }, damage: { dice: null, bonus: 4, types: ['bludgeoning'] } });
   });

@@ -16,6 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent } from './playCast';
+import { spellCosts } from './playBasicActions';
 import { rollDamageEvent } from './playActions';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -139,3 +140,30 @@ describe('efeito curado da magia', () => {
     expect(s2.modifiers.map((m) => m.label)).toEqual(['Bless']);
   });
 });
+
+describe('gastos para lançar (SPELL_COSTS)', () => {
+  const fireBolt = { name: 'Fire Bolt', time: 'action', level: 0 };
+  const shield = { name: 'Shield', time: 'reaction', level: 1 };
+  const font = { key: 'pool:font-of-magic', kind: 'pool', name: 'Font of Magic', item: 'Font of Magic', max: 5 };
+
+  it('sem feature, só o tempo da magia', () => {
+    expect(spellCosts(fireBolt, { features: [], resources: [] }).map((c) => c.cost)).toEqual(['action']);
+  });
+
+  it('Quickened Spell: magia de ação também pela bônus, gastando 2 Sorcery Points', () => {
+    const cat = { features: ['quickened spell'], resources: [font] };
+    const [base, quick] = spellCosts(fireBolt, cat);
+    expect(base).toMatchObject({ cost: 'action', label: 'Action', source: null });
+    expect(quick).toMatchObject({ cost: 'bonus', label: 'Bonus Action', source: 'Quickened Spell', spend: { key: 'pool:font-of-magic', amount: 2 } });
+    expect(spellCosts(shield, cat)).toHaveLength(1);
+  });
+
+  it('feature de uma magia só: Mantle of Majesty (Command sem slot), Misty Escape (reação)', () => {
+    const glamour = spellCosts({ name: 'Command', time: 'action', level: 1 }, { features: ['mantle of majesty'], resources: [] });
+    expect(glamour[1]).toMatchObject({ cost: 'bonus', source: 'Mantle of Majesty', noSlot: true });
+    expect(spellCosts(fireBolt, { features: ['mantle of majesty'], resources: [] })).toHaveLength(1);
+    const misty = spellCosts({ name: 'Misty Step', time: 'bonus', level: 2 }, { features: ['misty escape'], resources: [] });
+    expect(misty.map((c) => c.cost)).toEqual(['bonus', 'reaction']);
+  });
+});
+

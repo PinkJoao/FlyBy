@@ -2,7 +2,8 @@
  * Play.module.css: a tela do play mode
  * =============================================================================
  * CLASSES
- *   .sideContent: o histórico dentro da coluna que a pages/Character põe ao lado.
+ *   .sideContent, .sideScroll: o histórico dentro da coluna que a pages/Character
+ *     põe ao lado; só a lista (e a barra do combate) rola, em .sideScroll.
  *   .iconBtn: os botões de ícone (o menu do topo, desfazer e refazer), do tamanho
  *     do menu da ficha.
  *   .historyHead, .historyActions: o título do histórico com desfazer e refazer.
@@ -10,9 +11,11 @@
  *   .status: a faixa de estado (a morte e o combate; só aparece com um deles).
  *   .deathCard, .deadCard, .deathTitle, .pips, .pip, .pipOk, .pipBad,
  *     .deathHint: os testes contra a morte.
- *   .ghostBtn, .restBtns: os botões do combate.
- *   .combatBar, .combatRound, .econ, .econBtn, .econUsed: a barra do combate
- *     (rodada, iniciativa, ação, bônus e reação gastos).
+ *   .historyTitle, .sideHead: o título do histórico com a rodada do combate, e o
+ *     topo da coluna do desktop, FORA da rolagem (DDL-0164): o histórico rola só
+ *     abaixo dele. Preso por cima da lista, ele precisava de fundo (com --bg virava
+ *     uma caixa sobre o degradê do app) ou de desfoque (o texto passando por trás
+ *     ficava borrado). Os comandos do combate moram no CombatControls.
  *   .heading: os títulos.
  *   .rollBtn, .rollLabel: o botão de rolar com rótulo (o teste contra a morte).
  *   .toast, .toastLabel, .toastTotal, .toastTag: o aviso da última rolagem.
@@ -156,30 +159,20 @@
   color: var(--text-muted);
 }
 
-.ghostBtn {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-}
 
-.ghostBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
 
-.restBtns {
-  display: inline-flex;
-  gap: 6px;
-  margin-left: auto;
-}
 
 .sideContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 48px);
+}
+
+.sideScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -287,55 +280,12 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 560px) {
-  .attack {
-    flex-wrap: wrap;
-  }
-
-  .attackButtons {
-    width: 100%;
-    justify-content: flex-end;
-  }
-}
-
-.combatBar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  padding: 8px 12px;
-  border: 1px solid var(--accent-border);
-  border-radius: 12px;
-  background: var(--accent-bg);
-}
-
-.combatRound {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-
-.econ {
+.historyTitle {
   display: inline-flex;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
 }
 
-.econBtn {
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--accent-border);
-  background: var(--bg);
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.econUsed {
-  border-color: var(--border);
-  color: var(--text-muted);
-  text-decoration: line-through;
-  background: transparent;
+.sideHead {
+  flex: none;
 }

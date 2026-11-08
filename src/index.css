@@ -24,6 +24,10 @@
  *   - Os estados: --danger (erro, excesso, apagar), --info (azul), --success,
  *     --warning; --danger-text e --info-text são o mesmo tom legível como TEXTO
  *     sobre o tom claro de fundo (no escuro, mais claro que o sólido).
+ *   - Cores de jogo: --econ-action, --econ-bonus e --econ-reaction são os três
+ *     gastos do turno (azul, verde, amarelo; DDL-0163), nos botões de combate e em
+ *     toda etiqueta de custo; --die-d4 a --die-d20 são os dados do histórico
+ *     (DDL-0160). O amarelo é mais escuro no claro e no papel, para ler como texto.
  *   - O papel troca também as fontes: Cinzel nos títulos e Alegreya no texto
  *     (importadas no main.jsx). O accent dele é bordô (vinho), e o --danger é
  *     um escarlate alaranjado: com dois vermelhos parecidos, o include e o
@@ -66,6 +70,17 @@
   --info-text: #1f5fbf;
   --success: #2e8b3e;
   --warning: #b77a10;
+  --die-d4: #1f9d4c;
+  --die-d6: #14a9c0;
+  --die-d8: #8a3fe0;
+  --die-d10: #df338e;
+  --die-d12: #d92b2b;
+  --die-d20: #f06a0c;
+  --die-other: #6b7280;
+  --die-text: #fff;
+  --econ-action: #2563eb;
+  --econ-bonus: #16994a;
+  --econ-reaction: #8a6400;
 
   --rarity-uncommon: #2e8b3e;
   --rarity-rare: #2f74c0;
@@ -123,6 +138,17 @@
   --info-text: #8fb8ff;
   --success: #46b35e;
   --warning: #e0a02e;
+  --die-d4: #1f9d4c;
+  --die-d6: #14a9c0;
+  --die-d8: #8a3fe0;
+  --die-d10: #df338e;
+  --die-d12: #d92b2b;
+  --die-d20: #f06a0c;
+  --die-other: #6b7280;
+  --die-text: #fff;
+  --econ-action: #4f8ff7;
+  --econ-bonus: #3fbf6a;
+  --econ-reaction: #e8b923;
 
   --rarity-uncommon: #3fa14b;
   --rarity-rare: #4a90d9;
@@ -159,6 +185,17 @@
   --info-text: #234e78;
   --success: #3d6e2a;
   --warning: #9b6a10;
+  --die-d4: #3d7d3a;
+  --die-d6: #2b7f8e;
+  --die-d8: #6a3f93;
+  --die-d10: #a13a6d;
+  --die-d12: #a12f2f;
+  --die-d20: #b45a1c;
+  --die-other: #6b5a45;
+  --die-text: #fffaf0;
+  --econ-action: #2d5b8c;
+  --econ-bonus: #3d7a3a;
+  --econ-reaction: #7d5d08;
 
   --rarity-uncommon: #3d6e2a;
   --rarity-rare: #2c5f8f;

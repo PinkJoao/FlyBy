@@ -33,8 +33,9 @@
 //   PreparedToggle(props): o radio de preparação (o mesmo átomo do EquipToggle).
 //   SpellThumb(props): arte do fluff, senão o glyph da escola.
 //   SpellRow(props): uma linha da lista. Exportada para a aba Spells do play mode
-//     (components/play/SpellsTab), que passa `onCast` (o botão de lançar) e
-//     `usesLeft` (os usos grátis que sobram) e não passa preparar nem trocar.
+//     (components/play/SpellsTab), que passa `onCast` (o botão de lançar),
+//     `usesLeft` (os usos grátis que sobram) e `costTags` (as etiquetas coloridas
+//     dos gastos, DDL-0165), e não passa preparar nem trocar.
 //
 // DECISÕES E ARMADILHAS
 //   - "Prepare spell" abre o seletor em modo MÚLTIPLO: segue aberto enquanto
@@ -128,6 +129,7 @@ import Collapse from '../common/Collapse';
 import SortButton from '../common/SortButton';
 import { NAME_SORT } from '../../sorting';
 import CloseButton from '../common/CloseButton';
+import Button from '../common/Button';
 
 const ORIGIN_ICONS = { class: 'originClass', race: 'originSpecies', feat: 'originFeat', unassigned: 'itemAll' };
 
@@ -921,7 +923,7 @@ function SpellThumb({ src, school, alt }) {
   );
 }
 
-export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, onAssign, assignDisabled, onCast, castLabel = 'Cast', castDisabled = false, usesLeft = null }) {
+export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePrepared, onAssign, assignDisabled, onCast, castLabel = 'Cast', castDisabled = false, usesLeft = null, costTags = null }) {
   const raw = entry.raw;
   const meta = [schoolName(raw.school), castingTimeLabel(raw), rangeLabel(raw)].filter(Boolean);
   const cast = castTypeLabel(entry);
@@ -951,6 +953,9 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
             {cast && <span className={styles.chip}>{cast}</span>}
             {isRitual(raw) && cast !== 'Ritual' && <span className={styles.chip}>Ritual</span>}
             {isConcentration(raw) && <span className={styles.chip}>Concentration</span>}
+            {(costTags ?? []).map((t) => (
+              <span key={t.key} className={`${styles.chip} ${t.className ?? ''}`} title={t.title}>{t.label}</span>
+            ))}
           </span>
         </span>
       </button>
@@ -972,9 +977,9 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
         )}
         {usesLeft && <span className={styles.chip} title="Free uses left">{usesLeft}</span>}
         {onCast && (
-          <button type="button" className={styles.castBtn} onClick={onCast} disabled={castDisabled} title={`${castLabel} ${raw.name}`}>
+          <Button size="sm" variant="primary" onClick={onCast} disabled={castDisabled} title={`${castLabel} ${raw.name}`}>
             {castLabel}
-          </button>
+          </Button>
         )}
         {onAssign && (
           <button

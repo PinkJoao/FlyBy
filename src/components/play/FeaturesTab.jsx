@@ -18,6 +18,8 @@
 //   FeaturesTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - A pílula de custo tem a cor do gasto (econ.module.css, DDL-0163), a mesma da
+//     aba Actions e dos botões de combate.
 //   - Só USAR (definição do dono, DDL-0146): sem o ajuste à mão (menos e mais) dos pools.
 //     O pool sem activity (o uso que só a prosa declara) ganha "Use", que gasta um;
 //     o engano se desfaz no histórico.
@@ -40,8 +42,10 @@ import useDialogStore from '../../store/dialogStore';
 import EntryContent from '../common/EntryContent';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
+import Button from '../common/Button';
 import styles from '../builder/SpellbookTab.module.css';
 import play from './PlayTabs.module.css';
+import econ from './econ.module.css';
 
 const COST_LABELS = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', minute: 'Minute', hour: 'Hour', special: 'Special', legendary: 'Legendary' };
 
@@ -83,7 +87,7 @@ function showFeatureText(feature) {
 function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onAdjust }) {
   const activities = action?.activities ?? [];
   const special = action ? specialRecovery(action, catalog) : null;
-  const costs = [...new Set(activities.map((a) => costLabel(a.activation)).filter(Boolean))];
+  const costs = [...new Map(activities.filter((a) => costLabel(a.activation)).map((a) => [costLabel(a.activation), a.activation.type])).entries()];
   const recovery = pools.map((p) => recoveryText(p.recovery)).find(Boolean);
   const use = async () => {
     if (special) return onSpecial(action, special);
@@ -105,8 +109,8 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
           <span className={styles.rowName}>{feature.name}</span>
           <span className={styles.rowSub}>
             {feature.level > 0 && <span className={styles.rowMetaLine}>Level {feature.level}</span>}
-            {costs.map((c) => (
-              <span key={c} className={styles.chip}>{c}</span>
+            {costs.map(([label, type]) => (
+              <span key={label} className={[styles.chip, econ.tag, econ[type]].filter(Boolean).join(' ')}>{label}</span>
             ))}
             {recovery && <span className={styles.chip}>{recovery}</span>}
           </span>
@@ -119,14 +123,14 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
           </span>
         ))}
         {activities.length > 0 && (
-          <button type="button" className={styles.castBtn} onClick={use} title={`Use ${feature.name}`}>
+          <Button size="sm" variant="primary" onClick={use} title={`Use ${feature.name}`}>
             {special ? 'Choose' : 'Use'}
-          </button>
+          </Button>
         )}
         {lone && (
-          <button type="button" className={styles.castBtn} onClick={() => onAdjust(lone.key, 1)} disabled={loneLeft <= 0} title={`Spend one ${lone.name}`}>
+          <Button size="sm" variant="primary" onClick={() => onAdjust(lone.key, 1)} disabled={loneLeft <= 0} title={`Spend one ${lone.name}`}>
             Use
-          </button>
+          </Button>
         )}
       </div>
     </li>

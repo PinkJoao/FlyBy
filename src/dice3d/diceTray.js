@@ -2,49 +2,50 @@
 // diceTray: a bandeja de dados (todos os dados de uma rolagem), em canvas 2D
 // =============================================================================
 // O QUE FAZ
-//   A fase D2 dos dados (docs/PLAY-MODE-V2-PLAN.md §2, DDL-0153): os dados entram
-//   pela borda de baixo da tela, quicam no ar, batem nas bordas e uns nos outros,
-//   rolam conforme deslizam e assentam cada um na face do valor que o engine já
-//   sorteou. Desenhados com geometry.js (o mesmo dos d20 em destaque).
+//   A fase D2 dos dados (docs/PLAY-MODE-V2-PLAN.md §2, DDL-0153, refeita no
+//   DDL-0157): os dados caem numa grade no centro da tela e cada um gira no lugar,
+//   desacelera e para EXATO na face do valor que o engine já sorteou, como o d20 em
+//   destaque. Desenhados com geometry.js.
 //
 // FUNÇÕES
-//   traySize(count, w, h): o raio de cada dado na tela, pelo número de dados.
-//   createTray(canvas, dice, colors): a bandeja; devolve { start, finish, stop }.
-//   drawToken(ctx, body, colors): o dado sem sólido (d2, d3, d100 inteiro) como ficha.
+//   traySize(count, w, h): o raio de cada dado na tela, pela grade.
+//   gridOf(count, w, h): as colunas, as linhas e o lado da célula.
+//   createTray(canvas, dice, colors, hooks): a bandeja; devolve { start, finish,
+//     stop }. `hooks.onLand(i)` avisa quando o dado i para (o som do toque).
+//   drawToken(ctx, body, colors): o dado sem sólido (d2, d3) como ficha.
 //
 // DECISÕES E ARMADILHAS
-//   - Física SIMPLES no plano da mesa (posição, velocidade, atrito, quique nas
-//     bordas, choque entre dados de massa igual), e o giro do dado vem do rolar
-//     (eixo perpendicular ao movimento) mais um tombo inicial que some. Não é motor
-//     de corpo rígido: no fim, cada dado interpola até a face sorteada, girando em z
-//     só o necessário (twistToward), então ele não rodopia ao parar.
-//   - O quique é uma altura fingida (o dado cresce e a sombra se afasta), que decai
-//     rápido: dá a queda sem simular o eixo vertical.
-//   - Tempo pelo RELÓGIO, em passos de 1/120 s (STEP_S): o quadro lento faz mais
-//     passos, então a bandeja dura o mesmo em qualquer aparelho e o dado não
-//     atravessa a borda. Limitar o dt por quadro (a primeira versão) deixava a
-//     bandeja em câmera lenta quando o navegador espaçava os quadros (medido: 2 s
-//     entre quadros no painel do app). E LIMIT_MS fecha a conta pelo relógio de
-//     verdade: passou dele, todo dado vai direto à face final.
-//   - Pular (finish) ADIANTA a simulação (até FAST_STEPS passos, instantâneo) antes
-//     de fixar as faces: fixar na hora deixava os dados que ainda não tinham entrado
-//     empilhados na borda de baixo.
-//   - O dado descartado (manter maior ou menor) esmaece depois de assentar.
+//   - Giro no lugar, não física (pedido do dono, 2026-11-07): na versão com física o
+//     dado deslizava, parava e então girava até a face sorteada, e esse ajuste final
+//     parecia o app trocando o resultado. Agora a orientação final faz parte do
+//     próprio giro (a mesma conta do d20Canvas: voltas em torno de um eixo aleatório
+//     que se anulam enquanto a interpolação chega à face), então o dado nunca
+//     "corrige" nada.
+//   - Cada dado entra caindo (cresce de cima e assenta com um quique curto) e para num
+//     tempo próprio, escalonado, para não pararem todos juntos. O último para em até
+//     uns 2 s.
+//   - O número para em pé (sem giro em z no fim), legível como no d20.
+//   - Tempo pelo relógio (performance.now): o quadro lento só pula etapas; a bandeja
+//     dura o mesmo em qualquer aparelho (o painel do app chegou a dar 1 quadro a cada
+//     2 s, DDL-0153).
+//   - O dado descartado (manter maior ou menor) esmaece quando para.
 // -----------------------------------------------------------------------------
 
-import { dieQuat, drawDie, makeDie, quatAxis, quatMul, quatSlerp, twistToward } from './geometry';
+import { dieQuat, drawDie, makeDie, quatAxis, quatMul, quatSlerp } from './geometry';
 import { easeOut } from './d20Canvas';
 
-const SETTLE_S = 0.35;
-const MAX_S = 2.2;
-const STEP_S = 1 / 120;
-const LIMIT_MS = 2600;
-const FAST_STEPS = 480;
+const DROP_MS = 260;
 
-/** O raio de cada dado na tela: menor quando são muitos. */
+/** A grade: colunas e linhas pelo formato da área, e o lado da célula. */
+export function gridOf(count, w, h) {
+  const cols = Math.max(1, Math.min(count, Math.round(Math.sqrt((count * w) / Math.max(1, h))) || 1));
+  const rows = Math.ceil(count / cols);
+  return { cols, rows, cell: Math.min(w / cols, h / rows) };
+}
+
+/** O raio de cada dado na tela: o que cabe na célula, com teto. */
 export function traySize(count, w, h) {
-  const base = Math.min(46, Math.max(24, Math.min(w, h) / 8));
-  return Math.max(16, count > 6 ? base * Math.sqrt(6 / count) : base);
+  return Math.max(14, Math.min(60, gridOf(count, w, h).cell * 0.36));
 }
 
 /** O dado sem sólido como uma ficha redonda com o número. */
@@ -52,7 +53,7 @@ function drawToken(ctx, body, colors) {
   ctx.save();
   ctx.globalAlpha = body.alpha;
   ctx.beginPath();
-  ctx.arc(body.x, body.y, body.r * 0.8, 0, Math.PI * 2);
+  ctx.arc(body.x, body.y, body.r * 0.8 * body.scale, 0, Math.PI * 2);
   ctx.fillStyle = colors.face;
   ctx.fill();
   ctx.strokeStyle = colors.edge;
@@ -69,120 +70,89 @@ function drawToken(ctx, body, colors) {
  * A bandeja. `dice`: [{ sides, value, kept, mode?, token? }]; `colors`: { face, edge, text }.
  * @returns {{ start: () => Promise<void>, finish: Function, stop: Function }}
  */
-export function createTray(canvas, dice, colors) {
+export function createTray(canvas, dice, colors, hooks = {}) {
   const ctx = canvas.getContext('2d');
   const dpr = globalThis.devicePixelRatio || 1;
   const w = canvas.clientWidth || canvas.width;
   const h = canvas.clientHeight || canvas.height;
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
+  const { cols, rows, cell } = gridOf(dice.length, w, h);
   const r = traySize(dice.length, w, h);
   const rand = Math.random;
+  const stagger = dice.length > 1 ? Math.min(110, 700 / (dice.length - 1)) : 0;
   const bodies = dice.map((d, i) => {
     const die = d.token ? null : makeDie(d.sides, d.mode);
+    const row = Math.floor(i / cols);
+    const inRow = row === rows - 1 ? dice.length - row * cols : cols;
+    const col = i - row * cols;
     return {
       ...d,
       die,
       r,
-      x: w * (0.25 + 0.5 * rand()),
-      y: h + r * (1 + i * 0.5),
-      vx: (rand() - 0.5) * w * 1.2,
-      vy: -(h * (1.25 + rand() * 0.45)),
-      q: quatAxis([rand() - 0.5, rand() - 0.5, rand() - 0.5], rand() * Math.PI * 2),
-      tumble: [rand() - 0.5, rand() - 0.5, rand() - 0.5],
-      phase: rand() * Math.PI,
-      entered: false,
-      settling: null,
-      done: false,
+      x: w / 2 + (col - (inRow - 1) / 2) * cell,
+      y: h / 2 + (row - (rows - 1) / 2) * cell,
+      delay: i * stagger,
+      ms: 1000 + rand() * 250,
+      from: quatAxis([rand() - 0.5, rand() - 0.5, rand() - 0.5], rand() * Math.PI * 2),
+      to: die ? dieQuat(die, d.value) : null,
+      axis: [rand() - 0.5, rand() - 0.5, rand() - 0.5],
+      turns: (2.5 + rand() * 1.5) * Math.PI * 2,
+      q: null,
+      scale: 0,
+      lift: 0,
       alpha: 1,
-      hop: 0,
+      done: false,
     };
   });
   let frame = 0;
   let resolve = null;
-  let last = 0;
   let began = 0;
-  let t = 0;
 
-  const settle = (b) => {
-    if (b.settling || !b.die) return;
-    b.settling = { from: b.q, to: dieQuat(b.die, b.value, twistToward(b.die, b.value, b.q)), s: 0 };
+  const land = (b, i) => {
+    if (b.done) return;
+    b.done = true;
+    b.q = b.to;
+    b.scale = 1;
+    b.lift = 0;
+    if (!b.kept) b.alpha = 0.35;
+    hooks.onLand?.(i);
   };
 
-  const step = (dt) => {
-    t += dt;
-    for (const b of bodies) {
-      if (b.done) continue;
-      const friction = Math.exp(-(b.settling ? 9 : 1.9) * dt);
-      b.vx *= friction;
-      b.vy *= friction;
-      b.x += b.vx * dt;
-      b.y += b.vy * dt;
-      if (b.y < h - b.r) b.entered = true;
-      if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * 0.6; }
-      if (b.x > w - b.r) { b.x = w - b.r; b.vx = -Math.abs(b.vx) * 0.6; }
-      if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy) * 0.6; }
-      if (b.entered && b.y > h - b.r) { b.y = h - b.r; b.vy = -Math.abs(b.vy) * 0.6; }
-      b.hop = Math.max(0, 1.1 * Math.exp(-t / 0.32) * Math.abs(Math.cos(t * 11 + b.phase)));
-      const speed = Math.hypot(b.vx, b.vy);
-      if (b.settling) {
-        b.settling.s = Math.min(1, b.settling.s + dt / SETTLE_S);
-        b.q = quatSlerp(b.settling.from, b.settling.to, easeOut(b.settling.s));
-        if (b.settling.s >= 1) {
-          b.done = true;
-          if (!b.kept) b.alpha = 0.35;
-        }
-      } else if (b.die) {
-        b.q = quatMul(quatAxis([b.vy, b.vx, 0], (speed / b.r) * dt), b.q);
-        const spin = 14 * Math.exp(-t / 0.4) * dt;
-        if (spin > 1e-4) b.q = quatMul(quatAxis(b.tumble, spin), b.q);
-        if ((t > 0.55 && speed < 70) || t > MAX_S) settle(b);
-      } else if ((t > 0.55 && speed < 70) || t > MAX_S) {
-        b.done = true;
-        if (!b.kept) b.alpha = 0.35;
-      }
+  const pose = (b, i, now) => {
+    if (b.done) return;
+    const t = now - began - b.delay;
+    if (t < 0) {
+      b.scale = 0;
+      return;
     }
-    for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
-      const a = bodies[i];
-      const b = bodies[j];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const dist = Math.hypot(dx, dy);
-      const min = a.r + b.r;
-      if (!dist || dist >= min) continue;
-      const nx = dx / dist;
-      const ny = dy / dist;
-      const push = (min - dist) / 2;
-      a.x -= nx * push;
-      a.y -= ny * push;
-      b.x += nx * push;
-      b.y += ny * push;
-      const rel = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
-      if (rel <= 0) continue;
-      const k = rel * 0.9;
-      a.vx -= k * nx;
-      a.vy -= k * ny;
-      b.vx += k * nx;
-      b.vy += k * ny;
-    }
+    const drop = Math.min(1, t / DROP_MS);
+    b.scale = drop < 1 ? 1.35 - 0.35 * easeOut(drop) : 1;
+    b.lift = (1 - easeOut(drop)) * 1.2 + 0.25 * Math.exp(-t / 260) * Math.abs(Math.sin(t / 70));
+    const s = Math.min(1, t / b.ms);
+    const e = easeOut(s);
+    if (b.die) b.q = quatMul(quatAxis(b.axis, (1 - e) * b.turns), quatSlerp(b.from, b.to, e));
+    if (s >= 1) land(b, i);
   };
 
   const draw = () => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     for (const b of bodies) {
-      const off = b.hop * b.r * 0.5;
+      if (!b.scale) continue;
+      const off = b.lift * b.r * 0.45;
       ctx.beginPath();
-      ctx.ellipse(b.x + off * 0.6, b.y + off, b.r * 0.85, b.r * 0.7, 0, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0,0,0,${(0.28 * b.alpha * (1 - b.hop * 0.4)).toFixed(3)})`;
+      ctx.ellipse(b.x + off * 0.5, b.y + b.r * 0.15 + off, b.r * 0.85, b.r * 0.62, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,0,0,${(0.26 * b.alpha * Math.min(1, b.scale)).toFixed(3)})`;
       ctx.fill();
     }
-    for (const b of [...bodies].sort((p, q) => p.y - q.y)) {
+    for (const b of bodies) {
+      if (!b.scale) continue;
       if (!b.die) {
         drawToken(ctx, b, colors);
         continue;
       }
-      drawDie(ctx, b.die, b.q, { cx: b.x, cy: b.y - b.hop * b.r * 0.3, size: b.r * (1 + b.hop * 0.18), colors, alpha: b.alpha });
+      drawDie(ctx, b.die, b.q ?? b.from, { cx: b.x, cy: b.y - b.lift * b.r * 0.3, size: b.r * b.scale, colors, alpha: b.alpha });
     }
   };
 
@@ -200,27 +170,13 @@ export function createTray(canvas, dice, colors) {
   };
 
   const finish = () => {
-    for (let i = 0; i < FAST_STEPS && !bodies.every((b) => b.done); i++) step(STEP_S);
-    for (const b of bodies) {
-      if (b.die) b.q = dieQuat(b.die, b.value, twistToward(b.die, b.value, b.q));
-      b.hop = 0;
-      b.done = true;
-      b.y = Math.min(b.y, h - b.r);
-      b.alpha = b.kept ? 1 : 0.35;
-    }
+    bodies.forEach((b, i) => land(b, i));
     end();
   };
 
   const tick = (now) => {
     if (!began) began = now;
-    if (now - began > LIMIT_MS) {
-      finish();
-      return;
-    }
-    const elapsed = last ? Math.min(0.5, (now - last) / 1000) : 1 / 60;
-    last = now;
-    const steps = Math.max(1, Math.ceil(elapsed / STEP_S));
-    for (let i = 0; i < steps; i++) step(elapsed / steps);
+    bodies.forEach((b, i) => pose(b, i, now));
     draw();
     if (bodies.every((b) => b.done)) end();
     else frame = requestAnimationFrame(tick);

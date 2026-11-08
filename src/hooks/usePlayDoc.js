@@ -8,8 +8,8 @@
 //   compacta pela janela do histórico das configurações (settingsStore).
 //
 // FUNÇÕES
-//   usePlayDoc(characterId): { doc, state, record(event), undo(), redo(),
-//     canUndo, canRedo }. undo e redo devolvem { event, conflicts }, ou null
+//   usePlayDoc(characterId): { doc, state, record(event), undo(), redo(), clear(),
+//     canUndo, canRedo }. clear() limpa o histórico guardando o estado atual. undo e redo devolvem { event, conflicts }, ou null
 //     quando não há o que fazer.
 //
 // DECISÕES E ARMADILHAS
@@ -22,6 +22,8 @@
 //     characterStore ao gravar, desfazer e refazer (applyCharacterOps); as que
 //     conflitam voltam em `conflicts` para a tela avisar, e o cursor anda mesmo
 //     assim (DDL-0108, pergunta 3).
+//   - clear() não mexe no personagem: o que já foi gasto (poção, moedas) fica gasto;
+//     só o desfazer acaba (DDL-0155).
 // -----------------------------------------------------------------------------
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -29,7 +31,7 @@ import useSettingsStore from '../store/settingsStore';
 import useCharacterStore from '../store/characterStore';
 import { getPlay, savePlay } from '../data/playRepo';
 import {
-  currentPlayState, recordEvent, undoEvent, redoEvent, canUndo, canRedo, characterOps, applyCharacterOps,
+  currentPlayState, recordEvent, undoEvent, redoEvent, canUndo, canRedo, characterOps, applyCharacterOps, clearPlayHistory,
 } from '../engine/playState';
 
 /**
@@ -103,6 +105,9 @@ export default function usePlayDoc(characterId) {
     record,
     undo: () => move(undoEvent, 'backward'),
     redo: () => move(redoEvent, 'forward'),
+    clear: () => {
+      if (docRef.current) commit(clearPlayHistory(docRef.current));
+    },
     canUndo: !!doc && canUndo(doc),
     canRedo: !!doc && canRedo(doc),
   };

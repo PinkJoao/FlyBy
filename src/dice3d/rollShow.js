@@ -11,6 +11,8 @@
 //   d20Show(event): o que encenar, ou null quando o evento não tem d20 do app.
 //   shouldAnimate(show, { setting, reduced }): a animação roda?
 //   critLabel(event): o selo do 20 natural ("Critical hit" no ataque).
+//   bonusesOf(parts): os bônus de um teste de d20 (fixos e rolados), para a
+//     sequência de bônus do d20 em destaque (DDL-0157).
 //   trayShow(event): os dados da bandeja (D2), ou null.
 //   shouldTray(show, { setting, reduced }): a bandeja roda (só com "all")?
 //   TRAY_MAX: quantos dados cabem na bandeja; o resto vira "+N".
@@ -19,6 +21,8 @@
 //   - Com "All dice" (DDL-0153), o teste de d20 continua no d20 em destaque e a
 //     bandeja fica com o que não tem d20 (dano, cura, dados de vida). Os dados extras
 //     de um teste de d20 (o d4 do Bless) não entram em nenhum dos dois.
+//   - A bandeja também soma parte a parte (DDL-0158): `parts` são as partes da rolagem
+//     ("+5 Longsword", "+4 Modifier") sem os dados pequenos, que já estão na bandeja.
 //   - O d100 é o par de d10 de dezenas (00 a 90) e unidades (0 a 9): 00 e 0 é 100.
 //   - Dado sem sólido (d2, d3, d7) vira ficha redonda; mais de TRAY_MAX dados, só os
 //     primeiros caem e o resto aparece como "+N".
@@ -46,7 +50,32 @@ export function d20Show(event) {
   const dice = results.map((x) => ({ value: x.raw ?? x.value, kept: single || !!x.kept }));
   const crit = !!r.isCritical;
   const fumble = !!r.isFumble;
-  return { dice, natural: r.natural, crit, fumble, total: r.total, label: event.label ?? '', tag: crit ? critLabel(event) : fumble ? 'Natural 1' : null };
+  return {
+    dice,
+    natural: r.natural,
+    base: part.total ?? r.natural,
+    bonuses: bonusesOf(r.parts.slice(1)),
+    crit,
+    fumble,
+    total: r.total,
+    label: event.label ?? '',
+    tag: crit ? critLabel(event) : fumble ? 'Natural 1' : null,
+  };
+}
+
+/**
+ * Os bônus de um teste de d20, na ordem em que somam: o valor, o rótulo e os dados
+ * rolados (Bless, Guidance); parte fixa zerada fica de fora.
+ * @returns {Array<{ label: string, total: number, dice: Array<{ sides: number, value: number, kept: boolean }> }>}
+ */
+export function bonusesOf(parts) {
+  const out = [];
+  for (const p of parts ?? []) {
+    const dice = (p.groups ?? []).flatMap((g) => (DIE_SIDES.includes(g.faces) ? g.results.map((x) => ({ sides: g.faces, value: x.raw ?? x.value, kept: x.kept !== false })) : []));
+    if (!dice.length && !p.total) continue;
+    out.push({ label: p.label ?? '', total: p.total ?? 0, dice });
+  }
+  return out;
 }
 
 /** O selo do 20 natural: "Critical hit" num ataque, "Natural 20" no resto. */
@@ -65,7 +94,7 @@ export const TRAY_MAX = 24;
 /**
  * Os dados da bandeja (fase D2): toda rolagem SEM d20 do app (dano, cura, dados de
  * vida), um dado por resultado; o d100 vira o par de d10 (dezenas e unidades).
- * @returns {{ dice: Array<{ sides: number, value: number, kept: boolean, mode?: string, token?: boolean }>, more: number, total: number, label: string, tag: string|null }|null}
+ * @returns {{ dice: Array<{ sides: number, value: number, kept: boolean, mode?: string, token?: boolean }>, more: number, parts: object[], total: number, label: string, tag: string|null }|null}
  */
 export function trayShow(event) {
   const r = event?.rolls;
@@ -81,7 +110,8 @@ export function trayShow(event) {
   }
   if (!dice.length) return null;
   const critical = !!(event.payload?.critical || r.critical);
-  return { dice: dice.slice(0, TRAY_MAX), more: Math.max(0, dice.length - TRAY_MAX), total: r.total, label: event.label ?? '', tag: critical ? 'Critical' : null };
+  const parts = bonusesOf(r.parts).map((b) => ({ ...b, dice: [] }));
+  return { dice: dice.slice(0, TRAY_MAX), more: Math.max(0, dice.length - TRAY_MAX), parts, total: r.total, label: event.label ?? '', tag: critical ? 'Critical' : null };
 }
 
 /** A bandeja roda? Só com "All dice" ligado e sem pedido de menos movimento. */

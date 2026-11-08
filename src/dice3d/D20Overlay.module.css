@@ -13,6 +13,9 @@
  *   .crit, .fumble: o palco no crítico e na falha.
  *   .sparks, .spark: as faíscas do crítico.
  *   .crack: a rachadura da falha.
+ *   .chips, .chip, .chipValue, .chipLabel, .miniDie: os bônus que entram um a um
+ *     (DDL-0157), com o dado pequeno do bônus rolado.
+ *   .totalPop: o total pulsando a cada bônus somado.
  *
  * DECISÕES E ARMADILHAS
  *   - Cores só por token (--warning é o ouro, --danger o vermelho), com color-mix
@@ -211,5 +214,60 @@
 @keyframes d20-crack {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: min(92vw, 420px);
+  margin: 6px 0 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  animation: d20-chip 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.3) backwards;
+}
+
+.chipValue {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.chipLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.miniDie {
+  width: 28px;
+  height: 28px;
+}
+
+.totalPop {
+  animation: d20-pop 0.26s ease-out;
+}
+
+@keyframes d20-chip {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.6);
+  }
+}
+
+@keyframes d20-pop {
+  40% {
+    transform: scale(1.18);
   }
 }

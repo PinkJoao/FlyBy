@@ -24,6 +24,7 @@ import { useDialogClose } from '../common/dialogContext';
 import AmountStepper from './AmountStepper';
 import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
+import Button from '../common/Button';
 
 const FEET_JUMPS = [10, 30];
 
@@ -55,7 +56,7 @@ export default function MovePanel({ dash, speed, left, cost = 'action' }) {
       </p>
       {dash && cost && <p className={panel.note}>The Dash uses your {cost === 'bonus' ? 'bonus action' : cost}.</p>}
       <div className={panel.actions}>
-        <button type="submit" className={`${panel.btn} ${panel.primary}`} disabled={n <= 0 && !dash}>{dash ? 'Dash' : 'Move'}</button>
+        <Button type="submit" variant="primary" disabled={n <= 0 && !dash}>{dash ? 'Dash' : 'Move'}</Button>
       </div>
     </form>
   );

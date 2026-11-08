@@ -24,6 +24,7 @@ import { remainingOf } from '../../engine/playState';
 import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
+import Button from '../common/Button';
 
 /**
  * Os slots a recuperar, contra o orçamento.
@@ -58,8 +59,8 @@ export function SlotRecoveryPanel({ catalog, state, rule }) {
       </ul>
       <p className={over ? `${styles.note} ${styles.short}` : styles.note}>Total: {total} of {rule.budget}{over ? ' (over the limit)' : ''}</p>
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button type="button" className={`${styles.btn} ${styles.primary}`} disabled={total === 0} onClick={() => close({ picks })}>Recover</button>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button variant="primary" disabled={total === 0} onClick={() => close({ picks })}>Recover</Button>
       </div>
     </div>
   );
@@ -100,10 +101,10 @@ export function FontOfMagicPanel({ catalog, state, rule }) {
       </p>
       {noSpent && <p className={styles.warn}>No level {level} slot is spent, so the points would be lost.</p>}
       <div className={styles.actions}>
-        <button type="button" className={styles.btn} onClick={() => close(null)}>Cancel</button>
-        <button type="button" className={`${styles.btn} ${styles.primary}`} onClick={() => close({ mode, level })}>
+        <Button onClick={() => close(null)}>Cancel</Button>
+        <Button variant="primary" onClick={() => close({ mode, level })}>
           {mode === 'create' ? 'Create' : 'Convert'}
-        </button>
+        </Button>
       </div>
     </div>
   );

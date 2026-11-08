@@ -71,6 +71,9 @@
 //   isKnownLanguage(db, name): o idioma existe no compêndio?
 //
 //   Talentos e escolhas de feature
+//   - buildFeatItem: precedência curado, SRD (srdFeatMechanics, o feats24), overlay;
+//     activities e effects do SRD andam juntos. O Boon of Fate saía sem o pool e o
+//     Boon of Truesight sem a visão verdadeira (T3, talentos).
 //   buildFeatItem(featData, opts): o item de um talento.
 //   buildClassChosenFeats(classEntry, db): talentos da classe e o valor dos ASIs.
 //   buildItemChoiceAdvancements(classEntry, classObj, subObj, db, optionItems,
@@ -308,7 +311,7 @@ import {
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
-import { featureActivities, srdFeatureMechanics, classWeaponGrants } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
@@ -1097,7 +1100,9 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
       }]
     : [];
   const featOverlay = overlayMechanics(db ? overlayFeatEntry(db, featData.name, featData.source) : null, featData.name);
-  if (!changes) effects.push(...featOverlay.effects);
+  const featSrd = srdFeatMechanics(featData);
+  if (!changes) effects.push(...(featSrd?.effects.length ? featSrd.effects : featOverlay.effects));
+  const featActivities = featSrd && Object.keys(featSrd.activities).length ? featSrd.activities : featOverlay.activities;
 
   const advancement = [];
   const fixed = fixedAbilityBoosts(featData.ability);
@@ -1132,9 +1137,9 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
       source: sourceBlock(featData.source),
       requirements: '',
       properties: [],
-      uses: firstUses(featUses(featData.name), featOverlay.system.uses, proseUses(featData.name, null, featOverlay.activities)),
+      uses: firstUses(featUses(featData.name), featSrd?.uses, featOverlay.system.uses, proseUses(featData.name, null, featActivities)),
       prerequisites: { level: null, repeatable: !!featData.repeatable, items: [] },
-      activities: featOverlay.activities,
+      activities: featActivities,
       advancement: keyById(advancement),
       ...overlaySystemExtras(featOverlay.system),
       enchant: {},

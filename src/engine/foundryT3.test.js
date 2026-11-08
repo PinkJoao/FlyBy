@@ -23,6 +23,8 @@ import { srdItemMechanics } from './foundryItemMechanics';
 import { interopFlags, toolsHash } from './foundryInterop';
 import { modernizeEffects } from './foundryCompat';
 import { inventoryIdentity } from './foundryImport';
+import { srdFeatMechanics } from './foundryActivities';
+import { greatWeaponMinimum } from './foundryActor';
 
 function fakeDb() {
   return {
@@ -148,5 +150,27 @@ describe('export future-proof e interoperável (DDL-0167)', () => {
     const [now] = modernizeEffects([old]);
     expect(now.changes.map((c) => c.key)).toEqual(['system.attributes.senses.ranges.darkvision', 'system.abilities.con.value']);
     expect(old.changes[0].key).toBe('system.attributes.senses.darkvision');
+  });
+});
+
+describe('talentos (T3)', () => {
+  it('o talento de 2024 pega a mecânica do SRD: o pool do Boon of Fate, a visão do Boon of Truesight', () => {
+    const fate = srdFeatMechanics({ name: 'Boon of Fate', source: 'XPHB' });
+    expect(fate.uses?.max).toBeTruthy();
+    const sight = srdFeatMechanics({ name: 'Boon of Truesight', source: 'XPHB' });
+    expect(sight.effects.flatMap((e) => e.changes.map((c) => c.key))).toContain('system.attributes.senses.truesight');
+    expect(srdFeatMechanics({ name: 'Boon of Fate', source: 'XGE' })).toBeNull();
+  });
+
+  it('Great Weapon Fighting: mínimo 3 só na arma corpo a corpo de duas mãos, sem mexer no objeto recebido', () => {
+    const two = { type: 'weapon', name: 'Greatsword', system: { type: { value: 'martialM' }, properties: ['hvy', 'two'], damage: { base: { number: 2, denomination: 6, custom: { enabled: false } } } } };
+    const vers = { type: 'weapon', name: 'Trident', system: { type: { value: 'martialM' }, properties: ['thr', 'ver'], damage: { base: { number: 1, denomination: 8, custom: { enabled: false } } } } };
+    const bow = { type: 'weapon', name: 'Longbow', system: { type: { value: 'martialR' }, properties: ['two'], damage: { base: { number: 1, denomination: 8, custom: { enabled: false } } } } };
+    const before = two.system;
+    greatWeaponMinimum([two, vers, bow]);
+    expect(two.system.damage.base.custom).toEqual({ enabled: true, formula: '2d6min3' });
+    expect(before.damage.base.custom.enabled).toBe(false);
+    expect(vers.system.damage.base.custom.enabled).toBe(false);
+    expect(bow.system.damage.base.custom.enabled).toBe(false);
   });
 });

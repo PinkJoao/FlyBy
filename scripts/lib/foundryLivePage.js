@@ -16,9 +16,11 @@
 //     item, item sem usos que é gasto) e os números derivados.
 //   snapshot(actor): os números que a ficha mostra (CA, HP, CD, perícias, armas,
 //     contêineres, peso), para o lado a lado com o premade oficial.
-//   importText(text, name, folderId): cria o ator e aplica o JSON (importFromJSON).
-//   importOne(file, folderId): um ator do lote, checado e devolvido ao servidor.
-//   run(opts): o lote inteiro (pula o que já está na pasta), em série.
+//   tempActor(text, name): o ator só em memória (o padrão das rodadas).
+//   importText(text, name, folderId): cria o ator no mundo e aplica o JSON
+//     (importFromJSON), para o que precisa de interação (`persist: true`).
+//   importOne(file, opts): um ator do lote, checado e devolvido ao servidor.
+//   run(opts): o lote inteiro, em série (`persist` grava numa pasta).
 //   runPremades(opts): cada premade oficial e a nossa reexportação, lado a lado.
 //
 // DECISÕES E ARMADILHAS
@@ -26,12 +28,21 @@
 //     permissão de rede local; o fetch leva `targetAddressSpace: 'loopback'`.
 //     Janela nova (window.open) troca a PRÓPRIA aba e o iframe é barrado: o
 //     caminho que funciona é o fetch direto.
-//   - `@mod` em bônus de perícia e no dano do Martial Arts NÃO é defeito: é dado
-//     da rolagem, e o premade oficial usa o mesmo (Merric, Perrin). O check o
-//     ignora.
+//   - ROLL_TIME: caminhos que faltam no ator e NÃO são defeito. `@mod` em bônus de
+//     perícia e no Martial Arts é dado da rolagem (os premades usam igual);
+//     `@attributes.spell.level` é o nível de conjurador de NPC, somado ao
+//     `@details.level` do personagem na mesma fórmula (Booming Blade: o Foundry
+//     conta o ausente como 0 e rola 3d8 no nível 20, medido); a flag do módulo
+//     oficial `dnd-players-handbook` vem do próprio pack do SRD (Mirror Image).
+//     A regra geral fica estrita: foi ela que pegou o Persistent Rage.
 //   - Não embrulhar `ui.notifications.notify`: o libWrapper do Plutonium acusa
 //     conflito em toda chamada.
-//   - Nada é apagado no mundo: o lote fica na pasta para o dono limpar. Por isso
+//   - As rodadas usam ator TEMPORÁRIO por padrão (tempActor: o JSON com os mesmos
+//     `_id`, sem pasta e dono, num `new Actor` que não grava; o `fromCompendium`
+//     do Foundry 13 exige um documento, não um objeto): cerca de 1.000
+//     atores gravados esgotaram a RAM do servidor do dono (2026-11-08). Usar uma
+//     activity ou subir de nível pede ator gravado (`persist: true`).
+//   - Nada é apagado no mundo: o gravado fica na pasta para o dono limpar. Por isso
 //     o ator já importado se procura DENTRO da pasta da rodada: `getName` acha o
 //     de uma rodada velha (aconteceu, e o lado a lado mediu o export de antes).
 // -----------------------------------------------------------------------------
@@ -40,7 +51,7 @@ const { game, Actor, Folder, Roll, foundry } = globalThis;
 const BASE = 'http://127.0.0.1:8787';
 const NET = { targetAddressSpace: 'loopback' };
 const MISSING = '§MISSING§';
-const ROLL_TIME = /@mod\b/;
+const ROLL_TIME = /@mod\b|@attributes[.]spell[.]level|@flags[.]dnd-players-handbook[.]/;
 
 async function folder(name) {
   return game.folders.find((f) => f.type === 'Actor' && f.name === name)
@@ -129,6 +140,15 @@ function snapshot(a) {
   };
 }
 
+/** O ator SÓ em memória: o Foundry prepara e calcula, nada vai para o mundo. */
+function tempActor(text, name) {
+  const source = JSON.parse(text);
+  delete source.folder;
+  delete source.ownership;
+  source.name = name;
+  return new Actor.implementation(source);
+}
+
 async function importText(text, name, folderId) {
   const data = JSON.parse(text);
   let actor = await Actor.implementation.create({ name: data.name, type: 'character', folder: folderId });
@@ -138,14 +158,15 @@ async function importText(text, name, folderId) {
   return actor;
 }
 
-async function importOne(file, folderId) {
+async function importOne(file, { persist = false, folderId = null } = {}) {
   const text = await (await fetch(`${BASE}/a/${encodeURIComponent(file)}`, NET)).text();
   const cap = capture();
   let actor = null;
   let error = null;
-  try { actor = await importText(text, file.replace(/\.json$/, ''), folderId); } catch (e) { error = String(e?.stack ?? e).slice(0, 800); }
+  const name = file.replace(/[.]json$/, '');
+  try { actor = persist ? await importText(text, name, folderId) : tempActor(text, name); } catch (e) { error = String(e?.stack ?? e).slice(0, 800); }
   cap.restore();
-  const res = { file, error, logs: cap.logs };
+  const res = { file, error, logs: cap.logs, persisted: persist };
   if (actor) {
     res.issues = check(actor);
     res.snapshot = snapshot(actor);
@@ -154,14 +175,15 @@ async function importOne(file, folderId) {
   return res;
 }
 
-async function run({ files, folderName = 'FlyBy live' } = {}) {
-  const f = await folder(folderName);
+async function run({ files, persist = false, folderName = 'FlyBy live' } = {}) {
+  const f = persist ? await folder(folderName) : null;
   const list = (files ?? (await (await fetch(`${BASE}/list`, NET)).json())).filter((x) => !x.startsWith('_'));
   const L = window.FLYBY_LIVE;
   L.results = [];
   L.progress = { done: 0, total: list.length, startedAt: Date.now() };
   for (const file of list) {
-    if (!game.actors.find((a) => a.name === file.replace(/\.json$/, '') && a.folder?.id === f.id)) L.results.push(await importOne(file, f.id));
+    const already = f && game.actors.find((a) => a.name === file.replace(/[.]json$/, '') && a.folder?.id === f.id);
+    if (!already) L.results.push(await importOne(file, { persist, folderId: f?.id }));
     L.progress.done += 1;
   }
   await fetch(`${BASE}/save/_results.json`, { ...NET, method: 'POST', body: JSON.stringify(L.results) });
@@ -169,18 +191,22 @@ async function run({ files, folderName = 'FlyBy live' } = {}) {
   return L.progress;
 }
 
-async function runPremades({ folderName = 'FlyBy live premades' } = {}) {
-  const f = await folder(folderName);
+async function runPremades({ persist = false, folderName = 'FlyBy live premades' } = {}) {
+  const f = persist ? await folder(folderName) : null;
   const pairs = await (await fetch(`${BASE}/a/_pairs.json`, NET)).json();
   const L = window.FLYBY_LIVE;
   L.pres = [];
   L.preProgress = { done: 0, total: pairs.length };
   for (const p of pairs) {
-    const base = p.orig.replace(/\.json$/, '');
+    const base = p.orig.replace(/[.]json$/, '');
     const row = { orig: p.orig };
     try {
-      const get = async (prefix, url) => game.actors.find((a) => a.name === prefix + base && a.folder?.id === f.id)
-        ?? importText(await (await fetch(url, NET)).text(), prefix + base, f.id);
+      const get = async (prefix, url) => {
+        const name = prefix + base;
+        if (!persist) return tempActor(await (await fetch(url, NET)).text(), name);
+        return game.actors.find((a) => a.name === name && a.folder?.id === f.id)
+          ?? importText(await (await fetch(url, NET)).text(), name, f.id);
+      };
       const P = await get('OFFICIAL ', `${BASE}/p/${encodeURIComponent(p.orig)}`);
       const A = await get('OURS ', `${BASE}/a/${encodeURIComponent(p.ours)}`);
       Object.assign(row, { official: snapshot(P), ours: snapshot(A), oursIssues: check(A) });
@@ -193,4 +219,4 @@ async function runPremades({ folderName = 'FlyBy live premades' } = {}) {
   return L.preProgress;
 }
 
-window.FLYBY_LIVE = { folder, check, snapshot, importOne, run, runPremades };
+window.FLYBY_LIVE = { folder, check, snapshot, tempActor, importText, importOne, run, runPremades };

@@ -18,6 +18,8 @@
 //     feature, ou {}.
 //   classWeaponGrants(classId): os itens de inventário que a classe concede.
 //   srdFeatureMechanics(name, classId): { activities, effects } do SRD, ou null.
+//   srdFeatMechanics(featData): { activities, effects, uses } do talento no SRD
+//     (feats24, só o de 2024), em cópia, ou null.
 //
 // DECISÕES E ARMADILHAS
 //   - Estruturas copiadas 1:1 dos premades oficiais (um por classe). Destaques:
@@ -52,7 +54,7 @@
 //     acréscimo universal ganha título próprio.
 // -----------------------------------------------------------------------------
 
-import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS, SRD_COMMON_WEAPON_GRANTS } from './srdActivitiesData';
+import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS, SRD_COMMON_WEAPON_GRANTS, SRD_FEAT_MECHANICS } from './srdActivitiesData';
 
 const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 function fid() {
@@ -317,6 +319,17 @@ export function srdFeatureMechanics(name, classId) {
   const fixes = SRD_FORMULA_FIXES[key] ?? [];
   const fix = (v) => (fixes.length ? JSON.parse(fixes.reduce((s, [a, b]) => s.split(a).join(b), JSON.stringify(v))) : v);
   return { activities: fix(entry.activities ?? {}), effects: fix(entry.effects ?? []) };
+}
+
+/**
+ * A mecânica do SRD de um talento de 2024 ({ activities, effects, uses }), em cópia, ou null.
+ * @param {{name: string, source?: string, srd52?: boolean}} featData
+ */
+export function srdFeatMechanics(featData) {
+  if (!featData?.name || !(featData.source === 'XPHB' || featData.srd52)) return null;
+  const entry = SRD_FEAT_MECHANICS[String(featData.name).trim().toLowerCase().replace(/’/g, "'")];
+  if (!entry) return null;
+  return structuredClone({ activities: entry.activities ?? {}, effects: entry.effects ?? [], uses: entry.uses ?? null });
 }
 
 // ATENÇÃO: só com prova no PRÓPRIO SRD e no Foundry real; o par é [errado, certo].

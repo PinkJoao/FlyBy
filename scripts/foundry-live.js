@@ -2,8 +2,11 @@
 // foundry-live: o lote do sweep e os premades num mundo Foundry REAL (T2d)
 // =============================================================================
 // O QUE FAZ
-//   O lado do PC do teste ao vivo. Quatro comandos (`npx vite-node
+//   O lado do PC do teste ao vivo. Cinco comandos (`npx vite-node
 //   scripts/foundry-live.js <comando>`):
+//     feats      um ator por talento com mecânica (o Fighter Champion nível 20 do
+//                sweep mais o item do talento, com o acabamento do export), em
+//                `testing/actors/feat_*.json`, e a lista `_feats.json`.
 //     premades   reexporta os 48 premades oficiais pelo nosso import e export,
 //                como `testing/actors/premade_*.json`, e grava os pares.
 //     serve      servidor local com CORS na porta 8787: o lote, os premades
@@ -18,6 +21,7 @@
 //
 // FUNÇÕES
 //   emitPremades(): reexporta os premades e grava `_pairs.json`.
+//   emitFeats(): um ator por talento com mecânica e a lista `_feats.json`.
 //   serve(): o servidor local.
 //   roundtrip(): a volta pelo nosso import.
 //   report(): o resumo dos achados e do lado a lado.
@@ -35,7 +39,7 @@
 // -----------------------------------------------------------------------------
 
 import http from 'node:http';
-import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, createReadStream } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, createReadStream, rmSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
@@ -43,6 +47,9 @@ import { loadDb } from './lib/loadDb';
 import { decisionSummary, diffSummaries } from './lib/roundtrip';
 import { foundryToCharacter } from '../src/engine/foundryImport';
 import { assembleFoundryActor } from '../src/engine/foundryActor';
+import { buildFeatItem } from '../src/engine/foundryItems';
+import { linkConsumptionTargets } from '../src/engine/foundryConsumption';
+import { modernizeEffectKeys } from '../src/engine/foundryCompat';
 import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -51,6 +58,7 @@ const BACK = join(ROOT, 'testing', 'live-back');
 const PREMADES = join(ROOT, 'DnD Source Material', 'Character Sheets in JSON', 'Standard Premade Characters');
 const PAGE = join(ROOT, 'scripts', 'lib', 'foundryLivePage.js');
 const PORT = 8787;
+const FEAT_BASE = 'class_fighter_Champion.json';
 
 async function emitPremades() {
   const db = loadDb();
@@ -65,6 +73,28 @@ async function emitPremades() {
   }
   writeFileSync(join(ACTORS, '_pairs.json'), JSON.stringify(pairs));
   console.log(`premades: ${pairs.length} reexportados em testing/actors`);
+}
+
+async function emitFeats() {
+  const db = loadDb();
+  await loadFoundryMechanics();
+  for (const f of readdirSync(ACTORS)) if (f.startsWith('feat_')) rmSync(join(ACTORS, f));
+  const base = JSON.parse(readFileSync(join(ACTORS, FEAT_BASE), 'utf8'));
+  const list = [];
+  for (const raw of db.feats?.feat ?? []) {
+    const item = buildFeatItem(raw, { db, level: 4 });
+    if (!item) continue;
+    if (!Object.keys(item.system.activities ?? {}).length && !item.effects.length && !item.system.uses?.max) continue;
+    const actor = structuredClone(base);
+    actor.items = [...actor.items.filter((i) => i.name !== item.name), item];
+    linkConsumptionTargets(actor.items);
+    modernizeEffectKeys(actor.items);
+    const file = `feat_${raw.name.replace(/[^a-z0-9]+/gi, '_')}_${raw.source}.json`;
+    writeFileSync(join(ACTORS, file), JSON.stringify(actor));
+    list.push({ file, name: raw.name, source: raw.source });
+  }
+  writeFileSync(join(ACTORS, '_feats.json'), JSON.stringify(list));
+  console.log(`feats: ${list.length} talentos com mecânica, um ator cada (base ${FEAT_BASE})`);
 }
 
 function serve() {
@@ -150,7 +180,8 @@ function report() {
 
 const cmd = process.argv[2];
 if (cmd === 'premades') await emitPremades();
+else if (cmd === 'feats') await emitFeats();
 else if (cmd === 'serve') serve();
 else if (cmd === 'roundtrip') roundtrip();
 else if (cmd === 'report') report();
-else console.log('uso: npx vite-node scripts/foundry-live.js premades|serve|roundtrip|report');
+else console.log('uso: npx vite-node scripts/foundry-live.js premades|feats|serve|roundtrip|report');

@@ -27,6 +27,7 @@ const db = {
   'foundry-feats': {
     feat: [
       { name: 'Alert', source: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.initiativeAlert', mode: 'OVERRIDE', value: true }] }] },
+      { name: 'Alert', source: 'PHB', effects: [{ transfer: true, changes: [{ key: 'flags.dnd5e.initiativeAlert', mode: 'OVERRIDE', value: true }] }] },
       { name: 'Tough', source: 'XPHB', effects: [{ transfer: true, changes: [{ key: 'system.attributes.hp.bonuses.level', mode: 'ADD', value: 2 }] }] },
     ],
   },
@@ -133,7 +134,7 @@ describe('translateOverlayEffects', () => {
 describe('lookups do overlay', () => {
   it('feat: nome+fonte exatos; fonte errada não cruza edição', () => {
     expect(overlayFeatEffects(db, 'Alert', 'XPHB')).toHaveLength(1);
-    expect(overlayFeatEffects(db, 'Alert', 'PHB')).toEqual([]);
+    expect(overlayFeatEffects(db, 'Alert', 'XGE')).toEqual([]);
     expect(overlayFeatEffects(null, 'Alert', 'XPHB')).toEqual([]);
   });
 
@@ -224,10 +225,16 @@ describe('integração com foundryItems (precedência curado > overlay)', () => 
     expect(item.effects).toHaveLength(1);
   });
 
-  it('talento sem entrada curada ganha o effect do overlay (Alert)', () => {
-    const item = buildFeatItem({ name: 'Alert', source: 'XPHB', entries: ['...'] }, { level: 4, db });
+  it('talento sem entrada curada nem documento do SRD ganha o effect do overlay (Alert de 2014)', () => {
+    const item = buildFeatItem({ name: 'Alert', source: 'PHB', entries: ['...'] }, { level: 4, db });
     expect(item.effects).toHaveLength(1);
     expect(item.effects[0].changes[0]).toMatchObject({ key: 'flags.dnd5e.initiativeAlert', mode: 5, value: 'true' });
+  });
+
+  it('talento de 2024 com documento no SRD usa o do SRD antes do overlay (Alert, feats24)', () => {
+    const item = buildFeatItem({ name: 'Alert', source: 'XPHB', entries: ['...'] }, { level: 4, db });
+    expect(item.effects).toHaveLength(1);
+    expect(item.effects[0].changes[0]).toMatchObject({ key: 'flags.dnd5e.initiativeAlert', mode: 2, value: 'true' });
   });
 
   it('o effect de um traço vai no ITEM do traço, não no item de raça (TC-0064)', () => {

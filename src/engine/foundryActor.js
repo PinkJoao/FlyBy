@@ -10,6 +10,7 @@
 //
 // FUNÇÕES
 //   dropUnarmoredCalc(items): tira o cálculo de CA sem armadura dos effects.
+//   greatWeaponMinimum(items): o dado mínimo 3 nas armas de duas mãos.
 //   actorSpellcasting(items, originalClassId): o `attributes.spellcasting`.
 //   assembleFoundryActor(character, db): o ator completo.
 //
@@ -42,6 +43,10 @@
 //     cima da Breastplate e o Merric L5 ficava com CA 14, não 16 (T3, medido). A
 //     CA fica no cálculo padrão, como nos premades; tirando a armadura no Foundry,
 //     o jogador troca o cálculo lá.
+//   - Great Weapon Fighting: nem o talento do SRD nem o sistema têm mecânica para
+//     "trate 1 e 2 como 3"; o premade (Randal L11 e L17) escreve a fórmula da ARMA
+//     de duas mãos corpo a corpo (`2d6min3`) e deixa a versátil como está. O
+//     export faz o mesmo quando o personagem tem o talento.
 //   - Os alvos de consumo são ligados ao `_id` no FIM, com todos os itens no
 //     ator (foundryConsumption, TC-0097), e as chaves de effect que o dnd5e moveu
 //     são reescritas para as atuais (foundryCompat, DDL-0167).
@@ -88,6 +93,18 @@ function dropUnarmoredCalc(items) {
   for (const item of items) {
     if (!(item.effects ?? []).some((e) => (e.changes ?? []).some(calc))) continue;
     item.effects = item.effects.map((e) => ((e.changes ?? []).some(calc) ? { ...e, changes: e.changes.filter((c) => !calc(c)) } : e));
+  }
+}
+
+/** O dado mínimo 3 do Great Weapon Fighting nas armas corpo a corpo de duas mãos (cópia do `system`). */
+export function greatWeaponMinimum(items) {
+  for (const item of items) {
+    const sys = item.system;
+    const base = sys?.damage?.base;
+    if (item.type !== 'weapon' || !(sys.properties ?? []).includes('two') || !String(sys.type?.value ?? '').endsWith('M')) continue;
+    if (!base?.number || !base?.denomination || base.custom?.enabled) continue;
+    const custom = { enabled: true, formula: `${base.number}d${base.denomination}min3` };
+    item.system = { ...sys, damage: { ...sys.damage, base: { ...base, custom } } };
   }
 }
 
@@ -192,6 +209,7 @@ export function assembleFoundryActor(character, db) {
   linkConsumptionTargets(items);
   modernizeEffectKeys(items);
   if (derived.armorClass?.hasArmor) dropUnarmoredCalc(items);
+  if (items.some((i) => i.type === 'feat' && i.name === 'Great Weapon Fighting')) greatWeaponMinimum(items);
 
   const actor = {
     name: character.meta?.name ?? 'Unnamed',

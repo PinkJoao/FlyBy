@@ -163,6 +163,18 @@ for (const f of walk(join(PACKS, 'origins24'))) {
   files += record(flat, norm(doc.name), doc) ? 1 : 0;
 }
 
+const featMech = {};
+for (const f of walk(join(PACKS, 'feats24'))) {
+  const doc = parseYaml(readFileSync(f, 'utf8'));
+  if (doc.type !== 'feat' || !doc.name) continue;
+  const activities = prune(doc.system?.activities ?? {});
+  const cited = new Set(Object.values(activities ?? {}).flatMap((a) => (a.effects ?? []).map((e) => e?._id ?? e).filter(Boolean)));
+  const effects = prune((doc.effects ?? []).filter((e) => e?.type !== 'enchantment' && (cited.has(e?._id) || e?.transfer)));
+  const uses = doc.system?.uses?.max ? prune(doc.system.uses) : undefined;
+  if (!activities && !effects && !uses) continue;
+  featMech[norm(doc.name)] = { ...(activities ? { activities } : {}), ...(effects ? { effects } : {}), ...(uses ? { uses } : {}) };
+}
+
 /** Literal de objeto ordenado por chave. */
 const literal = (obj) =>
   `{\n${Object.keys(obj).sort().map((k) => `  ${JSON.stringify(k)}: ${JSON.stringify(obj[k])},`).join('\n')}\n}`;
@@ -183,6 +195,8 @@ const out = `// ================================================================
 //   SRD_CLASS_WEAPON_GRANTS: classId -> itens de INVENTÁRIO que o advancement da
 //     classe concede ({name, uuid, level, system}).
 //   SRD_COMMON_WEAPON_GRANTS: itens concedidos a QUALQUER classe.
+//   SRD_FEAT_MECHANICS: talento do feats24 -> {activities?, effects?, uses?} (as
+//     activities, os effects que elas citam ou que se transferem, e o pool).
 //
 // DECISÕES E ARMADILHAS
 //   - SRD_CLASS_WEAPON_GRANTS: o SRD só o faz no Bárbaro e no Monge, cujas
@@ -203,6 +217,8 @@ export const SRD_ACTIVITIES_FLAT = ${literal(flat)};
 export const SRD_CLASS_WEAPON_GRANTS = ${literal(weaponGrants)};
 
 export const SRD_COMMON_WEAPON_GRANTS = ${JSON.stringify(Object.values(commonByName))};
+
+export const SRD_FEAT_MECHANICS = ${literal(featMech)};
 `;
 
 writeFileSync(OUT, out);

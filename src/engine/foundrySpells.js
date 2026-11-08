@@ -16,7 +16,8 @@
 //     foundryProperties(spell), foundryMaterials(spell): os campos da magia.
 //   foundryUses(entry): os usos de uma concessão limitada.
 //   foundryPreparation(entry, origin, isArcanum, opts): `method` e `prepared`.
-//   buildSpellItem(entry, origin, opts): um item spell.
+//   buildSpellItem(entry, origin, opts): um item spell, com as activities
+//     (foundrySpellMechanics; `opts.db` para o overlay).
 //   buildSpellItems(derived, opts): todas, uma por ORIGEM.
 //   buildUnassignedSpellItems(character, db): as da carga.
 //   buildSpellSlots(derived): `spell1` a `spell9` e `pact`.
@@ -41,6 +42,9 @@
 //   - Escolha não preparada exporta `prepared: 0` (o grimório, TC-0080); cantrip
 //     nunca é despreparado. Origem nula é a carga: sai preparada simples, porque o
 //     único objetivo do balde é o documento não se perder.
+//   - As activities vêm do SRD e do overlay (foundrySpellMechanics, TC-0106): sem
+//     elas o Foundry punha um "Use" vazio e nenhuma magia rolava (T2d).
+//   - A magia leva a marca de procedência do foundryInterop (DDL-0167).
 //   - Uma magia por ORIGEM: a mesma magia do Cleric e da raça são dois itens.
 //   - Escolha da classe que a mesma origem CONCEDE (`shadowedPicks`, TC-0091):
 //     sai o item da concessão (`prepared: 2`, o estado nativo certo) com a marca
@@ -58,6 +62,8 @@
 import { randomFoundryId, itemStats, sourceBlock, slugify, entriesToHtml } from './foundryItems';
 import { spellUuid } from './compendiumUuids';
 import { resolveSpellObj } from './spells';
+import { spellMechanics, withFreeCasting } from './foundrySpellMechanics';
+import { interopFlags } from './foundryInterop';
 
 export const FOUNDRY_SCHOOL = {
   A: 'abj', C: 'con', D: 'div', E: 'enc', V: 'evo', I: 'ill', N: 'nec', T: 'trs',
@@ -183,7 +189,7 @@ export function foundryPreparation(entry, origin, isArcanum, opts = {}) {
 }
 
 /** Um item spell do Foundry. */
-export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = false } = {}) {
+export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = false, db = null } = {}) {
   const raw = entry.raw;
   const { method, prepared } = foundryPreparation(entry, origin, isArcanum, { pactOnly });
   const uses = isArcanum
@@ -211,6 +217,8 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
     ability: !origin || origin.kind === 'class' ? '' : (origin.ability ?? ''),
   };
   if (origin?.kind === 'class' && origin.classId) system.sourceItem = `class:${origin.classId}`;
+  const mech = withFreeCasting(spellMechanics(raw, db), { hasUses: !!uses?.max, isArcanum });
+  system.activities = mech.activities;
 
   return {
     _id: randomFoundryId(),
@@ -218,10 +226,10 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
     type: 'spell',
     img: 'icons/magic/symbols/rune-sigil-rough-white.webp',
     system,
-    effects: [],
+    effects: mech.effects,
     folder: null,
     sort: 0,
-    flags: {},
+    flags: interopFlags('spell', raw),
     _stats: itemStats(spellUuid(raw.name)),
   };
 }
@@ -229,7 +237,7 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
 /**
  * Todos os itens spell, uma magia por origem.
  * @param {ReturnType<import('./resolve').deriveFromDb>} derived
- * @param {{ castByFeature?: (name: string) => boolean }} [opts]
+ * @param {{ castByFeature?: (name: string) => boolean, db?: object }} [opts]
  * @returns {object[]}
  */
 export function buildSpellItems(derived, opts = {}) {
@@ -250,10 +258,10 @@ export function buildSpellItems(derived, opts = {}) {
     for (const entry of all) {
       if (!entry.raw) continue;
       if (entry.grantedBy && !entry.chosen && opts.castByFeature?.(entry.grantedBy)) continue;
-      const item = buildSpellItem(entry, origin, { isArcanum: arcanumNames.has(entry.raw.name), pactOnly });
+      const item = buildSpellItem(entry, origin, { isArcanum: arcanumNames.has(entry.raw.name), pactOnly, db: opts.db });
       const pick = entry.granted ? picks.get(entry.raw.name.toLowerCase()) : null;
       if (pick) {
-        item.flags = { builder5e: { classPick: { id: pick.id, source: pick.source, ...(pick.prepared === false ? { prepared: false } : {}) } } };
+        item.flags = { ...item.flags, builder5e: { classPick: { id: pick.id, source: pick.source, ...(pick.prepared === false ? { prepared: false } : {}) } } };
       }
       out.push(item);
     }
@@ -272,7 +280,7 @@ export function buildUnassignedSpellItems(character, db) {
   for (const ref of character?.unassignedSpells ?? []) {
     const raw = resolveSpellObj(db, ref?.id, ref?.source);
     if (!raw) continue;
-    out.push(buildSpellItem({ raw, prepared: ref.prepared }, null));
+    out.push(buildSpellItem({ raw, prepared: ref.prepared }, null, { db }));
   }
   return out;
 }

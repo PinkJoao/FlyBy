@@ -30,6 +30,7 @@ import { loadDb } from './lib/loadDb';
 import { comparePremade, aggregate, DELIBERATE, EXPECTED } from './lib/premadeDiff';
 import { foundryToCharacter } from '../src/engine/foundryImport';
 import { assembleFoundryActor } from '../src/engine/foundryActor';
+import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData';
 
 const ROOT = join(import.meta.dirname, '..');
 const OUT_DIR = join(ROOT, 'testing');
@@ -66,9 +67,10 @@ function label(actorName, file) {
   return lv ? `${actorName} L${lv}` : actorName;
 }
 
-function main() {
+async function main() {
   console.log('Loading local compendium…');
   const db = loadDb();
+  await loadFoundryMechanics();
   const sheets = sheetFiles();
   if (!sheets.length) throw new Error(`Nenhuma ficha encontrada em ${PREMADE_DIR}`);
   mkdirSync(OUT_DIR, { recursive: true });
@@ -81,7 +83,7 @@ function main() {
     try {
       const C = foundryToCharacter(P, db);
       const A = assembleFoundryActor(C, db);
-      findings = comparePremade(P, A);
+      findings = comparePremade(P, A, db);
     } catch (e) {
       findings = [{ cat: 'CRASH', key: id, before: null, after: `${e.message}` }];
     }
@@ -124,4 +126,4 @@ function main() {
   if (total) process.exitCode = 1;
 }
 
-main();
+await main();

@@ -12,6 +12,7 @@
 //
 // FUNÇÕES
 //   parseBonus(s): "+1", "-1" ou 1 vira número.
+//   flatBonusAc(raw): o bônus plano de CA de um item, ou 0 quando é condicional.
 //   itemActive(e): o item está em uso?
 //   unarmoredFormulas(character): as Defesas sem Armadura ativas.
 //   deriveArmorClass(character, inventory, mods, naturalArmor): a CA e o
@@ -33,8 +34,29 @@
 //   - CA fixa da espécie (Tortle 17) concorre mesmo com armadura vestida. O bônus
 //     plano da espécie (Warforged +1) vale por cima de qualquer base. Os bônus de
 //     acessório não repetem o da armadura e do escudo, que já está em `ac`.
+//   - CONDITIONAL_BONUS_AC: o 5etools marca `bonusAc` em itens cujo bônus a PRÓPRIA
+//     prosa condiciona (o +5 do Quarterstaff of the Acrobat é uma reação contra um
+//     ataque; o Arrow-Catching Shield só contra ataques à distância; o Pariah's
+//     Shield conta aliados). Somado sempre, o Perrin L17 chegava ao Foundry com CA
+//     26 e não 21 (T3, medido; varredura dos 84 itens com `bonusAc` do items.json). Vale para a
+//     ficha do app e para o export (foundryItems).
 //   - O teto de Destreza por armadura: leve cheio, média +2, pesada 0.
 // -----------------------------------------------------------------------------
+
+// ATENÇÃO: só com a PROVA na prosa do próprio item (o bônus vale numa reação, contra um tipo de ataque, por aliado).
+const CONDITIONAL_BONUS_AC = new Set([
+  'quarterstaff of the acrobat|xdmg',
+  'arrow-catching shield|dmg',
+  'arrow-catching shield|xdmg',
+  "pariah's shield|ggr",
+]);
+
+/** O bônus PLANO de CA de um item (`bonusAc`), ou 0 quando a prosa o condiciona. */
+export function flatBonusAc(raw) {
+  if (!raw?.bonusAc) return 0;
+  if (CONDITIONAL_BONUS_AC.has(`${String(raw.name ?? '').toLowerCase()}|${String(raw.source ?? '').toLowerCase()}`)) return 0;
+  return parseBonus(raw.bonusAc);
+}
 
 /** "+1", "-1" ou 1 vira número (0 se vazio ou ilegível). */
 function parseBonus(s) {
@@ -123,15 +145,15 @@ export function deriveArmorClass(character, inventory = [], mods = {}, naturalAr
   const breakdown = [...best.parts];
 
   if (shield) {
-    const shieldAc = (shield.raw?.ac ?? 2) + parseBonus(shield.raw?.bonusAc);
+    const shieldAc = (shield.raw?.ac ?? 2) + flatBonusAc(shield.raw);
     total += shieldAc;
     breakdown.push({ label: shield.raw?.name ?? 'Shield', value: shieldAc, note: 'shield' });
   }
 
   for (const e of inventory) {
     if (e === armor || e === shield) continue;
-    if (!e.raw?.bonusAc || !itemActive(e)) continue;
-    const b = parseBonus(e.raw.bonusAc);
+    if (!flatBonusAc(e.raw) || !itemActive(e)) continue;
+    const b = flatBonusAc(e.raw);
     if (b) {
       total += b;
       breakdown.push({ label: e.raw.name, value: b, note: 'item' });

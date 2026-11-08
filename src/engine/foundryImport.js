@@ -31,6 +31,10 @@
 //   Inventário
 //   customSnapshot(item), resolveInventorySource(db, name): item fora do catálogo
 //     e a fonte de um item pelo nome.
+//   ITEM_MECHANICS_KEYS, catalogItemNamed(db, name), itemEnchantment(item),
+//     enchantedName(item, ench), cap(s), catalogNameCandidates(item, ench),
+//     inventoryIdentity(item, db): o item do catálogo que um item de fora É
+//     (com o encantamento aplicado), ou null.
 //   Talentos
 //   featSource(item, db), findFeatObj(db, name, source): o talento resolvido.
 //   featTraitBag(featObj, featItem, db), featChoiceBag(featItem, items, db,
@@ -103,6 +107,18 @@
 //     catálogo, um snapshot (homebrew, componente de magia). Imagem custom é
 //     preservada; o ícone `icons/...` do Foundry não. O item concedido pela classe
 //     (Unarmed Strike) não volta: a derivação o recria.
+//   - Item mágico de fora (TC-0107): o premade guarda o item BASE ("Shield",
+//     "Plate Armor", "Ring") com um effect `enchantment` que dá o nome ("{} +2",
+//     "Mithral {}", "Ring of Resistance (garnet)") e cuja ORIGEM é o documento do
+//     item mágico no equipment24. inventoryIdentity tenta, nesta ordem: o nome
+//     mostrado, "+N Base", a ordem do 5etools para "X of Y (Z)" ("Potion of Fire
+//     Giant Strength"), o tipo de dano do anel ("Ring of Fire Resistance") e o nome
+//     do documento de origem ("Elven Chain"). Encantamento de MAGIA (o Shillelagh
+//     no cajado, origem num ator) não muda a identidade. Ler só o item base
+//     perdia o +2 do escudo, a CA da armadura e o anel inteiro (T2d).
+//   - O snapshot de item fora do catálogo guarda a MECÂNICA como carga (dano,
+//     armadura, bônus mágico, activities, usos e os effects) e o export a
+//     reemite: antes ele saía só com nome, peso e preço.
 //   Talentos
 //   - featSource: o item externo vem sem fonte; sem a do db o talento some do
 //     re-export (TC-0057). Com latestOnly, senão o Magic Initiate casava a edição
@@ -163,6 +179,7 @@ import { raceLineages, speciesCatalog } from './speciesData';
 import { isFoldedSpecies } from './mergedLineages';
 import { latestOnly } from '../selector/reprints';
 import { specificVariants } from './magicVariants';
+import { equipmentNameById } from './compendiumUuids';
 import { resolveItemObj } from './items';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from './resolve';
 import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
@@ -319,7 +336,68 @@ function customSnapshot(item) {
     attunement: sys.attunement ?? '',
     description: sys.description?.value ?? '',
     img: item?.img ?? null,
+    mechanics: {
+      system: Object.fromEntries(ITEM_MECHANICS_KEYS.filter((k) => sys[k] !== undefined).map((k) => [k, sys[k]])),
+      effects: item?.effects ?? [],
+    },
   };
+}
+
+const ITEM_MECHANICS_KEYS = ['armor', 'damage', 'range', 'properties', 'magicalBonus', 'activities', 'uses', 'strength', 'proficient', 'capacity'];
+
+/** O item do catálogo com esse nome (a versão atual), ou null. */
+function catalogItemNamed(db, name) {
+  const n = norm(name);
+  if (!n) return null;
+  return latestOnly(db?.['items-base']?.baseitem ?? []).find((i) => norm(i.name) === n)
+    ?? latestOnly(db?.items?.item ?? []).find((i) => norm(i.name) === n)
+    ?? specificVariants(db).find((i) => norm(i.name) === n)
+    ?? null;
+}
+
+/** O encantamento de ITEM MÁGICO que dá nome ao item (origem no equipment24), ou null. */
+function itemEnchantment(item) {
+  return (item?.effects ?? []).find((e) => e?.type === 'enchantment'
+    && !e.disabled
+    && String(e.origin ?? '').startsWith('Compendium.dnd5e.equipment24.')
+    && (e.changes ?? []).some((c) => c.key === 'name')) ?? null;
+}
+
+/** O nome que o Foundry mostra, com o encantamento aplicado. */
+function enchantedName(item, ench) {
+  const ch = ench.changes.find((c) => c.key === 'name');
+  const v = String(ch?.value ?? '');
+  return Number(ch?.mode) === 5 ? v.split('{}').join(item.name) : `${item.name}${v}`;
+}
+
+const cap = (s) => String(s ?? '').charAt(0).toUpperCase() + String(s ?? '').slice(1);
+
+/** Os nomes do catálogo a tentar para um item de fora, do mais fiel ao menos. */
+function catalogNameCandidates(item, ench) {
+  const shown = ench ? enchantedName(item, ench) : String(item?.name ?? '');
+  const out = [shown];
+  const plus = shown.match(/^(.*) [+]([0-9])$/);
+  if (plus) out.push(`+${plus[2]} ${plus[1]}`);
+  const paren = shown.match(/^(.+?) of (.+) [(]([^)]+)[)]$/);
+  if (paren) out.push(`${paren[1]} of ${cap(paren[3])} ${paren[2]}`);
+  if (/^ring of resistance/i.test(shown)) {
+    const dr = (item.effects ?? []).filter((e) => e?.type !== 'enchantment')
+      .flatMap((e) => e.changes ?? []).find((c) => c.key === 'system.traits.dr.value');
+    if (dr?.value) out.push(`Ring of ${cap(dr.value)} Resistance`);
+  }
+  const origin = ench ? equipmentNameById(String(ench.origin).split('.').pop()) : null;
+  if (origin) out.push(origin);
+  return out;
+}
+
+/** O item do catálogo que um item de fora é, ou null (vira snapshot). */
+export function inventoryIdentity(item, db) {
+  const ench = itemEnchantment(item);
+  for (const name of catalogNameCandidates(item, ench)) {
+    const hit = catalogItemNamed(db, name);
+    if (hit) return { name: hit.name, source: hit.source };
+  }
+  return null;
 }
 
 /** A fonte de um item de inventário pelo nome (versão atual). */
@@ -1159,10 +1237,11 @@ export function foundryToCharacter(rawActor, db, out = null) {
   );
   const uidByItemId = new Map();
   char.inventory = kept.map((it) => {
-    const source = resolveInventorySource(db, it.name);
+    const identity = inventoryIdentity(it, db);
+    const source = identity?.source ?? null;
     const entry = {
       uid: makeId(),
-      itemId: it.name,
+      itemId: identity?.name ?? it.name,
       source: source ?? itemSource(it),
       quantity: it.system?.quantity ?? 1,
       equipped: !!it.system?.equipped,

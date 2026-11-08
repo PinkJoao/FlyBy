@@ -47,6 +47,7 @@ import { buildSetupLink, resolveSourceInput } from '../data/setupLink';
 import { describeProblem } from '../data/sourceAddress';
 import useCharacterImport from '../hooks/useCharacterImport';
 import { assembleFoundryActor } from '../engine/foundryActor';
+import { loadFoundryMechanics } from '../engine/foundryMechanicsData';
 import { deriveFromDb } from '../engine/resolve';
 import { totalLevel, classNames } from '../schema/character';
 import { orderRoster } from './roster';
@@ -211,7 +212,8 @@ export default function Home() {
       ),
     });
 
-  const handleExport = (character) => {
+  const handleExport = async (character) => {
+    await loadFoundryMechanics();
     const actor = assembleFoundryActor(character, db);
     const blob = new Blob([JSON.stringify(actor, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

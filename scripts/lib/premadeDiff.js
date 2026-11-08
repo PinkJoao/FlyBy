@@ -20,7 +20,9 @@
 //   keyFor(type, name), setDiff(a, b): chave por tipo e diferença de conjuntos.
 //   weaponProfSet(list): as proficiências de arma comparáveis.
 //   preparedOf(it): o estado de preparação (5.x `prepared`; antigo `preparation`).
-//   itemsByType(actor): os itens por `type`, em mapas nome -> item.
+//   itemsByType(actor, db): os itens por `type`, em mapas nome -> item; com `db`, o
+//     equipamento pelo que o item É (inventoryIdentity do import: o premade guarda
+//     "Shield" com o encantamento "{} +2", e nós exportamos "+2 Shield", TC-0107).
 //   advLadder(item): a escada de advancement, multiset de `Tipo@nível` ordenado.
 //   grantCounts(item): quantos itens cada ItemGrant concede, por `título@nível`.
 //   grantEntries(item, actor): O QUE cada passo concede, `"<tipo>:<nome>"`.
@@ -29,7 +31,7 @@
 //     falta e o que sobra).
 //   compareSystem(P, A, out), compareItems(P, A, out): os blocos do `system` e os
 //     itens.
-//   comparePremade(premade, ours): os achados de uma ficha.
+//   comparePremade(premade, ours, db): os achados de uma ficha.
 //   aggregate(perActor): os achados agrupados por `cat`, com contagem e exemplos.
 //
 // DECISÕES E ARMADILHAS
@@ -91,6 +93,7 @@
 
 import { srdSpellNames } from '../../src/engine/spells';
 import { isBasicActionItem } from '../../src/engine/foundryBasicActions';
+import { inventoryIdentity } from '../../src/engine/foundryImport';
 import {
   CLASS_FEATURE_IDS, SUBCLASS_FEATURE_IDS, SPELL_IDS, FEAT_IDS, ORIGIN_IDS,
 } from '../../src/engine/compendiumUuidsData';
@@ -252,12 +255,22 @@ export const EXPECTED = [
       + '(Repelling)"), além do original. No nosso modelo a invocação é uma feature própria (item de '
       + 'optional feature) e o cantrip é UM só - que é a forma do livro. Emitir a cópia significaria '
       + 'inventar um documento de magia por invocação, e o jogador teria duas linhas do mesmo cantrip '
-      + 'na Spellbook.',
-    test: (f) =>
-      f.cat === 'items.spell'
-      && (f.after ?? []).length === 0
-      && (f.before ?? []).length > 0
-      && (f.before ?? []).every((n) => /\(.+\)$/.test(String(n))),
+      + 'na Spellbook. Quando o premade guarda SÓ a cópia (Sefris L11 e L17), o import resolve a cópia '
+      + 'no cantrip-base (resolveSpellObj) e o nosso lado tem o "Eldritch Blast"; até 2026-11-08 este '
+      + 'predicado aceitava o nosso lado VAZIO e escondia a perda do cantrip inteiro (achado no Foundry '
+      + 'real, T2d). Hoje o lado vazio só acontece com o original presente nos dois.',
+    test: (f) => {
+      if (f.cat !== 'items.spell' || !Array.isArray(f.before) || !Array.isArray(f.after ?? [])) return false;
+      const before = f.before.map(String);
+      const after = (f.after ?? []).map(String);
+      const baseOf = (n) => (n.endsWith(')') && n.lastIndexOf(' (') > 0 ? n.slice(0, n.lastIndexOf(' (')).trim() : null);
+      const bases = new Set(before.map(baseOf));
+      return f.cat === 'items.spell'
+        && before.length > 0
+        && before.every((n) => baseOf(n) !== null)
+        && after.length <= before.length
+        && after.every((n) => bases.has(n));
+    },
   },
   {
     id: 'race-grant-level-convention',
@@ -291,6 +304,21 @@ export const EXPECTED = [
       f.cat === 'items.gear'
       && (f.before ?? []).length === 0
       && JSON.stringify(f.after ?? []) === JSON.stringify(['unarmed strike']),
+  },
+  {
+    id: 'free-cast-activity',
+    why:
+      'O SRD deixa `activities: {}` no Paladin\'s Smite (o Divine Smite de 2024 é MAGIA) e no Agonizing '
+      + 'Blast. Emitimos a `cast` do Smite grátis (1 por descanso longo, sem espaço) e a `enchant` do '
+      + 'Agonizing Blast (o CHA no dano do cantrip escolhido), vindas do overlay. Provado no Foundry real '
+      + '(T2d, 2026-11-08): o lançamento grátis gasta o único uso e nenhum espaço, o segundo é recusado, '
+      + 'sem contagem em dobro com a magia preparada; tirar as duas activities perderia botões que o RAW '
+      + 'concede.',
+    test: (f) =>
+      f.cat === 'feat.activities'
+      && (f.before ?? []).length === 0
+      && ((f.key === "paladin's smite" && JSON.stringify(f.after) === '["cast"]')
+        || (f.key === 'agonizing blast' && JSON.stringify(f.after) === '["enchant"]')),
   },
   {
     id: 'basic-actions',
@@ -357,13 +385,14 @@ const weaponProfSet = (list) => {
 /** O estado de preparação de um item de magia. */
 const preparedOf = (it) => Number(it?.system?.prepared ?? (it?.system?.preparation?.prepared ? 1 : 0)) || 0;
 
-/** Os itens agrupados por `type`, em mapas nome -> item. */
-export function itemsByType(actor) {
+/** Os itens agrupados por `type`, em mapas nome -> item (equipamento pela identidade, com `db`). */
+export function itemsByType(actor, db = null) {
   const out = {};
   for (const it of actor?.items ?? []) {
     const type = isBasicActionItem(it) ? 'basicAction' : it.type;
     const m = (out[type] ??= new Map());
-    const k = keyFor(it.type, it.name);
+    const gear = db && GEAR_TYPES.includes(it.type) ? inventoryIdentity(it, db)?.name : null;
+    const k = keyFor(it.type, gear ?? it.name);
     const prev = m.get(k);
     if (!prev) m.set(k, it);
     else if (it.type === 'spell' && preparedOf(it) > preparedOf(prev)) m.set(k, it);
@@ -487,9 +516,9 @@ const DOC_TYPES = ['class', 'subclass', 'race', 'background'];
 /** Tipos de inventário (a distinção entre eles vira classe própria). */
 const GEAR_TYPES = ['weapon', 'equipment', 'consumable', 'tool', 'loot', 'container'];
 
-function compareItems(P, A, out) {
-  const pByType = itemsByType(P);
-  const aByType = itemsByType(A);
+function compareItems(P, A, out, db) {
+  const pByType = itemsByType(P, db);
+  const aByType = itemsByType(A, db);
 
   const types = new Set([...Object.keys(pByType), ...Object.keys(aByType)]);
   for (const t of types) {
@@ -566,10 +595,10 @@ function compareItems(P, A, out) {
  * @param {object} ours
  * @returns {Array<{cat:string, key:string, before:any, after:any}>}
  */
-export function comparePremade(premade, ours) {
+export function comparePremade(premade, ours, db = null) {
   const out = [];
   compareSystem(premade, ours, out);
-  compareItems(premade, ours, out);
+  compareItems(premade, ours, out, db);
   return out.map((f) => {
     const e = EXPECTED.find((x) => x.test(f));
     return e ? { ...f, expected: e.id } : f;

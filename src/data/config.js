@@ -37,7 +37,9 @@
 //   - gendata: as regras extraídas dos livros (as do XDMG vêm daqui) e todas as
 //     tabelas (~2300, 2.8 MB); só as 49 marcadas `srd52` entram no glossário
 //     (engine/glossary.js), o resto só fica cacheado.
-//   - O overlay Foundry das CLASSES vem num arquivo único.
+//   - O overlay Foundry das CLASSES vem num arquivo único, e o das MAGIAS também
+//     (`spells/foundry.json`, as activities de 316 magias, TC-0106; presente no
+//     repositório do 5etools ao lado dos spells-*.json).
 //   - Sync por SHA: em vez de re-baixar os ~65 arquivos a cada expiração, a API do
 //     GitHub diz o SHA de cada um e só o que mudou é baixado (fetcher.js). O raw
 //     não serve para isso: o CORS bloqueia ler o ETag e mandar If-None-Match
@@ -153,7 +155,10 @@ export function buildManifest() {
     { key: 'gendata-tables', path: 'generated/gendata-tables.json' },
   ];
 
-  const foundryClass = [{ key: 'foundry-class', path: 'class/foundry.json' }];
+  const foundryClass = [
+    { key: 'foundry-class', path: 'class/foundry.json' },
+    { key: 'foundry-spells', path: 'spells/foundry.json' },
+  ];
 
   return [...globals, ...classes, ...classFluff, ...spells, ...spellFluff, ...spellClassMap, ...generated, ...foundryClass];
 }

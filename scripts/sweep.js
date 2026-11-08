@@ -52,6 +52,7 @@ import { deriveFromDb, resolveClassObj, resolveSubclassObj } from '../src/engine
 import { cleanupClassEntry } from '../src/engine/classFeatureChoices';
 import { buildClassChoices } from '../src/components/builder/classChoices';
 import { assembleFoundryActor } from '../src/engine/foundryActor';
+import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData';
 import { foundryToCharacter } from '../src/engine/foundryImport';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -270,9 +271,10 @@ ${table(species)}
   writeFileSync(path, md);
 }
 
-function main() {
+async function main() {
   console.log(args.srd ? 'Loading the embedded SRD bundle…' : 'Loading local compendium…');
   const db = args.srd ? JSON.parse(readFileSync(SRD_BUNDLE, 'utf8')) : loadDb();
+  await loadFoundryMechanics();
   const reportName = args.srd ? 'report-srd.json' : 'report.json';
   mkdirSync(OUT_DIR, { recursive: true });
 
@@ -316,4 +318,4 @@ function main() {
   if (fails) process.exitCode = 1;
 }
 
-main();
+await main();

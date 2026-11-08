@@ -51,7 +51,6 @@
 //     actorResources(actor, derived, problems): os pools de feature.
 //     partFormula(part): a fórmula de uma parte de dano ou cura do Foundry.
 //     normActivation(a): o custo normalizado, ou null (passiva).
-//     poolOfItemNamed(name, ctx): o pool do item com esse nome.
 //     consumptionOf(a, item, ctx): o que uma activity gasta.
 //     saveDcOf(a, ctx): a CD de uma activity de save.
 //     featureActions(actor, ctx): as ações básicas e das features.
@@ -83,14 +82,11 @@
 //     quando o SRD guarda o pool na ACTIVITY (Natural Recovery, DDL-0106).
 //     `hd:d<faces>`, `slot:<círculo>`, `pact`, `granted:<origem>|<magia>`.
 //   - Consumo `itemUses`: alvo vazio é o pool do próprio item (ou da activity);
-//     `feat:<identifier>` é o pool de outro item (a forma do nosso
-//     foundryActivities, CHANNEL_DIVINITY_POOL), e sem pool exato vale o pool cujo
-//     identifier é PREFIXO (`channel-divinity-paladin` cai em `channel-divinity`);
-//     um uuid de compêndio é o item cujo `_stats.compendiumSource` é ele. O overlay
-//     também escreve o alvo como OBJETO (TC-0097): `{ prop, uid }` aponta a feature
-//     pelo nome no começo do uid; `{ consumes: { name } }` aponta pelo nome do item
-//     ou, quando o nome é o do RECURSO, pelo CONSUMES_BY_NAME ("Sorcery Point" é o
-//     pool do Font of Magic). Alvo que não resolve é PROBLEMA.
+//     o resto (`_id`, `feat:<identifier>`, uuid de compêndio, o OBJETO cru do
+//     overlay) acha o item pelo consumptionTargetItem do foundryConsumption, a
+//     MESMA regra com que o export liga o alvo ao `_id` (TC-0097). Ator nosso já
+//     chega com `_id`; o resto serve a ator de fora. Alvo que não resolve é
+//     PROBLEMA.
 //   - Consumo de outro tipo vai cru, sem chave, para a fase que o interpreta:
 //     `attribute` (o Magical Cunning DEVOLVE slots de pacto), `hitDice` (Durable),
 //     `spellSlots` (Font of Magic, Wild Companion).
@@ -154,6 +150,7 @@ import { validateFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList } from './playFeatures';
+import { consumptionTargetItem } from './foundryConsumption';
 
 export const DAMAGE_NAME = {
   A: 'acid', B: 'bludgeoning', C: 'cold', F: 'fire', O: 'force', L: 'lightning',
@@ -166,13 +163,6 @@ const PERIOD = {
 };
 
 const GRANTED_RECOVERY = { daily: 'day', rest: 'sr', restLong: 'lr' };
-
-// ATENÇÃO: o nome que o overlay põe em `consumes`, para o identifier do pool; confira contra o survey.
-const CONSUMES_BY_NAME = {
-  'focus point': "Monk's Focus",
-  'sorcery point': 'Font of Magic',
-  'superiority die': 'Combat Superiority',
-};
 
 const slug = (s) => String(s ?? '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -556,13 +546,6 @@ function normActivation(a) {
   };
 }
 
-/** O pool do item do ator com esse nome (sem caixa), ou null. */
-function poolOfItemNamed(name, ctx) {
-  const item = (ctx.actor?.items ?? []).find((i) => i.type === 'feat' && norm(i.name) === norm(name));
-  const key = item ? `pool:${item.system?.identifier || slug(item.name)}` : null;
-  return key && ctx.poolKeys.has(key) ? key : null;
-}
-
 /** O que uma activity gasta, em chaves de pool. */
 function consumptionOf(a, item, ctx) {
   const ident = item.system?.identifier || slug(item.name);
@@ -581,20 +564,10 @@ function consumptionOf(a, item, ctx) {
     }
     if (t.type === 'itemUses') {
       const target = t.target ?? '';
-      if (target && typeof target === 'object') {
-        const name = target.uid ? String(target.uid).split('|')[0] : CONSUMES_BY_NAME[norm(target.consumes?.name)] ?? target.consumes?.name;
-        key = poolOfItemNamed(name, ctx);
-      } else if (!target) {
-        key = ownPool;
-      } else if (String(target).startsWith('feat:')) {
-        const wanted = String(target).slice(5);
-        key = ctx.poolKeys.has(`pool:${wanted}`)
-          ? `pool:${wanted}`
-          : [...ctx.poolKeys].filter((k) => wanted.startsWith(`${k.slice(5)}-`)).sort((x, y) => y.length - x.length)[0] ?? null;
-      } else {
-        const other = (ctx.actor?.items ?? []).find((i) => i._stats?.compendiumSource === target);
-        if (other) key = `pool:${other.system?.identifier || slug(other.name)}`;
-      }
+      const other = target ? consumptionTargetItem(target, item, ctx.actor?.items) : null;
+      if (!target) key = ownPool;
+      else if (other === item) key = ownPool;
+      else if (other) key = `pool:${other.system?.identifier || slug(other.name)}`;
     } else if (t.type === 'activityUses') {
       key = a.uses?.max ? `pool:${ident}:${slug(a.name)}` : null;
     } else {

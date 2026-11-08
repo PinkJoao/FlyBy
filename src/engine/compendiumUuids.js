@@ -22,6 +22,8 @@
 //   srdSpeciesName(raceObj), suffixMatch(pool, base, name), srdOriginName(name):
 //     os nomes que o dnd5e dá à mesma espécie e ao mesmo traço.
 //   equipmentFoundryType(name): { type, subtype } de inventário, ou null.
+//   equipmentNameById(id): o nome (normalizado) do item do equipment24 com esse
+//     `_id`, ou null; o sentido inverso, para ler a ORIGEM de um encantamento.
 //
 // DECISÕES E ARMADILHAS
 //   - Sem uuid, sem escada: conteúdo fora do SRD (Artificer, subclasses não SRD)
@@ -205,6 +207,14 @@ export function featUuid(name) {
 /** Item de equipamento (equipment24). */
 export function equipmentUuid(name) {
   return flatUuid(EQUIPMENT_IDS, PACK_EQUIPMENT, name);
+}
+
+let equipmentNames = null;
+
+/** O nome normalizado do item do equipment24 com esse `_id`, ou null. */
+export function equipmentNameById(id) {
+  equipmentNames ??= new Map(Object.entries(EQUIPMENT_IDS).map(([n, i]) => [i, n]));
+  return equipmentNames.get(String(id ?? '')) ?? null;
 }
 
 /**

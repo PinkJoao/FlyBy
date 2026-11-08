@@ -9,6 +9,8 @@
 //   É um módulo à parte para evitar o ciclo foundryItems e foundryExport.
 //
 // FUNÇÕES
+//   dropUnarmoredCalc(items): tira o cálculo de CA sem armadura dos effects.
+//   actorSpellcasting(items, originalClassId): o `attributes.spellcasting`.
 //   assembleFoundryActor(character, db): o ator completo.
 //
 // DECISÕES E ARMADILHAS
@@ -32,6 +34,17 @@
 //   - As ações básicas entram para todo personagem (foundryBasicActions).
 //   - Os itens de optional feature são montados ANTES das magias: a magia de uma
 //     invocação cujo item já tem activity não sai (TC-0092, foundrySpells).
+//   - `attributes.spellcasting` é o atributo da CD e do ataque no cabeçalho da
+//     ficha: vazio, o Foundry real mostrava CD 8 + PB (Akra L1: 10 contra 13 do
+//     premade, T2d). Vem da classe original, como nos premades.
+//   - Com armadura de corpo vestida (`armorClass.hasArmor` da derivação), os effects
+//     de Defesa sem Armadura saem do export: o Foundry aplicava `unarmoredBarb` por
+//     cima da Breastplate e o Merric L5 ficava com CA 14, não 16 (T3, medido). A
+//     CA fica no cálculo padrão, como nos premades; tirando a armadura no Foundry,
+//     o jogador troca o cálculo lá.
+//   - Os alvos de consumo são ligados ao `_id` no FIM, com todos os itens no
+//     ator (foundryConsumption, TC-0097), e as chaves de effect que o dnd5e moveu
+//     são reescritas para as atuais (foundryCompat, DDL-0167).
 // -----------------------------------------------------------------------------
 
 import { deriveFromDb, resolveRaceObj, resolveClassObj, resolveSubclassObj } from './resolve';
@@ -66,6 +79,24 @@ import {
 } from './foundryItems';
 import { buildSpellItems, buildSpellSlots, buildUnassignedSpellItems } from './foundrySpells';
 import { buildBasicActionItems } from './foundryBasicActions';
+import { linkConsumptionTargets } from './foundryConsumption';
+import { modernizeEffectKeys } from './foundryCompat';
+
+/** Tira os effects que forçam a CA sem armadura (cópia só do que muda); com armadura vestida eles não valem. */
+function dropUnarmoredCalc(items) {
+  const calc = (c) => c?.key === 'system.attributes.ac.calc' || c?.key === 'system.attributes.ac.formula';
+  for (const item of items) {
+    if (!(item.effects ?? []).some((e) => (e.changes ?? []).some(calc))) continue;
+    item.effects = item.effects.map((e) => ((e.changes ?? []).some(calc) ? { ...e, changes: e.changes.filter((c) => !calc(c)) } : e));
+  }
+}
+
+/** O atributo de conjuração do ator: o da classe original, senão o da primeira que conjura. */
+function actorSpellcasting(items, originalClassId) {
+  const classes = items.filter((i) => i.type === 'class' && i.system?.spellcasting?.ability);
+  const pick = classes.find((i) => i._id === originalClassId) ?? classes[0];
+  return pick?.system.spellcasting.ability ?? '';
+}
 
 /**
  * O ator Foundry completo a partir do personagem e do compêndio.
@@ -88,7 +119,7 @@ export function assembleFoundryActor(character, db) {
   const castByFeature = (name) => [...optionalItems.values()].flat()
     .some((it) => it.name === name && Object.keys(it.system.activities ?? {}).length > 0);
   // ATENÇÃO: as magias saem ANTES das escadas: o value.added das escadas aponta para elas.
-  const spellItems = [...buildSpellItems(derived, { castByFeature }), ...buildUnassignedSpellItems(character, db)];
+  const spellItems = [...buildSpellItems(derived, { castByFeature, db }), ...buildUnassignedSpellItems(character, db)];
   const spellIds = new Map(spellItems.map((s) => [(s.name ?? '').trim().toLowerCase(), s._id]));
 
   const speciesFeatItems = buildSpeciesFeatItems(character, db);
@@ -157,6 +188,10 @@ export function assembleFoundryActor(character, db) {
   system.details.race = speciesItem?._id ?? '';
   system.details.background = bgItem?._id ?? '';
   system.details.originalClass = originalClassId;
+  system.attributes.spellcasting = actorSpellcasting(items, originalClassId);
+  linkConsumptionTargets(items);
+  modernizeEffectKeys(items);
+  if (derived.armorClass?.hasArmor) dropUnarmoredCalc(items);
 
   const actor = {
     name: character.meta?.name ?? 'Unnamed',

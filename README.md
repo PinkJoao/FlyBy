@@ -207,13 +207,13 @@ Whatever is easiest to copy. FlyBy checks the address and tells you if it finds 
 The JSON data format of the open-source 5e.tools project: the same folder layout, file names and fields. A copy of that project's `data` folder, or a mirror of it, works as it is. A source does not need every file: anything missing is simply left out (the **Game data source** menu tells you how many files a source is missing), but a source with none of them is treated as a wrong address.
 
 <details>
-<summary>The files FlyBy reads (74, all relative to the data folder)</summary>
+<summary>The files FlyBy reads (75, all relative to the data folder)</summary>
 
 | Where | Files |
 |---|---|
 | the folder itself | `races.json`, `fluff-races.json`, `backgrounds.json`, `feats.json`, `optionalfeatures.json`, `skills.json`, `languages.json`, `senses.json`, `items.json`, `items-base.json`, `fluff-items.json`, `magicvariants.json`, `variantrules.json`, `conditionsdiseases.json`, `actions.json`, `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json` |
 | `class/` | `class-<name>.json` and `fluff-class-<name>.json` for each of the 13 classes (artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard), plus `foundry.json` |
-| `spells/` | `spells-<source>.json` for each spell source FlyBy knows (17), the matching `fluff-spells-<source>.json` where they exist (9), and `sources.json` |
+| `spells/` | `spells-<source>.json` for each spell source FlyBy knows (17), the matching `fluff-spells-<source>.json` where they exist (9), `sources.json` and `foundry.json` |
 | `generated/` | `gendata-variantrules.json`, `gendata-tables.json` |
 
 </details>
@@ -232,7 +232,7 @@ A **play mode**: a screen made for the table, to roll checks and attacks with a 
 
 ## Known limitations
 
-- **Leveling up inside Foundry VTT.** A character exported from FlyBy brings the features of its current level. When you level it up inside Foundry, Foundry adds the new features from the D&amp;D 5e system's compendiums, which only contain the SRD content. Anything else (subclasses, species and options from your own game data source) is not there, so Foundry cannot add it. **Level up in FlyBy, then export and import the character into Foundry again.** In Foundry you can import the new file over the existing character (right-click it, then **Import Data**); note that this also replaces what changed during play there, such as current hit points and used spell slots.
+- **Leveling up inside Foundry VTT.** A character exported from FlyBy brings the features of its current level. When you level it up inside Foundry, Foundry adds the new features from the D&amp;D 5e system's compendiums, which only contain the SRD content. Anything else (subclasses, species and options from your own game data source) is not there, so leveling it up won't work inside Foundry without additional modules. **Without them, level up in FlyBy, then export and import the character into Foundry again.** In Foundry you can import the new file over the existing character (right-click it, then **Import Data**); note that this also replaces what changed during play there, such as current hit points and used spell slots.
 - **No session tracking yet.** FlyBy keeps your character's build, not what happens at the table (current hit points, used spell slots, conditions). That is what the upcoming play mode is for.
 
 ## For developers

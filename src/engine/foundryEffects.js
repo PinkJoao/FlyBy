@@ -19,6 +19,9 @@
 //     A Draconic Resilience XPHB é custom (10 + Dex + Cha); o calc `draconic` do
 //     dnd5e é o 13 + Dex de 2014. O Foundry só aceita UM ac.calc: numa multiclasse
 //     com duas Defesas sem Armadura, a ficha ao vivo escolhe a maior.
+//   - Unarmored Movement soma a escala da classe (`@scale.monk.unarmored-movement`,
+//     como o premade Perrin): o +10 fixo deixava o monge de nível 11 com 40 de
+//     deslocamento no Foundry, e não 50 (T2d).
 //   - FEATURE_TARGET_EFFECTS são `transfer:false`, aplicados no save falho pela
 //     activity (o Turn Undead amedronta e incapacita por 1 minuto, como no
 //     premade).
@@ -29,7 +32,7 @@ export const AE_MODE = { MULTIPLY: 1, ADD: 2, DOWNGRADE: 3, UPGRADE: 4, OVERRIDE
 /** @type {Record<string, {key:string, mode:number, value:string}[]>} */
 export const FEATURE_ACTIVE_EFFECTS = {
   'fast movement': [{ key: 'system.attributes.movement.walk', mode: AE_MODE.ADD, value: '10' }],
-  'unarmored movement': [{ key: 'system.attributes.movement.walk', mode: AE_MODE.ADD, value: '10' }],
+  'unarmored movement|monk': [{ key: 'system.attributes.movement.walk', mode: AE_MODE.ADD, value: '@scale.monk.unarmored-movement' }],
   'remarkable athlete': [{ key: 'flags.dnd5e.initiativeAdv', mode: AE_MODE.OVERRIDE, value: 'true' }],
 
   archery: [{ key: 'system.bonuses.rwak.attack', mode: AE_MODE.ADD, value: '2' }],

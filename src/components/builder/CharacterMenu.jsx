@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import useCharacterStore from '../../store/characterStore';
 import useCharacterImport from '../../hooks/useCharacterImport';
 import { assembleFoundryActor } from '../../engine/foundryActor';
+import { loadFoundryMechanics } from '../../engine/foundryMechanicsData';
 import MenuButton from '../common/MenuButton';
 import { SettingsMenu, SheetFilesMenu, SheetGuideMenu } from '../common/AppMenus';
 import { menu } from '../common/dialog';
@@ -68,7 +69,10 @@ export default function CharacterMenu({ character, db, derived, save, mode }) {
     a.click();
     URL.revokeObjectURL(url);
   };
-  const exportFoundry = () => download(assembleFoundryActor(character, db), '.json');
+  const exportFoundry = async () => {
+    await loadFoundryMechanics();
+    download(assembleFoundryActor(character, db), '.json');
+  };
   const exportPdf = () =>
     showPdfExport(async (options) => {
       const { exportCharacterPdf } = await import('../../pdf/exportPdf');

@@ -33,6 +33,10 @@
 //     candidato ÚNICO): 13 dos 16 casos do spells24. Os 3 que o SRD reescreveu
 //     inteiro estão em SPELL_SHORT_NAME_EXCEPTIONS (Arcane Hand, Arcane Sword,
 //     Arcanist's Magic Aura). srdSpellNames é o sentido inverso.
+//   - Sufixo entre parênteses que não resolve cai no nome-base: o premade da
+//     Sefris guarda o cantrip como "Eldritch Blast (Repelling)" (a cópia da
+//     invocação), e sem a rede o import perdia o Eldritch Blast INTEIRO a partir
+//     do nível 11 (medido no Foundry real, T2d). Só depois da busca exata.
 //   - A comparação de nome é insensível a caixa: as concessões vêm em minúsculas.
 //   - classSpellList casa pelo NOME da classe em qualquer fonte (PHB e XPHB).
 //   - spellChoosePredicate: sem filtro nem lista, toda magia vale ("level=0" do
@@ -112,7 +116,11 @@ export function resolveSpellObj(db, name, source) {
     const exact = list.find((s) => s.name.toLowerCase() === lc && s.source?.toLowerCase() === src);
     if (exact) return exact;
   }
-  return list.find((s) => s.name.toLowerCase() === lc) ?? bySrdShortName(list, lc) ?? byAlternateName(list, lc);
+  const hit = list.find((s) => s.name.toLowerCase() === lc) ?? bySrdShortName(list, lc) ?? byAlternateName(list, lc);
+  if (hit) return hit;
+  const open = lc.lastIndexOf(' (');
+  const base = lc.endsWith(')') && open > 0 ? lc.slice(0, open).trim() : lc;
+  return base !== lc ? resolveSpellObj(db, base, source) : null;
 }
 
 /** A magia pelo outro nome (compêndio completo x SRD), ou null. */

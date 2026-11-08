@@ -87,14 +87,14 @@ describe('featureActivities', () => {
   it('Sear Undead (Clérigo nv5) → save de dano radiante gastando o pool da Channel Divinity', () => {
     const a = only(featureActivities('Sear Undead', 'cleric'));
     expect(a).toMatchObject({ type: 'save', name: 'Channel Divinity: Turn Undead' });
-    expect(a.consumption.targets[0]).toEqual({ type: 'itemUses', value: '1', target: 'feat:channel-divinity', scaling: {} });
+    expect(a.consumption.targets[0]).toEqual({ type: 'itemUses', value: '1', target: 'feat:channel-divinity-cleric', scaling: {} });
     expect(a.damage).toEqual({ onSave: 'none', parts: [{ number: null, denomination: null, bonus: '', types: ['radiant'], custom: { enabled: true, formula: '(@abilities.wis.mod)d8' } }] });
   });
 
   it('Preserve Life (Domínio da Vida) → heal por pool (5×nível), gastando o pool da Channel Divinity', () => {
     const a = only(featureActivities('Preserve Life', 'cleric'));
     expect(a).toMatchObject({ type: 'heal', name: 'Channel Divinity: Preserve Life' });
-    expect(a.consumption.targets[0]).toMatchObject({ type: 'itemUses', value: '1', target: 'feat:channel-divinity' });
+    expect(a.consumption.targets[0]).toMatchObject({ type: 'itemUses', value: '1', target: 'feat:channel-divinity-cleric' });
     expect(a.healing.custom).toEqual({ enabled: true, formula: '5 * @classes.cleric.levels' });
     expect(a.target.affects).toMatchObject({ type: 'creature', choice: true, special: 'Bloodied creatures' });
   });

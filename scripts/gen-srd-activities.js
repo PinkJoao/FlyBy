@@ -1,5 +1,5 @@
 // =============================================================================
-// gen-srd-activities: gera src/engine/srdActivitiesData.js (npm run gen:srd)
+// gen-srd-activities: gera srdActivitiesData.js e srdSpellActivitiesData.js (npm run gen:srd)
 // =============================================================================
 // O QUE FAZ
 //   Lê o SOURCE do sistema dnd5e (`DnD Source Material/DnD 5e System Source Code/
@@ -16,7 +16,8 @@
 //   classe) e `feature` (traços de espécie e talentos do origins24). Saem também os
 //   itens de INVENTÁRIO que o advancement da classe concede (hoje o Unarmed Strike
 //   do Bárbaro e do Monge) e a cópia GENÉRICA deles do equipment24, para toda
-//   classe, keyed por nome para deduplicar.
+//   classe, keyed por nome para deduplicar. As MAGIAS do spells24 saem num arquivo
+//   à parte (srdSpellActivitiesData.js, TC-0106), keyed pelo nome no SRD.
 //
 // FUNÇÕES
 //   norm(s): o nome comparável.
@@ -49,6 +50,8 @@ import { parseYaml } from './lib/yamlLite';
 const ROOT = join(import.meta.dirname, '..');
 const PACKS = join(ROOT, 'DnD Source Material', 'DnD 5e System Source Code', 'packs', '_source');
 const OUT = join(ROOT, 'src', 'engine', 'srdActivitiesData.js');
+const SPELL_OUT = join(ROOT, 'src', 'engine', 'srdSpellActivitiesData.js');
+const ITEM_OUT = join(ROOT, 'src', 'engine', 'srdItemMechanicsData.js');
 
 const norm = (s) => (s ?? '').toString().trim().toLowerCase().replace(/’/g, "'");
 
@@ -208,3 +211,69 @@ console.log(
   + `${Object.keys(flat).length} de espécie/origem (${files} documentos com activity, `
   + `${Math.round(out.length / 1024)} KB).`,
 );
+
+const spells = {};
+for (const f of walk(join(PACKS, 'spells24'))) {
+  const doc = parseYaml(readFileSync(f, 'utf8'));
+  if (doc.type !== 'spell' || !doc.name) continue;
+  record(spells, norm(doc.name), doc);
+}
+
+const spellOut = `// =============================================================================
+// srdSpellActivitiesData: GERADO por npm run gen:srd; não edite à mão
+// =============================================================================
+// O QUE FAZ
+//   Activities (e os Active Effects que elas citam) das ${Object.keys(spells).length} magias do pack
+//   spells24 do sistema dnd5e (MIT + SRD 5.2 sob CC-BY-4.0, Wizards of the
+//   Coast): o ataque, o save, o dano, a cura e a invocação de cada magia. Sem
+//   elas a magia chega ao Foundry só com um "Use" vazio (TC-0106). Consumido por
+//   engine/foundrySpellMechanics.js.
+//
+//   SRD_SPELL_ACTIVITIES: nome da magia NO SRD (minúsculo) -> {activities, effects?}.
+//
+// DECISÕES E ARMADILHAS
+//   - O nome é o do SRD ("hideous laughter", não "tasha's hideous laughter"); quem
+//     lê traduz pelo srdSpellNames (engine/spells.js).
+// -----------------------------------------------------------------------------
+
+export const SRD_SPELL_ACTIVITIES = ${literal(spells)};
+`;
+
+writeFileSync(SPELL_OUT, spellOut);
+console.log(`srdSpellActivitiesData.js gerado: ${Object.keys(spells).length} magias (${Math.round(spellOut.length / 1024)} KB).`);
+
+const itemMech = {};
+for (const doc of docs.values()) {
+  if (!genericIds.has(doc._id)) continue;
+  const activities = prune(doc.system?.activities ?? {});
+  const cited = new Set(Object.values(activities ?? {}).flatMap((a) => (a.effects ?? []).map((e) => e?._id ?? e).filter(Boolean)));
+  const effects = prune((doc.effects ?? []).filter((e) => e?.type !== 'enchantment' && (cited.has(e?._id) || e?.transfer)));
+  const enchantments = prune((doc.effects ?? []).filter((e) => e?.type === 'enchantment'));
+  if (!activities && !effects && !enchantments) continue;
+  itemMech[doc._id] = { ...(activities ? { activities } : {}), ...(effects ? { effects } : {}), ...(enchantments ? { enchantments } : {}) };
+}
+
+const itemOut = `// =============================================================================
+// srdItemMechanicsData: GERADO por npm run gen:srd; não edite à mão
+// =============================================================================
+// O QUE FAZ
+//   Activities e Active Effects de ${Object.keys(itemMech).length} itens do pack equipment24 do
+//   sistema dnd5e (MIT + SRD 5.2 sob CC-BY-4.0, Wizards of the Coast): a cura da
+//   poção, o +2 de CON do Belt of Dwarvenkind, a resistência do anel. Sem eles o
+//   item mágico chega ao Foundry só com o que o dado do 5etools diz (TC-0107).
+//   Consumido por engine/foundryItemMechanics.js.
+//
+//   SRD_ITEM_MECHANICS: _id do documento no equipment24 -> {activities?, effects?,
+//     enchantments?}.
+//
+// DECISÕES E ARMADILHAS
+//   - Sai o effect que uma activity cita e o que se transfere ao ator; o
+//     \`enchantment\` (o modelo "Vicious Weapon" ou "+1, +2 ou +3", que muda OUTRO
+//     item) sai à parte, em \`enchantments\`: o export o aplica ao item base da
+//     variante, como os premades.
+// -----------------------------------------------------------------------------
+
+export const SRD_ITEM_MECHANICS = ${literal(itemMech)};
+`;
+writeFileSync(ITEM_OUT, itemOut);
+console.log(`srdItemMechanicsData.js gerado: ${Object.keys(itemMech).length} itens (${Math.round(itemOut.length / 1024)} KB).`);

@@ -46,6 +46,10 @@
 //   primaryAbilityBlock(classObj): o bloco primaryAbility.
 //   isOptionCatalog(feature): a feature é só um catálogo de opções?
 //   resolveClassFeatures(db, classId, classObj, level): features até o nível.
+//   featureIdentifier(name, classId): o identifier da feature (o do SRD quando
+//     diverge do nome).
+//   subclassScaleFix(feature): troca o nome longo da subclasse nos `@scale`.
+//   featureInteropFlags(feature): a marca de procedência da feature (foundryInterop).
 //   buildFeatureItem(feature, db): o item de uma feature, com a mecânica.
 //   buildClassFeatureItems(classEntry, classObj, db): as features da classe.
 //   buildClassWeaponItems(classEntry, classObj): armas concedidas pela classe.
@@ -113,7 +117,8 @@
 //   weaponAttackActivity(info, raw): a activity de ataque de uma arma.
 //   itemBonusEffect(name, img, raw): o effect dos bônus planos do item.
 //   customToFoundryItem(entry): o item custom, a partir do snapshot.
-//   buildInventoryItems(character, db): todo o inventário.
+//   buildInventoryItems(character, db): todo o inventário (com a mecânica do SRD
+//     do item, foundryItemMechanics).
 //   unpackContainer(item, raw, db): um pack desdobrado em contêiner e conteúdo.
 //
 // DECISÕES E ARMADILHAS
@@ -144,6 +149,20 @@
 //     (proseUses, DDL-0106), em feature, traço de espécie e talento.
 //
 //   Classe e features
+//   - Classe, subclasse, features, talentos, optional features, magias e itens
+//     levam a marca de procedência do foundryInterop (`flags.plutonium`, DDL-0167):
+//     com ela um importador de terceiros sobe de nível no Foundry o que o SRD não
+//     publica. A feature de subclasse precisa da fonte da subclasse, por isso o
+//     objeto da feature carrega `className`, `classSource` e `subclass.source`.
+//   - featureIdentifier: o SRD batiza o Channel Divinity de
+//     `channel-divinity-cleric` e `channel-divinity-paladin` (os ÚNICOS
+//     identifiers de feature do classes24 que divergem do nome), e as activities
+//     dele apontam `feat:<esse>`; com o slug do nome, Abjure Foes e Sacred Weapon
+//     chegavam ao Foundry sem pool (T2d, TC-0097).
+//   - subclassScaleFix: o overlay escreve `@scale.nature-domain.divine-strike`
+//     (o nome longo), e o nosso identifier de subclasse é o curto do SRD
+//     (`nature`); sem a troca o dano saía sem a escala (T2d: 9 fórmulas, Divine
+//     Strike, Starry Form, Psychic Blades).
 //   - fvttProgression: as frações '1/2' e '1/3' do 5etools não existem no dnd5e;
 //     exportadas cruas, a classe chegava sem espaços de magia (TC-0060).
 //     `artificer` fica: o sistema o define igual a `half`.
@@ -186,6 +205,9 @@
 //     "Tool Proficiencies" dos premades.
 //
 //   Talentos e escolhas de feature
+//   - buildOptionalFeatureItems: activity do overlay entra COM os effects que ela
+//     cita, mesmo se o item já tem outros; sem isso o "Make Agonizing" do
+//     Agonizing Blast chegava ao Foundry sem o encantamento (T2d).
 //   - Talento com aumento FIXO embute um ASI `fixed`; aumento por escolha já
 //     entra assado no `abilities` do ator.
 //   - buildClassChosenFeats: só os slots 'feat@<nível>' entram no ASI da classe.
@@ -242,6 +264,16 @@
 //     ESCOLHIDAS entrarem (o cantrip élfico).
 //
 //   Inventário
+//   - A mecânica do item vem do documento do SRD quando há (srdItemMechanics,
+//     TC-0107): os effects dele SUBSTITUEM os nossos (somar daria o bônus em
+//     dobro) e as activities entram; na arma COMUM o ataque é o nosso, na MÁGICA o
+//     do SRD (o dano extra: o "2d6" que o Merric L17 perdia).
+//   - Variante gerada com modelo no SRD sai como o item BASE mais o encantamento
+//     do modelo (srdVariantEnchantment), o formato dos premades; o resto do item
+//     (equipado, sintonizado, a marca de procedência) é o da variante.
+//   - Arma mágica leva a propriedade `mgc`: sem ela o Foundry ignora o
+//     magicalBonus e desfaz a sintonização (a Dwarven Thrower do Krusk, +11 contra
+//     +14, T3).
 //   - Sem imagem custom, ícone genérico do Foundry: a arte do 5e.tools é http e o
 //     re-import a confundiria com uma imagem do usuário.
 //   - O SRD decide entre equipment, consumable, loot e container (TC-0066); arma,
@@ -289,6 +321,9 @@ import {
   classUuid, classFeatureUuid, subclassUuid, subclassFeatureUuid, spellUuid,
   originUuid, featUuid, equipmentUuid, equipmentFoundryType, subclassIdentifier, srdSpeciesName, srdOriginName,
 } from './compendiumUuids';
+import { srdItemMechanics, srdVariantEnchantment } from './foundryItemMechanics';
+import { interopFlags } from './foundryInterop';
+import { flatBonusAc } from './armorClass';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
 
@@ -651,7 +686,7 @@ export function buildClassItem(classEntry, classObj, featureItems = [], asiByLev
       properties: [],
     },
     effects: [],
-    flags: {},
+    flags: interopFlags('class', { name: classObj.name, source: classObj.source }),
     _stats: itemStats(classUuid(parsed.id)),
   };
 }
@@ -699,7 +734,7 @@ export function resolveClassFeatures(db, classId, classObj, level) {
 
     const nth = (seen.get(norm(r.name)) ?? 0) + 1;
     seen.set(norm(r.name), nth);
-    const entry = { level: f.level, source: f.source ?? classObj.source, entries: f.entries ?? [], classId };
+    const entry = { level: f.level, source: f.source ?? classObj.source, entries: f.entries ?? [], classId, className: classObj.name, classSource: classObj.source };
     if (nth === 1) {
       out.push({ name: f.name, ...entry });
       continue;
@@ -709,6 +744,45 @@ export function resolveClassFeatures(db, classId, classObj, level) {
     if (classFeatureUuid(classId, numbered)) out.push({ name: numbered, ...entry });
   }
   return out;
+}
+
+// ATENÇÃO: o identifier que o SRD publica e diverge do nome; as activities do SRD apontam `feat:<este>`.
+const SRD_FEATURE_IDENTIFIERS = {
+  'cleric|channel divinity': 'channel-divinity-cleric',
+  'paladin|channel divinity': 'channel-divinity-paladin',
+};
+
+/** O `system.identifier` de uma feature de classe: o do SRD quando diverge do nome. */
+export function featureIdentifier(name, classId) {
+  return SRD_FEATURE_IDENTIFIERS[`${norm(classId)}|${norm(name)}`] ?? slugify(name);
+}
+
+/** A marca de procedência de uma feature de classe ou de subclasse (foundryInterop). */
+function featureInteropFlags(feature) {
+  if (feature.subclass?.source) {
+    return interopFlags('subclassFeature', {
+      name: feature.name, source: feature.source, level: feature.level, className: feature.className,
+      classSource: feature.classSource, shortName: feature.subclass.shortName, subclassSource: feature.subclass.source,
+    });
+  }
+  return interopFlags('classFeature', { name: feature.name, source: feature.source, level: feature.level, className: feature.className, classSource: feature.classSource });
+}
+
+/** Troca `@scale.<nome longo da subclasse>.` pelo identifier dela nas activities e effects. */
+function subclassScaleFix(feature) {
+  const sub = feature.subclass;
+  if (!sub?.name) return (v) => v;
+  const to = subclassIdentifier(feature.classId, sub) ?? slugify(sub.shortName ?? sub.name);
+  const from = slugify(sub.name);
+  if (from === to) return (v) => v;
+  const re = new RegExp(`@scale\\.${from}\\.`, 'g');
+  const walk = (v) => {
+    if (typeof v === 'string') return v.replace(re, `@scale.${to}.`);
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  return walk;
 }
 
 /**
@@ -768,11 +842,12 @@ export function buildFeatureItem(feature, db = null) {
   const curatedUses = featureUses(feature.name, feature.classId);
   const curatedActivities = featureActivities(feature.name, feature.classId, { targetEffectId });
   const srd = Object.keys(curatedActivities).length ? null : srdFeatureMechanics(feature.name, feature.classId);
-  const activities = Object.keys(curatedActivities).length
+  const scaleFix = subclassScaleFix(feature);
+  const activities = scaleFix(Object.keys(curatedActivities).length
     ? curatedActivities
-    : (srd?.activities ?? overlay.activities);
+    : (srd?.activities ?? overlay.activities));
   // ATENÇÃO: SRD e overlay são tudo-ou-nada; somá-los aplica o efeito em dobro.
-  if (!changes && !targetEffect && db) effects.push(...(srd?.effects.length ? srd.effects : overlay.effects));
+  if (!changes && !targetEffect && db) effects.push(...scaleFix(srd?.effects.length ? srd.effects : overlay.effects));
   else if (srd?.effects.length) effects.push(...srd.effects.filter((e) => !effects.some((x) => norm(x.name) === norm(e.name))));
 
   return {
@@ -782,7 +857,7 @@ export function buildFeatureItem(feature, db = null) {
     img: 'icons/svg/item-bag.svg',
     system: {
       type: { value: 'class', subtype: '' },
-      identifier: slugify(feature.name),
+      identifier: featureIdentifier(feature.name, feature.classId),
       description: { value: entriesToHtml(feature.entries), chat: '' },
       source: sourceBlock(feature.source),
       requirements: '',
@@ -796,7 +871,7 @@ export function buildFeatureItem(feature, db = null) {
       crewed: false,
     },
     effects,
-    flags: { builder5e: { level: feature.level } },
+    flags: { builder5e: { level: feature.level }, ...featureInteropFlags(feature) },
     _stats: itemStats(
       feature.subclass
         ? subclassFeatureUuid(feature.classId, feature.subclass, feature.name)
@@ -1066,7 +1141,7 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
       crewed: false,
     },
     effects,
-    flags: { builder5e: { level, ...(bagHasContent(choices) ? { choices } : {}) } },
+    flags: { builder5e: { level, ...(bagHasContent(choices) ? { choices } : {}) }, ...interopFlags('feat', featData) },
     _stats: itemStats(featUuid(featData.name) ?? originUuid(featData.name)),
   };
 }
@@ -1308,9 +1383,14 @@ export function buildOptionalFeatureItems(classEntry, db) {
         entries: raw.entries ?? [],
         classId: classEntry.classId,
       });
+      Object.assign(item.flags, interopFlags('optionalfeature', raw));
       const ofOverlay = overlayMechanics(overlayOptionalFeatureEntry(db, raw.name, raw.source), raw.name);
       if (!item.effects.length) item.effects.push(...ofOverlay.effects);
-      if (!Object.keys(item.system.activities).length) item.system.activities = ofOverlay.activities;
+      if (!Object.keys(item.system.activities).length) {
+        item.system.activities = ofOverlay.activities;
+        const cited = new Set(Object.values(ofOverlay.activities).flatMap((a) => (a.effects ?? []).map((e) => e._id)));
+        item.effects.push(...ofOverlay.effects.filter((e) => cited.has(e._id) && !item.effects.some((x) => x._id === e._id)));
+      }
       if (ofOverlay.system.uses && !item.system.uses.max) item.system.uses = ofOverlay.system.uses;
       Object.assign(item.system, overlaySystemExtras(ofOverlay.system));
       const subtype = (raw.featureType ?? []).map((t) => OPTFEAT_SUBTYPE[t]).find(Boolean);
@@ -1485,7 +1565,7 @@ export function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } 
  */
 export function buildSubclassFeatureItems(subclass, classId, db, level) {
   return resolveSubclassFeatures(subclass, classId, db, { max: level }).map((f) => buildFeatureItem(
-    { ...f, classId, subclass: { shortName: subclass.shortName, name: subclass.name } },
+    { ...f, classId, className: subclass.className, classSource: subclass.classSource, subclass: { shortName: subclass.shortName, name: subclass.name, source: subclass.source } },
     db,
   ));
 }
@@ -1931,7 +2011,7 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
       source: sourceBlock(subclass.source),
     },
     effects: [],
-    flags: {},
+    flags: interopFlags('subclass', { name: subclass.name, source: subclass.source, shortName: subclass.shortName, className: subclass.className, classSource: subclass.classSource }),
     _stats: itemStats(subclassUuid(classId, subclass)),
   };
 }
@@ -2113,7 +2193,7 @@ const ITEM_DAMAGE_TRAIT_KEY = {
 /** Active Effect dos bônus planos e traços de dano do item. */
 function itemBonusEffect(name, img, raw) {
   const changes = [];
-  if (bonusNum(raw?.bonusAc)) {
+  if (flatBonusAc(raw)) {
     changes.push({ key: 'system.attributes.ac.bonus', mode: 2, value: String(raw.bonusAc), priority: null });
   }
   if (bonusNum(raw?.bonusSavingThrow)) {
@@ -2157,6 +2237,7 @@ function customToFoundryItem(entry) {
     type: { value: c.typeValue ?? '', subtype: c.typeSubtype ?? '' },
     properties: [],
   };
+  Object.assign(system, structuredClone(c.mechanics?.system ?? {}));
   if (equippable) {
     system.equipped = !!entry.equipped;
     system.attuned = !!entry.attuned;
@@ -2167,7 +2248,7 @@ function customToFoundryItem(entry) {
     type: c.fType ?? 'loot',
     img: entry.customImg || c.img || 'icons/svg/item-bag.svg',
     system,
-    effects: [],
+    effects: structuredClone(c.mechanics?.effects ?? []),
     folder: null,
     sort: 0,
     flags: {},
@@ -2185,7 +2266,11 @@ export function buildInventoryItems(character, db) {
   const out = [];
   const itemIdByUid = new Map();
   for (const entry of character?.inventory ?? []) {
-    const raw = resolveItemObj(db, entry.itemId, entry.source);
+    const variantRaw = resolveItemObj(db, entry.itemId, entry.source);
+    const enchant = variantRaw && !entry.customName ? srdVariantEnchantment(variantRaw) : null;
+    const [baseName, baseSource] = String(variantRaw?.baseItem ?? '').split('|');
+    const baseRaw = enchant ? resolveItemObj(db, baseName, baseSource) : null;
+    const raw = baseRaw ?? variantRaw;
     if (!raw && entry.custom) {
       out.push(customToFoundryItem(entry));
       continue;
@@ -2235,6 +2320,8 @@ export function buildInventoryItems(character, db) {
       system.attuned = !!entry.attuned;
       const magic = bonusNum(raw?.bonusWeapon);
       if (magic) system.magicalBonus = String(magic);
+      // ATENÇÃO: sem `mgc` o Foundry ignora o magicalBonus e desfaz a sintonização (Dwarven Thrower, medido).
+      if (magic || (raw?.rarity && raw.rarity !== 'none')) system.properties = [...new Set([...system.properties, 'mgc'])];
       system.activities = weaponAttackActivity(info, raw);
     } else if (fType === 'equipment') {
       const tv = typeValue ?? info.armorSlot ?? 'trinket';
@@ -2278,9 +2365,21 @@ export function buildInventoryItems(character, db) {
       effects: bonusEffect ? [bonusEffect] : [],
       folder: null,
       sort: 0,
-      flags: {},
+      flags: variantRaw && !entry.customName ? interopFlags('item', variantRaw) : {},
       _stats: itemStats(entry.customName ? null : equipmentUuid(name)),
     };
+    if (baseRaw) item.effects = [...item.effects, enchant.effect];
+    const srdMech = raw && !entry.customName ? srdItemMechanics(raw.name) : null;
+    if (srdMech) {
+      if (srdMech.effects.length) item.effects = srdMech.effects;
+      const srdActs = Object.entries(srdMech.activities);
+      const magicWeapon = fType === 'weapon' && (item.system.properties ?? []).includes('mgc');
+      if (magicWeapon && srdActs.some(([, a]) => a.type === 'attack')) item.system.activities = {};
+      for (const [k, a] of srdActs) {
+        if (fType === 'weapon' && a.type === 'attack' && !magicWeapon) continue;
+        item.system.activities = { ...(item.system.activities ?? {}), [k]: a };
+      }
+    }
     const unpacked = unpackContainer(item, raw, db);
     if (unpacked) out.push(...unpacked);
     else out.push(item);

@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   O 5etools mantém (MIT, no mesmo mirror) um overlay de mecânicas Foundry:
-//   foundry-feats, foundry-races, foundry-optionalfeatures e class/foundry.json,
+//   foundry-feats, foundry-races, foundry-optionalfeatures, class/foundry.json e
+//   spells/foundry.json (as activities das magias, TC-0106),
 //   keyed por nome e fonte, com effects, activities, system e advancement que a
 //   prosa não expressa. Este módulo os indexa (memoizado por db) e traduz para o
 //   formato do dnd5e. Adotado POR COMPLETO no DDL-0057.
@@ -12,7 +13,8 @@
 //   Índice
 //   norm(s), overlayId(), push(map, key, entry), buildIndex(db), indexFor(db).
 //   Tradução
-//   translateChange(ch): um change do overlay, ou null.
+//   translateChange(ch, opts): um change do overlay, ou null (`itemPaths` aceita
+//     as chaves de item do encantamento).
 //   translateOverlayEffects(entry, fallbackName), overlayEffectsWithIds(entry,
 //     fallbackName): os effects (e o mapa foundryId para `_id`).
 //   setPath(target, path, value), translateOverlaySystem(entry): o `system`.
@@ -22,7 +24,7 @@
 //   translateOverlayAdvancement(entry): os ScaleValue.
 //   pickEntry(entries, source, level): a entrada certa entre homônimas.
 //   Consultas (todas toleram db null)
-//   overlayFeatEntry, overlayOptionalFeatureEntry, overlayClassFeatureEntry,
+//   overlaySpellEntry, overlayFeatEntry, overlayOptionalFeatureEntry, overlayClassFeatureEntry,
 //     overlaySubclassFeatureEntry: a entrada crua.
 //   overlayClassAdvancement, overlaySubclassAdvancement, overlayRaceAdvancement:
 //     os ScaleValue de classe, subclasse e raça.
@@ -36,8 +38,12 @@
 //     tudo-ou-nada por feature (DDL-0031).
 //   - Traduções: `mode` é string no overlay (vira o número de
 //     ACTIVE_EFFECT_MODES); `value` vira string; `transfer` AUSENTE é "on-use", não
-//     true (a semântica do conversor do Plutonium); effects `enchantment` e riders
-//     são de item e saem; só data paths de ator (system., flags.) entram.
+//     true (a semântica do conversor do Plutonium); riders saem; só data paths de
+//     ator (system., flags.) entram, MENOS no effect `enchantment` que uma
+//     activity `enchant` cita: ele muda o ITEM encantado (`name`,
+//     `system.damage.bonus`), entra com as chaves de item e o tipo dele. Sem ele
+//     a activity chegava ao Foundry vazia (o "Make Agonizing" do Agonizing Blast,
+//     T2d); o que nenhuma activity cita continua saindo.
 //   - Changes em `system.attributes.hp.bonuses.*` são DESCARTADOS: o HP extra já
 //     vai nativo (hpBonuses), e um AE somaria em dobro (o Tough some inteiro).
 //   - pickEntry: a FONTE é obrigatória (nunca cruza PHB e XPHB); entre homônimas,
@@ -101,7 +107,11 @@ function buildIndex(db) {
     if (e._copy) continue;
     push(raceFeature, `${norm(e.raceName)}|${norm(e.raceSource)}`, e);
   }
-  return { feat, optional, classFeature, subclassFeature, raceFeature };
+  const spell = new Map();
+  for (const e of db?.['foundry-spells']?.spell ?? []) {
+    spell.set(`${norm(e.name)}|${norm(e.source)}`, e);
+  }
+  return { feat, optional, classFeature, subclassFeature, raceFeature, spell };
 }
 
 function indexFor(db) {
@@ -115,9 +125,9 @@ function indexFor(db) {
 }
 
 /** Um change do overlay no formato do Foundry, ou null. */
-function translateChange(ch) {
+function translateChange(ch, { itemPaths = false } = {}) {
   const key = String(ch?.key ?? '');
-  if (!/^(system\.|flags\.)/.test(key)) return null;
+  if (!itemPaths && !/^(system\.|flags\.)/.test(key)) return null;
   if (key.startsWith('system.attributes.hp.bonuses')) return null;
   const mode = MODE_NUM[ch.mode] ?? (typeof ch.mode === 'number' ? ch.mode : MODE_NUM.ADD);
   const value = typeof ch.value === 'object' ? JSON.stringify(ch.value) : String(ch.value);
@@ -138,15 +148,19 @@ export function translateOverlayEffects(entry, fallbackName) {
 function overlayEffectsWithIds(entry, fallbackName) {
   const effects = [];
   const byFoundryId = new Map();
+  const cited = new Set((entry?.activities ?? []).filter((a) => a?.type === 'enchant')
+    .flatMap((a) => (a.effects ?? []).map((e) => e?.foundryId)).filter(Boolean));
   for (const eff of entry?.effects ?? []) {
-    if (eff?.type === 'enchantment' || eff?.enchantmentRiderParent) continue;
-    const changes = (eff?.changes ?? []).map(translateChange).filter(Boolean);
+    const enchantment = eff?.type === 'enchantment';
+    if (eff?.enchantmentRiderParent || (enchantment && !cited.has(eff.foundryId))) continue;
+    const changes = (eff?.changes ?? []).map((c) => translateChange(c, { itemPaths: enchantment })).filter(Boolean);
     const statuses = eff?.statuses ?? [];
     if (!changes.length && !statuses.length) continue;
     const _id = overlayId();
     if (eff.foundryId) byFoundryId.set(eff.foundryId, _id);
     effects.push({
       _id,
+      ...(enchantment ? { type: 'enchantment' } : {}),
       name: eff.name ?? fallbackName,
       changes,
       disabled: !!eff.disabled,
@@ -277,7 +291,12 @@ function pickEntry(entries, source, level) {
   return exact ?? [...candidates].sort((a, b) => (a.level ?? 0) - (b.level ?? 0))[0];
 }
 
-/** A entrada de um talento. */
+/** A entrada do overlay de uma magia, pela fonte exata. */
+export function overlaySpellEntry(db, name, source) {
+  return indexFor(db)?.spell.get(`${norm(name)}|${norm(source)}`) ?? null;
+}
+
+/** A entrada do overlay de um talento, pela fonte exata. */
 export function overlayFeatEntry(db, name, source) {
   return indexFor(db)?.feat.get(`${norm(name)}|${norm(source)}`) ?? null;
 }

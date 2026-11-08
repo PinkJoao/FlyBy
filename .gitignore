@@ -25,6 +25,8 @@ dist-ssr
 pdf-preview/
 # Actors de teste emitidos sob demanda pelo sweep (--emit-actors)
 testing/actors/
+# A volta do teste ao vivo no Foundry (scripts/foundry-live.js)
+testing/live-back/
 
 # Local reference source material (5e.tools / Foundry / Plutonium) — never committed or redistributed
 DnD Source Material/

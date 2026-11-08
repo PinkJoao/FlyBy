@@ -36,6 +36,14 @@
 //     effects do próprio item por `_id`, e separá-los deixa a referência no vazio
 //     (TC-0068, DDL-0074). Activity é mecânica do SISTEMA DE DESTINO: o SRD é a
 //     fonte (TC-0070).
+//   - SRD_FORMULA_FIXES conserta fórmula QUEBRADA do próprio SRD, com prova
+//     dupla: o Persistent Rage devolve `-@scale.barbarian.rage`, e a classe do
+//     SRD só publica a escala `rages`; no Foundry real (T2d, 2026-11-08) a
+//     activity gastava o uso dela e não devolvia nenhuma Rage, e com `rages`
+//     devolveu todas.
+//   - Channel Divinity: CHANNEL_DIVINITY_POOL é `feat:channel-divinity-cleric`,
+//     o identifier do SRD (featureIdentifier, foundryItems); o export liga o
+//     alvo ao `_id` no fim (foundryConsumption).
 //   - classWeaponGrants diverge do SRD DE PROPÓSITO (DDL-0080): o SRD dá o Unarmed
 //     Strike só ao Bárbaro e ao Monge, mas toda criatura pode atacar desarmada, e
 //     um Mago sem o cajado chegaria ao Foundry sem botão de ataque. O SRD é
@@ -142,7 +150,7 @@ const HOUR1 = { value: '1', units: 'hour', concentration: false, override: false
 const BONUS = { type: 'bonus' };
 const ACTION = { type: 'action' };
 const RANGE_30FT = { units: 'ft', value: '30', special: '', override: false };
-const CHANNEL_DIVINITY_POOL = 'feat:channel-divinity';
+const CHANNEL_DIVINITY_POOL = 'feat:channel-divinity-cleric';
 
 const FEATURE_ACTIVITIES = {
   'second wind': (classId) => [
@@ -306,5 +314,12 @@ export function srdFeatureMechanics(name, classId) {
     (classId ? SRD_ACTIVITIES_BY_CLASS[`${String(classId).trim().toLowerCase()}|${key}`] : null)
     ?? SRD_ACTIVITIES_FLAT[key];
   if (!entry) return null;
-  return { activities: entry.activities ?? {}, effects: entry.effects ?? [] };
+  const fixes = SRD_FORMULA_FIXES[key] ?? [];
+  const fix = (v) => (fixes.length ? JSON.parse(fixes.reduce((s, [a, b]) => s.split(a).join(b), JSON.stringify(v))) : v);
+  return { activities: fix(entry.activities ?? {}), effects: fix(entry.effects ?? []) };
 }
+
+// ATENÇÃO: só com prova no PRÓPRIO SRD e no Foundry real; o par é [errado, certo].
+const SRD_FORMULA_FIXES = {
+  'persistent rage': [['@scale.barbarian.rage"', '@scale.barbarian.rages"']],
+};

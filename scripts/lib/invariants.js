@@ -14,7 +14,9 @@
 //   checkDerivedSanity(derived, opts): as violações do derived de um personagem COM
 //     classe (vazia = ok).
 //   checkActorShape(actor): sanidade estrutural do actor Foundry exportado (campos
-//     mínimos por Item).
+//     mínimos por Item, e todo alvo de consumo por `_id` aponta um item do PRÓPRIO
+//     ator: a ligação do T2d chegou a gravar o id de outro ator, e só o Foundry
+//     real acusou).
 // -----------------------------------------------------------------------------
 
 /**
@@ -76,5 +78,16 @@ export function checkActorShape(actor) {
     if (!it?._id) out.push(`items[${i}] (${it?.name ?? '?'}): missing _id`);
     if (!it?.system) out.push(`items[${i}] (${it?.name ?? '?'}): missing system`);
   });
+  const ids = new Set(actor.items.map((it) => it?._id));
+  for (const it of actor.items) {
+    for (const act of Object.values(it?.system?.activities ?? {})) {
+      for (const t of act?.consumption?.targets ?? []) {
+        const looksLikeId = typeof t?.target === 'string' && t.target.length === 16 && !t.target.includes(':') && !t.target.includes('.');
+        if ((t?.type === 'itemUses' || t?.type === 'material') && looksLikeId && !ids.has(t.target)) {
+          out.push(`${it.name} > ${act.name || act.type}: consumption target ${t.target} is not on this actor`);
+        }
+      }
+    }
+  }
   return out;
 }

@@ -501,6 +501,9 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
   const usesCtx = { profBonus, modifiers };
   const leveledCasters = [];
   let warlockLevel = 0;
+  const wideningFeats = collectFeatIds(character)
+    .map((id) => resolveFeat(db, id))
+    .filter((f) => (f?.additionalSpells ?? []).some((g) => g?.expanded));
 
   for (const cls of character.classes ?? []) {
     if (!cls.classId) continue;
@@ -556,6 +559,7 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
           db,
           classObj,
           subclassObj,
+          feats: wideningFeats,
           classLevel: cls.level,
           maxSlotLevel: isPact
             ? (pactSlots(cls.level)?.level ?? 0)

@@ -26,7 +26,7 @@ export default function OriginFeatStep({ character, db, onChange }) {
   const originFeat = origin?.originFeat ?? null;
   const owned = ownedFromDb(character, db);
 
-  const featEntity = makeFeatEntity(['O'], 'Origin Feat', prereqContext(character, { db }));
+  const featEntity = makeFeatEntity(['O', 'D'], 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
 
   const originFeatData = originFeat ? resolveFeat(db, `${originFeat.id}|${originFeat.source}`) : null;
   const featChoices = originFeatData
@@ -53,7 +53,7 @@ export default function OriginFeatStep({ character, db, onChange }) {
         current={originFeat ? { label: originFeat.id, source: originFeat.source, id: `${originFeat.id}|${originFeat.source}` } : null}
         placeholder="Choose an origin feat…"
         showInfo={false}
-        initialFilterState={{ prereq: { ok: 'include' } }}
+        initialFilterState={{ prereq: { ok: 'include' }, category: { O: 'include' } }}
         onSelect={setOriginFeat}
         onClear={clearOriginFeat}
         exclude={(raw) => {

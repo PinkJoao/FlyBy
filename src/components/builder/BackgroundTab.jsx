@@ -21,6 +21,9 @@
 // DECISÕES E ARMADILHAS
 //   - O que a ficha já tem não pode ser escolhido de novo (dedup). A entity de
 //     talento é ciente do personagem (colore os pré-requisitos).
+//   - O talento de origem aceita também os Dragonmark (DDL-0172): o antecedente
+//     de herdeiro do EFA o dá no lugar do talento de origem. Filtro de Categoria
+//     com Origin pré-marcado; o Dragonmark aparece ao desmarcar.
 //   - O título "Ability Score Boosts" é link para a regra do glossário (DDL-0032).
 // -----------------------------------------------------------------------------
 
@@ -55,7 +58,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
 
   const owned = ownedFromDb(character, db);
 
-  const originFeatEntity = makeFeatEntity(['O'], 'Origin Feat', prereqContext(character, { db }));
+  const originFeatEntity = makeFeatEntity(['O', 'D'], 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
 
   const boostsRule = namedRuleEntry(db, 'Ability Score and Modifier|XPHB');
 
@@ -145,6 +148,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
               : null
           }
           placeholder="Choose origin feat…"
+          initialFilterState={{ category: { O: 'include' } }}
           onSelect={setOriginFeat}
           onClear={clearOriginFeat}
           exclude={(raw) => {

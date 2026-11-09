@@ -186,3 +186,13 @@ describe('ferramenta equipada (TC-0114)', () => {
     expect(item.system.attuned).toBe(false);
   });
 });
+
+describe('toda magia com uma activity (DDL-0177)', () => {
+  it('sem SRD, overlay nem ataque ou save, sai uma utility que gasta o espaço', () => {
+    const m = spellMechanics({ name: 'Silvery Barbs', source: 'SCC', level: 1, entries: ['Magic.'] }, null);
+    const acts = Object.values(m.activities);
+    expect(acts).toHaveLength(1);
+    expect(acts[0].type).toBe('utility');
+    expect(acts[0].consumption.spellSlot).toBe(true);
+  });
+});

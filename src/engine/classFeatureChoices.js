@@ -263,7 +263,7 @@ export function classLevelChoices(parsed, classObj, level) {
           level: f.level,
           label: `Level ${f.level} - Feat`,
           feature: { name: f.name, level: f.level },
-          pool: { type: 'feat', category: ['G'], extraCategories: ['O', 'EB'] },
+          pool: { type: 'feat', category: ['G'], extraCategories: ['O', 'EB', 'D'] },
         });
         break;
       case 'Epic Boon':
@@ -274,7 +274,7 @@ export function classLevelChoices(parsed, classObj, level) {
           level: f.level,
           label: `Level ${f.level} - Epic Boon`,
           feature: { name: f.name, level: f.level },
-          pool: { type: 'feat', category: ['EB'], extraCategories: ['G', 'O'] },
+          pool: { type: 'feat', category: ['EB'], extraCategories: ['G', 'O', 'D'] },
         });
         break;
       case 'Fighting Style': {

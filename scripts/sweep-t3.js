@@ -11,6 +11,8 @@
 //   import devolve as mesmas decisões. Grava `testing/report-t3.json` e
 //   `testing/COVERAGE-T3.md` (UI, Export e Notes à mão sobrevivem).
 //   `npm run sweep:t3` (ou `-- --feats`, `--spells`, `--items`, `--only=<texto>`).
+//   `--emit-actors` grava a ficha de cada unidade em `testing/actors/t3_*.json` e a
+//   lista `_t3.json`, para o lote ao vivo no Foundry (TESTING-PLAN §5.3).
 //
 // FUNÇÕES
 //   classRowFor(db, classId): a primeira linha de classe (com subclasse) da matriz.
@@ -28,6 +30,7 @@
 //   verdict(r): o resumo de uma linha.
 //   splitCells(line), escapePipes(s), unescapePipes(s), parseManual(text),
 //     writeCoverage(results): o tracker COVERAGE-T3.md.
+//   emitActor(actor, kind, row): grava a ficha da unidade para o lote ao vivo.
 //   main(): a CLI.
 //
 // DECISÕES E ARMADILHAS
@@ -40,8 +43,11 @@
 //     linhagem; talento exigido entra antes (origem, ou o `feat@4` com a unidade no
 //     `feat@8`). Só a PRIMEIRA alternativa do pré-requisito (as outras são OU).
 //     Status `null` (sem pré-requisito) passa; `unknown` (campanha, texto livre)
-//     o motor não avalia e vira nota; só `bad` reprova. Dragonmark (D, DG) fica
-//     FORA (o manual: um sistema próprio).
+//     o motor não avalia e vira nota; só `bad` reprova. Dragonmark (D, EFA) entra
+//     como talento de ORIGEM: é o que os antecedentes de herdeiro dão no lugar dele
+//     (DDL-0172), e o Dragonmark que outro talento exige (Greater Mark, ou a
+//     categoria do Potent Dragonmark, que leva o Mark of Healing) também vai na
+//     origem. Dark Gift (DG, RHW) vai no espaço de talento geral.
 //   - A magia entra pela classe da lista na ordem de PREFERRED_CASTERS (o Bruxo por
 //     último: acima do 5º círculo ele lança pelo Mystic Arcanum); magia sem classe
 //     nenhuma (concedida só por talento ou subclasse) é registrada, não testada aqui.
@@ -130,12 +136,11 @@ function speciesFor(db, races) {
 }
 
 function featHost(db, row, feat, species) {
-  if (row.category === 'D' || row.category === 'DG') return { skip: 'dragonmark (fora do escopo, CLAUDE.md §4)' };
   const alt = (feat.prerequisite ?? [])[0] ?? {};
   const caster = alt.spellcasting || alt.spellcasting2020 || alt.spellcastingFeature || alt.spellcastingPrepared
     || (alt.feature ?? []).some((x) => /spellcasting|pact magic/i.test(String(x)));
   const minLevel = typeof alt.level === 'number' ? alt.level : (alt.level?.level ?? 0);
-  let [classId, level, slot] = row.category === 'O' ? ['fighter', 1, 'origin'] : (SLOT[row.category] ?? SLOT.G);
+  let [classId, level, slot] = row.category === 'O' || row.category === 'D' ? ['fighter', 1, 'origin'] : (SLOT[row.category] ?? SLOT.G);
   const levelClass = alt.level?.class?.name ? String(alt.level.class.name).toLowerCase() : null;
   if (levelClass && !row.category.startsWith('FS')) classId = levelClass;
   else if (caster && classId === 'fighter') classId = 'wizard';
@@ -150,7 +155,7 @@ function featHost(db, row, feat, species) {
     const lc = (x) => String(x ?? '').toLowerCase();
     const rf = (db.feats?.feat ?? []).find((x) => lc(x.name) === lc(rn) && (!rs || lc(x.source) === lc(rs)));
     if (rf) {
-      required = { id: `${rf.name}|${rf.source}`, origin: rf.category === 'O' };
+      required = { id: `${rf.name}|${rf.source}`, origin: rf.category === 'O' || rf.category === 'D' };
       if (!required.origin && slot === 'feat@4') {
         level = Math.max(level, 8);
         slot = 'feat@8';
@@ -161,6 +166,7 @@ function featHost(db, row, feat, species) {
       }
     }
   }
+  if (!required && (alt.featCategory ?? []).includes('D')) required = { id: 'Mark of Healing|EFA', origin: true };
   const host = alt.race?.length ? (speciesFor(db, alt.race) ?? species) : species;
   const abilities = (alt.ability ?? []).flatMap((o) => Object.entries(o));
   return { classId, level, slot, species: host, abilities, required };
@@ -255,6 +261,7 @@ function runSpell(db, row, species) {
   const ex = exportChecks(db, built.character, (actor) => flagged(actor, 'spells.html', row.name, row.source));
   const item = (ex.actor?.items ?? []).find((i) => i.type === 'spell' && i.name === row.name);
   r.activities = item ? Object.keys(item.system.activities ?? {}).length : null;
+  if (args['emit-actors'] && ex.actor) emitted.push(emitActor(ex.actor, 'spell', row));
   delete ex.actor;
   r.export = ex;
   r.ms = Date.now() - t0;
@@ -353,6 +360,16 @@ ${table(of('variant'))}
   writeFileSync(path, md);
 }
 
+const ACTORS_DIR = join(ROOT, 'testing', 'actors');
+const emitted = [];
+
+/** Grava a ficha da unidade para o lote ao vivo e devolve a linha da lista. */
+function emitActor(actor, kind, row) {
+  const file = `t3_${kind}_${row.name.replace(/[^a-z0-9]+/gi, '_')}_${row.source}.json`;
+  writeFileSync(join(ACTORS_DIR, file), JSON.stringify(actor));
+  return { file, kind, name: row.name, source: row.source };
+}
+
 async function main() {
   const db = loadDb();
   await loadFoundryMechanics();
@@ -379,6 +396,7 @@ async function main() {
       console.log(`  ✗ ${r.id}  ${v}`);
     }
   }
+  if (emitted.length) writeFileSync(join(ACTORS_DIR, '_t3.json'), JSON.stringify(emitted));
   const skipped = results.filter((r) => r.skip).length;
   writeFileSync(join(OUT_DIR, 'report-t3.json'), JSON.stringify({ generatedAt: new Date().toISOString(), results }, null, 2));
   if (all && !only) writeCoverage(results);

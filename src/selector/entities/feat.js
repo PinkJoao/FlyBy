@@ -20,7 +20,9 @@
 //     como General; legacy sem `ability` ganha um +1 livre (o ChoiceList o renderiza).
 //   - O filtro de Categoria (TC-0029) existe para os slots de ASI e Epic Boon, que
 //     aceitam mais de uma: a padrão vem pré-marcada pelo chamador, e as de fora
-//     ganham badge.
+//     ganham badge. O Dragonmark (D, EFA, DDL-0172) entra como categoria extra no
+//     talento de origem (o antecedente de herdeiro o dá no lugar do de origem) e
+//     nos espaços de talento livre ("unrestricted feat choice" do livro).
 //   - `only` restringe a nomes (o College of Swords só tem Dueling e Two-Weapon).
 //   - Sem pré-requisito conta como atendido.
 // -----------------------------------------------------------------------------
@@ -81,6 +83,7 @@ const CATEGORY_FILTER_OPTIONS = [
   { value: 'O', label: 'Origin' },
   { value: 'G', label: 'General' },
   { value: 'EB', label: 'Epic Boon' },
+  { value: 'D', label: 'Dragonmark' },
 ];
 
 /** As categorias normalizadas de um talento (null vira G). */
@@ -164,7 +167,7 @@ export function makeFeatEntity(categories, title = 'Feat', ctx = null, only = nu
       const pre = prereqOf(f);
       const catBadges = opts.categoryFilter
         ? filterCategories(f)
-            .map((c) => (c === 'O' ? 'Origin' : c === 'EB' ? 'Epic Boon' : null))
+            .map((c) => ({ O: 'Origin', EB: 'Epic Boon', D: 'Dragonmark' })[c] ?? null)
             .filter(Boolean)
         : [];
       return {

@@ -25,6 +25,10 @@
 //
 // DECISÕES E ARMADILHAS
 //   - parseAllSpec lê TODOS os valores separados por `;` nos dois campos.
+//   - TALENTO também alarga (`feats` do originExtraSpells, DDL-0172): o "Spells of
+//     the Mark" dos 12 Mark of do EFA soma a tabela à lista de TODA classe que
+//     conjura, com o nome do talento como fonte. Medido: só esses 12 talentos têm
+//     `expanded`.
 //   - Grupos são ALTERNATIVAS (TC-0011): vale só o escolhido, como no
 //     grantedSpells.
 //   - NÃO há alargamento só em prosa hoje (o Magical Secrets está inteiro no dado),
@@ -117,7 +121,7 @@ const CLASS_WIDENING_LABELS = {
  * O conjunto on-list extra de uma origem de classe, com a fonte de cada um.
  * @returns {{ names: Set<string>, sources: Map<string, string> }}
  */
-export function originExtraSpells({ db, classObj, subclassObj, classLevel, maxSlotLevel = 0, activeGroup = null }) {
+export function originExtraSpells({ db, classObj, subclassObj, feats = [], classLevel, maxSlotLevel = 0, activeGroup = null }) {
   const names = new Set();
   const sources = new Map();
   const add = (set, label) => {
@@ -136,6 +140,7 @@ export function originExtraSpells({ db, classObj, subclassObj, classLevel, maxSl
     if (!entity) continue;
     add(expandedSpellNames(entity, { db, classLevel, maxSlotLevel, activeGroup }), label);
   }
+  for (const feat of feats) add(expandedSpellNames(feat, { db, classLevel, maxSlotLevel }), feat.name);
 
   return { names, sources };
 }

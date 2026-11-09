@@ -72,14 +72,14 @@ describe('classLevelChoices', () => {
     const out = classLevelChoices(fighterParsed, fighterObj, 4);
     const asi = out.find((c) => c.id === 'feat@4');
     expect(asi.pool.category).toEqual(['G']);
-    expect(asi.pool.extraCategories).toEqual(['O', 'EB']);
+    expect(asi.pool.extraCategories).toEqual(['O', 'EB', 'D']);
   });
 
   it('epic boon uses category EB (extras G/O desmarcáveis - TC-0029)', () => {
     const out = classLevelChoices(fighterParsed, fighterObj, 19);
     const boon = out.find((c) => c.id === 'feat@19');
     expect(boon.pool.category).toEqual(['EB']);
-    expect(boon.pool.extraCategories).toEqual(['G', 'O']);
+    expect(boon.pool.extraCategories).toEqual(['G', 'O', 'D']);
   });
 
   it('expertise appears per level with count 2', () => {

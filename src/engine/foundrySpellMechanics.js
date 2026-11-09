@@ -7,16 +7,15 @@
 //   mecânica de uma magia na precedência de sempre: o SRD (o pack spells24 do
 //   dnd5e, gerado em srdSpellActivitiesData), depois o overlay do 5etools
 //   (`spells/foundry.json`), e por último a activity montada do dado ESTRUTURADO
-//   do 5etools (ataque ou save, com o dano e a escala). Sem nada disso (as
-//   invocações de criatura fora do compêndio) a magia sai sem activity, e o
-//   Foundry põe o "Use" dele.
+//   do 5etools (ataque ou save, com o dano e a escala). Sem nada disso, uma
+//   activity `utility` simples (bareUtility), como o SRD faz no Feather Fall.
 //
 // FUNÇÕES
-//   EMPTY(): a mecânica vazia.
 //   isEdition2024(raw): a magia é da edição 2024 (a do SRD 5.2)?
 //   srdSpellMechanics(raw): { activities, effects } do SRD, ou null.
 //   damageDice(raw), upcastDice(raw): o primeiro {@damage} e os dados por círculo.
 //   derivedSpellMechanics(raw): a activity de ataque ou save do dado do 5etools.
+//   bareUtility(): a `utility` sem rolagem, no formato do SRD.
 //   spellMechanics(raw, db): { activities, effects }, cópias novas, ou vazio.
 //   fid(): id de activity.
 //   withFreeCasting(mech, opts): o lançamento pelo uso do ITEM (Mystic Arcanum,
@@ -31,7 +30,11 @@
 //   - derivedSpellMechanics só lê CAMPOS do 5etools (`spellAttack`, `savingThrow`,
 //     `damageInflict`, o primeiro `{@damage}` e o `{@scaledamage}`), no formato das
 //     activities do SRD (Fire Bolt, Sacred Flame, Fireball). Nada de prosa
-//     inventada: sem ataque nem save não sai activity.
+//     inventada: sem ataque nem save não sai activity de ataque ou save.
+//   - Toda magia sai com pelo menos uma activity (bareUtility): as 340 do SRD têm,
+//     e é a activity que gasta o espaço ao conjurar. Medido no Foundry 13.351 (lote
+//     da T3, DDL-0177): 68 de 538 magias saíam sem nenhuma (os Summon do XPHB, o
+//     Silvery Barbs, o Shadow Blade) e conjurá-las não gastava espaço.
 //   - withFreeCasting copia os premades oficiais: no Mystic Arcanum (`atwill`), toda
 //     activity que gastaria espaço gasta 1 uso do item (Sefris L17); na magia
 //     concedida com uso grátis, uma activity `forward` "(free casting)" gasta o uso e
@@ -46,8 +49,6 @@
 import { foundryMechanics } from './foundryMechanicsData';
 import { overlayMechanics, overlaySpellEntry } from './foundryOverlay';
 import { srdSpellNames } from './spells';
-
-const EMPTY = () => ({ activities: {}, effects: [] });
 
 /** A magia é da edição 2024 (a do SRD 5.2)? */
 export function isEdition2024(raw) {
@@ -77,7 +78,26 @@ export function spellMechanics(raw, db) {
   if (overlay && Object.keys(overlay.activities).length) {
     return structuredClone({ activities: overlay.activities, effects: overlay.effects });
   }
-  return derivedSpellMechanics(raw) ?? EMPTY();
+  return derivedSpellMechanics(raw) ?? { activities: bareUtility(), effects: [] };
+}
+
+/** A `utility` sem rolagem (o formato do Feather Fall no SRD): conjurar gasta o espaço. */
+function bareUtility() {
+  const _id = fid();
+  return {
+    [_id]: {
+      _id,
+      type: 'utility',
+      sort: 0,
+      activation: { type: 'action', override: false },
+      consumption: { scaling: { allowed: false }, spellSlot: true },
+      duration: { units: 'inst', override: false },
+      range: { override: false },
+      target: { prompt: true, template: { contiguous: false, units: 'ft' }, affects: { choice: false }, override: false },
+      roll: { prompt: false, visible: false },
+      uses: { spent: 0 },
+    },
+  };
 }
 
 const ABILITY = { strength: 'str', dexterity: 'dex', constitution: 'con', intelligence: 'int', wisdom: 'wis', charisma: 'cha' };

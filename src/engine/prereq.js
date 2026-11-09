@@ -16,10 +16,10 @@
 //   classProfsOf(character, db): as proficiências de armadura e arma das classes.
 //   prereqContext(character, opts): o contexto de checagem.
 //   checkLevel, checkAbility, checkRace, checkFeature, checkFeat,
-//     checkSpellcasting, checkOptionalfeature, checkPact, checkProficiency(req,
+//     checkFeatCategory, checkExclusiveFeatCategory, checkSpellcasting, checkOptionalfeature, checkPact, checkProficiency(req,
 //     ctx): cada critério, 'ok', 'bad' ou 'unknown'.
 //   levelText, abilityText, raceText, optionalfeatureText, pactText, spellText,
-//     otherText: o texto curto de cada critério.
+//     categoryLabel, featCategoryText, exclusiveFeatCategoryText, otherText: o texto curto de cada critério.
 //   evalEntry(entry, ctx): uma alternativa.
 //   evalPrereq(feat, ctx): { status, entries }, ou null sem pré-requisito.
 //   prereqStatus(feat, ctx), prereqText(feat, ctx): o status e o texto únicos.
@@ -40,13 +40,18 @@
 //     5etools, a string `nome#c` (cantrip; `#x` é o Hex) e o objeto { choose,
 //     entry, entrySummary } das versões XPHB.
 //   - Metadados de picker no `prerequisite` não são requisito do jogador.
+//   - Categoria de talento (DDL-0172, dragonmarks do EFA): `featCategory` pede um
+//     talento da categoria (Potent Dragonmark: um Dragonmark); `exclusiveFeatCategory`
+//     proíbe OUTRO da mesma (só um Dragonmark). O talento avaliado não conta para si
+//     (`self`, posto por evalPrereq): senão o já escolhido se reprovaria. Sem db, as
+//     categorias não se resolvem e o status é 'unknown'.
 // -----------------------------------------------------------------------------
 
 import { totalLevel } from '../schema/character';
 import { finalScores } from './abilities';
 import { titleCase } from './choices';
 import { collectFeatIds, collectOptionalFeatureIds } from './proficiency';
-import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from './resolve';
+import { resolveClassObj, resolveSubclassObj, resolveRaceObj, resolveFeat } from './resolve';
 
 const ABILITY_ABBR = { str: 'Str', dex: 'Dex', con: 'Con', int: 'Int', wis: 'Wis', cha: 'Cha' };
 
@@ -127,6 +132,9 @@ export function prereqContext(character, { db = null, grantedFeatures = [] } = {
     classLevels,
     grantedFeatures: grantedFeatures.map((f) => f.toLowerCase()),
     ownedFeats: new Set(collectFeatIds(character ?? {}).map((id) => id.toLowerCase())),
+    ownedFeatCategories: db
+      ? collectFeatIds(character ?? {}).map((id) => ({ id: id.toLowerCase(), category: resolveFeat(db, id)?.category ?? null }))
+      : null,
     optionalFeatures: new Set(
       collectOptionalFeatureIds(character ?? {}).map((id) => id.split('|')[0].toLowerCase())
     ),
@@ -299,12 +307,44 @@ function otherText(key, value) {
   }
 }
 
+/** Tem outro talento de uma das categorias pedidas. */
+function checkFeatCategory(req, ctx) {
+  if (!ctx.ownedFeatCategories) return 'unknown';
+  const want = new Set((req ?? []).map(String));
+  return ctx.ownedFeatCategories.some((f) => f.id !== ctx.self && want.has(f.category)) ? 'ok' : 'bad';
+}
+
+/** NÃO tem outro talento da categoria (só um Dragonmark). */
+function checkExclusiveFeatCategory(req, ctx) {
+  const s = checkFeatCategory(req, ctx);
+  return s === 'unknown' ? s : s === 'ok' ? 'bad' : 'ok';
+}
+
+const CATEGORY_LABEL = { D: 'Dragonmark', DG: 'Dark Gift', O: 'Origin', G: 'General', FS: 'Fighting Style', EB: 'Epic Boon' };
+
+/** O nome de uma categoria de talento. */
+function categoryLabel(c) {
+  return CATEGORY_LABEL[c] ?? String(c);
+}
+
+/** "Dragonmark feat". */
+function featCategoryText(value) {
+  return `${(value ?? []).map(categoryLabel).join(' or ')} feat`;
+}
+
+/** "No other Dragonmark feat". */
+function exclusiveFeatCategoryText(value) {
+  return `No other ${(value ?? []).map(categoryLabel).join(' or ')} feat`;
+}
+
 const CHECKERS = {
   level: checkLevel,
   ability: checkAbility,
   race: checkRace,
   feature: checkFeature,
   feat: checkFeat,
+  featCategory: checkFeatCategory,
+  exclusiveFeatCategory: checkExclusiveFeatCategory,
   spellcasting: checkSpellcasting,
   spellcasting2020: checkSpellcasting,
   spellcastingFeature: checkSpellcasting,
@@ -319,14 +359,14 @@ const TEXTS = {
   optionalfeature: optionalfeatureText,
   pact: pactText,
   spell: spellText,
+  featCategory: featCategoryText,
+  exclusiveFeatCategory: exclusiveFeatCategoryText,
 };
-const IGNORED_KEYS = new Set(['exclusiveFeatCategory', 'featCategory']);
 
 function evalEntry(entry, ctx) {
   let status = 'ok';
   const texts = [];
   for (const [key, value] of Object.entries(entry ?? {})) {
-    if (IGNORED_KEYS.has(key)) continue;
     const checker = CHECKERS[key];
     const s = checker ? checker(value, ctx) : 'unknown';
     texts.push(TEXTS[key] ? TEXTS[key](value) : otherText(key, value));
@@ -343,7 +383,8 @@ function evalEntry(entry, ctx) {
 export function evalPrereq(feat, ctx) {
   const list = feat?.prerequisite;
   if (!Array.isArray(list) || list.length === 0) return null;
-  const entries = list.map((e) => evalEntry(e, ctx)).filter((e) => e.text);
+  const own = { ...ctx, self: feat?.name ? `${feat.name}|${feat.source}`.toLowerCase() : null };
+  const entries = list.map((e) => evalEntry(e, own)).filter((e) => e.text);
   if (entries.length === 0) return null;
   let status = 'bad';
   if (entries.some((e) => e.status === 'ok')) status = 'ok';

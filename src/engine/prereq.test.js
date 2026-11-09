@@ -229,3 +229,31 @@ describe('checkRace - grupos raciais', () => {
     expect(prereqStatus(small, prereqContext(fighterChar({ raceId: 'eladrin' }), { db: DB }))).toBe('bad');
   });
 });
+
+describe('categoria de talento (dragonmarks, DDL-0172)', () => {
+  const mark = { name: 'Mark of Healing', source: 'EFA', category: 'D', prerequisite: [{ campaign: ['Eberron'], exclusiveFeatCategory: ['D'] }] };
+  const mark2 = { name: 'Mark of Storm', source: 'EFA', category: 'D', prerequisite: [{ campaign: ['Eberron'], exclusiveFeatCategory: ['D'] }] };
+  const potent = { name: 'Potent Dragonmark', source: 'EFA', category: 'G', prerequisite: [{ level: 4, featCategory: ['D'] }] };
+  const db = { feats: { feat: [mark, mark2, potent, { name: 'Alert', source: 'XPHB', category: 'O' }] } };
+  const withOrigin = (id) => {
+    const c = createCharacter();
+    c.classes = [{ classId: 'fighter', classSource: 'XPHB', level: 4, choices: {} }];
+    c.origin = { ...(c.origin ?? {}), originFeat: { id, source: id === 'Alert' ? 'XPHB' : 'EFA', choices: {} } };
+    return c;
+  };
+
+  it('Potent Dragonmark pede um talento de Dragonmark', () => {
+    expect(prereqStatus(potent, prereqContext(withOrigin('Mark of Healing'), { db }))).toBe('ok');
+    expect(prereqStatus(potent, prereqContext(withOrigin('Alert'), { db }))).toBe('bad');
+    expect(prereqText(potent, prereqContext(withOrigin('Alert'), { db }))).toContain('Dragonmark feat');
+  });
+  it('só um Dragonmark: o próprio não conta, outro reprova', () => {
+    const ctx = prereqContext(withOrigin('Mark of Healing'), { db });
+    expect(evalPrereq(mark, ctx).entries[0].text).toContain('No other Dragonmark feat');
+    expect(prereqStatus(mark, ctx)).toBe('unknown');
+    expect(prereqStatus(mark2, ctx)).toBe('bad');
+  });
+  it('sem db, a categoria não se resolve', () => {
+    expect(prereqStatus(potent, prereqContext(withOrigin('Mark of Healing')))).toBe('unknown');
+  });
+});

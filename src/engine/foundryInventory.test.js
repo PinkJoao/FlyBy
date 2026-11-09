@@ -345,3 +345,40 @@ describe('contêineres: o vínculo pai-filho atravessa export e import', () => {
     expect(byName(items, 'Bag of Holding').system.container).toBeNull();
   });
 });
+
+describe('overlay foundry-items no export (DDL-0175)', () => {
+  const odb = {
+    'items-base': { baseitem: [] },
+    items: {
+      item: [
+        { name: 'Bomb', source: 'XDMG', type: 'EXP|XDMG', rarity: 'none', weight: 1 },
+        { name: 'Oversized Longbow', source: 'WDH', type: 'R', weaponCategory: 'martial', dmg1: '2d6', dmgType: 'P', rarity: 'none' },
+        { name: 'Moon Charm', source: 'XDMG', type: 'G|XPHB', rarity: 'rare', weight: 0 },
+      ],
+    },
+    'fluff-items': { itemFluff: [] },
+    'foundry-items': {
+      item: [
+        { name: 'Bomb', source: 'XDMG', activities: [{ type: 'save', save: { ability: ['dex'], dc: { formula: '12' } } }] },
+        { name: 'Oversized Longbow', source: 'WDH', activities: [{ type: 'damage', damage: { parts: [{ custom: { enabled: true, formula: 'p' }, types: ['i'] }] } }] },
+        { name: 'Moon Charm', source: 'XDMG', activities: [{ type: 'cast', spell: {} }, { type: 'utility', name: 'Glow' }] },
+      ],
+    },
+  };
+  const out = buildInventoryItems({ inventory: [
+    { uid: 'a', itemId: 'Bomb', source: 'XDMG', quantity: 1 },
+    { uid: 'b', itemId: 'Oversized Longbow', source: 'WDH', quantity: 1 },
+    { uid: 'c', itemId: 'Moon Charm', source: 'XDMG', quantity: 1 },
+  ] }, odb);
+  const acts = (n) => Object.values(byName(out, n).system.activities ?? {}).map((a) => a.type);
+
+  it('a activity do overlay entra, e o loot com activity vira consumable', () => {
+    expect(acts('Bomb')).toEqual(['save']);
+    expect(byName(out, 'Bomb').type).toBe('consumable');
+    expect(byName(out, 'Bomb').system.type.value).toBe('trinket');
+  });
+  it('fórmula de dano que é palavra solta e cast sem magia saem; o ataque da arma é o nosso', () => {
+    expect(acts('Oversized Longbow')).toEqual(['attack']);
+    expect(acts('Moon Charm')).toEqual(['utility']);
+  });
+});

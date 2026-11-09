@@ -122,6 +122,8 @@
 //   customToFoundryItem(entry): o item custom, a partir do snapshot.
 //   buildInventoryItems(character, db): todo o inventário (com a mecânica do SRD
 //     do item, foundryItemMechanics).
+//   withOverlayMechanics(item, db, raw, variantName): a mecânica do overlay
+//     foundry-items no item, quando o SRD não tem o documento.
 //   unpackContainer(item, raw, db): um pack desdobrado em contêiner e conteúdo.
 //
 // DECISÕES E ARMADILHAS
@@ -271,6 +273,17 @@
 //     TC-0107): os effects dele SUBSTITUEM os nossos (somar daria o bônus em
 //     dobro) e as activities entram; na arma COMUM o ataque é o nosso, na MÁGICA o
 //     do SRD (o dano extra: o "2d6" que o Merric L17 perdia).
+//   - Sem o SRD, o overlay foundry-items (withOverlayMechanics, DDL-0175): as
+//     activities entram, menos o ATAQUE de arma (o nosso já é completo); os effects
+//     SOMAM, e o nosso efeito de bônus só sai se um effect transferido do overlay
+//     mexe na mesma chave (dobraria). O `loot` do Foundry não tem activities e as
+//     descarta calado (Bomb, Basic Poison, medido no 13.351): com activity do
+//     overlay ele sai `consumable` (`poison` se o 5etools marca, senão `trinket`).
+//     Activity com fórmula de dano que é uma palavra solta sai: o Foundry REPROVA o
+//     item inteiro e o tira da ficha calado (o "p" do Oversized Longbow WDH; dos
+//     357 do overlay, é a única fórmula assim, medido).
+//     A `cast` sem magia (Dark Shard Amulet, Moonblade: 6 de 122) também sai: seria
+//     um botão morto no Foundry.
 //   - Variante gerada com modelo no SRD sai como o item BASE mais o encantamento
 //     do modelo (srdVariantEnchantment), o formato dos premades; o resto do item
 //     (equipado, sintonizado, a marca de procedência) é o da variante, e
@@ -314,6 +327,7 @@ import {
   overlayOptionalFeatureEntry,
   overlayClassFeatureEntry,
   overlaySubclassFeatureEntry,
+  overlayItemEntry,
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
@@ -2398,6 +2412,7 @@ export function buildInventoryItems(character, db) {
         item.system.activities = { ...(item.system.activities ?? {}), [k]: a };
       }
     }
+    if (!srdMech && raw && !entry.customName) withOverlayMechanics(item, db, raw, baseRaw ? null : raw._variantName);
     const unpacked = unpackContainer(item, raw, db);
     if (unpacked) out.push(...unpacked);
     else out.push(item);
@@ -2413,6 +2428,27 @@ export function buildInventoryItems(character, db) {
     if (child) child.system.container = parentId;
   }
   return out;
+}
+
+/** Soma ao item a mecânica do overlay foundry-items (sem o ataque da arma, que é o nosso). */
+function withOverlayMechanics(item, db, raw, variantName) {
+  const entry = overlayItemEntry(db, raw.name, raw.source, variantName);
+  if (!entry) return;
+  const mech = overlayMechanics(entry, item.name);
+  const keysOf = (list) => list.filter((e) => e.transfer !== false).flatMap((e) => (e.changes ?? []).map((c) => c.key));
+  const theirs = new Set(keysOf(mech.effects));
+  if (keysOf(item.effects).some((k) => theirs.has(k))) item.effects = [];
+  item.effects = [...item.effects, ...mech.effects];
+  for (const [k, a] of Object.entries(mech.activities)) {
+    if (item.type === 'weapon' && a.type === 'attack') continue;
+    if (a.type === 'cast' && !a.spell?.uuid) continue;
+    if ((a.damage?.parts ?? []).some((p) => p.custom?.enabled && /^[a-z]+$/i.test(String(p.custom.formula ?? '').trim()))) continue;
+    item.system.activities = { ...(item.system.activities ?? {}), [k]: a };
+  }
+  if (item.type === 'loot' && Object.keys(item.system.activities ?? {}).length) {
+    item.type = 'consumable';
+    item.system.type = { value: raw.poison ? 'poison' : 'trinket', subtype: '' };
+  }
 }
 
 /**

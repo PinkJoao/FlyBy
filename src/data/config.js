@@ -29,7 +29,8 @@
 //     item mágico, que o engine expande sobre os itens base
 //     (engine/magicVariants.js); o overlay `foundry-*.json`, que é do 5etools e
 //     MIT, não Plutonium (DDL-0009). foundry-backgrounds.json não existe no mirror
-//     (404) e foundry-psionics.json é vazio: ficam fora.
+//     (404) e foundry-psionics.json é vazio: ficam fora. foundry-items.json entra
+//     na T3 (Q3, DDL-0175): as activities de 357 itens, depois do SRD.
 //   - Magias: um arquivo por livro (17, de spells/index.json, todos 200 em
 //     2026-07-09), concatenados e deduplicados por latestOnly em engine/spells.js.
 //     O mapa magia para classe vem de spells/sources.json, não da magia. Só 9
@@ -64,6 +65,7 @@ export const GLOBAL_FILES = [
   'foundry-feats.json',
   'foundry-races.json',
   'foundry-optionalfeatures.json',
+  'foundry-items.json',
 ];
 
 export const CLASS_NAMES = [

@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   O 5etools mantém (MIT, no mesmo mirror) um overlay de mecânicas Foundry:
 //   foundry-feats, foundry-races, foundry-optionalfeatures, class/foundry.json e
-//   spells/foundry.json (as activities das magias, TC-0106),
+//   spells/foundry.json (as activities das magias, TC-0106), foundry-items
+//   (itens, itens base e modelos de variante, DDL-0175),
 //   keyed por nome e fonte, com effects, activities, system e advancement que a
 //   prosa não expressa. Este módulo os indexa (memoizado por db) e traduz para o
 //   formato do dnd5e. Adotado POR COMPLETO no DDL-0057.
@@ -24,6 +25,8 @@
 //   translateOverlayAdvancement(entry): os ScaleValue.
 //   pickEntry(entries, source, level): a entrada certa entre homônimas.
 //   Consultas (todas toleram db null)
+//   overlayItemEntry(db, name, source, variantName): a entrada de um item (o
+//     modelo de variante pelo nome genérico e a mesma fonte, se o item não tiver).
 //   overlaySpellEntry, overlayFeatEntry, overlayOptionalFeatureEntry, overlayClassFeatureEntry,
 //     overlaySubclassFeatureEntry: a entrada crua.
 //   overlayClassAdvancement, overlaySubclassAdvancement, overlayRaceAdvancement:
@@ -111,7 +114,13 @@ function buildIndex(db) {
   for (const e of db?.['foundry-spells']?.spell ?? []) {
     spell.set(`${norm(e.name)}|${norm(e.source)}`, e);
   }
-  return { feat, optional, classFeature, subclassFeature, raceFeature, spell };
+  const item = new Map();
+  const items = db?.['foundry-items'];
+  for (const e of [...(items?.item ?? []), ...(items?.baseitem ?? []), ...(items?.magicvariant ?? [])]) {
+    const key = `${norm(e.name)}|${norm(e.source)}`;
+    if (!item.has(key)) item.set(key, e);
+  }
+  return { feat, optional, classFeature, subclassFeature, raceFeature, spell, item };
 }
 
 function indexFor(db) {
@@ -289,6 +298,15 @@ function pickEntry(entries, source, level) {
   if (!candidates.length) return null;
   const exact = candidates.find((e) => e.level === level);
   return exact ?? [...candidates].sort((a, b) => (a.level ?? 0) - (b.level ?? 0))[0];
+}
+
+/** A entrada do overlay de um item, pela fonte exata; o modelo de variante pelo nome genérico. */
+export function overlayItemEntry(db, name, source, variantName = null) {
+  const idx = indexFor(db);
+  if (!idx) return null;
+  const own = idx.item.get(`${norm(name)}|${norm(source)}`);
+  if (own || !variantName) return own ?? null;
+  return idx.item.get(`${norm(variantName)}|${norm(source)}`) ?? null;
 }
 
 /** A entrada do overlay de uma magia, pela fonte exata. */

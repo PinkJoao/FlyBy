@@ -207,11 +207,11 @@ Whatever is easiest to copy. FlyBy checks the address and tells you if it finds 
 The JSON data format of the open-source 5e.tools project: the same folder layout, file names and fields. A copy of that project's `data` folder, or a mirror of it, works as it is. A source does not need every file: anything missing is simply left out (the **Game data source** menu tells you how many files a source is missing), but a source with none of them is treated as a wrong address.
 
 <details>
-<summary>The files FlyBy reads (75, all relative to the data folder)</summary>
+<summary>The files FlyBy reads (76, all relative to the data folder)</summary>
 
 | Where | Files |
 |---|---|
-| the folder itself | `races.json`, `fluff-races.json`, `backgrounds.json`, `feats.json`, `optionalfeatures.json`, `skills.json`, `languages.json`, `senses.json`, `items.json`, `items-base.json`, `fluff-items.json`, `magicvariants.json`, `variantrules.json`, `conditionsdiseases.json`, `actions.json`, `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json` |
+| the folder itself | `races.json`, `fluff-races.json`, `backgrounds.json`, `feats.json`, `optionalfeatures.json`, `skills.json`, `languages.json`, `senses.json`, `items.json`, `items-base.json`, `fluff-items.json`, `magicvariants.json`, `variantrules.json`, `conditionsdiseases.json`, `actions.json`, `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json`, `foundry-items.json` |
 | `class/` | `class-<name>.json` and `fluff-class-<name>.json` for each of the 13 classes (artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard), plus `foundry.json` |
 | `spells/` | `spells-<source>.json` for each spell source FlyBy knows (17), the matching `fluff-spells-<source>.json` where they exist (9), `sources.json` and `foundry.json` |
 | `generated/` | `gendata-variantrules.json`, `gendata-tables.json` |

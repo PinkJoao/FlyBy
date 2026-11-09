@@ -20,12 +20,20 @@
 //     componentsText(spell), materialText(spell): rótulos e ranks da aba.
 //   saveOrAttack(spell), isRitual(spell), isConcentration(spell): classificação.
 //   classSpellList(db, className): os nomes da lista de uma classe.
+//   currentClassSource(db, className), listedClasses(db, info): a fonte da versão
+//     atual de uma classe e as classes de uma entrada do sources.json.
 //   spellClassIndex(db): magia para as classes que a têm (para filtrar por
 //     qualquer classe: o mestre pode liberar Warlock para o Bardo).
 //   classDisplayName(classId): 'wizard' vira 'Wizard'.
 //   spellChoosePredicate(pool, db): o predicado de um `{choose}` de magia.
 //
 // DECISÕES E ARMADILHAS
+//   - Lista de classe = `class` MAIS o `classVariant` (a lista expandida por outro
+//     livro: Chaos Bolt no Feiticeiro, Absorb Elements, Spirit Shroud) quando a
+//     classe dele é a da versão ATUAL da classe no app (XPHB; a do Artificer, a dele).
+//     Decisão do dono (Q6, DDL-0171): medido, +84 no Mago, +62 no Feiticeiro, +40 no
+//     Bruxo, +38 no Druida, +15 no Artificer e no Bardo, +9 no Ranger, +6 no
+//     Clérigo, +4 no Paladino. A entrada que aponta a classe de 2014 (PHB) não conta.
 //   - Nome CURTO x nome do LIVRO (TC-0079): o SRD tira o nome próprio do mago do
 //     título ("Hideous Laughter"), o 5etools mantém ("Tasha's Hideous Laughter").
 //     Sem a rede, a magia PREPARADA de um ator do Foundry não resolve e some do
@@ -279,11 +287,33 @@ export function classSpellList(db, className) {
   const want = className.toLowerCase();
   for (const bySource of Object.values(map)) {
     for (const [spellName, info] of Object.entries(bySource)) {
-      const classes = info?.class ?? [];
-      if (classes.some((c) => c?.name?.toLowerCase() === want)) {
+      if (listedClasses(db, info).some((name) => name.toLowerCase() === want)) {
         out.add(spellName.toLowerCase());
       }
     }
+  }
+  return out;
+}
+
+const CURRENT_CLASS_SOURCE = new WeakMap();
+
+/** A fonte da versão ATUAL de uma classe (a que o app oferece), ou null. */
+function currentClassSource(db, className) {
+  let cache = CURRENT_CLASS_SOURCE.get(db);
+  if (!cache) {
+    cache = new Map();
+    CURRENT_CLASS_SOURCE.set(db, cache);
+  }
+  const key = String(className ?? '').toLowerCase();
+  if (!cache.has(key)) cache.set(key, latestOnly(db?.[`class-${key}`]?.class ?? [])[0]?.source ?? null);
+  return cache.get(key);
+}
+
+/** As classes em cuja lista a magia está: `class`, mais o `classVariant` da edição atual da classe. */
+function listedClasses(db, info) {
+  const out = (info?.class ?? []).map((c) => c?.name).filter(Boolean);
+  for (const c of info?.classVariant ?? []) {
+    if (c?.name && c.source && c.source === currentClassSource(db, c.name)) out.push(c.name);
   }
   return out;
 }
@@ -301,7 +331,7 @@ export function spellClassIndex(db) {
     for (const [spellName, info] of Object.entries(bySource)) {
       const key = spellName.toLowerCase();
       const set = out.get(key) ?? new Set();
-      for (const c of info?.class ?? []) if (c?.name) set.add(c.name);
+      for (const name of listedClasses(db, info)) set.add(name);
       if (set.size) out.set(key, set);
     }
   }

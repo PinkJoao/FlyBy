@@ -47,7 +47,8 @@
 //     nenhuma (concedida só por talento ou subclasse) é registrada, não testada aqui.
 //     Magia que só entra na classe pelo `classVariant` (a lista expandida por outro
 //     livro: Chaos Bolt, Absorb Elements) usa essa classe, marcada no Host: a lista
-//     do app (classSpellList) não lê o campo (DDL-0170, pergunta ao dono).
+//     do app (classSpellList) não lia o campo (DDL-0170); desde o DDL-0171 ele conta,
+//     e o desvio fica só como rede (0 magias por ele).
 //   - O Ability Score Improvement não vira item de talento: o export o grava como o
 //     aumento de atributo do item da classe (o formato do Foundry); ele é conferido
 //     pelo round-trip, não pela presença.

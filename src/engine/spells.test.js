@@ -255,6 +255,30 @@ describe('classSpellList', () => {
   });
 });
 
+describe('classVariant conta na lista da edição atual da classe (Q6)', () => {
+  const dbCv = {
+    'class-sorcerer': { class: [{ name: 'Sorcerer', source: 'PHB' }, { name: 'Sorcerer', source: 'XPHB' }] },
+    'class-wizard': { class: [{ name: 'Wizard', source: 'XPHB' }] },
+    'spell-sources': {
+      XGE: {
+        'Chaos Bolt': { classVariant: [{ name: 'Sorcerer', source: 'PHB', definedInSource: 'XGE' }, { name: 'Sorcerer', source: 'XPHB', definedInSource: 'XGE' }] },
+        'Old Only': { classVariant: [{ name: 'Wizard', source: 'PHB', definedInSource: 'XGE' }] },
+      },
+    },
+  };
+
+  it('a entrada da classe atual (XPHB) entra; a que só aponta a de 2014 (PHB), não', () => {
+    expect(classSpellList(dbCv, 'Sorcerer').has('chaos bolt')).toBe(true);
+    expect(classSpellList(dbCv, 'Wizard').has('old only')).toBe(false);
+    expect(classSpellList(dbCv, 'Wizard').has('chaos bolt')).toBe(false);
+  });
+
+  it('o filtro de classe do seletor vê o mesmo', () => {
+    expect(spellClassIndex(dbCv).get('chaos bolt')).toEqual(['Sorcerer']);
+    expect(spellClassIndex(dbCv).get('old only')).toBeUndefined();
+  });
+});
+
 describe('classDisplayName', () => {
   it('capitaliza o classId', () => {
     expect(classDisplayName('wizard')).toBe('Wizard');

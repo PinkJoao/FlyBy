@@ -34,6 +34,7 @@ import AmountStepper from './AmountStepper';
 import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
 import Button from '../common/Button';
+import Toggle from '../common/Toggle';
 
 const HEAL_KINDS = [
   { value: 'heal', label: 'Heal' },
@@ -77,10 +78,7 @@ export function HealPanel({ vitals }) {
         onChange={setKind}
       />
       {kind === 'temp' && (
-        <label className={panel.check}>
-          <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
-          <span>Replace even if lower</span>
-        </label>
+        <Toggle checked={replace} onChange={setReplace} label="Replace even if lower" />
       )}
       {kind === 'max' && <p className={panel.note}>Like Aid: lasts until your next Long Rest.</p>}
       {n > 0 && <p className={styles.preview}>{preview}</p>}
@@ -115,10 +113,7 @@ export function HurtPanel({ vitals }) {
     >
       <p className={styles.now}>{vitals.current} / {vitals.max} HP{vitals.temp ? ` · ${vitals.temp} temporary` : ''}</p>
       <AmountStepper value={amount} onChange={setAmount} jumps={HP_JUMPS} />
-      <label className={panel.check}>
-        <input type="checkbox" checked={affectMax} onChange={(e) => setAffectMax(e.target.checked)} />
-        <span>Also lowers the hit point maximum</span>
-      </label>
+      <Toggle checked={affectMax} onChange={setAffectMax} label="Also lowers the hit point maximum" />
       {n > 0 && (
         <p className={styles.preview}>
           {toTemp ? `${toTemp} from temporary, ` : ''}{vitals.current} to {current} hit points{affectMax ? `, maximum ${vitals.max} to ${max}` : ''}

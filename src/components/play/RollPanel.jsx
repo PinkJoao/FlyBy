@@ -49,6 +49,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import useSettingsStore from '../../store/settingsStore';
 import styles from './RollPanel.module.css';
 import Button from '../common/Button';
+import Toggle from '../common/Toggle';
 
 const HITS = [
   { value: 'normal', label: 'Normal hit' },
@@ -126,17 +127,15 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
       {effects.length > 0 && (
         <div className={styles.effects}>
           {effects.map((e) => (
-            <label key={e.id} className={styles.check} title={e.note}>
-              <input
-                type="checkbox"
-                checked={effectIds.includes(e.id)}
-                onChange={(ev) => setEffectIds(ev.target.checked ? [...effectIds, e.id] : effectIds.filter((x) => x !== e.id))}
-              />
-              <span>
-                {e.label}{e.adv ? ': Advantage' : ''}{e.dis ? ': Disadvantage' : ''}
-                {e.note && <span className={styles.effectNote}> ({e.note})</span>}
-              </span>
-            </label>
+            <Toggle
+              key={e.id}
+              size="sm"
+              title={e.note}
+              checked={effectIds.includes(e.id)}
+              onChange={(on) => setEffectIds(on ? [...effectIds, e.id] : effectIds.filter((x) => x !== e.id))}
+              label={`${e.label}${e.adv ? ': Advantage' : ''}${e.dis ? ': Disadvantage' : ''}`}
+              hint={e.note || null}
+            />
           ))}
         </div>
       )}
@@ -153,10 +152,7 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
       )}
 
       {healOption && (
-        <label className={styles.check}>
-          <input type="checkbox" checked={applyHeal} onChange={(e) => setApplyHeal(e.target.checked)} />
-          <span>Heal myself with it</span>
-        </label>
+        <Toggle checked={applyHeal} onChange={setApplyHeal} label="Heal myself with it" />
       )}
 
       {kind === 'damage' && !healOption && (

@@ -42,6 +42,7 @@ import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import { SpellRow } from '../builder/SpellbookTab';
 import styles from '../builder/SpellbookTab.module.css';
+import Toggle from '../common/Toggle';
 import play from './PlayTabs.module.css';
 import econ from './econ.module.css';
 
@@ -200,10 +201,7 @@ export default function SpellsTab({ catalog, state, derived, db, onCast }) {
         );
       })}
 
-      <label className={play.toggle}>
-        <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
-        <span>Show unprepared spells</span>
-      </label>
+      <Toggle className={play.toggle} checked={showAll} onChange={setShowAll} label="Show unprepared spells" />
     </div>
   );
 }

@@ -31,6 +31,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import { SKILL_LABEL } from '../builder/labels';
 import styles from './PlayPanels.module.css';
 import Button from '../common/Button';
+import Toggle from '../common/Toggle';
 
 const TARGETS = [
   { value: 'attack', label: 'Attack rolls' },
@@ -87,14 +88,13 @@ export default function ModifierPanel({ rollData, inCombat = false, initialLabel
       <div className={styles.field}>
         <span className={styles.label}>Applies to</span>
         {TARGETS.map((t) => (
-          <label key={t.value} className={styles.check}>
-            <input
-              type="checkbox"
-              checked={targets.includes(t.value)}
-              onChange={(e) => setTargets(e.target.checked ? [...targets, t.value] : targets.filter((x) => x !== t.value))}
-            />
-            <span>{t.label}</span>
-          </label>
+          <Toggle
+            key={t.value}
+            size="sm"
+            checked={targets.includes(t.value)}
+            onChange={(on) => setTargets(on ? [...targets, t.value] : targets.filter((x) => x !== t.value))}
+            label={t.label}
+          />
         ))}
         <select className={styles.input} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="One skill">
           <option value="">Also one skill (optional)</option>

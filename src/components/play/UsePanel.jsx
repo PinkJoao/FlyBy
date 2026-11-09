@@ -24,6 +24,7 @@ import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
 import Button from '../common/Button';
+import Toggle from '../common/Toggle';
 
 /**
  * O conteúdo do diálogo de usar uma feature.
@@ -90,10 +91,7 @@ export default function UsePanel({ catalog, state, activity }) {
         </label>
       )}
       {activity.heal && (
-        <label className={styles.check}>
-          <input type="checkbox" checked={applyHeal} onChange={(e) => setApplyHeal(e.target.checked)} />
-          <span>Heal myself with it</span>
-        </label>
+        <Toggle checked={applyHeal} onChange={setApplyHeal} label="Heal myself with it" />
       )}
       {activity.attack && (
         <SegmentedControl

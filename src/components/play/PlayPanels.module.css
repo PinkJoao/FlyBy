@@ -4,7 +4,7 @@
  * CLASSES
  *   .form, .note, .warn, .short: a coluna, as notas e os avisos em vermelho.
  *   .costs, .stepRow, .stepper, .stepValue, .smallBtn: os custos e os contadores.
- *   .field, .label, .input, .check: os campos.
+ *   .field, .label, .input: os campos (os sim ou não são o Toggle comum).
  *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
  *   .actions: a fila dos botões (o Button do app, DDL-0160).
  * -------------------------------------------------------------------------- */
@@ -100,14 +100,6 @@
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
-}
-
-.check {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  cursor: pointer;
 }
 
 .options {

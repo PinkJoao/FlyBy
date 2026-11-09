@@ -1,0 +1,93 @@
+/* =============================================================================
+ * Toggle.module.css: o interruptor animado (trilha, botão, rótulo)
+ * =============================================================================
+ * CLASSES
+ *   .toggle: a linha clicável (botão sem moldura) com a trilha e o texto.
+ *   .sm: a escala menor, para listas.
+ *   .on: ligado (trilha em accent, botão à direita).
+ *   .track, .knob: a trilha e o botão que desliza.
+ *   .text, .label, .hint: o rótulo e a linha esmaecida sob ele.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Ligado = trilha --accent-bg com borda --accent-border e botão --accent, o mesmo
+ *     realce do SegmentedControl (DDL-0097, DDL-0187); desligado = trilha --bg com
+ *     borda --border e botão --text-muted.
+ *   - O botão anda por `transform` (não por `left`): só compõe, não refaz o layout.
+ *   - A trilha não encolhe (`flex: none`): um rótulo longo quebra a linha, não a
+ *     trilha.
+ * -------------------------------------------------------------------------- */
+.toggle {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--text-h);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  --track-w: 36px;
+  --track-h: 20px;
+  --knob: 14px;
+}
+.toggle:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.toggle:focus-visible .track {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
+}
+.sm {
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 0.92em;
+  --track-w: 28px;
+  --track-h: 16px;
+  --knob: 10px;
+}
+.track {
+  position: relative;
+  flex: none;
+  width: var(--track-w);
+  height: var(--track-h);
+  margin-top: 1px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  box-sizing: border-box;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.knob {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: var(--knob);
+  height: var(--knob);
+  border-radius: 50%;
+  background: var(--text-muted);
+  transform: translate(0, -50%);
+  transition: transform 180ms cubic-bezier(0.3, 0.7, 0.4, 1), background-color 180ms ease;
+}
+.on .track {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+.on .knob {
+  background: var(--accent);
+  transform: translate(calc(var(--track-w) - var(--knob) - 6px), -50%);
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.label {
+  line-height: 1.35;
+}
+.hint {
+  color: var(--text-muted);
+  font-size: 0.88em;
+  line-height: 1.3;
+}

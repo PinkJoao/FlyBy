@@ -4,8 +4,7 @@
  * CLASSES
  *   .form: a coluna do diálogo.
  *   .formula, .note: a fórmula que vai ser rolada e a nota (a CD de um save).
- *   .check: as caixas (os efeitos, curar a si mesmo).
- *   .effects, .effectNote: os efeitos que valem para a rolagem (condições, Bless).
+ *   .effects: os efeitos que valem para a rolagem (condições, Bless), em Toggle.
  *   .field, .label, .input, .invalid, .error, .hint: os campos de texto.
  *   .actions: a fila dos botões (o Button do app, DDL-0160).
  *
@@ -48,19 +47,6 @@
   border: 1px dashed var(--accent-border);
 }
 
-.effectNote {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.check {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--text);
-  cursor: pointer;
-}
 
 .field {
   display: flex;

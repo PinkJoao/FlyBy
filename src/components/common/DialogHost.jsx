@@ -29,6 +29,7 @@ import { reducedMotion } from '../../motion';
 import { useBackLayer } from '../../hooks/useBack';
 import styles from './DialogHost.module.css';
 import CloseButton from './CloseButton';
+import Toggle from './Toggle';
 
 const EXIT_MS = 120;
 
@@ -165,14 +166,13 @@ function DialogCard({ dialog, onResolve }) {
           <div className={styles.fields}>
             {fields.map((f) => (
               f.type === 'checkbox' ? (
-                <label key={f.name} className={styles.checkField}>
-                  <input
-                    type="checkbox"
-                    checked={!!values[f.name]}
-                    onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.checked }))}
-                  />
-                  {f.label && <span>{f.label}</span>}
-                </label>
+                <Toggle
+                  key={f.name}
+                  className={styles.checkField}
+                  checked={!!values[f.name]}
+                  onChange={(on) => setValues((v) => ({ ...v, [f.name]: on }))}
+                  label={f.label}
+                />
               ) : (
               <label key={f.name} className={styles.field}>
                 {f.label && <span className={styles.fieldLabel}>{f.label}</span>}

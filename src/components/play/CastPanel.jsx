@@ -26,6 +26,7 @@ import { spellModifier } from '../../engine/playEffects';
 import { useDialogClose } from '../common/dialogContext';
 import styles from './PlayPanels.module.css';
 import Button from '../common/Button';
+import Toggle from '../common/Toggle';
 
 /**
  * O conteúdo do diálogo de lançar.
@@ -72,10 +73,7 @@ export default function CastPanel({ catalog, state, origin, spell }) {
         ))}
       </div>
       {effect && !effect.self && (
-        <label className={styles.check}>
-          <input type="checkbox" checked={onSelf} onChange={(e) => setOnSelf(e.target.checked)} />
-          <span>It includes me ({effect.modifier.label} applies to my rolls)</span>
-        </label>
+        <Toggle checked={onSelf} onChange={setOnSelf} label={`It includes me (${effect.modifier.label} applies to my rolls)`} />
       )}
       <div className={styles.actions}>
         <Button onClick={() => close(null)}>Cancel</Button>

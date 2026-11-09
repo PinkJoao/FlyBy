@@ -8,7 +8,7 @@
  *     conteúdo entre um mínimo legível e --dlg-max-width, nunca maior que a tela,
  *     e o corpo rola se alto.
  *   .fields, .field, .fieldLabel, .select, .input, .checkField: os campos; o de
- *     checkbox põe caixa e rótulo na mesma linha ("Remember my answer").
+ *     sim ou não é o Toggle comum ("Remember my answer"), nunca a checkbox nativa.
  *   .actions, .btn, .primary, .danger: as ações; no mobile ocupam a linha inteira.
  *
  * DECISÕES E ARMADILHAS
@@ -100,18 +100,7 @@
 }
 
 .checkField {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 13px;
-  cursor: pointer;
-  opacity: 0.85;
-}
-.checkField input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
-  cursor: pointer;
 }
 
 .select,

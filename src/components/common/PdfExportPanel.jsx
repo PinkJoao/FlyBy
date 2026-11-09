@@ -27,6 +27,7 @@ import { useDialogClose } from './dialogContext';
 import Collapse from './Collapse';
 import SegmentedControl from './SegmentedControl';
 import styles from './PdfExportPanel.module.css';
+import Toggle from './Toggle';
 
 const FEATURE_LABEL = {
   classFeatures: 'Class features',
@@ -53,10 +54,7 @@ function Seg({ value, options, onChange, small = false }) {
 /** Uma caixa de marcar com rótulo. */
 function Check({ checked, label, onChange }) {
   return (
-    <label className={styles.check}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span>{label}</span>
-    </label>
+    <Toggle className={styles.check} checked={checked} onChange={onChange} label={label} />
   );
 }
 

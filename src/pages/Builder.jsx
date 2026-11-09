@@ -58,6 +58,7 @@ import { useNavigate } from 'react-router-dom';
 import { seedStartingGold } from '../engine/startingGold';
 import { directionOf, slideClass } from '../motion';
 import { useSwipeNav } from '../hooks/useSwipeNav';
+import useActiveInView from '../hooks/useActiveInView';
 import { maybeStartTutorial } from '../store/tutorialStore';
 import { TUT } from '../tutorial/anchors';
 import LevelControls from '../components/builder/LevelControls';
@@ -92,6 +93,8 @@ const TAB_TOUR = {
 export function BuilderInner({ character, db, save, derived, activeTab, setActiveTab, levelSlot, guideRequest, onGuideHandled }) {
   const [tabDir, setTabDir] = useState(null);
   const swipeRef = useRef(null);
+  const tabBarRef = useRef(null);
+  useActiveInView(tabBarRef, activeTab);
   const tabIndex = TABS.indexOf(activeTab);
   useSwipeNav(swipeRef, {
     onPrev: () => openTab(TABS[tabIndex - 1]),
@@ -274,13 +277,14 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
         <ProficienciesCard derived={derived} />
       </div>
 
-      <nav className={styles.tabBar} data-wheel-x="" data-tour={TUT.SHEET_TABS} data-flip="tabs" data-flip-fade="">
+      <nav ref={tabBarRef} className={styles.tabBar} data-wheel-x="" data-tour={TUT.SHEET_TABS} data-flip="tabs" data-flip-fade="">
         {TABS.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => openTab(tab)}
             className={activeTab === tab ? `${styles.tab} ${styles.tabActive}` : styles.tab}
+            data-active={activeTab === tab ? 'true' : undefined}
           >
             {tab}
           </button>

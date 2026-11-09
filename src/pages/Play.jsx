@@ -168,6 +168,7 @@ import { createPortal } from 'react-dom';
 import { useData } from '../data/dataContext';
 import usePlayDoc from '../hooks/usePlayDoc';
 import { useSwipeNav } from '../hooks/useSwipeNav';
+import useActiveInView from '../hooks/useActiveInView';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
 import { derivePlayCatalog } from '../engine/playCatalog';
@@ -310,6 +311,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const [tabDir, setTabDir] = useState(null);
   const swipeRef = useRef(null);
   const tabIndex = tabs.indexOf(activeTab);
+  const tabBarRef = useRef(null);
+  useActiveInView(tabBarRef, activeTab);
   /** Troca de aba lembrando a direção, para o painel novo entrar do lado certo. */
   const openTab = (next) => {
     if (!next || next === activeTab) return;
@@ -941,13 +944,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       </section>
       ) : null}
 
-      <nav className={sheetPage.tabBar} data-wheel-x="" data-tour={TUT.PLAY_TABS} data-flip="tabs" data-flip-fade="">
+      <nav ref={tabBarRef} className={sheetPage.tabBar} data-wheel-x="" data-tour={TUT.PLAY_TABS} data-flip="tabs" data-flip-fade="">
         {tabs.map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => openTab(t)}
             className={activeTab === t ? `${sheetPage.tab} ${sheetPage.tabActive}` : sheetPage.tab}
+            data-active={activeTab === t ? 'true' : undefined}
             data-tour={t === 'History' ? TUT.PLAY_HISTORY : undefined}
           >
             {t}

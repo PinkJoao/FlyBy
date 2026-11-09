@@ -25,6 +25,7 @@ import { modernizeEffects } from './foundryCompat';
 import { inventoryIdentity } from './foundryImport';
 import { srdFeatMechanics } from './foundryActivities';
 import { greatWeaponMinimum } from './foundryActor';
+import { buildInventoryItems } from './foundryItems';
 
 function fakeDb() {
   return {
@@ -172,5 +173,16 @@ describe('talentos (T3)', () => {
     expect(before.damage.base.custom.enabled).toBe(false);
     expect(vers.system.damage.base.custom.enabled).toBe(false);
     expect(bow.system.damage.base.custom.enabled).toBe(false);
+  });
+});
+
+describe('ferramenta equipada (TC-0114)', () => {
+  it('o export leva equipped e attuned na ferramenta, que no dnd5e é equipável', () => {
+    const db = { 'items-base': { baseitem: [{ name: "Alchemist's Supplies", source: 'XPHB', type: 'AT|XPHB', weight: 8, value: 5000 }] } };
+    const character = { inventory: [{ uid: 'u1', itemId: "Alchemist's Supplies", source: 'XPHB', quantity: 1, equipped: true, attuned: false }] };
+    const [item] = buildInventoryItems(character, db);
+    expect(item.type).toBe('tool');
+    expect(item.system.equipped).toBe(true);
+    expect(item.system.attuned).toBe(false);
   });
 });

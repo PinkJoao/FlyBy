@@ -27,7 +27,11 @@
 // DECISÕES E ARMADILHAS
 //   - "half-elf" NÃO vira elf: o hífen impede o match de sufixo, e é assim nas
 //     regras (talentos élficos listam half-elf quando vale). "small race" olha o
-//     tamanho, não o nome; uma sub-raça pedida exige a linhagem no id.
+//     tamanho, não o nome; uma sub-raça pedida exige a linhagem no id OU no nome da
+//     linhagem: o elfo de 2024 é `elf` com a linhagem "Elf; Wood Elf Lineage", e o
+//     Wood Elf Magic e o Drow High Magic acusavam um elfo da linhagem certa (T3,
+//     TC-0113). A linhagem também é um grupo ("Vampire (Ixalan)" é a linhagem do
+//     Vampire).
 //   - checkFeature só afirma quando o contexto CONCEDE a feature (o pool de
 //     Fighting Style); senão não dá para negar.
 //   - Talento com variante (Initiate of High Sorcery (Nuitari)): possuir o talento
@@ -109,6 +113,7 @@ export function prereqContext(character, { db = null, grantedFeatures = [] } = {
     if (c.classId) classLevels[c.classId.toLowerCase()] = c.level ?? 0;
   }
   const speciesId = character?.species?.id?.toLowerCase() ?? null;
+  const lineage = character?.species?.lineage ? String(character.species.lineage).toLowerCase() : null;
   const raceObj =
     db && character?.species ? resolveRaceObj(db, character.species.id, character.species.source, character.species.lineage) : null;
   const { armor, weapons } = classProfsOf(character, db);
@@ -116,7 +121,8 @@ export function prereqContext(character, { db = null, grantedFeatures = [] } = {
     scores: finalScores(character ?? { scores: {} }),
     level: totalLevel(character ?? {}),
     raceId: speciesId,
-    raceGroups: raceGroupsOf(speciesId, db),
+    raceLineage: lineage,
+    raceGroups: lineage ? new Set([...raceGroupsOf(speciesId, db), lineage]) : raceGroupsOf(speciesId, db),
     raceSizes: (Array.isArray(raceObj?.size) ? raceObj.size : [raceObj?.size]).filter(Boolean),
     classLevels,
     grantedFeatures: grantedFeatures.map((f) => f.toLowerCase()),
@@ -151,7 +157,10 @@ function checkRace(req, ctx) {
     const name = String(r.name).toLowerCase();
     if (name === 'small race') return ctx.raceSizes?.includes('S') ?? false;
     if (!ctx.raceGroups?.has(name)) return false;
-    if (r.subrace) return ctx.raceId.includes(String(r.subrace).toLowerCase());
+    if (r.subrace) {
+      const sub = String(r.subrace).toLowerCase();
+      return ctx.raceId.includes(sub) || !!ctx.raceLineage?.includes(sub);
+    }
     return true;
   })
     ? 'ok'

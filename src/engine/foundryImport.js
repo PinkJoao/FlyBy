@@ -116,6 +116,8 @@
 //     do documento de origem ("Elven Chain"). Encantamento de MAGIA (o Shillelagh
 //     no cajado, origem num ator) não muda a identidade. Ler só o item base
 //     perdia o +2 do escudo, a CA da armadura e o anel inteiro (T2d).
+//   - `flags.builder5e.item` (a variante que o NOSSO export guardou como item base +
+//     encantamento) vence a leitura pelo encantamento, como toda flag nossa.
 //   - O snapshot de item fora do catálogo guarda a MECÂNICA como carga (dano,
 //     armadura, bônus mágico, activities, usos e os effects) e o export a
 //     reemite: antes ele saía só com nome, peso e preço.
@@ -1237,7 +1239,8 @@ export function foundryToCharacter(rawActor, db, out = null) {
   );
   const uidByItemId = new Map();
   char.inventory = kept.map((it) => {
-    const identity = inventoryIdentity(it, db);
+    const own = it.flags?.builder5e?.item;
+    const identity = own?.id && resolveItemObj(db, own.id, own.source) ? { name: own.id, source: own.source } : inventoryIdentity(it, db);
     const source = identity?.source ?? null;
     const entry = {
       uid: makeId(),

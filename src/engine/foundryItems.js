@@ -273,7 +273,13 @@
 //     do SRD (o dano extra: o "2d6" que o Merric L17 perdia).
 //   - Variante gerada com modelo no SRD sai como o item BASE mais o encantamento
 //     do modelo (srdVariantEnchantment), o formato dos premades; o resto do item
-//     (equipado, sintonizado, a marca de procedência) é o da variante.
+//     (equipado, sintonizado, a marca de procedência) é o da variante, e
+//     `flags.builder5e.item` guarda a variante EXATA: o nome que o modelo gera nem
+//     sempre é o nosso ("Oathbow" e "Oath Longbow", o primeiro dos 14 perfis do
+//     "Ammunition of Slaying"), e o import a lê antes de tudo (T3, TC-0115).
+//   - Ferramenta e instrumento levam `equipped` e `attuned` (o item de ferramenta do
+//     dnd5e é equipável, e a ficha deixa equipar): sem isso o estado se perdia no
+//     round-trip (T3, 711 itens no sweep:t3, TC-0114).
 //   - Arma mágica leva a propriedade `mgc`: sem ela o Foundry ignora o
 //     magicalBonus e desfaz a sintonização (a Dwarven Thrower do Krusk, +11 contra
 //     +14, T3).
@@ -2344,6 +2350,8 @@ export function buildInventoryItems(character, db) {
       system.type = { value: typeValue, baseItem: toolId(raw?.name ?? entry.itemId) };
       system.ability = '';
       system.proficient = null;
+      system.equipped = !!entry.equipped;
+      system.attuned = !!entry.attuned;
     } else if (fType === 'container') {
       const props = containerProps(raw?.name ?? entry.itemId);
       system.capacity = props?.capacity?.type === 'weight'
@@ -2373,7 +2381,10 @@ export function buildInventoryItems(character, db) {
       flags: variantRaw && !entry.customName ? interopFlags('item', variantRaw) : {},
       _stats: itemStats(entry.customName ? null : equipmentUuid(name)),
     };
-    if (baseRaw) item.effects = [...item.effects, enchant.effect];
+    if (baseRaw) {
+      item.effects = [...item.effects, enchant.effect];
+      item.flags = { ...item.flags, builder5e: { ...(item.flags?.builder5e ?? {}), item: { id: variantRaw.name, source: variantRaw.source } } };
+    }
     const srdMech = raw && !entry.customName ? srdItemMechanics(raw.name) : null;
     if (srdMech) {
       if (srdMech.effects.length) item.effects = srdMech.effects;

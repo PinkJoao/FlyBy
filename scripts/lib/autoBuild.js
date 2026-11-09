@@ -42,6 +42,9 @@
 //     instrumento) e lista de códigos dos grants curados (`ch.from`).
 //   - Expertise pode legitimamente esperar as perícias serem escolhidas antes; só
 //     vira problema se o loop externo travar.
+//   - `spec.preset(character)` (T3, TESTING-PLAN §5b) roda ANTES do laço: põe a
+//     unidade sob teste no lugar real (o talento no `feat@4`, a magia no grimório, o
+//     item no inventário) e o laço preenche o resto e as sub-escolhas dela.
 //   - autoBuild: standard array numa ordem semeada (a variedade exercita
 //     pré-requisitos); talento de origem FIXO por padrão (Alert XPHB, sem
 //     sub-escolhas) para isolar a unidade, com os feats de classe semeados. Cada
@@ -420,6 +423,8 @@ export function autoBuild(db, spec) {
     lineage: spec.lineage ?? null,
     choices: {},
   };
+
+  if (spec.preset) spec.preset(c);
 
   const problems = [];
   let iterations = 0;

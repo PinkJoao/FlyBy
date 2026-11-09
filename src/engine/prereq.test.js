@@ -14,12 +14,12 @@ import { describe, it, expect } from 'vitest';
 import { prereqContext, prereqStatus, prereqText, evalPrereq } from './prereq';
 import { createCharacter } from '../schema/character';
 
-function ctxOf({ scores = {}, level = 1, raceId = null, classes = null, granted = [], db = null } = {}) {
+function ctxOf({ scores = {}, level = 1, raceId = null, lineage = null, classes = null, granted = [], db = null } = {}) {
   const c = createCharacter({ name: 'T' });
   Object.assign(c.scores, scores);
   if (classes) c.classes = classes;
   else c.classes[0].level = level;
-  if (raceId) c.species = { id: raceId, source: 'XPHB', choices: {} };
+  if (raceId) c.species = { id: raceId, source: 'XPHB', lineage, choices: {} };
   return prereqContext(c, { db, grantedFeatures: granted });
 }
 
@@ -29,6 +29,26 @@ const grappler = {
     { level: 4, ability: [{ dex: 13 }] },
   ],
 };
+
+describe('prereqStatus - sub-raça e linhagem de 2024 (TC-0113)', () => {
+  const woodElfMagic = { prerequisite: [{ race: [{ name: 'elf', subrace: 'wood' }] }] };
+  const drowHighMagic = { prerequisite: [{ race: [{ name: 'elf', subrace: 'drow' }] }] };
+  const ixalan = { prerequisite: [{ race: [{ name: 'Vampire (Ixalan)' }] }] };
+
+  it('a linhagem certa cumpre a sub-raça; a errada e a falta dela, não', () => {
+    expect(prereqStatus(woodElfMagic, ctxOf({ raceId: 'elf', lineage: 'Elf; Wood Elf Lineage' }))).toBe('ok');
+    expect(prereqStatus(drowHighMagic, ctxOf({ raceId: 'elf', lineage: 'Elf; Drow Lineage' }))).toBe('ok');
+    expect(prereqStatus(woodElfMagic, ctxOf({ raceId: 'elf', lineage: 'Elf; High Elf Lineage' }))).toBe('bad');
+    expect(prereqStatus(drowHighMagic, ctxOf({ raceId: 'elf', lineage: 'Elf; Wood Elf Lineage' }))).toBe('bad');
+    expect(prereqStatus(woodElfMagic, ctxOf({ raceId: 'elf' }))).toBe('bad');
+    expect(prereqStatus(woodElfMagic, ctxOf({ raceId: 'dwarf', lineage: 'Wood Elf' }))).toBe('bad');
+  });
+
+  it('a linhagem também é grupo: "Vampire (Ixalan)" é a linhagem do Vampire', () => {
+    expect(prereqStatus(ixalan, ctxOf({ raceId: 'vampire', lineage: 'Vampire (Ixalan)' }))).toBe('ok');
+    expect(prereqStatus(ixalan, ctxOf({ raceId: 'vampire', lineage: 'Vampire (Zendikar)' }))).toBe('bad');
+  });
+});
 
 describe('prereqStatus - checáveis (nível/atributo/raça)', () => {
   it('ok quando alguma alternativa é satisfeita', () => {

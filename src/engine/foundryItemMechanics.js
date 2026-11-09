@@ -25,6 +25,13 @@
 //     ("Vicious Weapon", "Shield, +1, +2, or +3" no perfil do bônus), com a origem
 //     no modelo. O Foundry calcula nome, bônus mágico, dano extra e crítico; antes
 //     a variante saía achatada e perdia o 2d6 do Vicious (Merric L17, T3).
+//   - Modelo com VÁRIOS perfis (Ammunition of Slaying: 14 tipos de criatura; Armor
+//     of Resistance: 10 tipos de dano; Flame Tongue: 2) usa o perfil cujo nome,
+//     aplicado à base, É o nome da variante ("Flame Tongue {}" + "Longsword"); sem
+//     perfil igual, a variante sai inteira, sem encantamento: pegar o primeiro
+//     impunha um tipo que o jogador não escolheu ("Arrow of Slaying (Aberrations)",
+//     visto no Foundry). Modelo de perfil único vale sempre (a marca
+//     `flags.builder5e.item` guarda o nome).
 //   - Sempre CÓPIA: o registro é compartilhado e o export muda activities depois
 //     (DDL-0166).
 // -----------------------------------------------------------------------------
@@ -55,9 +62,16 @@ export function srdVariantEnchantment(raw) {
   const uuid = equipmentUuid(template);
   if (!uuid) return null;
   const list = foundryMechanics()?.items?.[uuid.split('.').pop()]?.enchantments ?? [];
+  const baseName = String(raw.baseItem).split('|')[0];
+  const shown = (e) => {
+    const ch = (e.changes ?? []).find((c) => c.key === 'name');
+    if (!ch) return '';
+    const v = String(ch.value ?? '');
+    return (Number(ch.mode) === 5 ? v.split('{}').join(baseName) : `${baseName}${v}`).toLowerCase();
+  };
   const pick = plus
     ? list.find((e) => (e.changes ?? []).some((c) => /magicalBonus$/.test(c.key) && String(c.value) === plus[1]))
-    : list[0];
+    : list.find((e) => shown(e) === String(raw.name).toLowerCase()) ?? (list.length === 1 ? list[0] : null);
   if (!pick) return null;
   const effect = structuredClone({ ...pick, type: 'enchantment', origin: uuid, disabled: false, transfer: true });
   effect._stats = { compendiumSource: `${uuid}.ActiveEffect.${pick._id}` };

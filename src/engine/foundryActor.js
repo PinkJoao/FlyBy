@@ -17,6 +17,8 @@
 // DECISÕES E ARMADILHAS
 //   - O crédito do retrato (`meta.portraitCredit`, DDL-0137) vai em
 //     `flags.builder5e.portraitCredit`: o Foundry não tem campo para o artista.
+//   - O retrato vai no `img` do ator E no token (`prototypeToken.texture.src`), por
+//     `toFoundryImage`: URL sem extensão reprovava o ator inteiro (foundryImage.js).
 //   - A ORDEM de montagem importa: os itens de magia e os itens de escolha de
 //     feature são montados ANTES das escadas que apontam para eles em
 //     `value.added` (TC-0072, TC-0063); entram na lista no fim, para a ordem do
@@ -86,6 +88,7 @@ import { buildSpellItems, buildSpellSlots, buildUnassignedSpellItems } from './f
 import { buildBasicActionItems } from './foundryBasicActions';
 import { linkConsumptionTargets } from './foundryConsumption';
 import { modernizeEffectKeys } from './foundryCompat';
+import { toFoundryImage } from './foundryImage';
 
 /** Tira os effects que forçam a CA sem armadura (cópia só do que muda); com armadura vestida eles não valem. */
 function dropUnarmoredCalc(items) {
@@ -220,8 +223,12 @@ export function assembleFoundryActor(character, db) {
     flags: { builder5e: { schemaVersion: character.schemaVersion ?? 1, scores: { ...character.scores } } },
     prototypeToken: { name: character.meta?.name ?? 'Unnamed', actorLink: true },
   };
-  if (character.meta?.portrait) actor.img = character.meta.portrait;
-  if (character.meta?.portrait && character.meta.portraitCredit) {
+  const portrait = toFoundryImage(character.meta?.portrait);
+  if (portrait) {
+    actor.img = portrait;
+    actor.prototypeToken.texture = { src: portrait };
+  }
+  if (portrait && character.meta.portraitCredit) {
     actor.flags.builder5e.portraitCredit = { ...character.meta.portraitCredit };
   }
   return actor;

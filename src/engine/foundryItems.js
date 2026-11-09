@@ -335,6 +335,7 @@ import { interopFlags } from './foundryInterop';
 import { flatBonusAc } from './armorClass';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
+import { toFoundryImage } from './foundryImage';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
@@ -2144,7 +2145,8 @@ function itemFluffEntries(db, raw) {
 }
 
 function inventoryImg(entry, group) {
-  if (entry.customImg) return entry.customImg;
+  const custom = toFoundryImage(entry.customImg);
+  if (custom) return custom;
   return GROUP_ICON[group] ?? 'icons/svg/item-bag.svg';
 }
 
@@ -2257,7 +2259,7 @@ function customToFoundryItem(entry) {
     _id: randomFoundryId(),
     name: entry.customName || entry.itemId,
     type: c.fType ?? 'loot',
-    img: entry.customImg || c.img || 'icons/svg/item-bag.svg',
+    img: toFoundryImage(entry.customImg) || c.img || 'icons/svg/item-bag.svg',
     system,
     effects: structuredClone(c.mechanics?.effects ?? []),
     folder: null,

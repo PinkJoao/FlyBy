@@ -70,7 +70,8 @@
 //   - webImage: o `img` do ator vira retrato só se abrir fora do Foundry. Caminho
 //     relativo é do servidor dele e vira imagem quebrada aqui: as 48 premades
 //     (`systems/dnd5e/tokens/...`) e as 5 Plutonium (`worlds/...`) trazem só essa
-//     forma. O nosso export grava o que o app aceita (upload em data-URL, URL web).
+//     forma. O nosso export grava o que o app aceita (upload em data-URL, URL web),
+//     e o `#.jpg` que ele acrescenta sai aqui (`fromFoundryImage`).
 //   Magias
 //   - Escolha ou concessão: `prepared: 2` é concessão; `prepared: 0` numa magia de
 //     círculo é o grimório e volta com `prepared: false` (TC-0080), mas nunca num
@@ -197,6 +198,7 @@ import { deriveHpBonus } from './hpBonuses';
 import { classWeaponGrants } from './foundryActivities';
 import { classGrantChoices } from './classFeatureGrants';
 import { isBasicActionItem } from './foundryBasicActions';
+import { fromFoundryImage } from './foundryImage';
 
 const norm = (s) => (s ?? '').toString().trim().toLowerCase();
 
@@ -838,7 +840,7 @@ function slug(s) {
  * @returns {string|null}
  */
 function webImage(src) {
-  return typeof src === 'string' && /^(data:|https?:)/i.test(src) ? src : null;
+  return fromFoundryImage(src);
 }
 
 /**

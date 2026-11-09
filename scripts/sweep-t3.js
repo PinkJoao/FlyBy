@@ -12,7 +12,9 @@
 //   `testing/COVERAGE-T3.md` (UI, Export e Notes à mão sobrevivem).
 //   `npm run sweep:t3` (ou `-- --feats`, `--spells`, `--items`, `--only=<texto>`).
 //   `--emit-actors` grava a ficha de cada unidade em `testing/actors/t3_*.json` e a
-//   lista `_t3.json`, para o lote ao vivo no Foundry (TESTING-PLAN §5.3).
+//   lista `_t3.json`, para o lote ao vivo no Foundry (TESTING-PLAN §5.3). Os itens
+//   vão 40 unidades por ficha (`t3_items_NNN.json`): uma ficha por item passaria
+//   de 700 MB em disco.
 //
 // FUNÇÕES
 //   classRowFor(db, classId): a primeira linha de classe (com subclasse) da matriz.
@@ -31,6 +33,8 @@
 //   splitCells(line), escapePipes(s), unescapePipes(s), parseManual(text),
 //     writeCoverage(results): o tracker COVERAGE-T3.md.
 //   emitActor(actor, kind, row): grava a ficha da unidade para o lote ao vivo.
+//   setItemHost(actor), collectItemUnit(actor, row), flushItemBatch(): os itens vão em LOTES de 40
+//     unidades numa ficha só (o hospedeiro mais os itens delas).
 //   main(): a CLI.
 //
 // DECISÕES E ARMADILHAS
@@ -49,7 +53,8 @@
 //     categoria do Potent Dragonmark, que leva o Mark of Healing) também vai na
 //     origem. Dark Gift (DG, RHW) vai no espaço de talento geral.
 //   - A magia entra pela classe da lista na ordem de PREFERRED_CASTERS (o Bruxo por
-//     último: acima do 5º círculo ele lança pelo Mystic Arcanum); magia sem classe
+//     último: acima do 5º círculo ele lança pelo Mystic Arcanum); a magia que só uma
+//     SUBCLASSE alarga (a dunamancia do EGW pela Chronurgy) entra por ela; magia sem classe
 //     nenhuma (concedida só por talento ou subclasse) é registrada, não testada aqui.
 //     Magia que só entra na classe pelo `classVariant` (a lista expandida por outro
 //     livro: Chaos Bolt, Absorb Elements) usa essa classe, marcada no Host: a lista
@@ -74,7 +79,8 @@ import { classMatrix, defaultSpecies, speciesMatrix, featMatrix, spellMatrix, it
 import { autoBuild } from './lib/autoBuild';
 import { checkActorShape, scanBadValues } from './lib/invariants';
 import { decisionSummary, diffSummaries, classifyDiffs } from './lib/roundtrip';
-import { ownedFromDb, resolveFeat } from '../src/engine/resolve';
+import { ownedFromDb, resolveFeat, resolveSubclassObj } from '../src/engine/resolve';
+import { expandedSpellNames } from '../src/engine/spellListWidening';
 import { prereqContext, prereqStatus } from '../src/engine/prereq';
 import { classSpellList } from '../src/engine/spells';
 import { spellSources } from '../src/engine/spellSources';
@@ -179,7 +185,14 @@ function spellHost(db, row) {
   const raw = spellEntity.list(db).find((x) => x.name === row.name && x.source === row.source);
   const variants = new Set(spellSources(db, raw).classesVariant.map((c) => String(c.name).toLowerCase()));
   const viaVariant = PREFERRED_CASTERS.find((cid) => variants.has(cid));
-  return viaVariant ? { classId: viaVariant, level: 20, via: 'classVariant' } : { skip: 'sem lista de classe (concedida só por talento ou subclasse)' };
+  if (viaVariant) return { classId: viaVariant, level: 20, via: 'classVariant' };
+  for (const r of classMatrix(db).filter((x) => x.subclassId)) {
+    const sub = resolveSubclassObj(db, r.classId, r.subclassId, r.subclassSource);
+    if (sub && expandedSpellNames(sub, { db, classLevel: 20, maxSlotLevel: 9 }).has(name)) {
+      return { classId: r.classId, level: 20, via: 'subclass', subclassId: r.subclassId, subclassSource: r.subclassSource, classSource: r.classSource };
+    }
+  }
+  return { skip: 'sem lista de classe nem subclasse que a alargue (só por concessão)' };
 }
 
 function exportChecks(db, character, hasUnit) {
@@ -236,6 +249,7 @@ function runFeat(db, row, species) {
   r.prereq = prereqStatus(feat, prereqContext(built.character, { db, grantedFeatures: granted }));
   const asi = row.name === 'Ability Score Improvement';
   const ex = exportChecks(db, built.character, (actor) => asi || flagged(actor, 'feats.html', row.name, row.source));
+  if (args['emit-actors'] && ex.actor) emitted.push(emitActor(ex.actor, 'feat', row));
   delete ex.actor;
   r.export = ex;
   r.ms = Date.now() - t0;
@@ -245,9 +259,9 @@ function runFeat(db, row, species) {
 function runSpell(db, row, species) {
   const t0 = Date.now();
   const host = spellHost(db, row);
-  const r = { id: row.id, kind: 'spell', host: host.skip ? null : `${host.classId} ${host.level}${host.via === 'classVariant' ? ' (classVariant)' : ''}` };
+  const r = { id: row.id, kind: 'spell', host: host.skip ? null : `${host.classId} ${host.level}${host.via === 'class' ? '' : ` (${host.via})`}` };
   if (host.skip) return { ...r, skip: host.skip, ms: Date.now() - t0 };
-  const crow = classRowFor(db, host.classId);
+  const crow = host.subclassId ? host : classRowFor(db, host.classId);
   const built = autoBuild(db, {
     id: row.id, classId: host.classId, classSource: crow.classSource, subclassId: crow.subclassId,
     subclassSource: crow.subclassSource, level: host.level, ...species, seed: 7,
@@ -274,9 +288,13 @@ function runItem(db, row, species) {
   const r = { id: row.id, kind: row.kind, sample: row.kind === 'variant' ? `${row.name}|${row.source}` : undefined };
   if (!raw) return { ...r, skip: 'item não resolve', ms: Date.now() - t0 };
   const crow = classRowFor(db, 'fighter');
-  const built = autoBuild(db, {
+  const spec = {
     id: row.id, classId: 'fighter', classSource: crow.classSource, subclassId: crow.subclassId,
     subclassSource: crow.subclassSource, level: 5, ...species, seed: 7,
+  };
+  if (args['emit-actors'] && !hostNames) setItemHost(assembleFoundryActor(autoBuild(db, spec).character, db));
+  const built = autoBuild(db, {
+    ...spec,
     preset: (c) => {
       const equippable = EQUIPPABLE_GROUPS.has(itemTypeInfo(raw).group);
       c.inventory.push({ uid: makeId(), itemId: raw.name, source: raw.source, quantity: 1, equipped: equippable, attuned: !!raw.reqAttune });
@@ -285,10 +303,49 @@ function runItem(db, row, species) {
   r.build = { ok: built.ok, problems: built.problems.slice(0, 6), pendencies: built.pendencies?.total ?? 0 };
   r.taken = (built.derived.inventory ?? []).some((e) => e.raw?.name === raw.name);
   const ex = exportChecks(db, built.character, (actor) => flagged(actor, 'items.html', raw.name, raw.source));
+  if (args['emit-actors'] && ex.actor) collectItemUnit(ex.actor, row);
   delete ex.actor;
   r.export = ex;
   r.ms = Date.now() - t0;
   return r;
+}
+
+const INVENTORY_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'container']);
+const ITEM_BATCH = 40;
+let itemBatch = null;
+let hostNames = null;
+
+/** O hospedeiro SEM item nenhum: a base de toda ficha de lote e o que não é da unidade. */
+function setItemHost(actor) {
+  hostNames = new Map();
+  for (const i of (actor.items ?? []).filter((x) => INVENTORY_TYPES.has(x.type))) hostNames.set(i.name, (hostNames.get(i.name) ?? 0) + 1);
+  itemBatch = { base: structuredClone(actor), units: [], items: [] };
+}
+
+/** Os itens da unidade (o que a ficha tem além do equipamento do hospedeiro), para o lote ao vivo. */
+function collectItemUnit(actor, row) {
+  const inv = (actor.items ?? []).filter((i) => INVENTORY_TYPES.has(i.type));
+  const left = new Map(hostNames);
+  const unit = inv.filter((i) => {
+    const n = left.get(i.name) ?? 0;
+    if (n > 0) { left.set(i.name, n - 1); return false; }
+    return true;
+  });
+  itemBatch.units.push({ id: row.id, names: unit.map((i) => i.name) });
+  itemBatch.items.push(...unit);
+  if (itemBatch.units.length >= ITEM_BATCH) flushItemBatch();
+}
+
+/** Grava a ficha do lote de itens e começa outro. */
+function flushItemBatch() {
+  if (!itemBatch?.units.length) return;
+  const n = emitted.filter((e) => e.kind === 'items').length;
+  const actor = { ...structuredClone(itemBatch.base), name: `T3 items ${n + 1}` };
+  actor.items = [...actor.items, ...itemBatch.items];
+  const file = `t3_items_${String(n + 1).padStart(3, '0')}.json`;
+  writeFileSync(join(ACTORS_DIR, file), JSON.stringify(actor));
+  emitted.push({ file, kind: 'items', units: itemBatch.units });
+  itemBatch = { base: itemBatch.base, units: [], items: [] };
 }
 
 function verdict(r) {
@@ -396,6 +453,7 @@ async function main() {
       console.log(`  ✗ ${r.id}  ${v}`);
     }
   }
+  flushItemBatch();
   if (emitted.length) writeFileSync(join(ACTORS_DIR, '_t3.json'), JSON.stringify(emitted));
   const skipped = results.filter((r) => r.skip).length;
   writeFileSync(join(OUT_DIR, 'report-t3.json'), JSON.stringify({ generatedAt: new Date().toISOString(), results }, null, 2));

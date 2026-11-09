@@ -325,7 +325,7 @@ describe('contêineres: o vínculo pai-filho atravessa export e import', () => {
   });
 
   it('`weightlessContents` é emitido só para quem o SRD marca', () => {
-    expect(byName(items, 'Bag of Holding').system.properties).toEqual(['weightlessContents']);
+    expect(byName(items, 'Bag of Holding').system.properties).toEqual(['weightlessContents', 'mgc']);
     expect(byName(items, 'Backpack').system.properties).toEqual([]);
   });
 
@@ -380,5 +380,47 @@ describe('overlay foundry-items no export (DDL-0175)', () => {
   it('fórmula de dano que é palavra solta e cast sem magia saem; o ataque da arma é o nosso', () => {
     expect(acts('Oversized Longbow')).toEqual(['attack']);
     expect(acts('Moon Charm')).toEqual(['utility']);
+  });
+});
+
+describe('oráculo do SRD: cargas, consumível e id da base (DDL-0179)', () => {
+  const odb = {
+    'items-base': { baseitem: [{ name: 'Chain Mail', source: 'XPHB', type: 'HA|XPHB', ac: 16, weight: 55 }] },
+    items: {
+      item: [
+        { name: 'Wand of Sparks', source: 'XDMG', type: 'WD|XDMG', rarity: 'uncommon', charges: 7, recharge: 'dawn', rechargeAmount: '{@dice 1d6 + 1}' },
+        { name: 'Potion of Healing', source: 'XPHB', type: 'P|XPHB', rarity: 'common' },
+      ],
+    },
+    'fluff-items': { itemFluff: [] },
+  };
+  const out = buildInventoryItems({ inventory: [
+    { uid: 'a', itemId: 'Wand of Sparks', source: 'XDMG', quantity: 1 },
+    { uid: 'b', itemId: 'Potion of Healing', source: 'XPHB', quantity: 2 },
+    { uid: 'c', itemId: 'Chain Mail', source: 'XPHB', quantity: 1 },
+  ] }, odb);
+  it('cargas viram uses com a recarga ao amanhecer', () => {
+    expect(byName(out, 'Wand of Sparks').system.uses).toEqual({ max: '7', spent: 0, recovery: [{ period: 'dawn', type: 'formula', formula: '1d6 + 1' }] });
+  });
+  it('o consumível tem 1 uso que some, e o mágico leva mgc', () => {
+    const p = byName(out, 'Potion of Healing');
+    expect(p.system.uses).toMatchObject({ max: '1', autoDestroy: true });
+    expect(p.system.properties).toContain('mgc');
+  });
+  it('a armadura leva o id do dnd5e', () => {
+    expect(byName(out, 'Chain Mail').system.type.baseItem).toBe('chainmail');
+  });
+});
+
+describe('o tipo guarda as cargas (DDL-0181)', () => {
+  const odb = {
+    'items-base': { baseitem: [] },
+    items: { item: [{ name: 'Odd Staff', source: 'XDMG', type: 'OTH', rarity: 'rare', charges: 20, recharge: 'dawn' }] },
+    'fluff-items': { itemFluff: [] },
+  };
+  it('loot com cargas sai equipamento, com os usos', () => {
+    const [it] = buildInventoryItems({ inventory: [{ uid: 'a', itemId: 'Odd Staff', source: 'XDMG', quantity: 1 }] }, odb);
+    expect(it.type).toBe('equipment');
+    expect(it.system.uses.max).toBe('20');
   });
 });

@@ -9,7 +9,8 @@
 //   mecânica dele, em cópias novas, para o buildInventoryItems.
 //
 // FUNÇÕES
-//   srdItemMechanics(name): { activities, effects } do SRD para o item, ou null.
+//   srdItemMechanics(name): { activities, effects, fType, system } do SRD para o
+//     item, ou null (`system`: tipo, base, dano, armadura, propriedades, usos).
 //   srdVariantEnchantment(raw): o encantamento do modelo do SRD para a variante
 //     gerada, pronto para o item base, ou null.
 //
@@ -46,7 +47,7 @@ export function srdItemMechanics(name) {
   if (!uuid) return null;
   const entry = foundryMechanics()?.items?.[String(uuid).split('.').pop()];
   if (!entry) return null;
-  return structuredClone({ activities: entry.activities ?? {}, effects: entry.effects ?? [] });
+  return structuredClone({ activities: entry.activities ?? {}, effects: entry.effects ?? [], fType: entry.fType ?? null, system: entry.system ?? {} });
 }
 
 /**

@@ -196,3 +196,47 @@ describe('toda magia com uma activity (DDL-0177)', () => {
     expect(acts[0].consumption.spellSlot).toBe(true);
   });
 });
+
+describe('TC-0121: vínculo e documento do SRD nos itens (DDL-0180)', () => {
+  beforeAll(async () => { await loadFoundryMechanics(); });
+  it('o nome com as mesmas palavras liga ao documento; a contagem do pacote não', async () => {
+    const { equipmentUuid } = await import('./compendiumUuids');
+    expect(equipmentUuid('Potion of Greater Healing')).toBe(equipmentUuid('Potion of Healing (Greater)'));
+    expect(equipmentUuid('Belt of Fire Giant Strength')).toMatch(/BeltofGian|BeltOfGian/i);
+    expect(equipmentUuid('Arrows (20)')).toBeNull();
+  });
+  it('o documento do SRD dá tipo, subtipo e usos (Ring of the Ram, Healer\'s Kit)', () => {
+    const db = {
+      'items-base': { baseitem: [] },
+      items: { item: [
+        { name: 'Ring of the Ram', source: 'XDMG', type: 'RG|XDMG', rarity: 'rare', reqAttune: true, charges: 3, recharge: 'dawn', rechargeAmount: '{@dice 1d3}' },
+        { name: "Healer's Kit", source: 'XPHB', type: 'G|XPHB', rarity: 'none' },
+      ] },
+      'fluff-items': { itemFluff: [] },
+    };
+    const out = buildInventoryItems({ inventory: [
+      { uid: 'a', itemId: 'Ring of the Ram', source: 'XDMG', quantity: 1 },
+      { uid: 'b', itemId: "Healer's Kit", source: 'XPHB', quantity: 1 },
+    ] }, db);
+    const ring = out.find((i) => i.name === 'Ring of the Ram');
+    expect(ring.type).toBe('equipment');
+    expect(ring.system.type.value).toBe('ring');
+    expect(out.find((i) => i.name === "Healer's Kit").system.uses.max).toBe('10');
+  });
+});
+
+describe('T3e: campos estruturados do talento e alargamento por fonte (DDL-0184)', () => {
+  it('sentido e imunidade a condição do talento viram effect', async () => {
+    const { buildFeatItem: build } = await import('./foundryItems');
+    const it = build({ name: 'Odd Sight', source: 'X', category: 'G', senses: [{ blindsight: 10 }], conditionImmune: ['frightened'], entries: ['x'] }, { level: 4 });
+    const keys = it.effects.flatMap((e) => e.changes.map((c) => `${c.key}=${c.value}`));
+    expect(keys).toContain('system.attributes.senses.ranges.blindsight=10');
+    expect(keys).toContain('system.traits.ci.value=frightened');
+  });
+  it('o expanded "source=EGW" alarga com as magias do livro', async () => {
+    const { expandedSpellNames } = await import('./spellListWidening');
+    const db = { 'spells-egw': { spell: [{ name: 'Dark Star', source: 'EGW', level: 8 }, { name: 'Wristpocket', source: 'EGW', level: 2 }] } };
+    const sub = { additionalSpells: [{ expanded: { 1: [{ all: 'source=EGW' }] } }] };
+    expect([...expandedSpellNames(sub, { db, classLevel: 3, maxSlotLevel: 2 })].sort()).toEqual(['dark star', 'wristpocket']);
+  });
+});

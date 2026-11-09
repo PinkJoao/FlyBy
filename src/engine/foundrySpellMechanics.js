@@ -60,7 +60,7 @@ export function srdSpellMechanics(raw) {
   if (!raw?.name || !isEdition2024(raw)) return null;
   for (const name of srdSpellNames(raw.name)) {
     const entry = foundryMechanics()?.spells?.[name];
-    if (entry) return { activities: entry.activities ?? {}, effects: entry.effects ?? [] };
+    if (entry) return { activities: entry.activities ?? {}, effects: entry.effects ?? [], ...(entry.target ? { target: entry.target } : {}), ...(entry.range ? { range: entry.range } : {}) };
   }
   return null;
 }

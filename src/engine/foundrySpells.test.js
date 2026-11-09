@@ -22,6 +22,7 @@ import {
   foundryActivation,
   foundryDuration,
   foundryRange,
+  foundryTarget,
   foundryProperties,
   foundryMaterials,
   foundryUses,
@@ -88,7 +89,7 @@ describe('foundrySpells - tradução dos campos do 5etools', () => {
 
   it('materials: string simples e objeto com custo', () => {
     expect(foundryMaterials(fireball)).toMatchObject({ value: 'a ball of bat guano and sulfur', cost: 0 });
-    expect(foundryMaterials(bless)).toMatchObject({ value: 'a Holy Symbol worth 5+ GP', cost: 500 });
+    expect(foundryMaterials(bless)).toMatchObject({ value: 'a Holy Symbol worth 5+ GP', cost: 5 });
     expect(foundryMaterials(mistyStep)).toEqual({ value: '', consumed: false, cost: 0, supply: 0 });
   });
 });
@@ -457,5 +458,21 @@ describe('buildSpellItems - magia ESCOLHIDA numa optional feature', () => {
 
   it('sai como item mesmo com activity no item da feature: nenhuma activity a lança', () => {
     expect(buildSpellItems(derived, { castByFeature: () => true }).map((i) => i.name)).toEqual(['Light']);
+  });
+});
+
+describe('oráculo do SRD: alvo, tempo, duração (DDL-0179)', () => {
+  it('Self (cone) vira alcance self e o molde da área; a emanation é radius', () => {
+    const burning = { range: { type: 'cone', distance: { type: 'feet', amount: 15 } } };
+    expect(foundryRange(burning).units).toBe('self');
+    expect(foundryTarget(burning).template).toMatchObject({ type: 'cone', size: '15', units: 'ft' });
+    expect(foundryTarget({ range: { type: 'emanation', distance: { type: 'feet', amount: 30 } } }).template.type).toBe('radius');
+    expect(foundryTarget({ range: { type: 'point', distance: { type: 'feet', amount: 150 } } }).template.type).toBe('');
+  });
+  it('1 minuto leva o número; até ser dissipada é disp, com gatilho dstr', () => {
+    expect(foundryActivation({ time: [{ number: 1, unit: 'minute' }] }).value).toBe(1);
+    expect(foundryActivation({ time: [{ number: 1, unit: 'action' }] }).value).toBeNull();
+    expect(foundryDuration({ duration: [{ type: 'permanent', ends: ['dispel'] }] }).units).toBe('disp');
+    expect(foundryDuration({ duration: [{ type: 'permanent', ends: ['dispel', 'trigger'] }] }).units).toBe('dstr');
   });
 });

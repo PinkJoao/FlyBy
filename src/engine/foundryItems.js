@@ -122,6 +122,11 @@
 //   customToFoundryItem(entry): o item custom, a partir do snapshot.
 //   buildInventoryItems(character, db): todo o inventário (com a mecânica do SRD
 //     do item, foundryItemMechanics).
+//   baseItemId(raw, fallbackName): o id de arma ou armadura do dnd5e, ou ''.
+//   foundryItemUses(raw, fType): as cargas do item ou o uso único do consumível.
+//   withSrdDocument(item, mech): os campos do documento do SRD no item.
+//   featFieldEffect(featData, existing): sentidos e imunidade a condição do talento.
+//   fitUsesToType(item): o tipo que guarda os usos (loot com cargas, contêiner).
 //   withOverlayMechanics(item, db, raw, variantName): a mecânica do overlay
 //     foundry-items no item, quando o SRD não tem o documento.
 //   unpackContainer(item, raw, db): um pack desdobrado em contêiner e conteúdo.
@@ -273,6 +278,34 @@
 //     TC-0107): os effects dele SUBSTITUEM os nossos (somar daria o bônus em
 //     dobro) e as activities entram; na arma COMUM o ataque é o nosso, na MÁGICA o
 //     do SRD (o dano extra: o "2d6" que o Merric L17 perdia).
+//   - baseItemId: arma e armadura levam o id do dnd5e (`DND5E.weaponIds`,
+//     `armorIds`, `shieldIds` do config.mjs: `chainmail`, `lightcrossbow`), pela
+//     base do item mágico primeiro (Javelin of Lightning -> javelin); o slug do nome
+//     ("chain-mail") não casava com nada e a proficiência específica não valia.
+//     O Staff (e todo "Staff of") é um quarterstaff, como o SRD. Fora da lista, vazio (oráculo do SRD, DDL-0179).
+//   - featFieldEffect (T3e, DDL-0184): o ator do export não escreve sentidos nem
+//     imunidade a condição (só resistência e imunidade a DANO, pela derivação); o
+//     talento com o campo ESTRUTURADO do 5etools (`senses`, `bonusSenses`,
+//     `conditionImmune`: Blind Fighting, Skulker, Keenness of the Stone Giant, Boon of
+//     Poison Mastery) e sem effect que já os dê ganha um, no formato do SRD (sentido
+//     por UPGRADE, condição por ADD). Nada de prosa.
+//   - Item com documento no SRD (withSrdDocument, DDL-0180): tipo, subtipo, base,
+//     dano, armadura, propriedades e usos vêm do DOCUMENTO, a fonte do sistema de
+//     destino (§6.2). O nosso mapeamento pelo tipo do 5etools errava a Ring of the
+//     Ram e o Shield of the Cavalier (saíam arma), o Rod of Lordly Might (uma maça),
+//     os focos sem `foc`, os 10 usos do Healer's Kit. As propriedades SOMAM (o `mgc`
+//     pela raridade fica); preço e peso seguem o livro (o pack tem os seus).
+//   - fitUsesToType: `loot` e `container` do Foundry não têm `uses` e os descartam
+//     calados (medido no lote ao vivo da T3, DDL-0181: o Blackstaff perdia as 20
+//     cargas, o Jewel of Three Prayers as dele). O loot com cargas sai `equipment`
+//     (`trinket`); o pacote desdobrado ("Arrows (20)") não leva o uso único do
+//     consumível que ele era.
+//   - Cargas e usos (foundryItemUses, oráculo do SRD, DDL-0179): as `charges` do
+//     5etools viram `uses` (a recarga ao amanhecer, ao anoitecer, à meia-noite e no
+//     descanso longo, com a fórmula do `rechargeAmount`); o consumível sem cargas
+//     tem 1 uso que some ao acabar, como o SRD. Antes nenhum item tinha `uses`, e a
+//     activity da varinha que gasta carga não tinha o que gastar. Item mágico
+//     consumível, loot, contêiner e ferramenta ganham `mgc`, como o SRD.
 //   - Sem o SRD, o overlay foundry-items (withOverlayMechanics, DDL-0175): as
 //     activities entram, menos o ATAQUE de arma (o nosso já é completo); os effects
 //     SOMAM, e o nosso efeito de bônus só sai se um effect transferido do overlay
@@ -1123,6 +1156,8 @@ export function buildFeatItem(featData, { level = null, subtype, choices = null,
   const featOverlay = overlayMechanics(db ? overlayFeatEntry(db, featData.name, featData.source) : null, featData.name);
   const featSrd = srdFeatMechanics(featData);
   if (!changes) effects.push(...(featSrd?.effects.length ? featSrd.effects : featOverlay.effects));
+  const fieldEffect = featFieldEffect(featData, effects);
+  if (fieldEffect) effects.push(fieldEffect);
   const featActivities = featSrd && Object.keys(featSrd.activities).length ? featSrd.activities : featOverlay.activities;
 
   const advancement = [];
@@ -2337,7 +2372,7 @@ export function buildInventoryItems(character, db) {
     if (fType === 'weapon') {
       const cat = (info.category ?? raw?.weaponCategory) === 'martial' ? 'martial' : 'simple';
       const km = info.kind === 'ranged' ? 'R' : 'M';
-      system.type = { value: cat + km, baseItem: slugify(raw?.name ?? entry.itemId) };
+      system.type = { value: cat + km, baseItem: baseItemId(raw, entry.itemId) };
       system.damage = { base: weaponDamageBase(raw), versatile: weaponDamageVersatile(raw) };
       system.range = parseRange(raw?.range);
       system.properties = mapWeaponProps(raw?.property);
@@ -2352,7 +2387,7 @@ export function buildInventoryItems(character, db) {
       system.activities = weaponAttackActivity(info, raw);
     } else if (fType === 'equipment') {
       const tv = typeValue ?? info.armorSlot ?? 'trinket';
-      system.type = { value: tv, baseItem: slugify(raw?.name ?? entry.itemId) };
+      system.type = { value: tv, baseItem: ['light', 'medium', 'heavy', 'shield'].includes(tv) ? baseItemId(raw, entry.itemId) : slugify(raw?.name ?? entry.itemId) };
       const isArmor = ['light', 'medium', 'heavy', 'shield'].includes(tv);
       system.armor = { value: isArmor ? (raw?.ac ?? null) : null, dex: isArmor ? (ARMOR_DEX[tv] ?? null) : null };
       system.strength = raw?.strength ? Number(raw.strength) : null;
@@ -2381,6 +2416,11 @@ export function buildInventoryItems(character, db) {
     } else {
       system.type = { value: typeValue, subtype: '' };
     }
+    const uses = foundryItemUses(raw, fType);
+    if (uses) system.uses = uses;
+    if (raw?.rarity && raw.rarity !== 'none' && ['consumable', 'loot', 'container', 'tool'].includes(fType)) {
+      system.properties = [...new Set([...(system.properties ?? []), 'mgc'])];
+    }
 
     const name = entry.customName || raw?.name || entry.itemId;
     const img = inventoryImg(entry, info.group);
@@ -2403,17 +2443,19 @@ export function buildInventoryItems(character, db) {
     }
     const srdMech = raw && !entry.customName ? srdItemMechanics(raw.name) : null;
     if (srdMech) {
+      withSrdDocument(item, srdMech);
       if (srdMech.effects.length) item.effects = srdMech.effects;
       const srdActs = Object.entries(srdMech.activities);
-      const magicWeapon = fType === 'weapon' && (item.system.properties ?? []).includes('mgc');
+      const magicWeapon = item.type === 'weapon' && (item.system.properties ?? []).includes('mgc');
       if (magicWeapon && srdActs.some(([, a]) => a.type === 'attack')) item.system.activities = {};
       for (const [k, a] of srdActs) {
-        if (fType === 'weapon' && a.type === 'attack' && !magicWeapon) continue;
+        if (item.type === 'weapon' && a.type === 'attack' && !magicWeapon) continue;
         item.system.activities = { ...(item.system.activities ?? {}), [k]: a };
       }
     }
     if (!srdMech && raw && !entry.customName) withOverlayMechanics(item, db, raw, baseRaw ? null : raw._variantName);
     const unpacked = unpackContainer(item, raw, db);
+    for (const it of unpacked ?? [item]) fitUsesToType(it);
     if (unpacked) out.push(...unpacked);
     else out.push(item);
     if (entry.uid) itemIdByUid.set(entry.uid, (unpacked ? unpacked[0] : item)._id);
@@ -2428,6 +2470,64 @@ export function buildInventoryItems(character, db) {
     if (child) child.system.container = parentId;
   }
   return out;
+}
+
+const BASE_ITEM_IDS = new Set([
+  'battleaxe', 'blowgun', 'club', 'dagger', 'dart', 'flail', 'glaive', 'greataxe', 'greatclub', 'greatsword', 'halberd',
+  'handaxe', 'handcrossbow', 'heavycrossbow', 'javelin', 'lance', 'lightcrossbow', 'lighthammer', 'longbow', 'longsword',
+  'mace', 'maul', 'morningstar', 'musket', 'pike', 'pistol', 'quarterstaff', 'rapier', 'scimitar', 'shortsword', 'sickle',
+  'spear', 'shortbow', 'sling', 'trident', 'warpick', 'warhammer', 'whip',
+  'breastplate', 'chainmail', 'chainshirt', 'halfplate', 'hide', 'leather', 'padded', 'plate', 'ringmail', 'scalemail',
+  'splint', 'studded', 'shield',
+]);
+const BASE_ITEM_ALIAS = { staff: 'quarterstaff', woodenstaff: 'quarterstaff', studdedleather: 'studded' };
+
+/** O id de arma ou armadura do dnd5e (`chainmail`, `lightcrossbow`), pela base do item; ou ''. */
+function baseItemId(raw, fallbackName) {
+  for (const name of [String(raw?.baseItem ?? '').split('|')[0], raw?.name ?? fallbackName]) {
+    const key = String(name ?? '').toLowerCase().replace(/[^a-z]/g, '');
+    const bare = key.endsWith('armor') ? key.slice(0, -5) : key;
+    const id = BASE_ITEM_ALIAS[bare] ?? (bare.startsWith('staffof') ? 'quarterstaff' : bare);
+    if (BASE_ITEM_IDS.has(id)) return id;
+  }
+  return '';
+}
+
+const RECHARGE_PERIOD = { dawn: 'dawn', dusk: 'dusk', midnight: 'day', restLong: 'lr', restShort: 'sr' };
+
+/** Os `uses` do item: as cargas do 5etools, ou o uso único do consumível; ou null. */
+function foundryItemUses(raw, fType) {
+  if (typeof raw?.charges === 'number') {
+    const period = RECHARGE_PERIOD[raw.recharge];
+    const amount = String(raw.rechargeAmount ?? '').replace(/[{]@dice ([^}]+)[}]/, '$1').trim();
+    const recovery = !period ? [] : amount ? [{ period, type: 'formula', formula: amount }] : [{ period, type: 'recoverAll' }];
+    return { max: String(raw.charges), spent: 0, recovery };
+  }
+  if (fType === 'consumable') return { max: '1', autoDestroy: true, spent: 0, recovery: [] };
+  return null;
+}
+
+/** O tipo do Foundry que guarda os usos: loot com cargas vira equipamento; contêiner não tem usos. */
+function fitUsesToType(item) {
+  if (item.type === 'container') delete item.system.uses;
+  if (item.type === 'loot' && item.system.uses?.max) {
+    item.type = 'equipment';
+    item.system.type = { value: 'trinket', baseItem: '' };
+  }
+}
+
+const SRD_ITEM_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'container']);
+
+/** Põe no item o tipo, a base, o dano, a armadura, as propriedades e os usos do documento do SRD. */
+function withSrdDocument(item, mech) {
+  if (mech.fType && SRD_ITEM_TYPES.has(mech.fType)) item.type = mech.fType;
+  const s = mech.system ?? {};
+  if (s.type) item.system.type = { ...(item.system.type ?? {}), value: s.type.value ?? '', baseItem: s.type.baseItem ?? '' };
+  if (s.damage?.base) item.system.damage = { ...(item.system.damage ?? {}), base: s.damage.base };
+  if (s.armor) item.system.armor = { ...(item.system.armor ?? {}), ...s.armor };
+  if (s.properties) item.system.properties = [...new Set([...(item.system.properties ?? []), ...s.properties])];
+  if (s.uses) item.system.uses = s.uses;
+  else if (item.system.uses?.autoDestroy) delete item.system.uses;
 }
 
 /** Soma ao item a mecânica do overlay foundry-items (sem o ataque da arma, que é o nosso). */
@@ -2449,6 +2549,29 @@ function withOverlayMechanics(item, db, raw, variantName) {
     item.type = 'consumable';
     item.system.type = { value: raw.poison ? 'poison' : 'trinket', subtype: '' };
   }
+}
+
+const SENSE_KEYS = ['darkvision', 'blindsight', 'tremorsense', 'truesight'];
+
+/**
+ * O effect dos campos ESTRUTURADOS do talento (sentidos, imunidade a condição) que
+ * nenhum effect já dá; ou null.
+ */
+function featFieldEffect(featData, existing) {
+  const keys = new Set(existing.flatMap((e) => (e.changes ?? []).map((c) => c.key)));
+  const out = [];
+  for (const block of [...(featData.senses ?? []), ...(featData.bonusSenses ?? [])]) {
+    for (const sense of SENSE_KEYS) {
+      const range = Number(block?.[sense]);
+      const key = `system.attributes.senses.ranges.${sense}`;
+      if (range > 0 && !keys.has(key) && !keys.has(`system.attributes.senses.${sense}`)) out.push({ key, mode: 4, value: String(range), priority: null });
+    }
+  }
+  for (const cond of (featData.conditionImmune ?? []).filter((c) => typeof c === 'string')) {
+    if (!keys.has('system.traits.ci.value')) out.push({ key: 'system.traits.ci.value', mode: 2, value: cond, priority: null });
+  }
+  if (!out.length) return null;
+  return { _id: randomFoundryId(), name: featData.name, changes: out, disabled: false, transfer: true, img: 'icons/svg/aura.svg', origin: '', duration: {}, description: '', flags: {} };
 }
 
 /**

@@ -17,7 +17,9 @@
 //   itens de INVENTÁRIO que o advancement da classe concede (hoje o Unarmed Strike
 //   do Bárbaro e do Monge) e a cópia GENÉRICA deles do equipment24, para toda
 //   classe, keyed por nome para deduplicar. As MAGIAS do spells24 saem num arquivo
-//   à parte (srdSpellActivitiesData.js, TC-0106), keyed pelo nome no SRD.
+//   à parte (srdSpellActivitiesData.js, TC-0106), keyed pelo nome no SRD, com o
+//   `target` e o `range` do documento (o alvo e a área, que a activity lê do item;
+//   oráculo da T3, DDL-0179).
 //
 // FUNÇÕES
 //   norm(s): o nome comparável.
@@ -232,7 +234,11 @@ const spells = {};
 for (const f of walk(join(PACKS, 'spells24'))) {
   const doc = parseYaml(readFileSync(f, 'utf8'));
   if (doc.type !== 'spell' || !doc.name) continue;
-  record(spells, norm(doc.name), doc);
+  if (!record(spells, norm(doc.name), doc)) continue;
+  const entry = spells[norm(doc.name)];
+  const target = prune(doc.system?.target ?? {});
+  if (target) entry.target = target;
+  if (doc.system?.range?.units) entry.range = { units: doc.system.range.units, value: doc.system.range.value ?? null, special: doc.system.range.special ?? '' };
 }
 
 const spellOut = `// =============================================================================
@@ -245,7 +251,8 @@ const spellOut = `// ===========================================================
 //   elas a magia chega ao Foundry só com um "Use" vazio (TC-0106). Consumido por
 //   engine/foundrySpellMechanics.js.
 //
-//   SRD_SPELL_ACTIVITIES: nome da magia NO SRD (minúsculo) -> {activities, effects?}.
+//   SRD_SPELL_ACTIVITIES: nome da magia NO SRD (minúsculo) -> {activities, effects?,
+//   target?, range?} (o alvo e a área do item, que a activity lê; DDL-0179).
 //
 // DECISÕES E ARMADILHAS
 //   - O nome é o do SRD ("hideous laughter", não "tasha's hideous laughter"); quem
@@ -262,11 +269,23 @@ const itemMech = {};
 for (const doc of docs.values()) {
   if (!genericIds.has(doc._id)) continue;
   const activities = prune(doc.system?.activities ?? {});
-  const cited = new Set(Object.values(activities ?? {}).flatMap((a) => (a.effects ?? []).map((e) => e?._id ?? e).filter(Boolean)));
-  const effects = prune((doc.effects ?? []).filter((e) => e?.type !== 'enchantment' && (cited.has(e?._id) || e?.transfer)));
+  const effects = prune((doc.effects ?? []).filter((e) => e?.type !== 'enchantment' && e?._id));
   const enchantments = prune((doc.effects ?? []).filter((e) => e?.type === 'enchantment'));
-  if (!activities && !effects && !enchantments) continue;
-  itemMech[doc._id] = { ...(activities ? { activities } : {}), ...(effects ? { effects } : {}), ...(enchantments ? { enchantments } : {}) };
+  const s = doc.system ?? {};
+  const system = prune({
+    type: s.type ? { value: s.type.value ?? '', baseItem: s.type.baseItem ?? '' } : null,
+    damage: s.damage?.base?.denomination ? { base: s.damage.base } : null,
+    armor: s.armor?.value != null ? { value: s.armor.value, dex: s.armor.dex ?? null } : null,
+    properties: s.properties ?? [],
+    uses: s.uses?.max ? { max: String(s.uses.max), spent: 0, recovery: s.uses.recovery ?? [], ...(s.uses.autoDestroy ? { autoDestroy: true } : {}) } : null,
+  });
+  itemMech[doc._id] = {
+    fType: doc.type,
+    ...(system ? { system } : {}),
+    ...(activities ? { activities } : {}),
+    ...(effects ? { effects } : {}),
+    ...(enchantments ? { enchantments } : {}),
+  };
 }
 
 const itemOut = `// =============================================================================
@@ -279,11 +298,13 @@ const itemOut = `// ============================================================
 //   item mágico chega ao Foundry só com o que o dado do 5etools diz (TC-0107).
 //   Consumido por engine/foundryItemMechanics.js.
 //
-//   SRD_ITEM_MECHANICS: _id do documento no equipment24 -> {activities?, effects?,
-//     enchantments?}.
+//   SRD_ITEM_MECHANICS: _id do documento no equipment24 -> {fType, system?,
+//     activities?, effects?, enchantments?}; \`system\` traz tipo, subtipo, base,
+//     dano, armadura, propriedades e usos do documento (oráculo do SRD, DDL-0180).
 //
 // DECISÕES E ARMADILHAS
-//   - Sai o effect que uma activity cita e o que se transfere ao ator; o
+//   - Saem TODOS os effects do item (os que uma activity cita, os que se
+//     transferem e os que o jogador aplica à mão, como o da Potion of Heroism); o
 //     \`enchantment\` (o modelo "Vicious Weapon" ou "+1, +2 ou +3", que muda OUTRO
 //     item) sai à parte, em \`enchantments\`: o export o aplica ao item base da
 //     variante, como os premades.

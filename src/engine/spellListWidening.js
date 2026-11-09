@@ -24,7 +24,10 @@
 //   originExtraSpells(opts): o on-list extra de uma origem e a fonte de cada um.
 //
 // DECISÕES E ARMADILHAS
-//   - parseAllSpec lê TODOS os valores separados por `;` nos dois campos.
+//   - parseAllSpec lê TODOS os valores separados por `;` nos campos, e também o
+//     `source=` (T3e, DDL-0184): a Chronurgy e a Graviturgy do EGW alargam a lista com
+//     `{all: "source=EGW"}`, as 15 magias de dunamancia, e o leitor só via `class=`;
+//     nenhum mago dessas subclasses conseguia prepará-las.
 //   - TALENTO também alarga (`feats` do originExtraSpells, DDL-0172): o "Spells of
 //     the Mark" dos 12 Mark of do EFA soma a tabela à lista de TODA classe que
 //     conjura, com o nome do talento como fonte. Medido: só esses 12 talentos têm
@@ -64,14 +67,17 @@ function keyReached(key, classLevel, maxSlotLevel) {
   return Number.isFinite(n) && classLevel >= n;
 }
 
-/** "level=1;2;3|class=Cleric;Druid" vira { levels, classNames }. */
+/** "level=1;2;3|class=Cleric;Druid" (ou "source=EGW") vira { levels, classNames, sources }. */
 function parseAllSpec(spec) {
   if (typeof spec !== 'string') return null;
   const cls = spec.match(/class=([^|]+)/i);
+  const src = spec.match(/source=([^|]+)/i);
   const lvl = spec.match(/level=([^|]+)/i);
-  if (!cls) return null;
+  if (!cls && !src) return null;
+  const list = (m) => (m ? m[1].split(';').map((x) => x.trim()).filter(Boolean) : null);
   return {
-    classNames: cls[1].split(';').map((s) => s.trim()).filter(Boolean),
+    classNames: list(cls) ?? [],
+    sources: list(src)?.map((x) => x.toUpperCase()) ?? null,
     levels: lvl ? lvl[1].split(';').map(Number).filter(Number.isFinite) : null,
   };
 }
@@ -103,6 +109,11 @@ export function expandedSpellNames(entity, { db, classLevel, maxSlotLevel = 0, a
       const spec = parseAllSpec(e?.all);
       if (!spec) continue;
       const levelOf = spellLevelIndex(db);
+      if (spec.sources) {
+        for (const sp of allSpells(db)) {
+          if (spec.sources.includes(String(sp.source).toUpperCase()) && (spec.levels === null || spec.levels.includes(sp.level))) out.add(sp.name.toLowerCase());
+        }
+      }
       for (const className of spec.classNames) {
         for (const name of classSpellList(db, className)) {
           if (spec.levels === null || spec.levels.includes(levelOf.get(name))) out.add(name);

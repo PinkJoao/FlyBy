@@ -19,6 +19,8 @@
 //   spellUuid(spellName): o uuid de uma magia.
 //   flatUuid(map, pack, name), originUuid(name), featUuid(name),
 //     equipmentUuid(name): a procedência (`_stats.compendiumSource`).
+//   nameWords(name), equipmentIdByWords(name): o item do equipment24 pelas mesmas
+//     palavras, quando o nome exato não casa.
 //   srdSpeciesName(raceObj), suffixMatch(pool, base, name), srdOriginName(name):
 //     os nomes que o dnd5e dá à mesma espécie e ao mesmo traço.
 //   equipmentFoundryType(name): { type, subtype } de inventário, ou null.
@@ -26,6 +28,14 @@
 //     `_id`, ou null; o sentido inverso, para ler a ORIGEM de um encantamento.
 //
 // DECISÕES E ARMADILHAS
+//   - equipmentUuid tenta o nome exato e depois as MESMAS palavras (ordem,
+//     vírgula e parênteses de fora): o SRD escreve "Potion of
+//     Healing (Greater)", "Ioun Stone of Agility", "Belt of Giant Strength (fire)"
+//     onde o 5etools escreve "Potion of Greater Healing", "Ioun Stone, Agility",
+//     "Belt of Fire Giant Strength". A contagem fica: "Arrows (20)" é um pacote, não
+//     a pilha "Arrows" do SRD. Sem isso 44 itens mágicos saíam sem o vínculo
+//     e sem a mecânica do SRD (oráculo do SRD, DDL-0180). Só vale quando UM documento
+//     tem aquelas palavras; dois (o pack repete "Hooded Lantern") ficam com o exato.
 //   - Sem uuid, sem escada: conteúdo fora do SRD (Artificer, subclasses não SRD)
 //     não ganha passo futuro, e apontar para um near-match faria o Foundry trocar o
 //     conteúdo do jogador.
@@ -206,7 +216,30 @@ export function featUuid(name) {
 
 /** Item de equipamento (equipment24). */
 export function equipmentUuid(name) {
-  return flatUuid(EQUIPMENT_IDS, PACK_EQUIPMENT, name);
+  const id = EQUIPMENT_IDS[norm(name)] ?? equipmentIdByWords(name);
+  return id ? `${PACK_EQUIPMENT}.${id}` : null;
+}
+
+const WORD_STOP = new Set(['of', 'the', 'a', 'an', 'level']);
+let equipmentWords = null;
+
+/** As palavras do nome, sem ordem nem pontuação ("Potion of Greater Healing" = "Potion of Healing (Greater)"). */
+function nameWords(name) {
+  return norm(name).replace(/[^a-z0-9 ]/g, ' ').split(/ +/).filter((w) => w && !WORD_STOP.has(w)).sort().join(' ');
+}
+
+/** O `_id` do equipment24 com as MESMAS palavras, quando é um só; ou null. */
+function equipmentIdByWords(name) {
+  if (!equipmentWords) {
+    const counts = new Map();
+    for (const [n, i] of Object.entries(EQUIPMENT_IDS)) {
+      const k = nameWords(n);
+      const seen = counts.get(k);
+      counts.set(k, seen && seen !== i ? false : i);
+    }
+    equipmentWords = counts;
+  }
+  return equipmentWords.get(nameWords(name)) || null;
 }
 
 let equipmentNames = null;

@@ -13,7 +13,8 @@
 //
 // FUNÇÕES
 //   foundryActivation(spell), foundryDuration(spell), foundryRange(spell),
-//     foundryProperties(spell), foundryMaterials(spell): os campos da magia.
+//     foundryTarget(spell), foundryProperties(spell), foundryMaterials(spell): os
+//     campos da magia.
 //   foundryUses(entry): os usos de uma concessão limitada.
 //   foundryPreparation(entry, origin, isArcanum, opts): `method` e `prepared`.
 //   buildSpellItem(entry, origin, opts): um item spell, com as activities
@@ -23,6 +24,14 @@
 //   buildSpellSlots(derived): `spell1` a `spell9` e `pact`.
 //
 // DECISÕES E ARMADILHAS
+//   - Alvo e área (oráculo do SRD, DDL-0179): a activity do SRD lê o `target` do
+//     ITEM, e o nosso saía vazio em 257 de 340 (o Fireball sem a esfera para pôr
+//     na cena). A magia do SRD leva o `target` e o `range` do documento; a outra, a
+//     área do "Self (forma)" do 5etools (foundryTarget: cone, esfera, cubo, linha;
+//     a emanation de 2024 é `radius`, como o SRD a escreve), com alcance `self`.
+//   - Tempo em minutos e horas leva o número (o SRD: 1 minuto é `value: 1`);
+//     "até ser dissipada" é `disp`, e com gatilho `dstr`; o custo do material é em
+//     PO (o 5etools guarda em PC: o Revivify saía 30000).
 //   - Como cada origem mapeia: classe 'spell' (ou 'pact') e prepared 1.
 //     Concedida: prepared 2, com o uso GRÁTIS em `uses` quando tem frequência, e
 //     o método segue 'spell'/'pact' DE PROPÓSITO, porque o RAW 2024 diz "you can
@@ -89,10 +98,11 @@ export function foundryActivation(spell) {
   const t = spell?.time?.[0];
   if (!t) return { type: '', condition: '', value: null };
   const n = t.number ?? 1;
+  const type = ACTIVATION_TYPE[t.unit] ?? '';
   return {
-    type: ACTIVATION_TYPE[t.unit] ?? '',
+    type,
     condition: '',
-    value: n > 1 ? n : null,
+    value: n > 1 || ['minute', 'hour'].includes(type) ? n : null,
   };
 }
 
@@ -101,7 +111,10 @@ export function foundryDuration(spell) {
   const d = spell?.duration?.[0];
   if (!d) return { value: '', units: 'inst' };
   if (d.type === 'instant') return { value: '', units: 'inst' };
-  if (d.type === 'permanent') return { value: '', units: 'perm' };
+  if (d.type === 'permanent') {
+    const ends = d.ends ?? [];
+    return { value: '', units: ends.includes('dispel') ? (ends.includes('trigger') ? 'dstr' : 'disp') : 'perm' };
+  }
   if (d.type === 'special') return { value: '', units: 'spec' };
   if (d.type === 'timed' && d.duration) {
     return { value: String(d.duration.amount ?? 1), units: DURATION_UNITS[d.duration.type] ?? 'spec' };
@@ -113,10 +126,24 @@ export function foundryDuration(spell) {
 export function foundryRange(spell) {
   const r = spell?.range;
   if (!r) return { units: '', special: '', value: '' };
+  if (AREA_SHAPES[r.type]) return { units: 'self', special: '', value: '' };
   const dist = r.distance ?? {};
   const units = RANGE_UNITS[dist.type] ?? '';
   const value = dist.type === 'feet' || dist.type === 'miles' ? String(dist.amount ?? '') : '';
   return { units, special: '', value };
+}
+
+const AREA_SHAPES = { cone: 'cone', sphere: 'sphere', cube: 'cube', line: 'line', emanation: 'radius' };
+
+/** O `target`: a área da magia de alcance "Self (forma)", como o SRD a escreve. */
+export function foundryTarget(spell) {
+  const r = spell?.range;
+  const shape = AREA_SHAPES[r?.type];
+  const size = r?.distance?.type === 'feet' ? String(r.distance.amount ?? '') : '';
+  return {
+    affects: { choice: false, count: '', type: '' },
+    template: { units: 'ft', contiguous: false, type: shape && size ? shape : '', size: shape && size ? size : '', stationary: false },
+  };
 }
 
 /** Os `properties`: componentes, concentração e ritual. */
@@ -139,7 +166,7 @@ export function foundryMaterials(spell) {
   return {
     value: m.text ?? '',
     consumed: !!m.consume,
-    cost: Number(m.cost ?? 0),
+    cost: Math.round(Number(m.cost ?? 0)) / 100,
     supply: 0,
   };
 }
@@ -204,7 +231,7 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
     source: sourceBlock(raw.source),
     activation: foundryActivation(raw),
     duration: foundryDuration(raw),
-    target: { affects: { choice: false, count: '', type: '' }, template: { units: 'ft', contiguous: false, type: '', stationary: false } },
+    target: foundryTarget(raw),
     range: foundryRange(raw),
     uses,
     level: raw.level ?? 0,
@@ -217,7 +244,17 @@ export function buildSpellItem(entry, origin, { isArcanum = false, pactOnly = fa
     ability: !origin || origin.kind === 'class' ? '' : (origin.ability ?? ''),
   };
   if (origin?.kind === 'class' && origin.classId) system.sourceItem = `class:${origin.classId}`;
-  const mech = withFreeCasting(spellMechanics(raw, db), { hasUses: !!uses?.max, isArcanum });
+  const base = spellMechanics(raw, db);
+  if (base.target) {
+    system.target = {
+      ...system.target,
+      ...base.target,
+      affects: { ...system.target.affects, ...(base.target.affects ?? {}) },
+      template: { ...system.target.template, ...(base.target.template ?? {}) },
+    };
+  }
+  if (base.range) system.range = { ...system.range, ...base.range, value: base.range.value == null ? '' : String(base.range.value) };
+  const mech = withFreeCasting(base, { hasUses: !!uses?.max, isArcanum });
   system.activities = mech.activities;
 
   return {

@@ -72,7 +72,7 @@
 // -----------------------------------------------------------------------------
 
 import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, basename, dirname } from 'node:path';
 import process from 'node:process';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -97,7 +97,8 @@ function head(file) {
   const txt = readFileSync(file, 'utf8');
   const pick = (k) => txt.match(new RegExp(`^${k}: *(.+)$`, 'm'))?.[1]?.trim();
   const unquote = (s) => s?.replace(/^['"]|['"]$/g, '');
-  const subtype = unquote(txt.match(/^ +type:\n +value: *(.*)$/m)?.[1]?.trim());
+  // ATENÇÃO: o `type` do SYSTEM (2 espaços); o primeiro `type: value:` do arquivo é muitas vezes o de uma activity.
+  const subtype = unquote(txt.match(/^ {2}type:\n {4}value: *(.*)$/m)?.[1]?.trim());
   const identifier = unquote(txt.match(/^ {2}identifier: *(.*)$/m)?.[1]?.trim());
   return {
     id: pick('_id'), name: unquote(pick('name')), type: pick('type'),
@@ -221,15 +222,22 @@ const FLAT_PACKS = [
   ['feats', 'feats24', new Set(['feat'])],
   ['equipment', 'equipment24', new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'container'])],
 ];
+const packCopies = new Set();
 for (const [key, dir, types] of FLAT_PACKS) {
   for (const f of walk(join(PACKS, dir))) {
     const { id, name, type, subtype, uses: u, selfLineage } = head(f);
     if (!id || !name || !types.has(type)) continue;
     if (key === 'origins' && type === 'race' && selfLineage && !speciesSelfLineage.includes(name)) speciesSelfLineage.push(name);
     if (key === 'origins' && !originNames.includes(name)) originNames.push(name);
-    if (!flat[key][norm(name)]) flat[key][norm(name)] = id;
+    // ATENÇÃO: o item dentro de um pacote (`explorers-pack/rations.yml`) é cópia; o avulso (com a mecânica) vence.
+    const packCopy = basename(dirname(f)).endsWith('-pack');
+    if (!flat[key][norm(name)] || (packCopies.has(`${key}|${norm(name)}`) && !packCopy)) {
+      flat[key][norm(name)] = id;
+      if (packCopy) packCopies.add(`${key}|${norm(name)}`); else packCopies.delete(`${key}|${norm(name)}`);
+      if (key === 'equipment') equipmentTypes[norm(name)] = `${type}/${subtype}`;
+    }
     if (key === 'origins' && type === 'race' && !speciesNames.includes(name)) speciesNames.push(name);
-    if (key === 'equipment' && !equipmentTypes[norm(name)]) equipmentTypes[norm(name)] = `${type}/${subtype}`;
+
     if (key === 'equipment' && type === 'container' && !containerProps[norm(name)]) {
       containerProps[norm(name)] = container(readFileSync(f, 'utf8'));
     }

@@ -32,8 +32,10 @@
 //     do máximo, então somar o escudo por cima é sempre RAW. A base 10 + Dex aceita
 //     escudo, então a lista nunca fica vazia.
 //   - CA fixa da espécie (Tortle 17) concorre mesmo com armadura vestida. O bônus
-//     plano da espécie (Warforged +1) vale por cima de qualquer base. Os bônus de
-//     acessório não repetem o da armadura e do escudo, que já está em `ac`.
+//     plano da espécie (Warforged +1) vale por cima de qualquer base. O `bonusAc` da
+//     ARMADURA e do ESCUDO soma ao `ac` deles: o 5etools guarda no `ac` o da base
+//     (medido: 156 de 156 armaduras mágicas, T1 da T3, DDL-0185), e o +1 Chain Mail
+//     dava CA 16 em vez de 17 na ficha, no jogo e no PDF; o acessório soma à parte.
 //   - CONDITIONAL_BONUS_AC: o 5etools marca `bonusAc` em itens cujo bônus a PRÓPRIA
 //     prosa condiciona (o +5 do Quarterstaff of the Acrobat é uma reação contra um
 //     ataque; o Arrow-Catching Shield só contra ataques à distância; o Pariah's
@@ -115,11 +117,12 @@ export function deriveArmorClass(character, inventory = [], mods = {}, naturalAr
   if (armor) {
     const cap = DEX_CAP[armor.armorSlot] ?? Infinity;
     const dexPart = Math.min(dex, cap);
+    const armorAc = armor.raw.ac + flatBonusAc(armor.raw);
     candidates.push({
-      total: armor.raw.ac + dexPart,
+      total: armorAc + dexPart,
       allowsShield: true,
       parts: [
-        { label: armor.raw.name, value: armor.raw.ac, note: 'armor' },
+        { label: armor.raw.name, value: armorAc, note: 'armor' },
         ...(dexPart !== 0 ? [{ label: 'Dex modifier', value: dexPart, note: 'dex' }] : []),
       ],
     });

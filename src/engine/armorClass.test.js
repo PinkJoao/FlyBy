@@ -159,3 +159,10 @@ describe('deriveSaveBonusFromItems', () => {
     expect(deriveSaveBonusFromItems([ring]).bonus).toBe(0);
   });
 });
+
+describe('o bônus da armadura mágica soma ao ac dela (DDL-0185)', () => {
+  it('+1 Chain Mail vestida dá 17', () => {
+    const inv = [{ group: 'armor', armorSlot: 'heavy', equipped: true, raw: { name: '+1 Chain Mail', source: 'XDMG', ac: 16, bonusAc: '+1' } }];
+    expect(deriveArmorClass({}, inv, { dex: 3 }).total).toBe(17);
+  });
+});

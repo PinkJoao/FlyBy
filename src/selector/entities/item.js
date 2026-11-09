@@ -19,6 +19,8 @@
 //   Exporta itemEntity.
 //
 // DECISÕES E ARMADILHAS
+//   - typeLabel põe o tipo no singular (Potions, Potion), mas nunca em "us" e "ss":
+//     a regra antiga cortava "Spellcasting Focus" em "Focu" (T1 da T3, DDL-0185).
 //   - `naturalSort` é Rarity (do mundano ao artefato, e alfabético dentro de cada
 //     raridade pelo `sortList`): sem isso os ~4000 itens mágicos abrem a loja na
 //     frente do equipamento básico. `sorts` traz Price (o derivado também,
@@ -149,7 +151,7 @@ function typeLabel(raw) {
   const info = itemTypeInfo(raw);
   if (info.group === 'weapon') return `${cap(info.category ?? '')} Weapon`.trim();
   if (info.group === 'armor') return info.armorSlot === 'shield' ? 'Shield' : `${cap(info.armorSlot ?? '')} Armor`.trim();
-  return info.groupLabel?.replace(/ Items$/, ' Item').replace(/([a-rt-z])s$/, '$1') ?? info.groupLabel;
+  return info.groupLabel?.replace(/ Items$/, ' Item').replace(/([^su])s$/, '$1') ?? info.groupLabel;
 }
 
 const itemEntity = {

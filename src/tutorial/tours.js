@@ -19,7 +19,8 @@
 //     micro-tours por ABA (F3, na 1a abertura de cada uma; curtos, só os elementos
 //     estáveis).
 //   - O play mode tem o seu: `play` (na 1a abertura da tela de jogo) e
-//     `play-combat` (no 1o combate, sobre a barra que só existe então).
+//     `play-combat` (no 1o combate, sobre a barra que só existe então), `play-summons`
+//     (na 1a abertura da aba Summons) e `play-form` (na 1a forma), DDL-0196.
 //   - No mobile o tour do seletor ABRE a gaveta e a tela de detalhe
 //     (`mobileAction`) e as fecha ao avançar e terminar; por isso a âncora é o
 //     painel, não o botão "Filters" (que some com a gaveta aberta).
@@ -330,7 +331,7 @@ const play = {
     {
       anchor: TUT.PLAY_TABS,
       title: 'Tabs',
-      body: 'History keeps every roll (on a narrow screen); Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Inventory, items to use.',
+      body: 'History keeps every roll (on a narrow screen); Actions has your attacks; Features, your resources and abilities; Spells, slots and casting; Summons, while something you summoned is on the field; Inventory, items to use.',
       placement: 'bottom',
     },
     {
@@ -369,6 +370,36 @@ const playCombat = {
   ],
 };
 
+const playSummons = {
+  id: 'play-summons',
+  steps: [
+    {
+      anchor: TUT.PLAY_SUMMONS,
+      title: 'Summons',
+      body: 'One card for each thing you brought to the fight: a creature, a group of the same creature, or a spell you track like Spiritual Weapon. It shows the AC, the hit points of each one with Hurt and Heal, the actions to roll, and when it acts and how you command it.',
+      placement: 'auto',
+    },
+    {
+      anchor: TUT.PLAY_SUMMONS,
+      title: 'When it ends',
+      body: 'A summon tied to your concentration leaves when the concentration ends, and one with a duration leaves when its time runs out in combat. Dismiss removes it yourself. Undo brings any of them back. In combat, "Then:" under the turn buttons lists who acts after you.',
+      placement: 'auto',
+    },
+  ],
+};
+
+const playForm = {
+  id: 'play-form',
+  steps: [
+    {
+      anchor: TUT.PLAY_FORM,
+      title: 'In another form',
+      body: 'Armor Class, speed, Strength, Dexterity, Constitution, checks and attacks now come from the form; what the form keeps of you (your hit points, and for Wild Shape your mind and proficiencies) stays. Revert ends it. A form from a spell also ends with your concentration.',
+      placement: 'bottom',
+    },
+  ],
+};
+
 export const TOURS = {
   selector,
   sheet,
@@ -380,6 +411,8 @@ export const TOURS = {
   'tab-biography': tabBiography,
   play,
   'play-combat': playCombat,
+  'play-summons': playSummons,
+  'play-form': playForm,
 };
 
 export const ALL_TOUR_IDS = Object.keys(TOURS);

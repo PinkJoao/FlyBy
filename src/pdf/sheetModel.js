@@ -43,7 +43,8 @@
 //     opts): o inventário.
 //   resourceRows(actor, derived), characterResources(character, derived, db): os
 //     recursos com usos e a recuperação deles.
-//   buildSheetModel(character, derived, db, options): o modelo.
+//   buildSheetModel(character, derived, db, options, extra): o modelo; `extra.bestiary`
+//     traz as criaturas da seção Summons & forms (pdf/creatureModel, DDL-0196).
 //   evalUses e recoveryText são reexportados do engine/playCatalog.
 //
 // DECISÕES E ARMADILHAS
@@ -101,6 +102,7 @@ import raceEntity from '../selector/entities/race';
 import { durationLabel } from '../selector/entities/spell';
 import { toBlocks } from './entries';
 import { normalizePdfOptions } from './pdfOptions';
+import { creatureCards } from './creatureModel';
 
 const ABILITY_NAME = {
   str: 'Strength', dex: 'Dexterity', con: 'Constitution',
@@ -660,7 +662,7 @@ function characterResources(character, derived, db) {
  * @param {object} db
  * @param {object} [options] as opções do pdfOptions (normalizadas aqui)
  */
-export function buildSheetModel(character, derived, db, options) {
+export function buildSheetModel(character, derived, db, options, { bestiary = [] } = {}) {
   const opts = normalizePdfOptions(options);
   const raceObj = character.species
     ? resolveRaceObj(db, character.species.id, character.species.source, character.species.lineage)
@@ -764,6 +766,7 @@ export function buildSheetModel(character, derived, db, options) {
     },
     featureGroups,
     spellcasting: buildSpellcasting(character, derived, opts),
+    creatures: opts.sections.creatures ? creatureCards(character, derived, db, bestiary) : [],
     inventory: buildInventory(character, derived, db, opts),
     biography: {
       appearance: id.appearance ?? '',

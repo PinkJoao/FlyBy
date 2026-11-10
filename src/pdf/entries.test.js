@@ -19,7 +19,7 @@ describe('inlineRuns', () => {
   });
 
   it('labels the 2024 attack and save tags', () => {
-    expect(runsText(inlineRuns('{@atkr m} {@hit 4}, {@h}5 damage'))).toBe('Melee Attack Roll: +4, Hit:5 damage');
+    expect(runsText(inlineRuns('{@atkr m} {@hit 4}, {@h}5 damage'))).toBe('Melee Attack Roll: +4, Hit: 5 damage');
     expect(runsText(inlineRuns('{@actSave wis} {@dc 13}'))).toBe('Wisdom Saving Throw: DC 13');
   });
 

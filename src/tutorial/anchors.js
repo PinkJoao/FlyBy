@@ -59,4 +59,6 @@ export const TUT = {
   PLAY_ROLLS: 'play-rolls',
   PLAY_HISTORY: 'play-history',
   PLAY_COMBAT: 'play-combat',
+  PLAY_SUMMONS: 'play-summons',
+  PLAY_FORM: 'play-form',
 };

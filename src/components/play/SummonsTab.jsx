@@ -12,6 +12,7 @@
 //
 // FUNÇÕES
 //   speedLine(speed, variant): o deslocamento em uma linha, só o da forma.
+//   details(view): deslocamento, concentração e turno, a linha abaixo do título.
 //   ActionRow(props): uma ação do summon.
 //   SummonsTab(props): a aba.
 //
@@ -21,6 +22,8 @@
 //   - PV sem número (molde em prosa que o núcleo não leu) mostra o texto e "?": a
 //     vista nunca inventa (DDL-0191).
 //   - Os botões só chamam o que a tela passa; nada aqui grava evento.
+//   - O título leva só o nome, a CA e Dismiss: o resto numa linha própria, porque a
+//     375px a pílula com tudo quebrava em três linhas e cortava o Dismiss (DDL-0196).
 // -----------------------------------------------------------------------------
 
 import Button from '../common/Button';
@@ -45,6 +48,15 @@ function speedLine(speed, variant) {
       return `${k === 'walk' ? '' : `${k} `}${n} ft.${cond}`;
     })
     .join(', ');
+}
+
+/** O deslocamento, a concentração e a regra de turno, numa linha abaixo do título. */
+function details({ group, stats }) {
+  return [
+    stats?.speed ? speedLine(stats.speed, group.ctx?.variant) : null,
+    group.concentration ? 'Concentration' : null,
+    turnText(group.turn) || null,
+  ].filter(Boolean);
 }
 
 /** Uma ação do summon: o texto no toque, o ataque e o dano. */
@@ -88,11 +100,11 @@ function ActionRow({ view, action, onAttack, onDamage }) {
  * A aba de summons.
  * @param {{ views: object[], loading?: boolean, onHp: Function, onAttack: Function, onDamage: Function, onDismiss: Function, onLight?: Function, lightKinds?: Function }} props
  */
-export default function SummonsTab({ views, loading = false, onHp, onAttack, onDamage, onDismiss, onLight, lightKinds = () => [] }) {
+export default function SummonsTab({ views, loading = false, onHp, onAttack, onDamage, onDismiss, onLight, lightKinds = () => [], dataTour }) {
   if (loading) return <p className={styles.empty}>Loading the creatures…</p>;
   if (!views.length) return <p className={styles.empty}>No summons right now.</p>;
   return (
-    <div className={styles.tab}>
+    <div className={styles.tab} data-tour={dataTour}>
       {views.map((view) => {
         const { group, stats, members } = view;
         const many = members.length > 1;
@@ -103,13 +115,17 @@ export default function SummonsTab({ views, loading = false, onHp, onAttack, onD
               <span className={styles.panelTitle}>{group.label}{many ? ` ×${members.length}` : ''}</span>
               <span className={styles.panelCount}>
                 {view.light ? (view.light.ac != null ? `AC ${view.light.ac}` : 'Spell effect') : stats ? `AC ${stats.ac.value ?? '?'}` : 'Not in the bestiary'}
-                {stats?.speed ? ` · ${speedLine(stats.speed, group.ctx?.variant)}` : ''}
-                {group.concentration ? ' · concentration' : ''}
-                {turnText(group.turn) ? ` · ${turnText(group.turn)}` : ''}
               </span>
               <Button size="sm" variant="link" onClick={() => onDismiss(group)}>Dismiss</Button>
             </div>
             <ul className={styles.list}>
+              {details(view).length > 0 && (
+                <li className={styles.row}>
+                  <span className={styles.rowText}>
+                    <span className={styles.rowMetaLine}>{details(view).join(' · ')}</span>
+                  </span>
+                </li>
+              )}
               {members.map((m) => (
                 <li key={m.index} className={styles.row}>
                   <span className={styles.rowText}>

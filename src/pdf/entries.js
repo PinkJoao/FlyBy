@@ -21,6 +21,8 @@
 //   runsText(runs), blocksText(blocks): o texto puro (contagens e testes).
 //
 // DECISÕES E ARMADILHAS
+//   - `{@h}`, `{@m}` e `{@hom}` vêm colados no texto ("{@h}5 (1d6 + 2)"): o rótulo
+//     leva o espaço (os blocos de criatura da seção Summons & forms, DDL-0196).
 //   - A exibição das tags segue o EntryContent do app (o display de cada
 //     gramática de pipes), mais o que a ficha precisa e a tela não: {@atkr m}
 //     vira "Melee Attack Roll:", {@actSave wis} vira "Wisdom Saving Throw:", e
@@ -49,7 +51,7 @@ const ATK = {
 };
 
 const LABEL_TAGS = {
-  h: 'Hit:', m: 'Miss:', hom: 'Hit or Miss:', actSaveFail: 'Failure:', actSaveSuccess: 'Success:',
+  h: 'Hit: ', m: 'Miss: ', hom: 'Hit or Miss: ', actSaveFail: 'Failure:', actSaveSuccess: 'Success:',
   actSaveSuccessOrFail: 'Failure or Success:', actTrigger: 'Trigger:', actResponse: 'Response:',
 };
 

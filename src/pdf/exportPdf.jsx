@@ -9,6 +9,8 @@
 // FUNÇÕES
 //   safeName(character): o nome de arquivo.
 //   pdfPortrait(src): o retrato convertido para PNG pelo canvas, quando preciso.
+//   creaturesFor(db): o bestiário da fonte ativa, para a seção Summons & forms
+//     (DDL-0196); só carrega com a seção ligada, e a falha deixa a seção vazia.
 //   exportCharacterPdf(character, derived, db, options): registra as fontes, gera
 //     a ficha com as opções do jogador (DDL-0105) e baixa.
 //
@@ -27,6 +29,10 @@ import CharacterSheet from './CharacterSheetDoc';
 import { buildSheetModel } from './sheetModel';
 import { registerPdfFonts } from './fonts';
 import { loadCorsImage } from '../data/imageProxy';
+import { normalizePdfOptions } from './pdfOptions';
+import { loadBestiary } from '../data/bestiary';
+import { readSource } from '../data/dataSource';
+import { resolveCopies } from '../selector/copy';
 
 /** Um nome de arquivo seguro. */
 const safeName = (character) => (character.meta?.name || 'character').replace(/[^\w.-]+/g, '_');
@@ -50,6 +56,15 @@ async function pdfPortrait(src) {
   }
 }
 
+/** O bestiário da fonte ativa para a seção Summons & forms; sem ele a seção sai vazia. */
+async function creaturesFor(db) {
+  try {
+    return resolveCopies(await loadBestiary({ db, source: await readSource() }));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Gera o PDF da ficha preenchida e baixa.
  * @param {object} character
@@ -60,7 +75,8 @@ async function pdfPortrait(src) {
 export async function exportCharacterPdf(character, derived, db, options) {
   registerPdfFonts();
   const portrait = await pdfPortrait(character.meta?.portrait);
-  const model = buildSheetModel({ ...character, meta: { ...character.meta, portrait } }, derived, db, options);
+  const bestiary = normalizePdfOptions(options).sections.creatures ? await creaturesFor(db) : [];
+  const model = buildSheetModel({ ...character, meta: { ...character.meta, portrait } }, derived, db, options, { bestiary });
   const blob = await pdf(<CharacterSheet model={model} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

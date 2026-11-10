@@ -106,6 +106,7 @@ export default function PdfExportPanel({ onExport }) {
             <Check checked={opts.sections.combat} label="Combat page" onChange={(v) => patch('sections', 'combat', v)} />
             <Check checked={opts.sections.features} label="Features & traits" onChange={(v) => patch('sections', 'features', v)} />
             <Check checked={opts.sections.spells} label="Spellcasting" onChange={(v) => patch('sections', 'spells', v)} />
+            <Check checked={opts.sections.creatures} label="Summons & forms" onChange={(v) => patch('sections', 'creatures', v)} />
             <Check checked={opts.sections.inventory} label="Equipment" onChange={(v) => patch('sections', 'inventory', v)} />
             <Check checked={opts.sections.biography} label="Biography" onChange={(v) => patch('sections', 'biography', v)} />
           </div>

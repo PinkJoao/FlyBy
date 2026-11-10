@@ -7,7 +7,8 @@
 //   normalização de um valor gravado (DDL-0105):
 //     theme       'white' | 'parchment'
 //     pageSize    'A4' | 'LETTER'
-//     sections    combat, features, spells, inventory, biography (liga e desliga)
+//     sections    combat, features, spells, creatures (summons e formas, DDL-0196),
+//                 inventory, biography (liga e desliga)
 //     fields      portrait, skills, attacks, resources, proficiencies, tableBoxes
 //                 (página de combate)
 //     detail      por grupo: classFeatures, subclassFeatures, speciesTraits, feats
@@ -38,7 +39,7 @@ const ITEM_DETAIL = ['names', 'magic', 'all'];
 export const DEFAULT_PDF_OPTIONS = {
   theme: 'parchment',
   pageSize: 'A4',
-  sections: { combat: true, features: true, spells: true, inventory: true, biography: true },
+  sections: { combat: true, features: true, spells: true, creatures: true, inventory: true, biography: true },
   fields: { portrait: true, skills: true, attacks: true, resources: true, proficiencies: true, tableBoxes: true },
   detail: {
     classFeatures: 'full',
@@ -59,7 +60,7 @@ export const PDF_PRESETS = {
     flavor: DEFAULT_PDF_OPTIONS.flavor,
   },
   compact: {
-    sections: { combat: true, features: true, spells: true, inventory: true, biography: true },
+    sections: { combat: true, features: true, spells: true, creatures: false, inventory: true, biography: true },
     fields: { portrait: true, skills: true, attacks: true, resources: true, proficiencies: true, tableBoxes: true },
     detail: {
       classFeatures: 'titles', subclassFeatures: 'titles', speciesTraits: 'titles', feats: 'titles',
@@ -68,7 +69,7 @@ export const PDF_PRESETS = {
     flavor: { species: false, classes: false, subclasses: false, items: false },
   },
   complete: {
-    sections: { combat: true, features: true, spells: true, inventory: true, biography: true },
+    sections: { combat: true, features: true, spells: true, creatures: true, inventory: true, biography: true },
     fields: { portrait: true, skills: true, attacks: true, resources: true, proficiencies: true, tableBoxes: true },
     detail: {
       classFeatures: 'full', subclassFeatures: 'full', speciesTraits: 'full', feats: 'full',

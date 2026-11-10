@@ -381,6 +381,20 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const t = setTimeout(() => maybeStartTutorial('play-combat'), 300);
     return () => clearTimeout(t);
   }, [inCombat]);
+
+  const onSummonsTab = activeTab === 'Summons' && !bestiary.loading;
+  useEffect(() => {
+    if (!onSummonsTab) return undefined;
+    const t = setTimeout(() => maybeStartTutorial('play-summons'), 300);
+    return () => clearTimeout(t);
+  }, [onSummonsTab]);
+
+  const formOn = !!state.form;
+  useEffect(() => {
+    if (!formOn) return undefined;
+    const t = setTimeout(() => maybeStartTutorial('play-form'), 300);
+    return () => clearTimeout(t);
+  }, [formOn]);
   const hp = vitalsOf(state, catalog);
   const hitDice = hitDiceLeft(catalog, state);
 
@@ -1072,7 +1086,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       )}
 
       {state.form && (
-        <section className={styles.formCard}>
+        <section className={styles.formCard} data-tour={TUT.PLAY_FORM}>
           <span className={styles.formTitle}>{state.form.label}</span>
           <span className={styles.formNote}>{formNote}</span>
           <Button size="sm" onClick={revertForm}>Revert</Button>
@@ -1195,6 +1209,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
               onDamage={(v, a) => summonRoll(v, a, 'damage')}
               onDismiss={dismissSummon}
               onLight={lightRoll}
+              dataTour={TUT.PLAY_SUMMONS}
               lightKinds={lightKinds}
             />
           )}

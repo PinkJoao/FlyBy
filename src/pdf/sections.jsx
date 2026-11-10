@@ -19,6 +19,8 @@
 //     FeaturesSection(props): as features por grupo.
 //   SlotTracker(props), SpellTable(props), SpellCard(props), CardGrid(props),
 //     SpellsSection(props): a conjuração.
+//     CreatureCard(props), CreaturesSection(props): os summons e as formas, dois
+//       cartões por linha (opcional, DDL-0196).
 //   isLongCard(card), pairs(list): o cartão que pode partir, e as linhas de dois.
 //   ItemTable(props), Coins(props), InventorySection(props): o inventário.
 //   TextBox(props), BiographySection(props): a história.
@@ -542,6 +544,47 @@ export function SpellsSection({ sc, t, w }) {
       <SlotTracker slots={sc.slots} pact={sc.pact} t={t} />
       {sc.origins.map((o) => <SpellTable key={o.id} o={o} t={t} />)}
       {sc.cards?.length ? <CardGrid cards={sc.cards} t={t} /> : null}
+    </View>
+  );
+}
+
+/** O cartão de uma criatura (summon, companheiro, forma do Wild Shape). */
+function CreatureCard({ card, t }) {
+  const meta = [['Armor Class', card.ac], ['Hit Points', card.hp], ['Speed', card.speed]];
+  return (
+    <View style={{ width: '49%', borderWidth: 0.8, borderColor: t.rule, borderRadius: 4, backgroundColor: t.box }}>
+      <View style={{ backgroundColor: t.redSoft, borderTopLeftRadius: 4, borderTopRightRadius: 4, paddingHorizontal: 5, paddingVertical: 2.5, borderBottomWidth: 0.8, borderBottomColor: t.red }}>
+        <Text style={{ fontFamily: FONTS.title, fontWeight: 700, fontSize: 9, color: t.red }}>{card.name}</Text>
+        <Text style={{ ...body(t, 7.5), fontStyle: 'italic', color: t.muted }}>{card.origin}</Text>
+      </View>
+      <View style={{ padding: 5 }}>
+        {meta.map(([label, value]) => (
+          <Text key={label} style={{ ...body(t, 7.5) }}>
+            <Text style={{ fontWeight: 700 }}>{label}: </Text>{String(value ?? '')}
+          </Text>
+        ))}
+        <Text style={{ ...body(t, 7) }}>{card.stats}</Text>
+        {card.forms ? <Text style={{ ...body(t, 7), fontStyle: 'italic' }}>{card.forms}</Text> : null}
+        <View style={{ borderTopWidth: 0.5, borderTopColor: t.rule, marginVertical: 3 }} />
+        {card.traits.length ? <Blocks blocks={card.traits} t={t} size={7.5} /> : null}
+        <Blocks blocks={card.actions} t={t} size={7.5} />
+      </View>
+    </View>
+  );
+}
+
+/** Os summons e as formas, dois cartões por linha. */
+export function CreaturesSection({ cards, t, w }) {
+  if (!cards.length) return null;
+  return (
+    <View>
+      <SectionTitle t={t} width={w}>Summons &amp; Forms</SectionTitle>
+      {pairs(cards).map(([a, b]) => (
+        <View key={a.key} wrap={false} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+          <CreatureCard card={a} t={t} />
+          {b ? <CreatureCard card={b} t={t} /> : null}
+        </View>
+      ))}
     </View>
   );
 }

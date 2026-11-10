@@ -25,7 +25,7 @@
 import { Document, Page, View } from '@react-pdf/renderer';
 import { themeFor, FONTS } from './theme';
 import { PageBackground, RunningHeader, Footer } from './parts';
-import { CombatSection, FeaturesSection, SpellsSection, InventorySection, BiographySection } from './sections';
+import { CombatSection, FeaturesSection, SpellsSection, CreaturesSection, InventorySection, BiographySection } from './sections';
 
 const PAGE_SIZES = { A4: [595.28, 841.89], LETTER: [612, 792] };
 const PAD = { top: 38, bottom: 40, side: 34 };
@@ -49,6 +49,7 @@ export default function CharacterSheet({ model }) {
     s.combat && <CombatSection key="combat" m={model} t={t} opts={opts} contentHeight={height - PAD.top - PAD.bottom} />,
     s.features && model.featureGroups.length > 0 && <FeaturesSection key="features" groups={model.featureGroups} t={t} w={w} />,
     s.spells && model.spellcasting.origins.length > 0 && <SpellsSection key="spells" sc={model.spellcasting} t={t} w={w} />,
+    s.creatures && model.creatures?.length > 0 && <CreaturesSection key="creatures" cards={model.creatures} t={t} w={w} />,
     s.inventory && <InventorySection key="inventory" inv={inv} t={t} w={w} />,
     s.biography && <BiographySection key="bio" b={model.biography} t={t} w={w} portrait={opts.fields.portrait ? model.header.portrait : null} />,
   ].filter(Boolean);

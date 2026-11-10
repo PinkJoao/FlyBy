@@ -47,6 +47,9 @@
 //     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque.
 //     lightRoll(group, kind), lightKinds(group): a rolagem da instância leve (S4,
 //       DDL-0194), a da magia no círculo gravado, com o custo que a prosa diz.
+//     transformWildShape(feature), pickForm(m), revertForm(): a forma (DDL-0195): o
+//       Wild Shape pelas formas conhecidas, a magia de transformação pelo painel
+//       seletor, e sair dela; o catálogo da tela é o da forma (formCatalog).
 //     summonHp(group, member, kind), summonRoll(view, action, kind),
 //       summonFromFeature(feature), dismissSummon(group): a aba Summons (DDL-0192): PV de um membro, o ataque e o
 //       dano de uma ação (sem os efeitos do jogador) e dispensar. Ao conjurar uma
@@ -180,6 +183,8 @@ import useActiveInView from '../hooks/useActiveInView';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
 import { derivePlayCatalog } from '../engine/playCatalog';
+import { transformRuleOf, transformOps, revertOps, formTempHp, formCatalog, formStats, formEligible, wildShapeOf } from '../engine/playForms';
+import creatureEntity from '../selector/entities/creature';
 import {
   vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
@@ -224,6 +229,7 @@ import ConditionsCard from '../components/play/ConditionsCard';
 import EffectsCard from '../components/play/EffectsCard';
 import { SKILL_LABEL } from '../components/builder/labels';
 import SelectorPanel from '../selector/SelectorPanel';
+import Button from '../components/common/Button';
 import conditionEntity from '../selector/entities/condition';
 import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
@@ -313,13 +319,21 @@ function HistoryHead({ onUndo, onRedo, onClear, canUndo, canRedo, canClear, last
 }
 
 /** A tela do play mode, com o personagem garantido. */
+// ATENÇÃO: as condições do XPHB que incluem Incapacitated (a regra do Wild Shape acaba com ela).
+const INCAPACITATING = ['incapacitated', 'paralyzed', 'petrified', 'stunned', 'unconscious'];
+
 export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const { db } = useData();
-  const catalog = useMemo(() => derivePlayCatalog(character, db, { derived }), [character, db, derived]);
+  const baseCatalog = useMemo(() => derivePlayCatalog(character, db, { derived }), [character, db, derived]);
   const play = usePlayDoc(character.id);
   const wide = useMediaQuery(WIDE_QUERY);
   const summonsActive = (play.state?.summons?.length ?? 0) > 0;
-  const bestiary = useBestiary(summonsActive);
+  const form = play.state?.form ?? null;
+  const bestiary = useBestiary(summonsActive || !!form);
+  const formBlock = form ? bestiary.list.find((m) => m.name === form.ref?.name && m.source === form.ref?.source) ?? null : null;
+  const catalog = useMemo(() => (form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog), [baseCatalog, form, formBlock]);
+  const beastDb = useMemo(() => ({ ...db, bestiary: { monster: bestiary.list } }), [db, bestiary.list]);
+  const [formPick, setFormPick] = useState(null);
   const tabList = summonsActive ? [...TABS.slice(0, 3), 'Summons', ...TABS.slice(3)] : TABS;
   const tabs = wide ? tabList : ['History', ...tabList];
   const [tab, setTab] = useState('Actions');
@@ -587,6 +601,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** Lança uma magia: escolhe a forma, grava e abre a rolagem dela. */
   const castSpell = async (origin, spell) => {
+    if (state.form && !state.form.spells && !(await confirm({ title: 'No spellcasting in this form', message: `${state.form.source}: you can't cast spells in this form. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
+    const transformRule = transformRuleOf(spell.name);
     const costs = spellCosts(spell, catalog);
     let cost = costs[0];
     if (costs.length > 1) {
@@ -604,12 +620,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const beasts = summoning ? await bestiary.load() : [];
     const creatures = !summoning ? [] : /^find familiar$/i.test(spell.name) ? familiarForms(beasts) : summonCreaturesFor(beasts, spell);
     const light = !creatures.length && isLightSummon(spell);
-    if (!way || creatures.length || light) {
-      const r = await askCast({ catalog, state, origin, spell, creatures, light });
+    let transformSelf = false;
+    if (!way || creatures.length || light || transformRule) {
+      const r = await askCast({ catalog, state, origin, spell, creatures, light, transform: transformRule });
       if (!r) return;
       way = way ?? r.way;
       onSelf = !!r.onSelf;
       summon = r.summon;
+      transformSelf = !!r.transform;
     }
     const classLevel = character.classes?.find((c) => `class:${c.classId}` === origin.key)?.level ?? null;
     const turn = summon ? summonTurnOf([...(rawSpell?.entries ?? []), ...(rawSpell?.entriesHigherLevel ?? [])]) : null;
@@ -619,6 +637,12 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (way.key && (way.left ?? 0) < 1 && !(await confirm({ title: 'Nothing left', message: `No ${way.label.toLowerCase()} is left. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
     record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]), costOfActivation(cost.cost));
     if (summon) setTab('Summons');
+    if (transformRule && transformSelf) {
+      await bestiary.load();
+      setFormPick({ rule: transformRule });
+      setPicker('form');
+      return;
+    }
     if (spell.mechanics?.attack && spell.mechanics?.damage?.dice) {
       const atk = spellAttackOf(origin, spell, way.level);
       const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus) : '', effect: damageText(atk) });
@@ -770,6 +794,60 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const ops = summonOps({ state, creature, spell: null, level: null, origin, catalog, classLevel: cls?.level ?? null, turn, feature: feature.name });
     record(makeEvent('summon', { label: `${creature.name} summoned`, ops, payload: { summon: creature.name } }));
     setTab('Summons');
+  };
+
+  /** O Wild Shape: escolhe uma das formas conhecidas, gasta o uso e a Ação Bônus. */
+  const transformWildShape = async (feature) => {
+    const known = character.wildShapeForms ?? [];
+    if (!known.length) {
+      await alert({ title: 'No known forms', message: 'Choose your Wild Shape forms in the sheet, on the Class tab.' });
+      return;
+    }
+    const r = await ask({
+      title: feature.name,
+      fields: [{ type: 'select', name: 'f', label: 'Form', default: '0', options: known.map((f, i) => ({ label: f.name, value: String(i) })) }],
+      actions: [{ label: 'Cancel', value: false }, { label: 'Transform', value: true, tone: 'primary' }],
+    });
+    if (!r?.action) return;
+    const pick = known[Number(r.values?.f) || 0];
+    const list = await bestiary.load();
+    const creature = list.find((m) => m.name === pick.name && m.source === pick.source) ?? list.find((m) => m.name === pick.name);
+    if (!creature) {
+      await alert({ title: pick.name, message: 'This form is not in the bestiary of this data source.' });
+      return;
+    }
+    const ws = (character.classes ?? []).map((c) => wildShapeOf(db, c)).find(Boolean);
+    const rule = transformRuleOf('wild shape');
+    const pool = baseCatalog.resources.find((x) => String(x.name).toLowerCase() === 'wild shape');
+    if (pool && leftOf(baseCatalog, state, pool.key) < 1
+      && !(await confirm({ title: 'No Wild Shape left', message: 'You have no uses of Wild Shape left. Transform anyway?', confirmLabel: 'Transform anyway' }))) return;
+    const wis = baseCatalog.rollData?.abilities?.wis?.mod ?? 0;
+    const ops = [
+      ...(pool ? [{ op: 'spend', key: pool.key, amount: 1 }] : []),
+      ...transformOps({
+        state, rule, creature,
+        tempHp: formTempHp(rule, { classLevel: ws?.level ?? 0, circleForms: !!ws?.circleForms }),
+        acFloor: ws?.circleForms ? 13 + wis : null,
+        spells: baseCatalog.features.includes('beast spells'),
+      }),
+    ];
+    record(makeEvent('form', { label: `Wild Shape: ${creature.name}`, ops, payload: { form: creature.name } }), 'bonus');
+  };
+
+  /** A forma escolhida no painel depois de uma magia de transformação. */
+  const pickForm = (m) => {
+    const rule = formPick?.rule;
+    setPicker(null);
+    setFormPick(null);
+    if (!rule) return;
+    const ops = transformOps({ state, rule, creature: m, tempHp: formTempHp(rule, { stats: formStats(m) }) });
+    record(makeEvent('form', { label: `${rule.label}: ${m.name}`, ops, payload: { form: m.name } }));
+  };
+
+  /** Sai da forma (o Wild Shape gasta a Ação Bônus). */
+  const revertForm = () => {
+    if (!state.form) return;
+    record(makeEvent('form', { label: `${state.form.label} ends`, ops: revertOps(state), payload: { reverted: true } }), state.form.kind === 'wildShape' ? 'bonus' : null);
   };
 
   /** Dispensa o grupo, perguntando antes. */
@@ -971,6 +1049,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const nextUndone = play.doc && play.doc.cursor < play.doc.events.length ? play.doc.events[play.doc.cursor] : null;
 
   const checks = catalog.checks;
+  const wildLevel = state.form?.kind === 'wildShape' ? (character.classes ?? []).map((c) => wildShapeOf(db, c)).find(Boolean)?.level ?? 0 : 0;
+  const formNote = !state.form ? '' : [
+    formBlock ? `AC ${catalog.stats.ac}` : bestiary.loading ? 'Loading the form…' : 'Form not in the bestiary',
+    state.form.spells ? null : "Can't cast spells",
+    wildLevel ? `Up to ${Math.floor(wildLevel / 2)} hour${Math.floor(wildLevel / 2) === 1 ? '' : 's'}` : null,
+    state.form.endsAtZeroTemp ? 'Ends when its temporary HP run out' : null,
+    state.form.kind === 'wildShape' && INCAPACITATING.some((id) => state.conditions?.[id]) ? 'Incapacitated: Wild Shape ends' : null,
+  ].filter(Boolean).join(' · ');
   const historyHead = (
     <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} />
   );
@@ -983,6 +1069,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           <button type="button" className={styles.restBtn} onClick={longRest}>Long rest</button>
         </div>,
         levelSlot,
+      )}
+
+      {state.form && (
+        <section className={styles.formCard}>
+          <span className={styles.formTitle}>{state.form.label}</span>
+          <span className={styles.formNote}>{formNote}</span>
+          <Button size="sm" onClick={revertForm}>Revert</Button>
+        </section>
       )}
 
       <div className={sheetHeader.header}>
@@ -1085,7 +1179,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
-            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} onSummon={summonFromFeature} />
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} onSummon={summonFromFeature} onTransform={transformWildShape} />
           )}
 
           {activeTab === 'Spells' && (
@@ -1145,6 +1239,18 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           exclude={(c) => c.name !== 'Concentration' && !!state.conditions?.[conditionId(c.name)]}
           onSelect={pickCondition}
           onClose={() => setPicker(null)}
+        />
+      )}
+      {picker === 'form' && (
+        <SelectorPanel
+          entity={creatureEntity}
+          db={beastDb}
+          currentId={null}
+          heading={`${formPick?.rule?.label ?? 'Form'}: choose the form`}
+          hint={bestiary.loading ? 'Loading the creatures…' : 'Forms the spell allows at your level.'}
+          exclude={(m) => !formEligible(m, formPick?.rule, { level: baseCatalog.stats.level })}
+          onSelect={pickForm}
+          onClose={() => { setPicker(null); setFormPick(null); }}
         />
       )}
       {picker === 'effect' && (

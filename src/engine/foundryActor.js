@@ -17,6 +17,8 @@
 // DECISÕES E ARMADILHAS
 //   - O crédito do retrato (`meta.portraitCredit`, DDL-0137) vai em
 //     `flags.builder5e.portraitCredit`: o Foundry não tem campo para o artista.
+//     `flags.builder5e.wildShapeForms`: as formas conhecidas do Wild Shape (DDL-0195),
+//     decisão sem campo no dnd5e.
 //   - O retrato vai no `img` do ator E no token (`prototypeToken.texture.src`), por
 //     `toFoundryImage`: URL sem extensão reprovava o ator inteiro (foundryImage.js).
 //   - A ORDEM de montagem importa: os itens de magia e os itens de escolha de
@@ -230,6 +232,9 @@ export function assembleFoundryActor(character, db) {
   }
   if (portrait && character.meta.portraitCredit) {
     actor.flags.builder5e.portraitCredit = { ...character.meta.portraitCredit };
+  }
+  if (character.wildShapeForms?.length) {
+    actor.flags.builder5e.wildShapeForms = character.wildShapeForms.map((f) => ({ name: f.name, source: f.source }));
   }
   return actor;
 }

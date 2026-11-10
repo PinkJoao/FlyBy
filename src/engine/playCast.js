@@ -108,7 +108,7 @@ export function castEvent({ state, origin, spell, way, onSelf = false, now = new
   const ops = [];
   if (way.key) ops.push({ op: 'spend', key: way.key, amount: 1 });
   const ended = spell.concentration && state.concentration ? state.concentration.name : null;
-  if (spell.concentration) ops.push(...endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon'));
+  if (spell.concentration) ops.push(...endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon' || o.op === 'form' || (o.op === 'hp' && o.temp < 0)));
   const expiresRound = state.combat && spell.durationRounds ? state.combat.round + spell.durationRounds : null;
   if (spell.concentration) ops.push({ op: 'concentration', value: { name: spell.name, spellKey: spell.key, level: way.level, ...(expiresRound ? { expiresRound } : {}) } });
   const effect = spellModifier(spell);

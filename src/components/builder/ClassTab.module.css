@@ -10,6 +10,7 @@
  *   .levelControl, .levelLabel: o controle de nível no canto superior direito, com
  *     o rótulo À ESQUERDA do stepper para a linha não ficar alta.
  *   .tab, .choices, .subLabel, .addBtn, .summary: o resto da aba.
+ *   .formRow, .over: as formas do Wild Shape (WildShapeForms, DDL-0195).
  *
  * DECISÕES E ARMADILHAS
  *   - .classTop tem a mesma largura máxima do .field do PickerField (420px), para
@@ -151,4 +152,14 @@
 .summary {
   font-size: 13px;
   opacity: 0.6;
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.over {
+  color: var(--danger);
 }

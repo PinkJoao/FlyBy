@@ -5,7 +5,8 @@
 //   Multiclasse em SUB-ABAS (uma classe por vez). A 1ª entrada é a ORIGINAL (define
 //   os saves). Deriva ao vivo; as escolhas usam o ChoiceList e gravam em
 //   `cls.choices`. Os descritores vêm de buildClassChoices, o mesmo builder que o
-//   wizard fatia por kind (DDL-0013). A progressão fica ABAIXO dos seletores.
+//   wizard fatia por kind (DDL-0013). A progressão fica ABAIXO dos seletores. A
+//   classe com Wild Shape ganha as formas conhecidas (WildShapeForms, DDL-0195).
 //
 // FUNÇÕES
 //   capitalize(s): o rótulo da classe (o id é minúsculo, TC-0016).
@@ -33,6 +34,8 @@ import PickerField from '../common/PickerField';
 import Stepper from '../common/Stepper';
 import ChoiceList from './ChoiceList';
 import ClassProgression from './ClassProgression';
+import WildShapeForms from './WildShapeForms';
+import { wildShapeOf } from '../../engine/playForms';
 import classEntity from '../../selector/entities/class';
 import { makeSubclassEntity } from '../../selector/entities/subclass';
 import { confirm } from '../common/dialog';
@@ -45,7 +48,7 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
-export default function ClassTab({ character, db, onChange }) {
+export default function ClassTab({ character, db, onChange, onWildShapeForms }) {
   const classes = character.classes ?? [];
   const [activeIdx, setActiveIdx] = useState(0);
   const [autoOpenUid, setAutoOpenUid] = useState(null);
@@ -119,6 +122,7 @@ export default function ClassTab({ character, db, onChange }) {
   const maxForThis = MAX_TOTAL - (total - (c.level || 0));
 
   const choices = buildClassChoices(db, c, character);
+  const wildShape = wildShapeOf(db, c);
 
   return (
     <div className={styles.tab}>
@@ -199,6 +203,10 @@ export default function ClassTab({ character, db, onChange }) {
               onClear={() => clearSubclass(idx)}
             />
           </div>
+        )}
+
+        {wildShape && onWildShapeForms && (
+          <WildShapeForms db={db} forms={character.wildShapeForms ?? []} limits={wildShape} onChange={onWildShapeForms} />
         )}
 
         {choices.length > 0 && (

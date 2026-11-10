@@ -20,6 +20,7 @@
 // DECISÕES E ARMADILHAS
 //   - A feature que invoca um companheiro (Steel Defender, Primal Companion, Summon
 //     Wildfire Spirit; CLASS_SUMMONS em engine/playSummons.js) ganha "Summon" (DDL-0193).
+//   - O Wild Shape ganha "Transform": as formas conhecidas da ficha (DDL-0195).
 //   - A pílula de custo tem a cor do gasto (econ.module.css, DDL-0163), a mesma da
 //     aba Actions e dos botões de combate.
 //   - Só USAR (definição do dono, DDL-0146): sem o ajuste à mão (menos e mais) dos pools.
@@ -46,6 +47,7 @@ import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import Button from '../common/Button';
 import { isSummonFeature } from '../../engine/playSummons';
+import { transformRuleOf } from '../../engine/playForms';
 import styles from '../builder/SpellbookTab.module.css';
 import play from './PlayTabs.module.css';
 import econ from './econ.module.css';
@@ -87,7 +89,7 @@ function showFeatureText(feature) {
 }
 
 /** Uma feature: nome, nível e custos; o pool e o botão de usar ao lado. */
-function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onAdjust, onSummon }) {
+function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onAdjust, onSummon, onTransform }) {
   const activities = action?.activities ?? [];
   const special = action ? specialRecovery(action, catalog) : null;
   const costs = [...new Map(activities.filter((a) => costLabel(a.activation)).map((a) => [costLabel(a.activation), a.activation.type])).entries()];
@@ -130,6 +132,11 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
             {special ? 'Choose' : 'Use'}
           </Button>
         )}
+        {onTransform && transformRuleOf(feature.name)?.kind === 'wildShape' && (
+          <Button size="sm" variant="primary" onClick={() => onTransform(feature)} title="Assume one of your known forms">
+            Transform
+          </Button>
+        )}
         {onSummon && isSummonFeature(feature.name) && (
           <Button size="sm" variant="primary" onClick={() => onSummon(feature)} title={`Summon with ${feature.name}`}>
             Summon
@@ -149,7 +156,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
  * A aba de features do jogo.
  * @param {{ catalog: object, state: object, onUse: Function, onSpecial: Function, onAdjust: Function }} props
  */
-export default function FeaturesTab({ catalog, state, onUse, onSpecial, onAdjust, onSummon }) {
+export default function FeaturesTab({ catalog, state, onUse, onSpecial, onAdjust, onSummon, onTransform }) {
   const [kind, setKind] = useState('all');
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState(() => new Set());
@@ -169,7 +176,7 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onAdjust
       else next.add(label);
       return next;
     });
-  const rowProps = { catalog, state, onUse, onSpecial, onAdjust, onSummon };
+  const rowProps = { catalog, state, onUse, onSpecial, onAdjust, onSummon, onTransform };
 
   if (!features.length && !orphans.length) return <p className={styles.empty}>This character has no features.</p>;
 

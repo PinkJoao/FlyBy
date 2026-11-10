@@ -27,6 +27,8 @@
 //   concentrationCheckEvent(args): o save de CON para manter a concentração.
 //
 // DECISÕES E ARMADILHAS
+//   - Forma (DDL-0195): o dano que zera os PV temporários de uma forma que "acaba sem
+//     eles" (Polymorph) tira a forma no mesmo evento, e a concentração nela junto.
 //   Regras medidas no texto do XPHB (data/book/book-xphb.json, 2026-10-24)
 //   - HP máximo: subir (Aid) sobe o atual junto, porque o estado guarda o DANO; o
 //     corte do Hurt com "afeta o máximo" (o dreno de um vampiro) desce o máximo
@@ -134,8 +136,15 @@ export function damageOutcome(state, catalog, { amount, type = '', critical = fa
     }
   }
   if (toHp || toTemp) ops.unshift({ op: 'hp', damage: toHp, temp: -toTemp });
+  const formEnds = !!state.form?.endsAtZeroTemp && v.temp > 0 && toTemp === v.temp;
+  if (formEnds) {
+    ops.push({ op: 'form', clear: true });
+    const conc = String(state.concentration?.name ?? '').toLowerCase();
+    if (state.form.concentration && conc === String(state.form.source ?? '').toLowerCase()) ops.push(...endConcentrationOps(state).filter((o) => o.op !== 'form' && o.op !== 'hp'));
+    notes.push(`${state.form.source} ends (no temporary hit points left)`);
+  }
 
-  const dc = state.concentration && taken > 0 ? concentrationDc(taken) : null;
+  const dc = state.concentration && taken > 0 && !formEnds ? concentrationDc(taken) : null;
   return {
     ops,
     summary: { amount: Math.max(0, Math.floor(Number(amount) || 0)), taken, trait, type: type || null, toTemp, toHp, notes, concentrationDc: dc },
@@ -258,7 +267,7 @@ export function deathSaveEvent({ state, catalog, options = {}, rng, now = new Da
 
 /** Começa (com o nome do que se concentra) ou termina a concentração, com o que dependia dela. */
 export function concentrationEvent({ state = null, name = null, now = new Date() }) {
-  const ends = state ? endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon') : [];
+  const ends = state ? endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon' || o.op === 'form' || (o.op === 'hp' && o.temp < 0)) : [];
   return makeEvent('concentration', {
     label: name ? `Concentrating on ${name}` : 'Concentration ended',
     ops: [...ends, { op: 'concentration', value: name ? { name } : null }],

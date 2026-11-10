@@ -48,6 +48,8 @@
 //   costAvailable(cost, state): o custo está livre neste turno?
 //
 // DECISÕES E ARMADILHAS
+//   - Na forma (Wild Shape, Polymorph; DDL-0195) os ataques são os do bloco (`kind:
+//     'form'`) e contam para a ação Attack como as armas.
 //   - Medido em 2026-11-05 (sonda sobre a matriz): só o Cunning Action traz os custos
 //     como atividades com o NOME da ação (Dash, Disengage, Hide); esses entram sem
 //     registro. O SRD também traz as opções do monge e o Adrenaline Rush do orc como
@@ -256,7 +258,7 @@ export function costAvailable(cost, state) {
  * @param {object[]} [inventory] o inventário derivado
  */
 export function actionContext(catalog, state, inventory = []) {
-  const attacks = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' || a.kind === 'unarmed');
+  const attacks = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' || a.kind === 'unarmed' || a.kind === 'form');
   const spells = (catalog?.spells ?? []).flatMap((o) => o.spells.filter((s) => s.prepared !== false).map((s) => ({ origin: o, spell: s })));
   const items = (inventory ?? []).filter((e) => e?.raw);
   const typeOf = (e) => String(e.raw.type ?? '').split('|')[0];

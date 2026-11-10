@@ -120,6 +120,7 @@ export function decisionSummary(c) {
         .sort();
     })(),
     currency: { ...(c.currency ?? {}) },
+    wildShapeForms: (c.wildShapeForms ?? []).map((f) => `${f.name}|${f.source}`.toLowerCase()).sort(),
   };
 }
 

@@ -307,7 +307,7 @@ export function BuilderInner({ character, db, save, derived, activeTab, setActiv
           {activeTab === 'Background' && (
             <BackgroundTab character={character} db={db} onChangeOrigin={setOrigin} onChangeIdentity={setIdentity} />
           )}
-          {activeTab === 'Class' && <ClassTab character={character} db={db} onChange={setClasses} />}
+          {activeTab === 'Class' && <ClassTab character={character} db={db} onChange={setClasses} onWildShapeForms={(wildShapeForms) => save({ ...character, wildShapeForms })} />}
           {activeTab === 'Inventory' && (
             <InventoryTab
               character={character}

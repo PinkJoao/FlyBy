@@ -45,6 +45,8 @@
 //     (`add`), tira (`remove`) ou muda um membro (`damage`, `condition` com `on`).
 //     O membro guarda o dano, não o PV, e o grupo traz o contexto do invocador
 //     (engine/playSummons.js): o reducer não lê a ficha nem o bestiário.
+//   - Forma (DDL-0195): `form` é a forma atual ou null; a operação `form` põe (`set`)
+//     ou tira (`clear`). Quem cria o evento (engine/playForms.js) decide o resto.
 //   Operações (`op`)
 //   - `hp` { damage, temp, max }: somas; dano e temporário com piso em 0; `max`
 //     soma ao ajuste do HP máximo (`maxHpDelta`: Aid sobe, um dreno desce), que o
@@ -100,6 +102,7 @@ export function emptyPlayState() {
     modifiers: [],
     combat: null,
     summons: [],
+    form: null,
   };
 }
 
@@ -155,6 +158,8 @@ export function applyOp(state, op) {
       return { ...state, combat: op.value ?? null };
     case 'summon':
       return { ...state, summons: summonsAfter(state.summons ?? [], op) };
+    case 'form':
+      return { ...state, form: op.clear ? null : op.set ?? state.form ?? null };
     case 'modifier':
       if (op.add) return { ...state, modifiers: [...state.modifiers.filter((m) => m.id !== op.add.id), op.add] };
       if (op.remove) return { ...state, modifiers: state.modifiers.filter((m) => m.id !== op.remove) };
@@ -221,6 +226,7 @@ export function normalizePlayDoc(raw, characterId) {
     conditions: b.conditions && typeof b.conditions === 'object' ? { ...b.conditions } : {},
     modifiers: Array.isArray(b.modifiers) ? b.modifiers : [],
     summons: Array.isArray(b.summons) ? b.summons : [],
+    form: b.form && typeof b.form === 'object' ? b.form : null,
   };
   const events = Array.isArray(raw.events) ? raw.events.filter((e) => e && typeof e === 'object') : [];
   const cursor = clamp(Number.isInteger(raw.cursor) ? raw.cursor : events.length, 0, events.length);

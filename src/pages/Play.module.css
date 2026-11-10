@@ -9,6 +9,7 @@
  *   .historyHead, .historyActions: o título do histórico com desfazer e refazer.
  *   .restGroup, .restBtn: Short rest e Long rest no lugar do controle de nível.
  *   .status: a faixa de estado (a morte e o combate; só aparece com um deles).
+ *   .formCard, .formTitle, .formNote: o aviso da forma no topo (Wild Shape, DDL-0195).
  *   .deathCard, .deadCard, .deathTitle, .pips, .pip, .pipOk, .pipBad,
  *     .deathHint: os testes contra a morte.
  *   .historyTitle, .sideHead: o título do histórico com a rodada do combate, e o
@@ -288,4 +289,29 @@
 
 .sideHead {
   flex: none;
+}
+
+.formCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.formTitle {
+  flex: 1;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.formNote {
+  flex-basis: 100%;
+  order: 3;
+  font-size: 13px;
+  color: var(--text-muted);
 }

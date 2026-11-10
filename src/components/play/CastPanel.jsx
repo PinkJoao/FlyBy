@@ -10,7 +10,8 @@
 //   now" (ligado por padrão, U4 do plano de summons, DDL-0192): a criatura, a forma
 //   quando o bloco tem variantes (Air, Land, Water) e quantas. A magia sem bloco que
 //   fica em campo (`light`, Spiritual Weapon, Mage Hand; S4, DDL-0194) ganha "Track
-//   it in Summons", também ligado por padrão.
+//   it in Summons", também ligado por padrão. A magia de transformação (`transform`,
+//   DDL-0195) ganha "I transform myself" (ligado só no Shapechange, que é sempre em si).
 //   `onSelf` existe para a magia com efeito curado que pode ou não incluir quem
 //   lança (Bless, Shield of Faith): a caixa "It includes me" liga o efeito.
 //
@@ -40,7 +41,7 @@ import { creatureStats } from '../../engine/creature';
  * O conteúdo do diálogo de lançar.
  * @param {{ catalog: object, state: object, origin: object, spell: object, creatures?: object[] }} props
  */
-export default function CastPanel({ catalog, state, origin, spell, creatures = [], light = false }) {
+export default function CastPanel({ catalog, state, origin, spell, creatures = [], light = false, transform = null }) {
   const close = useDialogClose();
   const ways = castWays(catalog, state, spell);
   const first = ways.find((w) => w.left == null || w.left > 0) ?? ways[0];
@@ -48,6 +49,7 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
   const effect = spellModifier(spell);
   const [onSelf, setOnSelf] = useState(false);
   const [summonOn, setSummonOn] = useState(creatures.length > 0 || light);
+  const [selfOn, setSelfOn] = useState(transform?.kind === 'shapechange');
   const [creatureIdx, setCreatureIdx] = useState(0);
   const creature = creatures[creatureIdx] ?? null;
   const variants = creature ? creatureStats(creature, { spellLevel: spell.level }).variants : [];
@@ -66,7 +68,7 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
     e.preventDefault();
     const way = ways.find((w) => w.id === pick);
     const summon = summonOn && creature ? { creature, variant: chosenVariant, count: Math.max(1, Number(count) || 1) } : summonOn && light ? { light: true } : null;
-    if (way) close({ way, onSelf, summon });
+    if (way) close({ way, onSelf, summon, transform: !!transform && selfOn });
   };
 
   return (
@@ -107,6 +109,11 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
           )}
           {summonOn && <span className={styles.label}>How many</span>}
           {summonOn && <AmountStepper value={count} onChange={setCount} min={1} label="How many" autoFocus={false} />}
+        </div>
+      )}
+      {transform && (
+        <div className={styles.summon}>
+          <Toggle checked={selfOn} onChange={setSelfOn} label="I transform myself" hint="Choose the form next; your stats change to it" />
         </div>
       )}
       {light && (

@@ -213,6 +213,15 @@ describe('foundryToCharacter', () => {
     }
   });
 
+  it('formas do Wild Shape fazem round-trip pela flag (DDL-0195)', () => {
+    const original = createCharacter({ name: 'Fern' });
+    original.wildShapeForms = [{ name: 'Wolf', source: 'XMM' }, { name: 'Rat', source: 'XMM' }];
+    const actor = assembleFoundryActor(original, db);
+    expect(actor.flags.builder5e.wildShapeForms).toEqual(original.wildShapeForms);
+    expect(foundryToCharacter(actor, db).wildShapeForms).toEqual(original.wildShapeForms);
+    expect(foundryToCharacter(assembleFoundryActor(createCharacter({ name: 'X' }), db), db).wildShapeForms ?? []).toEqual([]);
+  });
+
   it('espécie: base + lineage do nome', () => {
     expect(ch.species).toMatchObject({ id: 'elf', source: 'XPHB', lineage: 'Elf; Drow Lineage' });
   });

@@ -16,6 +16,7 @@
 // FUNÇÕES
 //   SlotButton(props), RoundBadge(props), CombatFloat(props), CombatDock(props).
 //   TurnButtons(props): Next turn e End combat, nos dois lugares.
+//   SummonsLine(props): "Then: ..." com os summons ativos e a regra de turno de cada um.
 //   SLOTS: os três gastos, com o rótulo e o ícone; `available` diz quais ainda dão.
 //
 // DECISÕES E ARMADILHAS
@@ -86,7 +87,7 @@ function TurnButtons({ onNextTurn, onEndCombat, size }) {
  * No celular: os gastos à esquerda e os comandos e a rodada à direita, fixos na tela.
  * @param {{ round: number, available: object, onPick: Function, onNextTurn: Function, onEndCombat: Function, dataTour?: string }} props
  */
-export function CombatFloat({ round, available, onPick, onNextTurn, onEndCombat, dataTour }) {
+export function CombatFloat({ round, available, onPick, onNextTurn, onEndCombat, dataTour, summons = [] }) {
   return createPortal(
     <>
       <div className={`${styles.pod} ${styles.float} ${styles.left} motion-page`} data-tour={dataTour}>
@@ -98,6 +99,7 @@ export function CombatFloat({ round, available, onPick, onNextTurn, onEndCombat,
         <RoundBadge round={round} compact />
         <TurnButtons onNextTurn={onNextTurn} onEndCombat={onEndCombat} />
       </div>
+      {summons.length > 0 && <SummonsLine summons={summons} className={`${styles.float} ${styles.summonsFloat} motion-page`} />}
     </>,
     document.body,
   );
@@ -107,7 +109,7 @@ export function CombatFloat({ round, available, onPick, onNextTurn, onEndCombat,
  * No desktop: a barra na base da coluna do histórico.
  * @param {{ available: object, onPick: Function, onNextTurn: Function, onEndCombat: Function, dataTour?: string }} props
  */
-export function CombatDock({ available, onPick, onNextTurn, onEndCombat, dataTour }) {
+export function CombatDock({ available, onPick, onNextTurn, onEndCombat, dataTour, summons = [] }) {
   return (
     <div className={styles.dock} data-tour={dataTour}>
       <span className={styles.pod}>
@@ -118,6 +120,16 @@ export function CombatDock({ available, onPick, onNextTurn, onEndCombat, dataTou
       <span className={styles.pod}>
         <TurnButtons onNextTurn={onNextTurn} onEndCombat={onEndCombat} />
       </span>
+      {summons.length > 0 && <SummonsLine summons={summons} />}
     </div>
+  );
+}
+
+/** A linha dos summons no controle de turno (U6, DDL-0193): quem age depois de você. */
+function SummonsLine({ summons, className = '' }) {
+  return (
+    <span className={`${styles.summons} ${className}`} title={summons.map((s) => `${s.label}: ${s.note}`).join('\n')}>
+      Then: {summons.map((s) => s.label).join(', ')}
+    </span>
   );
 }

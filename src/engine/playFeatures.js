@@ -142,6 +142,7 @@ export function featureList(actor, character, db) {
       level: place.option ? null : level,
       rank: level ?? 0,
       actionKey: `action:${ident}`,
+      source: item.system?.source?.book ?? null,
       entries: place.entries?.length ? place.entries : htmlToEntries(item.system?.description?.value),
     });
   }

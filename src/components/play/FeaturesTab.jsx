@@ -18,6 +18,8 @@
 //   FeaturesTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - A feature que invoca um companheiro (Steel Defender, Primal Companion, Summon
+//     Wildfire Spirit; CLASS_SUMMONS em engine/playSummons.js) ganha "Summon" (DDL-0193).
 //   - A pílula de custo tem a cor do gasto (econ.module.css, DDL-0163), a mesma da
 //     aba Actions e dos botões de combate.
 //   - Só USAR (definição do dono, DDL-0146): sem o ajuste à mão (menos e mais) dos pools.
@@ -43,6 +45,7 @@ import EntryContent from '../common/EntryContent';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import Button from '../common/Button';
+import { isSummonFeature } from '../../engine/playSummons';
 import styles from '../builder/SpellbookTab.module.css';
 import play from './PlayTabs.module.css';
 import econ from './econ.module.css';
@@ -84,7 +87,7 @@ function showFeatureText(feature) {
 }
 
 /** Uma feature: nome, nível e custos; o pool e o botão de usar ao lado. */
-function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onAdjust }) {
+function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onAdjust, onSummon }) {
   const activities = action?.activities ?? [];
   const special = action ? specialRecovery(action, catalog) : null;
   const costs = [...new Map(activities.filter((a) => costLabel(a.activation)).map((a) => [costLabel(a.activation), a.activation.type])).entries()];
@@ -127,6 +130,11 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
             {special ? 'Choose' : 'Use'}
           </Button>
         )}
+        {onSummon && isSummonFeature(feature.name) && (
+          <Button size="sm" variant="primary" onClick={() => onSummon(feature)} title={`Summon with ${feature.name}`}>
+            Summon
+          </Button>
+        )}
         {lone && (
           <Button size="sm" variant="primary" onClick={() => onAdjust(lone.key, 1)} disabled={loneLeft <= 0} title={`Spend one ${lone.name}`}>
             Use
@@ -141,7 +149,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
  * A aba de features do jogo.
  * @param {{ catalog: object, state: object, onUse: Function, onSpecial: Function, onAdjust: Function }} props
  */
-export default function FeaturesTab({ catalog, state, onUse, onSpecial, onAdjust }) {
+export default function FeaturesTab({ catalog, state, onUse, onSpecial, onAdjust, onSummon }) {
   const [kind, setKind] = useState('all');
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState(() => new Set());
@@ -161,7 +169,7 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onAdjust
       else next.add(label);
       return next;
     });
-  const rowProps = { catalog, state, onUse, onSpecial, onAdjust };
+  const rowProps = { catalog, state, onUse, onSpecial, onAdjust, onSummon };
 
   if (!features.length && !orphans.length) return <p className={styles.empty}>This character has no features.</p>;
 

@@ -11,7 +11,9 @@
 // FUNÇÕES
 //   Localização
 //   resolveClassObj(db, classId, source): a classe; prefere a fonte do personagem,
-//     senão a mais recente.
+//     senão a mais recente que não é reedição cosmética.
+//   reskinBase(list, cls): a classe de que a reedição (`reskinOf`) é cópia.
+//   reskinSources(db, classId): as fontes das reedições de uma classe.
 //   subclassCopyId(s), resolvedSubclassList(db, classId): as subclasses com o
 //     `_copy` resolvido (cache por db).
 //   resolveSubclassObj(db, classId, subclassId, subclassSource): uma subclasse.
@@ -47,6 +49,13 @@
 //
 // DECISÕES E ARMADILHAS
 //   Localização
+//   - Reedição cosmética de classe (`reskinOf`, DDL-0190): o espelho do 5etools
+//     ganhou "Druid|WoW", "Monk|WoW", "Paladin|WoW", "Rogue|WoW" e "Warlock|WoW",
+//     STUBS `_copy` da classe XPHB sem `startingEquipment` nem features. Sem fonte,
+//     o resolveClassObj pegava a ÚLTIMA da lista (o stub): o seletor de classe a
+//     oferecia, a ficha gravava "WoW" e o kit inicial saía vazio, travando o passo do
+//     guia. A reedição resolve para a classe base, e o padrão ignora reedições; a
+//     ficha já gravada como "WoW" volta a funcionar sem migração.
 //   - Subclasse legada anexada à classe 2024 é STUB `_copy`: traz só as
 //     subclassFeatures reapontadas e herda o resto (as domain spells) da
 //     original. Sem resolver, o stub ganha do original e as magias somem
@@ -169,9 +178,22 @@ export function resolveClassObj(db, classId, source) {
   if (!Array.isArray(list) || list.length === 0) return null;
   if (source) {
     const match = list.find((c) => c.source === source);
-    if (match) return match;
+    if (match) return reskinBase(list, match) ?? match;
   }
-  return list[list.length - 1];
+  const real = list.filter((c) => !c.reskinOf);
+  return (real.length ? real : list).at(-1);
+}
+
+/** A classe de que uma reedição cosmética (`reskinOf`) é cópia, ou null. */
+function reskinBase(list, cls) {
+  const [name, source] = String(cls?.reskinOf?.[0] ?? '').split('|');
+  if (!name) return null;
+  return list.find((c) => !c.reskinOf && c.name === name && (!source || c.source?.toLowerCase() === source.toLowerCase())) ?? null;
+}
+
+/** As fontes das reedições cosméticas de uma classe ("WoW"), para a lista de subclasses ignorar as cópias. */
+export function reskinSources(db, classId) {
+  return new Set((db?.[`class-${classId}`]?.class ?? []).filter((c) => c.reskinOf).map((c) => c.source));
 }
 
 // ATENÇÃO: resolva o _copy das subclasses; sem ele, o stub vence e as magias concedidas somem.

@@ -12,6 +12,8 @@
 //   makeSubclassEntity(classId, title): a fábrica.
 //
 // DECISÕES E ARMADILHAS
+//   - As subclasses da reedição cosmética da classe (`classSource` "WoW", cópias das
+//     do XPHB, DDL-0190) saem da lista: seriam duplicatas com o mesmo nome.
 //   - O id inclui classSource: a cópia "compat" (Armorer TCE na classe EFA) colide
 //     com a original em name|source.
 //   - Subclasses não usam reprintedAs de forma consistente (e há duplicatas na
@@ -21,6 +23,7 @@
 import { latestOnly } from '../reprints';
 import { resolveCopies } from '../copy';
 import { resolveSubclassEntries } from '../../engine/subclassPreview';
+import { reskinSources } from '../../engine/resolve';
 
 const subclassIdOf = (s) => `${s.shortName ?? s.name}|${s.source}|${s.classSource ?? ''}`;
 
@@ -47,6 +50,7 @@ export function makeSubclassEntity(classId, title = 'Subclass') {
     list: (db) =>
       dedupeByShortName(
         latestOnly(resolveCopies(db?.[`class-${classId}`]?.subclass ?? [], subclassIdOf))
+          .filter((s) => !reskinSources(db, classId).has(s.classSource))
       ),
 
     idOf: (s) => `${s.shortName}|${s.source}`,

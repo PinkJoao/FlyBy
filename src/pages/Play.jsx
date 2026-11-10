@@ -45,6 +45,14 @@
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
 //     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque.
+//     lightRoll(group, kind), lightKinds(group): a rolagem da instância leve (S4,
+//       DDL-0194), a da magia no círculo gravado, com o custo que a prosa diz.
+//     summonHp(group, member, kind), summonRoll(view, action, kind),
+//       summonFromFeature(feature), dismissSummon(group): a aba Summons (DDL-0192): PV de um membro, o ataque e o
+//       dano de uma ação (sem os efeitos do jogador) e dispensar. Ao conjurar uma
+//       magia com `miscTags` SMN, o bestiário carrega e o CastPanel oferece invocar
+//       (o Find Familiar, as feras de ND 0); a feature de companheiro tem "Summon"; a
+//       regra de turno vem da prosa e aparece na linha dos summons do combate (DDL-0193).
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
 //     askRollKind(opts), damageText(attack): a pergunta "d20 ou os outros dados" e o
 //       texto do dano (DDL-0156).
@@ -176,7 +184,7 @@ import {
   vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
-import { emptyPlayState } from '../engine/playState';
+import { emptyPlayState, makeEvent, hpView } from '../engine/playState';
 import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
 import {
@@ -195,6 +203,11 @@ import { actionContext, attackStepOp, basicActionList, costAvailable, offhandAtt
 import FeaturesTab from '../components/play/FeaturesTab';
 import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
+import SummonsTab from '../components/play/SummonsTab';
+import useBestiary from '../hooks/useBestiary';
+import { summonCreaturesFor, summonOps, summonGroupView, summonHpEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, familiarForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
+import { resolveClassObj, resolveSubclassObj } from '../engine/resolve';
+import { resolveSpellObj } from '../engine/spells';
 import RollButton from '../components/play/RollButton';
 import { CombatDock, CombatFloat, RoundBadge } from '../components/play/CombatControls';
 import PlayHistory from '../components/play/PlayHistory';
@@ -305,7 +318,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const catalog = useMemo(() => derivePlayCatalog(character, db, { derived }), [character, db, derived]);
   const play = usePlayDoc(character.id);
   const wide = useMediaQuery(WIDE_QUERY);
-  const tabs = wide ? TABS : ['History', ...TABS];
+  const summonsActive = (play.state?.summons?.length ?? 0) > 0;
+  const bestiary = useBestiary(summonsActive);
+  const tabList = summonsActive ? [...TABS.slice(0, 3), 'Summons', ...TABS.slice(3)] : TABS;
+  const tabs = wide ? tabList : ['History', ...tabList];
   const [tab, setTab] = useState('Actions');
   const activeTab = tabs.includes(tab) ? tab : 'Actions';
   const [tabDir, setTabDir] = useState(null);
@@ -582,14 +598,27 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const ways = castWays(catalog, state, spell);
     let way = cost.noSlot ? { id: 'free', label: cost.source, level: spell.level, key: null, left: null } : ways.length === 1 && ways[0].left == null ? ways[0] : null;
     let onSelf = false;
-    if (!way) {
-      const r = await askCast({ catalog, state, origin, spell });
+    let summon = null;
+    const rawSpell = resolveSpellObj(db, spell.name, spell.source);
+    const summoning = (rawSpell?.miscTags ?? []).includes('SMN');
+    const beasts = summoning ? await bestiary.load() : [];
+    const creatures = !summoning ? [] : /^find familiar$/i.test(spell.name) ? familiarForms(beasts) : summonCreaturesFor(beasts, spell);
+    const light = !creatures.length && isLightSummon(spell);
+    if (!way || creatures.length || light) {
+      const r = await askCast({ catalog, state, origin, spell, creatures, light });
       if (!r) return;
-      way = r.way;
+      way = way ?? r.way;
       onSelf = !!r.onSelf;
+      summon = r.summon;
     }
+    const classLevel = character.classes?.find((c) => `class:${c.classId}` === origin.key)?.level ?? null;
+    const turn = summon ? summonTurnOf([...(rawSpell?.entries ?? []), ...(rawSpell?.entriesHigherLevel ?? [])]) : null;
+    const summonExtra = summon?.light
+      ? lightOps({ state, spell, level: way.level, origin, catalog, rules: lightRulesOf(rawSpell?.entries), casterHpMax: hpView(state, catalog.stats?.hpMax ?? 0).max })
+      : summon ? summonOps({ state, creature: summon.creature, spell, level: way.level, variant: summon.variant, count: summon.count, origin, catalog, classLevel, turn }) : [];
     if (way.key && (way.left ?? 0) < 1 && !(await confirm({ title: 'Nothing left', message: `No ${way.label.toLowerCase()} is left. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
-    record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), costOfActivation(cost.cost));
+    record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]), costOfActivation(cost.cost));
+    if (summon) setTab('Summons');
     if (spell.mechanics?.attack && spell.mechanics?.damage?.dice) {
       const atk = spellAttackOf(origin, spell, way.level);
       const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus) : '', effect: damageText(atk) });
@@ -619,6 +648,29 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (kind === 'attack') rollAttack(spellAttackOf(origin, spell, level));
     else if (kind === 'damage') rollDamage(spellAttackOf(origin, spell, level));
     else rollSpellHeal(origin, spell, level);
+  };
+
+  /** A rolagem de uma instância leve (Spiritual Weapon de novo): a da magia, no círculo gravado, com o custo que a prosa diz. */
+  const lightRoll = (group, kind) => {
+    const origin = catalog.spells.find((o) => o.spells.some((s) => s.key === group.spell?.key));
+    const spell = origin?.spells.find((s) => s.key === group.spell?.key);
+    if (!spell) {
+      alert({ title: 'Spell not found', message: 'This spell is no longer on the sheet.' });
+      return;
+    }
+    const cost = costOfActivation(group.turn?.command);
+    const pay = cost ? [economyOp(state, cost)].filter(Boolean) : [];
+    const atk = spellAttackOf(origin, spell, group.ctx?.spellLevel ?? spell.level);
+    if (kind === 'attack') rollAttack(atk, false, false, null, pay);
+    else if (kind === 'damage') rollDamage(atk, {}, false, false, null, pay);
+    else rollSpellHeal(origin, spell, group.ctx?.spellLevel ?? spell.level);
+  };
+
+  /** O que a instância leve rola: ataque, dano ou cura da magia. */
+  const lightKinds = (group) => {
+    const spell = catalog.spells.flatMap((o) => o.spells).find((s) => s.key === group.spell?.key);
+    const m = spell?.mechanics ?? {};
+    return [m.attack && 'attack', m.damage?.dice && 'damage', m.heal?.dice && 'heal'].filter(Boolean);
   };
 
   /** O descanso longo: mostra o que vai voltar e grava. */
@@ -661,6 +713,68 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     });
     const ability = r?.values?.ability;
     if (r?.action && ability) rollTest({ type: 'tool', id: name, ability }, `${name} (${ABILITY_FULL[ability]})`);
+  };
+
+  /** As vistas dos grupos de summon: a criatura resolvida e os PV de cada membro. */
+  const summonViews = (state.summons ?? []).map((g) =>
+    summonGroupView(g, bestiary.list.find((m) => m.name === g.ref?.name && m.source === g.ref?.source) ?? null));
+
+  /** A linha dos summons no controle de turno: quem age e como. */
+  const summonLine = (state.summons ?? []).map((g) => ({ label: g.label, note: turnText(g.turn) || 'acts as the text says' }));
+
+  /** Dano ou cura num membro de um summon, pelo valor digitado. */
+  const summonHp = async (group, member, kind) => {
+    const r = await ask({
+      title: kind === 'hurt' ? `${group.label}: damage` : `${group.label}: healing`,
+      fields: [{ type: 'text', name: 'n', label: kind === 'hurt' ? 'Damage' : 'Healing', default: '' }],
+      actions: [{ label: 'Cancel', value: false }, { label: kind === 'hurt' ? 'Hurt' : 'Heal', value: true, tone: 'primary' }],
+    });
+    const n = Number.parseInt(r?.values?.n, 10);
+    if (r?.action && Number.isFinite(n) && n > 0) record(summonHpEvent(group, member, kind === 'hurt' ? n : -n));
+  };
+
+  /** O ataque e o dano de uma ação de summon, sem os efeitos do jogador. */
+  const summonRoll = (view, action, kind) => {
+    const atk = summonAttack(view.group, action, view.stats);
+    if (kind === 'attack') {
+      roll((options) => rollAttackEvent({ catalog, attack: atk, options }), { title: `${atk.name}: attack`, kind: 'd20', parts: [{ label: 'Attack', formula: atk.attack?.bonus ?? 0 }], rollData: catalog.rollData }, false, []);
+    } else {
+      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData }, false, []);
+    }
+  };
+
+  /** O companheiro de uma feature de classe (Steel Defender, Primal Companion): escolhe a criatura e invoca. */
+  const summonFromFeature = async (feature) => {
+    const list = featureSummons(await bestiary.load(), feature.name, feature.source);
+    if (!list.length) {
+      await alert({ title: feature.name, message: 'The creature is not in the bestiary of this data source.' });
+      return;
+    }
+    let creature = list[0];
+    if (list.length > 1) {
+      const r = await ask({
+        title: feature.name,
+        fields: [{ type: 'select', name: 'c', label: 'Creature', default: '0', options: list.map((c, i) => ({ label: c.name, value: String(i) })) }],
+        actions: [{ label: 'Cancel', value: false }, { label: 'Summon', value: true, tone: 'primary' }],
+      });
+      if (!r?.action) return;
+      creature = list[Number(r.values?.c) || 0];
+    }
+    const cls = character.classes?.find((c) => {
+      const co = resolveClassObj(db, c.classId, c.source);
+      const so = c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null;
+      return co?.name === feature.section || so?.name === feature.section;
+    }) ?? character.classes?.[0];
+    const origin = catalog.spells?.find((o) => o.key === `class:${cls?.classId}`) ?? null;
+    const turn = summonTurnOf([...(feature.entries ?? []), ...(creature.trait ?? []), ...(creature.actionEntries ?? [])]);
+    const ops = summonOps({ state, creature, spell: null, level: null, origin, catalog, classLevel: cls?.level ?? null, turn, feature: feature.name });
+    record(makeEvent('summon', { label: `${creature.name} summoned`, ops, payload: { summon: creature.name } }));
+    setTab('Summons');
+  };
+
+  /** Dispensa o grupo, perguntando antes. */
+  const dismissSummon = async (group) => {
+    if (await confirm({ title: `Dismiss ${group.label}?`, message: 'It leaves the Summons tab. You can undo it in the history.', confirmLabel: 'Dismiss' })) record(dismissEvent(group));
   };
 
   const rollAttack = (attack, quick, spend = false, cost = 'action', extraOps = []) =>
@@ -971,13 +1085,25 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
-            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} />
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} onSummon={summonFromFeature} />
           )}
 
           {activeTab === 'Spells' && (
             <SpellsTab catalog={catalog} state={state} derived={derived} db={db} onCast={castSpell} />
           )}
 
+          {activeTab === 'Summons' && (
+            <SummonsTab
+              views={summonViews}
+              loading={bestiary.loading}
+              onHp={summonHp}
+              onAttack={(v, a) => summonRoll(v, a, 'attack')}
+              onDamage={(v, a) => summonRoll(v, a, 'damage')}
+              onDismiss={dismissSummon}
+              onLight={lightRoll}
+              lightKinds={lightKinds}
+            />
+          )}
           {activeTab === 'Inventory' && (
             <InventoryTab
               catalog={catalog}
@@ -999,14 +1125,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           </div>
           <div className={styles.sideScroll}>
             <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} />
-            {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} />}
+            {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} summons={summonLine} />}
           </div>
         </div>,
         sideSlot,
       )}
 
       {!wide && state.combat && (
-        <CombatFloat round={state.combat.round} available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} />
+        <CombatFloat round={state.combat.round} available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} summons={summonLine} />
       )}
 
       {picker === 'condition' && (

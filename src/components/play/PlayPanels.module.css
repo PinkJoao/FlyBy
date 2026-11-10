@@ -5,6 +5,7 @@
  *   .form, .note, .warn, .short: a coluna, as notas e os avisos em vermelho.
  *   .costs, .stepRow, .stepper, .stepValue, .smallBtn: os custos e os contadores.
  *   .field, .label, .input: os campos (os sim ou não são o Toggle comum).
+ *   .summon: o bloco "Summon now" do diálogo de conjurar (DDL-0192).
  *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
  *   .actions: a fila dos botões (o Button do app, DDL-0160).
  * -------------------------------------------------------------------------- */
@@ -140,4 +141,13 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+}
+
+.summon {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }

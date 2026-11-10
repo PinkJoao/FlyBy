@@ -47,7 +47,7 @@ import {
 export const MISSING = Symbol('missing');
 
 /** Busca um caminho tentando cada base em ordem; 404 em todas devolve MISSING. */
-async function fetchWithMirrors(path, signal, bases) {
+export async function fetchWithMirrors(path, signal, bases) {
   let lastError;
   let notFound = 0;
   for (const base of bases) {

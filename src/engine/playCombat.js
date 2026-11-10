@@ -97,12 +97,20 @@ export function nextTurnEvent({ state, now = new Date() }) {
       ended.push(m.label);
     }
   }
+  for (const g of state.summons ?? []) {
+    if (g.expiresRound != null && round >= g.expiresRound && !g.concentration) {
+      ops.push({ op: 'summon', remove: g.id });
+      ended.push(g.label);
+    }
+  }
   const conc = state.concentration;
   if (conc?.expiresRound != null && round >= conc.expiresRound) {
     ops.push(...endConcentrationOps(state));
     ended.push(conc.name);
   }
-  return makeEvent('combat', { label: `Round ${round}`, ops, payload: { round, ended } }, now);
+  const gone = new Set(ops.filter((o) => o.op === 'summon' && o.remove).map((o) => o.remove));
+  const after = (state.summons ?? []).filter((g) => !gone.has(g.id) && (g.turn?.order === 'after' || g.turn?.order === 'shared')).map((g) => g.label);
+  return makeEvent('combat', { label: `Round ${round}`, ops, payload: { round, ended, after } }, now);
 }
 
 /** Fecha o combate. */

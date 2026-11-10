@@ -23,6 +23,7 @@
 //   Estado
 //     emptyPlayState(): o estado descansado.
 //     applyOp(state, op), applyEvent(state, event): o redutor puro.
+//     summonsAfter(list, op): a lista de summons depois de uma operação `summon`.
 //     hpView(state, maxHp), remainingOf(state, key, max): os valores atuais.
 //   Documento e log
 //     createPlayDoc(characterId), normalizePlayDoc(raw, characterId): o
@@ -40,6 +41,10 @@
 //       personagem, com a lista do que conflitou.
 //
 // DECISÕES E ARMADILHAS
+//   - Summons (DDL-0192): `summons` é a lista de grupos; a operação `summon` põe
+//     (`add`), tira (`remove`) ou muda um membro (`damage`, `condition` com `on`).
+//     O membro guarda o dano, não o PV, e o grupo traz o contexto do invocador
+//     (engine/playSummons.js): o reducer não lê a ficha nem o bestiário.
 //   Operações (`op`)
 //   - `hp` { damage, temp, max }: somas; dano e temporário com piso em 0; `max`
 //     soma ao ajuste do HP máximo (`maxHpDelta`: Aid sobe, um dreno desce), que o
@@ -94,6 +99,7 @@ export function emptyPlayState() {
     concentration: null,
     modifiers: [],
     combat: null,
+    summons: [],
   };
 }
 
@@ -147,6 +153,8 @@ export function applyOp(state, op) {
       return { ...state, concentration: op.value ?? null };
     case 'combat':
       return { ...state, combat: op.value ?? null };
+    case 'summon':
+      return { ...state, summons: summonsAfter(state.summons ?? [], op) };
     case 'modifier':
       if (op.add) return { ...state, modifiers: [...state.modifiers.filter((m) => m.id !== op.add.id), op.add] };
       if (op.remove) return { ...state, modifiers: state.modifiers.filter((m) => m.id !== op.remove) };
@@ -154,6 +162,23 @@ export function applyOp(state, op) {
     default:
       return state;
   }
+}
+
+/** A lista de summons depois de uma operação `summon` (pôr, tirar, dano num membro, condição). */
+function summonsAfter(list, op) {
+  if (op.add) return [...list.filter((g) => g.id !== op.add.id), op.add];
+  if (op.remove) return list.filter((g) => g.id !== op.remove);
+  return list.map((g) => {
+    if (g.id !== op.id) return g;
+    const members = (g.members ?? []).map((m, i) => {
+      if (i !== op.member) return m;
+      const conditions = op.condition
+        ? (op.on ? [...new Set([...(m.conditions ?? []), op.condition])] : (m.conditions ?? []).filter((c) => c !== op.condition))
+        : m.conditions ?? [];
+      return { ...m, damage: Math.max(0, num(m.damage) + num(op.damage)), conditions };
+    });
+    return { ...g, members };
+  });
 }
 
 /** Aplica todas as operações de um evento. */
@@ -195,6 +220,7 @@ export function normalizePlayDoc(raw, characterId) {
     spent: b.spent && typeof b.spent === 'object' ? { ...b.spent } : {},
     conditions: b.conditions && typeof b.conditions === 'object' ? { ...b.conditions } : {},
     modifiers: Array.isArray(b.modifiers) ? b.modifiers : [],
+    summons: Array.isArray(b.summons) ? b.summons : [],
   };
   const events = Array.isArray(raw.events) ? raw.events.filter((e) => e && typeof e === 'object') : [];
   const cursor = clamp(Number.isInteger(raw.cursor) ? raw.cursor : events.length, 0, events.length);

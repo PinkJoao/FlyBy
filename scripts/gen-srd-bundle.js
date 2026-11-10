@@ -15,6 +15,11 @@
 //   srdCorpus(edition): o texto oficial do SRD 5.2 (packs `*24` do dnd5e) ou do
 //     SRD 5.1 (SRD51_PACKS, os sem sufixo), já normalizado para comparação, o
 //     nome de cada documento e, à parte, o de cada página do texto de regras.
+//   srdBestiary(): as criaturas do bestiário local, para o filtro `srd52` (S0 do
+//     plano de summons, DDL-0189: as 335 criaturas do SRD 5.2 vão no pacote). Sai a
+//     metadata de apresentação (token, som, arte alternativa, `_versions`) e o
+//     ambiente fica só com a categoria: "planar, feywild" vira "planar" (o
+//     plano do cenário não é texto do SRD).
 //   renamesModule(map): o src/engine/srdRenamesData.js gerado (nome antigo ->
 //     nome do SRD), para resolver fichas entre os dois modos.
 //   main(): gera, varre, grava e falha se sobrar nome protegido, ou se uma
@@ -180,6 +185,20 @@ function srdCorpus(edition = '5.2') {
   return { corpus: normalizeCorpus(texts.map((t) => t.replace(/\s*\n\s*/g, ' ')).join(' ')), docNames, pageNames };
 }
 
+/** As criaturas de todos os arquivos do bestiário local (o filtro `srd52` vem depois, no buildSrdBundle). */
+function srdBestiary() {
+  const dir = join(ROOT, 'DnD Source Material', '5etools Source Code', 'data', 'bestiary');
+  const DROP = ['soundClip', 'altArt', 'hasToken', 'hasFluff', 'hasFluffImages', 'foundryTokenScale', 'tokenCredit', 'tokenHref', '_versions'];
+  return readdirSync(dir).filter((x) => /^bestiary-.*[.]json$/.test(x))
+    .flatMap((x) => JSON.parse(readFileSync(join(dir, x), 'utf8')).monster ?? [])
+    .map((m) => {
+      const out = { ...m };
+      for (const k of DROP) delete out[k];
+      if (Array.isArray(out.environment)) out.environment = [...new Set(out.environment.map((e) => String(e).split(',')[0].trim()))];
+      return out;
+    });
+}
+
 /** O módulo gerado com as trocas de nome (antigo minúsculo -> nome do SRD). */
 function renamesModule(map) {
   const rule = '='.repeat(77);
@@ -210,6 +229,7 @@ function renamesModule(map) {
 function main() {
   if (!existsSync(PACKS)) throw new Error('Packs do dnd5e não encontrados (./DnD Source Material).');
   const full = loadDb();
+  full.bestiary = { monster: srdBestiary() };
   const { bundle, report } = buildSrdBundle(full, {
     textFixes: TEXT_FIXES, extraRenames: EXTRA_RENAMES, legacy: SRD51_EXTRAS, unflagged: SRD52_UNFLAGGED,
   });

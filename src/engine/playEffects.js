@@ -34,7 +34,8 @@
 //       curado de uma feature usada ou de uma magia lançada, ou null.
 //     sourceModifier(name): o efeito curado de uma magia lançada por OUTRO (o Add
 //       effect do card), sem ligação com a concentração do personagem, ou null.
-//     endConcentrationOps(state): termina a concentração e o que dependia dela.
+//     endConcentrationOps(state): termina a concentração e o que dependia dela (os
+//       efeitos e, desde o DDL-0193, os summons ligados a ela).
 //     restModifierOps(state, period): o que um descanso tira.
 //     conditionEvent(args), modifierEvent(args), removeModifierEvent(args): os
 //       eventos.
@@ -329,6 +330,7 @@ export function endConcentrationOps(state) {
   return [
     { op: 'concentration', value: null },
     ...(state.modifiers ?? []).filter((m) => m.concentration).map((m) => ({ op: 'modifier', remove: m.id })),
+    ...(state.summons ?? []).filter((g) => g.concentration).map((g) => ({ op: 'summon', remove: g.id })),
   ];
 }
 

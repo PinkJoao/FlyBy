@@ -305,7 +305,7 @@ function currentClassSource(db, className) {
     CURRENT_CLASS_SOURCE.set(db, cache);
   }
   const key = String(className ?? '').toLowerCase();
-  if (!cache.has(key)) cache.set(key, latestOnly(db?.[`class-${key}`]?.class ?? [])[0]?.source ?? null);
+  if (!cache.has(key)) cache.set(key, latestOnly((db?.[`class-${key}`]?.class ?? []).filter((c) => !c.reskinOf))[0]?.source ?? null);
   return cache.get(key);
 }
 

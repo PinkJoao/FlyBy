@@ -153,6 +153,7 @@ function detailOf(event) {
       if (p.moved != null || p.dash) lines.push(`${p.left} ft left this turn`);
       if (p.rounds) lines.push(`${p.rounds} round${p.rounds === 1 ? '' : 's'}`);
       for (const n of p.ended ?? []) lines.push(`${n} ended`);
+      if (p.after?.length) lines.push(`Your summons act: ${p.after.join(', ')}`);
       for (const t of p.effects ?? []) tags.push({ text: t });
       break;
     case 'use':

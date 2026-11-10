@@ -258,7 +258,7 @@ export function deathSaveEvent({ state, catalog, options = {}, rng, now = new Da
 
 /** Começa (com o nome do que se concentra) ou termina a concentração, com o que dependia dela. */
 export function concentrationEvent({ state = null, name = null, now = new Date() }) {
-  const ends = state ? endConcentrationOps(state).filter((o) => o.op === 'modifier') : [];
+  const ends = state ? endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon') : [];
   return makeEvent('concentration', {
     label: name ? `Concentrating on ${name}` : 'Concentration ended',
     ops: [...ends, { op: 'concentration', value: name ? { name } : null }],

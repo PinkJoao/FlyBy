@@ -28,6 +28,7 @@ import { rollHitDie, hitDiceLeft } from '../../engine/playRest';
 import { sequenceRng } from '../../engine/dice';
 import { hpView } from '../../engine/playState';
 import { useDialogClose } from '../common/dialogContext';
+import Chip from '../common/Chip';
 import styles from './ShortRestPanel.module.css';
 import Button from '../common/Button';
 
@@ -93,7 +94,7 @@ export default function ShortRestPanel({ catalog, state }) {
       {spends.length > 0 && (
         <div className={styles.rolled}>
           {spends.map((s, i) => (
-            <span key={i} className={styles.chip}>d{s.faces}: {s.healed}</span>
+            <Chip key={i} size="sm" onCard>d{s.faces}: {s.healed}</Chip>
           ))}
           <button type="button" className={styles.link} onClick={undoLast}>Undo last</button>
         </div>

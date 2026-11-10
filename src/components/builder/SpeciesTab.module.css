@@ -2,7 +2,7 @@
  * SpeciesTab.module.css: a aba Species
  * =============================================================================
  * CLASSES
- *   .tab, .section, .label, .sectionTitle, .meta, .metaItem, .about, .traits,
+ *   .tab, .section, .label, .sectionTitle, .about, .traits,
  *     .trait, .hint.
  * -------------------------------------------------------------------------- */
 
@@ -28,25 +28,6 @@
   font-size: 17px;
   font-weight: 600;
   color: var(--text-h);
-}
-
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.metaItem {
-  font-size: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 5px 10px;
-  color: var(--text);
-}
-
-.metaItem b {
-  color: var(--text-h);
-  font-weight: 600;
 }
 
 .about {

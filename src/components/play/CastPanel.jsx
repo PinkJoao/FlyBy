@@ -8,7 +8,9 @@
 //   marcada. Fecha com { way, onSelf, summon } (`summon.light` na instância leve), ou null. Quem o abre é o playDialogs.jsx.
 //   A magia que invoca (`creatures`, os blocos do bestiário) ganha o bloco "Summon
 //   now" (ligado por padrão, U4 do plano de summons, DDL-0192): a criatura, a forma
-//   quando o bloco tem variantes (Air, Land, Water) e quantas. A magia sem bloco que
+//   quando o bloco tem variantes (Air, Land, Water) e quantas. Com mais de quatro
+//   criaturas (o Find Familiar) a escolha vai para o painel seletor depois do
+//   lançamento (`summon.pick`), como toda escolha de criatura do app (DDL-0197). A magia sem bloco que
 //   fica em campo (`light`, Spiritual Weapon, Mage Hand; S4, DDL-0194) ganha "Track
 //   it in Summons", também ligado por padrão. A magia de transformação (`transform`,
 //   DDL-0195) ganha "I transform myself" (ligado só no Shapechange, que é sempre em si).
@@ -67,7 +69,10 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
   const submit = (e) => {
     e.preventDefault();
     const way = ways.find((w) => w.id === pick);
-    const summon = summonOn && creature ? { creature, variant: chosenVariant, count: Math.max(1, Number(count) || 1) } : summonOn && light ? { light: true } : null;
+    const many = creatures.length > 4;
+    const summon = summonOn && many ? { pick: true, count: Math.max(1, Number(count) || 1) }
+      : summonOn && creature ? { creature, variant: chosenVariant, count: Math.max(1, Number(count) || 1) }
+        : summonOn && light ? { light: true } : null;
     if (way) close({ way, onSelf, summon, transform: !!transform && selfOn });
   };
 
@@ -95,14 +100,9 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
       )}
       {creatures.length > 0 && (
         <div className={styles.summon}>
-          <Toggle checked={summonOn} onChange={setSummonOn} label="Summon now" hint="The creature appears in the Summons tab" />
+          <Toggle checked={summonOn} onChange={setSummonOn} label="Summon now" hint={creatures.length > 4 ? 'You choose the creature next; it appears in the Summons tab' : 'The creature appears in the Summons tab'} />
           {summonOn && creatures.length > 1 && creatures.length <= 4 && (
             <SegmentedControl block ariaLabel="Creature" value={creatureIdx} onChange={setCreatureIdx} options={creatures.map((c, i) => [i, c.name])} />
-          )}
-          {summonOn && creatures.length > 4 && (
-            <select className={styles.input} aria-label="Creature" value={creatureIdx} onChange={(e) => setCreatureIdx(Number(e.target.value))}>
-              {creatures.map((c, i) => <option key={`${c.name}|${c.source}`} value={i}>{c.name}</option>)}
-            </select>
           )}
           {summonOn && variants.length > 0 && (
             <SegmentedControl block size="sm" ariaLabel="Form" value={chosenVariant} onChange={setVariant} options={variants.map((v) => [v, v])} />

@@ -137,6 +137,9 @@
 }
 .newBtn {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -164,6 +167,9 @@
 
 .primary {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 14px;
   font-weight: 600;

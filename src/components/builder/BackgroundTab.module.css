@@ -8,14 +8,11 @@
  *   .mode*, .boost*: os ability boosts.
  *   .featChoices: as sub-escolhas do talento de origem (Skilled, Crafter, Magic
  *     Initiate).
- *   .tags, .tagChip, .tagRemove, .addBtn, .emptyTag: idiomas e ferramentas, chips
- *     removíveis e botão de adicionar.
- *   .chips, .chip*: as perícias.
  *   .story: o texto livre da origem contada em prosa.
  *
  * DECISÕES E ARMADILHAS
- *   - Chips são PÍLULAS (999px), como no resto do app (DDL-0129); o .addBtn segue
- *     com o raio de botão.
+ *   - As escolhas da origem (idiomas, ferramentas, perícias) vão pelo ChoiceList e
+ *     pelo Chip comum (DDL-0197); esta folha não tem chip próprio.
  * -------------------------------------------------------------------------- */
 
 .tab {
@@ -127,104 +124,6 @@
   margin-left: 14px;
   padding-left: 14px;
   border-left: 2px solid var(--src-origin);
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.tagChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  border-radius: 999px;
-  padding: 6px 6px 6px 12px;
-  font-size: 13px;
-  color: var(--text-h);
-  /* ATENÇÃO: sem text-transform: capitalize (TC-0040), como no ChoiceList. */
-}
-
-.tagRemove {
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--text);
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.tagRemove:hover {
-  color: var(--danger);
-  background: var(--bg);
-}
-
-.addBtn {
-  font: inherit;
-  font-size: 13px;
-  padding: 7px 12px;
-  border-radius: 9px;
-  border: 1px dashed var(--border);
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.addBtn:hover {
-  border-color: var(--accent-border);
-}
-
-.emptyTag {
-  font-size: 13px;
-  opacity: 0.5;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  font: inherit;
-  font-size: 13px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.chip:hover {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-
-.chipActive {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-bg);
-  font-weight: 600;
-}
-
-.chipDisabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.chipDisabled:hover {
-  border-color: var(--border);
-  color: var(--text);
 }
 
 .story {

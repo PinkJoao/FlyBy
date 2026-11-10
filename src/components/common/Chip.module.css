@@ -4,14 +4,19 @@
  * CLASSES
  *   .chip, .sm, .onCard: a pílula, o tamanho compacto e o fundo dentro de card.
  *   .active: acesa (filtro ligado, ou escolhida).
- *   .info, .warning, .danger: os tons de estado (color-mix sobre o token).
+ *   .info, .success, .warning, .danger: os tons de estado (color-mix sobre o token).
  *   .static: só leitura (sem cursor nem realce).
  *   .removable, .labelBtn, .remove: a escolhida com o X redondo.
+ *   .add: o botão de adicionar (tracejado, + e texto em accent).
+ *   .struck: riscado (o filtro excluído, o bônus desligado).
+ *   .wrap: o texto longo quebra linha (raio de 14px: pílula em uma linha, cápsula
+ *     em duas).
  *   .label, .count: o rótulo e o número esmaecido.
  *
  * DECISÕES E ARMADILHAS
- *   - Medidas do filtro do SelectorPanel e da faixa "Chosen", a forma que a maior
- *     parte do app já usava (DDL-0129): pílula de 999px, 13px, 5px 11px.
+ *   - Pílula de 999px, 14px, 6px 13px: 32px de altura, a mesma da escolhida (o X de
+ *     22px com 4px em volta) e da de adicionar (DDL-0198, um pouco maior que a do
+ *     DDL-0129 a pedido do dono). O X não tem fundo; o tom vermelho só no hover.
  *   - Sem font-weight na acesa: a pílula não muda de largura ao acender.
  * -------------------------------------------------------------------------- */
 
@@ -22,9 +27,9 @@
   gap: 5px;
   max-width: 100%;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.3;
-  padding: 5px 11px;
+  padding: 6px 13px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
@@ -53,7 +58,7 @@
 
 .sm {
   font-size: 12px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   gap: 4px;
 }
 
@@ -84,6 +89,12 @@
   color: var(--text-h);
 }
 
+.success {
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--text-h);
+}
+
 .danger {
   border-color: color-mix(in srgb, var(--danger) 55%, transparent);
   background: color-mix(in srgb, var(--danger) 12%, transparent);
@@ -100,8 +111,8 @@
 }
 
 .removable {
-  gap: 2px;
-  padding: 3px 4px 3px 11px;
+  gap: 4px;
+  padding: 4px 4px 4px 13px;
   color: var(--text-h);
   cursor: default;
 }
@@ -127,25 +138,31 @@ button.labelBtn {
   cursor: pointer;
 }
 
+button.labelBtn:hover .label {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
 .remove {
   appearance: none;
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: none;
+  background: transparent;
   color: var(--text-muted);
   font-size: 11px;
   cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .remove:hover {
-  background: color-mix(in srgb, var(--text) 14%, transparent);
-  color: var(--text-h);
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+  color: var(--danger-text);
 }
 
 .label {
@@ -157,4 +174,29 @@ button.labelBtn {
   font-size: 0.85em;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.add {
+  border-style: dashed;
+  background: transparent;
+  color: var(--accent);
+}
+
+.add:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.struck .label {
+  text-decoration: line-through;
+}
+
+.wrap {
+  white-space: normal;
+  border-radius: 14px;
+}
+
+.wrap .label {
+  overflow: visible;
 }

@@ -348,7 +348,7 @@ export default function Home() {
           <div className={styles.empty}>
             <p>No characters yet.</p>
             <button type="button" className={styles.primary} onClick={createNew}>
-              + New Character
+              <Icon name="plus" /> New Character
             </button>
           </div>
         ) : (
@@ -377,7 +377,7 @@ export default function Home() {
 
             <div className={styles.newRow}>
               <button type="button" className={styles.newBtn} onClick={createNew}>
-                + New Character
+                <Icon name="plus" /> New Character
               </button>
             </div>
 

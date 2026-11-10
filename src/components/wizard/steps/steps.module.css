@@ -334,31 +334,17 @@
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  font-size: 16px;
-  line-height: 1;
+  font-size: 13px;
+  line-height: 0;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
 }
 
 .spellRemove:hover {
   border-color: var(--danger);
   color: var(--danger);
-}
-
-.spellAdd {
-  align-self: flex-start;
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px dashed var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--text-h);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.spellAdd:hover {
-  border-style: solid;
-  border-color: var(--accent);
 }
 
 .spellDone {
@@ -674,4 +660,8 @@
 
 .kitGold strong {
   color: var(--text-h);
+}
+
+.spellAddChip {
+  align-self: flex-start;
 }

@@ -450,36 +450,6 @@
   opacity: 0.7;
 }
 
-.rowRarity {
-  font-size: 8.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1.4;
-  padding: 0 4px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.rowAttunedChip {
-  font-size: 8.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1.4;
-  padding: 0 4px;
-  border-radius: 4px;
-  border: 1px solid var(--accent-border);
-  color: var(--accent);
-  background: var(--accent-bg);
-}
-
-.rowUnknown {
-  font-size: 11px;
-  color: var(--danger);
-}
-
 .rowSide {
   display: flex;
   align-items: center;

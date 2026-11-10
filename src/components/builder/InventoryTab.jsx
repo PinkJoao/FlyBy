@@ -61,6 +61,7 @@ import { NAME_SORT, sortName } from '../../sorting';
 import { showImageSource } from '../common/imageSourceDialog';
 import CloseButton from '../common/CloseButton';
 import Button from '../common/Button';
+import Tag from '../common/Tag';
 
 const EQUIPPABLE_GROUPS = new Set(['weapon', 'armor', 'spellcastingFocus', 'tool', 'instrument']);
 
@@ -618,16 +619,11 @@ export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEq
               </span>
             )}
             {rarity && (
-              <span
-                className={styles.rowRarity}
-                style={rarityColor ? { color: rarityColor, borderColor: rarityColor } : undefined}
-              >
-                {cap(rarity)}
-              </span>
+              <Tag color={rarityColor}>{cap(rarity)}</Tag>
             )}
-            {entry.attuned && <span className={styles.rowAttunedChip}>Attuned</span>}
-            {entry.isCustom && <span className={styles.rowUnknown}>Custom</span>}
-            {!entry.raw && !entry.isCustom && <span className={styles.rowUnknown}>unresolved</span>}
+            {entry.attuned && <Tag tone="accent">Attuned</Tag>}
+            {entry.isCustom && <Tag>Custom</Tag>}
+            {!entry.raw && !entry.isCustom && <Tag tone="danger" title="Not found in the data source">Unresolved</Tag>}
           </span>
         </span>
       </button>

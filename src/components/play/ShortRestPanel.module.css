@@ -4,7 +4,8 @@
  * CLASSES
  *   .panel, .now, .warn: a coluna, o HP (de agora e o que vai ficar) e o aviso.
  *   .rows, .row, .die, .left, .typed, .spend, .error: uma linha por face.
- *   .rolled, .chip, .link: os dados já rolados e o "desfazer o último".
+ *   .rolled, .link: os dados já rolados (cada um no Chip comum, DDL-0198) e o
+ *     "desfazer o último".
  *   .actions: a fila dos botões (o Button do app, DDL-0160).
  * -------------------------------------------------------------------------- */
 
@@ -98,16 +99,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-}
-
-.chip {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text-h);
 }
 
 .link {

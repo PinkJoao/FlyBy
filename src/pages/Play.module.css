@@ -19,7 +19,8 @@
  *     ficava borrado). Os comandos do combate moram no CombatControls.
  *   .heading: os títulos.
  *   .rollBtn, .rollLabel: o botão de rolar com rótulo (o teste contra a morte).
- *   .toast, .toastLabel, .toastTotal, .toastTag: o aviso da última rolagem.
+ *   .toast, .toastLabel, .toastTotal: o aviso da última rolagem (o crítico e o 1
+ *     natural são a Tag comum, DDL-0199).
  *
  * DECISÕES E ARMADILHAS
  *   - O layout É o da ficha (DDL-0114): .page, .topBar, .tabBar, .tab, .panel e
@@ -272,13 +273,6 @@
   font-weight: 700;
   color: var(--text-h);
   font-variant-numeric: tabular-nums;
-}
-
-.toastTag {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent);
-  text-transform: uppercase;
 }
 
 .historyTitle {

@@ -49,7 +49,8 @@
 //       DDL-0194), a da magia no círculo gravado, com o custo que a prosa diz.
 //     transformWildShape(feature), pickForm(m), revertForm(): a forma (DDL-0195): o
 //       Wild Shape pelas formas conhecidas, a magia de transformação pelo painel
-//       seletor, e sair dela; o catálogo da tela é o da forma (formCatalog).
+//       seletor, e sair dela; o catálogo da tela é o da forma (formCatalog). O mesmo
+//       painel escolhe a criatura do Find Familiar (`formPick.summon`, DDL-0197).
 //     summonHp(group, member, kind), summonRoll(view, action, kind),
 //       summonFromFeature(feature), dismissSummon(group): a aba Summons (DDL-0192): PV de um membro, o ataque e o
 //       dano de uma ação (sem os efeitos do jogador) e dispensar. Ao conjurar uma
@@ -184,7 +185,7 @@ import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
 import { derivePlayCatalog } from '../engine/playCatalog';
 import { transformRuleOf, transformOps, revertOps, formTempHp, formCatalog, formStats, formEligible, wildShapeOf } from '../engine/playForms';
-import creatureEntity from '../selector/entities/creature';
+import creatureEntity, { beastFormEntity } from '../selector/entities/creature';
 import {
   vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
@@ -242,6 +243,7 @@ import DiceTrayOverlay from '../dice3d/DiceTrayOverlay';
 import sheetPage from './Builder.module.css';
 import sheetHeader from '../components/builder/StatsHeader.module.css';
 import styles from './Play.module.css';
+import Tag from '../components/common/Tag';
 
 const TABS = ['Actions', 'Features', 'Spells', 'Inventory'];
 
@@ -647,9 +649,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const turn = summon ? summonTurnOf([...(rawSpell?.entries ?? []), ...(rawSpell?.entriesHigherLevel ?? [])]) : null;
     const summonExtra = summon?.light
       ? lightOps({ state, spell, level: way.level, origin, catalog, rules: lightRulesOf(rawSpell?.entries), casterHpMax: hpView(state, catalog.stats?.hpMax ?? 0).max })
-      : summon ? summonOps({ state, creature: summon.creature, spell, level: way.level, variant: summon.variant, count: summon.count, origin, catalog, classLevel, turn }) : [];
+      : summon && !summon.pick ? summonOps({ state, creature: summon.creature, spell, level: way.level, variant: summon.variant, count: summon.count, origin, catalog, classLevel, turn }) : [];
     if (way.key && (way.left ?? 0) < 1 && !(await confirm({ title: 'Nothing left', message: `No ${way.label.toLowerCase()} is left. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
     record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]), costOfActivation(cost.cost));
+    if (summon?.pick) {
+      setFormPick({ summon: { creatures, spell, level: way.level, origin, classLevel, turn, count: summon.count } });
+      setPicker('form');
+      return;
+    }
     if (summon) setTab('Summons');
     if (transformRule && transformSelf) {
       await bestiary.load();
@@ -851,8 +858,15 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   /** A forma escolhida no painel depois de uma magia de transformação. */
   const pickForm = (m) => {
     const rule = formPick?.rule;
+    const pick = formPick?.summon;
     setPicker(null);
     setFormPick(null);
+    if (pick) {
+      const ops = summonOps({ state, creature: m, spell: pick.spell, level: pick.level, count: pick.count, origin: pick.origin, catalog, classLevel: pick.classLevel, turn: pick.turn });
+      record(makeEvent('summon', { label: `${m.name} summoned`, ops, payload: { summon: m.name } }));
+      setTab('Summons');
+      return;
+    }
     if (!rule) return;
     const ops = transformOps({ state, rule, creature: m, tempHp: formTempHp(rule, { stats: formStats(m) }) });
     record(makeEvent('form', { label: `${rule.label}: ${m.name}`, ops, payload: { form: m.name } }));
@@ -1258,12 +1272,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       )}
       {picker === 'form' && (
         <SelectorPanel
-          entity={creatureEntity}
+          entity={formPick?.summon || formPick?.rule?.types?.join() === 'beast' ? beastFormEntity : creatureEntity}
           db={beastDb}
           currentId={null}
-          heading={`${formPick?.rule?.label ?? 'Form'}: choose the form`}
-          hint={bestiary.loading ? 'Loading the creatures…' : 'Forms the spell allows at your level.'}
-          exclude={(m) => !formEligible(m, formPick?.rule, { level: baseCatalog.stats.level })}
+          heading={formPick?.summon ? `${formPick.summon.spell.name}: choose the creature` : `${formPick?.rule?.label ?? 'Form'}: choose the form`}
+          hint={bestiary.loading ? 'Loading the creatures…' : formPick?.summon ? undefined : 'Forms the spell allows at your level.'}
+          exclude={(m) => (formPick?.summon
+            ? !formPick.summon.creatures.some((c) => c.name === m.name && c.source === m.source)
+            : !formEligible(m, formPick?.rule, { level: baseCatalog.stats.level }))}
           onSelect={pickForm}
           onClose={() => { setPicker(null); setFormPick(null); }}
         />
@@ -1288,9 +1304,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           <span className={styles.toastLabel}>{toast.label}</span>
           <span className={styles.toastTotal}>{toastNumber(toast)}</span>
           {(toast.rolls?.isCritical || toast.payload?.critical) && (
-            <span className={styles.toastTag}>{['attack', 'damageRoll', 'use'].includes(toast.kind) ? 'Critical' : 'Natural 20'}</span>
+            <Tag tone="success">{['attack', 'damageRoll', 'use'].includes(toast.kind) ? 'Critical' : 'Natural 20'}</Tag>
           )}
-          {toast.rolls?.isFumble && <span className={styles.toastTag}>Natural 1</span>}
+          {toast.rolls?.isFumble && <Tag tone="danger">Natural 1</Tag>}
         </button>
       )}
     </>

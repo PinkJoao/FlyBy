@@ -6,7 +6,7 @@
  *     aviso da exaustão 6.
  *   .list, .row, .rowMain, .rowName, .rowNote: uma condição ou efeito por linha.
  *   .rowCtrl, .ctrlBtn, .level: os controles (tirar, o nível com menos e mais).
- *   .add, .adds: o botão de acrescentar, no fim (e a fila deles, nos efeitos).
+ *   .adds: a fila dos botões de acrescentar, no fim (o Chip `add`, DDL-0197).
  *   O nome da linha é um botão quando abre a regra (as condições).
  *
  * DECISÕES E ARMADILHAS
@@ -106,7 +106,8 @@ button.rowName:hover {
   display: grid;
   place-items: center;
   font: inherit;
-  font-weight: 700;
+  font-size: 16px;
+  line-height: 0;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
@@ -132,20 +133,3 @@ button.rowName:hover {
   font-variant-numeric: tabular-nums;
 }
 
-.add {
-  align-self: flex-start;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px dashed var(--border);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.add:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
-}

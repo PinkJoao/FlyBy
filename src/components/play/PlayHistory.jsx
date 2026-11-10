@@ -45,6 +45,10 @@
 import { ABILITY_FULL } from '../builder/labels';
 import styles from './PlayHistory.module.css';
 import Button from '../common/Button';
+import Tag from '../common/Tag';
+
+/** O tom da Tag de cada etiqueta do cartão (o acerto em verde, a falha em vermelho). */
+const HISTORY_TONE = { crit: 'success', fumble: 'danger' };
 
 const KIND_LABEL = {
   check: 'Check',
@@ -286,16 +290,16 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
         {detail.total != null && <span className={styles.total}>{detail.total}</span>}
         <span className={styles.tags}>
           {rolls.mode && rolls.mode !== 'normal' && (
-            <span className={styles.tag}>{rolls.mode === 'advantage' ? 'Advantage' : 'Disadvantage'}</span>
+            <Tag>{rolls.mode === 'advantage' ? 'Advantage' : 'Disadvantage'}</Tag>
           )}
-          {critical && <span className={`${styles.tag} ${styles.crit}`}>{CRIT_KINDS.has(event.kind) ? 'Critical' : 'Natural 20'}</span>}
-          {rolls.isFumble && <span className={`${styles.tag} ${styles.fumble}`}>Natural 1</span>}
+          {critical && <Tag tone="success">{CRIT_KINDS.has(event.kind) ? 'Critical' : 'Natural 20'}</Tag>}
+          {rolls.isFumble && <Tag tone="danger">Natural 1</Tag>}
           {event.kind === 'damageRoll' && (event.payload?.types ?? []).length > 0 && (
-            <span className={styles.tag}>{event.payload.types.join(' / ')}</span>
+            <Tag>{event.payload.types.join(' / ')}</Tag>
           )}
-          {save && <span className={styles.tag}>DC {save.dc} {ABILITY_FULL[save.ability] ?? save.ability} save</span>}
+          {save && <Tag>DC {save.dc} {ABILITY_FULL[save.ability] ?? save.ability} save</Tag>}
           {detail.tags.map((t) => (
-            <span key={t.text} className={t.tone ? `${styles.tag} ${styles[t.tone]}` : styles.tag}>{t.text}</span>
+            <Tag key={t.text} tone={HISTORY_TONE[t.tone] ?? undefined}>{t.text}</Tag>
           ))}
         </span>
       </div>

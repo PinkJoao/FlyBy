@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { SKILL_LABEL } from '../builder/labels';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
+import Chip from '../common/Chip';
 import card from '../builder/ProficienciesCard.module.css';
 import styles from './PlayCards.module.css';
 
@@ -97,8 +98,8 @@ export default function EffectsCard({ modifiers, combat, onAdd, onAddCustom, onR
             ))}
           </ul>
           <div className={styles.adds}>
-            <button type="button" className={styles.add} onClick={onAdd} title="Find the spell or feature that caused it">+ Add effect</button>
-            <button type="button" className={styles.add} onClick={onAddCustom} title="A bonus or penalty of your own, like one from the DM">+ Add custom effect</button>
+            <Chip add onCard onClick={onAdd} title="Find the spell or feature that caused it">Add effect</Chip>
+            <Chip add onCard onClick={onAddCustom} title="A bonus or penalty of your own, like one from the DM">Add custom effect</Chip>
           </div>
         </div>
       </Collapse>

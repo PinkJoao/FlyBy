@@ -26,6 +26,8 @@ import {
   kitChooseAllows,
 } from '../../../engine/startingEquipment';
 import SelectorPanel from '../../../selector/SelectorPanel';
+import Chip from '../../common/Chip';
+import { showDetailPopup } from '../../common/detailPopup';
 import itemEntity from '../../../selector/entities/item';
 import choiceStyles from '../../builder/ChoiceList.module.css';
 import styles from './steps.module.css';
@@ -45,6 +47,10 @@ function KitChoose({ choose, index, picks, db, onPicks }) {
     if (mine.length + 1 >= choose.quantity) setOpen(false);
   };
   const remove = (id) => onPicks({ ...picks, [index]: mine.filter((x) => x !== id) });
+  const openDetail = (id) => {
+    const raw = itemEntity.list(db).find((r) => itemEntity.idOf(r) === id);
+    if (raw) showDetailPopup({ entity: itemEntity, raw, db });
+  };
 
   return (
     <div className={choiceStyles.choice}>
@@ -56,17 +62,10 @@ function KitChoose({ choose, index, picks, db, onPicks }) {
       </div>
       <div className={choiceStyles.tags}>
         {mine.map((id) => (
-          <span key={id} className={choiceStyles.tagChip}>
-            <span className={choiceStyles.tagLabel}>{id.split('|')[0]}</span>
-            <button type="button" className={choiceStyles.tagRemove} aria-label={`Remove ${id.split('|')[0]}`} onClick={() => remove(id)}>
-              ×
-            </button>
-          </span>
+          <Chip key={id} onClick={() => openDetail(id)} onRemove={() => remove(id)}>{id.split('|')[0]}</Chip>
         ))}
         {mine.length < choose.quantity && (
-          <button type="button" className={choiceStyles.addBtn} onClick={() => setOpen(true)}>
-            + Add item
-          </button>
+          <Chip add onClick={() => setOpen(true)}>Add item</Chip>
         )}
       </div>
       {open && (

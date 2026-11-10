@@ -41,6 +41,8 @@ import { makeSubclassEntity } from '../../selector/entities/subclass';
 import { confirm } from '../common/dialog';
 import { TUT } from '../../tutorial/anchors';
 import styles from './ClassTab.module.css';
+import Tag from '../common/Tag';
+import Icon from '../common/Icon';
 
 const MAX_TOTAL = 20;
 
@@ -138,15 +140,15 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
           </button>
         ))}
         {total < MAX_TOTAL && (
-          <button type="button" className={styles.addTab} onClick={addClass} aria-label="Add class">
-            +
+          <button type="button" className={styles.addTab} onClick={addClass} aria-label="Add class" title="Add a class">
+            <Icon name="plus" />
           </button>
         )}
       </nav>
 
       <div className={styles.classCard} data-tour={TUT.TAB_CLASS_CARD}>
         <div className={styles.classTop}>
-          <span className={styles.multiBadge}>{c.isOriginalClass ? 'Original' : 'Multiclass'}</span>
+          <Tag>{c.isOriginalClass ? 'Original' : 'Multiclass'}</Tag>
           {c.classId && (
             <div className={styles.levelControl}>
               <span className={styles.levelLabel}>Level</span>
@@ -206,7 +208,9 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
         )}
 
         {wildShape && onWildShapeForms && (
-          <WildShapeForms db={db} forms={character.wildShapeForms ?? []} limits={wildShape} onChange={onWildShapeForms} />
+          <div className={styles.choices}>
+            <WildShapeForms db={db} forms={character.wildShapeForms ?? []} limits={wildShape} onChange={onWildShapeForms} />
+          </div>
         )}
 
         {choices.length > 0 && (

@@ -28,6 +28,7 @@
 
 import { useEffect, useRef } from 'react';
 import styles from './AmountStepper.module.css';
+import Icon from '../common/Icon';
 
 /**
  * O número com menos e mais de um passo e os saltos embaixo.
@@ -50,7 +51,7 @@ export default function AmountStepper({ value, onChange, unit = 1, jumps = [], m
   return (
     <div className={styles.stepper}>
       <div className={styles.main}>
-        <button type="button" className={styles.side} onClick={() => step(-unit)} disabled={blocked(-unit)} aria-label={`${unit} less`}>-</button>
+        <button type="button" className={styles.side} onClick={() => step(-unit)} disabled={blocked(-unit)} aria-label={`${unit} less`}><Icon name="minus" /></button>
         <input
           ref={inputRef}
           className={styles.amount}
@@ -61,7 +62,7 @@ export default function AmountStepper({ value, onChange, unit = 1, jumps = [], m
           placeholder="0"
           aria-label={label}
         />
-        <button type="button" className={styles.side} onClick={() => step(unit)} aria-label={`${unit} more`}>+</button>
+        <button type="button" className={styles.side} onClick={() => step(unit)} aria-label={`${unit} more`}><Icon name="plus" /></button>
       </div>
       {deltas.length > 0 && (
         <div className={styles.jumps} style={{ '--jumps': deltas.length }}>

@@ -20,6 +20,7 @@ import { ask } from '../common/dialog';
 import { totalLevel } from '../../schema/character';
 import styles from './LevelControls.module.css';
 import AnimatedNumber from '../common/AnimatedNumber';
+import Icon from '../common/Icon';
 
 const MAX_TOTAL_LEVEL = 20;
 
@@ -90,7 +91,7 @@ export default function LevelControls({ character, onChangeClasses, flip }) {
         title={canLevelDown ? 'Level down' : 'A class cannot go below level 1'}
         aria-label="Level down"
       >
-        −
+        <Icon name="minus" />
       </button>
       <span className={styles.level} title={`Character level ${total}`}>
         <AnimatedNumber value={total} className={styles.levelValue} />
@@ -104,7 +105,7 @@ export default function LevelControls({ character, onChangeClasses, flip }) {
         title={canLevelUp ? 'Level up' : `Level ${MAX_TOTAL_LEVEL} is the maximum`}
         aria-label="Level up"
       >
-        +
+        <Icon name="plus" />
       </button>
     </div>
   );

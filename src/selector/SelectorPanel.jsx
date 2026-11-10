@@ -30,6 +30,10 @@
 //     emitido sem opção acusa um valor DIGITADO errado ("Very Rare" x "Very rare").
 //   - Grupo de filtro sem opção some; a busca nos filtros casa a opção ou o grupo;
 //     uma opção ATIVA nunca some nem desabilita.
+//   - Cada opção mostra quantos resultados ela alcança com os OUTROS filtros (o
+//     `count` do Chip, DDL-0199): a mesma conta que a desabilita no zero. A conta
+//     passa antes pelo `exclude` de quem chama (as formas fora do ND, o que já foi
+//     escolhido), para o número bater com a lista.
 //   - Renderização em levas (RENDER_CHUNK) com um sentinel: a loja (~4700 itens) e
 //     o glossário (~7700) travavam o painel. O reset só acontece ao REFINAR (busca,
 //     filtros, entity), nunca a cada mudança de resultados (o carrinho da loja muda
@@ -75,6 +79,8 @@ import Icon from '../components/common/Icon';
 import SortButton from '../components/common/SortButton';
 import { NAME_SORT, sortList } from '../sorting';
 import CloseButton from '../components/common/CloseButton';
+import Chip from '../components/common/Chip';
+import Tag from '../components/common/Tag';
 
 const DRAWER_CLOSE_PX = 70;
 
@@ -91,9 +97,9 @@ function cardOf(item, entity, db) {
   return c;
 }
 
-const PREREQ_CLASS = { ok: 'preOk', bad: 'preBad', unknown: 'preUnknown' };
+const PREREQ_TONE = { ok: 'success', bad: 'danger', unknown: 'warning' };
 
-const TONE_CLASS = { blue: 'toneBlue', accent: 'toneAccent', red: 'toneRed', neutral: 'toneNeutral' };
+const BADGE_TONE = { blue: 'info', accent: 'accent', red: 'danger', neutral: 'neutral' };
 
 export default function SelectorPanel({
   entity,
@@ -210,14 +216,15 @@ export default function SelectorPanel({
     [items, query, filterState]
   );
 
+  const countable = useMemo(() => (exclude ? items.filter((it) => !exclude(it.raw)) : items), [items, exclude]);
   const counts = useMemo(
     () =>
-      facetCounts(items, {
+      facetCounts(countable, {
         query,
         filterState,
         filterIds: entity.filters.map((f) => f.id),
       }),
-    [items, query, filterState, entity.filters],
+    [countable, query, filterState, entity.filters],
   );
   const sortOptions = useMemo(() => {
     const own = (entity.sorts ?? []).map((o) => ({ ...o, keyOf: o.keyOf && ((raw) => o.keyOf(raw, db)) }));
@@ -362,18 +369,7 @@ export default function SelectorPanel({
           <div className={styles.chosenStrip} aria-label="Already chosen">
             <span className={styles.chosenLabel}>Chosen</span>
             {multi.chosen.map((c) => (
-              <span key={c.key} className={`${styles.chosenChip} motion-pop`}>
-                {c.label}
-                <button
-                  type="button"
-                  className={styles.chosenRemove}
-                  onClick={() => multi.onRemove(c.key)}
-                  aria-label={`Remove ${c.label}`}
-                  title={`Remove ${c.label}`}
-                >
-                  <Icon name="close" />
-                </button>
-              </span>
+              <Chip key={c.key} className="motion-pop" onRemove={() => multi.onRemove(c.key)}>{c.label}</Chip>
             ))}
           </div>
         )}
@@ -472,20 +468,21 @@ export default function SelectorPanel({
                     {opts.map((opt) => {
                       const mode = filterState[f.id]?.[opt.value];
                       // ATENÇÃO: opção ATIVA nunca desabilita; senão não daria para desmarcá-la.
-                      const empty = !mode && !counts[f.id]?.[opt.value];
+                      const n = counts[f.id]?.[opt.value] ?? 0;
+                      const empty = !mode && !n;
                       return (
-                        <button
+                        <Chip
                           key={opt.value}
-                          type="button"
-                          className={`${styles.chip} ${
-                            mode === 'include' ? styles.inc : mode === 'exclude' ? styles.exc : ''
-                          } ${empty ? styles.chipEmpty : ''}`}
+                          active={mode === 'include'}
+                          tone={mode === 'exclude' ? 'danger' : undefined}
+                          struck={mode === 'exclude'}
+                          count={n}
                           disabled={empty}
-                          title={empty ? 'No results with the current filters' : undefined}
+                          title={empty ? 'No results with the current filters' : `${n} result${n === 1 ? '' : 's'} with this option and the other filters`}
                           onClick={() => toggle(f.id, opt.value)}
                         >
                           {opt.label}
-                        </button>
+                        </Chip>
                       );
                     })}
                   </div>
@@ -535,20 +532,13 @@ export default function SelectorPanel({
                     {card.meta && <span className={styles.cardMeta}>{card.meta}</span>}
                     {card.rarity && (
                       <span className={styles.badges}>
-                        <em
-                          className={styles.rarityBadge}
-                          style={card.rarity.color ? { color: card.rarity.color, borderColor: card.rarity.color } : undefined}
-                        >
-                          {card.rarity.label}
-                        </em>
+                        <Tag color={card.rarity.color}>{card.rarity.label}</Tag>
                       </span>
                     )}
                     {card.prereqs?.length > 0 && (
                       <span className={styles.badges}>
                         {card.prereqs.map((p, pi) => (
-                          <em key={pi} className={`${styles.prereq} ${styles[PREREQ_CLASS[p.status]] ?? ''}`}>
-                            {p.text}
-                          </em>
+                          <Tag key={pi} tone={PREREQ_TONE[p.status] ?? 'neutral'}>{p.text}</Tag>
                         ))}
                       </span>
                     )}
@@ -556,12 +546,7 @@ export default function SelectorPanel({
                       <span className={styles.badges}>
                         {card.badges.map((b, bi) => {
                           const text = typeof b === 'string' ? b : b.text;
-                          const tone = typeof b === 'object' ? TONE_CLASS[b.tone] : null;
-                          return (
-                            <em key={bi} className={tone ? `${styles.badge} ${styles[tone]}` : styles.badge}>
-                              {text}
-                            </em>
-                          );
+                          return <Tag key={bi} tone={typeof b === 'object' ? BADGE_TONE[b.tone] ?? 'accent' : 'accent'}>{text}</Tag>;
                         })}
                       </span>
                     )}

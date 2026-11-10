@@ -30,8 +30,10 @@ import { useBackDepth } from '../../hooks/useBack';
 import { directionOf, slideClass } from '../../motion';
 import styles from './Wizard.module.css';
 import Icon from '../common/Icon';
+import Tag from '../common/Tag';
 
 const STATUS_LABEL = { complete: 'Done', incomplete: 'Needs a choice', optional: 'Optional', info: 'Info' };
+const STATUS_TONE = { complete: 'success', incomplete: 'warning', optional: 'neutral', info: 'info' };
 
 /**
  * O shell do guia.
@@ -129,9 +131,7 @@ export default function Wizard({
               {renderStep?.(step, { character, derived, db, onChange }) ?? (
                 <div className={styles.placeholder}>
                   <p>This step’s screen arrives in a later phase.</p>
-                  <span className={`${styles.badge} ${styles[statusOf(step)]}`}>
-                    {STATUS_LABEL[statusOf(step)]}
-                  </span>
+                  <Tag tone={STATUS_TONE[statusOf(step)]}>{STATUS_LABEL[statusOf(step)]}</Tag>
                 </div>
               )}
             </div>
@@ -198,7 +198,7 @@ function Review({ steps, statusOf, onGoto }) {
                     <span className={styles.reviewName}>{s.title}</span>
                     <span className={styles.reviewSub}>{s.subtitle}</span>
                   </span>
-                  <span className={`${styles.badge} ${styles[st]}`}>{STATUS_LABEL[st]}</span>
+                  <Tag tone={STATUS_TONE[st]}>{STATUS_LABEL[st]}</Tag>
                 </button>
               </li>
             );

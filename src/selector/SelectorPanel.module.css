@@ -5,8 +5,8 @@
  *   Painel
  *   .overlay, .panel, .header, .headerText, .hint: o painel (o X é o CloseButton); .hint é a
  *     dica opcional sob o título (glossário).
- *   .chosenStrip, .chosenLabel, .chosenChip, .chosenRemove: a faixa do que já
- *     foi escolhido numa escolha múltipla, com desfazer.
+ *   .chosenStrip, .chosenLabel: a faixa do que já foi escolhido numa escolha
+ *     múltipla, com desfazer; as pílulas são o Chip comum (DDL-0197).
  *   .detailScreen, .detailHead, .detailScroll: a tela de DETALHE do mobile
  *     (tocar num card a abre antes de selecionar).
  *   .searchBar, .search, .filterToggle: a busca; o toggle só existe no mobile.
@@ -18,18 +18,17 @@
  *   .legend*, .dotInc, .dotExc: a legenda include/exclude, em duas linhas no
  *     desktop (não disputa largura com o Clear) e horizontal no mobile.
  *   .filtersActions, .clear, .applyFilters: os botões (Apply só na gaveta).
- *   .filterGroup, .chips, .chip, .inc, .exc, .noFilters: os chips.
+ *   .filterGroup, .chips, .noFilters: os grupos de filtro; cada opção é o Chip comum
+ *     (incluída = `active`, excluída = tom `danger` riscado; DDL-0198).
  *   .chipEmpty: a opção que não alcança resultado agora: visível e inerte, nunca
  *     numa opção ativa (DDL-0077).
  *   Resultados
  *   .results, .count, .cards, .sentinel: a grade e o sentinel das levas.
  *   .countRow, .sortBtn: o contador à esquerda e o botão de ordenar à direita.
- *   .card*, .badges, .badge: os cards; .cardBox é o card COM ações (loja), um
- *     <div> com o botão de info e o stepper na base.
- *   .rarityBadge: a raridade (loja), bordada; a cor vem inline.
- *   .toneNeutral, .toneBlue, .toneAccent, .toneRed: os tons dos badges.
- *   .prereq, .preOk, .preBad, .preUnknown: os pré-requisitos, pelo status contra o
- *     personagem.
+ *   .card*, .badges: os cards; .cardBox é o card COM ações (loja), um <div> com o
+ *     botão de info e o stepper na base. A raridade (cor do dado), os pré-requisitos
+ *     (success, danger, warning pelo status contra o personagem) e os badges do
+ *     cartão são a Tag comum (DDL-0199).
  *   Preview
  *   .preview, .previewScroll, .previewFoot, .selectBtn, .muted.
  *
@@ -121,38 +120,6 @@
   margin-right: 4px;
 }
 
-.chosenChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 4px 3px 10px;
-  border: 1px solid var(--accent-border);
-  border-radius: 999px;
-  background: var(--accent-bg);
-  color: var(--text-h);
-  font-size: 13px;
-}
-
-.chosenRemove {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.chosenRemove:hover {
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: var(--danger);
-}
 .headerText {
   min-width: 0;
 }
@@ -365,49 +332,6 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-.chip {
-  appearance: none;
-  font: inherit;
-  font-size: 12.5px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-.chip:hover {
-  filter: brightness(1.1);
-  border-color: var(--accent-border);
-}
-.inc {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.inc:hover {
-  border-color: var(--accent);
-}
-.exc {
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-  border-color: var(--danger);
-  color: var(--danger);
-  text-decoration: line-through;
-}
-.exc:hover {
-  border-color: var(--danger);
-}
-
-.chipEmpty {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.chipEmpty:hover {
-  filter: none;
-  border-color: var(--border);
-}
-
 .results {
   overflow-y: auto;
   padding: 16px;
@@ -504,67 +428,6 @@
   gap: 4px;
   margin-top: 4px;
 }
-.badge {
-  font-style: normal;
-  font-size: 10.5px;
-  padding: 2px 6px;
-  border-radius: 5px;
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-.rarityBadge {
-  font-style: normal;
-  font-size: 8.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1.4;
-  padding: 0 4px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.toneNeutral {
-  background: color-mix(in srgb, var(--info) 10%, transparent);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-.toneBlue {
-  background: color-mix(in srgb, var(--info) 14%, transparent);
-  color: var(--info-text);
-}
-.toneAccent {
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-.toneRed {
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: var(--danger-text);
-}
-
-.prereq {
-  font-style: normal;
-  font-size: 10.5px;
-  padding: 2px 6px;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-.preOk {
-  border-color: color-mix(in srgb, var(--success) 55%, transparent);
-  background: color-mix(in srgb, var(--success) 10%, transparent);
-}
-.preBad {
-  border-color: color-mix(in srgb, var(--danger) 60%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-.preUnknown {
-  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
-  background: color-mix(in srgb, var(--warning) 10%, transparent);
-}
-
 .preview {
   border-left: 1px solid var(--border);
   display: flex;

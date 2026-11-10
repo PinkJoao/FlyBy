@@ -2,13 +2,12 @@
  * ChoiceList.module.css: a lista de escolhas (o choke-point de toda escolha)
  * =============================================================================
  * CLASSES
- *   .list, .choice, .head, .label, .counter: o bloco de cada escolha.
+ *   .list, .choice, .head, .label, .counter: o bloco de cada escolha; .counterOver
+ *     é a contagem acima do limite (vermelha), .hint a linha do limite abaixo do título.
  *   .labelLink: o título tappável (abre a feature no glossário), com o sublinhado
  *     pontilhado dos links de regra.
- *   .chips, .chip*: as opções em chip.
- *   .tags, .tagChip, .tagLabel, .tagRemove, .addBtn: lista de tags (qualquer
- *     ferramenta ou idioma); .tagLabel é o texto do chip como botão, que abre a
- *     descrição do escolhido.
+ *   .tags: a fila das escolhidas e do botão de adicionar, ambos o Chip comum
+ *     (components/common/Chip.jsx, DDL-0197).
  *   .abilityChoice, .ability*: o ASI embutido em talento.
  *   .modeRow, .modeBtn, .modeActive, .pillsWrap: pills; .pillsWrap quebra linha
  *     (tipos de dano: até 9 opções no Boon of Energy Resistance).
@@ -18,8 +17,8 @@
  *     Tome), já que os chips ficam acima e pode haver mais de uma.
  *
  * DECISÕES E ARMADILHAS
- *   - Chips são PÍLULAS (999px), como no resto do app (DDL-0129); os botões
- *     (.addBtn, .modeBtn) seguem com o raio de botão.
+ *   - As escolhidas e o "Add" são o Chip comum (DDL-0197), nunca uma cópia aqui; o
+ *     .modeBtn segue com o raio de botão.
  *   - Sem capitalize nos chips (TC-0040): os rótulos já chegam com a grafia certa
  *     (SKILL_LABEL, titleCase do engine ou o nome real da entidade), e capitalizar
  *     de novo quebrava as partículas ("Pact Of The Blade").
@@ -76,43 +75,14 @@
   opacity: 0.55;
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.counterOver {
+  color: var(--danger);
+  opacity: 1;
 }
 
-.chip {
-  font: inherit;
-  font-size: 13px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.chip:hover {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-
-.chipActive {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-bg);
-  font-weight: 600;
-}
-
-.chipDisabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.chipDisabled:hover {
-  border-color: var(--border);
-  color: var(--text);
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .tags {
@@ -120,71 +90,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-}
-
-.tagChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  border-radius: 999px;
-  padding: 6px 6px 6px 12px;
-  font-size: 13px;
-  color: var(--text-h);
-  /* ATENÇÃO: sem text-transform: capitalize (TC-0040): quebraria "Pact of the Blade". */
-}
-
-.tagLabel {
-  font: inherit;
-  font-size: 13px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  text-transform: inherit;
-}
-
-.tagLabel:hover,
-.tagLabel:focus-visible {
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-  outline: none;
-}
-
-.tagRemove {
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--text);
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.tagRemove:hover {
-  color: var(--danger);
-  background: var(--bg);
-}
-
-.addBtn {
-  font: inherit;
-  font-size: 13px;
-  padding: 7px 12px;
-  border-radius: 9px;
-  border: 1px dashed var(--border);
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.addBtn:hover {
-  border-color: var(--accent-border);
 }
 
 .abilityChoice {

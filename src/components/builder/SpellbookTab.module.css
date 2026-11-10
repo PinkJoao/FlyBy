@@ -20,13 +20,14 @@
  *   .prepareBtn: "Prepare spell", no padrão do Shop; no limite (R11) não some,
  *     fica indisponível.
  *   Painéis
- *   .empty, .panel*, .list, .row*, .thumb*, .chip*, .metaDot: as linhas;
+ *   .empty, .panel*, .list, .row*, .thumb*, .metaDot: as linhas (as etiquetas são a
+ *     Tag comum, DDL-0199);
  *     .rowGranted (concedida, sempre preparada) tem a faixa lateral do item
  *     equipado, .rowUnprepared recua para o segundo plano.
  *   .prepRadio, .prepDot, .prepRadioOn: o toggle de preparar, igual ao de equipar.
  *   Overlay da magia
  *   .infoOverlay, .infoPanel, .infoHead, .infoScroll, .infoFooter,
- *     .grantedChip, .infoNote: o detalhe, no padrão do item.
+ *     .infoNote: o detalhe, no padrão do item.
  *   .changeBtn, .removeBtn: o par do rodapé; o margin-left: auto do .changeBtn
  *     junta os dois à direita.
  *   .swapBtn: a troca no card da magia preparada.
@@ -303,6 +304,9 @@
 }
 
 .prepareBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -561,24 +565,6 @@
 }
 
 .chip,
-.chipAccent {
-  font-size: 8.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1.4;
-  padding: 0 4px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.chipAccent {
-  border-color: var(--accent-border);
-  color: var(--accent);
-  background: var(--accent-bg);
-}
-
 .rowSide {
   display: flex;
   align-items: center;
@@ -686,19 +672,6 @@
   background: var(--bg-soft);
 }
 
-.grantedChip {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 2px 6px;
-  border-radius: 5px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
-  white-space: nowrap;
-}
-
 .infoNote {
   font-size: 12px;
   opacity: 0.65;
@@ -777,7 +750,7 @@
   place-items: center;
   font: inherit;
   font-size: 18px;
-  line-height: 1;
+  line-height: 0;
   border-radius: 8px;
   border: 1px solid var(--accent-border);
   background: var(--bg);

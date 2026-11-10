@@ -8,7 +8,6 @@
  * CLASSES
  *   .head, .progress*, .title, .exit: o cabeçalho (voltar, progresso, sair).
  *   .body, .step*, .placeholder: o corpo, que rola.
- *   .badge, .complete, .incomplete, .optional: o selo de estado.
  *   .foot, .navBtn, .primaryBtn, .footNote: o rodapé (Back, Next, Skip); o Next ou
  *     Finish é o preenchido de accent, e o bloqueado (passo obrigatório vazio)
  *     fica visivelmente desabilitado.
@@ -132,31 +131,6 @@
   border: 1px dashed var(--border);
   border-radius: 14px;
   opacity: 0.85;
-}
-
-.badge {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  white-space: nowrap;
-}
-.complete {
-  color: var(--success);
-  border-color: color-mix(in srgb, var(--success) 50%, transparent);
-  background: color-mix(in srgb, var(--success) 10%, transparent);
-}
-.incomplete {
-  color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 50%, transparent);
-  background: color-mix(in srgb, var(--warning) 10%, transparent);
-}
-.optional {
-  color: var(--text);
-  opacity: 0.7;
 }
 
 .foot {

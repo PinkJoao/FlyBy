@@ -41,7 +41,10 @@
 
 .side {
   height: 52px;
-  font-size: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 0;
 }
 
 .side:hover:not(:disabled),

@@ -23,18 +23,17 @@
 //     Attack com Extra Attack em curso mostra "1 of 2 attacks".
 //   - O grupo Other nasce ABERTO (pedido do dono, 2026-11-06); o cabeçalho ainda o
 //     recolhe.
-//   - A etiqueta de custo tem a cor do gasto (econ.module.css, DDL-0163): azul a
-//     ação, verde a bônus, amarelo a reação, as mesmas dos botões de combate.
+//   - A etiqueta de custo é a Tag no tom do gasto (DDL-0199, cores do DDL-0163): azul
+//     a ação, verde a bônus, amarelo a reação; o gasto já usado no turno, esmaecido.
 //   - As ações de feature (Rage, Second Wind) não entram aqui: ficam na aba Features
 //     (resposta P3 do dono).
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
-import Chip from '../common/Chip';
-import econ from './econ.module.css';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import styles from './ActionsTab.module.css';
+import Tag from '../common/Tag';
 
 /** O card de uma ação: o nome, os custos e o que sobra no turno. */
 function ActionCard({ item, readied, inCombat, onAct }) {
@@ -50,9 +49,9 @@ function ActionCard({ item, readied, inCombat, onAct }) {
       <span className={styles.name}>{item.name}</span>
       <span className={styles.costs}>
         {costs.map((c) => (
-          <Chip key={`${c.cost}|${c.available}`} size="sm" className={[econ.tag, econ[c.cost], inCombat && !c.available ? styles.costUsed : null].filter(Boolean).join(' ')} title={c.source ? `${c.label}, from ${c.source}` : c.label}>
+          <Tag key={`${c.cost}|${c.available}`} tone={c.cost} dim={inCombat && !c.available} title={c.source ? `${c.label}, from ${c.source}` : c.label}>
             {c.label}
-          </Chip>
+          </Tag>
         ))}
       </span>
       {readied && <span className={styles.readied}>Readied: {readied}</span>}

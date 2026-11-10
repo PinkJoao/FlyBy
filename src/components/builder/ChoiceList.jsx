@@ -72,6 +72,7 @@ import { prereqContext, prereqStatus } from '../../engine/prereq';
 import PickerField from '../common/PickerField';
 import ClearableSelect from '../common/ClearableSelect';
 import SelectorPanel from '../../selector/SelectorPanel';
+import Chip from '../common/Chip';
 import EntryContent from '../common/EntryContent';
 import { showDetailPopup } from '../common/detailPopup';
 import { showRulePopup } from '../common/RulePopup';
@@ -256,19 +257,10 @@ function TagChoice({ choice, picks, onChange, db, owned }) {
   return (
     <div className={styles.tags}>
       {picks.map((value) => (
-        <span key={value} className={styles.tagChip}>
-          <button type="button" className={styles.tagLabel} onClick={() => openDetail(value)}>
-            {labelOf(value)}
-          </button>
-          <button type="button" className={styles.tagRemove} onClick={() => remove(value)} aria-label={`Remove ${labelOf(value)}`}>
-            ×
-          </button>
-        </span>
+        <Chip key={value} onClick={() => openDetail(value)} onRemove={() => remove(value)}>{labelOf(value)}</Chip>
       ))}
       {picks.length < choice.count && (
-        <button type="button" className={styles.addBtn} onClick={() => setOpen(true)}>
-          + Add {addLabel}
-        </button>
+        <Chip add onClick={() => setOpen(true)}>Add {addLabel}</Chip>
       )}
       {open && entity && (
         <SelectorPanel
@@ -342,19 +334,10 @@ function OptionalFeatureChoice({ choice, entry, picks, onChange, db, owned, char
     <div className={styles.featSlot}>
       <div className={styles.tags}>
         {picks.map((id) => (
-          <span key={id} className={styles.tagChip}>
-            <button type="button" className={styles.tagLabel} onClick={() => openDetail(id)}>
-              {nameOf(id)}
-            </button>
-            <button type="button" className={styles.tagRemove} onClick={() => remove(id)} aria-label={`Remove ${nameOf(id)}`}>
-              ×
-            </button>
-          </span>
+          <Chip key={id} onClick={() => openDetail(id)} onRemove={() => remove(id)}>{nameOf(id)}</Chip>
         ))}
         {picks.length < choice.count && (
-          <button type="button" className={styles.addBtn} onClick={() => setOpen(true)}>
-            + Add
-          </button>
+          <Chip add onClick={() => setOpen(true)}>Add</Chip>
         )}
         {open && (
           <SelectorPanel
@@ -574,19 +557,10 @@ function SpellChoice({ choice, picks, onChange, db, siblingPicks, spellsOwned })
   return (
     <div className={styles.tags}>
       {picks.map((id) => (
-        <span key={id} className={styles.tagChip}>
-          <button type="button" className={styles.tagLabel} onClick={() => openDetail(id)}>
-            {nameOf(id)}
-          </button>
-          <button type="button" className={styles.tagRemove} onClick={() => remove(id)} aria-label={`Remove ${nameOf(id)}`}>
-            ×
-          </button>
-        </span>
+        <Chip key={id} onClick={() => openDetail(id)} onRemove={() => remove(id)}>{nameOf(id)}</Chip>
       ))}
       {picks.length < choice.count && (
-        <button type="button" className={styles.addBtn} onClick={() => setOpen(true)}>
-          + Add spell
-        </button>
+        <Chip add onClick={() => setOpen(true)}>Add spell</Chip>
       )}
       {open && (
         <SelectorPanel
@@ -633,20 +607,11 @@ function MixedChoice({ choice, picks, onChange, db, owned }) {
   return (
     <div className={styles.tags}>
       {picks.map((p) => (
-        <span key={p.value} className={styles.tagChip}>
-          <button type="button" className={styles.tagLabel} onClick={() => openDetail(p)}>
-            {labelFor(p)}
-          </button>
-          <button type="button" className={styles.tagRemove} onClick={() => remove(p.value)} aria-label={`Remove ${labelFor(p)}`}>
-            ×
-          </button>
-        </span>
+        <Chip key={p.value} onClick={() => openDetail(p)} onRemove={() => remove(p.value)}>{labelFor(p)}</Chip>
       ))}
       {picks.length < choice.count &&
         choice.pool.of.map((kind) => (
-          <button key={kind} type="button" className={styles.addBtn} onClick={() => setAddKind(kind)}>
-            + Add {kind}
-          </button>
+          <Chip key={kind} add onClick={() => setAddKind(kind)}>Add {kind}</Chip>
         ))}
       {addKind && ADD_ENTITY[addKind] && (
         <SelectorPanel

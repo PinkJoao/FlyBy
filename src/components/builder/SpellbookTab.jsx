@@ -125,6 +125,7 @@ import {
 import styles from './SpellbookTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
+import Tag from '../common/Tag';
 import Collapse from '../common/Collapse';
 import SortButton from '../common/SortButton';
 import { NAME_SORT } from '../../sorting';
@@ -716,7 +717,7 @@ export default function SpellbookTab({
             disabled={prepareDisabled}
             title={prepareDisabled ? 'Remove a spell to prepare another one.' : undefined}
           >
-            + Prepare spell
+            <Icon name="plus" /> Prepare spell
           </button>
         )}
       </div>
@@ -845,7 +846,7 @@ export default function SpellbookTab({
               </div>
             ) : infoEntry.granted ? (
               <div className={styles.infoFooter}>
-                <span className={styles.grantedChip}>Always Prepared</span>
+                <Tag tone="accent">Always Prepared</Tag>
                 <span className={styles.infoNote}>
                   Granted by {origin.label}. It does not count against your prepared spells.
                 </span>
@@ -947,14 +948,14 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
                 </span>
               ))}
             </span>
-            {entry.granted && <span className={styles.chipAccent}>Always Prepared</span>}
-            {arcanum && <span className={styles.chipAccent}>Mystic Arcanum</span>}
-            {arcanum && <span className={styles.chip}>1/Long Rest</span>}
-            {cast && <span className={styles.chip}>{cast}</span>}
-            {isRitual(raw) && cast !== 'Ritual' && <span className={styles.chip}>Ritual</span>}
-            {isConcentration(raw) && <span className={styles.chip}>Concentration</span>}
+            {entry.granted && <Tag tone="accent">Always Prepared</Tag>}
+            {arcanum && <Tag tone="accent">Mystic Arcanum</Tag>}
+            {arcanum && <Tag>1/Long Rest</Tag>}
+            {cast && <Tag>{cast}</Tag>}
+            {isRitual(raw) && cast !== 'Ritual' && <Tag>Ritual</Tag>}
+            {isConcentration(raw) && <Tag>Concentration</Tag>}
             {(costTags ?? []).map((t) => (
-              <span key={t.key} className={`${styles.chip} ${t.className ?? ''}`} title={t.title}>{t.label}</span>
+              <Tag key={t.key} tone={t.tone} title={t.title}>{t.label}</Tag>
             ))}
           </span>
         </span>
@@ -975,7 +976,7 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
             <Icon name="swap" />
           </button>
         )}
-        {usesLeft && <span className={styles.chip} title="Free uses left">{usesLeft}</span>}
+        {usesLeft && <Tag title="Free uses left">{usesLeft}</Tag>}
         {onCast && (
           <Button size="sm" variant="primary" onClick={onCast} disabled={castDisabled} title={`${castLabel} ${raw.name}`}>
             {castLabel}
@@ -990,7 +991,7 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
             title={assignDisabled ? 'This sheet has no spellcasting class.' : `Assign ${raw.name} to a class`}
             aria-label={`Assign ${raw.name} to a class`}
           >
-            +
+            <Icon name="plus" />
           </button>
         )}
       </div>

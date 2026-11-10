@@ -21,8 +21,8 @@
 //   - A feature que invoca um companheiro (Steel Defender, Primal Companion, Summon
 //     Wildfire Spirit; CLASS_SUMMONS em engine/playSummons.js) ganha "Summon" (DDL-0193).
 //   - O Wild Shape ganha "Transform": as formas conhecidas da ficha (DDL-0195).
-//   - A pílula de custo tem a cor do gasto (econ.module.css, DDL-0163), a mesma da
-//     aba Actions e dos botões de combate.
+//   - O custo e a recuperação são a Tag (DDL-0199), o custo no tom do gasto, o mesmo
+//     da aba Actions e dos botões de combate.
 //   - Só USAR (definição do dono, DDL-0146): sem o ajuste à mão (menos e mais) dos pools.
 //     O pool sem activity (o uso que só a prosa declara) ganha "Use", que gasta um;
 //     o engano se desfaz no histórico.
@@ -46,11 +46,11 @@ import EntryContent from '../common/EntryContent';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import Button from '../common/Button';
+import Tag from '../common/Tag';
 import { isSummonFeature } from '../../engine/playSummons';
 import { transformRuleOf } from '../../engine/playForms';
 import styles from '../builder/SpellbookTab.module.css';
 import play from './PlayTabs.module.css';
-import econ from './econ.module.css';
 
 const COST_LABELS = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', minute: 'Minute', hour: 'Hour', special: 'Special', legendary: 'Legendary' };
 
@@ -115,9 +115,9 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
           <span className={styles.rowSub}>
             {feature.level > 0 && <span className={styles.rowMetaLine}>Level {feature.level}</span>}
             {costs.map(([label, type]) => (
-              <span key={label} className={[styles.chip, econ.tag, econ[type]].filter(Boolean).join(' ')}>{label}</span>
+              <Tag key={label} tone={type ?? undefined}>{label}</Tag>
             ))}
-            {recovery && <span className={styles.chip}>{recovery}</span>}
+            {recovery && <Tag>{recovery}</Tag>}
           </span>
         </span>
       </button>

@@ -2,15 +2,14 @@
  * ClassTab.module.css: a aba Class
  * =============================================================================
  * CLASSES
- *   .subTabs, .subTab*, .addTab, .multiBadge: as sub-abas de multiclasse (uma
+ *   .subTabs, .subTab*, .addTab: as sub-abas de multiclasse (uma
  *     classe por vez).
  *   .classCard, .classTop: o conteúdo da classe, SEM card com borda: as sub-abas já
  *     separam as classes e as features têm seção própria, então o conteúdo flui e
  *     ganha largura no mobile.
  *   .levelControl, .levelLabel: o controle de nível no canto superior direito, com
  *     o rótulo À ESQUERDA do stepper para a linha não ficar alta.
- *   .tab, .choices, .subLabel, .addBtn, .summary: o resto da aba.
- *   .formRow, .over: as formas do Wild Shape (WildShapeForms, DDL-0195).
+ *   .tab, .choices, .subLabel, .summary: o resto da aba.
  *
  * DECISÕES E ARMADILHAS
  *   - .classTop tem a mesma largura máxima do .field do PickerField (420px), para
@@ -61,9 +60,11 @@
 
 .addTab {
   flex: none;
+  display: grid;
+  place-items: center;
   font: inherit;
   font-size: 18px;
-  font-weight: 700;
+  line-height: 0;
   width: 38px;
   border-radius: 10px;
   border: 1px dashed var(--border);
@@ -74,18 +75,6 @@
 
 .addTab:hover {
   border-color: var(--accent-border);
-}
-
-.multiBadge {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px 6px;
-  font-weight: 600;
-  opacity: 0.7;
 }
 
 .choices {
@@ -127,39 +116,8 @@
   display: block;
 }
 
-.addBtn {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px dashed var(--border);
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-  align-self: flex-start;
-}
-
-.addBtn:hover {
-  border-color: var(--accent-border);
-}
-
-.addBtn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 .summary {
   font-size: 13px;
   opacity: 0.6;
 }
 
-.formRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.over {
-  color: var(--danger);
-}

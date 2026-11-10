@@ -19,6 +19,7 @@ import DetailView from './DetailView';
 import styles from './PickerField.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import CloseButton from './CloseButton';
+import Icon from './Icon';
 
 /**
  * O gatilho de um seletor, com limpar e info.
@@ -83,12 +84,12 @@ export default function PickerField({
         </button>
         {current && showInfo && (
           <button type="button" className={styles.infoBtn} onClick={() => setInfo(true)} aria-label={`About ${current.label}`}>
-            i
+            <Icon name="info" />
           </button>
         )}
         {current && (
-          <button type="button" className={styles.clearX} onClick={onClear} aria-label="Clear">
-            ×
+          <button type="button" className={styles.clearX} onClick={onClear} aria-label="Clear" title="Clear">
+            <Icon name="close" />
           </button>
         )}
       </div>

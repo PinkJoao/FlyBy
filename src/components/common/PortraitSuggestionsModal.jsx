@@ -250,8 +250,8 @@ function GalleryBody({ character, onSelect, onClose }) {
                 {tagLabelOf(t)}
               </Chip>
             ))}
-            <Chip icon="plus" onClick={() => setPickerOpen(true)} disabled={!indexData}>
-              Tag
+            <Chip add onClick={() => setPickerOpen(true)} disabled={!indexData}>
+              Add tag
             </Chip>
             {isModified && (
               <Button variant="link" size="sm" onClick={resetTags}>

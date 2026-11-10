@@ -24,6 +24,7 @@ import { useState } from 'react';
 import styles from './Stepper.module.css';
 import AnimatedNumber from './AnimatedNumber';
 import { useNumberMotion } from '../../hooks/useNumberMotion';
+import Icon from './Icon';
 
 const STYLE_VARS = {
   bg: { var: '--stp-bg' },
@@ -138,7 +139,7 @@ export default function Stepper({
         disabled={minusDisabled}
         aria-label={`Decrease ${ariaLabel}`}
       >
-        −
+        <Icon name="minus" />
       </button>
       {editable ? (
         <input
@@ -165,7 +166,7 @@ export default function Stepper({
         disabled={plusDisabled}
         aria-label={`Increase ${ariaLabel}`}
       >
-        +
+        <Icon name="plus" />
       </button>
     </div>
   );

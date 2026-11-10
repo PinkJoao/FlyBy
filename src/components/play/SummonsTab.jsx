@@ -27,6 +27,7 @@
 // -----------------------------------------------------------------------------
 
 import Button from '../common/Button';
+import Tag from '../common/Tag';
 import { turnText } from '../../engine/playSummons';
 import EntryContent from '../common/EntryContent';
 import useDialogStore from '../../store/dialogStore';
@@ -82,8 +83,8 @@ function ActionRow({ view, action, onAttack, onDamage }) {
         <span className={styles.rowText}>
           <span className={styles.rowName}>{action.name}</span>
           <span className={styles.rowSub}>
-            {atk && <span className={styles.chip}>{atk.bonus == null ? 'attack ?' : `${atk.bonus >= 0 ? '+' : ''}${atk.bonus} to hit`}</span>}
-            {action.save && <span className={styles.chip}>{`DC ${action.save.dc ?? '?'} ${String(action.save.ability).toUpperCase()}`}</span>}
+            {atk && <Tag>{atk.bonus == null ? 'attack ?' : `${atk.bonus >= 0 ? '+' : ''}${atk.bonus} to hit`}</Tag>}
+            {action.save && <Tag>{`DC ${action.save.dc ?? '?'} ${String(action.save.ability).toUpperCase()}`}</Tag>}
             {dmg && <span className={styles.rowMetaLine}>{dmg}</span>}
           </span>
         </span>

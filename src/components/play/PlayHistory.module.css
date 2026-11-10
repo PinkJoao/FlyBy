@@ -5,7 +5,8 @@
  *   .list, .day, .empty: a lista, o separador de dia e o vazio.
  *   .card, .undone: o cartão de um evento; o desfeito fica esmaecido.
  *   .head, .kind, .title, .time: o cabeçalho do cartão.
- *   .body, .total, .tags, .tag, .crit, .fumble: o total e as marcas.
+ *   .body, .total, .tags: o total e a fila das marcas (cada uma é a Tag comum, o
+ *     acerto em success e a falha em danger, DDL-0199).
  *   .lines: o resumo de um evento de vida ou descanso.
  *   .parts, .part, .partLabel, .partFormula, .partTotal: as partes da rolagem.
  *   .dice, .die, .d4 a .d20, .other, .base, .face, .shade, .dropped, .adjusted,
@@ -105,28 +106,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-}
-
-.tag {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--text);
-  background: var(--bg);
-}
-
-.crit {
-  border-color: var(--success);
-  color: var(--success);
-  background: color-mix(in srgb, var(--success) 12%, transparent);
-}
-
-.fumble {
-  border-color: var(--danger);
-  color: var(--danger-text);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 .lines {

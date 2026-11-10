@@ -9,6 +9,7 @@
 //   ClearableSelect(props): o campo.
 // -----------------------------------------------------------------------------
 
+import Icon from './Icon';
 import styles from './ClearableSelect.module.css';
 
 export default function ClearableSelect({ value, onChange, children, placeholder = 'Choose…' }) {
@@ -19,8 +20,8 @@ export default function ClearableSelect({ value, onChange, children, placeholder
         {children}
       </select>
       {value && (
-        <button type="button" className={styles.clearX} onClick={() => onChange('')} aria-label="Clear">
-          ×
+        <button type="button" className={styles.clearX} onClick={() => onChange('')} aria-label="Clear" title="Clear">
+          <Icon name="close" />
         </button>
       )}
     </div>

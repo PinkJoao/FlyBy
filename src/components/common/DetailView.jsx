@@ -9,7 +9,8 @@
 //   listas de uma magia). Como o corpo é `entries`, as tags viram links.
 //
 // FUNÇÕES
-//   metaClass(m): a classe de um chip de meta (pré-requisito, tom, destaque).
+//   metaChip(m): o tom e o aceso de um chip de meta (pré-requisito, tom, destaque);
+//     o chip é o Chip comum no tamanho normal, que quebra a linha (DDL-0199, DDL-0200).
 //   Expando(props): uma seção retrátil, fechada por padrão.
 //   DetailView(props): a ficha.
 //
@@ -30,21 +31,17 @@ import { showImageViewer } from '../../store/imageViewerStore';
 import { imgUrl } from './media';
 import styles from './DetailView.module.css';
 import Icon from './Icon';
+import Chip from './Chip';
 import Collapse from './Collapse';
 
-const STATUS_CLASS = { ok: 'metaOk', bad: 'metaBad', unknown: 'metaUnknown' };
-const TONE_CLASS = { blue: 'toneBlue', accent: 'toneAccent', red: 'toneRed', neutral: 'toneNeutral' };
+const STATUS_TONE = { ok: 'success', bad: 'danger', unknown: 'warning' };
+const META_TONE = { blue: 'info', red: 'danger' };
 
-/** A classe CSS de um chip de meta. */
-function metaClass(m) {
-  const extra = m.status
-    ? styles[STATUS_CLASS[m.status]]
-    : m.tone
-      ? styles[TONE_CLASS[m.tone]]
-      : m.highlight
-        ? styles.metaHi
-        : '';
-  return extra ? `${styles.metaItem} ${extra}` : styles.metaItem;
+/** O tom e o aceso de um chip de meta (pré-requisito, tom do dado, destaque). */
+function metaChip(m) {
+  if (m.status) return { tone: STATUS_TONE[m.status] };
+  if (m.tone === 'accent' || (!m.tone && m.highlight)) return { active: true };
+  return { tone: META_TONE[m.tone] };
 }
 
 /** Seção retrátil (chevron e rótulo), fechada por padrão. */
@@ -118,9 +115,7 @@ export default function DetailView({
             <img className={imgClass} src={displaySrc} alt={raw.name} loading="lazy" onError={() => setImgOk(false)} />
           </button>
         ) : (
-          <button type="button" className={styles.imgAddBtn} onClick={onImgClick}>
-            <Icon name="addImage" /> Add image
-          </button>
+          <Chip add icon="addImage" className={styles.imgAdd} onClick={onImgClick}>Add image</Chip>
         )
       ) : (
         gallery.length > 0 && <ImageCarousel images={gallery} capped={capImage} alt={raw.name} />
@@ -136,9 +131,9 @@ export default function DetailView({
       {meta.length > 0 && (
         <div className={styles.meta}>
           {meta.map((m, i) => (
-            <span key={`${m.label ?? m.value}-${i}`} className={metaClass(m)}>
+            <Chip key={`${m.label ?? m.value}-${i}`} onCard wrap {...metaChip(m)}>
               {m.label ? <b>{m.label}</b> : null} {m.value}
-            </span>
+            </Chip>
           ))}
         </div>
       )}

@@ -25,6 +25,8 @@ import { makeSpellEntity } from '../../../selector/entities/spell';
 import { classSpellList, schoolName, castingTimeLabel, rangeLabel, spellLevelLabel } from '../../../engine/spells';
 import { preparedElsewhere } from '../../../engine/spellcasting';
 import { confirm } from '../../common/dialog';
+import Icon from '../../common/Icon';
+import Chip from '../../common/Chip';
 import styles from './steps.module.css';
 
 /**
@@ -133,8 +135,9 @@ export default function SpellPicker({ origin, origins, db, level, maxLevel, limi
                 className={styles.spellRemove}
                 onClick={() => remove(entry)}
                 aria-label={`Remove ${entry.raw.name}`}
+                title="Remove"
               >
-                ×
+                <Icon name="close" />
               </button>
             </li>
           ))}
@@ -142,9 +145,7 @@ export default function SpellPicker({ origin, origins, db, level, maxLevel, limi
       )}
 
       {picks.length < limit ? (
-        <button type="button" className={styles.spellAdd} onClick={() => setOpen(true)}>
-          + Choose a {noun}
-        </button>
+        <Chip add className={styles.spellAddChip} onClick={() => setOpen(true)}>Choose a {noun}</Chip>
       ) : (
         <p className={styles.spellDone}>You've chosen all your {noun}s. Remove one to swap it.</p>
       )}

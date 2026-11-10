@@ -28,6 +28,7 @@ import { testBreakdown } from '../../engine/playChecks';
 import { formatBonus } from '../../engine/math';
 import { ABILITY_FULL, SKILL_LABEL } from '../builder/labels';
 import { useDialogClose } from '../common/dialogContext';
+import Chip from '../common/Chip';
 import styles from './SkillCheckPanel.module.css';
 
 /** "+1d4" a partir de "1d4" (o sinal que já existe fica). */
@@ -50,14 +51,14 @@ function Row({ name, prof, breakdown, onPick }) {
           </span>
         </span>
         <span className={styles.chips}>
-          {fixed.map((p) => <span key={p.label} className={styles.chip}>{p.label} {formatBonus(p.value)}</span>)}
+          {fixed.map((p) => <Chip key={p.label} size="sm" onCard>{p.label} {formatBonus(p.value)}</Chip>)}
           {rolled.map((r) => (
-            <span key={r.label} className={r.on ? `${styles.chip} ${styles.rolled}` : `${styles.chip} ${styles.rolled} ${styles.off}`}>{r.label} {signedFormula(r.formula)}</span>
+            <Chip key={r.label} size="sm" tone="info" struck={!r.on} className={r.on ? undefined : styles.off}>{r.label} {signedFormula(r.formula)}</Chip>
           ))}
           {conditional.map((c) => (
-            <span key={c.label} className={c.on ? `${styles.chip} ${styles.cond}` : `${styles.chip} ${styles.cond} ${styles.off}`}>
+            <Chip key={c.label} size="sm" tone="warning" struck={!c.on} className={c.on ? undefined : styles.off}>
               {c.label}{typeof c.value === 'number' ? ` ${formatBonus(c.value)}` : c.formula ? ` ${signedFormula(c.formula)}` : c.text && !c.label.toLowerCase().includes(c.text) ? `: ${c.text}` : ''}
-            </span>
+            </Chip>
           ))}
         </span>
       </button>
@@ -87,9 +88,9 @@ export default function SkillCheckPanel({ catalog, state, ability }) {
     <div className={styles.panel}>
       {(has('rolled') || has('conditional')) && (
         <p className={styles.legend}>
-          <span className={styles.chip}>Fixed</span>
-          {has('rolled') && <span className={`${styles.chip} ${styles.rolled}`}>Rolled</span>}
-          {has('conditional') && <span className={`${styles.chip} ${styles.cond}`}>Temporary or conditional</span>}
+          <Chip size="sm" onCard>Fixed</Chip>
+          {has('rolled') && <Chip size="sm" tone="info">Rolled</Chip>}
+          {has('conditional') && <Chip size="sm" tone="warning">Temporary or conditional</Chip>}
         </p>
       )}
       <ul className={styles.list}>

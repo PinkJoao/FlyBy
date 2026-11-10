@@ -6,13 +6,12 @@
  *     SelectorPanel e na aba de espécie).
  *   .imgCapped: altura limitada (overlay de item): a arte inteira, centrada, sem
  *     esticar o painel; a de item do 5etools costuma ser alta.
- *   .imgButton, .imgAddBtn: a imagem editável e, sem imagem, um botão pequeno em
+ *   .imgButton, .imgAdd: a imagem editável e, sem imagem, o Chip de adicionar em
  *     vez do quadro grande.
- *   .credit, .name, .src, .meta, .metaItem, .metaHi: o cabeçalho.
- *   .toneNeutral, .toneBlue, .toneAccent, .toneRed: neutro, caster, half caster e
- *     martial.
- *   .metaOk, .metaBad, .metaUnknown: o pré-requisito atende, não atende, ou não é
- *     checável (confirmar com o DM).
+ *   .credit, .name, .src, .meta: o cabeçalho; cada item da .meta é o Chip comum
+ *     pequeno (DDL-0199): o tom do dado (info caster, aceso half caster, danger
+ *     martial), o destaque aceso, e o pré-requisito em success, danger ou warning
+ *     (atende, não atende, confirmar com o DM).
  *   .expando*: a seção retrátil entre as chips e o corpo ("Spell Lists").
  *   .lore, .loreLabel: o texto de lore.
  * -------------------------------------------------------------------------- */
@@ -59,30 +58,6 @@
   filter: brightness(1.05);
 }
 
-.imgAddBtn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px dashed var(--border);
-  background: none;
-  color: var(--text);
-  opacity: 0.7;
-  cursor: pointer;
-}
-
-.imgAddBtn:hover {
-  opacity: 1;
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
-
 .credit {
   font-size: 11px;
   opacity: 0.5;
@@ -107,63 +82,6 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
-}
-
-.metaItem {
-  font-size: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 5px 10px;
-  color: var(--text);
-}
-
-.metaItem b {
-  color: var(--text-h);
-  font-weight: 600;
-}
-
-.metaHi {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--text-h);
-}
-
-.toneNeutral {
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.toneBlue {
-  border-color: color-mix(in srgb, var(--info) 45%, transparent);
-  background: color-mix(in srgb, var(--info) 12%, transparent);
-  color: var(--info-text);
-}
-
-.toneAccent {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-.toneRed {
-  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-  color: var(--danger-text);
-}
-
-.metaOk {
-  border-color: color-mix(in srgb, var(--success) 55%, transparent);
-  background: color-mix(in srgb, var(--success) 10%, transparent);
-}
-
-.metaBad {
-  border-color: color-mix(in srgb, var(--danger) 60%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.metaUnknown {
-  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
-  background: color-mix(in srgb, var(--warning) 10%, transparent);
 }
 
 .expando {
@@ -229,4 +147,9 @@
   font-weight: 600;
   display: block;
   margin-bottom: 6px;
+}
+
+.imgAdd {
+  align-self: flex-start;
+  margin-bottom: 10px;
 }

@@ -26,6 +26,7 @@ import { useState } from 'react';
 import { CONDITIONS, conditionName } from '../../engine/playEffects';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
+import Chip from '../common/Chip';
 import card from '../builder/ProficienciesCard.module.css';
 import styles from './PlayCards.module.css';
 
@@ -109,9 +110,9 @@ export default function ConditionsCard({ conditions, concentration, combat, onAd
                   <div className={styles.rowCtrl}>
                     {c?.levels ? (
                       <>
-                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, level - 1)} aria-label="One level less">-</button>
+                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, level - 1)} aria-label="One level less"><Icon name="minus" /></button>
                         <span className={styles.level}>{level}</span>
-                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, Math.min(c.levels, level + 1))} disabled={level >= c.levels} aria-label="One level more">+</button>
+                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, Math.min(c.levels, level + 1))} disabled={level >= c.levels} aria-label="One level more"><Icon name="plus" /></button>
                       </>
                     ) : (
                       <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, 0)} aria-label={`End ${conditionName(id)}`} title="End it">
@@ -123,7 +124,9 @@ export default function ConditionsCard({ conditions, concentration, combat, onAd
               );
             })}
           </ul>
-          <button type="button" className={styles.add} onClick={onAdd}>+ Add condition</button>
+          <div className={styles.adds}>
+            <Chip add onCard onClick={onAdd}>Add condition</Chip>
+          </div>
         </div>
       </Collapse>
     </div>

@@ -15,6 +15,10 @@
 //   sizeOf(m): os tamanhos por extenso ("Medium").
 //   acText(m), hpText(m), speedText(m): os números da prévia.
 //   cap(s): a primeira letra maiúscula.
+//   feet(v): o número de um deslocamento.
+//   creatureCard(m, opts): o cartão (fonte abaixo do nome, linha de CA, PV e passo,
+//     etiquetas de ND, tamanho, tipo e deslocamentos extras); `beastFormEntity` é a
+//     mesma entity sem o tipo, para as formas que são sempre feras (DDL-0197).
 //
 // DECISÕES E ARMADILHAS
 //   - O 5etools escreve tipo, ND, CA e PV de mais de um jeito (texto ou objeto,
@@ -22,10 +26,14 @@
 //     e mostram o `special` como texto, sem inventar número.
 //   - A lista resolve o `_copy` (o Hound of Ill Omen é cópia do Dire Wolf) e sai pelo latestOnly (a criatura de 2024 esconde a de 2014 do mesmo
 //     nome) e é calculada uma vez por db (LIST_CACHE), como as outras entities.
+//   - O cartão segue o contrato dos outros seletores (DDL-0197): a fonte vai no
+//     `subtitle` com o nome por extenso no hover, o resto em `meta` e `badges`;
+//     nada é escrito à mão no título.
 // -----------------------------------------------------------------------------
 
 import { latestOnly } from '../reprints';
 import { resolveCopies } from '../copy';
+import { sourceName } from '../../engine/sourceNames';
 
 const SIZE = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', H: 'Huge', G: 'Gargantuan' };
 const SIZE_RANK = { Tiny: 0, Small: 1, Medium: 2, Large: 3, Huge: 4, Gargantuan: 5 };
@@ -74,6 +82,34 @@ export function hpText(m) {
   if (!h) return '';
   if (h.special) return h.special;
   return h.formula ? `${h.average} (${h.formula})` : String(h.average ?? '');
+}
+
+const EXTRA_SPEEDS = ['fly', 'swim', 'climb', 'burrow'];
+
+/** O número de um deslocamento (número ou { number }). */
+const feet = (v) => (typeof v === 'object' && v ? v.number : v);
+
+/**
+ * O cartão no formato dos outros seletores: fonte abaixo do nome, CA, PV e passo na
+ * linha de baixo, e as etiquetas do ND, do tamanho, do tipo e dos deslocamentos extras.
+ */
+export function creatureCard(m, { showType = true } = {}) {
+  const sp = m?.speed ?? {};
+  const walk = feet(sp.walk);
+  const a = (m?.ac ?? [])[0];
+  const ac = typeof a === 'number' ? a : a?.ac ?? null;
+  return {
+    title: m.name,
+    subtitle: m.source,
+    subtitleFull: sourceName(m.source),
+    meta: [ac != null && `AC ${ac}`, m?.hp?.average != null && `${m.hp.average} HP`, walk && `${walk} ft.`].filter(Boolean).join(' · '),
+    badges: [
+      m.cr != null ? `CR ${crText(m.cr)}` : null,
+      sizeOf(m).join('/'),
+      showType ? typeOf(m) : null,
+      ...EXTRA_SPEEDS.filter((k) => sp[k]).map((k) => (feet(sp[k]) && feet(sp[k]) !== true ? `${cap(k)} ${feet(sp[k])} ft.` : cap(k))),
+    ].filter(Boolean),
+  };
 }
 
 /** O deslocamento como texto ("30 ft., climb 30 ft."). */
@@ -129,11 +165,14 @@ const creatureEntity = {
     { label: 'Hit Points', value: hpText(m) },
     { label: 'Speed', value: speedText(m) },
   ].filter((x) => x.value),
-  card: (m) => ({
-    title: m.name,
-    subtitle: `${m.cr != null ? `CR ${crText(m.cr)} · ` : ''}${sizeOf(m).join('/')} ${typeOf(m)} · ${m.source}`.trim(),
-    badges: [],
-  }),
+  card: (m) => creatureCard(m),
+};
+
+/** A entity das formas de fera (Wild Shape, Polymorph): o mesmo seletor, sem o tipo, que é sempre Beast. */
+export const beastFormEntity = {
+  ...creatureEntity,
+  card: (m) => creatureCard(m, { showType: false }),
+  filters: creatureEntity.filters.filter((x) => x.id !== 'type'),
 };
 
 export default creatureEntity;

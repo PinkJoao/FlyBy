@@ -16,6 +16,7 @@ import styles from './InventoryTab.module.css';
 import { useBackLayer } from '../../hooks/useBack';
 import Icon from '../common/Icon';
 import CloseButton from '../common/CloseButton';
+import Tag from '../common/Tag';
 
 export default function ItemPickerModal({ title, entries, confirmLabel, emptyText, db, onConfirm, onClose }) {
   const [picked, setPicked] = useState(() => new Set());
@@ -85,12 +86,7 @@ export default function ItemPickerModal({ title, entries, confirmLabel, emptyTex
                         <span className={styles.rowSub}>
                           {meta.length > 0 && <span className={styles.rowMetaLine}>{meta.join(' • ')}</span>}
                           {rarity && (
-                            <span
-                              className={styles.rowRarity}
-                              style={color ? { color, borderColor: color } : undefined}
-                            >
-                              {cap(rarity)}
-                            </span>
+                            <Tag color={color}>{cap(rarity)}</Tag>
                           )}
                         </span>
                       </span>

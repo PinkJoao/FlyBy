@@ -21,6 +21,7 @@ import ClassTableView from '../common/ClassTableView';
 import styles from './ClassProgression.module.css';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
+import Tag from '../common/Tag';
 
 export default function ClassProgression({ db, classId, classObj, subclass, level }) {
   const [mode, setMode] = useState('default');
@@ -84,7 +85,7 @@ export default function ClassProgression({ db, classId, classObj, subclass, leve
                   <Icon name="chevron" />
                 </span>
                 Level {l.level}
-                {l.level > level && <span className={styles.futureTag}>Locked</span>}
+                {l.level > level && <Tag>Locked</Tag>}
               </button>
               <Collapse open={!isCollapsed}>
                 <div className={styles.levelFeatures}>
@@ -111,7 +112,7 @@ function FeatureCard({ feature, subclassName }) {
     <div className={sub ? `${styles.feature} ${styles.featureSub}` : styles.feature}>
       <button type="button" className={styles.featureHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={styles.featureName}>{feature.name}</span>
-        {sub && <span className={styles.subTag}>{subclassName ?? 'Subclass'}</span>}
+        {sub && <Tag tone="accent">{subclassName ?? 'Subclass'}</Tag>}
         {!open && long && <span className={styles.longHint}>Options</span>}
         <span className={open ? `${styles.chevron} ${styles.chevronOpen}` : styles.chevron}><Icon name="chevron" /></span>
       </button>

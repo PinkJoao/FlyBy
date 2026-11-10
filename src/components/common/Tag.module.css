@@ -1,0 +1,109 @@
+/* =============================================================================
+ * Tag.module.css: a etiqueta de destaque (retângulo pequeno, maiúsculas)
+ * =============================================================================
+ * CLASSES
+ *   .tag: a etiqueta (9px, 700, maiúsculas, 16px de altura, 0 5px, raio 4px, borda).
+ *   .neutral, .accent, .info, .success, .warning, .danger: os tons de significado.
+ *   .action, .bonus, .reaction: os gastos do turno (--econ-*).
+ *   .custom: a cor que vem do dado (raridade), pela variável --tag.
+ *   .dim: esmaecida (já gasto, desligado).
+ *   .text: o texto, cortado na altura da maiúscula onde há suporte.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Medida da etiqueta de linha que a ficha já usava em mais lugares (grimório,
+ *     inventário, loja); 9px basta em maiúsculas (DDL-0200).
+ *   - Centro vertical: a caixa da linha guarda lugar para as descendentes, que a
+ *     maiúscula não tem, e o texto subia. `text-box: trim-both cap alphabetic` corta a
+ *     caixa na altura da maiúscula e o flex centra exato; sem o suporte, 1px de
+ *     padding em cima compensa (DDL-0200).
+ *   - Os tons tingidos usam color-mix sobre o token, como o resto do app
+ *     (DDL-0097); o texto do info e do danger usa o token de texto legível.
+ * -------------------------------------------------------------------------- */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-sizing: border-box;
+  height: 16px;
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  padding: 1px 5px 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.neutral {
+  background: transparent;
+}
+
+.accent {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.info,
+.success,
+.warning,
+.danger,
+.action,
+.bonus,
+.reaction,
+.custom {
+  border-color: color-mix(in srgb, var(--tag) 55%, transparent);
+  background: color-mix(in srgb, var(--tag) 13%, transparent);
+  color: var(--tag-text, var(--tag));
+}
+
+.info {
+  --tag: var(--info);
+  --tag-text: var(--info-text);
+}
+
+.success {
+  --tag: var(--success);
+}
+
+.warning {
+  --tag: var(--warning);
+  --tag-text: var(--text-h);
+}
+
+.danger {
+  --tag: var(--danger);
+  --tag-text: var(--danger-text);
+}
+
+.action {
+  --tag: var(--econ-action);
+}
+
+.bonus {
+  --tag: var(--econ-bonus);
+}
+
+.reaction {
+  --tag: var(--econ-reaction);
+}
+
+.dim {
+  opacity: 0.45;
+}
+
+@supports (text-box: trim-both cap alphabetic) {
+  .tag {
+    padding: 0 5px;
+  }
+
+  /* ATENÇÃO: o corte vale no .text (item do flex, logo um bloco), não no .tag inline-flex. */
+  .text {
+    text-box: trim-both cap alphabetic;
+  }
+}

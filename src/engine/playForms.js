@@ -99,7 +99,7 @@ export function wildShapeLimits(entries, level, { circleForms = false } = {}) {
 
 /**
  * O Wild Shape de uma entrada de classe: os limites no nível dela e o Circle Forms.
- * @returns {{ known: number, maxCr: number, fly: boolean, circleForms: boolean, level: number }|null}
+ * @returns {{ known: number, maxCr: number, fly: boolean, circleForms: boolean, level: number, entries: object[] }|null}
  */
 export function wildShapeOf(db, cls) {
   const data = cls?.classId ? db?.[`class-${cls.classId}`] : null;
@@ -109,7 +109,7 @@ export function wildShapeOf(db, cls) {
   const circleForms = !!cls.subclassId && (data?.subclassFeature ?? []).some((f) => f.name === 'Circle Forms'
     && f.subclassShortName === cls.subclassId && (!cls.subclassSource || f.subclassSource === cls.subclassSource) && f.level <= cls.level);
   const limits = wildShapeLimits(pick.entries, cls.level, { circleForms });
-  return limits ? { ...limits, circleForms, level: cls.level } : null;
+  return limits ? { ...limits, circleForms, level: cls.level, entries: pick.entries } : null;
 }
 
 /** A criatura serve para a origem? (tipo, ND, voo, tamanho) */

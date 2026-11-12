@@ -20,7 +20,7 @@
 //   Rolagens
 //     rollEffects(state, catalog, roll): o que se aplica a uma rolagem.
 //     applyEffects(effects, enabledIds): vantagem, desvantagem, partes, piso,
-//       limiar de crítico e falha automática do que ficou ligado.
+//       limiar de crítico, falha automática e gastos do que ficou ligado.
 //     matches(targets, roll): um efeito de modificador vale para esta rolagem?
 //   Ficha
 //     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins.
@@ -82,8 +82,9 @@
 //     Divine Favor (+1d4 radiante com arma), Hunter's Mark (+1d6 de força no alvo
 //     marcado), Hex (+1d6 necrótico no alvo amaldiçoado). `self` diz se a magia é
 //     só em si mesmo; senão a tela pergunta.
-//   - RIDERS: Sneak Attack (a escala do Rogue, uma vez por turno, opcional) e
-//     Brutal Strike (troca a vantagem pelo dado, opcional).
+//   - RIDERS: os extras das features (Sneak Attack, Brutal Strike, Divine Strike,
+//     Peerless Skill...) moram em engine/playFeatureRolls.js (DDL-0205); o que gasta
+//     um pool leva `spend`, e applyEffects devolve os `spends` ligados.
 //   - PASSIVES (pelo nome da feature no catálogo): Improved Critical (19),
 //     Superior Critical (18), Reliable Talent (piso 10 nos testes com
 //     proficiência).
@@ -92,6 +93,7 @@
 import { makeId } from '../schema/character';
 import { makeEvent } from './playState';
 import { revertOps } from './playForms';
+import { featureRiders } from './playFeatureRolls';
 
 export const CONDITIONS = {
   blinded: { name: 'Blinded', attack: 'dis', notes: ['Auto-fail checks that need sight', 'Attacks against you have Advantage'] },
@@ -222,14 +224,7 @@ export function rollEffects(state, catalog, roll) {
     });
   }
 
-  if (roll.kind === 'damage' && roll.weapon) {
-    if (catalog.rollData?.['scale.rogue.sneak-attack']) {
-      out.push({ id: 'rider:sneak-attack', label: 'Sneak Attack', source: 'Sneak Attack', part: { label: 'Sneak Attack', formula: '@scale.rogue.sneak-attack' }, note: 'once per turn, Finesse or Ranged, with Advantage or an ally next to the target', defaultOn: false });
-    }
-    if (catalog.rollData?.['scale.barbarian.brutal-strike'] && roll.attackAbility === 'str') {
-      out.push({ id: 'rider:brutal-strike', label: 'Brutal Strike', source: 'Brutal Strike', part: { label: 'Brutal Strike', formula: '@scale.barbarian.brutal-strike' }, note: 'only if you gave up Advantage on the attack', defaultOn: false });
-    }
-  }
+  out.push(...featureRiders(state, catalog, roll));
 
   const features = new Set(catalog.features ?? []);
   for (const [name, p] of Object.entries(PASSIVES)) {
@@ -242,7 +237,7 @@ export function rollEffects(state, catalog, roll) {
 
 /**
  * Soma o que ficou ligado.
- * @returns {{ advantage: number, disadvantage: number, parts: object[], d20Min: number|null, critThreshold: number|null, autoFail: boolean, labels: string[] }}
+ * @returns {{ advantage: number, disadvantage: number, parts: object[], d20Min: number|null, critThreshold: number|null, autoFail: boolean, labels: string[], spends: object[] }}
  */
 export function applyEffects(effects, enabledIds = null) {
   const on = (effects ?? []).filter((e) => (enabledIds ? enabledIds.includes(e.id) : e.defaultOn));
@@ -254,6 +249,7 @@ export function applyEffects(effects, enabledIds = null) {
     critThreshold: on.reduce((m, e) => (e.critThreshold ? Math.min(m ?? 20, e.critThreshold) : m), null),
     autoFail: on.some((e) => e.autoFail),
     labels: on.map((e) => e.label),
+    spends: on.filter((e) => e.spend).map((e) => e.spend),
   };
 }
 

@@ -24,6 +24,9 @@
 //   - O Hurt não tem tipo de dano (pedido do usuário): resistência e imunidade não
 //     entram; o dano de um ataque, que tem tipo, é outro caminho.
 //   - Temporário não soma (XPHB): o padrão fica com o maior, "replace" força o novo.
+//   - Heal e Hurt servem também ao membro de um summon (DDL-0201): a mesma regra, o
+//     mesmo painel; `maxNote` troca a nota do máximo. "To full" põe no número o que
+//     falta para o máximo.
 //   - Dados de vida: a maior face primeiro, ao gastar e ao devolver (engine/playRest).
 // -----------------------------------------------------------------------------
 
@@ -46,14 +49,15 @@ const HP_JUMPS = [5, 10];
 
 /**
  * O painel de cura: HP, temporário ou máximo.
- * @param {{ vitals: { current: number, max: number, temp: number } }} props
+ * @param {{ vitals: { current: number, max: number, temp: number }, maxNote?: string }} props
  */
-export function HealPanel({ vitals }) {
+export function HealPanel({ vitals, maxNote = 'Like Aid: lasts until your next Long Rest.' }) {
   const close = useDialogClose();
   const [amount, setAmount] = useState('');
   const [kind, setKind] = useState('heal');
   const [replace, setReplace] = useState(false);
   const n = Math.max(0, Math.floor(Number(amount) || 0));
+  const missing = Math.max(0, vitals.max - vitals.current);
 
   let preview;
   if (kind === 'heal') preview = `${vitals.current} to ${Math.min(vitals.max, vitals.current + n)} hit points`;
@@ -77,10 +81,15 @@ export function HealPanel({ vitals }) {
         options={HEAL_KINDS}
         onChange={setKind}
       />
+      {kind === 'heal' && missing > 0 && (
+        <Button size="sm" variant="link" className={styles.full} onClick={() => setAmount(String(missing))}>
+          To full (+{missing})
+        </Button>
+      )}
       {kind === 'temp' && (
         <Toggle checked={replace} onChange={setReplace} label="Replace even if lower" />
       )}
-      {kind === 'max' && <p className={panel.note}>Like Aid: lasts until your next Long Rest.</p>}
+      {kind === 'max' && <p className={panel.note}>{maxNote}</p>}
       {n > 0 && <p className={styles.preview}>{preview}</p>}
       <div className={panel.actions}>
         <Button type="submit" variant="primary" disabled={n <= 0}>Apply</Button>

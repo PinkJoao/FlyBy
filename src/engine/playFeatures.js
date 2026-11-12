@@ -15,6 +15,15 @@
 //   featureIdent(item): a identidade do item, a mesma das chaves do catálogo.
 //   FEATURE_KINDS: os tipos, na ordem e com o rótulo das sub-abas.
 //   norm(s), slug(s): o nome comparável e o identificador (o mesmo do catálogo).
+//   plainText(entries): o texto corrido das entries, com as tags do 5etools soltas.
+//   turnCostsOf(entries): os custos de turno que o texto da feature cita (action,
+//     bonus, reaction), na ordem de ECONOMY.
+//   featureCosts(feature, action): os custos do turno da feature, os das activities
+//     da ação do catálogo somados aos do texto.
+//   triggerOf(entries): 'free' (no action required), 'rider' (o extra do acerto, o
+//     uma vez por turno, o gasto de N pontos) ou null.
+//   isActiveFeature(feature, action, pools): se a feature é ATIVA (algo que o jogador
+//     usa ou declara) para o alternador da aba.
 //
 // DECISÕES E ARMADILHAS
 //   - O tipo vem do item do ator: `race` é espécie, `feat` com subtype `origin` é o
@@ -34,9 +43,26 @@
 //   - As chaves batem com as do catálogo: a ação é `action:<ident>` e o pool é o do
 //     item de mesmo nome (`pool.item`), como `featureActions` e `actorResources`.
 //   - As ações básicas do XPHB ficam fora: moram na aba Actions (DDL-0147).
+//   - `turnCostsOf` lê o custo pela PROSA (DDL-0203): 181 features da matriz citam um
+//     custo de turno e não têm activity nem pool. "Bonus Action" e "Reaction" valem em
+//     qualquer forma; a ação só nas formas que gastam ("Magic action", "as an action",
+//     "use your action"), porque "when you take the Attack action" é gatilho, não custo.
+//     "can't take Reactions" sai antes (a condição que a feature impõe). "No action
+//     required" não é custo: a feature vale como as sem custo.
+//   - ATIVA x PASSIVA (DDL-0204, o alternador da aba): ativa é a que tem activity, pool,
+//     custo de turno, "no action required" ou um GATILHO que o jogador declara
+//     (`triggerOf`: "once per turn", "extra damage", "spend 2 points", "expend a use").
+//     Medido na matriz: só pelos custos, 536 ativas e 755 passivas, e umas 90 que se usam
+//     na mesa (Divine Strike, Hunter's Prey, Stunning Strike, Metamagic, Frenzy) caíam
+//     nas passivas. "Expend a/the/your" ficou de fora: pegava o Spellcasting ("expend a
+//     spell slot"). O summon e a forma (botões da aba) a tela soma. A feature do
+//     registro curado (`roll`, engine/playFeatureRolls, DDL-0205) é ativa sempre:
+//     Reckless Attack não tem gatilho no texto. A de `passive` no registro (a que só
+//     melhora outra, DDL-0206) é passiva mesmo com gatilho e pool.
 // -----------------------------------------------------------------------------
 
 import { isBasicActionItem } from './foundryBasicActions';
+import { featureRollOf } from './playFeatureRolls';
 import { resolveClassFeatures, resolveSubclassFeatures } from './foundryItems';
 import { resolveClassObj, resolveRaceObj, resolveSubclassObj } from './resolve';
 
@@ -60,12 +86,62 @@ const OPTION_LABELS = {
 
 const FEAT_LABELS = { origin: 'Origin feat', fightingStyle: 'Fighting Styles', epicBoon: 'Epic Boons' };
 
+const TURN_CUES = [
+  ['action', /\b(?:magic|utilize|study|influence) action\b|\b(?:as|use|uses|using|take|takes|spend|expend) (?:an|your|its|one) action\b/],
+  ['bonus', /\bbonus action/],
+  ['reaction', /\breaction/],
+];
+const NOT_A_COST = /\b(?:can(?:no|['’])t|doesn['’]t|don['’]t|without) (?:take |taking |use |using |require |requiring )?(?:a |an |your |any )?(?:actions?|bonus actions?|reactions?)\b/g;
+
+const FREE_CUE = /\bno action required\b/;
+const RIDER_CUE = /once (?:per|on each of your|on each) turn|\bextra (?:\d+d\d+|damage)|\b(?:expend|spend)s? (?:\d+|one|two|three|four|five)\b|\bexpend (?:a|one) use\b/;
+
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 const slug = (s) => norm(s).replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 /** A identidade do item, a mesma de `action:<ident>` no catálogo. */
 export function featureIdent(item) {
   return item.system?.identifier || slug(item.name);
+}
+
+/** O texto corrido das entries, com as tags do 5etools trocadas pelo texto delas. */
+export function plainText(entries) {
+  const out = [];
+  const walk = (e) => {
+    if (typeof e === 'string') out.push(e);
+    else if (Array.isArray(e)) e.forEach(walk);
+    else if (e && typeof e === 'object') {
+      if (e.name) out.push(e.name);
+      for (const k of ['entries', 'items', 'entry', 'rows']) if (e[k] != null) walk(e[k]);
+    }
+  };
+  walk(entries);
+  return out.join(' ').replace(/\{@\w+ ([^|}]*)[^}]*\}/g, '$1');
+}
+
+/** Os custos de turno que o texto cita: ['bonus'], ['action', 'reaction'], []. */
+export function turnCostsOf(entries) {
+  const text = plainText(entries).toLowerCase().replace(NOT_A_COST, ' ');
+  return TURN_CUES.filter(([, re]) => re.test(text)).map(([cost]) => cost);
+}
+
+/** Os custos do turno da feature: os das activities e os que o texto cita, em ordem. */
+export function featureCosts(feature, action) {
+  const all = new Set([...(action?.activities ?? []).map((a) => a.activation?.type), ...(feature?.costs ?? [])]);
+  return TURN_CUES.map(([cost]) => cost).filter((c) => all.has(c));
+}
+
+/** O gatilho que a prosa declara: 'free', 'rider' ou null. */
+export function triggerOf(entries) {
+  const text = plainText(entries).toLowerCase();
+  if (FREE_CUE.test(text)) return 'free';
+  return RIDER_CUE.test(text) ? 'rider' : null;
+}
+
+/** A feature é ativa (o jogador a usa ou declara): activity, pool, custo, gatilho ou registro. */
+export function isActiveFeature(feature, action, pools = []) {
+  if (feature?.roll === 'passive') return false;
+  return (action?.activities?.length ?? 0) > 0 || pools.length > 0 || (feature?.costs?.length ?? 0) > 0 || !!feature?.trigger || !!feature?.roll;
 }
 
 /** O texto de reserva: os parágrafos do HTML simples do export, sem as tags. */
@@ -88,7 +164,7 @@ export function namedEntries(entries, out = []) {
 
 /**
  * As features do ator, com tipo, seção, nível, chaves do catálogo e texto.
- * @returns {Array<{ key: string, name: string, kind: string, section: string, level: number|null, rank: number, actionKey: string, entries: any[] }>}
+ * @returns {Array<{ key: string, name: string, kind: string, section: string, level: number|null, rank: number, actionKey: string, entries: any[], costs: string[], trigger: string|null, roll: string|null }>}
  */
 export function featureList(actor, character, db) {
   const known = new Map();
@@ -145,6 +221,10 @@ export function featureList(actor, character, db) {
       source: item.system?.source?.book ?? null,
       entries: place.entries?.length ? place.entries : htmlToEntries(item.system?.description?.value),
     });
+    const last = out[out.length - 1];
+    last.costs = turnCostsOf(last.entries);
+    last.trigger = triggerOf(last.entries);
+    last.roll = featureRollOf(item.name)?.kind ?? null;
   }
   const order = (f) => FEATURE_KINDS.findIndex((k) => k.id === f.kind);
   return out

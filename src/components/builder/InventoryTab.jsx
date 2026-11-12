@@ -17,7 +17,8 @@
 //   CustomDetail(props): o detalhe de um item custom (HTML do Foundry).
 //   ItemRow(props): uma linha. Exportada para a aba Inventory do play mode, que passa
 //     `readOnly` (sem quantidade nem equipar: só o "x3"), `onUse` (o botão de usar)
-//     e `usesLeft` (as cargas que sobram).
+//     e `usesLeft` (as cargas que sobram); com `onUsesLeft`, as cargas viram botão
+//     do ajuste à mão (DDL-0202).
 //
 // DECISÕES E ARMADILHAS
 //   - Só grupos que se vestem ou empunham mostram o equipar.
@@ -595,7 +596,7 @@ function CustomDetail({ entry, name, meta }) {
   );
 }
 
-export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEquip = false, readOnly = false, onUse, useLabel = 'Use', usesLeft = null }) {
+export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEquip = false, readOnly = false, onUse, useLabel = 'Use', usesLeft = null, onUsesLeft }) {
   const canEquip = !readOnly && !hideEquip && EQUIPPABLE_GROUPS.has(entry.group);
   const rarity = entry.rarity ?? null;
   const rarityColor = rarity ? RARITY_COLOR[rarity] : null;
@@ -642,7 +643,12 @@ export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEq
             ariaLabel={`Quantity of ${nameOf(entry)}`}
           />
         )}
-        {usesLeft && <span className={styles.rowQty} title="Charges left">{usesLeft}</span>}
+        {usesLeft && !onUsesLeft && <span className={styles.rowQty} title="Charges left">{usesLeft}</span>}
+        {usesLeft && onUsesLeft && (
+          <button type="button" className={`${styles.rowQty} ${styles.rowQtyBtn}`} onClick={onUsesLeft} title="Charges left: tap to remove or add by hand">
+            {usesLeft}
+          </button>
+        )}
         {onUse && (
           <Button size="sm" variant="primary" onClick={onUse} title={`${useLabel} ${nameOf(entry)}`}>
             {useLabel}

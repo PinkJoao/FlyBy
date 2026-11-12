@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
-  left, slotKey, resolveCosts, activityEvent, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent,
+  left, slotKey, resolveCosts, activityEvent, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, featureLogEvent,
 } from './playUse';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -140,6 +140,18 @@ describe('recuperações especiais', () => {
     expect(adjustResourceEvent({ catalog, key: 'slot:1', delta: 1 }).ops).toEqual([{ op: 'spend', key: 'slot:1', amount: 1 }]);
     expect(adjustResourceEvent({ catalog, key: 'slot:1', delta: -2 }).ops).toEqual([{ op: 'restore', key: 'slot:1', amount: 2 }]);
   });
+
+  it('ajuste manual com o estado: tira só o que sobra e põe só o que foi gasto (DDL-0202)', () => {
+    const max = catalog.resources.find((r) => r.key === 'slot:1').max;
+    const s = st({ spent: { 'slot:1': 1 } });
+    const take = adjustResourceEvent({ catalog, key: 'slot:1', delta: 99, state: s });
+    expect(take.ops).toEqual([{ op: 'spend', key: 'slot:1', amount: max - 1 }]);
+    expect(take.payload.asked).toBe(99);
+    const give = adjustResourceEvent({ catalog, key: 'slot:1', delta: -5, state: s });
+    expect(give.ops).toEqual([{ op: 'restore', key: 'slot:1', amount: 1 }]);
+    expect(run(s, give).spent['slot:1'] ?? 0).toBe(0);
+    expect(adjustResourceEvent({ catalog, key: 'slot:1', delta: 1, state: s }).payload.asked).toBeUndefined();
+  });
 });
 
 describe('efeito curado da feature', () => {
@@ -175,3 +187,47 @@ describe('rolar só o ataque ou só o efeito', () => {
   });
 });
 
+
+describe('featureLogEvent', () => {
+  it('registra o nome e o custo sem rolar nem gastar', () => {
+    const e = featureLogEvent({ catalog, feature: { key: 'feature:storm-aura|3', name: 'Storm Aura' }, cost: 'bonus' });
+    expect(e.kind).toBe('use');
+    expect(e.label).toBe('Storm Aura');
+    expect(e.ops).toEqual([]);
+    expect(e.payload).toMatchObject({ logged: true, cost: 'bonus', featureKey: 'feature:storm-aura|3', costs: [] });
+  });
+
+  it('com spend gasta um do pool', () => {
+    const e = featureLogEvent({ catalog, feature: { name: 'Second Wind' }, spend: 'pool:second-wind' });
+    expect(e.ops).toEqual([{ op: 'spend', key: 'pool:second-wind', amount: 1 }]);
+    expect(e.payload.costs[0].amount).toBe(1);
+    expect(e.payload.cost).toBeNull();
+  });
+
+  it('com modificador e salvaguarda do registro: liga o efeito e mostra a CD', () => {
+    const modifier = { id: 'm', label: 'Reckless Attack', maxRounds: 1, effects: [] };
+    const e = featureLogEvent({ catalog, state: st(), feature: { name: 'Reckless Attack' }, modifier, save: { abilities: ['con'], dc: 14 } });
+    expect(e.ops).toEqual([{ op: 'modifier', add: modifier }]);
+    expect(e.payload).toMatchObject({ effect: 'Reckless Attack', save: { dc: 14 } });
+  });
+
+  it('com roll, rola a fórmula do registro no evento', () => {
+    const e = featureLogEvent({ catalog, feature: { name: "Commander's Strike" }, roll: { label: "Ally's damage bonus", formula: '1d8' }, rng: seq(6) });
+    expect(e.rolls.total).toBe(6);
+    expect(e.payload.rolled).toBe(true);
+  });
+
+  it('apply cura com o total e restore devolve todo o gasto do pool', () => {
+    const s = { ...st(), damage: 10, spent: { 'pool:second-wind': 2 } };
+    const e = featureLogEvent({ catalog, state: s, feature: { name: 'Uncanny Metabolism' }, roll: { label: 'Hit Points regained', formula: '1d8' }, apply: 'heal', restore: 'pool:second-wind', rng: seq(5) });
+    expect(e.ops).toContainEqual({ op: 'restore', key: 'pool:second-wind', amount: 2 });
+    expect(e.payload.healed).toMatchObject({ amount: 5 });
+    expect(e.payload.lines[0]).toContain('2 regained');
+  });
+
+  it('apply temp dá PV temporários sem somar', () => {
+    const e = featureLogEvent({ catalog, state: { ...st(), tempHp: 3 }, feature: { name: 'Form of Dread' }, roll: { label: 'Temporary Hit Points', formula: '1d10' }, apply: 'temp', rng: seq(7) });
+    expect(e.ops).toContainEqual({ op: 'hp', temp: 4 });
+    expect(e.payload.temp).toMatchObject({ from: 3, to: 7 });
+  });
+});

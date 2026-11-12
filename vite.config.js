@@ -24,8 +24,17 @@
 //     aparecem numa faixa (CacheFirst), e daí em diante abrem sem rede.
 //   - Das fontes do tema papel, só o subconjunto LATINO entra no precache (cerca
 //     de 113 KB): os outros alfabetos só aparecem em nome raro e vêm sob demanda.
-//   - `autoUpdate`: um deploy novo assume na próxima abertura, sem perguntar. O
-//     `navigateFallback` responde qualquer rota com o index.html, como o rewrite
+//   - `autoUpdate`: o worker novo assume assim que baixa (skipWaiting), e um
+//     reload comum já traz a versão nova. O registro é do app (`injectRegister:
+//     false`, `virtual:pwa-register` em src/appUpdate.js): o aviso com Reload, a
+//     checagem ao voltar ao app e a recarga por pedaço perdido moram lá; o script
+//     injetado antes só registrava e nunca avisava (DDL-0208).
+//   - `skipWaiting` e `clientsClaim` ficam EXPLÍCITOS no workbox: o plugin só os
+//     liga sozinho com `injectRegister` 'auto' ou nulo. Com o 'script-defer' de
+//     antes, o worker novo ficava esperando até TODA aba do app fechar, o que no
+//     celular quase nunca acontece; reload não o soltava, e só limpar os dados do
+//     site resolvia (medido no preview, 2026-11-12).
+//   - O `navigateFallback` responde qualquer rota com o index.html, como o rewrite
 //     do Firebase; a query (`?fonte=`) segue na URL e o app a lê igual.
 //   - O manifesto não usa marca da Wizards no nome nem na descrição: é o texto
 //     da tela de instalação (PACKAGING-STUDY.md §4).
@@ -47,7 +56,7 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'script-defer',
+      injectRegister: false,
       includeAssets: ['logo.svg', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'FlyBy',
@@ -69,6 +78,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/portraits-licensed/'),

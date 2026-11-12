@@ -68,7 +68,7 @@ export default function SlotPanel({ choices, slotLabel }) {
           </ul>
         </div>
       )}
-      {!basics.length && !features.length && <p className={styles.note}>Nothing on the sheet uses your {slotLabel.toLowerCase()}.</p>}
+      {!basics.length && !features.length && <p className={styles.note}>Nothing you have uses your {slotLabel.toLowerCase()}.</p>}
       <Button variant="link" onClick={() => close({ kind: 'mark' })}>
         Mark the {slotLabel.toLowerCase()} as used
       </Button>

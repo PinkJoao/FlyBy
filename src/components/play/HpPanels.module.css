@@ -3,6 +3,7 @@
  * =============================================================================
  * CLASSES
  *   .now, .preview: o HP de agora e o que vai acontecer.
+ *   .full: o "To full" do Heal, centrado abaixo do número.
  * -------------------------------------------------------------------------- */
 
 .now {
@@ -20,3 +21,6 @@
   color: var(--accent);
 }
 
+.full {
+  align-self: center;
+}

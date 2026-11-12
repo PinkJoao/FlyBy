@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyEvent, makeEvent } from './playState';
-import { summonCreaturesFor, summonOps, summonGroupView, summonHpEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps } from './playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps } from './playSummons';
 import { objectSummons, creatureStats } from './creature';
 import { endConcentrationOps } from './playEffects';
 import { nextTurnEvent } from './playCombat';
@@ -42,7 +42,7 @@ describe('summons no play mode (DDL-0192)', () => {
     expect(state.summons).toHaveLength(1);
     const g = state.summons[0];
     expect(g.members).toHaveLength(2);
-    state = applyEvent(state, summonHpEvent(g, 1, 10));
+    state = applyEvent(state, summonVitalsEvent({ group: g, member: summonGroupView(g, spirit).members[1], kind: 'hurt', amount: 10 }));
     const v = summonGroupView(state.summons[0], spirit);
     expect(v.stats.ac.value).toBe(14);
     expect(v.members.map((m) => m.current)).toEqual([25, 15]);
@@ -51,6 +51,32 @@ describe('summons no play mode (DDL-0192)', () => {
     expect(rend.damage.dice).toBe('1d8 + 4 + 3');
     state = applyEvent(state, dismissEvent(state.summons[0]));
     expect(state.summons).toHaveLength(0);
+  });
+  it('PV do membro: temporário que não soma e absorve, máximo que sobe com o atual, cura, corte do máximo (DDL-0201)', () => {
+    let state = emptyPlayState();
+    state = applyEvent(state, makeEvent('cast', { ops: summonOps({ state, creature: spirit, spell, level: 3, variant: 'Air', origin, catalog }) }));
+    const id = state.summons[0].id;
+    const step = (kind, amount, opts = {}) => {
+      const g = state.summons.find((x) => x.id === id);
+      const ev = summonVitalsEvent({ group: g, member: summonGroupView(g, spirit).members[0], kind, amount, ...opts });
+      state = applyEvent(state, ev);
+      return { ev, m: summonGroupView(state.summons[0], spirit).members[0] };
+    };
+    expect(step('temp', 5).m).toMatchObject({ max: 25, current: 25, temp: 5 });
+    expect(step('temp', 3).m.temp).toBe(5);
+    expect(step('temp', 3, { replace: true }).m.temp).toBe(3);
+    expect(step('hurt', 10).m).toMatchObject({ current: 18 });
+    expect(state.summons[0].members[0].temp).toBe(0);
+    expect(step('max', 5).m).toMatchObject({ max: 30, current: 23 });
+    const heal = step('heal', 100);
+    expect(heal.m.current).toBe(30);
+    expect(heal.ev.payload).toMatchObject({ from: 23, to: 30 });
+    expect(step('hurt', 100).m.current).toBe(0);
+    expect(state.summons[0].members[0].damage).toBe(30);
+    expect(step('heal', 4).m.current).toBe(4);
+    const cut = step('hurt', 3, { affectMax: true });
+    expect(cut.m).toMatchObject({ max: 27, current: 1 });
+    expect(cut.ev.payload.maxCut).toBe(3);
   });
   it('a concentração que acaba, por qualquer caminho, tira o summon ligado (DDL-0193)', () => {
     let state = emptyPlayState();
@@ -110,7 +136,7 @@ describe('summons no play mode (DDL-0192)', () => {
     expect(g.light).toEqual({ ac: 20, hp: 44 });
     expect(g.ctx.spellLevel).toBe(5);
     expect(summonGroupView(g, null).members).toEqual([{ index: 0, max: 44, current: 44, conditions: [] }]);
-    state = applyEvent(state, summonHpEvent(g, 0, 10));
+    state = applyEvent(state, summonVitalsEvent({ group: g, member: summonGroupView(g, null).members[0], kind: 'hurt', amount: 10 }));
     expect(summonGroupView(state.summons[0], null).members[0].current).toBe(34);
     const hand = { name: 'Mage Hand', source: 'XPHB', key: 'spell:x|Mage Hand' };
     const rules = { command: 'action', ac: null, hp: null, replaces: true };

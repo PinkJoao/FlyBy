@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyEvent, makeEvent } from './playState';
-import { transformRuleOf, wildShapeLimits, formEligible, formTempHp, transformOps, revertOps, formCatalog, formStats, crNumber } from './playForms';
+import { transformRuleOf, wildShapeLimits, formEligible, formTempHp, transformOps, revertOps, formCatalog, formStats, crNumber, formEventId } from './playForms';
 import { endConcentrationOps } from './playEffects';
 import { damageOutcome } from './playHealth';
 
@@ -124,5 +124,15 @@ describe('playForms (DDL-0195)', () => {
     expect(endConcentrationOps(poly).filter((o) => o.op === 'form' || o.op === 'hp')).toEqual([{ op: 'form', clear: true }, { op: 'hp', temp: -7 }]);
     const ws = { ...poly, form: { concentration: false } };
     expect(endConcentrationOps(ws).some((o) => o.op === 'form')).toBe(false);
+  });
+
+  it('formEventId: o evento vivo que pôs a forma atual, nunca um desfeito ou já revertido (DDL-0201)', () => {
+    const on = makeEvent('form', { ops: [{ op: 'form', set: { kind: 'wildShape' } }] });
+    const hit = makeEvent('damage', { ops: [{ op: 'hp', damage: 3 }] });
+    const off = makeEvent('form', { ops: [{ op: 'form', clear: true }] });
+    expect(formEventId({ events: [on, hit], cursor: 2 })).toBe(on.id);
+    expect(formEventId({ events: [on, hit, off], cursor: 3 })).toBe(null);
+    expect(formEventId({ events: [on, hit, off], cursor: 2 })).toBe(on.id);
+    expect(formEventId({ events: [on], cursor: 0 })).toBe(null);
   });
 });

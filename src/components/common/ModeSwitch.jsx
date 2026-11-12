@@ -1,5 +1,5 @@
 // =============================================================================
-// ModeSwitch: o seletor Sheet | Play no topo da página do personagem
+// ModeSwitch: o seletor Build | Play no topo da página do personagem
 // =============================================================================
 // O QUE FAZ
 //   Os dois modos da mesma página (DDL-0117): a ficha (montar o personagem) e o
@@ -14,12 +14,14 @@
 //     (a ficha à esquerda, o jogo à direita).
 //   - É um grupo de botões com aria-pressed, não abas: o conteúdo inteiro da página
 //     troca, e as abas de verdade ficam embaixo.
+//   - O rótulo é "Build" (DDL-0201, como a rota `/build/:id`); o valor interno segue
+//     'sheet', que nenhum jogador vê e que a página, o FLIP e os testes leem.
 // -----------------------------------------------------------------------------
 
 import SegmentedControl from './SegmentedControl';
 
 const MODES = [
-  { value: 'sheet', label: 'Sheet' },
+  { value: 'sheet', label: 'Build' },
   { value: 'play', label: 'Play' },
 ];
 

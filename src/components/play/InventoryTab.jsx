@@ -15,7 +15,8 @@
 //   - Sem loja, sem quantidade, sem equipar, sem guardar em contêiner (definições do
 //     dono, DDL-0146 e P6): isso é da ficha. As moedas também saíram (DDL-0160): no
 //     jogo quase não servem, e a ficha as edita. A quantidade aparece só lida ("x3"); o
-//     gasto é o uso (a poção bebida, a flecha do ataque, a carga da varinha).
+//     gasto é o uso (a poção bebida, a flecha do ataque, a carga da varinha). As
+//     cargas tocadas abrem o ajuste à mão (o que o mestre tira ou dá, DDL-0202).
 //   - Mostra TUDO, solto ou guardado, numa lista só: no jogo o que importa é achar o
 //     item, não onde ele está (a ficha mostra os contêineres).
 //   - O que está equipado ou atunado aparece destacado, como na ficha (rowActive).
@@ -35,9 +36,9 @@ import styles from '../builder/InventoryTab.module.css';
 
 /**
  * A aba de inventário do jogo.
- * @param {{ catalog: object, state: object, inventory: object[], db: object, onUse: Function, onCharge: Function, onAttack: Function }} props
+ * @param {{ catalog: object, state: object, inventory: object[], db: object, onUse: Function, onCharge: Function, onAttack: Function, onResource?: Function }} props
  */
-export default function InventoryTab({ catalog, state, inventory, db, onUse, onCharge, onAttack }) {
+export default function InventoryTab({ catalog, state, inventory, db, onUse, onCharge, onAttack, onResource }) {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('all');
   const [collapsed, setCollapsed] = useState(() => new Set());
@@ -72,6 +73,7 @@ export default function InventoryTab({ catalog, state, inventory, db, onUse, onC
         onUse={isUsable(entry.raw) ? () => onUse(entry) : charge ? () => onCharge(charge) : attack ? () => onAttack(attack) : undefined}
         useLabel={!isUsable(entry.raw) && !charge && attack ? 'Attack' : 'Use'}
         usesLeft={charge ? `${remainingOf(state, charge.key, charge.max)}/${charge.max}` : null}
+        onUsesLeft={charge && onResource ? () => onResource(charge) : undefined}
       />
     );
   };

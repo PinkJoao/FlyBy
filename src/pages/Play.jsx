@@ -41,7 +41,8 @@
 //   PlayInner(props): o modo jogo, com o personagem garantido (quem carrega é a
 //     pages/Character); os descansos e a coluna do histórico entram por portal nos
 //     lugares dela (`levelSlot`, `sideSlot`).
-//     roll(build, dialog, quick): pergunta (ou não), rola, grava e mostra.
+//     roll(build, dialog, quick): pergunta (ou não), rola, grava e mostra; o gasto dos
+//       extras ligados (Peerless Skill, Eldritch Smite) vai no mesmo evento.
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
 //     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque.
@@ -51,7 +52,9 @@
 //       Wild Shape pelas formas conhecidas, a magia de transformação pelo painel
 //       seletor, e sair dela; o catálogo da tela é o da forma (formCatalog). O mesmo
 //       painel escolhe a criatura do Find Familiar (`formPick.summon`, DDL-0197).
-//     summonHp(group, member, kind), summonRoll(view, action, kind),
+//     historyLive: o estado vivo dos cards do histórico (os summons em campo, o
+//       evento da forma atual, Dismiss e Revert por ali, DDL-0201).
+//     summonHp(group, member, kind) (os painéis Heal e Hurt do jogador, DDL-0201), summonRoll(view, action, kind),
 //       summonFromFeature(feature), dismissSummon(group): a aba Summons (DDL-0192): PV de um membro, o ataque e o
 //       dano de uma ação (sem os efeitos do jogador) e dispensar. Ao conjurar uma
 //       magia com `miscTags` SMN, o bestiário carrega e o CastPanel oferece invocar
@@ -78,8 +81,15 @@
 //     rollDeathSave(quick), rollConcentration(dc, quick), askConcentrationSave(),
 //       startConcentration(), endConcentration(): morte e concentração.
 //     shortRest(), longRest(): os descansos.
-//     applyFeature(action, activity), special(action, rule), adjust(key, delta):
-//       usar uma feature, as recuperações especiais e o ajuste à mão.
+//     applyFeature(action, activity), special(action, rule): usar uma feature e as
+//       recuperações especiais.
+//     logFeature(feature, spend): o "Log to history" de uma feature (o detalhe, o Use
+//       da que só a prosa diz que gasta, o Use do pool sem activity); em combate, com
+//       mais de um custo, pergunta qual (DDL-0203). Com o registro curado
+//       (playFeatureRolls, DDL-0205), liga o efeito (Reckless Attack) ou gasta e mostra
+//       a salvaguarda (Stunning Strike).
+//     adjustByHand(resource): o ajuste do mestre (tirar ou pôr) pelo ResourcePanel,
+//       aberto pelos contadores das abas Features, Spells e Inventory (DDL-0202).
 //     checkAbility(ability), saveAbility(ability, quick): o Check (o seletor de
 //       perícia e então a rolagem) e o Save de um card de atributo.
 //     pickCondition(raw), conditionInfo(id): a condição escolhida no painel seletor
@@ -184,17 +194,19 @@ import useActiveInView from '../hooks/useActiveInView';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
 import { derivePlayCatalog } from '../engine/playCatalog';
-import { transformRuleOf, transformOps, revertOps, formTempHp, formCatalog, formStats, formEligible, wildShapeOf } from '../engine/playForms';
+import { transformRuleOf, transformOps, revertOps, formTempHp, formCatalog, formStats, formEligible, wildShapeOf, formEventId } from '../engine/playForms';
 import creatureEntity, { beastFormEntity } from '../selector/entities/creature';
 import {
   vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
-import { emptyPlayState, makeEvent, hpView } from '../engine/playState';
-import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
+import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { featureCosts } from '../engine/playFeatures';
+import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
@@ -203,7 +215,7 @@ import {
   movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
 } from '../engine/playCombat';
 import { askRoll } from '../components/play/rollDialog';
-import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askSkillCheck, askMove, askAction, askSlot, askCost } from '../components/play/playDialogs';
+import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askSkillCheck, askMove, askAction, askSlot, askCost, askResource } from '../components/play/playDialogs';
 import ActionsTab from '../components/play/ActionsTab';
 import { actionContext, attackStepOp, basicActionList, costAvailable, offhandAttack, slotChoices, spellCosts } from '../engine/playBasicActions';
 import FeaturesTab from '../components/play/FeaturesTab';
@@ -211,12 +223,13 @@ import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
 import SummonsTab from '../components/play/SummonsTab';
 import useBestiary from '../hooks/useBestiary';
-import { summonCreaturesFor, summonOps, summonGroupView, summonHpEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, familiarForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, familiarForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
 import { resolveClassObj, resolveSubclassObj } from '../engine/resolve';
 import { resolveSpellObj } from '../engine/spells';
 import RollButton from '../components/play/RollButton';
 import { CombatDock, CombatFloat, RoundBadge } from '../components/play/CombatControls';
 import PlayHistory from '../components/play/PlayHistory';
+import RevertFormButton from '../components/play/RevertFormButton';
 import Icon from '../components/common/Icon';
 import { alert, ask, confirm } from '../components/common/dialog';
 import { maybeStartTutorial } from '../store/tutorialStore';
@@ -230,7 +243,6 @@ import ConditionsCard from '../components/play/ConditionsCard';
 import EffectsCard from '../components/play/EffectsCard';
 import { SKILL_LABEL } from '../components/builder/labels';
 import SelectorPanel from '../selector/SelectorPanel';
-import Button from '../components/common/Button';
 import conditionEntity from '../selector/entities/condition';
 import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
@@ -415,6 +427,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       await alert({ title: 'Could not roll', message: String(e?.message ?? e) });
       return;
     }
+    const riders = riderSpendOps(options.applied, catalog);
+    if (riders.ops.length) event = { ...event, ops: [...event.ops, ...riders.ops], payload: { ...event.payload, spent: riders.lines } };
     record(event, cost);
   };
 
@@ -433,7 +447,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       setToast(null);
       setRollShow({ show: tray, event: final, kind: 'tray' });
     } else setToast(final);
-    if (conflicts?.length) alert({ title: 'Not applied to the sheet', message: 'The sheet does not have that much, so the item or coins were left as they are.' });
+    if (conflicts?.length) alert({ title: 'Not applied to the character', message: 'The character does not have that much, so the item or coins were left as they are.' });
   };
 
   /** Fecha o d20 em destaque e mostra o aviso da rolagem. */
@@ -596,7 +610,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const action = catalog.actions.find((a) => a.key === event.payload?.actionKey);
     const activity = action?.activities.find((x) => x.id === event.payload?.activityId);
     if (!activity) {
-      alert({ title: 'Feature not found', message: 'This feature is no longer on the sheet.' });
+      alert({ title: 'Feature not found', message: 'This feature is no longer on the character.' });
       return;
     }
     applyFeature(action, activity, { only: 'effect', free: true, critical: !!event.payload?.attack?.critical });
@@ -613,7 +627,32 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (r) record(slotRecoveryEvent({ catalog, state, action, picks: r.picks }));
   };
 
-  const adjust = (key, delta) => record(adjustResourceEvent({ catalog, key, delta }));
+  /** Leva uma feature ao histórico com o custo do turno; `spend` gasta um do pool. */
+  const logFeature = async (feature, spend = null) => {
+    const costs = featureCosts(feature, catalog.actions.find((a) => a.key === feature.actionKey));
+    let cost = costs.length === 1 ? costs[0] : null;
+    if (costs.length > 1 && state.combat) {
+      const v = await ask({
+        title: feature.name,
+        message: 'Which part of your turn does it take?',
+        actions: [...costs.map((c) => ({ label: SLOT_LABEL[c], value: c })), { label: 'None', value: 'none' }],
+      });
+      if (v == null) return;
+      cost = v === 'none' ? null : v;
+    }
+    const use = featureUseOf(feature, catalog);
+    const modifier = use?.modifier ? makeModifier(use.modifier) : null;
+    const pay = spend ?? use?.spend ?? null;
+    if (pay && leftOf(catalog, state, pay) < 1 && !(await confirm({ title: 'Not enough left', message: 'There is nothing left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
+    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null }), cost);
+  };
+
+  /** O ajuste à mão de um recurso (o mestre tira ou dá): o painel e o evento preso ao que há. */
+  const adjustByHand = async (resource) => {
+    const max = resource.max ?? 0;
+    const r = await askResource({ title: resource.label ?? resource.name, left: remainingOf(state, resource.key, max), max, shape: resource.kind === 'slot' || resource.kind === 'pact' ? 'gem' : undefined });
+    if (r) record(adjustResourceEvent({ catalog, key: resource.key, delta: r.delta, state }));
+  };
 
   /** Lança uma magia: escolhe a forma, grava e abre a rolagem dela. */
   const castSpell = async (origin, spell) => {
@@ -687,7 +726,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const origin = catalog.spells.find((o) => o.spells.some((s) => s.key === spellKey));
     const spell = origin?.spells.find((s) => s.key === spellKey);
     if (!spell) {
-      alert({ title: 'Spell not found', message: 'This spell is no longer on the sheet.' });
+      alert({ title: 'Spell not found', message: 'This spell is no longer on the character.' });
       return;
     }
     if (kind === 'attack') rollAttack(spellAttackOf(origin, spell, level));
@@ -700,7 +739,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const origin = catalog.spells.find((o) => o.spells.some((s) => s.key === group.spell?.key));
     const spell = origin?.spells.find((s) => s.key === group.spell?.key);
     if (!spell) {
-      alert({ title: 'Spell not found', message: 'This spell is no longer on the sheet.' });
+      alert({ title: 'Spell not found', message: 'This spell is no longer on the character.' });
       return;
     }
     const cost = costOfActivation(group.turn?.command);
@@ -769,13 +808,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** Dano ou cura num membro de um summon, pelo valor digitado. */
   const summonHp = async (group, member, kind) => {
-    const r = await ask({
-      title: kind === 'hurt' ? `${group.label}: damage` : `${group.label}: healing`,
-      fields: [{ type: 'text', name: 'n', label: kind === 'hurt' ? 'Damage' : 'Healing', default: '' }],
-      actions: [{ label: 'Cancel', value: false }, { label: kind === 'hurt' ? 'Hurt' : 'Heal', value: true, tone: 'primary' }],
-    });
-    const n = Number.parseInt(r?.values?.n, 10);
-    if (r?.action && Number.isFinite(n) && n > 0) record(summonHpEvent(group, member, kind === 'hurt' ? n : -n));
+    const vitals = { current: member.current ?? 0, max: member.max ?? member.current ?? 0, temp: member.temp ?? 0 };
+    const r = kind === 'hurt' ? await askHurt({ title: `${group.label}: hurt`, vitals }) : await askHeal({ title: `${group.label}: heal`, vitals, maxNote: 'Like Aid: stays until you change it or the summon leaves.' });
+    if (!r) return;
+    record(summonVitalsEvent({ group, member, kind: kind === 'hurt' ? 'hurt' : r.kind, amount: r.amount, replace: r.replace, affectMax: r.affectMax }));
   };
 
   /** O ataque e o dano de uma ação de summon, sem os efeitos do jogador. */
@@ -821,7 +857,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const transformWildShape = async (feature) => {
     const known = character.wildShapeForms ?? [];
     if (!known.length) {
-      await alert({ title: 'No known forms', message: 'Choose your Wild Shape forms in the sheet, on the Class tab.' });
+      await alert({ title: 'No known forms', message: 'Choose your Wild Shape forms in Build mode, on the Class tab.' });
       return;
     }
     const r = await ask({
@@ -878,6 +914,18 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     record(makeEvent('form', { label: `${state.form.label} ends`, ops: revertOps(state), payload: { reverted: true } }), state.form.kind === 'wildShape' ? 'bonus' : null);
   };
 
+  /** O estado vivo que os cards do histórico leem: os summons em campo e o evento da forma atual. */
+  const historyLive = {
+    summons: new Set((state.summons ?? []).map((g) => g.id)),
+    form: state.form,
+    formEventId: state.form ? formEventId(play.doc) : null,
+    onRevert: revertForm,
+    onDismiss: (id) => {
+      const group = (state.summons ?? []).find((g) => g.id === id);
+      if (group) dismissSummon(group);
+    },
+  };
+
   /** Dispensa o grupo, perguntando antes. */
   const dismissSummon = async (group) => {
     if (await confirm({ title: `Dismiss ${group.label}?`, message: 'It leaves the Summons tab. You can undo it in the history.', confirmLabel: 'Dismiss' })) record(dismissEvent(group));
@@ -896,7 +944,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         rollData: catalog.rollData,
       },
       quick,
-      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', attackAbility: attack.ability }),
+      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability }),
       spend ? cost : null,
     );
 
@@ -923,7 +971,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', attackAbility: attack.ability }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability }),
       spend ? cost : null,
     );
 
@@ -951,7 +999,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const base = catalog.attacks.find((a) => a.key === (offhand ? String(attackKey).slice(0, -'#offhand'.length) : attackKey));
     const attack = base && offhand ? offhandAttack(base, catalog) : base;
     if (!attack) {
-      alert({ title: 'Attack not found', message: 'This attack is no longer on the sheet.' });
+      alert({ title: 'Attack not found', message: 'This attack is no longer on the character.' });
       return;
     }
     rollDamage(attack, opts);
@@ -1057,7 +1105,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const moveCursor = (fn, verb) => {
     const r = fn();
     if (r?.conflicts?.length) {
-      alert({ title: `Could not ${verb} everything`, message: 'An item changed on the sheet since this action, so it was left as it is now.' });
+      alert({ title: `Could not ${verb} everything`, message: 'An item changed in Build mode since this action, so it was left as it is now.' });
     }
   };
   const undo = () => moveCursor(play.undo, 'undo');
@@ -1103,7 +1151,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         <section className={styles.formCard} data-tour={TUT.PLAY_FORM}>
           <span className={styles.formTitle}>{state.form.label}</span>
           <span className={styles.formNote}>{formNote}</span>
-          <Button size="sm" onClick={revertForm}>Revert</Button>
+          <RevertFormButton form={state.form} onClick={revertForm} />
         </section>
       )}
 
@@ -1200,18 +1248,18 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'History' && (
             <>
               {historyHead}
-              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} />
+              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} live={historyLive} />
             </>
           )}
 
           {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
-            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onAdjust={adjust} onSummon={summonFromFeature} onTransform={transformWildShape} />
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} />
           )}
 
           {activeTab === 'Spells' && (
-            <SpellsTab catalog={catalog} state={state} derived={derived} db={db} onCast={castSpell} />
+            <SpellsTab catalog={catalog} state={state} derived={derived} db={db} onCast={castSpell} onResource={adjustByHand} />
           )}
 
           {activeTab === 'Summons' && (
@@ -1236,6 +1284,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
               onUse={consumeItem}
               onCharge={(r) => spendCharge(r)}
               onAttack={attackFromInventory}
+              onResource={adjustByHand}
             />
           )}
         </div>
@@ -1247,7 +1296,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} round={state.combat ? state.combat.round : null} />
           </div>
           <div className={styles.sideScroll}>
-            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} />
+            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} live={historyLive} />
             {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} summons={summonLine} />}
           </div>
         </div>,

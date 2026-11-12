@@ -42,7 +42,9 @@
 //
 // DECISÕES E ARMADILHAS
 //   - Summons (DDL-0192): `summons` é a lista de grupos; a operação `summon` põe
-//     (`add`), tira (`remove`) ou muda um membro (`damage`, `condition` com `on`).
+//     (`add`), tira (`remove`) ou muda um membro (`damage`, `temp`, `max`, `condition`
+//     com `on`). O temporário e o ajuste do máximo (`maxDelta`) só entram no membro
+//     quando existem (DDL-0201), e o membro antigo, sem eles, deriva igual.
 //     O membro guarda o dano, não o PV, e o grupo traz o contexto do invocador
 //     (engine/playSummons.js): o reducer não lê a ficha nem o bestiário.
 //   - Forma (DDL-0195): `form` é a forma atual ou null; a operação `form` põe (`set`)
@@ -169,7 +171,7 @@ export function applyOp(state, op) {
   }
 }
 
-/** A lista de summons depois de uma operação `summon` (pôr, tirar, dano num membro, condição). */
+/** A lista de summons depois de uma operação `summon` (pôr, tirar, dano, temporário e máximo num membro, condição). */
 function summonsAfter(list, op) {
   if (op.add) return [...list.filter((g) => g.id !== op.add.id), op.add];
   if (op.remove) return list.filter((g) => g.id !== op.remove);
@@ -180,7 +182,10 @@ function summonsAfter(list, op) {
       const conditions = op.condition
         ? (op.on ? [...new Set([...(m.conditions ?? []), op.condition])] : (m.conditions ?? []).filter((c) => c !== op.condition))
         : m.conditions ?? [];
-      return { ...m, damage: Math.max(0, num(m.damage) + num(op.damage)), conditions };
+      const out = { ...m, damage: Math.max(0, num(m.damage) + num(op.damage)), conditions };
+      if (op.temp || m.temp) out.temp = Math.max(0, num(m.temp) + num(op.temp));
+      if (op.max || m.maxDelta) out.maxDelta = num(m.maxDelta) + num(op.max);
+      return out;
     });
     return { ...g, members };
   });

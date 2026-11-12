@@ -114,7 +114,7 @@ export default function PlayTiles({
         </div>
       </ExpandTile>
       <ExpandTile flip="tile-ac" value={ac ?? '-'} label="Armor Class" changed={ac !== baseAc}>
-        {acBreakdown.length === 0 && acEffects.length === 0 && <p className={sheet.emptyNote}>Equip armor or a shield in the sheet to change AC.</p>}
+        {acBreakdown.length === 0 && acEffects.length === 0 && <p className={sheet.emptyNote}>Equip armor or a shield in Build mode to change AC.</p>}
         {acBreakdown.map((b, i) => (
           <div className={sheet.breakRow} key={`${b.label}-${i}`}>
             <span className={sheet.bName}>{b.label}</span>
@@ -135,7 +135,7 @@ export default function PlayTiles({
         changed={speed !== baseSpeed || (combat && moveLeft < 0)}
         title="Your speeds, and your movement this turn in combat"
       >
-        {modes.length === 0 && <p className={sheet.emptyNote}>No speed on the sheet yet (it comes from the species).</p>}
+        {modes.length === 0 && <p className={sheet.emptyNote}>No speed yet (it comes from the species, in Build mode).</p>}
         {modes.map((m) => (
           <div className={sheet.breakRow} key={m}>
             <span className={sheet.bName}>{SPEED_LABEL[m]}</span>

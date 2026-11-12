@@ -18,7 +18,8 @@
  *     divisor; .rowHit é a área clicável que abre o item, .rowSub a sublinha de
  *     tipo e badges, .rowSide o lado direito (peso, quantidade, equipar, menu).
  *   .rowQty: no play mode, a quantidade só lida ("x3") e as cargas (o botão de usar
- *     é o Button do app, DDL-0160).
+ *     é o Button do app, DDL-0160); .rowQtyBtn: as cargas tocáveis do ajuste à mão
+ *     (DDL-0202), na pílula de borda fina do contador do jogo.
  *   .equipRadio, .equipDot, .equipRadioOn: o toggle de equipar, SÓ o círculo (área
  *     de toque 28px, dote 16px; preenchido = equipado).
  *   Overlay do item
@@ -464,6 +465,22 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
+}
+
+.rowQtyBtn {
+  appearance: none;
+  font-family: inherit;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rowQtyBtn:hover,
+.rowQtyBtn:focus-visible {
+  border-color: var(--accent-border);
 }
 
 

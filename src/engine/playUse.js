@@ -20,7 +20,8 @@
 //   specialRecovery(action): a regra curada de uma recuperação especial, ou null.
 //   slotRecoveryEvent(args): o Arcane Recovery e o Natural Recovery.
 //   fontOfMagicEvent(args): criar um slot com pontos, ou converter um slot em pontos.
-//   adjustResourceEvent(args): gastar ou devolver à mão.
+//   adjustResourceEvent(args): gastar ou devolver à mão (com `state`, preso ao que há).
+//   featureLogEvent(args): o "Log to history" de uma feature (nome e custo, sem rolar).
 //
 // DECISÕES E ARMADILHAS
 //   - activityEvent NÃO se chama "use...": o lint do React trata todo nome que
@@ -51,11 +52,21 @@
 //     converter um slot dá tantos pontos quanto o círculo. O modelo guarda o GASTO,
 //     então "criar" só reabastece um slot gasto: sem slot gasto daquele círculo, a
 //     tela avisa.
+//   - featureLogEvent é a primeira camada do DDL-0203: TODA feature pode ir ao
+//     histórico com o custo do turno, mesmo sem activity (as 181 da matriz que só a
+//     prosa diz que gastam uma ação, bônus ou reação). Não rola nem liga efeito; com
+//     `spend` gasta um do pool (o "Use" da feature que só tem pool). O gasto do turno
+//     entra pelo `record` da tela, como nas activities. A camada 2 (DDL-0205) passa o
+//     modificador (Reckless Attack, com a duração em rodadas) e a salvaguarda
+//     (Stunning Strike) do registro curado; desde o DDL-0206 também a rolagem (`roll`:
+//     o dado de superioridade do Commander's Strike, os PV do Inspiring Smite), e desde
+//     o DDL-0207 `apply` (cura ou PV temporários com o total, healOutcome e tempHpOutcome)
+//     e `restore` (devolve todo o gasto de um pool, o Focus do Uncanny Metabolism).
 // -----------------------------------------------------------------------------
 
 import { rollFormula, rollParts, d20Test, cryptoRng } from './dice';
 import { makeEvent, remainingOf } from './playState';
-import { healOutcome } from './playHealth';
+import { healOutcome, tempHpOutcome } from './playHealth';
 import { bonusParts, rngFor, d20Options } from './playActions';
 import { featureModifier } from './playEffects';
 import { withRounds } from './playCombat';
@@ -240,12 +251,60 @@ export function fontOfMagicEvent({ catalog, state, action, mode, level, now = ne
   }, now);
 }
 
-/** Gasta (positivo) ou devolve (negativo) à mão um recurso do catálogo. */
-export function adjustResourceEvent({ catalog, key, delta, now = new Date() }) {
-  const n = Math.trunc(Number(delta) || 0);
+/**
+ * Gasta (positivo) ou devolve (negativo) à mão um recurso do catálogo. Com `state`, o
+ * gasto para no que sobra e a devolução no que foi gasto; o pedido fica em `asked`.
+ */
+export function adjustResourceEvent({ catalog, key, delta, state = null, now = new Date() }) {
+  const asked = Math.trunc(Number(delta) || 0);
+  let n = asked;
+  if (state) {
+    const r = (catalog.resources ?? []).find((x) => x.key === key);
+    const leftNow = r ? remainingOf(state, key, r.max) : 0;
+    const spent = r ? Math.min(r.max, state.spent?.[key] ?? 0) : 0;
+    n = asked >= 0 ? Math.min(asked, leftNow) : -Math.min(-asked, spent);
+  }
   return makeEvent('resource', {
     label: nameOf(catalog, key),
     ops: n >= 0 ? [{ op: 'spend', key, amount: n }] : [{ op: 'restore', key, amount: -n }],
-    payload: { key, delta: n },
+    payload: { key, delta: n, ...(n !== asked ? { asked } : {}) },
+  }, now);
+}
+
+/**
+ * O "Log to history" de uma feature: o nome e o custo do turno, sem rolar. `spend` é a
+ * chave do que o uso gasta (um); `modifier`, `save` e `roll` vêm do registro (playFeatureRolls).
+ */
+export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, modifier = null, save = null, roll = null, apply = null, restore = null, rng = cryptoRng, now = new Date() }) {
+  const rolls = roll ? rollParts([{ label: roll.label, formula: roll.formula }], { data: catalog.rollData, rng }) : null;
+  const ops = spend ? [{ op: 'spend', key: spend, amount: 1 }] : [];
+  if (modifier) ops.push({ op: 'modifier', add: state ? withRounds(modifier, state, modifier.maxRounds) : modifier });
+  let healed = null;
+  let temp = null;
+  if (apply && rolls && state) {
+    const outcome = apply === 'heal' ? healOutcome(state, catalog, rolls.total) : tempHpOutcome(state, rolls.total);
+    ops.push(...outcome.ops);
+    if (apply === 'heal') healed = outcome.summary;
+    else temp = outcome.summary;
+  }
+  const restoredBack = restore && state ? Math.min(state.spent?.[restore] ?? 0, (catalog.resources ?? []).find((r) => r.key === restore)?.max ?? 0) : 0;
+  if (restoredBack > 0) ops.push({ op: 'restore', key: restore, amount: restoredBack });
+  return makeEvent('use', {
+    label: feature.name,
+    ops,
+    payload: {
+      featureKey: feature.key ?? null,
+      logged: true,
+      cost,
+      costs: spend ? [{ name: nameOf(catalog, spend), amount: 1 }] : [],
+      short: spend && state && left(catalog, state, spend) < 1 ? [nameOf(catalog, spend)] : [],
+      save,
+      effect: modifier?.label ?? null,
+      rolled: !!rolls,
+      healed,
+      temp,
+      lines: restoredBack > 0 ? [`${nameOf(catalog, restore)}: ${restoredBack} regained`] : [],
+    },
+    rolls,
   }, now);
 }

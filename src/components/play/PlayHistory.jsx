@@ -21,6 +21,9 @@
 //   PlayHistory(props): a lista, com os separadores de dia.
 //
 // DECISÕES E ARMADILHAS
+//   - A feature levada ao histórico à mão (`logged`, DDL-0203) mostra o custo do turno
+//     na Tag do tom do gasto e diz que nada foi rolado. O gasto de um extra ligado na
+//     rolagem (`spent`, DDL-0205) vira uma linha em qualquer tipo de card.
 //   - Cada dado aparece na SILHUETA da forma dele (DieShape, DDL-0158): com 2d4 e
 //     2d8 na mesma parte, dá para ver qual é qual. Desde o DDL-0160, no estilo do
 //     rolador do Google que o dono mandou: cada tipo com a cor dele (tokens
@@ -34,6 +37,10 @@
 //     o "Concentration save" com a CD, enquanto houver concentração; o da MAGIA
 //     lançada, o ataque, o dano e a cura no círculo em que ela saiu. Num evento
 //     desfeito os botões somem.
+//   - O card que CRIOU um summon tem "Dismiss" e o que pôs a forma ATUAL tem "Revert"
+//     (o RevertFormButton do aviso), enquanto ela ou ele estiver ativo (DDL-0201).
+//     `live` traz o estado vivo: os ids dos grupos em campo, o id do evento que pôs a
+//     forma e as ações. Dispensar e reverter são eventos NOVOS, diferentes de desfazer.
 //   - "Critical" só no ATAQUE e no dano dele (CRIT_KINDS): no XPHB só o ataque
 //     tem crítico; o 20 natural de um teste ou save sai como "Natural 20".
 //   - Dados e partes usam o ÍNDICE como key: dois dados podem ter o mesmo valor e
@@ -46,9 +53,12 @@ import { ABILITY_FULL } from '../builder/labels';
 import styles from './PlayHistory.module.css';
 import Button from '../common/Button';
 import Tag from '../common/Tag';
+import RevertFormButton from './RevertFormButton';
 
 /** O tom da Tag de cada etiqueta do cartão (o acerto em verde, a falha em vermelho). */
-const HISTORY_TONE = { crit: 'success', fumble: 'danger' };
+const HISTORY_TONE = { crit: 'success', fumble: 'danger', action: 'action', bonus: 'bonus', reaction: 'reaction' };
+
+const TURN_COST = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction' };
 
 const KIND_LABEL = {
   check: 'Check',
@@ -73,6 +83,8 @@ const KIND_LABEL = {
   item: 'Item',
   currency: 'Money',
   combat: 'Combat',
+  summon: 'Summon',
+  form: 'Form',
 };
 
 const CRIT_KINDS = new Set(['attack', 'damageRoll', 'use']);
@@ -173,6 +185,9 @@ function detailOf(event) {
       if (p.over) lines.push('Over the recovery limit');
       if (p.noSpentSlot) lines.push('No spent slot to refill');
       if (p.effect) tags.push({ text: `${p.effect} on`, tone: 'crit' });
+      if (p.logged && p.cost) tags.push({ text: TURN_COST[p.cost] ?? p.cost, tone: p.cost });
+      if (p.temp) lines.push(p.temp.kept ? `Kept ${p.temp.from} temporary hit points` : `${p.temp.to} temporary hit points`);
+      if (p.logged && !(p.costs ?? []).length && !p.effect && !p.save && !p.rolled) lines.push('Logged, nothing rolled');
       break;
     case 'cast':
       tags.push({ text: p.way });
@@ -185,13 +200,22 @@ function detailOf(event) {
     case 'healRoll':
       if (p.healed) lines.push(`${p.healed.from} to ${p.healed.to} hit points`);
       break;
+    case 'summon':
+      if (p.from != null && p.to != null) lines.push(`${p.from} to ${p.to} hit points`);
+      if (p.toTemp) lines.push(`${p.toTemp} from temporary hit points`);
+      if (p.maxCut) lines.push(`Hit point maximum -${p.maxCut} (now ${p.maxTo})`);
+      if (p.maxTo != null && !p.maxCut) lines.push(`Maximum ${p.maxFrom} to ${p.maxTo}`);
+      if (p.kept) lines.push(`Kept the ${p.tempFrom} it had (more than ${p.amount})`);
+      break;
     case 'resource':
       total = Math.abs(p.delta);
       lines.push(p.delta >= 0 ? 'Spent by hand' : 'Regained by hand');
+      if (p.asked != null) lines.push(`Asked for ${Math.abs(p.asked)}, only ${Math.abs(p.delta)} possible`);
       break;
     default:
       break;
   }
+  for (const s of p.spent ?? []) lines.push(`${s.name}: ${s.amount} spent`);
   return { total, tags, lines };
 }
 
@@ -273,12 +297,14 @@ function DiceList({ group }) {
 }
 
 /** O cartão de um evento. */
-function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect }) {
+function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, live }) {
   const rolls = event.rolls ?? {};
   const critical = event.kind === 'damageRoll' ? event.payload?.critical : rolls.isCritical;
   const save = event.kind === 'damageRoll' ? event.payload?.save : null;
   const detail = detailOf(event);
   const dc = event.kind === 'damage' ? event.payload?.concentrationDc : null;
+  const groups = undone || !live?.onDismiss ? [] : (event.ops ?? []).filter((o) => o.op === 'summon' && o.add && live.summons?.has(o.add.id)).map((o) => o.add);
+  const formLive = !undone && live?.form && live.formEventId === event.id && live.onRevert;
   return (
     <li className={undone ? `${styles.card} ${styles.undone}` : styles.card}>
       <div className={styles.head}>
@@ -343,6 +369,16 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
           )}
         </span>
       )}
+      {(groups.length > 0 || formLive) && (
+        <span className={styles.actionRow}>
+          {formLive && <RevertFormButton form={live.form} onClick={live.onRevert} className={styles.action} />}
+          {groups.map((g) => (
+            <Button key={g.id} size="sm" className={styles.action} onClick={() => live.onDismiss(g.id)} title={`Dismiss ${g.label}`}>
+              Dismiss{groups.length > 1 ? ` ${g.label}` : ''}
+            </Button>
+          ))}
+        </span>
+      )}
       {dc && !undone && concentrating && onConcentration && (
         <Button size="sm" variant="primary" className={styles.action} onClick={() => onConcentration(dc)}>
           Concentration save (DC {dc})
@@ -354,9 +390,9 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
 
 /**
  * O histórico: do mais novo para o mais velho, separado por dia.
- * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function }} props
+ * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function, live?: object }} props
  */
-export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect }) {
+export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, live }) {
   const events = doc?.events ?? [];
   if (!events.length) {
     return <p className={styles.empty}>Nothing rolled yet. Your rolls and actions show up here, and you can undo them.</p>;
@@ -380,6 +416,7 @@ export default function PlayHistory({ doc, onDamage, onConcentration, concentrat
         concentrating={concentrating}
         onSpell={onSpell}
         onFeatureEffect={onFeatureEffect}
+        live={live}
       />,
     );
   }

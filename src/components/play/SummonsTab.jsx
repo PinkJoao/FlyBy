@@ -21,13 +21,16 @@
 //     o mesmo desenho (§6.4: o que parece a ficha usa o CSS da ficha).
 //   - PV sem número (molde em prosa que o núcleo não leu) mostra o texto e "?": a
 //     vista nunca inventa (DDL-0191).
-//   - Os botões só chamam o que a tela passa; nada aqui grava evento.
+//   - Os botões só chamam o que a tela passa; nada aqui grava evento. Hurt e Heal
+//     abrem os painéis do jogador (HpPanels): cura, temporário e máximo (DDL-0201);
+//     `onHp` recebe o membro da vista (PV, máximo e temporário).
 //   - O título leva só o nome, a CA e Dismiss: o resto numa linha própria, porque a
 //     375px a pílula com tudo quebrava em três linhas e cortava o Dismiss (DDL-0196).
 // -----------------------------------------------------------------------------
 
 import Button from '../common/Button';
 import Tag from '../common/Tag';
+import Icon from '../common/Icon';
 import { turnText } from '../../engine/playSummons';
 import EntryContent from '../common/EntryContent';
 import useDialogStore from '../../store/dialogStore';
@@ -130,12 +133,12 @@ export default function SummonsTab({ views, loading = false, onHp, onAttack, onD
               {members.map((m) => (
                 <li key={m.index} className={styles.row}>
                   <span className={styles.rowText}>
-                    <span className={styles.rowName}>{many ? `#${m.index + 1} ` : ''}{m.current ?? '?'} / {m.max ?? '?'} HP</span>
+                    <span className={styles.rowName}>{many ? `#${m.index + 1} ` : ''}{m.current ?? '?'} / {m.max ?? '?'} HP{m.temp ? ` · ${m.temp} temp` : ''}</span>
                     {m.max == null && stats?.hp?.text && <span className={styles.rowMetaLine}>{stats.hp.text}</span>}
                   </span>
                   <div className={styles.rowSide}>
-                    <Button size="sm" variant="danger" onClick={() => onHp(group, m.index, 'hurt')}>Hurt</Button>
-                    <Button size="sm" onClick={() => onHp(group, m.index, 'heal')}>Heal</Button>
+                    <Button size="sm" variant="danger" onClick={() => onHp(group, m, 'hurt')}><Icon name="hurt" />Hurt</Button>
+                    <Button size="sm" onClick={() => onHp(group, m, 'heal')}><Icon name="heal" />Heal</Button>
                   </div>
                 </li>
               ))}

@@ -17,6 +17,7 @@
 //   formEligible(m, rule, limits): a criatura serve para a origem?
 //   formTempHp(rule, opts): os PV temporários ao assumir a forma.
 //   transformOps(opts), revertOps(state): as operações de entrar e sair da forma.
+//   formEventId(doc): o id do evento vivo que pôs a forma atual (o card do Revert).
 //   bonusOf(text): o número de um "+5" do bloco, ou null.
 //   sum(parts): a soma dos valores das partes de um teste.
 //   formAttacks(stats): as ações com ataque ou dano no formato de ataque do jogo.
@@ -161,6 +162,17 @@ export function revertOps(state) {
   if (!state?.form) return [];
   const temp = state.form.tempVanish && state.tempHp > 0 ? [{ op: 'hp', temp: -state.tempHp }] : [];
   return [{ op: 'form', clear: true }, ...temp];
+}
+
+/** O id do evento (antes do cursor) que pôs a forma por último; null se nenhum ou se ela já saiu. */
+export function formEventId(doc) {
+  const events = doc?.events ?? [];
+  for (let i = Math.min(doc?.cursor ?? events.length, events.length) - 1; i >= 0; i--) {
+    const ops = events[i].ops ?? [];
+    const last = [...ops].reverse().find((o) => o.op === 'form');
+    if (last) return last.set ? events[i].id : null;
+  }
+  return null;
 }
 
 /** O número de um "+5" do bloco, ou null. */

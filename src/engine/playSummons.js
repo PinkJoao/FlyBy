@@ -22,7 +22,8 @@
 //   summonOps({ state, creature, spell, level, variant, count, origin, catalog }):
 //     as operações de invocar (e as que tiram os summons da concentração anterior).
 //   summonGroupView(group, block): a criatura resolvida e os PV de cada membro.
-//   summonHpEvent(group, member, delta), dismissEvent(group): os eventos do card.
+//   summonVitalsEvent(opts), dismissEvent(group): os eventos do card (PV pelos
+//     painéis Heal e Hurt do jogador, dispensar).
 //   summonAttack(group, action, stats): uma ação no formato de ataque do play mode.
 //
 // DECISÕES E ARMADILHAS
@@ -42,6 +43,11 @@
 //     action required by you"), gravada no grupo. Os companheiros de classe vêm de
 //     CLASS_SUMMONS (feature que invoca -> bloco do bestiário); o Find Familiar oferece
 //     as feras de ND 0 (o bestiário não marca as formas com `summonedBySpell`).
+//   - PV do membro (DDL-0201): os painéis Heal e Hurt do jogador (HpPanels), com a
+//     mesma regra: o temporário não soma (fica o maior, `replace` força) e absorve o
+//     dano antes; o máximo sobe com o atual (`maxDelta`, como o Aid); o Hurt pode cortar
+//     o máximo. O dano gravado nunca passa do que o membro tinha, para a cura não
+//     precisar pagar o excesso. Sem máximo lido (prosa), só dano e cura simples.
 //   - Grupos iguais (S3 do dono): `count` membros num grupo só, cada um com o seu PV.
 //   - S4 (DDL-0194): a instância leve é um grupo com `light` e sem `ref`. LIGHT_SUMMONS
 //     só diz QUAIS magias (prova na prosa de cada uma); o resto vem do texto
@@ -203,30 +209,66 @@ export function lightOps({ state, spell, level, origin, catalog, rules, casterHp
 
 /** A criatura resolvida e os PV de cada membro. */
 export function summonGroupView(group, block) {
+  const member = (base) => (m, index) => {
+    const max = base == null ? null : Math.max(0, base + (m.maxDelta ?? 0));
+    const out = { index, max, current: max == null ? null : Math.min(max, Math.max(0, max - (m.damage ?? 0))), conditions: m.conditions ?? [] };
+    if (m.temp) out.temp = m.temp;
+    return out;
+  };
   if (group.light) {
-    const max = group.light.hp ?? null;
-    const members = max == null ? [] : (group.members ?? []).map((m, index) => ({ index, max, current: Math.max(0, max - (m.damage ?? 0)), conditions: m.conditions ?? [] }));
+    const base = group.light.hp ?? null;
+    const members = base == null ? [] : (group.members ?? []).map(member(base));
     return { group, stats: null, members, light: group.light };
   }
   const stats = block ? creatureStats(block, group.ctx ?? {}) : null;
-  const max = stats?.hp?.value ?? null;
-  const members = (group.members ?? []).map((m, index) => ({
-    index,
-    max,
-    current: max == null ? null : Math.max(0, max - (m.damage ?? 0)),
-    conditions: m.conditions ?? [],
-  }));
+  const members = (group.members ?? []).map(member(stats?.hp?.value ?? null));
   return { group, stats, members };
 }
 
-/** O evento de dano (delta > 0) ou cura (delta < 0) num membro. */
-export function summonHpEvent(group, member, delta, now = new Date()) {
-  const n = Math.round(Number(delta) || 0);
-  return makeEvent('summon', {
-    label: `${group.label}${(group.members?.length ?? 1) > 1 ? ` #${member + 1}` : ''}: ${n >= 0 ? `${n} damage` : `${-n} healed`}`,
-    ops: [{ op: 'summon', id: group.id, member, damage: n }],
-    payload: { summon: group.label, member, delta: n },
-  }, now);
+/**
+ * O evento dos painéis de PV num membro: `heal`, `temp`, `max` ou `hurt`.
+ * @param {{ group: object, member: { index: number, max: number|null, current: number|null, temp?: number }, kind: string, amount: number, replace?: boolean, affectMax?: boolean }} opts
+ */
+export function summonVitalsEvent({ group, member, kind, amount, replace = false, affectMax = false }, now = new Date()) {
+  const n = Math.max(0, Math.floor(Number(amount) || 0));
+  const raw = Math.max(0, Number(group.members?.[member.index]?.damage) || 0);
+  const temp = member.temp ?? 0;
+  const max = member.max;
+  const cur = member.current ?? 0;
+  const who = `${group.label}${(group.members?.length ?? 1) > 1 ? ` #${member.index + 1}` : ''}`;
+  const op = { op: 'summon', id: group.id, member: member.index };
+  let label;
+  let payload = { summon: group.label, member: member.index, kind, amount: n };
+  if (kind === 'temp') {
+    const next = replace ? n : Math.max(temp, n);
+    op.temp = next - temp;
+    label = `${who}: ${next} temporary HP`;
+    payload = { ...payload, tempFrom: temp, tempTo: next, kept: next === temp && n !== next };
+  } else if (kind === 'max') {
+    op.max = n;
+    label = `${who}: hit point maximum +${n}`;
+    payload = { ...payload, maxFrom: max, maxTo: max == null ? null : max + n };
+  } else if (kind === 'heal') {
+    const to = max == null ? cur : Math.min(max, cur + n);
+    op.damage = max == null ? -Math.min(n, raw) : (max - to) - raw;
+    label = `${who}: ${n} healed`;
+    payload = { ...payload, from: max == null ? null : cur, to: max == null ? null : to };
+  } else {
+    const toTemp = Math.min(temp, n);
+    const rest = n - toTemp;
+    if (toTemp) op.temp = -toTemp;
+    if (max == null) op.damage = rest;
+    else {
+      const cut = affectMax ? Math.min(max, rest) : 0;
+      const newMax = max - cut;
+      const to = Math.min(cur - Math.min(rest, cur), newMax);
+      op.damage = (newMax - to) - raw;
+      if (cut) op.max = -cut;
+      payload = { ...payload, from: cur, to, toTemp, maxCut: cut || null, maxTo: cut ? newMax : null };
+    }
+    label = `${who}: ${n} damage`;
+  }
+  return makeEvent('summon', { label, ops: [op], payload }, now);
 }
 
 /** O evento de dispensar o grupo. */

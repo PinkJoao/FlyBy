@@ -12,7 +12,8 @@
 //
 // FUNÇÕES
 //   openPanel(title, content, maxWidth): abre um painel num diálogo.
-//   askHeal(props), askHurt(props), askHitDice(props): os painéis do card de HP.
+//   askHeal(props), askHurt(props), askHitDice(props): os painéis do card de HP
+//     (`title` opcional: o summon usa os dois com o nome dele, DDL-0201).
 //   askShortRest(props): o ShortRestPanel.
 //   askUse(props), askCast(props): usar uma feature, lançar uma magia.
 //   askSlotRecovery(props), askFontOfMagic(props): as recuperações especiais.
@@ -22,9 +23,11 @@
 //   askAction(props): como usar uma ação básica da aba Actions (ActionPanel).
 //   askSlot(props): o que a ação, a bônus ou a reação paga (SlotPanel, DDL-0161).
 //   askCost(props): com que gasto do turno lançar (CostPanel, DDL-0165).
+//   askResource(props): tirar ou pôr à mão um recurso (ResourcePanel, DDL-0202).
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
+import ResourcePanel from './ResourcePanel';
 import { HealPanel, HurtPanel, HitDicePanel } from './HpPanels';
 import ShortRestPanel from './ShortRestPanel';
 import UsePanel from './UsePanel';
@@ -55,16 +58,16 @@ function openPanel(title, content, maxWidth) {
  * O diálogo de cura: HP, temporário ou máximo.
  * @returns {Promise<{ kind: 'heal'|'temp'|'max', amount: number, replace: boolean }|null>}
  */
-export function askHeal(props) {
-  return openPanel('Heal', <HealPanel {...props} />, 420);
+export function askHeal({ title = 'Heal', ...props }) {
+  return openPanel(title, <HealPanel {...props} />, 420);
 }
 
 /**
  * O diálogo de dano sofrido.
  * @returns {Promise<{ amount: number, affectMax: boolean }|null>}
  */
-export function askHurt(props) {
-  return openPanel('Hurt', <HurtPanel {...props} />, 420);
+export function askHurt({ title = 'Hurt', ...props }) {
+  return openPanel(title, <HurtPanel {...props} />, 420);
 }
 
 /**
@@ -134,4 +137,12 @@ export function askSlot({ slotLabel, ...props }) {
 /** Com que gasto do turno fazer algo; o título é o que se faz. */
 export function askCost({ title, ...props }) {
   return openPanel(title, <CostPanel {...props} />, 440);
+}
+
+/**
+ * Tirar ou pôr à mão um recurso; o título é o nome dele.
+ * @returns {Promise<{ delta: number }|null>}
+ */
+export function askResource({ title, ...props }) {
+  return openPanel(title, <ResourcePanel {...props} />, 420);
 }

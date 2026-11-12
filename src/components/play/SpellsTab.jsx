@@ -12,19 +12,23 @@
 //
 // FUNÇÕES
 //   rawIndex(origin): as magias cruas da origem derivada, pelo nome.
-//   PoolChip(props): um espaço no cabeçalho do círculo (o que sobra e o máximo).
+//   PoolChip(props): um espaço no cabeçalho do círculo, em gemas (o que sobra e o máximo).
 //   SpellsTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
 //   - Sem preparar, sem trocar, sem quantidade (definição do dono, DDL-0146): isso é
-//     da ficha. Também sem o ajuste à mão dos espaços: o gasto é o "Cast", e o
-//     histórico desfaz.
+//     da ficha. O gasto é o "Cast"; o ajuste à mão é só o do mestre (abaixo).
 //   - A magia vem do catálogo de jogo (o que lança e o que gasta) e a parte "de
 //     livro" (arte, escola, tempo, alcance) da origem derivada, pelo nome: a linha é
 //     a SpellRow da ficha, que lê o `raw`.
 //   - Cada magia leva as etiquetas dos gastos com que pode ser lançada, na cor do
 //     gasto (spellCosts, a Tag no tom do gasto, DDL-0165, DDL-0199): o tempo dela e os das features
 //     (Quickened Spell, Mantle of Majesty...). A mesma magia pode ter duas.
+//   - Os espaços são MARCADORES (gemas, as `Pips` da aba Features com `shape="gem"`,
+//     DDL-0201): a gema cheia é o que sobra; o pacto leva o rótulo e o tom accent.
+//   - Tocar nas gemas abre o ajuste à mão (DDL-0202, `onResource`). Por isso o cabeçalho
+//     do círculo é um div que recolhe ao toque, com o título como botão (teclado e
+//     `aria-expanded`): um botão dentro de outro não vale. A gema para a propagação.
 //   - Mystic Arcanum e magia concedida com usos mostram os usos que sobram na linha;
 //     o arcanum não é espaço e não aparece no cabeçalho.
 //   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
@@ -44,6 +48,7 @@ import { SpellRow } from '../builder/SpellbookTab';
 import styles from '../builder/SpellbookTab.module.css';
 import Toggle from '../common/Toggle';
 import play from './PlayTabs.module.css';
+import { Pips } from './FeaturesTab';
 
 /** As magias cruas da origem derivada, pelo nome (com granted e castType). */
 function rawIndex(origin) {
@@ -53,15 +58,24 @@ function rawIndex(origin) {
   return out;
 }
 
-/** Um espaço no cabeçalho do círculo: "Level 1 slots 3/4". */
-function PoolChip({ pool }) {
+/** Um espaço no cabeçalho do círculo: as gemas do que sobra; o pacto com o rótulo e o tom dele. */
+function PoolChip({ pool, onResource }) {
+  const pact = pool.kind === 'pact';
+  const cls = [styles.slot, play.slotBtn, pact && styles.slotPact, pool.left > 0 ? null : styles.slotEmpty].filter(Boolean).join(' ');
   return (
-    <span className={pool.left > 0 ? styles.slot : `${styles.slot} ${styles.slotEmpty}`} title={pool.label}>
-      <span className={styles.slotLevel}>{pool.kind === 'pact' ? `Pact ${pool.level}` : 'Slots'}</span>
-      <span className={styles.slotCount}>
-        {pool.left}/{pool.max}
-      </span>
-    </span>
+    <button
+      type="button"
+      className={cls}
+      disabled={!onResource}
+      onClick={(e) => {
+        e.stopPropagation();
+        onResource?.(pool);
+      }}
+      title={`${pool.label}: ${pool.left} of ${pool.max} left. Tap to remove or add by hand`}
+    >
+      {pact && <span className={styles.slotLevel}>Pact {pool.level}</span>}
+      <Pips left={pool.left} max={pool.max} shape="gem" />
+    </button>
   );
 }
 
@@ -69,7 +83,7 @@ function PoolChip({ pool }) {
  * A aba de magias do jogo.
  * @param {{ catalog: object, state: object, derived: object, db: object, onCast: Function }} props
  */
-export default function SpellsTab({ catalog, state, derived, db, onCast }) {
+export default function SpellsTab({ catalog, state, derived, db, onCast, onResource }) {
   const origins = (catalog.spells ?? []).filter((o) => o.spells.length);
   const [originKey, setOriginKey] = useState(origins[0]?.key ?? null);
   const [query, setQuery] = useState('');
@@ -156,12 +170,14 @@ export default function SpellsTab({ catalog, state, derived, db, onCast }) {
         const isCollapsed = collapsed.has(lv);
         return (
           <section key={lv} className={styles.panel}>
-            <button type="button" className={styles.panelHead} onClick={() => toggle(lv)} aria-expanded={!isCollapsed}>
-              <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
+            <div className={styles.panelHead} onClick={() => toggle(lv)}>
+              <button type="button" className={play.headToggle} aria-expanded={!isCollapsed}>
+                <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
+              </button>
               {pools.length > 0 && (
                 <span className={styles.slots}>
                   {pools.map((p) => (
-                    <PoolChip key={p.key} pool={p} />
+                    <PoolChip key={p.key} pool={p} onResource={onResource} />
                   ))}
                 </span>
               )}
@@ -169,7 +185,7 @@ export default function SpellsTab({ catalog, state, derived, db, onCast }) {
               <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
                 <Icon name="chevron" />
               </span>
-            </button>
+            </div>
             <Collapse open={!isCollapsed}>
               <ul className={styles.list}>
                 {list.map((s) => {

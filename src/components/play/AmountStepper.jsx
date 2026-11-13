@@ -16,7 +16,8 @@
 //     mostra o "0" de placeholder, e um botão parte de 0.
 //   - `min` corta o que os botões dão (0 no HP e nos pés); null deixa ir abaixo
 //     de zero (os dados de vida devolvem os gastos com número negativo). O botão
-//     que só daria o próprio mínimo fica desabilitado.
+//     que só daria o próprio mínimo fica desabilitado. `max` faz o mesmo em cima (o
+//     ResourcePanel, que não passa do máximo do recurso); sem ele, não há teto.
 //   - O foco automático só vale com mouse: num toque (pointer: coarse) ele abriria
 //     o teclado do celular por cima dos botões, que são o jeito de usar ali. Vem
 //     depois da montagem (setTimeout), pelo mesmo motivo do RollPanel: o
@@ -32,9 +33,9 @@ import Icon from '../common/Icon';
 
 /**
  * O número com menos e mais de um passo e os saltos embaixo.
- * @param {{ value: string, onChange: (v: string) => void, unit?: number, jumps?: number[], min?: number|null, label?: string, autoFocus?: boolean }} props
+ * @param {{ value: string, onChange: (v: string) => void, unit?: number, jumps?: number[], min?: number|null, max?: number|null, label?: string, autoFocus?: boolean }} props
  */
-export default function AmountStepper({ value, onChange, unit = 1, jumps = [], min = 0, label = 'Amount', autoFocus = true }) {
+export default function AmountStepper({ value, onChange, unit = 1, jumps = [], min = 0, max = null, label = 'Amount', autoFocus = true }) {
   const inputRef = useRef(null);
   const n = Math.trunc(Number(value) || 0);
 
@@ -44,8 +45,11 @@ export default function AmountStepper({ value, onChange, unit = 1, jumps = [], m
     return () => clearTimeout(t);
   }, [autoFocus]);
 
-  const step = (delta) => onChange(String(min == null ? n + delta : Math.max(min, n + delta)));
-  const blocked = (delta) => delta < 0 && min != null && n <= min;
+  const step = (delta) => {
+    const lo = min == null ? n + delta : Math.max(min, n + delta);
+    onChange(String(max == null ? lo : Math.min(max, lo)));
+  };
+  const blocked = (delta) => (delta < 0 && min != null && n <= min) || (delta > 0 && max != null && n >= max);
   const deltas = [...jumps].sort((a, b) => b - a).map((j) => -j).concat([...jumps].sort((a, b) => a - b));
 
   return (
@@ -62,7 +66,7 @@ export default function AmountStepper({ value, onChange, unit = 1, jumps = [], m
           placeholder="0"
           aria-label={label}
         />
-        <button type="button" className={styles.side} onClick={() => step(unit)} aria-label={`${unit} more`}><Icon name="plus" /></button>
+        <button type="button" className={styles.side} onClick={() => step(unit)} disabled={blocked(unit)} aria-label={`${unit} more`}><Icon name="plus" /></button>
       </div>
       {deltas.length > 0 && (
         <div className={styles.jumps} style={{ '--jumps': deltas.length }}>

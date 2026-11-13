@@ -156,7 +156,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
       </button>
       <div className={styles.rowSide}>
         {pools.map((p) => (
-          <button key={p.key} type="button" className={play.adjust} onClick={() => onResource?.(p)} disabled={!onResource} title={`${p.name}: remove or add by hand`}>
+          <button key={p.key} type="button" className={play.adjust} onClick={() => onResource?.(p)} disabled={!onResource} title={`${p.name}: change by hand`}>
             <Pips left={remainingOf(state, p.key, p.max)} max={p.max} />
           </button>
         ))}

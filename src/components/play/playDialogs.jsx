@@ -23,7 +23,8 @@
 //   askAction(props): como usar uma ação básica da aba Actions (ActionPanel).
 //   askSlot(props): o que a ação, a bônus ou a reação paga (SlotPanel, DDL-0161).
 //   askCost(props): com que gasto do turno lançar (CostPanel, DDL-0165).
-//   askResource(props): tirar ou pôr à mão um recurso (ResourcePanel, DDL-0202).
+//   askResource(props): mudar à mão o que resta ou o máximo de um recurso (ResourcePanel,
+//     DDL-0202, DDL-0209).
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';

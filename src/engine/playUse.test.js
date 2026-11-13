@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
-  left, slotKey, resolveCosts, activityEvent, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, featureLogEvent,
+  left, slotKey, resolveCosts, activityEvent, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
 } from './playUse';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -151,6 +151,34 @@ describe('recuperações especiais', () => {
     expect(give.ops).toEqual([{ op: 'restore', key: 'slot:1', amount: 1 }]);
     expect(run(s, give).spent['slot:1'] ?? 0).toBe(0);
     expect(adjustResourceEvent({ catalog, key: 'slot:1', delta: 1, state: s }).payload.asked).toBeUndefined();
+  });
+
+  it('painel Current | Max: o fim que o jogador pôs vira gasto e ajuste do máximo (DDL-0209)', () => {
+    const key = 'pool:second-wind';
+    const s = st({ spent: { [key]: 1 } });
+    const cur = setResourceEvent({ catalog, key, left: 0, max: 2, state: s });
+    expect(cur.ops).toEqual([{ op: 'spend', key, amount: 1 }]);
+    expect(cur.payload).toMatchObject({ delta: 1, was: { left: 1, max: 2 }, now: { left: 0, max: 2 } });
+    const up = setResourceEvent({ catalog, key, left: 2, max: 3, state: s });
+    expect(up.ops).toEqual([{ op: 'resourceMax', key, amount: 1 }]);
+    const after = run(s, up);
+    expect(after.resourceMax).toEqual({ [key]: 1 });
+    const adjusted = withResourceMax(catalog, after).resources.find((r) => r.key === key);
+    expect(adjusted).toMatchObject({ max: 3, sheetMax: 2 });
+    const back = setResourceEvent({ catalog: withResourceMax(catalog, after), key, left: 2, max: 2, state: after });
+    expect(back.ops).toEqual([{ op: 'resourceMax', key, amount: -1 }, { op: 'restore', key, amount: 1 }]);
+    const done = run(after, back);
+    expect(done.resourceMax).toEqual({});
+    expect(done.spent[key]).toBeUndefined();
+    expect(withResourceMax(catalog, done)).toBe(catalog);
+  });
+
+  it('painel: o que resta nunca passa do máximo nem fica negativo', () => {
+    const key = 'pool:second-wind';
+    const e = setResourceEvent({ catalog, key, left: 9, max: 1, state: st() });
+    expect(e.payload.now).toEqual({ left: 1, max: 1 });
+    expect(run(st(), e).resourceMax).toEqual({ [key]: -1 });
+    expect(setResourceEvent({ catalog, key, left: -3, max: -2, state: st() }).payload.now).toEqual({ left: 0, max: 0 });
   });
 });
 

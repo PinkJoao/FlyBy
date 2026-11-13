@@ -645,7 +645,7 @@ export function ItemRow({ entry, thumb, onInfo, onEquip, onQty, onRemove, hideEq
         )}
         {usesLeft && !onUsesLeft && <span className={styles.rowQty} title="Charges left">{usesLeft}</span>}
         {usesLeft && onUsesLeft && (
-          <button type="button" className={`${styles.rowQty} ${styles.rowQtyBtn}`} onClick={onUsesLeft} title="Charges left: tap to remove or add by hand">
+          <button type="button" className={`${styles.rowQty} ${styles.rowQtyBtn}`} onClick={onUsesLeft} title="Charges left: tap to change by hand">
             {usesLeft}
           </button>
         )}

@@ -1,25 +1,27 @@
 // =============================================================================
-// ResourcePanel: tirar ou pôr à mão um recurso do play mode
+// ResourcePanel: mudar à mão o que resta de um recurso do play mode, ou o máximo
 // =============================================================================
 // O QUE FAZ
 //   O painel que abre ao tocar no contador de um recurso (as bolinhas de uma
-//   feature, as gemas de um círculo de magia, as cargas de um item): Remove ou Add,
-//   o número com menos e mais (AmountStepper) e a prévia do que fica. Fecha com
-//   { delta } (positivo tira, negativo põe) ou null. Quem o abre é o playDialogs.jsx
-//   (askResource).
+//   feature, as gemas de um círculo de magia, as cargas de um item): o alternador
+//   Current | Max em cima, o número no meio com menos e mais (AmountStepper) e a
+//   prévia em bolinhas. Em Current o número é o que RESTA; em Max, o máximo. Fecha
+//   com { left, max } (o fim que o jogador pôs) ou null. Quem o abre é o
+//   playDialogs.jsx (askResource); o evento é setResourceEvent (playUse).
 //
 // FUNÇÕES
 //   ResourcePanel(props): o painel.
 //
 // DECISÕES E ARMADILHAS
-//   - É para o que o MESTRE tira ou dá fora de um descanso (DDL-0202): o "só usar"
-//     do jogo segue para o resto; o ajuste vira um evento "by hand" que o histórico
-//     desfaz.
-//   - Tirar para no que sobra e pôr para no que foi gasto (o modelo guarda o gasto, e
-//     o máximo é da ficha): a prévia avisa quando o pedido passa disso, e o evento
-//     (adjustResourceEvent com o estado) faz o mesmo corte.
-//   - Começa em Add quando não sobra nada e em Remove quando nada foi gasto; o outro
-//     lado fica desabilitado se não alcança nada (§6.4).
+//   - É para o que o MESTRE tira, dá ou muda fora de um descanso (DDL-0202, e o
+//     formato simples do DDL-0209, que trocou o Remove | Add): o "só usar" do jogo
+//     segue para o resto; o ajuste vira um evento "by hand" que o histórico desfaz.
+//   - Começa em Current. O que resta vai de 0 ao máximo; o máximo vai de 0 para
+//     cima (o mestre dá um uso a mais do que a feature tem). O modelo guarda o
+//     GASTO, então mudar o máximo leva o que resta junto (2 de 3 vira 3 de 4), e a
+//     prévia mostra isso antes do Apply.
+//   - O máximo da ficha (`sheetMax`) aparece quando o atual é outro, para o jogador
+//     saber voltar.
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -33,51 +35,57 @@ import styles from './HpPanels.module.css';
 
 /**
  * O painel de ajuste à mão.
- * @param {{ left: number, max: number, shape?: string }} props
+ * @param {{ left: number, max: number, sheetMax?: number, shape?: string }} props
  */
-export default function ResourcePanel({ left, max, shape }) {
+export default function ResourcePanel({ left, max, sheetMax = max, shape }) {
   const close = useDialogClose();
-  const spent = Math.max(0, max - left);
-  const [mode, setMode] = useState(left > 0 ? 'remove' : 'add');
-  const [amount, setAmount] = useState('1');
-  const n = Math.max(0, Math.floor(Number(amount) || 0));
-  const room = mode === 'remove' ? left : spent;
-  const real = Math.min(n, room);
-  const next = mode === 'remove' ? left - real : left + real;
+  const [mode, setMode] = useState('current');
+  const [draftMax, setDraftMax] = useState(max);
+  const [draftSpent, setDraftSpent] = useState(Math.max(0, max - left));
+  const draftLeft = Math.max(0, draftMax - draftSpent);
+  const changed = draftMax !== max || draftLeft !== left;
+  const toNumber = (v) => Math.max(0, Math.trunc(Number(v) || 0));
+  const onAmount = (v) => {
+    if (v === '') return mode === 'current' ? setDraftSpent(draftMax) : setDraftMax(0);
+    if (mode === 'current') setDraftSpent(draftMax - Math.min(draftMax, toNumber(v)));
+    else setDraftMax(toNumber(v));
+  };
 
   return (
     <form
       className={panel.form}
       onSubmit={(e) => {
         e.preventDefault();
-        if (real > 0) close({ delta: mode === 'remove' ? real : -real });
+        if (changed) close({ left: draftLeft, max: draftMax });
       }}
     >
-      <p className={styles.now}>
-        <Pips left={left} max={max} shape={shape} /> {left} of {max} left
-      </p>
       <SegmentedControl
         block
-        ariaLabel="Remove or add"
+        ariaLabel="Change the current value or the maximum"
         value={mode}
         options={[
-          { value: 'remove', label: 'Remove', disabled: left === 0 },
-          { value: 'add', label: 'Add', disabled: spent === 0 },
+          { value: 'current', label: 'Current' },
+          { value: 'max', label: 'Max' },
         ]}
         onChange={setMode}
       />
-      <AmountStepper value={amount} onChange={setAmount} min={0} autoFocus={false} />
-      {n > 0 && (
-        <p className={styles.preview}>
-          {left} to {next} of {max}
-          {n > room ? (mode === 'remove' ? ` (only ${room} left to remove)` : ` (only ${room} spent to add back)`) : ''}
-        </p>
-      )}
-      <p className={panel.note}>For what the DM takes away or grants outside a rest. You can undo it in the history.</p>
+      <AmountStepper
+        key={mode}
+        value={String(mode === 'current' ? draftLeft : draftMax)}
+        onChange={onAmount}
+        min={0}
+        max={mode === 'current' ? draftMax : null}
+        label={mode === 'current' ? 'Current' : 'Maximum'}
+        autoFocus={false}
+      />
+      <p className={styles.now}>
+        <Pips left={draftLeft} max={draftMax} shape={shape} /> {draftLeft} of {draftMax} left
+        {changed ? ` (was ${left} of ${max})` : ''}
+      </p>
+      {sheetMax !== draftMax && <p className={panel.note}>The sheet's maximum is {sheetMax}.</p>}
+      <p className={panel.note}>For what the DM takes away, grants or changes outside a rest. You can undo it in the history.</p>
       <div className={panel.actions}>
-        <Button type="submit" variant={mode === 'remove' ? 'danger' : 'primary'} disabled={real <= 0}>
-          {mode === 'remove' ? 'Remove' : 'Add'}
-        </Button>
+        <Button type="submit" variant="primary" disabled={!changed}>Apply</Button>
       </div>
     </form>
   );

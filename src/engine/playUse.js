@@ -21,6 +21,8 @@
 //   slotRecoveryEvent(args): o Arcane Recovery e o Natural Recovery.
 //   fontOfMagicEvent(args): criar um slot com pontos, ou converter um slot em pontos.
 //   adjustResourceEvent(args): gastar ou devolver à mão (com `state`, preso ao que há).
+//   setResourceEvent(args): o ResourcePanel: o que resta e o máximo que o jogador pôs.
+//   withResourceMax(catalog, state): o catálogo com o ajuste do máximo de cada recurso.
 //   featureLogEvent(args): o "Log to history" de uma feature (nome e custo, sem rolar).
 //
 // DECISÕES E ARMADILHAS
@@ -52,6 +54,14 @@
 //     converter um slot dá tantos pontos quanto o círculo. O modelo guarda o GASTO,
 //     então "criar" só reabastece um slot gasto: sem slot gasto daquele círculo, a
 //     tela avisa.
+//   - O máximo de um recurso é da ficha, e o mestre pode mudá-lo na mesa (o ResourcePanel
+//     em Max): o estado guarda só o AJUSTE (`resourceMax`, como o `maxHpDelta`), e a
+//     tela passa o catálogo por withResourceMax uma vez, então toda conta que lê
+//     `resource.max` (as abas, os eventos, o descanso) já vê o máximo ajustado; o da
+//     ficha fica em `sheetMax`. setResourceEvent recebe o FIM (resta e máximo) e
+//     calcula as operações; subir o máximo sem mexer no gasto sobe o que resta junto.
+//     O payload diz `was` e `now`, nunca `from`/`to`: a notificação da tela
+//     (toastNumber) lê `payload.to` de qualquer evento como número.
 //   - featureLogEvent é a primeira camada do DDL-0203: TODA feature pode ir ao
 //     histórico com o custo do turno, mesmo sem activity (as 181 da matriz que só a
 //     prosa diz que gastam uma ação, bônus ou reação). Não rola nem liga efeito; com
@@ -269,6 +279,39 @@ export function adjustResourceEvent({ catalog, key, delta, state = null, now = n
     ops: n >= 0 ? [{ op: 'spend', key, amount: n }] : [{ op: 'restore', key, amount: -n }],
     payload: { key, delta: n, ...(n !== asked ? { asked } : {}) },
   }, now);
+}
+
+/**
+ * O ajuste do ResourcePanel: chega ao que resta `left` com o máximo `max`. Gasto e
+ * máximo viram operações; o payload guarda o antes e o depois para o histórico.
+ */
+export function setResourceEvent({ catalog, key, left, max, state, now = new Date() }) {
+  const r = (catalog.resources ?? []).find((x) => x.key === key);
+  const maxNow = r ? r.max : 0;
+  const leftNow = remainingOf(state, key, maxNow);
+  const newMax = Math.max(0, Math.trunc(Number(max) || 0));
+  const newLeft = Math.min(newMax, Math.max(0, Math.trunc(Number(left) || 0)));
+  const spentNow = state.spent?.[key] ?? 0;
+  const spendBy = (newMax - newLeft) - spentNow;
+  const ops = [];
+  if (newMax !== maxNow) ops.push({ op: 'resourceMax', key, amount: newMax - maxNow });
+  if (spendBy > 0) ops.push({ op: 'spend', key, amount: spendBy });
+  if (spendBy < 0) ops.push({ op: 'restore', key, amount: -spendBy });
+  return makeEvent('resource', {
+    label: nameOf(catalog, key),
+    ops,
+    payload: { key, delta: leftNow - newLeft, was: { left: leftNow, max: maxNow }, now: { left: newLeft, max: newMax } },
+  }, now);
+}
+
+/** O catálogo com o ajuste do máximo de cada recurso (`resourceMax`); o da ficha em `sheetMax`. */
+export function withResourceMax(catalog, state) {
+  const adjust = state?.resourceMax ?? {};
+  if (!catalog || Object.keys(adjust).length === 0) return catalog;
+  return {
+    ...catalog,
+    resources: (catalog.resources ?? []).map((r) => (adjust[r.key] ? { ...r, sheetMax: r.max, max: Math.max(0, r.max + adjust[r.key]) } : r)),
+  };
 }
 
 /**

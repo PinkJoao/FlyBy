@@ -208,8 +208,11 @@ function detailOf(event) {
       if (p.kept) lines.push(`Kept the ${p.tempFrom} it had (more than ${p.amount})`);
       break;
     case 'resource':
-      total = Math.abs(p.delta);
-      lines.push(p.delta >= 0 ? 'Spent by hand' : 'Regained by hand');
+      total = p.delta ? Math.abs(p.delta) : null;
+      if (p.was && p.now && p.was.max !== p.now.max) {
+        lines.push(`Maximum ${p.was.max} to ${p.now.max} by hand`);
+        if (p.delta !== 0) lines.push(`${p.was.left} to ${p.now.left} left`);
+      } else lines.push(p.delta >= 0 ? 'Spent by hand' : 'Regained by hand');
       if (p.asked != null) lines.push(`Asked for ${Math.abs(p.asked)}, only ${Math.abs(p.delta)} possible`);
       break;
     default:

@@ -54,7 +54,10 @@
 //     soma ao ajuste do HP máximo (`maxHpDelta`: Aid sobe, um dreno desce), que o
 //     hpView aplica sobre o máximo da ficha. `spend` { key,
 //     amount }: soma ao gasto (negativo devolve), piso 0, a chave some no 0.
-//     `restore` { key, amount? }: devolve `amount` ou tudo. `death` { success,
+//     `restore` { key, amount? }: devolve `amount` ou tudo. `resourceMax` { key,
+//     amount }: soma ao ajuste do máximo do recurso (`resourceMax`, a chave some no
+//     0), que o withResourceMax (playUse) aplica sobre o máximo da ficha; o gasto
+//     fica, então subir o máximo sobe o que resta junto, como no HP. `death` { success,
 //     failure, set, reset }: `set` troca campos ({ success, failure, stable, dead })
 //     e então soma, preso entre 0 e 3; `reset` zera tudo. `condition` { id, level }: 0
 //     tira. `inspiration` { value }, `concentration` { value }, `combat` { value }:
@@ -98,6 +101,7 @@ export function emptyPlayState() {
     maxHpDelta: 0,
     death: { ...NO_DEATH },
     spent: {},
+    resourceMax: {},
     conditions: {},
     inspiration: false,
     concentration: null,
@@ -129,6 +133,14 @@ export function applyOp(state, op) {
       if (after > 0) spent[op.key] = after;
       else delete spent[op.key];
       return { ...state, spent };
+    }
+    case 'resourceMax': {
+      if (!op.key) return state;
+      const after = num(state.resourceMax?.[op.key]) + num(op.amount);
+      const resourceMax = { ...(state.resourceMax ?? {}) };
+      if (after !== 0) resourceMax[op.key] = after;
+      else delete resourceMax[op.key];
+      return { ...state, resourceMax };
     }
     case 'death': {
       if (op.reset) return { ...state, death: { ...NO_DEATH } };
@@ -228,6 +240,7 @@ export function normalizePlayDoc(raw, characterId) {
     maxHpDelta: num(b.maxHpDelta),
     death: { ...NO_DEATH, ...(b.death ?? {}) },
     spent: b.spent && typeof b.spent === 'object' ? { ...b.spent } : {},
+    resourceMax: b.resourceMax && typeof b.resourceMax === 'object' ? { ...b.resourceMax } : {},
     conditions: b.conditions && typeof b.conditions === 'object' ? { ...b.conditions } : {},
     modifiers: Array.isArray(b.modifiers) ? b.modifiers : [],
     summons: Array.isArray(b.summons) ? b.summons : [],

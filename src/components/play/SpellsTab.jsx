@@ -71,7 +71,7 @@ function PoolChip({ pool, onResource }) {
         e.stopPropagation();
         onResource?.(pool);
       }}
-      title={`${pool.label}: ${pool.left} of ${pool.max} left. Tap to remove or add by hand`}
+      title={`${pool.label}: ${pool.left} of ${pool.max} left. Tap to change by hand`}
     >
       {pact && <span className={styles.slotLevel}>Pact {pool.level}</span>}
       <Pips left={pool.left} max={pool.max} shape="gem" />

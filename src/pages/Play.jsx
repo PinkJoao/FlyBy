@@ -88,8 +88,10 @@
 //       mais de um custo, pergunta qual (DDL-0203). Com o registro curado
 //       (playFeatureRolls, DDL-0205), liga o efeito (Reckless Attack) ou gasta e mostra
 //       a salvaguarda (Stunning Strike).
-//     adjustByHand(resource): o ajuste do mestre (tirar ou pôr) pelo ResourcePanel,
-//       aberto pelos contadores das abas Features, Spells e Inventory (DDL-0202).
+//     adjustByHand(resource): o ajuste do mestre (o que resta ou o máximo) pelo
+//       ResourcePanel, aberto pelos contadores das abas Features, Spells e Inventory
+//       (DDL-0202, DDL-0209). O catálogo da tela já vem com o máximo ajustado
+//       (withResourceMax), então toda aba e todo evento leem o mesmo número.
 //     checkAbility(ability), saveAbility(ability, quick): o Check (o seletor de
 //       perícia e então a rolagem) e o Save de um card de atributo.
 //     pickCondition(raw), conditionInfo(id): a condição escolhida no painel seletor
@@ -201,7 +203,7 @@ import {
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
-import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
@@ -345,7 +347,11 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const form = play.state?.form ?? null;
   const bestiary = useBestiary(summonsActive || !!form);
   const formBlock = form ? bestiary.list.find((m) => m.name === form.ref?.name && m.source === form.ref?.source) ?? null : null;
-  const catalog = useMemo(() => (form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog), [baseCatalog, form, formBlock]);
+  const resourceMax = play.state?.resourceMax;
+  const catalog = useMemo(
+    () => withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }),
+    [baseCatalog, form, formBlock, resourceMax],
+  );
   const beastDb = useMemo(() => ({ ...db, bestiary: { monster: bestiary.list } }), [db, bestiary.list]);
   const [formPick, setFormPick] = useState(null);
   const tabList = summonsActive ? [...TABS.slice(0, 3), 'Summons', ...TABS.slice(3)] : TABS;
@@ -647,11 +653,12 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     record(featureLogEvent({ catalog, state, feature, cost, spend: pay, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null }), cost);
   };
 
-  /** O ajuste à mão de um recurso (o mestre tira ou dá): o painel e o evento preso ao que há. */
+  /** O ajuste à mão de um recurso (o mestre tira, dá ou muda o máximo): o painel e o evento. */
   const adjustByHand = async (resource) => {
-    const max = resource.max ?? 0;
-    const r = await askResource({ title: resource.label ?? resource.name, left: remainingOf(state, resource.key, max), max, shape: resource.kind === 'slot' || resource.kind === 'pact' ? 'gem' : undefined });
-    if (r) record(adjustResourceEvent({ catalog, key: resource.key, delta: r.delta, state }));
+    const full = (catalog.resources ?? []).find((x) => x.key === resource.key) ?? resource;
+    const max = full.max ?? 0;
+    const r = await askResource({ title: resource.label ?? resource.name, left: remainingOf(state, resource.key, max), max, sheetMax: full.sheetMax ?? max, shape: resource.kind === 'slot' || resource.kind === 'pact' ? 'gem' : undefined });
+    if (r) record(setResourceEvent({ catalog, key: resource.key, left: r.left, max: r.max, state }));
   };
 
   /** Lança uma magia: escolhe a forma, grava e abre a rolagem dela. */

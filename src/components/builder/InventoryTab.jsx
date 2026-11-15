@@ -125,6 +125,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
   const entries = derived.inventory ?? [];
   const attunedCount = derived.attunedCount ?? 0;
+  const attunementMax = derived.attunementMax ?? ATTUNEMENT_MAX;
   const infoEntry = infoUid ? entries.find((e) => e.uid === infoUid) : null;
   const loose = entries.filter((e) => !e.container);
   const contents = infoEntry?.isContainer ? contentsOf(entries, infoEntry.uid) : [];
@@ -171,7 +172,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const toggleEquip = (entry) => updateEntry(entry.uid, { equipped: !entry.equipped });
   const toggleAttune = async (entry) => {
     if (!entry.attuned) {
-      const reason = unmetAttunement(attunedCount, entry.raw);
+      const reason = unmetAttunement(attunedCount, entry.raw, attunementMax);
       if (reason) {
         const ok = await confirm({
           title: 'Attunement',
@@ -284,8 +285,8 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
             </div>
           </div>
           <div className={styles.statusDivider} role="presentation" />
-          <span className={attunedCount > ATTUNEMENT_MAX ? `${styles.attuned} ${styles.attunedOver}` : styles.attuned}>
-            Attuned {attunedCount}/{ATTUNEMENT_MAX}
+          <span className={attunedCount > attunementMax ? `${styles.attuned} ${styles.attunedOver}` : styles.attuned}>
+            Attuned {attunedCount}/{attunementMax}
           </span>
         </div>
       </div>

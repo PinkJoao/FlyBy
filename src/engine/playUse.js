@@ -16,6 +16,7 @@
 //   nameOf(catalog, key): o nome de um recurso para o resumo.
 //   resolveCosts(catalog, state, activity, options): os gastos concretos da
 //     activity, com a escala e o slot escolhidos.
+//   liveRollData(catalog, state): o rollData com o PV atual e o Bloodied do estado.
 //   activityEvent(args): o evento de usar uma activity.
 //   specialRecovery(action): a regra curada de uma recuperação especial, ou null.
 //   slotRecoveryEvent(args): o Arcane Recovery e o Natural Recovery.
@@ -75,7 +76,7 @@
 // -----------------------------------------------------------------------------
 
 import { rollFormula, rollParts, d20Test, cryptoRng } from './dice';
-import { makeEvent, remainingOf } from './playState';
+import { makeEvent, remainingOf, hpView } from './playState';
 import { healOutcome, tempHpOutcome } from './playHealth';
 import { bonusParts, rngFor, d20Options } from './playActions';
 import { featureModifier } from './playEffects';
@@ -131,6 +132,18 @@ export function resolveCosts(catalog, state, activity, { scaling = 1, slotLevel 
   return out;
 }
 
+/** O rollData com o PV atual e o Bloodied do estado (`@attributes.hp.value`, `@statuses.bloodied`). */
+export function liveRollData(catalog, state) {
+  const rd = catalog.rollData ?? {};
+  if (!state) return rd;
+  const hp = hpView(state, catalog.stats?.hpMax ?? rd.attributes?.hp?.max ?? 0);
+  return {
+    ...rd,
+    attributes: { ...(rd.attributes ?? {}), hp: { value: hp.current, max: hp.max } },
+    statuses: { ...(rd.statuses ?? {}), bloodied: hp.current <= hp.max / 2 ? 1 : 0 },
+  };
+}
+
 /**
  * O evento de usar uma activity: gasta, rola e, quando é em si mesmo, cura.
  * @param {{ catalog: object, state: object, action: object, activity: object, options?: object, rng?: Function, now?: Date }} args
@@ -147,7 +160,7 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
   const scaling = Math.max(1, Math.floor(Number(options.scaling) || 1));
   const mods = catalog.rollData?.abilities ?? {};
   const ability = activity.attack?.ability ?? null;
-  const data = { ...catalog.rollData, scaling, ...(ability ? { mod: mods[ability]?.mod ?? 0 } : {}) };
+  const data = { ...liveRollData(catalog, state), scaling, ...(ability ? { mod: mods[ability]?.mod ?? 0 } : {}) };
   const r = rngFor(options, rng);
   const parts = [];
   let attack = null;
@@ -325,7 +338,7 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
   let healed = null;
   let temp = null;
   if (apply && rolls && state) {
-    const outcome = apply === 'heal' ? healOutcome(state, catalog, rolls.total) : tempHpOutcome(state, rolls.total);
+    const outcome = apply === 'heal' ? healOutcome(state, catalog, rolls.total) : tempHpOutcome(state, rolls.total, { catalog });
     ops.push(...outcome.ops);
     if (apply === 'heal') healed = outcome.summary;
     else temp = outcome.summary;

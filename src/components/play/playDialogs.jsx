@@ -25,10 +25,13 @@
 //   askCost(props): com que gasto do turno lançar (CostPanel, DDL-0165).
 //   askResource(props): mudar à mão o que resta ou o máximo de um recurso (ResourcePanel,
 //     DDL-0202, DDL-0209).
+//   askRerollDice(props): quais dados do dano ou da cura rolar de novo (RerollDicePanel,
+//     DDL-0215); fecha com os ids marcados.
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
 import ResourcePanel from './ResourcePanel';
+import RerollDicePanel from './RerollDicePanel';
 import { HealPanel, HurtPanel, HitDicePanel } from './HpPanels';
 import ShortRestPanel from './ShortRestPanel';
 import UsePanel from './UsePanel';
@@ -146,4 +149,9 @@ export function askCost({ title, ...props }) {
  */
 export function askResource({ title, ...props }) {
   return openPanel(title, <ResourcePanel {...props} />, 420);
+}
+
+/** Quais dados rolar de novo: a lista dos ids, ou null. */
+export function askRerollDice({ title, ...props }) {
+  return openPanel(title, <RerollDicePanel {...props} />, 420);
 }

@@ -133,6 +133,9 @@
 //
 // DECISÕES E ARMADILHAS
 //   Geral
+//   - A feature marcada `isClassFeatureVariant` é OPCIONAL de outro livro (as do TCE nas
+//     classes PHB, o Pet Specialization do WoW na Ranger XPHB, que "replaces the Roving feature
+//     for a Hunter with the Beast Master subclass"): não entra sozinha (DDL-0216).
 //   - O formato é o APLICADO dos premades (`value.chosen`, `value.added`): sem
 //     ele o Foundry trata o passo como pendente e pergunta de novo.
 //   - `advancement` é um OBJETO indexado pelo `_id` (MappingField), não array.
@@ -787,7 +790,7 @@ export function resolveClassFeatures(db, classId, classObj, level) {
     if (r.gainsSubclass) continue;
     if (NON_ITEM_FEATURES.has(norm(r.name))) continue;
     const f = idx.get(`${norm(r.name)}|${r.level}`);
-    if (!f || isOptionCatalog(f)) continue;
+    if (!f || isOptionCatalog(f) || f.isClassFeatureVariant) continue;
 
     const nth = (seen.get(norm(r.name)) ?? 0) + 1;
     seen.set(norm(r.name), nth);
@@ -1994,7 +1997,7 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   );
 
   const residual = {};
-  const RESIDUAL_SPECIES_KINDS = ['spellAbility', 'size', 'mixed', 'resist', 'immune', 'vulnerable', 'spell', 'spellSet'];
+  const RESIDUAL_SPECIES_KINDS = ['spellAbility', 'size', 'mixed', 'resist', 'immune', 'vulnerable', 'spell', 'spellSet', 'featureoption'];
   for (const [id, entry] of Object.entries(speciesChoices ?? {})) {
     if (!entry || typeof entry !== 'object') continue;
     if ((entry.picks?.length ?? 0) === 0) continue;

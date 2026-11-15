@@ -122,8 +122,14 @@ describe('segunda leva: manobras, sorte, Goliath, monge', () => {
   });
 
   it('a que só melhora outra fica passiva mesmo com gatilho', () => {
-    expect(isActiveFeature({ name: 'Improved Blessed Strikes', costs: [], trigger: 'rider', roll: featureRollOf('Improved Blessed Strikes').kind }, null, [])).toBe(false);
+    expect(isActiveFeature({ name: 'Improved Elemental Fury', costs: [], trigger: 'rider', roll: featureRollOf('Improved Elemental Fury').kind }, null, [])).toBe(false);
     expect(isActiveFeature({ name: 'Goading Attack', costs: [], trigger: null, roll: 'rider' }, null, [])).toBe(true);
+  });
+
+  it('Improved Blessed Strikes e Heightened Focus dão os PV temporários do texto no Use (DDL-0214)', () => {
+    const rd = { abilities: { wis: { mod: 4 } }, 'scale.monk.die': '1d8' };
+    expect(featureUseOf({ name: 'Improved Blessed Strikes' }, { rollData: rd })).toMatchObject({ apply: 'temp', roll: { formula: '2 * @abilities.wis.mod' } });
+    expect(featureUseOf({ name: 'Heightened Focus' }, { rollData: rd })).toMatchObject({ apply: 'temp', roll: { formula: '@scale.monk.die + @scale.monk.die' } });
   });
 });
 
@@ -162,5 +168,27 @@ describe('terceira leva: magia, distância, dois extras, cura e devolução', ()
     expect(featureUseOf({ name: 'Uncanny Metabolism' }, c([], res))).toMatchObject({ apply: 'heal', restore: 'pool:monks-focus' });
     expect(featureUseOf({ name: 'Symbiotic Entity' }, c([], res))).toMatchObject({ apply: 'temp', spend: 'pool:wild-shape', roll: { formula: '4 * @classes.druid.levels' } });
     expect(ids(featureRiders(st(), c(['symbiotic entity'], res), { kind: 'damage', weapon: true, melee: true }))).toEqual(['rider:symbiotic-entity-1']);
+  });
+});
+
+describe('Savage Attacker: o dado da arma rolado duas vezes', () => {
+  it('liga `twice` na arma, nunca no desarmado, e o dano fica com a melhor rolagem', async () => {
+    const { rollDamageEvent } = await import('./playActions');
+    const { sequenceRng } = await import('./dice');
+    const c = cat(['savage attacker']);
+    expect(featureRiders(st(), c, { kind: 'damage', weapon: true, unarmed: true })).toEqual([]);
+    const riders = featureRiders(st(), c, { kind: 'damage', weapon: true, melee: true });
+    expect(ids(riders)).toEqual(['rider:savage-attacker']);
+    expect(riders[0].part).toBeUndefined();
+    const applied = applyEffects(riders, ['rider:savage-attacker']);
+    expect(applied.twice).toBe(true);
+    const attack = { key: 'a', name: 'Greatsword', kind: 'weapon', damage: { dice: '2d6', bonus: 3, types: ['slashing'] } };
+    const e = rollDamageEvent({ catalog: c, attack, options: { applied }, rng: sequenceRng([1, 2, 6, 5]) });
+    expect(e.rolls.total).toBe(14);
+    const [first, second] = e.rolls.parts[0].groups;
+    expect(first.results.every((r) => !r.kept)).toBe(true);
+    expect(second.results.every((r) => r.kept)).toBe(true);
+    const crit = rollDamageEvent({ catalog: c, attack, options: { applied, critical: true }, rng: sequenceRng([6, 6, 6, 6, 1, 1, 1, 1]) });
+    expect(crit.rolls.total).toBe(27);
   });
 });

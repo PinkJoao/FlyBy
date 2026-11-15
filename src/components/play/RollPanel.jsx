@@ -18,7 +18,8 @@
 //
 // FUNÇÕES
 //   parseManual(text): os números digitados, ou null se algum não é número.
-//   previewFormula(props, state): a fórmula que vai ser rolada, em texto.
+//   previewFormula(props, state): a fórmula que vai ser rolada, em texto (com o reroll do
+//     1, os 3d20 da Elven Accuracy e o `max` do Savage Attacker).
 //   RollPanel(props): o conteúdo do diálogo.
 //     submit(e): fecha com as opções.
 //
@@ -70,9 +71,15 @@ function parseManual(text) {
 }
 
 /** A fórmula que vai ser rolada, em texto ("2d20kh + 5 + 1d4"). */
-function previewFormula({ kind, parts, versatileDice }, { mode, bonus, critical, versatile }) {
-  const list = (parts ?? []).map((p, i) => (i === 0 && versatile && versatileDice ? versatileDice : String(p.formula)));
-  if (kind === 'd20') list.unshift(mode === 'advantage' ? '2d20kh' : mode === 'disadvantage' ? '2d20kl' : '1d20');
+function previewFormula({ kind, parts, versatileDice }, { mode, bonus, critical, versatile, rerollOnes, elven, twice }) {
+  const list = (parts ?? []).map((p, i) => {
+    const f = i === 0 && versatile && versatileDice ? versatileDice : String(p.formula);
+    return i === 0 && twice && kind !== 'd20' ? `max(${f}, ${f})` : f;
+  });
+  if (kind === 'd20') {
+    const count = mode === 'normal' ? 1 : mode === 'advantage' && elven ? 3 : 2;
+    list.unshift(`${count}d20${rerollOnes ? 'ro1' : ''}${mode === 'advantage' ? 'kh' : mode === 'disadvantage' ? 'kl' : ''}`);
+  }
   if (String(bonus ?? '').trim()) list.push(String(bonus).trim());
   const text = list.filter((f) => f !== '0').join(' + ').replace(/\+ -/g, '- ');
   return critical && /d/.test(text) ? `${text} (dice doubled)` : text;
@@ -119,7 +126,7 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
       <p className={styles.formula}>
         {previewFormula(
           { kind, parts: [...parts, ...on.filter((e) => e.part).map((e) => e.part)], versatileDice },
-          { mode: netMode, bonus, critical, versatile },
+          { mode: netMode, bonus, critical, versatile, rerollOnes: on.some((e) => e.rerollOnes), elven: on.some((e) => e.elven), twice: on.some((e) => e.twice) },
         )}
       </p>
       {note && <p className={styles.note}>{note}</p>}

@@ -24,6 +24,8 @@
 //     cinco que derivavam 10 + Dex; o Loxodon é o único que soma CON. O goblin de
 //     Ixalan é sub-raça fundida do de Zendikar mas tem fonte PSX, e o fallback
 //     procura `<baseName>|<fonte da variante>`: precisa da linha própria.
+//   - A linhagem Taunka do Tauren (WoW, 2026-11-15): "Your shaggy hide gives you a +1 bonus
+//     to Armor Class", pela chave do NOME da linhagem resolvida (`Tauren; Taunka Lineage`).
 //   - A codificação do export (`ac.calc`, `ac.formula`, `ac.bonus`, modes 5 e 2)
 //     é a do overlay foundry-races (verificada 2026-07-17), reproduzida para as
 //     edições que o overlay não cobre. Este módulo é a fonte ÚNICA da ficha e do
@@ -44,6 +46,7 @@ export const NATURAL_ARMOR = {
   'Tortle|MPMM': { type: 'flat', ac: 17, label: 'Natural Armor' },
   'Autognome|AAG': { type: 'unarmored', base: 13, ability: 'dex', label: 'Armored Casing' },
   'Warforged|EFA': { type: 'bonus', bonus: 1, label: 'Integrated Protection' },
+  'Tauren; Taunka Lineage|WoW': { type: 'bonus', bonus: 1, label: 'Taunka Lineage' },
   'Lizardfolk|MPMM': { type: 'unarmored', base: 13, ability: 'dex', label: 'Natural Armor' },
   'Thri-kreen|AAG': { type: 'unarmored', base: 13, ability: 'dex', label: 'Chameleon Carapace' },
   'Locathah|LR': { type: 'unarmored', base: 12, ability: 'dex', label: 'Natural Armor' },

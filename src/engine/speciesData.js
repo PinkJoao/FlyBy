@@ -35,7 +35,8 @@
 //   Catálogo
 //   prepareLegacyBase(race), legacyStandaloneSpecies(db): as espécies legadas.
 //   speciesCatalog(db): o catálogo que toda resolução por nome usa.
-//   resolvedCatalog(db, list): o compêndio com o `_copy` resolvido.
+//   resolvedCatalog(db, list): o compêndio com o `_copy` resolvido e os PROSE_FIELDS.
+//   speciesOptionChoices(raceObj, level, bag): as escolhas de opção de traço (SPECIES_OPTIONS).
 //   lineageLabel(name), raceOrVersions(race): rótulos e listas.
 //   Tamanho e campos
 //   sizeCodes(raceObj), speciesSizeChoice(raceObj), sizePick(bag),
@@ -52,6 +53,16 @@
 //     `darkvision: 120` no JSON cru, mas nem a prosa dele nem o SRD
 //     (tiefling-abyssal.yml, 60 pés) dizem isso, e as outras legacies não mexem no
 //     campo. É o único lugar para correção de dado upstream.
+//   - SPECIES_OPTIONS (TC-0128, DDL-0212): o traço que manda escolher uma das opções da
+//     lista dele, em níveis (Animal Enhancement: uma no 1, outra no 5, "one of the options
+//     you didn't take at 1st level, or one of the following"). Vira `featureoption` da
+//     espécie, com os cartões tirados das listas do traço; o que a opção faz no jogo é a
+//     metade de jogo (F1, F5).
+//   - PROSE_FIELDS (TC-0128, DDL-0212): o campo estruturado que a PROSA declara e o dado não
+//     traz (não é dado errado, é dado faltando), posto no catálogo resolvido, por onde passam o
+//     seletor e a derivação. Khoravar: "one skill or with one tool of your choice" vira o
+//     `skillToolLanguageProficiencies` de uma escolha mista. A troca a cada descanso longo é
+//     de jogo, não de ficha.
 //   - `_baseSource` (DDL-0071): uma linhagem curada carrega a fonte da sub-raça de
 //     origem, que pode não ter fluff; o fallback de lore e arte volta à EDIÇÃO da
 //     base 2024, não à primeira entrada de mesmo nome.
@@ -149,6 +160,10 @@ function substituteVars(value, vars) {
   }
   return value;
 }
+
+const PROSE_FIELDS = {
+  'Khoravar|EFA': { skillToolLanguageProficiencies: [{ choose: [{ from: ['anySkill', 'anyTool'], count: 1 }] }] },
+};
 
 const KNOWN_DATA_FIXES = {
   'Tiefling|XPHB/Tiefling; Abyssal Legacy': { darkvision: 60 },
@@ -444,8 +459,36 @@ export function filterLineageDeferred(choices, db, baseRace, lineage) {
 export function speciesChoices({ db, baseRace, raceObj, lineage = null, level = 1, bag = null }) {
   if (!raceObj) return [];
   const size = speciesSizeChoice(raceObj);
-  const choices = [...(size ? [size] : []), ...parseChoices(raceObj, { level, bag })];
+  const choices = [...(size ? [size] : []), ...parseChoices(raceObj, { level, bag }), ...speciesOptionChoices(raceObj, level, bag)];
   return filterLineageDeferred(choices, db, baseRace, lineage);
+}
+
+const SPECIES_OPTIONS = {
+  'Simic Hybrid|GGR': { feature: 'Animal Enhancement', steps: [{ level: 1, lists: [0] }, { level: 5, lists: [0, 1], exclude: 1 }] },
+};
+
+/**
+ * As escolhas de opção que só a prosa de um traço pede (o Animal Enhancement do Simic
+ * Hybrid), como `featureoption`: as listas nomeadas do traço viram cartões.
+ */
+export function speciesOptionChoices(raceObj, level = 1, bag = null) {
+  const spec = SPECIES_OPTIONS[`${raceObj?.name}|${raceObj?.source}`];
+  const trait = spec && (raceObj.entries ?? []).find((e) => e?.name === spec.feature);
+  if (!trait) return [];
+  const lists = [];
+  const walk = (e) => {
+    if (Array.isArray(e)) return e.forEach(walk);
+    if (!e || typeof e !== 'object') return;
+    if (e.type === 'list') lists.push((e.items ?? []).filter((i) => i?.name).map((i) => ({ value: i.name, label: i.name, entries: i.entries ?? (i.entry ? [i.entry] : []) })));
+    else if (Array.isArray(e.entries)) walk(e.entries);
+  };
+  walk(trait.entries);
+  const idOf = (lvl) => `featopt@${spec.feature}@${lvl}`;
+  return spec.steps.filter((st) => st.level <= level).map((st) => {
+    const taken = st.exclude ? (bag?.[idOf(spec.steps[st.exclude - 1].level)]?.picks ?? []) : [];
+    const options = st.lists.flatMap((i) => lists[i] ?? []).filter((o) => !taken.includes(o.value));
+    return { id: idOf(st.level), kind: 'featureoption', count: 1, level: st.level, label: `${spec.feature} (level ${st.level})`, feature: { name: spec.feature, level: st.level }, pool: { type: 'featureoption', options, ...(st.exclude ? { excludeFrom: [idOf(spec.steps[st.exclude - 1].level)] } : {}) } };
+  });
 }
 
 const standaloneCache = new WeakMap();
@@ -499,7 +542,10 @@ const catalogCache = new WeakMap();
 function resolvedCatalog(db, list) {
   let resolved = catalogCache.get(db);
   if (!resolved) {
-    resolved = resolveCopies(list);
+    resolved = resolveCopies(list).map((r) => {
+      const add = PROSE_FIELDS[`${r.name}|${r.source}`];
+      return add ? { ...r, ...add } : r;
+    });
     catalogCache.set(db, resolved);
   }
   return resolved;

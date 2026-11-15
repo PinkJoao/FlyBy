@@ -53,6 +53,11 @@
 //     magia de `prepared`/`known` com o texto procurando "to cast {@spell X}"; dá
 //     10 candidatos e 9 são falsos (a magia vem por outra via). Sobra o Wild
 //     Companion do Druida: Find Familiar é permissão, não preparada.
+//   - MISSING: o Giant Power do Path of the Giant (BGG) dá "a cantrip of your choice: either
+//     druidcraft or thaumaturgy" com SAB. O dado JÁ traz a escolha (dois grupos, o seletor
+//     "Spell List"), só sem o atributo: a entrada tem apenas `ability`, que vale para TODOS
+//     os grupos sem um. A primeira versão (DDL-0212) somava também a escolha ao primeiro
+//     grupo e a duplicava; vista na tela em 2026-11-15.
 //   - MISSING: o Channeler do College of Spirits RHW conhece Guidance @3; o dado só
 //     codifica o Spirit Guardians @6 (a versão VRGR trazia).
 //   - O curado em `subrace` (Merge with Stone) existe por completude: a derivação
@@ -178,6 +183,7 @@ export const REMOVED_ADDITIONAL_SPELLS = {
 export const MISSING_ADDITIONAL_SPELLS = {
   // ATENÇÃO: cada entrada é FUNDIDA no primeiro grupo; um grupo novo viraria alternativa (TC-0011).
   'College of Spirits|RHW': { known: { 3: ['guidance|xphb#c'] } },
+  'Path of the Giant|BGG': { ability: 'wis' },
 };
 
 /** Poda arrays e objetos que ficaram vazios. */
@@ -275,8 +281,10 @@ export function curatedAdditionalSpells(entity) {
   if (regrades) groups = applyRegrades(groups, regrades);
   if (removed) groups = applyRemovals(groups, removed);
   if (!extra) return groups;
+  if (extra.ability) groups = (groups.length ? groups : [{}]).map((g) => (g.ability ? g : { ...g, ability: extra.ability }));
   const first = { ...(groups[0] ?? {}) };
   for (const [bucket, byLevel] of Object.entries(extra)) {
+    if (bucket === 'ability') continue;
     const merged = { ...(first[bucket] ?? {}) };
     for (const [lvl, spells] of Object.entries(byLevel)) {
       merged[lvl] = [...(merged[lvl] ?? []), ...spells];

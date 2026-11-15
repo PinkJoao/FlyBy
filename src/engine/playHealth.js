@@ -15,7 +15,8 @@
 //   concentrationDc(damage): a CD do save de concentração.
 //   damageOutcome(state, catalog, opts): o que um dano faz (ops e resumo).
 //   healOutcome(state, catalog, amount): o que uma cura faz.
-//   tempHpOutcome(state, amount, opts): o temporário novo, sem somar.
+//   tempHpOutcome(state, amount, opts): o temporário novo, sem somar (`opts.catalog` para o
+//     Boon of Bountiful Health).
 //   deathSaveOutcome(state, catalog, roll): o que um teste contra a morte faz.
 //   maxHpOutcome(state, catalog, amount): subir o HP máximo (e o atual junto).
 //   hurtOutcome(state, catalog, opts): o dano do painel Hurt, que pode cortar
@@ -27,6 +28,11 @@
 //   concentrationCheckEvent(args): o save de CON para manter a concentração.
 //
 // DECISÕES E ARMADILHAS
+//   - Modificadores de toda cura (DDL-0215), pelo nome no catálogo: Boon of Fortitude soma o
+//     CON a cada cura em healOutcome ("whenever you regain Hit Points, you can regain
+//     additional Hit Points equal to your Constitution modifier"; "once per turn" fica com
+//     o jogador), e Boon of Bountiful Health soma 5 a cada PV temporário em tempHpOutcome
+//     (Augmented Health). O card do histórico mostra a linha do bônus.
 //   - Forma (DDL-0195): o dano que zera os PV temporários de uma forma que "acaba sem
 //     eles" (Polymorph) tira a forma no mesmo evento, e a concentração nela junto.
 //   Regras medidas no texto do XPHB (data/book/book-xphb.json, 2026-10-24)
@@ -154,23 +160,27 @@ export function damageOutcome(state, catalog, { amount, type = '', critical = fa
 /** O que uma cura faz: sobe o HP atual até o máximo e, saindo do zero, limpa a morte. */
 export function healOutcome(state, catalog, amount) {
   const v = vitals(state, catalog);
-  const n = Math.max(0, Math.floor(Number(amount) || 0));
+  const base = Math.max(0, Math.floor(Number(amount) || 0));
+  const fortitude = base > 0 && (catalog?.features ?? []).includes('boon of fortitude') ? Math.max(0, catalog.rollData?.abilities?.con?.mod ?? 0) : 0;
+  const n = base + fortitude;
   const target = Math.min(v.max, v.current + n);
   const delta = (v.max - target) - state.damage;
   const ops = [];
   if (delta !== 0) ops.push({ op: 'hp', damage: delta });
   const deathMarked = v.death.success || v.death.failure || v.death.stable || v.death.dead;
   if (n > 0 && deathMarked) ops.push({ op: 'death', reset: true });
-  return { ops, summary: { amount: n, healed: target - v.current, from: v.current, to: target } };
+  return { ops, summary: { amount: n, healed: target - v.current, from: v.current, to: target, ...(fortitude ? { bonus: { label: 'Boon of Fortitude', value: fortitude } } : {}) } };
 }
 
 /** O temporário novo: sem somar; fica o maior, ou o novo com `replace`. */
-export function tempHpOutcome(state, amount, { replace = false } = {}) {
-  const n = Math.max(0, Math.floor(Number(amount) || 0));
+export function tempHpOutcome(state, amount, { replace = false, catalog = null } = {}) {
+  const base = Math.max(0, Math.floor(Number(amount) || 0));
+  const augmented = base > 0 && (catalog?.features ?? []).includes('boon of bountiful health') ? 5 : 0;
+  const n = base + augmented;
   const next = replace ? n : Math.max(state.tempHp, n);
   return {
     ops: next !== state.tempHp ? [{ op: 'hp', temp: next - state.tempHp }] : [],
-    summary: { amount: n, from: state.tempHp, to: next, kept: next === state.tempHp && n !== next },
+    summary: { amount: n, from: state.tempHp, to: next, kept: next === state.tempHp && n !== next, ...(augmented ? { bonus: { label: 'Augmented Health', value: augmented } } : {}) },
   };
 }
 
@@ -241,8 +251,8 @@ export function healEvent({ state, catalog, amount, label = 'Healing', now = new
 }
 
 /** O evento de HP temporário. */
-export function tempHpEvent({ state, amount, replace = false, label = 'Temporary hit points', now = new Date() }) {
-  const { ops, summary } = tempHpOutcome(state, amount, { replace });
+export function tempHpEvent({ state, catalog = null, amount, replace = false, label = 'Temporary hit points', now = new Date() }) {
+  const { ops, summary } = tempHpOutcome(state, amount, { replace, catalog });
   return makeEvent('tempHp', { label, ops, payload: summary }, now);
 }
 

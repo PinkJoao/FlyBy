@@ -273,7 +273,7 @@ describe('derivePlayCatalog', () => {
 
   it('dados das fórmulas, testes e números da ficha', () => {
     expect(catalog.rollData).toMatchObject({ prof: 3, abilities: { wis: { mod: 4 } }, classes: { cleric: { levels: 4 } }, 'scale.cleric.channel-divinity': 2 });
-    expect(catalog.rollData.attributes.hd).toEqual({ largestAvailable: '1d10', smallestAvailable: '1d8' });
+    expect(catalog.rollData.attributes.hd).toEqual({ largestAvailable: '1d10', smallestAvailable: '1d8', largestFace: 10, smallestFace: 8 });
     expect(catalog.checks.abilities.find((a) => a.ability === 'wis')).toEqual({
       ability: 'wis', score: 18, mod: 4, save: 7, saveProf: true,
       checkParts: [{ kind: 'ability', ability: 'wis', value: 4 }],

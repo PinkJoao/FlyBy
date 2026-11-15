@@ -51,7 +51,7 @@ export default function ShortRestPanel({ catalog, state }) {
     const value = String(typed[faces] ?? '').trim();
     try {
       const rng = value ? sequenceRng([Number(value)], () => NaN) : undefined;
-      setSpends([...spends, rollHitDie({ catalog, faces, rng })]);
+      setSpends([...spends, rollHitDie({ catalog, faces, rng, rest: true })]);
       setTyped({ ...typed, [faces]: '' });
       setError(null);
     } catch (e) {

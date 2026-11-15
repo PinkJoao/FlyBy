@@ -8,6 +8,7 @@
  *   .summon: o bloco "Summon now" do diálogo de conjurar (DDL-0192).
  *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
  *   .actions: a fila dos botões (o Button do app, DDL-0160).
+ *   .chips: a fila dos dados do Reroll dice (o Chip do app, DDL-0215).
  * -------------------------------------------------------------------------- */
 
 .form {
@@ -137,6 +138,12 @@
 .left {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .actions {

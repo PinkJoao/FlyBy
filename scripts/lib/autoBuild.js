@@ -36,7 +36,10 @@
 //     escolha IRMÃ acabou de escolher; por isso a exclusão explícita por bag (como o
 //     dedup de spell chooses irmãos, TC-0025). `weapon` fica de fora: a maestria
 //     deduplica só contra si mesma, como a featureoption.
-//   - tagCandidates segue o ChoiceList: proficiência de arma individual (Kensei),
+//   - `pool.excludeFrom` de uma featureoption (o Animal Enhancement do nível 5, TC-0128) tira
+//     o que a escolha irmã já pegou: a tela gera as opções com o bag, a passada não.
+//   - tagCandidates segue o ChoiceList: os planos do Artificer pela entity de item com
+//     `planAllows` (DDL-0212); proficiência de arma individual (Kensei),
 //     restrição de classe da Weapon Mastery (Barbarian só corpo a corpo, TC-0021),
 //     categoria de ferramenta (pode ser ARRAY: o Monk aceita artesão OU
 //     instrumento) e lista de códigos dos grants curados (`ch.from`).
@@ -77,6 +80,8 @@ import skillEntity from '../../src/selector/entities/skill';
 import toolEntity from '../../src/selector/entities/tool';
 import languageEntity from '../../src/selector/entities/language';
 import weaponEntity from '../../src/selector/entities/weapon';
+import itemEntity from '../../src/selector/entities/item';
+import { planAllows } from '../../src/engine/classFeatureChoices';
 import { mulberry32, pickOne, shuffled } from './rng';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
@@ -115,6 +120,8 @@ function tagCandidates(ch, picks, ctx, bag) {
   let values;
   if (ch.pool.type === 'list') {
     values = ch.pool.options.map((o) => o.value);
+  } else if (ch.pool.type === 'plan') {
+    values = itemEntity.list(ctx.db).filter((r) => planAllows(ch.pool, r)).map((r) => itemEntity.idOf(r));
   } else if (kind === 'weaponProf') {
     values = weaponEntity
       .list(ctx.db)
@@ -207,7 +214,8 @@ function fillChoice(ch, entry, bag, ctx) {
   if (ch.pool.type === 'featureoption') {
     let changed = false;
     while (picks.length < (ch.count ?? 1)) {
-      const v = pickOne(ctx.rng, ch.pool.options.map((o) => o.value).filter((v) => !picks.includes(v)));
+      const taken = (ch.pool.excludeFrom ?? []).flatMap((id) => bag?.[id]?.picks ?? []);
+      const v = pickOne(ctx.rng, ch.pool.options.map((o) => o.value).filter((v) => !picks.includes(v) && !taken.includes(v)));
       if (!v) {
         ctx.problems.push(`${ctx.where}: feature-option "${ch.label}" (${ch.id}) has no candidates`);
         break;

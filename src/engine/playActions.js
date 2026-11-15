@@ -27,8 +27,13 @@
 //     quando o jogador digitou o dado da mesa.
 //   rollTestEvent(args): o evento de um teste de d20.
 //   rollAttackEvent(args): o evento do acerto de um ataque.
-//   damageParts(attack, options): as partes do dano de um ataque.
+//   damageParts(attack, options): as partes do dano de um ataque; com `applied.twice`
+//     (Savage Attacker) o dado da arma vira `max(dado, dado)`.
 //   rollDamageEvent(args): o evento do dano de um ataque.
+//   forgoDice(formula, n, data): o dado com `n` dados a menos (Cunning Strike, DDL-0217).
+//   withDiceMax(formula, data): todo dado no máximo (Supreme Healing, DDL-0217).
+//   withDiceMin(formula, floor, data): o dado da arma com o piso por dado (`minN`): o
+//     Clean Hits do Fists of Fury, `applied.diceMin` (DDL-0215); a `@ref` é resolvida antes.
 //
 // DECISÕES E ARMADILHAS
 //   - Um teste rolado só ENTRA no histórico (`ops` vazio): na C2 nada muda no
@@ -46,7 +51,7 @@
 //     o baixa (Champion) é a fase C5.
 // -----------------------------------------------------------------------------
 
-import { d20Test, rollParts, sequenceRng, cryptoRng } from './dice';
+import { d20Test, rollParts, sequenceRng, cryptoRng, resolveRefs } from './dice';
 import { makeEvent } from './playState';
 import { checkPartsOf, partLabel } from './playChecks';
 
@@ -108,6 +113,8 @@ export function d20Options(options = {}) {
     advantage: m.advantage + (a.advantage ?? 0),
     disadvantage: m.disadvantage + (a.disadvantage ?? 0),
     d20Min: a.d20Min ?? null,
+    rerollOnes: !!a.rerollOnes,
+    elven: !!a.elven,
     critThreshold: options.critThreshold ?? a.critThreshold ?? 20,
     physical: (options.manual ?? []).some((v) => Number.isFinite(v)),
   };
@@ -149,13 +156,49 @@ export function rollAttackEvent({ catalog, attack, options = {}, rng, now = new 
   }, now);
 }
 
+/** O dado da arma com o piso de cada dado (Clean Hits: "treat any 1 on a damage die as a 2"). */
+export function withDiceMin(formula, floor, data = {}) {
+  let text = String(formula);
+  try {
+    text = resolveRefs(text, data);
+  } catch {
+    return text;
+  }
+  return text.replace(/(\d*d\d+)(?!\d)/g, `$1min${floor}`);
+}
+
+/** O dado com `n` dados a menos (o Cunning Strike tira dados do Sneak Attack), nunca abaixo de 0. */
+export function forgoDice(formula, n, data = {}) {
+  let text = String(formula);
+  try {
+    text = resolveRefs(text, data);
+  } catch {
+    return text;
+  }
+  return text.replace(/(\d+)d(\d+)/, (m, count, faces) => `${Math.max(0, Number(count) - n)}d${faces}`);
+}
+
+/** Todo dado no valor máximo (o Supreme Healing: "use the highest number possible for each die"). */
+export function withDiceMax(formula, data = {}) {
+  let text = String(formula);
+  try {
+    text = resolveRefs(text, data);
+  } catch {
+    return text;
+  }
+  return text.replace(/(\d*)d(\d+)(?!\d)/g, (m, count, faces) => `${count}d${faces}min${faces}`);
+}
+
 /** As partes do dano de um ataque (dado, modificador), com o versátil se pedido. */
 export function damageParts(attack, options = {}) {
   const d = attack.damage;
   if (!d) return [];
-  const dice = options.versatile && attack.versatile ? attack.versatile : d.dice;
+  const picked = options.versatile && attack.versatile ? attack.versatile : d.dice;
+  const floor = options.applied?.diceMin;
+  const dice = picked && floor ? withDiceMin(picked, floor, options.data) : picked;
+  const twice = dice && options.applied?.twice;
   return [
-    ...(dice ? [{ label: attack.name, formula: dice }] : []),
+    ...(dice ? [{ label: twice ? `${attack.name} (best of two)` : attack.name, formula: twice ? `max(${dice}, ${dice})` : dice }] : []),
     ...(d.bonus ? [{ label: 'Modifier', formula: d.bonus }] : []),
   ];
 }
@@ -165,7 +208,9 @@ export function damageParts(attack, options = {}) {
  * @param {{ catalog: object, attack: object, options?: object, rng?: Function, now?: Date }} args
  */
 export function rollDamageEvent({ catalog, attack, options = {}, rng, now = new Date() }) {
-  const result = rollParts([...damageParts(attack, options), ...(options.applied?.parts ?? []), ...bonusParts(options)], {
+  const forgo = options.applied?.forgo ?? 0;
+  const riders = (options.applied?.parts ?? []).map((p) => (forgo && p.forgoable ? { ...p, label: `${p.label} (${forgo} die${forgo > 1 ? 's' : ''} forgone)`, formula: forgoDice(p.formula, forgo, catalog.rollData) } : p));
+  const result = rollParts([...damageParts(attack, { ...options, data: catalog.rollData }), ...riders, ...bonusParts(options)], {
     data: catalog.rollData,
     rng: rngFor(options, rng),
     critical: !!options.critical,

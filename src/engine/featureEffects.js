@@ -24,6 +24,11 @@
 //   - AC_BONUS_FEATURES (DDL-0043): bônus plano de CA em prosa. `requiresArmor`
 //     espelha o RAW do Defense ("While you are wearing armor"), e o chamador decide
 //     se aplica.
+//   - SUBCLASS_AC_BONUSES (DDL-0215): o bônus de CA de feature de SUBCLASSE, pela chave
+//     `subclasse|fonte` e o nível: Soul of the Forge, "While wearing heavy armor, you gain a
+//     +1 bonus to AC" (`requiresHeavy`, conferido pelo `armorSlot` da armadura vestida).
+//     Bônus que dependem do jogo (Agile Parry, Awakened Astral Self, Revenant Blade) são
+//     interruptores do play mode (FEATURE_ROLLS), não da ficha.
 // -----------------------------------------------------------------------------
 
 import { collectChoicePicks } from './choices';
@@ -54,9 +59,14 @@ export function cantripLimitBonus(classEntry) {
   return out;
 }
 
-/** @type {Record<string, {value:number, requiresArmor?:boolean, label:string}>} */
+/** @type {Record<string, {value:number, requiresArmor?:boolean, requiresHeavy?:boolean, label:string}>} */
 export const AC_BONUS_FEATURES = {
   defense: { value: 1, requiresArmor: true, label: 'Defense' },
+};
+
+/** @type {Record<string, {level:number, value:number, requiresHeavy?:boolean, label:string}>} */
+export const SUBCLASS_AC_BONUSES = {
+  'forge|xge': { level: 6, value: 1, requiresHeavy: true, label: 'Soul of the Forge' },
 };
 
 /**
@@ -69,6 +79,10 @@ export function acFeatureBonuses(character) {
   for (const id of chosenFeatureIds(character)) {
     const eff = AC_BONUS_FEATURES[String(id).split('|')[0].toLowerCase()];
     if (eff) out.push(eff);
+  }
+  for (const cls of character?.classes ?? []) {
+    const eff = SUBCLASS_AC_BONUSES[`${cls.subclassId ?? ''}|${cls.subclassSource ?? ''}`.toLowerCase()];
+    if (eff && (cls.level ?? 0) >= eff.level) out.push(eff);
   }
   return out;
 }

@@ -37,6 +37,12 @@
 //     o "Concentration save" com a CD, enquanto houver concentração; o da MAGIA
 //     lançada, o ataque, o dano e a cura no círculo em que ela saiu. Num evento
 //     desfeito os botões somem.
+//   - O card da MAGIA lançada tem o botão do que uma feature dá depois de lançar (Blessed
+//     Healer, Abjuration Adept), por `live.castTriggersOf` e `live.onCastTrigger` (DDL-0215).
+//   - O card do DANO e da CURA tem "Reroll dice" quando há o que rolar de novo
+//     (`live.canRerollDice`, `live.onRerollDice`, DDL-0215).
+//   - O card do TESTE e do ATAQUE tem "Reroll" (DDL-0214): rola de novo pela regra de uma
+//     feature (engine/playRerolls), num evento NOVO; o card novo diz "Rerolled by X".
 //   - O card que CRIOU um summon tem "Dismiss" e o que pôs a forma ATUAL tem "Revert"
 //     (o RevertFormButton do aviso), enquanto ela ou ele estiver ativo (DDL-0201).
 //     `live` traz o estado vivo: os ids dos grupos em campo, o id do evento que pôs a
@@ -117,6 +123,7 @@ function detailOf(event) {
     case 'heal':
       total = p.healed;
       lines.push(`${p.from} to ${p.to} hit points`);
+      if (p.bonus) lines.push(`${p.bonus.label}: +${p.bonus.value}`);
       break;
     case 'maxHp':
       total = p.amount;
@@ -131,6 +138,7 @@ function detailOf(event) {
       break;
     case 'tempHp':
       total = p.to;
+      if (p.bonus) lines.push(`${p.bonus.label}: +${p.bonus.value}`);
       if (p.kept) lines.push(`Kept the ${p.from} you had (more than ${p.amount})`);
       break;
     case 'deathSave':
@@ -218,6 +226,7 @@ function detailOf(event) {
     default:
       break;
   }
+  if (p.reroll) lines.push(`${p.reroll.keep ? 'Raised' : 'Rerolled'} by ${p.reroll.source}`);
   for (const s of p.spent ?? []) lines.push(`${s.name}: ${s.amount} spent`);
   return { total, tags, lines };
 }
@@ -300,7 +309,7 @@ function DiceList({ group }) {
 }
 
 /** O cartão de um evento. */
-function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, live }) {
+function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, onReroll, live }) {
   const rolls = event.rolls ?? {};
   const critical = event.kind === 'damageRoll' ? event.payload?.critical : rolls.isCritical;
   const save = event.kind === 'damageRoll' ? event.payload?.save : null;
@@ -354,6 +363,16 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
           Roll damage{critical ? ' (critical)' : ''}
         </Button>
       )}
+      {(event.kind === 'damageRoll' || event.kind === 'healRoll') && !undone && live?.canRerollDice?.(event) && (
+        <Button size="sm" className={styles.action} onClick={() => live.onRerollDice(event)} title="Roll some of these dice again, by a feature or another rule">
+          Reroll dice
+        </Button>
+      )}
+      {(event.kind === 'attack' || event.kind === 'check') && event.rolls && !undone && onReroll && (
+        <Button size="sm" className={styles.action} onClick={() => onReroll(event)} title="Roll it again, by a feature or another rule">
+          Reroll
+        </Button>
+      )}
       {event.kind === 'use' && event.payload?.only === 'attack' && !undone && onFeatureEffect && (
         <Button size="sm" variant="primary" className={styles.action} onClick={() => onFeatureEffect(event)}>
           {(event.payload?.types ?? []).length ? 'Roll damage' : 'Roll healing'}{event.payload?.attack?.critical ? ' (critical)' : ''}
@@ -370,6 +389,9 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
           {event.payload?.heal && (
             <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'heal')}>Healing</Button>
           )}
+          {(live?.castTriggersOf?.(event) ?? []).map((t) => (
+            <Button key={t.name} size="sm" className={styles.action} onClick={() => live.onCastTrigger(t)}>{t.label}</Button>
+          ))}
         </span>
       )}
       {(groups.length > 0 || formLive) && (
@@ -393,9 +415,9 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
 
 /**
  * O histórico: do mais novo para o mais velho, separado por dia.
- * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function, live?: object }} props
+ * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function, onReroll?: Function, live?: object }} props
  */
-export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, live }) {
+export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, onReroll, live }) {
   const events = doc?.events ?? [];
   if (!events.length) {
     return <p className={styles.empty}>Nothing rolled yet. Your rolls and actions show up here, and you can undo them.</p>;
@@ -419,6 +441,7 @@ export default function PlayHistory({ doc, onDamage, onConcentration, concentrat
         concentrating={concentrating}
         onSpell={onSpell}
         onFeatureEffect={onFeatureEffect}
+        onReroll={onReroll}
         live={live}
       />,
     );

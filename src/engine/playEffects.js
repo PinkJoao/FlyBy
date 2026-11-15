@@ -85,15 +85,20 @@
 //   - RIDERS: os extras das features (Sneak Attack, Brutal Strike, Divine Strike,
 //     Peerless Skill...) moram em engine/playFeatureRolls.js (DDL-0205); o que gasta
 //     um pool leva `spend`, e applyEffects devolve os `spends` ligados.
+//   - A vantagem que só a prosa declara (Fey Ancestry, Brave) vem de
+//     engine/playProseEffects (DDL-0213); a feature com FEATURE_EFFECTS (a Rage) fica fora
+//     dela pela chave da ação, e o Bloodied e a Rage ativa vão pelo estado.
 //   - PASSIVES (pelo nome da feature no catálogo): Improved Critical (19),
 //     Superior Critical (18), Reliable Talent (piso 10 nos testes com
 //     proficiência).
 // -----------------------------------------------------------------------------
 
 import { makeId } from '../schema/character';
-import { makeEvent } from './playState';
+import { makeEvent, hpView } from './playState';
 import { revertOps } from './playForms';
 import { featureRiders } from './playFeatureRolls';
+import { bridgedEffects } from './playActorEffects';
+import { proseEffects } from './playProseEffects';
 
 export const CONDITIONS = {
   blinded: { name: 'Blinded', attack: 'dis', notes: ['Auto-fail checks that need sight', 'Attacks against you have Advantage'] },
@@ -150,6 +155,9 @@ const PASSIVES = {
   'superior critical': { critThreshold: 18 },
   'reliable talent': { d20Min: 10 },
 };
+
+/** Os nomes das features que as PASSIVES tratam (o levantamento as conta como `use`). */
+export const PASSIVE_FEATURES = Object.keys(PASSIVES);
 
 /** As condições ativas, com as incluídas, e o nível da exaustão. */
 export function conditionList(state) {
@@ -225,6 +233,9 @@ export function rollEffects(state, catalog, roll) {
   }
 
   out.push(...featureRiders(state, catalog, roll));
+  out.push(...bridgedEffects(state, catalog, roll, ids));
+  const hp = hpView(state, catalog.stats?.hpMax ?? 0);
+  out.push(...proseEffects(catalog, roll, { conditionIds: [...ids], skipKeys: Object.keys(FEATURE_EFFECTS), bloodied: hp.max > 0 && hp.current <= hp.max / 2, raging: (state.modifiers ?? []).some((m) => m.label === 'Rage'), concentrating: !!state.concentration, skipNames: Object.keys(PASSIVES) }));
 
   const features = new Set(catalog.features ?? []);
   for (const [name, p] of Object.entries(PASSIVES)) {
@@ -250,6 +261,11 @@ export function applyEffects(effects, enabledIds = null) {
     autoFail: on.some((e) => e.autoFail),
     labels: on.map((e) => e.label),
     spends: on.filter((e) => e.spend).map((e) => e.spend),
+    twice: on.some((e) => e.twice),
+    diceMin: on.reduce((m, e) => (e.diceMin ? Math.max(m ?? 0, e.diceMin) : m), null),
+    forgo: on.reduce((s, e) => s + (e.forgo ?? 0), 0),
+    rerollOnes: on.some((e) => e.rerollOnes),
+    elven: on.some((e) => e.elven),
   };
 }
 

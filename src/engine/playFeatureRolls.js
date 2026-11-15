@@ -31,7 +31,8 @@
 //   noteOf(entry, rollData): a nota, que pode citar uma CD calculada.
 //   maneuverDc(rollData), SUPERIORITY(rollData), BARDIC(rollData): a CD das manobras
 //     (8 + PB + FOR ou DES) e os dados de superioridade e de inspiração.
-//   fits(when, roll): a rolagem casa com o `when` da entrada (arma, FOR, corpo a corpo).
+//   fits(when, roll): a rolagem casa com o `when` da entrada (arma, FOR, corpo a corpo, magia,
+//     qualquer rolagem de FOR).
 //   CLERIC_STRIKE(rollData): a fórmula do Divine Strike pela escala do Cleric.
 //   norm(s), slug(s): o nome comparável e o pedaço do id do extra.
 //
@@ -105,6 +106,39 @@
 //     Demiurgic Colossus). Passivas: Improved Defender, Bond of Fang and Scale,
 //     Eventide's Splendor, Order's Wrath, Great Stature, Runic Juggernaut, Demiurgic
 //     Colossus.
+//   - Improved Blessed Strikes e Heightened Focus deixaram de ser passivas (DDL-0214): o
+//     "Use" dá os PV temporários que o texto conta ("twice your Wisdom modifier" do Potent
+//     Spellcasting; "two rolls of your Martial Arts die" do Patient Defense). A escala do
+//     Divine Strike e o Flurry de três golpes seguem nas outras entradas.
+//   - Quarta leva (DDL-0214, o bônus que a prosa do G3 não lê): Guided Strike e Feat of
+//     Strength, "+10 bonus to the roll" com um Channel Divinity (o de Feat of Strength só no
+//     que usa FOR, `when: 'strRoll'`); Aura of Hate, o CAR (mínimo +1) no dano de arma corpo
+//     a corpo, LIGADA; Alchemical Savant, o INT (mínimo +1) numa rolagem da magia; Arcane
+//     Firearm, 1d8 no dano da magia.
+//   - Sexta leva (DDL-0217, as features de dado do SRD): Cunning Strike (Poison, Trip,
+//     Withdraw, 1d6 cada), Devious Strikes (Daze 2d6, Knock Out 6d6, Obscure 3d6) e o
+//     Stealth Attack do Supreme Sneak (1d6): "Each effect has a die cost, which is the number
+//     of Sneak Attack damage dice you must forgo"; o extra leva `forgo` e o Sneak Attack é
+//     `forgoable`, e rollDamageEvent tira os dados da parte do Sneak Attack (`forgoDice`). A
+//     CD é 8 + DES + PB (ROGUE_DC). Use Magic Device: o "Use" rola o d6 das cargas ("On a roll
+//     of 6, you use the property without expending the charges"). Arcane Eloquence: Smooth
+//     Talker, 1d4 em Deception, Intimidation e Persuasion (`when: 'social'`), LIGADO.
+//   - Quinta leva (DDL-0215, as famílias em aberto do levantamento): Agile Parry (+2 CA até o
+//     seu próximo turno), Awakened Astral Self (+2 CA, 10 minutos) e Revenant Blade (+1 CA com
+//     a cimitarra de duas lâminas nas duas mãos) são `toggle` com `ac`; Devouring Plague
+//     (1d10), Touch of the Grave (PB d4) e Blood Thirst (1d6) curam o dano necrótico que
+//     causam ("you regain Hit Points equal to the Necrotic damage dealt"), então o "Use" rola
+//     e cura o mesmo número; Fists of Fury (Clean Hits: "treat any 1 on a damage die as a
+//     2", `diceMin`, aplicado por rollDamageEvent); Soul of Artifice do TCE (+1 por item
+//     atunado, `@attunement.value`; o do EFA não tem bônus); Conjuration Adept (o
+//     modificador do atributo que o talento aumentou, `@featAbility`, na concentração).
+//   - Savage Attacker (DDL-0210): "roll the weapon's damage dice twice and use either
+//     roll"; o extra não soma parte, liga `twice` e o dado da arma vira `max(dado,
+//     dado)` (damageParts em engine/playActions), com o grupo perdedor riscado no card.
+//     `when: 'armed'`: arma, não o desarmado (que não é arma em 2024). O feat de 2014
+//     tem o mesmo nome e vale só corpo a corpo: fica na nota.
+//   - A feature fora do registro com cura ou PV temporários na prosa (`catalog.proseUses`,
+//     engine/playProseEffects, DDL-0214) ganha o mesmo "Use" de `apply` por featureUseOf.
 //   - `apply` ('heal' ou 'temp') faz o "Use" curar ou dar PV temporários com o total
 //     rolado, pelas mesmas regras do card de HP (healOutcome, tempHpOutcome: o temporário
 //     não soma). `restore` devolve todo o gasto de um pool (Uncanny Metabolism).
@@ -146,10 +180,31 @@ const FOCUS = { item: "Monk's Focus" };
 const SHOT = { item: 'Arcane Shot' };
 const ARROW = byLevel('fighter', [[18, '4d6'], [0, '2d6']]);
 
+const ROGUE_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.dex?.mod ?? 0);
+
 const CLERIC_STRIKE = (rd) => (rd['scale.cleric.divine-strike'] ? '@scale.cleric.divine-strike' : '1d8');
 
 export const FEATURE_ROLLS = {
-  'sneak attack': { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => !!c.rollData?.['scale.rogue.sneak-attack'], formula: '@scale.rogue.sneak-attack', note: 'once per turn, Finesse or Ranged, with Advantage or an ally next to the target' },
+  'sneak attack': { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => !!c.rollData?.['scale.rogue.sneak-attack'], formula: '@scale.rogue.sneak-attack', forgoable: true, note: 'once per turn, Finesse or Ranged, with Advantage or an ally next to the target' },
+  'cunning strike': {
+    kind: 'rider', on: ['damage'], when: 'weapon', forgo: 1, label: 'Cunning Strike: Poison (1d6 of Sneak Attack)',
+    note: (rd) => `with Sneak Attack; DC ${ROGUE_DC(rd)} Constitution save or Poisoned for 1 minute (save again at the end of each of its turns)`,
+    also: [
+      { on: ['damage'], when: 'weapon', forgo: 1, label: 'Cunning Strike: Trip (1d6 of Sneak Attack)', note: (rd) => `with Sneak Attack; a Large or smaller target makes a DC ${ROGUE_DC(rd)} Dexterity save or has the Prone condition` },
+      { on: ['damage'], when: 'weapon', forgo: 1, label: 'Cunning Strike: Withdraw (1d6 of Sneak Attack)', note: 'with Sneak Attack; you move up to half your Speed without provoking Opportunity Attacks' },
+    ],
+  },
+  'devious strikes': {
+    kind: 'rider', on: ['damage'], when: 'weapon', forgo: 2, label: 'Devious Strikes: Daze (2d6 of Sneak Attack)',
+    note: (rd) => `with Sneak Attack; DC ${ROGUE_DC(rd)} Constitution save or, on its next turn, only one of a move, an action or a Bonus Action`,
+    also: [
+      { on: ['damage'], when: 'weapon', forgo: 6, label: 'Devious Strikes: Knock Out (6d6 of Sneak Attack)', note: (rd) => `with Sneak Attack; DC ${ROGUE_DC(rd)} Constitution save or Unconscious for 1 minute or until it takes damage` },
+      { on: ['damage'], when: 'weapon', forgo: 3, label: 'Devious Strikes: Obscure (3d6 of Sneak Attack)', note: (rd) => `with Sneak Attack; DC ${ROGUE_DC(rd)} Dexterity save or Blinded until the end of its next turn` },
+    ],
+  },
+  'supreme sneak': { kind: 'rider', on: ['damage'], when: 'weapon', forgo: 1, label: 'Stealth Attack (1d6 of Sneak Attack)', note: "with Sneak Attack; the Hide action's Invisible condition stays if you end the turn behind Three-Quarters or Total Cover" },
+  'use magic device': { kind: 'use', roll: { label: 'Charges: on a 6, none are spent', formula: '1d6' } },
+  'arcane eloquence': { kind: 'rider', on: ['check'], when: 'social', defaultOn: true, formula: '1d4', label: 'Smooth Talker', note: 'Deception, Intimidation or Persuasion' },
   'brutal strike': { kind: 'rider', on: ['damage'], when: 'str', has: (c) => !!c.rollData?.['scale.barbarian.brutal-strike'], formula: '@scale.barbarian.brutal-strike', note: 'only if you gave up Advantage on the attack' },
   frenzy: { kind: 'rider', on: ['damage'], when: 'str', needs: 'Rage', formula: (rd) => `${rd['scale.barbarian.rage-damage'] ?? 2}d6`, note: 'with Reckless Attack, the first target you hit this turn' },
   'divine fury': { kind: 'rider', on: ['damage'], when: 'weapon', needs: 'Rage', formula: '1d6 + floor(@classes.barbarian.levels / 2)', note: 'first creature you hit on each turn; Necrotic or Radiant' },
@@ -192,11 +247,11 @@ export const FEATURE_ROLLS = {
   'lunar form': { kind: 'rider', on: ['damage'], formula: '2d10', label: 'Improved Lunar Radiance', note: "once per turn, with a Wild Shape form's attack; Radiant" },
   'inspiring smite': { kind: 'use', spend: { item: 'Channel Divinity' }, roll: { label: 'Temporary Hit Points to share', formula: '2d8 + @classes.paladin.levels' } },
   'wild magic surge': { kind: 'use', roll: { label: 'd20 (on a 20, roll on the table)', formula: '1d20' } },
-  'improved blessed strikes': { kind: 'passive' },
+  'improved blessed strikes': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points (Potent Spellcasting)', formula: '2 * @abilities.wis.mod' } },
   'improved elemental fury': { kind: 'passive' },
   'improved brutal strike (2)': { kind: 'passive' },
   relentless: { kind: 'passive' },
-  'heightened focus': { kind: 'passive' },
+  'heightened focus': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points (Patient Defense)', formula: MARTIAL(2) } },
   'combat inspiration': { kind: 'passive' },
   'pact magic': { kind: 'passive' },
   'chemical mastery': { kind: 'rider', on: ['damage'], when: 'spell', formula: '2d8', label: 'Alchemical Eruption', note: 'an Artificer spell dealing Acid, Fire or Poison; once per turn; Force' },
@@ -302,6 +357,21 @@ export const FEATURE_ROLLS = {
   'wrath of the storm': { kind: 'use', roll: { label: 'Lightning or Thunder (Dexterity save, half on success)', formula: '2d8' } },
   'elemental cleaver': { kind: 'rider', on: ['damage'], when: 'weapon', needs: 'Rage', formula: byLevel('barbarian', [[14, '2d6'], [0, '1d6']]), note: 'the infused weapon; the type you chose when raging' },
   'demiurgic colossus': { kind: 'passive' },
+  'guided strike': { kind: 'rider', on: ['attack'], spend: CD, formula: '10', note: 'after you see the roll, before you know if it hits' },
+  'channel divinity: feat of strength': { kind: 'rider', on: ['attack', 'check', 'save'], when: 'strRoll', spend: CD, formula: '10', label: 'Feat of Strength', note: 'a roll that uses Strength' },
+  'aura of hate': { kind: 'rider', on: ['damage'], when: 'melee', defaultOn: true, formula: 'max(1, @abilities.cha.mod)', note: 'Melee weapon damage; also for Fiends and Undead within 10 feet' },
+  'alchemical savant': { kind: 'rider', on: ['damage'], when: 'spell', formula: 'max(1, @abilities.int.mod)', note: "one roll of a spell cast with Alchemist's Supplies; healing, or Acid, Fire or Poison damage" },
+  'arcane firearm': { kind: 'rider', on: ['damage'], when: 'spell', formula: '1d8', note: 'one damage roll of an Artificer spell cast through the firearm' },
+  'agile parry': { kind: 'toggle', modifier: () => ({ label: 'Agile Parry', source: 'feature', duration: 'manual', maxRounds: 1, ac: 2, effects: [] }) },
+  'awakened astral self': { kind: 'toggle', modifier: () => ({ label: 'Awakened Astral Self', source: 'feature', duration: 'manual', maxRounds: 100, endsOnIncapacitated: true, ac: 2, notes: ['5 Focus Points; spend them on the counter'], effects: [] }) },
+  'revenant blade': { kind: 'toggle', modifier: () => ({ label: 'Revenant Blade', source: 'feature', duration: 'manual', ac: 1, notes: ['a double-bladed scimitar in two hands'], effects: [] }) },
+  'devouring plague': { kind: 'use', apply: 'heal', spend: { item: 'Devouring Plague' }, roll: { label: 'Necrotic damage dealt, and Hit Points regained', formula: '1d10' } },
+  'touch of the grave': { kind: 'use', apply: 'heal', roll: { label: 'Extra Necrotic damage, and Hit Points regained', formula: (rd) => `${rd.prof ?? 2}d4` } },
+  'blood thirst': { kind: 'use', apply: 'heal', roll: { label: 'Necrotic damage dealt (on a hit), and Hit Points regained', formula: '1d6' } },
+  'fists of fury': { kind: 'rider', on: ['damage'], when: 'weapon', diceMin: 2, label: 'Clean Hits (a 1 counts as 2)', note: 'an Unarmed Strike or a Light weapon; Combo Strikes: +1 per earlier melee hit on that creature this turn, in the Situational bonus' },
+  'soul of artifice': { kind: 'rider', on: ['save', 'deathSave', 'concentration'], has: (c) => (c.featureList ?? []).some((f) => f.name === 'Soul of Artifice' && f.source === 'TCE'), defaultOn: true, formula: '@attunement.value', label: 'Soul of Artifice (+1 per attuned item)', note: 'one per magic item you are attuned to' },
+  'conjuration adept': { kind: 'rider', on: ['concentration'], formula: (rd) => `@abilities.${rd.featAbility?.['conjuration adept'] ?? 'int'}.mod`, label: 'Persistent Conjuration', note: 'only on a Conjuration spell' },
+  'savage attacker': { kind: 'rider', on: ['damage'], when: 'armed', twice: true, label: 'Savage Attacker (best of two)', note: "once per turn; the weapon's damage dice rolled twice (the 2014 feat: melee only)" },
   'vigilant rebuke': { kind: 'use', roll: { label: 'Force to the creature that forced the save', formula: '2d8 + @abilities.cha.mod' } },
 };
 
@@ -340,9 +410,12 @@ export function ridersOf(entry) {
 function fits(when, roll) {
   if (!when) return true;
   if (when === 'stealth') return roll.kind === 'initiative' || roll.skill === 'ste';
+  if (when === 'social') return ['dec', 'itm', 'per'].includes(roll.skill);
   if (when === 'spell') return !!roll.spell;
+  if (when === 'strRoll') return roll.attackAbility === 'str' || roll.ability === 'str';
   if (!roll.weapon) return false;
   if (when === 'unarmed') return !!roll.unarmed;
+  if (when === 'armed') return !roll.unarmed;
   if (when === 'str') return roll.attackAbility === 'str';
   if (when === 'melee') return roll.melee !== false;
   if (when === 'ranged') return roll.melee === false;
@@ -369,7 +442,7 @@ export function featureRiders(state, catalog, roll) {
         id: `rider:${slug(name)}${entry.kind === 'rider' ? (i ? `-${i}` : '') : `-${i + 1}`}`,
         label: none ? `${label} (none left)` : label,
         source: label,
-        part: { label, formula: formulaOf(e, rd) },
+        ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
         note: noteOf(e, rd),
         defaultOn: !!e.defaultOn,
         ...(key ? { spend: { key, amount: 1 } } : {}),
@@ -393,7 +466,11 @@ export function riderSpendOps(applied, catalog) {
  */
 export function featureUseOf(feature, catalog) {
   const e = featureRollOf(feature?.name);
-  if (!e || (e.kind !== 'toggle' && e.kind !== 'use')) return null;
+  if (!e) {
+    const prose = (catalog.proseUses ?? []).find((u) => u.name === feature?.name);
+    return prose ? { modifier: null, spend: null, save: null, roll: { label: prose.label, formula: prose.formula }, apply: prose.apply, restore: null } : null;
+  }
+  if (e.kind !== 'toggle' && e.kind !== 'use') return null;
   const rd = catalog.rollData ?? {};
   let save = null;
   if (e.save) {

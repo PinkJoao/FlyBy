@@ -32,7 +32,7 @@
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems, speciesTraitEntries, buildInventoryItems } from './foundryItems';
+import { buildClassItem, buildChoiceTraits, buildFeatureItem, buildFeatItem, buildClassChosenFeats, buildClassTraitValues, buildOriginFeatItem, buildClassFeatureItems, buildClassFutureGrants, buildSubclassFeatureItems, buildSubclassFutureGrants, buildSubclassItem, buildSpeciesItem, buildSpeciesFeatItems, buildBackgroundItem, hitPointsValue, resolveClassFeatures, randomFoundryId, fvttProgression, buildItemChoiceAdvancements, buildClassWeaponItems, speciesTraitEntries, buildInventoryItems } from './foundryItems';
 
 const gwm = { name: 'Great Weapon Master', source: 'XPHB', category: 'G', ability: [{ str: 1 }], entries: ['You have mastered heavy weapons.'] };
 const alert = { name: 'Alert', source: 'XPHB', category: 'O', entries: ['You are always ready.'] };
@@ -69,6 +69,17 @@ const wizardObj = {
   startingProficiencies: { armor: [], weapons: ['simple'], skills: [{ choose: { from: ['arcana'], count: 2 } }] },
   classFeatures: ['Wizard Subclass|Wizard||3'],
 };
+
+describe('resolveClassFeatures', () => {
+  it('a feature opcional de outro livro (isClassFeatureVariant) não é dada sozinha (DDL-0216)', () => {
+    const db = { 'class-ranger': { classFeature: [
+      { name: 'Roving', source: 'XPHB', className: 'Ranger', classSource: 'XPHB', level: 6, entries: [] },
+      { name: 'Pet Specialization', source: 'WoW', className: 'Ranger', classSource: 'XPHB', level: 6, isClassFeatureVariant: true, entries: [] },
+    ] } };
+    const ranger = { name: 'Ranger', source: 'XPHB', classFeatures: ['Roving|Ranger|XPHB|6', 'Pet Specialization|Ranger|XPHB|6|WoW'] };
+    expect(resolveClassFeatures(db, 'ranger', ranger, 6).map((f) => f.name)).toEqual(['Roving']);
+  });
+});
 
 describe('randomFoundryId', () => {
   it('gera id de 16 chars alfanuméricos', () => {

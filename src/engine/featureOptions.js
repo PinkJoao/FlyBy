@@ -25,6 +25,9 @@
 //   subclassFeatureOptionChoices(db, classId, subclass, level): as de SUBCLASSE.
 //
 // DECISÕES E ARMADILHAS
+//   - A feature marcada `isClassFeatureVariant` é OPCIONAL de outro livro (as do TCE nas
+//     classes PHB, o Pet Specialization do WoW na Ranger XPHB, que "replaces the Roving feature
+//     for a Hunter with the Beast Master subclass"): não entra sozinha (DDL-0216).
 //   - CHOOSE_ONE_FEATURES: `true` extrai as opções da feature; uma lista explícita
 //     serve quando as opções não são sub-features (tipos de dano). A chave é o nome
 //     da feature em minúsculas, único entre as classes.
@@ -145,7 +148,7 @@ export function featureOptionChoices(db, classId, classObj, level) {
     const r = parseFeatureRef(ref);
     if (r.level > level) continue;
     const feature = idx.get(`${norm(r.name)}|${r.level}`);
-    if (!feature) continue;
+    if (!feature || feature.isClassFeatureVariant) continue;
 
     for (const block of findOptionBlocks(feature.entries)) {
       const options = block.refs.map((cf) => optionToCard({ type: 'refClassFeature', classFeature: cf }, resolveRef)).filter(Boolean);

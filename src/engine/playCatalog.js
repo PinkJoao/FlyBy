@@ -59,7 +59,10 @@
 //     speedOf(character, db): o deslocamento a pé da espécie.
 //     speedsOf(character, db): todos os deslocamentos da espécie, em pés.
 //     spellRollData(spellcasting): os slots como dados de fórmula.
-//     buildRollData(character, derived, actor): os dados das fórmulas.
+//     buildRollData(character, derived, actor): os dados das fórmulas; desde o DDL-0215,
+//       `attunement.value` (os itens atunados, Soul of Artifice) e `featAbility` (o atributo
+//       que cada talento aumentou, Conjuration Adept).
+//     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
 //     checkList(derived, character): os testes.
 //     spellResources(spellcasting), spellOrigins(spellcasting, level): magias.
 //     derivePlayCatalog(character, db, opts): o catálogo.
@@ -109,7 +112,11 @@
 //     de FOR e DES); `@scaling` (quanto se gasta, escolhido na hora: Lay on Hands,
 //     Healing Light) vale 1 na conferência e a activity sai marcada `scalable`;
 //     `@attributes.hd.largestAvailable` e `smallestAvailable` são o dado de vida de
-//     maior e de menor face (o estado de jogo afina isso na C3).
+//     maior e de menor face (o estado de jogo afina isso na C3); `largestFace` e
+//     `smallestFace` são só as faces (os talentos de escola do FRHoF:
+//     `(@scaling)d(@attributes.hd.smallestFace)`). `@attributes.hp.value` e
+//     `@statuses.bloodied` (Persistent Wrath, Hungering Might) são o PV cheio e 0 no
+//     catálogo; o "Use" troca pelo PV atual do estado (`liveRollData`, engine/playUse).
 //   - CD de save `spellcasting` de uma feature usa a CD da origem de classe com
 //     o maior valor (o Foundry usa o atributo de conjuração do ator); CD por
 //     atributo é 8 + PB + mod. Sem origem conjuradora, a CD é null e vira problema.
@@ -137,6 +144,17 @@
 //     arma quando a média dele é maior ("in place of" é opção do jogador; a maior é
 //     a que ele escolheria). Com armadura ou escudo, nada muda. Sem isso o monge
 //     rolava 1 + FOR no desarmado.
+//   - `actorEffects` (DDL-0211): os Active Effects ligados das features do ator, pela
+//     lista fechada de engine/playActorEffects (Danger Sense, Luck, Aura of Protection);
+//     o diálogo da rolagem os lê por rollEffects. Fórmula que não resolve vira problema.
+//   - `proseEffects` (DDL-0213, DDL-0214): a vantagem, o bônus, o reroll do 1 e o piso
+//     que só a prosa das features declara (engine/playProseEffects). A feature é "ativada"
+//     (vale depois de usada) com custo do turno, gatilho, activity ou pool, a mesma regra
+//     da aba Features. O bônus com fórmula que não resolve no rollData sai.
+//   - `proseUses` (DDL-0214): a cura e os PV temporários da prosa; a feature ganha
+//     `roll: 'use'`, e o "Use" dela (featureUseOf) rola a fórmula e aplica.
+//     O Honed Spellfire soma o nível de Sorcerer aos temporários do Bolstering Flames
+//     ("You add your Sorcerer level to the Temporary Hit Points gained", DDL-0215).
 // -----------------------------------------------------------------------------
 
 import { ABILITIES } from '../schema/character';
@@ -146,11 +164,14 @@ import { assembleFoundryActor } from './foundryActor';
 import { isBasicActionItem } from './foundryBasicActions';
 import { rangeLabel, isRitual, isConcentration } from './spells';
 import { SKILL_ABILITY } from './proficiency';
+import { collectAbilityPicks } from './choices';
 import { validateFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList } from './playFeatures';
 import { consumptionTargetItem } from './foundryConsumption';
+import { actorRollEffects } from './playActorEffects';
+import { proseRollEffects, proseUses } from './playProseEffects';
 
 export const DAMAGE_NAME = {
   A: 'acid', B: 'bludgeoning', C: 'cold', F: 'fire', O: 'force', L: 'lightning',
@@ -684,7 +705,29 @@ function spellRollData(spellcasting) {
   return out;
 }
 
-/** Os dados das fórmulas do dice.js. */
+/** O atributo que cada talento escolhido aumentou, pelo nome em minúsculas (Conjuration Adept). */
+function featAbilities(character) {
+  const out = {};
+  const walk = (bag) => {
+    for (const choice of Object.values(bag ?? {})) {
+      if (!choice || typeof choice !== 'object') continue;
+      if (choice.kind === 'feat' && choice.picks?.length) {
+        const ability = collectAbilityPicks(choice.sub ?? {})[0]?.ability;
+        if (ability) for (const p of choice.picks) out[String(p).split('|')[0].toLowerCase()] = ability;
+      }
+      for (const sub of Object.values(choice.sub ?? {})) walk(sub);
+    }
+  };
+  walk(character.species?.choices);
+  walk(character.origin?.originFeat?.choices);
+  const origin = character.origin?.originFeat;
+  const originAbility = collectAbilityPicks(origin?.choices ?? {})[0]?.ability;
+  if (origin?.id && originAbility) out[String(origin.id).toLowerCase()] = originAbility;
+  for (const cls of character.classes ?? []) walk(cls.choices);
+  return out;
+}
+
+/** O rollData do jogo: atributos, PB, classes, PV, atunement, o atributo dos talentos e as escalas. */
 function buildRollData(character, derived, actor) {
   const abilities = {};
   for (const a of ABILITIES) {
@@ -698,10 +741,14 @@ function buildRollData(character, derived, actor) {
     prof: derived.proficiencyBonus ?? 0,
     details: { level: derived.level ?? 0 },
     classes,
-    attributes: faces.length
-      ? { hd: { largestAvailable: `1d${faces[0]}`, smallestAvailable: `1d${faces[faces.length - 1]}` } }
-      : {},
+    attributes: {
+      hp: { value: derived.maxHp ?? 0, max: derived.maxHp ?? 0 },
+      ...(faces.length ? { hd: { largestAvailable: `1d${faces[0]}`, smallestAvailable: `1d${faces[faces.length - 1]}`, largestFace: faces[0], smallestFace: faces[faces.length - 1] } } : {}),
+    },
+    statuses: { bloodied: 0 },
     scaling: 1,
+    attunement: { value: (character.inventory ?? []).filter((e) => e.attuned).length },
+    featAbility: featAbilities(character),
     spells: spellRollData(derived.spellcasting),
     ...scaleRollData(actor, derived.level ?? 0),
   };
@@ -777,6 +824,7 @@ function spellOrigins(spellcasting, level) {
       source: s.raw.source ?? s.source ?? null,
       level: s.raw.level,
       ritual: isRitual(s.raw),
+      school: s.raw.school ?? null,
       concentration: isConcentration(s.raw),
       time: s.raw.time?.[0]?.unit ?? null,
       durationRounds: roundsOf(s.raw.duration),
@@ -853,6 +901,21 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     }
   }
 
+  const bridged = a ? actorRollEffects(a) : [];
+  for (const e of bridged) {
+    if (e.formula && validateFormula(e.formula, rollData)) problems.push({ where: e.name, message: `actor effect ${e.key} does not resolve: ${e.formula}` });
+  }
+
+  const actions = a ? featureActions(a, ctx) : [];
+  const featuresOfActor = a ? featureList(a, character, db) : [];
+  const withActivities = new Set(actions.filter((x) => x.activities?.length).map((x) => x.key));
+  const pooled = new Set(resources.filter((r) => r.kind === 'pool').map((r) => r.item));
+  const activated = (f) => f.costs?.length > 0 || !!f.trigger || withActivities.has(f.actionKey) || pooled.has(f.name);
+  const uses = proseUses(featuresOfActor, { hasActivity: (f) => withActivities.has(f.actionKey) })
+    .map((u) => (u.name === 'Bolstering Flames' && features.includes('honed spellfire') ? { ...u, formula: `${u.formula} + @classes.sorcerer.levels` } : u))
+    .filter((u) => !validateFormula(u.formula, rollData));
+  for (const f of featuresOfActor) if (!f.roll && uses.some((u) => u.name === f.name)) f.roll = 'use';
+
   return {
     rollData,
     stats: {
@@ -868,9 +931,12 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     checks: checkList(d, character),
     defenses: defensesOf(d),
     features,
-    featureList: a ? featureList(a, character, db) : [],
+    featureList: featuresOfActor,
+    actorEffects: bridged,
+    proseEffects: proseRollEffects(featuresOfActor, { activated, bridged }).filter((e) => !e.part || !validateFormula(e.part.formula, rollData)),
+    proseUses: uses,
     attacks,
-    actions: a ? featureActions(a, ctx) : [],
+    actions,
     resources,
     spells: spellOrigins(d.spellcasting, level),
     problems,

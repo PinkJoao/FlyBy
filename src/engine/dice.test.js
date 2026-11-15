@@ -218,3 +218,13 @@ describe('d20Test', () => {
     expect(JSON.parse(JSON.stringify(r))).toEqual(r);
   });
 });
+
+describe('max e min de dados', () => {
+  it('o argumento que perde fica descartado, e o empate fica com o primeiro', () => {
+    const r = rollFormula('max(1d8, 1d8)', { rng: seq(3, 7) });
+    expect(r.total).toBe(7);
+    expect(r.groups.map((g) => [g.total, g.results[0].kept])).toEqual([[0, false], [7, true]]);
+    const tie = rollFormula('min(1d6, 1d6)', { rng: seq(4, 4) });
+    expect(tie.groups.map((g) => g.results[0].kept)).toEqual([true, false]);
+  });
+});

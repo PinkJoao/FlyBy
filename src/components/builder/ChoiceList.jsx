@@ -24,9 +24,14 @@
 //   ChoiceList(props): a lista.
 //   ChoiceRow(props): uma escolha, com título e contador.
 //   TagChoice, OptionalFeatureChoice, FeatureOptionChoice, AbilityChoice,
-//     SelectChoice, PillsChoice, SpellChoice, MixedChoice, FeatChoice: os tipos.
+//     SelectChoice, PillsChoice, SpellChoice, MixedChoice, FeatChoice, PlanChoice: os
+//     tipos.
 //
 // DECISÕES E ARMADILHAS
+//   - PlanChoice (os planos do Artificer, DDL-0212) escolhe ITENS concretos pela entity de
+//     item, como a loja: o chip abre o detalhe do item (sintonia, raridade) e o painel só
+//     mostra o que `planAllows` aceita. Pílulas não serviam: 56 linhas sem detalhe, e a linha
+//     "qualquer item comum" pede um item diferente a cada plano.
 //   - DEDUP: `owned` (tudo que a ficha tem) impede escolher duas vezes; talentos
 //     `repeatable` escapam. Expertise exclui as que já têm expertise.
 //   - Tocar num chip abre a descrição do escolhido (DDL-0021).
@@ -81,6 +86,8 @@ import skillEntity from '../../selector/entities/skill';
 import toolEntity from '../../selector/entities/tool';
 import languageEntity from '../../selector/entities/language';
 import weaponEntity from '../../selector/entities/weapon';
+import itemEntity from '../../selector/entities/item';
+import { planAllows } from '../../engine/classFeatureChoices';
 import { makeOptionalFeatureEntity } from '../../selector/entities/optionalfeature';
 import { SKILL_LABEL, ABILITY_FULL } from './labels';
 import { kindRuleEntry } from './choiceRules';
@@ -213,6 +220,8 @@ function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, sibl
         <SelectChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'spell' ? (
         <SpellChoice choice={choice} picks={picks} onChange={onChange} db={db} siblingPicks={siblingSpellPicks} spellsOwned={spellsOwned} />
+      ) : choice.pool.type === 'plan' ? (
+        <PlanChoice choice={choice} picks={picks} onChange={onChange} db={db} />
       ) : PILL_KINDS.has(choice.kind) ? (
         <PillsChoice choice={choice} picks={picks} onChange={onChange} />
       ) : choice.pool.type === 'any' && Array.isArray(choice.pool.of) ? (
@@ -518,6 +527,46 @@ function PillsChoice({ choice, picks, onChange }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Os planos do Replicate Magic Item: itens concretos pelo seletor de itens. */
+function PlanChoice({ choice, picks, onChange, db }) {
+  const [open, setOpen] = useState(false);
+  const nameOf = (id) => id.split('|')[0];
+  const add = (raw) => {
+    const id = itemEntity.idOf(raw);
+    let total = picks.length;
+    if (!picks.includes(id) && picks.length < choice.count) {
+      onChange({ kind: 'plan', picks: [...picks, id] });
+      total += 1;
+    }
+    if (total >= choice.count) setOpen(false);
+  };
+  const remove = (id) => onChange({ kind: 'plan', picks: picks.filter((p) => p !== id) });
+  const openDetail = (id) => {
+    const raw = itemEntity.list(db).find((r) => itemEntity.idOf(r) === id);
+    if (raw) showDetailPopup({ entity: itemEntity, raw, db });
+  };
+  return (
+    <div className={styles.tags}>
+      {picks.map((id) => (
+        <Chip key={id} onClick={() => openDetail(id)} onRemove={() => remove(id)}>{nameOf(id)}</Chip>
+      ))}
+      {picks.length < choice.count && <Chip add onClick={() => setOpen(true)}>Add plan</Chip>}
+      {open && (
+        <SelectorPanel
+          entity={itemEntity}
+          db={db}
+          heading="Choose Plan"
+          currentId={null}
+          exclude={(raw) => picks.includes(itemEntity.idOf(raw)) || !planAllows(choice.pool, raw)}
+          onSelect={add}
+          multi={{ total: choice.count, chosen: picks.map((id) => ({ key: id, label: nameOf(id) })), onRemove: remove }}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }

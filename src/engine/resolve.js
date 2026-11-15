@@ -49,6 +49,10 @@
 //
 // DECISÕES E ARMADILHAS
 //   Localização
+//   - A subclasse copiada para a reedição cosmética (Circle of the Land|WoW, classSource
+//     WoW, só um `_copy` da XPHB) não vence a de verdade em resolveSubclassObj: ela não tem
+//     features próprias, e o premade importado perdia as do SRD (T2, DDL-0216). Só é
+//     escolhida quando é a única.
 //   - Reedição cosmética de classe (`reskinOf`, DDL-0190): o espelho do 5etools
 //     ganhou "Druid|WoW", "Monk|WoW", "Paladin|WoW", "Rogue|WoW" e "Warlock|WoW",
 //     STUBS `_copy` da classe XPHB sem `startingEquipment` nem features. Sem fonte,
@@ -94,6 +98,8 @@
 //     os slots compartilhados do multiclasse não o influenciam.
 //   - O `expanded` do patrono e os alargamentos em prosa CONTAM como da lista
 //     sem serem concedidos (TC-0043); `expandedFrom` guarda a fonte para o badge.
+//   - Classe que não conjura e ganha magia de feature (o Giant Power do Barbarian, TC-0128):
+//     a origem usa o atributo do grupo concedido, quando ele é fixo.
 //   - Cantrips: base mais os extras de featureoption (TC-0028), só se a classe
 //     já conjura cantrips. Grimório só para quem tem repertório (o Mago).
 //     Conhecida e não preparada conta no grimório, não no limite.
@@ -140,6 +146,7 @@ import { deriveSubclassGrants } from './subclassGrants';
 import { deriveClassFeatureGrants } from './classFeatureGrants';
 import { collectChoicePicks } from './choices';
 import { deriveInventory, carryingCapacity } from './items';
+import { attunementMaxFor } from './attunement';
 import { deriveArmorClass, deriveSaveBonusFromItems } from './armorClass';
 import { naturalArmorFor } from './naturalArmor';
 import { deriveDamageTraits } from './damageTraits';
@@ -227,6 +234,9 @@ export function resolveSubclassObj(db, classId, subclassId, subclassSource) {
   if (!Array.isArray(list)) return null;
   let matches = list.filter((s) => s.shortName === subclassId);
   if (matches.length === 0) return null;
+  const reskins = reskinSources(db, classId);
+  const real = matches.filter((s) => !reskins.has(s.classSource));
+  if (real.length) matches = real;
   if (subclassSource) {
     const bySource = matches.filter((s) => s.source === subclassSource);
     if (bySource.length) matches = bySource;
@@ -535,10 +545,9 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       : null;
     const info = casterInfo(classObj, subclassObj);
 
-    const featureGranted = [
-      ...resolveGranted(classObj?.additionalSpells, cls.level, db, usesCtx, classObj, { bag: cls.choices, idPrefix: 'class:' }).spells,
-      ...resolveGranted(subclassObj?.additionalSpells, cls.level, db, usesCtx, subclassObj, { bag: cls.choices, idPrefix: 'sub:' }).spells,
-    ];
+    const classGrant = resolveGranted(classObj?.additionalSpells, cls.level, db, usesCtx, classObj, { bag: cls.choices, idPrefix: 'class:' });
+    const subGrant = resolveGranted(subclassObj?.additionalSpells, cls.level, db, usesCtx, subclassObj, { bag: cls.choices, idPrefix: 'sub:' });
+    const featureGranted = [...classGrant.spells, ...subGrant.spells];
     const granted = [...featureGranted, ...optionalFeatureGrants(cls, db, usesCtx)];
 
     if (!info && granted.length === 0) continue;
@@ -549,7 +558,8 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       else leveledCasters.push({ code: info.code, level: cls.level });
     }
 
-    const ability = info?.ability ?? null;
+    const grantAbility = [subGrant.ability, classGrant.ability].find((a) => typeof a === 'string') ?? null;
+    const ability = info?.ability ?? grantAbility;
     const abilityMod = ability ? (modifiers?.[ability] ?? 0) : null;
     const grantedNames = new Set(featureGranted.map((s) => s.raw.name.toLowerCase()));
     const picks = resolveSpellRefs(cls.spells, db);
@@ -808,6 +818,7 @@ export function deriveFromDb(character, db) {
   const armorClass = deriveArmorClass(character, inv.entries, derived.modifiers, naturalArmorFor(raceObj));
   for (const b of acFeatureBonuses(character)) {
     if (b.requiresArmor && !armorClass.hasArmor) continue;
+    if (b.requiresHeavy && armorClass.armorSlot !== 'heavy') continue;
     armorClass.total += b.value;
     armorClass.breakdown.push({ label: b.label, value: b.value, note: 'feature' });
   }
@@ -830,6 +841,11 @@ export function deriveFromDb(character, db) {
     saves,
     inventory: inv.entries,
     attunedCount: inv.attunedCount,
+    attunementMax: attunementMaxFor(db, (character.classes ?? []).map((c) => {
+      const obj = c.classId ? resolveClassObj(db, c.classId, c.source) : null;
+      const sub = obj && c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null;
+      return { classId: c.classId, className: obj?.name, classSource: obj?.source, level: c.level ?? 1, subclassShortName: sub?.shortName, subclassSource: sub?.source };
+    })),
     encumbrance: { totalWeight: inv.totalWeight, capacity, encumbered: inv.totalWeight > capacity },
     armorClass,
     itemSaveBonus,

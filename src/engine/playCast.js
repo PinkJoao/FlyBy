@@ -18,8 +18,19 @@
 //   diceWithUpcast(baseDice, spell, level): o dado base mais o upcast do círculo.
 //   healParts(origin, spell, level): as partes da cura, com o upcast e o modificador.
 //   spellHealEvent(args): rola a cura e, se for em si mesmo, aplica.
+//   castTriggers(event, catalog): o que uma feature dá DEPOIS de lançar, pelo card da magia
+//     (Blessed Healer, Abjuration Adept), com o valor pelo círculo do espaço gasto.
 //
 // DECISÕES E ARMADILHAS
+//   - Supreme Healing (DDL-0217): na cura de magia, cada dado vale o máximo ("don't roll
+//     those dice for the healing; instead use the highest number possible for each die"),
+//     por `withDiceMax` em spellHealEvent; a parte diz "(Supreme Healing)".
+//   - CAST_TRIGGERS (DDL-0215): o que a feature dá "immediately after you cast a spell with a
+//     spell slot". Blessed Healer: a magia de cura gasta espaço, e você recupera 2 + o
+//     círculo ("a creature other than yourself": o jogador sabe em quem curou, por isso é um
+//     botão no card e não automático). Abjuration Adept: magia de Abjuração com espaço dá
+//     PV temporários iguais ao dobro do círculo. O evento guarda `school` e `slotted` (o
+//     espaço comum ou o do pacto, não o uso concedido nem o ritual).
 //   - Cantrip, magia à vontade (`will`) e magia inata sem contador saem de graça.
 //     O "inato sem frequência" é CARGA (playCatalog): sem contador, não se gasta.
 //   - Magia concedida com usos (1 por dia, PB por descanso) gasta o próprio uso; ela
@@ -48,7 +59,7 @@
 import { rollParts, cryptoRng } from './dice';
 import { makeEvent, remainingOf } from './playState';
 import { healOutcome } from './playHealth';
-import { bonusParts, rngFor } from './playActions';
+import { bonusParts, rngFor, withDiceMax } from './playActions';
 import { endConcentrationOps, spellModifier } from './playEffects';
 import { withRounds } from './playCombat';
 
@@ -100,6 +111,21 @@ export function slotPoolsFor(catalog, state, level) {
   return out;
 }
 
+const CAST_TRIGGERS = {
+  'blessed healer': { when: (p) => p.heal && p.slotted && p.level >= 1, apply: 'heal', formula: (p) => `${2 + p.level}`, label: (p) => `Blessed Healer: regain ${2 + p.level} HP` },
+  'abjuration adept': { when: (p) => p.school === 'A' && p.slotted && p.level >= 1, apply: 'temp', formula: (p) => `${2 * p.level}`, label: (p) => `Protective Ward: ${2 * p.level} temp HP` },
+};
+
+/** O que uma feature dá depois de lançar, pelo card da magia: [{ name, label, apply, formula }]. */
+export function castTriggers(event, catalog) {
+  if (event?.kind !== 'cast') return [];
+  const p = event.payload ?? {};
+  const features = new Set(catalog?.features ?? []);
+  return Object.entries(CAST_TRIGGERS)
+    .filter(([name, t]) => features.has(name) && t.when(p))
+    .map(([name, t]) => ({ name, label: t.label(p), apply: t.apply, formula: t.formula(p) }));
+}
+
 /**
  * O evento de conjurar: gasta o que a forma pede e liga a concentração.
  * @param {{ catalog?: object, state: object, origin: object, spell: object, way: object, now?: Date }} args
@@ -130,6 +156,8 @@ export function castEvent({ state, origin, spell, way, onSelf = false, now = new
       save: spell.mechanics?.save ? { ability: spell.mechanics.save, dc: origin.saveDc } : null,
       damage: !!spell.mechanics?.damage?.dice,
       heal: !!spell.mechanics?.heal?.dice,
+      school: spell.school ?? null,
+      slotted: /^(slot|pact)/.test(way.key ?? ''),
       effect: applied ? effect.modifier.label : null,
     },
   }, now);
@@ -170,7 +198,9 @@ export function healParts(origin, spell, level = spell.level) {
 
 /** Rola a cura de uma magia e, se for no próprio personagem, aplica. */
 export function spellHealEvent({ catalog, state, origin, spell, level, options = {}, rng = cryptoRng, now = new Date() }) {
-  const rolls = rollParts([...healParts(origin, spell, level), ...bonusParts(options)], { data: catalog.rollData, rng: rngFor(options, rng) });
+  const supreme = (catalog.features ?? []).includes('supreme healing');
+  const parts = healParts(origin, spell, level).map((p) => (supreme && /d\d/.test(String(p.formula)) ? { label: `${p.label} (Supreme Healing)`, formula: withDiceMax(p.formula, catalog.rollData) } : p));
+  const rolls = rollParts([...parts, ...bonusParts(options)], { data: catalog.rollData, rng: rngFor(options, rng) });
   const ops = [];
   let healed = null;
   if (options.applyHeal) {

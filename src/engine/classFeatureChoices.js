@@ -18,6 +18,9 @@
 //   weaponMasteryCount(classObj, level): quantas armas o Weapon Mastery cobre.
 //   classLevelChoices(parsed, classObj, level): as escolhas por nível da classe.
 //   classToolChoices(classObj): as ferramentas das proficiências iniciais.
+//   planFilter(text), planNames(db, name, source), planAllows(pool, raw),
+//     planChoices(db, classId, classObj, level): os planos do Replicate Magic Item
+//     (Artificer do EFA) como escolha `plan` de itens concretos.
 //   subclassFeatureChoices(db, classId, subclass, level, classSkills): as
 //     escolhas concedidas por features de subclasse.
 //   optionalFeatureCount(progression, level), firstOfpLevel(progression): a
@@ -49,10 +52,22 @@
 //     proficiência de ARMA individual (kind 'weaponProf', uma melee e uma ranged no
 //     3, mais uma em 6, 11 e 17 via `level`); Elemental Affinity é resistência
 //     PERMANENTE à escolha (kind 'resist').
+//   - Giant Power e Draconic Disciple (TC-0128): "Giant (Draconic) or one other language of
+//     your choice" é uma escolha de idioma livre, com a sugestão no rótulo; o jogador que já
+//     fala o idioma escolhe outro, como o texto manda.
 //   - grantChoices: o nível sai do fim do keyTag e ordena os seletores. `label`
 //     sobrepõe o rótulo, `tag` desambigua vários grants do mesmo kind na mesma
 //     feature. Pool 'mixed' descreve as alternativas ("Skill or Language") em vez de
 //     vazar o nome interno (achado da sessão T1a Fighter).
+//   - Os planos do Artificer (TC-0128, DDL-0212) são uma escolha `plan` só: o count vem da
+//     coluna Plans Known; o pool vem das tabelas "Magic Item Plans (Artificer Level N+)" da
+//     própria feature, as de nível alcançado. Cada plano é um ITEM concreto ("Nome|Fonte", o
+//     id da entity de item). A linha `{@item}` aceita o item, os membros do seu grupo (Armor
+//     of Resistance) e as variantes geradas do genérico (+1 Armor, pelo `_variantName`). A
+//     linha `{@filter}` aceita qualquer item da raridade e do tipo dela, quantas vezes
+//     couber, um item diferente por plano: é a nota da tabela, e a primeira versão, que fazia
+//     dela um plano só, estava errada (vista na tela em 2026-11-15).
+//     Sem casa nativa no dnd5e: vai na flag residual da classe, como as outras.
 //   - Weapon Mastery restrito por classe (TC-0021): Bárbaro só melee; Ladino com a
 //     regra condicional de weaponFilterAllows. Fighter, Paladino e Ranger livres.
 //   - Ferramentas iniciais: entradas SEPARADAS do array são alternativas. O Monge
@@ -157,6 +172,8 @@ const SUBCLASS_FEATURE_GRANTS = {
     { kind: 'language', count: 2 },
   ],
   'bladesinger|training in war and song': [{ kind: 'skill', count: 1, from: ['acr', 'ath', 'prf', 'per'] }],
+  'giant|giant power': [{ kind: 'language', count: 1, label: 'Language (Giant, or another if you know Giant)' }],
+  'ascendant dragon|draconic disciple': [{ kind: 'language', count: 1, label: 'Language (Draconic, or another)' }],
 };
 
 const KIND_LABEL = { skill: 'Skill', tool: 'Tool', language: 'Language', expertise: 'Expertise', feat: 'Feat', weaponProf: 'Weapon', resist: 'Damage Resistance' };
@@ -372,6 +389,96 @@ export function classToolChoices(classObj) {
     label: token.label,
     pool: { type: 'any', of: 'tool', category: token.category },
   }));
+}
+
+const PLAN_FEATURE = 'replicate magic item';
+const PLAN_TYPE_CODES = { potion: 'P', scroll: 'SC' };
+
+/** Um `{@filter ...|items|k=v|...}` como filtro de plano { label, rarity, notTypes, wondrous, notCursed }. */
+function planFilter(text) {
+  const parts = text.split('|');
+  const out = { label: `Any ${parts[0].charAt(0).toLowerCase()}${parts[0].slice(1)}`, notTypes: [], wondrous: false, notCursed: false, rarity: null };
+  for (const kv of parts.slice(2)) {
+    const [k, v = ''] = kv.split('=');
+    const values = v.split(';').filter(Boolean);
+    if (k === 'rarity' && values.length) out.rarity = values[0].toLowerCase();
+    if (k === 'miscellaneous' && values.includes('!cursed')) out.notCursed = true;
+    if (k === 'type') {
+      for (const t of values) {
+        const neg = t.startsWith('!');
+        const name = t.replace(/^!/, '').toLowerCase();
+        if (neg && PLAN_TYPE_CODES[name]) out.notTypes.push(PLAN_TYPE_CODES[name]);
+        if (!neg && name === 'wondrous item') out.wondrous = true;
+      }
+    }
+  }
+  return out;
+}
+
+/** Os nomes "nome|fonte" de um `{@item}` da tabela, com os membros quando é um grupo de itens. */
+function planNames(db, name, source) {
+  const id = `${name}|${source}`.toLowerCase();
+  const group = (db?.items?.itemGroup ?? []).find((g) => `${g.name}|${g.source}`.toLowerCase() === id);
+  return [id, ...(group?.items ?? []).map((m) => String(m).toLowerCase())];
+}
+
+/** Se o item (cru, da entity de item) pode ser um plano desse pool. */
+export function planAllows(pool, raw) {
+  if (!pool || !raw) return false;
+  const source = String(raw.source ?? '').toLowerCase();
+  const name = String(raw.name ?? '').toLowerCase();
+  if (pool.names.includes(`${name}|${source}`)) return true;
+  const generic = String(raw._variantName ?? '').toLowerCase().replace(/\s*\(\*\)$/, '');
+  if (generic && pool.names.includes(`${generic}|${source}`)) return true;
+  const type = String(raw.type ?? '').split('|')[0];
+  return pool.filters.some((f) =>
+    String(raw.rarity ?? '').toLowerCase() === f.rarity &&
+    !f.notTypes.includes(type) &&
+    (!f.wondrous || raw.wondrous === true) &&
+    (!f.notCursed || !raw.curse));
+}
+
+/**
+ * Os planos do Replicate Magic Item (Artificer do EFA): quantos (a coluna Plans Known
+ * da tabela da classe) e quais (as tabelas da feature cujo nível mínimo já chegou).
+ */
+export function planChoices(db, classId, classObj, level) {
+  const raw = db?.[`class-${classId}`]?.classFeature ?? [];
+  const feature = raw.find((f) => String(f.name).toLowerCase() === PLAN_FEATURE && f.classSource === classObj?.source && f.level <= level);
+  if (!feature) return [];
+  let count = 0;
+  for (const g of classObj?.classTableGroups ?? []) {
+    const col = (g.colLabels ?? []).findIndex((l) => /plans known/i.test(String(l)));
+    const n = col >= 0 ? Number(g.rows?.[level - 1]?.[col]) : NaN;
+    if (Number.isFinite(n)) count = n;
+  }
+  const names = new Set();
+  const filters = [];
+  const walk = (e) => {
+    if (Array.isArray(e)) return e.forEach(walk);
+    if (!e || typeof e !== 'object') return;
+    if (e.type === 'table' && Number(String(e.caption ?? '').match(/Level (\d+)\+/)?.[1] ?? 0) <= level) {
+      for (const row of e.rows ?? []) {
+        const cell = typeof row[0] === 'string' ? row[0] : JSON.stringify(row[0]);
+        const item = cell.match(/\{@item ([^|}]+)(?:\|([^|}]*))?/);
+        const filter = cell.match(/\{@filter ([^}]+)\}/);
+        if (item) planNames(db, item[1], item[2] || 'XDMG').forEach((n) => names.add(n));
+        else if (filter) filters.push(planFilter(filter[1]));
+      }
+    }
+    for (const k of ['entries', 'items']) if (e[k]) walk(e[k]);
+  };
+  walk(feature.entries);
+  if (!count || (!names.size && !filters.length)) return [];
+  return [{
+    id: `plan@${PLAN_FEATURE}@${feature.level}`,
+    kind: 'plan',
+    count,
+    level: feature.level,
+    label: `${feature.name} - Plans`,
+    feature: { name: feature.name, level: feature.level },
+    pool: { type: 'plan', names: [...names], filters },
+  }];
 }
 
 /**

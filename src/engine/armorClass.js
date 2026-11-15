@@ -102,7 +102,7 @@ function unarmoredFormulas(character) {
  * @param {object[]} inventory
  * @param {Record<string, number>} mods
  * @param {import('./naturalArmor').NaturalArmor|null} [naturalArmor]
- * @returns {{total:number, breakdown:{label:string,value:number,note?:string}[], hasArmor:boolean, hasShield:boolean}}
+ * @returns {{total:number, breakdown:{label:string,value:number,note?:string}[], hasArmor:boolean, hasShield:boolean, armorSlot:string|null}}
  */
 export function deriveArmorClass(character, inventory = [], mods = {}, naturalArmor = null) {
   const dex = mods.dex ?? 0;
@@ -168,7 +168,7 @@ export function deriveArmorClass(character, inventory = [], mods = {}, naturalAr
     breakdown.push({ label: naturalArmor.label, value: naturalArmor.bonus, note: 'natural' });
   }
 
-  return { total, breakdown, hasArmor: !!armor, hasShield: !!shield };
+  return { total, breakdown, hasArmor: !!armor, hasShield: !!shield, armorSlot: armor?.armorSlot ?? null };
 }
 
 /**

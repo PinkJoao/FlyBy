@@ -51,6 +51,19 @@ describe('resolveSubclassObj / resolveRaceObj', () => {
   it('acha a subclasse pelo shortName', () => {
     expect(resolveSubclassObj(db, 'fighter', 'Champion')?.name).toBe('Champion');
   });
+  it('a cópia da subclasse para a reedição cosmética (WoW) não vence a de verdade (DDL-0216)', () => {
+    const wow = {
+      'class-druid': {
+        class: [{ name: 'Druid', source: 'XPHB' }, { name: 'Druid', source: 'WoW', reskinOf: ['Druid|XPHB'] }],
+        subclass: [
+          { name: 'Circle of the Land', shortName: 'Land', source: 'XPHB', classSource: 'XPHB', subclassFeatures: ['Circle of the Land|Druid|XPHB|Land|XPHB|3'] },
+          { name: 'Circle of the Land', shortName: 'Land', source: 'WoW', classSource: 'WoW', _copy: { name: 'Circle of the Land', source: 'XPHB', shortName: 'Land', className: 'Druid', classSource: 'XPHB' } },
+        ],
+      },
+    };
+    expect(resolveSubclassObj(wow, 'druid', 'Land')?.source).toBe('XPHB');
+    expect(resolveSubclassObj(wow, 'druid', 'Land', 'SRD 5.2')?.source).toBe('XPHB');
+  });
   it('acha a raça pelo nome em minúsculas', () => {
     expect(resolveRaceObj(db, 'elf', 'XPHB')?.name).toBe('Elf');
   });

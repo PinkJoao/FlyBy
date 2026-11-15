@@ -27,8 +27,8 @@
 //     nos dois sentidos (`channel-divinity-paladin` e `channel-divinity`), o mais
 //     longo primeiro.
 //   - CONSUMES_BY_NAME: o nome que o overlay põe em `consumes` é o do RECURSO, não
-//     o da feature ("Sorcery Point" é o pool do Font of Magic). Confira contra o
-//     survey do catálogo.
+//     o da feature ("Sorcery Point" é o pool do Font of Magic; "Soul Trinket" é o do
+//     Tokens of the Departed, 2026-11-13). Confira contra o survey do catálogo.
 //   - `activityUses` numa activity SEM usos própria não gasta nada no Foundry: se
 //     o item tem usos, o alvo vira o pool do item (o "Recharge with Psionic
 //     Energy" do Bulwark of Force devolve o uso do item); se não tem, sai.
@@ -48,6 +48,7 @@ const CONSUMES_BY_NAME = {
   'focus point': "Monk's Focus",
   'sorcery point': 'Font of Magic',
   'superiority die': 'Combat Superiority',
+  'soul trinket': 'Tokens of the Departed',
 };
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();

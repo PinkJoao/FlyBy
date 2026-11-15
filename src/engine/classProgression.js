@@ -17,6 +17,11 @@
 //   cellText(v): o texto de uma célula; 0 em coluna de slot vira "-".
 //   classTable(classObj, subclass): { cols, rows } com Level, PB e as colunas;
 //     subclasses com tabela própria (Eldritch Knight) entram no fim.
+//
+// DECISÕES E ARMADILHAS
+//   - A feature marcada `isClassFeatureVariant` é OPCIONAL de outro livro (as do TCE nas
+//     classes PHB, o Pet Specialization do WoW na Ranger XPHB, que "replaces the Roving feature
+//     for a Hunter with the Beast Master subclass"): não entra sozinha (DDL-0216).
 // -----------------------------------------------------------------------------
 
 import { parseFeatureRef } from './classData';
@@ -73,7 +78,7 @@ function classFeatureItems(db, classId, classObj) {
   for (const ref of classObj?.classFeatures ?? []) {
     const r = parseFeatureRef(ref);
     const f = findFeature(r.name, r.source || classObj.source, r.level);
-    if (f) {
+    if (f && !f.isClassFeatureVariant) {
       out.push({ name: f.name, level: f.level, entries: resolveOptionalRefs(inlineRefs(f.entries ?? []), db) });
     }
   }

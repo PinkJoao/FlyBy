@@ -68,6 +68,10 @@
 //       Settings > Track ammunition desligado, DDL-0161).
 //     featureEffectFromHistory(event): o dano ou a cura de uma feature que rolou só o
 //       ataque, sem gastar de novo.
+//     rerollFromHistory(event): o "Reroll" do card do teste e do ataque: pergunta a regra
+//       (engine/playRerolls) e grava a nova rolagem com o gasto dela (DDL-0214).
+//     rerollDiceFromHistory(event): o "Reroll dice" do card do dano e da cura: a regra, os
+//       dados (askRerollDice) e o evento novo (DDL-0215).
 //     openTab(tab): troca de aba lembrando a direção (para o painel entrar do
 //       lado certo).
 //     moveCursor(fn, verb), undo(), redo(): mexem no cursor e avisam um
@@ -206,7 +210,8 @@ import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playSt
 import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent } from '../engine/playCast';
+import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
+import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers } from '../engine/playCast';
 import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier,
 } from '../engine/playEffects';
@@ -217,7 +222,7 @@ import {
   movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
 } from '../engine/playCombat';
 import { askRoll } from '../components/play/rollDialog';
-import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askSkillCheck, askMove, askAction, askSlot, askCost, askResource } from '../components/play/playDialogs';
+import { askHeal, askHurt, askHitDice, askShortRest, askUse, askCast, askSlotRecovery, askFontOfMagic, askModifier, askSkillCheck, askMove, askAction, askSlot, askCost, askResource, askRerollDice } from '../components/play/playDialogs';
 import ActionsTab from '../components/play/ActionsTab';
 import { actionContext, attackStepOp, basicActionList, costAvailable, offhandAttack, slotChoices, spellCosts } from '../engine/playBasicActions';
 import FeaturesTab from '../components/play/FeaturesTab';
@@ -466,7 +471,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const openHeal = async () => {
     const r = await askHeal({ vitals: hp });
     if (!r) return;
-    if (r.kind === 'temp') record(tempHpEvent({ state, amount: r.amount, replace: r.replace }));
+    if (r.kind === 'temp') record(tempHpEvent({ state, catalog, amount: r.amount, replace: r.replace }));
     else if (r.kind === 'max') record(maxHpEvent({ state, catalog, amount: r.amount }));
     else record(healEvent({ state, catalog, amount: r.amount }));
   };
@@ -612,6 +617,43 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** O "Roll damage" do cartão de uma feature que rolou só o ataque: sem gastar de novo. */
+  /** Rola de novo um teste ou ataque do histórico, pela regra que o jogador escolher. */
+  const rerollFromHistory = async (event) => {
+    const options = rerollOptions(event, catalog, state);
+    if (!options.length) return;
+    let option = options[0];
+    if (options.length > 1) {
+      const id = await ask({
+        title: `Reroll ${event.label}`,
+        message: 'Which rule lets you roll it again, or raise it?',
+        actions: options.map((o) => ({ label: `${o.label}${o.spendKey ? ` (1 ${(catalog.resources ?? []).find((r) => r.key === o.spendKey)?.name ?? ''}${o.left < 1 ? ', none left' : ''})` : ''}`, value: o.id })),
+      });
+      option = options.find((o) => o.id === id);
+      if (!option) return;
+    }
+    if (option.spendKey && option.left < 1 && !(await confirm({ title: 'Nothing left', message: `${option.label} has nothing left to spend. Reroll anyway?`, confirmLabel: 'Reroll anyway' }))) return;
+    record(rerollEvent({ event, catalog, option }));
+  };
+
+  /** Rola de novo alguns dados de um dano ou de uma cura do histórico, pela regra escolhida. */
+  const rerollDiceFromHistory = async (event) => {
+    const options = rerollDiceOptions(event, catalog, state);
+    if (!options.length) return;
+    let option = options[0];
+    if (options.length > 1) {
+      const id = await ask({
+        title: `Reroll dice: ${event.label}`,
+        message: 'Which rule lets you roll some of these dice again?',
+        actions: options.map((o) => ({ label: `${o.label}${o.spendKey ? ` (1 ${(catalog.resources ?? []).find((r) => r.key === o.spendKey)?.name ?? ''}${o.left < 1 ? ', none left' : ''})` : ''}`, value: o.id })),
+      });
+      option = options.find((o) => o.id === id);
+      if (!option) return;
+    }
+    if (option.spendKey && option.left < 1 && !(await confirm({ title: 'Nothing left', message: `${option.label} has nothing left to spend. Reroll anyway?`, confirmLabel: 'Reroll anyway' }))) return;
+    const picks = await askRerollDice({ title: option.label, dice: rerollableDice(event), max: option.max, ones: option.ones, note: option.note });
+    if (picks?.length) record(rerollDiceEvent({ event, catalog, option, picks }));
+  };
+
   const featureEffectFromHistory = (event) => {
     const action = catalog.actions.find((a) => a.key === event.payload?.actionKey);
     const activity = action?.activities.find((x) => x.id === event.payload?.activityId);
@@ -931,6 +973,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       const group = (state.summons ?? []).find((g) => g.id === id);
       if (group) dismissSummon(group);
     },
+    castTriggersOf: (event) => castTriggers(event, catalog),
+    canRerollDice: (event) => rerollDiceOptions(event, catalog, state).length > 0,
+    onRerollDice: rerollDiceFromHistory,
+    onCastTrigger: (t) => record(featureLogEvent({ catalog, state, feature: { name: t.label.split(':')[0] }, roll: { label: t.label, formula: t.formula }, apply: t.apply })),
   };
 
   /** Dispensa o grupo, perguntando antes. */
@@ -978,7 +1024,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, twoHanded: (attack.properties ?? []).includes('2H') }),
       spend ? cost : null,
     );
 
@@ -1255,7 +1301,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'History' && (
             <>
               {historyHead}
-              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} live={historyLive} />
+              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} live={historyLive} />
             </>
           )}
 
@@ -1303,7 +1349,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} round={state.combat ? state.combat.round : null} />
           </div>
           <div className={styles.sideScroll}>
-            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} live={historyLive} />
+            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} live={historyLive} />
             {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} summons={summonLine} />}
           </div>
         </div>,

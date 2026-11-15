@@ -9,7 +9,8 @@
 //
 //   A sintaxe é a de roll data do Foundry, a mesma das fórmulas de pool e
 //   activity que o catálogo lê: números, `NdM` (`d%` é d100), as quatro
-//   operações, parênteses, `kh`/`kl`/`k` (manter os maiores ou menores), `minN`/`maxN`
+//   operações, parênteses, `kh`/`kl`/`k` (manter os maiores ou menores), `roN` (rolar de
+//   novo uma vez o dado que saiu N ou menos), `minN`/`maxN`
 //   (piso e teto de cada dado), `floor`/`ceil`/`round`/`abs`/`min`/`max`, e
 //   referências `@caminho` resolvidas por um objeto de dados (plano ou aninhado).
 //
@@ -24,6 +25,7 @@
 //   parseFormula(text): a árvore da fórmula (sem refs).
 //   hasDice(node), formatNode(node): inspeção e texto normalizado da árvore.
 //   evaluate(node, ctx): o valor de um nó, rolando os dados no ctx.
+//   dropLosers(ctx, spans, winner): em `min`/`max`, descarta os dados dos perdedores.
 //   rollDice(node, ctx): um termo de dados, com manter, piso, teto e crítico.
 //   rollFormula(text, opts): rola uma fórmula.
 //   validateFormula(text, data): null se a fórmula é válida, senão a mensagem.
@@ -31,7 +33,8 @@
 //     mesmo rng e o mesmo crítico, e soma; um rng marcado `physical` (o dado da
 //     mesa, rngFor do playActions) marca o resultado.
 //   resolveMode(advantage, disadvantage): vantagem e desvantagem se anulam.
-//   d20Test(opts): um teste de d20 com modo, natural, crítico e falha crítica;
+//   d20Test(opts): um teste de d20 com modo, natural, crítico e falha crítica, o reroll
+//     do 1 e a Elven Accuracy;
 //     `physical` marca o resultado do dado de mesa (a animação do d20 não roda).
 //
 // DECISÕES E ARMADILHAS
@@ -49,6 +52,14 @@
 //     inteira: o 5e arredonda para baixo (metade do dano).
 //   - `minN` e `maxN` mudam o VALOR do dado e guardam o sorteado em `raw`: o teste
 //     de d20 julga o natural pelo `raw` (Reliable Talent não apaga um 20).
+//   - `max(2d6, 2d6)` é "rolar duas vezes e ficar com a melhor" (Savage Attacker):
+//     os dados do argumento que perdeu ficam `kept: false` e o grupo soma 0, como o
+//     dado descartado do `kh`; o empate fica com o primeiro.
+//   - `roN` rola de novo, UMA vez, o dado que saiu N ou menos (o Luck do Halfling é
+//     `1d20ro1`, e o `ro` vem ANTES do `kh`: o nome é lido guloso e `khro` não existe): o primeiro fica no grupo como `kept: false, rerolled: true` e o
+//     manter (`kh`/`kl`) só escolhe entre os que ficaram. d20Test aceita `rerollOnes` e
+//     `elven` (Elven Accuracy: 3d20 na vantagem), ligados pela ponte dos efeitos do ator
+//     (engine/playActorEffects).
 //   - Limites contra travar a tela: até 1000 dados por termo e 10000 faces.
 //   - Identificador é lido guloso (`[a-z]+`) e então classificado; `d` sozinho é
 //     o operador de dado. Um nome desconhecido é erro, nunca ignorado.
@@ -59,6 +70,7 @@ const MAX_FACES = 10000;
 const FUNCTIONS = new Set(['floor', 'ceil', 'round', 'abs', 'min', 'max']);
 const KEEP = new Set(['kh', 'kl', 'k']);
 const CLAMP = new Set(['min', 'max']);
+const REROLL = 'ro';
 
 export class DiceError extends Error {
   constructor(message, position = null) {
@@ -148,7 +160,7 @@ export function tokenize(text) {
       i += m[0].length;
     } else if (/[a-z]/i.test(ch)) {
       const word = src.slice(i).match(/^[a-z]+/i)[0].toLowerCase();
-      if (word !== 'd' && !FUNCTIONS.has(word) && !KEEP.has(word)) throw new DiceError(`Unknown word "${word}".`, i);
+      if (word !== 'd' && word !== REROLL && !FUNCTIONS.has(word) && !KEEP.has(word)) throw new DiceError(`Unknown word "${word}".`, i);
       tokens.push({ type: word === 'd' ? 'd' : 'word', value: word, pos: i });
       i += word.length;
     } else if ('+-*/(),%'.includes(ch)) {
@@ -200,6 +212,9 @@ export function parseFormula(text) {
         next();
         const n = peek()?.type === 'num' ? next().value : 1;
         mods.push({ m: m.value === 'k' ? 'kh' : m.value, n });
+      } else if (m.value === REROLL && tokens[p + 1]?.type === 'num') {
+        next();
+        mods.push({ m: REROLL, n: next().value });
       } else if (CLAMP.has(m.value) && tokens[p + 1]?.type === 'num') {
         next();
         mods.push({ m: m.value, n: next().value });
@@ -318,27 +333,45 @@ function rollDice(node, ctx) {
 
   const floorTo = node.mods.find((m) => m.m === 'min')?.n;
   const ceilTo = node.mods.find((m) => m.m === 'max')?.n;
+  const rerollAt = node.mods.find((m) => m.m === REROLL)?.n;
   const results = [];
+  const live = [];
   for (let i = 0; i < count; i++) {
-    const raw = ctx.rng(faces);
+    let raw = ctx.rng(faces);
+    if (rerollAt != null && raw <= rerollAt) {
+      results.push({ value: raw, kept: false, rerolled: true });
+      raw = ctx.rng(faces);
+    }
     let value = raw;
     if (floorTo != null) value = Math.max(value, Math.min(floorTo, faces));
     if (ceilTo != null) value = Math.min(value, Math.max(ceilTo, 1));
+    live.push(results.length);
     results.push(value === raw ? { value, kept: true } : { value, raw, kept: true });
   }
 
   const keep = node.mods.find((m) => m.m === 'kh' || m.m === 'kl');
   if (keep) {
-    const order = results.map((r, i) => i).sort((a, b) => (keep.m === 'kh'
+    const order = [...live].sort((a, b) => (keep.m === 'kh'
       ? results[b].value - results[a].value
       : results[a].value - results[b].value) || a - b);
     const kept = new Set(order.slice(0, Math.min(keep.n, count)));
-    results.forEach((r, i) => { r.kept = kept.has(i); });
+    live.forEach((i) => { results[i].kept = kept.has(i); });
   }
 
   const total = results.reduce((s, r) => s + (r.kept ? r.value : 0), 0);
   ctx.groups.push({ formula: formatNode({ ...node, count: { t: 'num', v: count } }), faces, results, total });
   return total;
+}
+
+/** Em `min`/`max`, os dados dos argumentos que não venceram ficam descartados. */
+function dropLosers(ctx, spans, winner) {
+  spans.forEach(([start, end], i) => {
+    if (i === winner) return;
+    for (const g of ctx.groups.slice(start, end)) {
+      g.results.forEach((r) => { r.kept = false; });
+      g.total = 0;
+    }
+  });
 }
 
 /** O valor de um nó; os dados rolados vão para `ctx.groups`. */
@@ -358,9 +391,18 @@ function evaluate(node, ctx) {
       return a / b;
     }
     case 'fn': {
-      const args = node.args.map((n) => evaluate(n, ctx));
-      if (node.name === 'min') return Math.min(...args);
-      if (node.name === 'max') return Math.max(...args);
+      const spans = [];
+      const args = node.args.map((n) => {
+        const start = ctx.groups.length;
+        const v = evaluate(n, ctx);
+        spans.push([start, ctx.groups.length]);
+        return v;
+      });
+      if (node.name === 'min' || node.name === 'max') {
+        const pick = node.name === 'min' ? Math.min(...args) : Math.max(...args);
+        dropLosers(ctx, spans, args.indexOf(pick));
+        return pick;
+      }
       if (args.length !== 1) throw new DiceError(`${node.name}() takes one value.`);
       return Math[node.name](args[0]);
     }
@@ -420,10 +462,11 @@ export function resolveMode(advantage, disadvantage) {
  * Um teste de d20: o d20 do modo e as partes, com natural, crítico e falha crítica.
  * @param {{ parts?: { label: string, formula: string|number }[], advantage?: number|boolean, disadvantage?: number|boolean, critThreshold?: number, d20Min?: number, data?: object, rng?: (faces: number) => number }} opts
  */
-export function d20Test({ parts = [], advantage = 0, disadvantage = 0, critThreshold = 20, d20Min = null, physical = false, data = {}, rng = cryptoRng } = {}) {
+export function d20Test({ parts = [], advantage = 0, disadvantage = 0, critThreshold = 20, d20Min = null, rerollOnes = false, elven = false, physical = false, data = {}, rng = cryptoRng } = {}) {
   const mode = resolveMode(advantage, disadvantage);
-  const base = mode === 'advantage' ? '2d20kh' : mode === 'disadvantage' ? '2d20kl' : '1d20';
-  const die = d20Min ? `${base}min${d20Min}` : base;
+  const count = mode === 'normal' ? 1 : mode === 'advantage' && elven ? 3 : 2;
+  const keep = mode === 'advantage' ? 'kh' : mode === 'disadvantage' ? 'kl' : '';
+  const die = `${count}d20${rerollOnes ? 'ro1' : ''}${keep}${d20Min ? `min${d20Min}` : ''}`;
   const rolled = rollParts([{ label: 'd20', formula: die }, ...parts], { data, rng });
   const kept = rolled.parts[0].groups[0].results.find((r) => r.kept);
   const natural = kept.raw ?? kept.value;

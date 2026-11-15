@@ -9,7 +9,8 @@
 // FUNÇÕES
 //   recoveryFor(catalog, state, period, ctx): o que cada recurso recupera no
 //     descanso (operações e linhas do resumo).
-//   rollHitDie(args): rola um dado de vida com a CON (mínimo 1).
+//   rollHitDie(args): rola um dado de vida com a CON (mínimo 1) e as regras das features.
+//   hitDieRules(catalog, rest): as regras dos dados de vida que valem agora.
 //   hitDiceLeft(catalog, state): os dados de vida que sobram, por face.
 //   shortRestEvent(args): o descanso curto com os dados de vida gastos.
 //   hitDiceEvent(args): gastar dados de vida fora do descanso (cura) ou, com
@@ -32,6 +33,15 @@
 //     zero no longo: Aid dura 8 horas e o dreno do vampiro acaba no descanso longo.
 //   - Dados de vida pelo card de HP (`hitDiceEvent`): a maior face primeiro, ao
 //     gastar e ao devolver; pedir mais do que sobra gasta o que houver.
+//   - Features que mudam o dado de vida (DDL-0215), pelo nome no catálogo:
+//     HIT_DIE_RULES dá o valor máximo (Boon of Bountiful Health, "use the highest number
+//     possible", em qualquer gasto; Troll Healing, "the maximum roll of the dice", só no
+//     descanso curto), +1 por dado (Inner Peace, no curto) e rolar de novo 1 e 2 (Black
+//     Blood Healing, `ro2`, no curto). REST_HIT_DICE_BONUS soma uma vez por descanso curto
+//     com dado gasto (Iron Stomach do Vigor of the Hill Giant: CON + PB, "whenever you eat
+//     food as part of a short rest"; comer fica com o jogador). Gastar UM dado fora do
+//     descanso (Dwarven Fortitude, Healing Machine, Emergency Fail-Safe) é o Hit dice do
+//     card de HP (`hitDiceEvent`), que vale a qualquer hora.
 //   - Períodos: o curto recupera `sr`; o longo, `lr`, `sr`, `day`, `dawn` e
 //     `dusk` (o "1 por dia" da magia concedida e do item volta no longo).
 //     Recuperação `recoverAll` devolve tudo; `formula` devolve o valor da
@@ -44,6 +54,22 @@ import { healOutcome } from './playHealth';
 import { endConcentrationOps, restModifierOps } from './playEffects';
 
 const PERIODS = { sr: ['sr'], lr: ['lr', 'sr', 'day', 'dawn', 'dusk'] };
+
+const HIT_DIE_RULES = {
+  'boon of bountiful health': { max: true, label: 'Superior Recuperation' },
+  'troll healing': { max: true, rest: true, label: 'Troll Healing' },
+  'inner peace': { plus: 1, rest: true, label: 'Inner Peace' },
+  'black blood healing': { reroll: 2, rest: true, label: 'Black Blood Healing' },
+};
+const REST_HIT_DICE_BONUS = {
+  'vigor of the hill giant': { formula: '@abilities.con.mod + @prof', label: 'Iron Stomach (eating food)' },
+};
+
+/** As regras dos dados de vida que valem agora (no descanso curto ou fora dele). */
+export function hitDieRules(catalog, rest = false) {
+  const features = new Set(catalog?.features ?? []);
+  return Object.entries(HIT_DIE_RULES).filter(([name, r]) => features.has(name) && (!r.rest || rest)).map(([, r]) => r);
+}
 
 /**
  * O que cada recurso gasto recupera num descanso.
@@ -80,10 +106,14 @@ export function recoveryFor(catalog, state, period, { rng = cryptoRng } = {}) {
   return { ops, lines, groups };
 }
 
-/** Rola um dado de vida com a CON; cura no mínimo 1 (XPHB). */
-export function rollHitDie({ catalog, faces, rng = cryptoRng }) {
-  const rolls = rollFormula(`1d${faces} + @abilities.con.mod`, { data: catalog.rollData, rng });
-  return { faces, rolls, healed: Math.max(1, rolls.total) };
+/** Rola um dado de vida com a CON (e as regras das features); cura no mínimo 1 (XPHB). */
+export function rollHitDie({ catalog, faces, rng = cryptoRng, rest = false }) {
+  const rules = hitDieRules(catalog, rest);
+  const reroll = rules.find((r) => r.reroll)?.reroll;
+  const die = rules.some((r) => r.max) ? `${faces}` : `1d${faces}${reroll ? `ro${reroll}` : ''}`;
+  const plus = rules.reduce((s, r) => s + (r.plus ?? 0), 0);
+  const rolls = rollFormula(`${die} + @abilities.con.mod${plus ? ` + ${plus}` : ''}`, { data: catalog.rollData, rng });
+  return { faces, rolls, healed: Math.max(1, rolls.total), ...(rules.length ? { rules: rules.map((r) => r.label) } : {}) };
 }
 
 /** Os dados de vida que sobram, por face, da maior para a menor. */
@@ -103,7 +133,9 @@ export function shortRestEvent({ state, catalog, spends = [], rng, now = new Dat
   const byFace = {};
   for (const s of spends) byFace[s.faces] = (byFace[s.faces] ?? 0) + 1;
   for (const [faces, n] of Object.entries(byFace)) ops.push({ op: 'spend', key: `hd:d${faces}`, amount: n });
-  const healTotal = spends.reduce((sum, s) => sum + s.healed, 0);
+  const features = new Set(catalog.features ?? []);
+  const extras = spends.length ? Object.entries(REST_HIT_DICE_BONUS).filter(([name]) => features.has(name)).map(([, b]) => ({ label: b.label, rolls: rollFormula(b.formula, { data: catalog.rollData, rng: rng ?? cryptoRng }) })) : [];
+  const healTotal = spends.reduce((sum, s) => sum + s.healed, 0) + extras.reduce((sum, x) => sum + Math.max(0, x.rolls.total), 0);
   const heal = healOutcome(state, catalog, healTotal);
   ops.push(...heal.ops);
   if (spends.length) {
@@ -124,7 +156,10 @@ export function shortRestEvent({ state, catalog, spends = [], rng, now = new Dat
     payload: { lines, from: heal.summary.from, to: heal.summary.to },
     rolls: {
       total: heal.summary.healed,
-      parts: spends.map((s) => ({ label: `d${s.faces} + Con`, formula: s.rolls.formula, total: s.healed, groups: s.rolls.groups })),
+      parts: [
+        ...spends.map((s) => ({ label: `d${s.faces} + Con${s.rules ? ` (${s.rules.join(', ')})` : ''}`, formula: s.rolls.formula, total: s.healed, groups: s.rolls.groups })),
+        ...extras.map((x) => ({ label: x.label, formula: x.rolls.formula, total: Math.max(0, x.rolls.total), groups: x.rolls.groups })),
+      ],
     },
   }, now);
 }

@@ -22,6 +22,7 @@
 //   - O fighting style de subclasse é restrito aos nomes do featureType no db.
 //   - choiceRuleEntry usa o mesmo alvo de um link {@classFeature} (entityLinks):
 //     nível exato, depois só o nome; sem match, título em texto.
+//   - Os planos do Artificer (`planChoices`, TC-0128) entram junto das sub-features.
 //   - Escolhas de magia moram no MESMO bag, com ids 'class:' e 'sub:' (TC-0011).
 // -----------------------------------------------------------------------------
 
@@ -32,6 +33,7 @@ import {
   classToolChoices,
   subclassFeatureChoices,
   optionalFeatureChoices,
+  planChoices,
 } from '../../engine/classFeatureChoices';
 import { collectSkillProficiencies } from '../../engine/proficiency';
 import { subclassConditionalChoices } from '../../engine/subclassGrants';
@@ -118,6 +120,7 @@ export function buildClassChoices(db, cls, character) {
   const optChoices = optionalFeatureChoices(classObj, subObj, cls.level).map(resolveFsOnly);
   const featOptChoices = [
     ...featureOptionChoices(db, cls.classId, classObj, cls.level),
+    ...planChoices(db, cls.classId, classObj, cls.level),
     ...subclassFeatureOptionChoices(db, cls.classId, subObj, cls.level),
   ];
   const subFeatChoices = subObj

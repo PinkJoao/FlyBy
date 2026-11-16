@@ -31,7 +31,11 @@
 //     do XPHB: Combat Superiority (todos no curto ou longo, `sr`), Psionic Power
 //     do Psi Warrior e do Soulknife (1 no curto, todos no longo), Warrior of the
 //     Gods (o pool de d12 do Zealot, na escala curada da subclasse), Fey
-//     Reinforcements (1 Summon Fey sem slot por descanso longo). O overlay
+//     Reinforcements (1 Summon Fey sem slot por descanso longo); do TC-0144 (DDL-0223), o
+//     Split Enchantment do Enchanter do AU ("a number of times equal to your Intelligence
+//     modifier ... Long Rest") e os Tokens of the Departed do Phantom do RHW (a escala dos
+//     soul trinkets; o descanso longo devolve até dois: a fórmula "2", que o Foundry prende
+//     no máximo; do nível 13 em diante, com 1 trinket, ele chega a 3, um limite aceito). O overlay
 //     descreve esses pools como `entryData.resources` (um "dicePool" que o
 //     Plutonium vira item à parte) e o nosso export não lia; sem o pool no DONO,
 //     as sub-features ficavam sem ter o que gastar.
@@ -106,6 +110,8 @@ const SCOPED_USES = {
   'rogue|psionic power': { max: '@scale.soulknife.die.number', recovery: LR_FULL_SR_ONE },
   'barbarian|warrior of the gods': { max: '@scale.zealot.warrior-of-the-gods', recovery: LR_FULL },
   'ranger|fey reinforcements': { max: '1', recovery: LR_FULL },
+  'wizard|split enchantment': { max: '@abilities.int.mod', recovery: LR_FULL },
+  'rogue|tokens of the departed': { max: '@scale.phantom.soul-trinkets', recovery: [{ period: 'lr', type: 'formula', formula: '2' }] },
 };
 
 const SHARED_POOL_MEMBERS = new Set([

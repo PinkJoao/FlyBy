@@ -37,7 +37,12 @@
 //     Warrior of the Gods do Zealot (4 d12, 5 no 6, 6 no 12, 7 no 17; o overlay a
 //     põe no item da FEATURE, que o dnd5e não lê como escala) e o dano do sopro do
 //     Dragonborn (Gem) do FTD (1d10, 2d10 no 5, 3d10 no 11, 4d10 no 17), ambos
-//     conferidos na prosa. Precedem o overlay pelo identifier.
+//     conferidos na prosa. Precedem o overlay pelo identifier. Do lote ao vivo do TC-0144
+//     (DDL-0223): o Ancient Armor do Hollow Warden ("+1 bonus to AC ... increases to +2 when
+//     you reach Ranger level 11", `ac`) e os soul trinkets do Phantom do RHW ("a maximum of
+//     two ... Rogue levels 13 (three trinkets) and 17 (four trinkets)", `soul-trinkets`); e o
+//     Pull of Death do Grave do RHW ("an extra 1d4 Necrotic damage ... 1d6 when you reach Cleric
+//     level 11", `death-die`), que fecha o TC-0129.
 //   - srdScaleValues, com os títulos e ids dos premades: "Max Prepared Spells"
 //     (`max-prepared`, que o `preparation.formula` cita), "Cantrips Known",
 //     "Weapon Masteries Known" (`mastery`, a contagem; as escolhas seguem nos
@@ -79,6 +84,15 @@ const CURATED_SCALE_VALUES = {
 const CURATED_SUBCLASS_SCALES = {
   'barbarian|zealot': [
     { title: 'Warrior of the Gods', identifier: 'warrior-of-the-gods', type: 'number', scale: { 3: { value: 4 }, 6: { value: 5 }, 12: { value: 6 }, 17: { value: 7 } } },
+  ],
+  'ranger|hollow warden': [
+    { title: 'Ancient Armor', identifier: 'ac', type: 'number', scale: { 3: { value: 1 }, 11: { value: 2 } } },
+  ],
+  'cleric|grave': [
+    { title: 'Pull of Death', identifier: 'death-die', type: 'dice', scale: { 3: { number: 1, faces: 4 }, 11: { number: 1, faces: 6 } } },
+  ],
+  'rogue|phantom': [
+    { title: 'Soul Trinkets', identifier: 'soul-trinkets', type: 'number', scale: { 9: { value: 2 }, 13: { value: 3 }, 17: { value: 4 } } },
   ],
 };
 

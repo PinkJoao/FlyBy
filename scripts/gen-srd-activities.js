@@ -199,6 +199,16 @@ for (const classDir of readdirSync(join(PACKS, 'classfeatures'))) {
   }
 }
 
+const legacyScales = {};
+for (const f of walk(join(PACKS, 'subclasses'))) {
+  const doc = parseYaml(readFileSync(f, 'utf8'));
+  if (doc.type !== 'subclass' || !doc.name) continue;
+  const scales = Object.values(doc.system?.advancement ?? {}).filter((a) => a?.type === 'ScaleValue').map((a) => prune({ type: 'ScaleValue', title: a.title, configuration: a.configuration }));
+  if (!scales.length) continue;
+  const slug = norm(doc.name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  legacyScales[`${norm(doc.system?.classIdentifier ?? '')}|${slug}`] = scales;
+}
+
 for (const f of walk(join(PACKS, 'origins24'))) {
   const doc = parseYaml(readFileSync(f, 'utf8'));
   if (doc.type !== 'feat' || !doc.name) continue;
@@ -246,6 +256,8 @@ const out = `// ================================================================
 //     alvo de consumo que aponta um documento do pack de 2014 (o Channel Divinity do clérigo
 //     antigo, o Ki por uuid) vira "feat:<identifier>", que acha o item de 2024 de mesmo
 //     identifier (o Ki de 2014 já é "monks-focus").
+//   SRD14_SUBCLASS_SCALES: "classId|subclasse-slug" -> os ScaleValue do item de subclasse do
+//     SRD de 2014 (o "divine-strike" do Life Domain, que o Divine Strike antigo cita).
 //
 // DECISÕES E ARMADILHAS
 //   - SRD_CLASS_WEAPON_GRANTS: o SRD só o faz no Bárbaro e no Monge, cujas
@@ -270,6 +282,8 @@ export const SRD_COMMON_WEAPON_GRANTS = ${JSON.stringify(Object.values(commonByN
 export const SRD_FEAT_MECHANICS = ${literal(featMech)};
 
 export const SRD14_SUBCLASS_FEATURES = ${literal(legacy)};
+
+export const SRD14_SUBCLASS_SCALES = ${literal(legacyScales)};
 `;
 
 writeFileSync(OUT, out);

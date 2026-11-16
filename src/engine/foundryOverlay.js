@@ -22,6 +22,10 @@
 //   resolvePlaceholder(value), resolveActivityRefs(act),
 //     translateOverlayActivities(entry, effectIds): as activities.
 //   overlayMechanics(entry, fallbackName): effects, activities e system juntos.
+//   overlayFix(name): as correções de fórmula do overlay (OVERLAY_FORMULA_FIXES), com prova no
+//     texto e no Foundry real: o Hungering Might do Hollow Warden (RHW) multiplicava a cura por
+//     `@statuses.bloodied`, que o Foundry não resolve; o texto já diz "provided you are
+//     Bloodied", e a condição fica com o jogador (TC-0144, DDL-0223).
 //   translateOverlayAdvancement(entry): os ScaleValue.
 //   pickEntry(entries, source, level): a entrada certa entre homônimas.
 //   Consultas (todas toleram db null)
@@ -269,11 +273,24 @@ function translateOverlayActivities(entry, effectIds) {
 export function overlayMechanics(entry, fallbackName) {
   if (!entry) return { effects: [], activities: {}, system: {} };
   const { effects, byFoundryId } = overlayEffectsWithIds(entry, fallbackName);
+  const fix = overlayFix(entry.name ?? fallbackName);
   return {
-    effects,
-    activities: translateOverlayActivities(entry, byFoundryId),
+    effects: fix(effects),
+    activities: fix(translateOverlayActivities(entry, byFoundryId)),
     system: translateOverlaySystem(entry),
   };
+}
+
+// ATENÇÃO: só com prova no texto da feature E no Foundry real; o par é [errado, certo].
+const OVERLAY_FORMULA_FIXES = {
+  'wrath of the wild': [['(1d10+@abilities.wis.mod)*@statuses.bloodied', '1d10+@abilities.wis.mod']],
+};
+
+/** Aplica as correções de fórmula do overlay de uma feature (cópia nova). */
+function overlayFix(name) {
+  const fixes = OVERLAY_FORMULA_FIXES[String(name ?? '').trim().toLowerCase()] ?? [];
+  if (!fixes.length) return (v) => v;
+  return (v) => JSON.parse(fixes.reduce((s, [a, b]) => s.split(a).join(b), JSON.stringify(v)));
 }
 
 /** Os ScaleValue do overlay no nosso formato. */

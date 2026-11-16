@@ -194,7 +194,9 @@
 //   - subclassScaleFix: o overlay escreve `@scale.nature-domain.divine-strike`
 //     (o nome longo), e o nosso identifier de subclasse é o curto do SRD
 //     (`nature`); sem a troca o dano saía sem a escala (T2d: 9 fórmulas, Divine
-//     Strike, Starry Form, Psychic Blades).
+//     Strike, Starry Form, Psychic Blades). Também o nome da PRÓPRIA feature: o overlay
+//     do Hollow Warden cita `@scale.wrath-of-the-wild.ac`, e escala só mora na classe ou
+//     na subclasse (TC-0144, DDL-0223).
 //   - fvttProgression: as frações '1/2' e '1/3' do 5etools não existem no dnd5e;
 //     exportadas cruas, a classe chegava sem espaços de magia (TC-0060).
 //     `artificer` fica: o sistema o define igual a `half`.
@@ -386,7 +388,7 @@ import {
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
-import { featureActivities, srdFeatureMechanics, srd14FeatureMechanics, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics, srd14FeatureMechanics, srd14SubclassScales, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
@@ -852,9 +854,9 @@ function subclassScaleFix(feature) {
   const sub = feature.subclass;
   if (!sub?.name) return (v) => v;
   const to = subclassIdentifier(feature.classId, sub) ?? slugify(sub.shortName ?? sub.name);
-  const from = slugify(sub.name);
-  if (from === to) return (v) => v;
-  const re = new RegExp(`@scale\\.${from}\\.`, 'g');
+  const froms = [...new Set([slugify(sub.name), slugify(feature.name)])].filter((f) => f && f !== to);
+  if (!froms.length) return (v) => v;
+  const re = new RegExp(`@scale\\.(?:${froms.join('|')})\\.`, 'g');
   const walk = (v) => {
     if (typeof v === 'string') return v.replace(re, `@scale.${to}.`);
     if (Array.isArray(v)) return v.map(walk);
@@ -2117,7 +2119,7 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
         ...(opts.futureGrants ?? []),
         ...(opts.choiceTraits ?? []),
         ...withCurated(
-          curatedSubclassScales(classId, subclass.shortName),
+          [...curatedSubclassScales(classId, subclass.shortName), ...(featureEdition({ classId, subclass }, opts.db) === 'classic' ? srd14SubclassScales(classId, subclass.name) : [])],
           overlaySubclassAdvancement(opts.db, { className: classId, shortName: subclass.shortName, source: subclass.source }),
         ).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
         ...(opts.itemChoices ?? []).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),

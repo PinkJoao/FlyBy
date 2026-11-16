@@ -24,6 +24,9 @@
 //   runPremades(opts): cada premade oficial e a nossa reexportação, lado a lado.
 //
 // DECISÕES E ARMADILHAS
+//   - Pool cuja fórmula dá 0 no ator (o Split Enchantment com INT 10, que o texto deixa em
+//     zero) é `consume-item-zero-uses`, não `consume-item-no-uses`: o defeito é o pool que
+//     NÃO existe (TC-0144, DDL-0223).
 //   - O navegador do app bloqueia a página pública de buscar `localhost` até a
 //     permissão de rede local; o fetch leva `targetAddressSpace: 'loopback'`.
 //     Janela nova (window.open) troca a PRÓPRIA aba e o iframe é barrado: o
@@ -101,7 +104,7 @@ function check(actor) {
         if (t.type === 'itemUses') {
           const target = t.target ? actor.items.get(t.target) : item;
           if (!target) add('consume-missing-item', aw, tag);
-          else if (!target.system.uses?.max && target.type === 'feat') add('consume-item-no-uses', aw, `${tag} -> ${target.name}`);
+          else if (!target.system.uses?.max && target.type === 'feat') add(target._source?.system?.uses?.max ? 'consume-item-zero-uses' : 'consume-item-no-uses', aw, `${tag} -> ${target.name}`);
         } else if (t.type === 'activityUses' && !act.uses?.max) add('consume-activity-no-uses', aw, tag);
         else if (t.type === 'attribute' && foundry.utils.getProperty(actor.system, t.target) === undefined) add('consume-bad-attribute', aw, tag);
         const u = typeof t.value === 'string' ? unresolved(t.value, ard) : null;

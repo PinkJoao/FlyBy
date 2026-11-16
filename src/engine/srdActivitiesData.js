@@ -23,6 +23,8 @@
 //     alvo de consumo que aponta um documento do pack de 2014 (o Channel Divinity do clérigo
 //     antigo, o Ki por uuid) vira "feat:<identifier>", que acha o item de 2024 de mesmo
 //     identifier (o Ki de 2014 já é "monks-focus").
+//   SRD14_SUBCLASS_SCALES: "classId|subclasse-slug" -> os ScaleValue do item de subclasse do
+//     SRD de 2014 (o "divine-strike" do Life Domain, que o Divine Strike antigo cita).
 //
 // DECISÕES E ARMADILHAS
 //   - SRD_CLASS_WEAPON_GRANTS: o SRD só o faz no Bárbaro e no Monge, cujas
@@ -266,4 +268,8 @@ export const SRD14_SUBCLASS_FEATURES = {
   "wizard|school-of-evocation|overchannel": {"activities":{"dnd5eactivity000":{"_id":"dnd5eactivity000","type":"damage","activation":{"type":"special","override":false},"consumption":{"targets":[{"type":"itemUses","value":"1"}],"scaling":{"allowed":false},"spellSlot":true},"duration":{"concentration":false,"override":false},"range":{"units":"self","override":false},"target":{"template":{"contiguous":false},"affects":{"type":"self","choice":false},"prompt":true,"override":false},"damage":{"critical":{"allow":false},"parts":[{"number":2,"denomination":12,"types":["necrotic"],"custom":{"enabled":false},"scaling":{"mode":"whole"}}]},"uses":{"spent":0},"sort":0},"dnd5eactivity200":{"_id":"dnd5eactivity200","type":"damage","activation":{"type":"special","override":false},"consumption":{"targets":[{"type":"itemUses","value":"1"}],"scaling":{"allowed":false},"spellSlot":true},"duration":{"concentration":false,"override":false},"range":{"units":"self","override":false},"target":{"template":{"contiguous":false},"affects":{"type":"self","choice":false},"prompt":true,"override":false},"damage":{"critical":{"allow":false},"parts":[{"number":1,"denomination":12,"custom":{"enabled":false},"scaling":{"mode":"whole"}}]},"uses":{"spent":0},"sort":0}},"uses":{"max":"1","recovery":[{"period":"lr","type":"recoverAll"}],"spent":0}},
   "wizard|school-of-evocation|potent cantrip": {},
   "wizard|school-of-evocation|sculpt spells": {"activities":{"dnd5eactivity000":{"_id":"dnd5eactivity000","type":"utility","activation":{"type":"special","override":false},"consumption":{"scaling":{"allowed":false},"spellSlot":true},"duration":{"concentration":false,"override":false},"range":{"override":false},"target":{"template":{"contiguous":false},"affects":{"choice":false},"prompt":true,"override":false},"roll":{"prompt":false,"visible":false},"uses":{"spent":0},"sort":0}}},
+};
+
+export const SRD14_SUBCLASS_SCALES = {
+  "cleric|life-domain": [{"type":"ScaleValue","title":"Divine Strike Damage","configuration":{"identifier":"divine-strike","type":"dice","scale":{"8":{"number":1,"faces":8},"14":{"number":2,"faces":8}}}}],
 };

@@ -47,20 +47,20 @@
 //   isOptionCatalog(feature): a feature é só um catálogo de opções?
 //   resolveClassFeatures(db, classId, classObj, level): features até o nível.
 //   featureIdentifier(name, classId): o identifier da feature (o do SRD quando
-//     diverge do nome).
+//     diverge do nome). Só para feature de CLASSE: a "Channel Divinity" guarda-chuva de uma
+//     subclasse antiga (Conquest, Oathbreaker) ganhava o identifier da da classe, e as duas
+//     viravam uma linha só no jogo, com o pool repetido (DDL-0226).
 //   subclassScaleFix(feature): troca o nome longo da subclasse nos `@scale`.
 //   featureInteropFlags(feature): a marca de procedência da feature (foundryInterop).
 //   buildFeatureItem(feature, db): o item de uma feature, com a mecânica. A feature de
-//     subclasse CLÁSSICA (2014) usa a mecânica e o pool do SRD de 2014 (srd14FeatureMechanics)
-//     ou nenhuma (o overlay), nunca a do SRD de 2024 de mesmo nome: o Wholeness of Body do
-//     Open Hand antigo saía com o bônus e os usos pela SAB, e a Devotion antiga ganhava um
-//     segundo pool de Channel Divinity (TC-0135, DDL-0222). Pelo mesmo motivo ela não lê os
-//     registros curados SÓ por nome (FEATURE_USES, FEATURE_ACTIVITIES): são das features de
-//     classe de 2024 (o Divine Sense no Channel Divinity do paladino); o SCOPED_USES por
-//     classe e nome, curado para elas, segue valendo.
-//   subclassObjOf(feature, db), featureEdition(feature, db), subclassNameOf(feature, db): a
-//     subclasse da feature, a edição dela ('classic' ou 'one', o `edition` do 5etools) e o
-//     nome (a pasta do SRD de 2014).
+//     subclasse LEGADA (`classic`, uma das que o app oferece porque não têm reprint) nunca
+//     pega a mecânica do SRD de 2024 de mesmo nome nem os registros curados SÓ por nome
+//     (FEATURE_USES, FEATURE_ACTIVITIES), que são das features de classe de 2024: vale o
+//     overlay, o SCOPED_USES curado para ela e o registro de adaptação (TC-0135, DDL-0222).
+//     O registro do SRD de 2014 do DDL-0222 saiu no DDL-0224: as 12 subclasses que ele cobria
+//     foram reeditadas, e o app não as oferece (o import troca pelo reprint).
+//   subclassObjOf(feature, db), featureEdition(feature, db): a subclasse da feature e a
+//     edição dela ('classic' ou 'one', o `edition` do 5etools).
 //   buildClassFeatureItems(classEntry, classObj, db): as features da classe.
 //   buildClassWeaponItems(classEntry, classObj): armas concedidas pela classe.
 //   buildClassFutureGrants(classEntry, classObj, db): a escada futura da classe.
@@ -372,7 +372,7 @@ import { latestOnly } from '../selector/reprints';
 import { classGrantChoices, classGrantGroups } from './classFeatureGrants';
 import { parseClass, parseFeatureRef } from './classData';
 import { classLevelChoices, classToolChoices, subclassFeatureChoices, optionalFeatureChoices, optionalFeatureCount } from './classFeatureChoices';
-import { featureOptionChoices, subclassFeatureOptionChoices, findOptionBlocks } from './featureOptions';
+import { featureOptionChoices, subclassFeatureOptionChoices, findOptionBlocks, optionPicks } from './featureOptions';
 import { buildClassAdvancement, curatedSubclassScales, curatedRaceScales } from './foundryAdvancement';
 import { effectChangesFor, targetEffectFor } from './foundryEffects';
 import {
@@ -388,7 +388,7 @@ import {
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
-import { featureActivities, srdFeatureMechanics, srd14FeatureMechanics, srd14SubclassScales, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
@@ -921,10 +921,9 @@ export function buildFeatureItem(feature, db = null) {
   const overlay = overlayMechanics(overlayEntry, feature.name);
 
   const classic = featureEdition(feature, db) === 'classic';
-  const legacy = classic ? srd14FeatureMechanics(feature.classId, subclassNameOf(feature, db), feature.overlayName ?? feature.name) : null;
-  const curatedUses = featureUses(feature.name, feature.classId, { srd: !classic, named: !classic }) ?? (legacy?.uses ? { max: legacy.uses.max, spent: 0, recovery: (legacy.uses.recovery ?? []).map((r) => ({ ...r })) } : null);
+  const curatedUses = featureUses(feature.name, feature.classId, { srd: !classic, named: !classic });
   const curatedActivities = classic ? {} : featureActivities(feature.name, feature.classId, { targetEffectId });
-  const srd = Object.keys(curatedActivities).length ? null : classic ? legacy : srdFeatureMechanics(feature.name, feature.classId);
+  const srd = Object.keys(curatedActivities).length || classic ? null : srdFeatureMechanics(feature.name, feature.classId);
   const scaleFix = subclassScaleFix(feature);
   const activities = scaleFix(Object.keys(curatedActivities).length
     ? curatedActivities
@@ -940,7 +939,7 @@ export function buildFeatureItem(feature, db = null) {
     img: 'icons/svg/item-bag.svg',
     system: {
       type: { value: 'class', subtype: '' },
-      identifier: featureIdentifier(feature.name, feature.classId),
+      identifier: feature.subclass ? slugify(feature.name) : featureIdentifier(feature.name, feature.classId),
       description: { value: entriesToHtml(feature.entries), chat: '' },
       source: sourceBlock(feature.source),
       requirements: '',
@@ -978,11 +977,6 @@ function subclassObjOf(feature, db) {
 export function featureEdition(feature, db) {
   if (!feature?.subclass) return null;
   return subclassObjOf(feature, db)?.edition ?? null;
-}
-
-/** O nome da subclasse da feature (o do SRD de 2014 é a pasta dele). */
-function subclassNameOf(feature, db) {
-  return feature.subclass?.name ?? subclassObjOf(feature, db)?.name ?? feature.subclass?.shortName ?? '';
 }
 
 /**
@@ -1339,11 +1333,11 @@ export function buildItemChoiceAdvancements(classEntry, classObj, subObj, db, op
 
   const featureDescriptors =
     scope === 'subclass'
-      ? subclassFeatureOptionChoices(db, classId, subObj, 20)
+      ? subclassFeatureOptionChoices(db, classId, subObj, 20, { followers: true })
       : featureOptionChoices(db, classId, classObj, 20);
   for (const ch of featureDescriptors) {
     const names = (ch.pool?.options ?? []).map((o) => `${ch.label}: ${o.label}`);
-    const picked = (classEntry.choices?.[ch.id]?.picks ?? [])
+    const picked = optionPicks(classEntry.choices, ch, featureDescriptors)
       .map((p) => (ch.pool.options ?? []).find((o) => o.value === p))
       .filter(Boolean)
       .map((o) => `${ch.label}: ${o.label}`);
@@ -1431,12 +1425,11 @@ export function buildFeatureOptionItems(classEntry, classObj, subObj, db) {
   if (!classObj) return [];
   const descriptors = [
     ...featureOptionChoices(db, classEntry.classId, classObj, classEntry.level || 1),
-    ...subclassFeatureOptionChoices(db, classEntry.classId, subObj, classEntry.level || 1),
+    ...subclassFeatureOptionChoices(db, classEntry.classId, subObj, classEntry.level || 1, { followers: true }),
   ];
   const out = [];
   for (const ch of descriptors) {
-    const entry = classEntry.choices?.[ch.id];
-    for (const pick of entry?.picks ?? []) {
+    for (const pick of optionPicks(classEntry.choices, ch, descriptors)) {
       const opt = (ch.pool?.options ?? []).find((o) => o.value === pick);
       if (!opt) continue;
       out.push(
@@ -2119,7 +2112,7 @@ export function buildSubclassItem(subclass, classId, featureItems = [], opts = {
         ...(opts.futureGrants ?? []),
         ...(opts.choiceTraits ?? []),
         ...withCurated(
-          [...curatedSubclassScales(classId, subclass.shortName), ...(featureEdition({ classId, subclass }, opts.db) === 'classic' ? srd14SubclassScales(classId, subclass.name) : [])],
+          curatedSubclassScales(classId, subclass.shortName),
           overlaySubclassAdvancement(opts.db, { className: classId, shortName: subclass.shortName, source: subclass.source }),
         ).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),
         ...(opts.itemChoices ?? []).map((a) => ({ _id: randomFoundryId(), value: {}, ...a })),

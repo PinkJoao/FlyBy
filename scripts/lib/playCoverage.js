@@ -81,7 +81,7 @@ export const EXPLAINED = {
     'guardian spirit': OTHER, 'holy deliverance': OTHER, 'rot and violence': OTHER, 'master of hexes': 'it takes a healing away; nothing to roll',
     'pet specialization': OTHER, 'infusion of light': 'refills a pool by the damage rolled: the pool is adjusted by hand (DDL-0209)',
     'experimental elixir': FAMILY, 'holy bolt': FAMILY, 'mystic brew': FAMILY,
-    'dwarven fortitude': HP_CARD, 'healing machine': HP_CARD, 'emergency fail-safe': HP_CARD, 'inner peace': HIT_DICE, 'troll healing': HIT_DICE, 'vigor of the hill giant': HIT_DICE, 'boon of bountiful health': HIT_DICE,
+    'dwarven fortitude': HP_CARD, 'healing machine': HP_CARD, lifedrinker: HP_CARD, 'emergency fail-safe': HP_CARD, 'inner peace': HIT_DICE, 'troll healing': HIT_DICE, 'vigor of the hill giant': HIT_DICE, 'boon of bountiful health': HIT_DICE,
     'boon of fortitude': HEAL_MOD,
     'blessed healer': SLOT, 'disciple of life': SPELL_HEAL, 'atonement': OTHER,
     'necromancy spellbook': TEXT,
@@ -101,6 +101,8 @@ export const EXPLAINED = {
     'improved elemental fury': 'the scale raises the Primal Strike die (FEATURE_ROLLS passive)',
     'improved blessed strikes': 'the scale raises the Divine Strike die; the Use gives the temp HP',
     'supreme healing': 'every spell healing die at its maximum (withDiceMax in spellHealEvent, DDL-0217)',
+    'great stature': "the fighter level raises the Giant's Might die (FEATURE_ROLLS toggle, byLevel)",
+    'runic juggernaut': "the fighter level raises the Giant's Might die (FEATURE_ROLLS toggle, byLevel)",
   },
 };
 

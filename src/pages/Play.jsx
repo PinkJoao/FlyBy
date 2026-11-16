@@ -91,7 +91,8 @@
 //       da que só a prosa diz que gasta, o Use do pool sem activity); em combate, com
 //       mais de um custo, pergunta qual (DDL-0203). Com o registro curado
 //       (playFeatureRolls, DDL-0205), liga o efeito (Reckless Attack) ou gasta e mostra
-//       a salvaguarda (Stunning Strike).
+//       a salvaguarda (Stunning Strike). O gasto variável (`amount` { min, max }, o Touch of
+//       the Long Death de 1 a 10 Focus) é perguntado numa lista antes de gravar (DDL-0224).
 //     adjustByHand(resource): o ajuste do mestre (o que resta ou o máximo) pelo
 //       ResourcePanel, aberto pelos contadores das abas Features, Spells e Inventory
 //       (DDL-0202, DDL-0209). O catálogo da tela já vem com o máximo ajustado
@@ -688,11 +689,22 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       if (v == null) return;
       cost = v === 'none' ? null : v;
     }
-    const use = featureUseOf(feature, catalog);
+    let use = featureUseOf(feature, catalog);
+    if (use?.amount && typeof use.amount === 'object') {
+      const r = await ask({
+        title: feature.name,
+        message: `How many points of ${(catalog.resources ?? []).find((x) => x.key === use.spend)?.name ?? 'the resource'} do you spend (${use.amount.min} to ${use.amount.max})?`,
+        fields: [{ type: 'select', name: 'n', label: 'Points', default: String(use.amount.min), options: Array.from({ length: use.amount.max - use.amount.min + 1 }, (_, i) => ({ label: String(use.amount.min + i), value: String(use.amount.min + i) })) }],
+        actions: [{ label: 'Cancel', value: false }, { label: 'Use', value: true, tone: 'primary' }],
+      });
+      if (!r?.action) return;
+      use = featureUseOf(feature, catalog, Math.floor(Number(r.values?.n) || 0));
+    }
     const modifier = use?.modifier ? makeModifier(use.modifier) : null;
     const pay = spend ?? use?.spend ?? null;
-    if (pay && leftOf(catalog, state, pay) < 1 && !(await confirm({ title: 'Not enough left', message: 'There is nothing left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
-    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null }), cost);
+    const amount = spend ? 1 : use?.spent ?? 1;
+    if (pay && amount > 0 && leftOf(catalog, state, pay) < amount && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
+    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null }), cost);
   };
 
   /** O ajuste à mão de um recurso (o mestre tira, dá ou muda o máximo): o painel e o evento. */

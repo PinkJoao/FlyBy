@@ -90,9 +90,19 @@
 //     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
 //     checkList(derived, character): os testes.
 //     spellResources(spellcasting), spellOrigins(spellcasting, level): magias.
+//     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity?
 //     derivePlayCatalog(character, db, opts): o catálogo.
 //
 // DECISÕES E ARMADILHAS
+//   Channel Divinity sem activity (DDL-0225)
+//   - A opção de Channel Divinity que o texto descreve e nenhuma activity traz (as antigas
+//     que o app oferece, Conquering Presence, Cloak of Shadows, Watcher's Will, e várias de
+//     2024, Vow of Enmity, Holy Bolt, Mind Magic) ganha o "Use" que gasta o pool da classe
+//     (`spendItem`, lido por featureUseOf); a que tem activity sem consumo nenhum (o Touch of
+//     Death do overlay) passa a consumir o pool. CHANNEL_CUE é a frase do gasto ("use your
+//     Channel Divinity", "expend one use of your Channel Divinity", "using your Channel
+//     Divinity") ou o nome "Channel Divinity: X" (o texto antigo costuma não repetir o gasto);
+//     a que só cita as opções (Inescapable Destruction, Supreme Healing) não casa.
 //   Fonte da mecânica (DDL-0108)
 //   - As features vêm do ATOR montado em memória (`assembleFoundryActor`), como o
 //     PDF já fazia: `system.uses` (máximo e recuperação, do registro curado, do
@@ -193,7 +203,7 @@ import { collectAbilityPicks } from './choices';
 import { validateFormula, rollFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
-import { featureList } from './playFeatures';
+import { featureList, plainText } from './playFeatures';
 import { consumptionTargetItem } from './foundryConsumption';
 import { actorRollEffects } from './playActorEffects';
 import { proseRollEffects, proseUses } from './playProseEffects';
@@ -624,6 +634,14 @@ function ancestryTypes(item, types, ctx) {
 const TYPE_NAMES = { heal: 'Healing', save: 'Saving throw', damage: 'Damage', utility: 'Use' };
 
 /** O dado que a activity rola e que só o texto diz (o Cutting Words subtrai um dado de Bardic Inspiration). */
+const CHANNEL_CUE = /\b(?:use|uses|using|(?:expend|expends|expending) (?:one|a) use of) (?:your )?channel divinity\b/i;
+
+/** O texto da feature gasta um uso do Channel Divinity? */
+export function spendsChannelDivinity(feature) {
+  const name = feature?.name ?? '';
+  return /^channel divinity:/i.test(name) || (!/^channel divinity$/i.test(name) && CHANNEL_CUE.test(plainText(feature?.entries ?? [])));
+}
+
 const ACTIVITY_ROLLS = {
   'cutting words': { label: 'Bardic Inspiration die (subtract it from the roll)', formula: '@scale.bard.inspiration' },
 };
@@ -1030,6 +1048,15 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     .map((u) => (u.name === 'Bolstering Flames' && features.includes('honed spellfire') ? { ...u, formula: `${u.formula} + @classes.sorcerer.levels` } : u))
     .filter((u) => !validateFormula(u.formula, rollData));
   for (const f of featuresOfActor) if (!f.roll && uses.some((u) => u.name === f.name)) f.roll = 'use';
+  const channelKey = resources.find((r) => r.kind === 'pool' && String(r.item ?? '').toLowerCase() === 'channel divinity')?.key ?? null;
+  for (const f of featuresOfActor) {
+    if (!channelKey || !spendsChannelDivinity(f)) continue;
+    const act = actions.find((x) => x.key === f.actionKey);
+    if (act?.activities?.length && act.activities.every((x) => !x.consumes.length)) for (const x of act.activities) x.consumes.push({ key: channelKey, amount: 1 });
+    if (f.roll || withActivities.has(f.actionKey)) continue;
+    f.roll = 'use';
+    f.spendItem = 'Channel Divinity';
+  }
 
   return {
     rollData,

@@ -24,6 +24,8 @@
 //   - "Of your choice" sozinho NÃO é pista: quase sempre é escolha na hora ("a creature
 //     of your choice"). Só conta perto de proficiency, language, skill, tool, resistance,
 //     damage type ou cantrip.
+//   - A escolha de uma feature de SUBCLASSE tem de ser `sub:` (a da classe não prova a dela:
+//     a perícia do Student of Arcana passava pela escolha de perícia do clérigo, DDL-0228).
 //   - O saco de escolhas é a prova do builder porque o autoBuild preenche tudo o que as
 //     telas oferecem (choicesComplete, a mesma régua do guia).
 //   - O Spellcasting e o Pact Magic guardam as magias em `classes[].spells`, não no saco;
@@ -68,16 +70,19 @@ const KIND_CUES = [
   ['skill', /\b(?:proficiency|proficient) (?:in|with) (?:one|two|three|four|a|an)\b[^.]{0,60}\bskills?\b[^.]{0,40}\bof your choice|\bskills? of your choice/],
   ['tool', /\btools? of your choice|\bproficiency with (?:one|two|a) [^.]{0,40}\btools?\b[^.]{0,30}\bof your choice/],
   ['language', /\blanguages? of your choice|\blearn (?:one|two|three) (?:additional |extra )?languages?/],
-  ['resist', /\bresistance to [^.]{0,60}\bdamage type (?:of your choice|you choose)|\bchoose (?:a|one) damage type\b/],
+  ['resist', /\bresistance to [^.]{0,60}\bdamage types? (?:of your choice|you choose)|\bchoose (?:a|one) damage type\b/],
   ['spell', /\b(?:learn|know) (?:one|two|three|an?) (?:\w+ )?(?:cantrips?|spells?)\b[^.]{0,40}\bof your choice|\bcantrip of your choice/],
+  ['spell', /\bchoose (?:a|one|two|three) level \d+ (?:and a level \d+ )?[^.]{0,30}spells?\b/],
   ['ability', /\bincrease (?:one|an) ability score of your choice/],
 ];
-const NAMED_CUE = /\bchoose (?:one|two|three|an?) (?:of the following|\w+ (?:option|benefit|form|type|kind|element|aspect|enhancement))s?\b|\bwhen you (?:take|gain|choose) this (?:feat|feature|trait)[^.]{0,20}\bchoose\b/;
+const ABILITY_CUE = /(?:intelligence|wisdom|charisma|strength|constitution)[^.]{0,90}\(choose|\bchoose the ability when/;
+const NAMED_CUE = /\bchoose (?:one|two|three|an?) (?:of the following|\w+ (?:option|benefit|form|type|kind|element|aspect|enhancement))s?\b|\bwhen you (?:take|gain|choose) this (?:feat|feature|trait)[^.]{0,20}\bchoose\b|\bchoose (?:one|two|a|an) of the \w+(?: \w+)?:|\b(?:choose|chosen?) (?:the [a-z]+ )?when you (?:gain|select|choose|take) this\b/;
 
 /** A pista de escolha duradoura do texto: { kind } ou null. */
 function cueOf(text) {
   const t = text.toLowerCase();
   for (const [kind, re] of KIND_CUES) if (re.test(t)) return { kind };
+  if (ABILITY_CUE.test(t)) return { kind: 'spellAbility' };
   return NAMED_CUE.test(t) ? { kind: 'named' } : null;
 }
 
@@ -86,7 +91,7 @@ function bagEntries(c) {
   const out = [];
   const walk = (bag, where) => {
     for (const [key, v] of Object.entries(bag ?? {})) {
-      out.push({ where, key: key.toLowerCase(), kind: v?.kind, picks: (v?.picks ?? []).map((p) => String(p).toLowerCase()) });
+      out.push({ where: where === 'class' && key.startsWith('sub:') ? 'subclass' : where, key: key.toLowerCase(), kind: v?.kind, picks: (v?.picks ?? []).map((p) => String(p).toLowerCase()) });
       for (const sub of Object.values(v?.sub ?? {})) walk(sub, where);
     }
   };
@@ -105,7 +110,7 @@ const seen = new Map();
 function visit(character, unit, only = null) {
   const catalog = derivePlayCatalog(character, db);
   const entries = bagEntries(character);
-  const wantWhere = { class: ['class'], subclass: ['class'], species: ['species'], feat: ['feat', 'class'] };
+  const wantWhere = { class: ['class'], subclass: ['subclass'], species: ['species'], feat: ['feat', 'class'] };
   for (const f of catalog.featureList ?? []) {
     if (only && !(f.kind === 'feat' && f.name === only)) continue;
     const key = `${f.name}|${f.source}|${f.section}`;

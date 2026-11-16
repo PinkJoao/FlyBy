@@ -18,9 +18,12 @@
 //   showFeatureText(feature, onLog): o texto da feature num diálogo, com "Log to
 //     history".
 //   FeatureRow(props): uma linha.
-//   FeaturesTab(props): a aba.
+//   FeaturesTab(props): a aba; `poolsOf(f)` são os pools da linha.
 //
 // DECISÕES E ARMADILHAS
+//   - O pool vai para a linha pelo NOME do item; quando duas features têm o mesmo nome (a
+//     "Channel Divinity" do paladino e a guarda-chuva da subclasse antiga), só a do
+//     identificador do pool o mostra (DDL-0226).
 //   - A feature que invoca um companheiro (Steel Defender, Primal Companion, Summon
 //     Wildfire Spirit; CLASS_SUMMONS em engine/playSummons.js) ganha "Summon" (DDL-0193).
 //   - O Wild Shape ganha "Transform": as formas conhecidas da ficha (DDL-0195).
@@ -155,7 +158,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
               <Tag key={label} tone={type ?? undefined}>{label}</Tag>
             ))}
             {recovery && <Tag>{recovery}</Tag>}
-            {rider && <Tag tone="info">{rider.on.includes('damage') ? 'In damage rolls' : 'In d20 rolls'}</Tag>}
+            {rider && <Tag tone="info">{rider.on.includes('damage') ? (rider.on.length > 1 ? 'In d20 and damage rolls' : 'In damage rolls') : 'In d20 rolls'}</Tag>}
           </span>
         </span>
       </button>
@@ -208,11 +211,17 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, o
   const pools = (catalog.resources ?? []).filter((r) => r.kind === 'pool');
   const actions = new Map((catalog.actions ?? []).map((a) => [a.key, a]));
   const claimed = new Set(features.map((f) => f.name));
+  const poolsOf = (f) => {
+    const same = pools.filter((p) => p.item === f.name);
+    if (features.filter((x) => x.name === f.name).length < 2) return same;
+    const ident = f.actionKey.replace(/^action:/, '');
+    return same.filter((p) => p.key === `pool:${ident}` || p.key.startsWith(`pool:${ident}:`));
+  };
   const orphans = pools.filter((p) => !claimed.has(p.item));
   const kinds = FEATURE_KINDS.filter((k) => features.some((f) => f.kind === k.id));
   const needle = query.trim().toLowerCase();
   const activeOf = (f) =>
-    isActiveFeature(f, actions.get(f.actionKey), pools.filter((p) => p.item === f.name)) || isSummonFeature(f.name) || transformRuleOf(f.name)?.kind === 'wildShape';
+    isActiveFeature(f, actions.get(f.actionKey), poolsOf(f)) || isSummonFeature(f.name) || transformRuleOf(f.name)?.kind === 'wildShape';
   const matches = features.filter((f) => (kind === 'all' || f.kind === kind) && (!needle || f.name.toLowerCase().includes(needle)));
   const shown = matches.filter((f) => activeOf(f) === (mode === 'active'));
   const other = matches.length - shown.length;
@@ -300,7 +309,7 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, o
             <Collapse open={!isCollapsed}>
               <ul className={styles.list}>
                 {list.map((f) => (
-                  <FeatureRow key={f.key} feature={f} action={actions.get(f.actionKey)} pools={pools.filter((p) => p.item === f.name)} {...rowProps} />
+                  <FeatureRow key={f.key} feature={f} action={actions.get(f.actionKey)} pools={poolsOf(f)} {...rowProps} />
                 ))}
               </ul>
             </Collapse>

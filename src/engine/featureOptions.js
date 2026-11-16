@@ -23,7 +23,9 @@
 //   curatedOptions(feature, resolveRef): as opções de uma feature curada.
 //   featureOptionChoices(db, classId, classObj, level): as escolhas das features
 //     de CLASSE até o nível.
-//   subclassFeatureOptionChoices(db, classId, subclass, level): as de SUBCLASSE.
+//   subclassFeatureOptionChoices(db, classId, subclass, level, opts): as de SUBCLASSE; com
+//     `followers` também as que SEGUEM outra (FOLLOWS), marcadas com `follows`.
+//   optionPicks(choices, ch, all): os picks de uma escolha; a que segue outra lê os da líder.
 //
 // DECISÕES E ARMADILHAS
 //   - A feature de SUBCLASSE com um bloco `options` de `refSubclassFeature` (o Hunter's Prey,
@@ -46,7 +48,11 @@
 //     da feature em minúsculas, único entre as classes.
 //   - O Storm Aura do Storm Herald É escolha real ("Choose desert, sea, or
 //     tundra", TC-0019), ao contrário dos grant-all (Genie, Psi Warrior,
-//     Soulknife; DDL-0002). Storm Soul e Raging Storm SEGUEM essa escolha.
+//     Soulknife; DDL-0002). Storm Soul e Raging Storm SEGUEM essa escolha (FOLLOWS):
+//     "the environment you chose for your Storm Aura". Desde o DDL-0221 o bloco `options` com
+//     `count` delas virava uma escolha à parte, e o modelo saía Tundra e Desert (TC-0148). A
+//     seguidora não aparece no builder nem no import; o export (o item e o ItemChoice do
+//     Foundry) toma a opção de MESMO nome da líder (`optionPicks`, DDL-0227).
 //   - Os ids de subclasse começam com `sub:`, para serem podados quando a
 //     subclasse troca.
 // -----------------------------------------------------------------------------
@@ -60,6 +66,7 @@ const featureCopyId = (f) =>
   [f.name, f.source, f.classSource, f.subclassShortName, f.subclassSource, f.level].map(norm).join('|');
 
 const DAMAGE_TYPES = ['Acid', 'Cold', 'Fire', 'Lightning', 'Thunder'];
+const FOLLOWS = { 'storm soul': 'storm aura', 'raging storm': 'storm aura' };
 const CHOOSE_ONE_FEATURES = {
   'blessed strikes': true,
   "hunter's prey": true,
@@ -182,7 +189,7 @@ export function featureOptionChoices(db, classId, classObj, level) {
  * Escolhas de sub-feature da subclasse (ids com `sub:`).
  * @returns {import('./choices').Choice[]}
  */
-export function subclassFeatureOptionChoices(db, classId, subclass, level) {
+export function subclassFeatureOptionChoices(db, classId, subclass, level, { followers = false } = {}) {
   if (!subclass) return [];
   const short = norm(subclass.shortName);
   const pool = resolveCopies(db?.[`class-${classId}`]?.subclassFeature ?? [], featureCopyId);
@@ -205,5 +212,17 @@ export function subclassFeatureOptionChoices(db, classId, subclass, level) {
     seen.add(`${norm(f.name)}|${f.level}`);
     out.push({ id: `sub:featopt@${f.name}@${f.level}`, kind: 'featureoption', count: 1, level: f.level, label: f.name, feature: { name: f.name, level: f.level, subclass: subclass.shortName }, pool: { type: 'featureoption', options } });
   }
-  return out;
+  for (const ch of out) {
+    const leader = FOLLOWS[norm(ch.label)] && out.find((x) => norm(x.label) === FOLLOWS[norm(ch.label)]);
+    if (leader) ch.follows = leader.id;
+  }
+  return followers ? out : out.filter((ch) => !ch.follows);
+}
+
+/** Os picks de uma escolha; a que segue outra toma a opção de mesmo nome da líder. */
+export function optionPicks(choices, ch, all) {
+  if (!ch.follows) return choices?.[ch.id]?.picks ?? [];
+  const leader = all.find((x) => x.id === ch.follows);
+  const labels = (choices?.[ch.follows]?.picks ?? []).map((p) => (leader?.pool?.options ?? []).find((o) => o.value === p)?.label).filter(Boolean);
+  return (ch.pool?.options ?? []).filter((o) => labels.some((l) => norm(l) === norm(o.label))).map((o) => o.value);
 }

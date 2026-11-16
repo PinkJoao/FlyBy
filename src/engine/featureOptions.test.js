@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
+import { featureOptionChoices, subclassFeatureOptionChoices, optionPicks } from './featureOptions';
 
 const db = {
   'class-cleric': {
@@ -201,6 +201,29 @@ describe('subclassFeatureOptionChoices', () => {
     expect(out).toHaveLength(1);
     expect(out[0].id).toBe('sub:featopt@Storm Aura@3');
     expect(out[0].pool.options.map((o) => o.label)).toEqual(['Desert', 'Sea', 'Tundra']);
+  });
+
+  it('o Storm Soul segue o ambiente do Storm Aura: não é escolha, e o pick vem da líder (TC-0148)', () => {
+    const ref = (name, lvl) => ({ type: 'refSubclassFeature', subclassFeature: `${name}|Barbarian|PHB|Storm Herald|XGE|${lvl}` });
+    const env = (lvl, text) => ['Desert', 'Sea', 'Tundra'].map((name) => ({ name, source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: lvl, entries: [`${name} ${text}`] }));
+    const db2 = {
+      'class-barbarian': {
+        subclassFeature: [
+          { name: 'Storm Aura', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 3, entries: ['Choose desert, sea, or tundra.', { type: 'options', entries: [ref('Desert', 3), ref('Sea', 3), ref('Tundra', 3)] }] },
+          ...env(3, 'aura'),
+          { name: 'Storm Soul', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 6, entries: ['Based on the environment you chose for your Storm Aura.', { type: 'options', count: 1, entries: [ref('Desert', 6), ref('Sea', 6), ref('Tundra', 6)] }] },
+          ...env(6, 'soul'),
+        ],
+      },
+    };
+    const sub = { shortName: 'Storm Herald', source: 'XGE' };
+    expect(subclassFeatureOptionChoices(db2, 'barbarian', sub, 6).map((c) => c.id)).toEqual(['sub:featopt@Storm Aura@3']);
+    const all = subclassFeatureOptionChoices(db2, 'barbarian', sub, 6, { followers: true });
+    const soul = all.find((c) => c.label === 'Storm Soul');
+    expect(soul.follows).toBe('sub:featopt@Storm Aura@3');
+    const choices = { 'sub:featopt@Storm Aura@3': { kind: 'featureoption', picks: ['Tundra|XGE'] }, 'sub:featopt@Storm Soul@6': { kind: 'featureoption', picks: ['Desert|XGE'] } };
+    expect(optionPicks(choices, soul, all)).toEqual(['Tundra|XGE']);
+    expect(soul.pool.options.find((o) => o.value === 'Tundra|XGE').entries).toEqual(['Tundra soul']);
   });
 
   it('usa lista explícita quando não há sub-features (Elemental Epitome → tipos de dano)', () => {

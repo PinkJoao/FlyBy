@@ -91,7 +91,7 @@ describe('deriveGrantedProficiencies', () => {
   });
 
   it('sem classe/espécie → tudo vazio', () => {
-    expect(deriveGrantedProficiencies(createCharacter(), db)).toEqual({ armor: [], weapons: [], weaponNames: [], grantedSkills: [], grantedTools: [] });
+    expect(deriveGrantedProficiencies(createCharacter(), db)).toEqual({ armor: [], weapons: [], weaponNames: [], grantedSkills: [], grantedTools: [], languages: [] });
   });
 });
 

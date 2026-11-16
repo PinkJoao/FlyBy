@@ -232,6 +232,13 @@ describe('featureLogEvent', () => {
     expect(e.payload.cost).toBeNull();
   });
 
+  it('com amount gasta a quantidade escolhida; zero não gasta (DDL-0224)', () => {
+    const e = featureLogEvent({ catalog, feature: { name: 'Touch of the Long Death' }, spend: 'pool:second-wind', amount: 3 });
+    expect(e.ops).toEqual([{ op: 'spend', key: 'pool:second-wind', amount: 3 }]);
+    expect(e.payload.costs[0].amount).toBe(3);
+    expect(featureLogEvent({ catalog, feature: { name: 'Searing Sunburst' }, spend: 'pool:second-wind', amount: 0 }).ops).toEqual([]);
+  });
+
   it('com modificador e salvaguarda do registro: liga o efeito e mostra a CD', () => {
     const modifier = { id: 'm', label: 'Reckless Attack', maxRounds: 1, effects: [] };
     const e = featureLogEvent({ catalog, state: st(), feature: { name: 'Reckless Attack' }, modifier, save: { abilities: ['con'], dc: 14 } });

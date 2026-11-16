@@ -9,8 +9,9 @@
 //
 //   A sintaxe é a de roll data do Foundry, a mesma das fórmulas de pool e
 //   activity que o catálogo lê: números, `NdM` (`d%` é d100), as quatro
-//   operações, parênteses, `kh`/`kl`/`k` (manter os maiores ou menores), `roN` (rolar de
-//   novo uma vez o dado que saiu N ou menos), `minN`/`maxN`
+//   operações, parênteses, `kh`/`kl`/`k` (manter os maiores ou menores), `roN` ou `rN` (rolar
+//   de novo uma vez o dado que saiu N ou menos; `r` é o do Foundry, no overlay do Tavern
+//   Brawler, "1d4r1"), `minN`/`maxN`
 //   (piso e teto de cada dado), `floor`/`ceil`/`round`/`abs`/`min`/`max`, e
 //   referências `@caminho` resolvidas por um objeto de dados (plano ou aninhado).
 //
@@ -73,6 +74,7 @@ const FUNCTIONS = new Set(['floor', 'ceil', 'round', 'abs', 'min', 'max']);
 const KEEP = new Set(['kh', 'kl', 'k']);
 const CLAMP = new Set(['min', 'max']);
 const REROLL = 'ro';
+const REROLL_ALIASES = new Set(['ro', 'r']);
 
 export class DiceError extends Error {
   constructor(message, position = null) {
@@ -162,7 +164,7 @@ export function tokenize(text) {
       i += m[0].length;
     } else if (/[a-z]/i.test(ch)) {
       const word = src.slice(i).match(/^[a-z]+/i)[0].toLowerCase();
-      if (word !== 'd' && word !== REROLL && !FUNCTIONS.has(word) && !KEEP.has(word)) throw new DiceError(`Unknown word "${word}".`, i);
+      if (word !== 'd' && !REROLL_ALIASES.has(word) && !FUNCTIONS.has(word) && !KEEP.has(word)) throw new DiceError(`Unknown word "${word}".`, i);
       tokens.push({ type: word === 'd' ? 'd' : 'word', value: word, pos: i });
       i += word.length;
     } else if ('+-*/(),%'.includes(ch)) {
@@ -214,7 +216,7 @@ export function parseFormula(text) {
         next();
         const n = peek()?.type === 'num' ? next().value : 1;
         mods.push({ m: m.value === 'k' ? 'kh' : m.value, n });
-      } else if (m.value === REROLL && tokens[p + 1]?.type === 'num') {
+      } else if (REROLL_ALIASES.has(m.value) && tokens[p + 1]?.type === 'num') {
         next();
         mods.push({ m: REROLL, n: next().value });
       } else if (CLAMP.has(m.value) && tokens[p + 1]?.type === 'num') {

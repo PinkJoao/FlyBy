@@ -3,8 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   Deriva as proficiências que vêm de graça da CLASSE (startingProficiencies:
-//   armaduras, armas, ferramentas) e da ESPÉCIE (skill e tool FIXOS, `{ nome:
-//   true }`), além das escolhas do jogador. Precisa do compêndio, então roda na
+//   armaduras, armas, ferramentas), da ESPÉCIE e dos TALENTOS (skill, tool, arma,
+//   armadura e idioma FIXOS, `{ nome: true }`), além das escolhas do jogador. Precisa do compêndio, então roda na
 //   derivação (deriveFromDb) e é injetada no contexto. Proficiência concedida por
 //   TEXTO de feature é outra camada (featureEffects, classFeatureGrants).
 //
@@ -12,8 +12,9 @@
 //   stripTag(s), cap(s), capWords(s), labelFrom(map, raw): limpeza e rótulos.
 //   conditionalWeaponNames(classObj, db): as armas individuais de uma regra
 //     condicional de proficiência.
+//   addFixed(fields, sink): os `{ nome: true }` de um conjunto de campos de proficiência.
 //   deriveGrantedProficiencies(character, db): { armor, weapons, weaponNames,
-//     grantedSkills, grantedTools }.
+//     grantedSkills, grantedTools, languages }.
 //
 // DECISÕES E ARMADILHAS
 //   - Regra CONDICIONAL de arma (TC-0078): o Monge 2024 é proficiente em "Martial
@@ -29,9 +30,14 @@
 //   - Armas e armaduras FIXAS de raça (Dwarven Combat Training, Elf Weapon
 //     Training, Joraga de Zendikar) chegam como 'battleaxe|phb' ou 'light'.
 //   - Rótulos são deduplicados por forma normalizada, preservando a ordem.
+//   - Os talentos entram pelo mesmo caminho da espécie (DDL-0228): o Lightly Armored dava
+//     "training with Light armor and Shields" só no texto, e um mago com ele ficava sem
+//     armadura nenhuma; o Poisoner sem o Poisoner's Kit, o Fey Teleportation sem Sylvan.
+//     Só o fixo (`true`); `choose` e `any` são escolhas do talento, no saco dele.
 // -----------------------------------------------------------------------------
 
-import { resolveClassObj, resolveRaceObj } from './resolve';
+import { resolveClassObj, resolveRaceObj, resolveFeat } from './resolve';
+import { collectFeatIds } from './proficiency';
 import { skillCode } from './classData';
 
 const ARMOR_LABEL = { light: 'Light Armor', medium: 'Medium Armor', heavy: 'Heavy Armor', shield: 'Shields' };
@@ -136,30 +142,16 @@ export function deriveGrantedProficiencies(character, db) {
   const race = character?.species
     ? resolveRaceObj(db, character.species.id, character.species.source, character.species.lineage)
     : null;
-  for (const entry of race?.skillProficiencies ?? []) {
-    if (!entry || typeof entry !== 'object') continue;
-    for (const [k, v] of Object.entries(entry)) {
-      if (v === true && k !== 'choose' && k !== 'any') skills.add(skillCode(k));
-    }
-  }
-  for (const entry of race?.toolProficiencies ?? []) {
-    if (!entry || typeof entry !== 'object') continue;
-    for (const [k, v] of Object.entries(entry)) {
-      if (v === true && k !== 'choose' && k !== 'any') addTo(tools, cap(k));
-    }
-  }
-  for (const entry of race?.weaponProficiencies ?? []) {
-    if (!entry || typeof entry !== 'object') continue;
-    for (const [k, v] of Object.entries(entry)) {
-      if (v === true && k !== 'choose' && k !== 'any') addTo(weapons, capWords(String(k).split('|')[0]));
-    }
-  }
-  for (const entry of race?.armorProficiencies ?? []) {
-    if (!entry || typeof entry !== 'object') continue;
-    for (const [k, v] of Object.entries(entry)) {
-      if (v === true && k !== 'choose' && k !== 'any') addTo(armor, labelFrom(ARMOR_LABEL, k));
-    }
-  }
+  const languages = new Map();
+  const sink = {
+    skill: (k) => skills.add(skillCode(k)),
+    tool: (k) => addTo(tools, capWords(k)),
+    weapon: (k) => addTo(weapons, capWords(String(k).split('|')[0])),
+    armor: (k) => addTo(armor, labelFrom(ARMOR_LABEL, k)),
+    language: (k) => addTo(languages, capWords(k)),
+  };
+  addFixed(race, { ...sink, tool: (k) => addTo(tools, cap(k)), language: null });
+  for (const id of collectFeatIds(character ?? {})) addFixed(resolveFeat(db, id), sink);
 
   return {
     armor: [...armor.values()],
@@ -167,5 +159,21 @@ export function deriveGrantedProficiencies(character, db) {
     weaponNames: [...weaponNames.values()],
     grantedSkills: [...skills],
     grantedTools: [...tools.values()],
+    languages: [...languages.values()],
   };
+}
+
+const FIXED_FIELDS = { skill: 'skillProficiencies', tool: 'toolProficiencies', weapon: 'weaponProficiencies', armor: 'armorProficiencies', language: 'languageProficiencies' };
+
+/** Os `{ nome: true }` de uma entidade, por tipo, para o `sink` de cada tipo. */
+function addFixed(entity, sink) {
+  for (const [kind, field] of Object.entries(FIXED_FIELDS)) {
+    if (!sink[kind]) continue;
+    for (const entry of entity?.[field] ?? []) {
+      if (!entry || typeof entry !== 'object') continue;
+      for (const [k, v] of Object.entries(entry)) {
+        if (v === true && k !== 'choose' && k !== 'any' && !k.startsWith('any')) sink[kind](k);
+      }
+    }
+  }
 }

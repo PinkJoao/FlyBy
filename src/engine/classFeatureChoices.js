@@ -177,6 +177,9 @@ const SUBCLASS_FEATURE_GRANTS = {
   'bladesinger|training in war and song': [{ kind: 'skill', count: 1, from: ['acr', 'ath', 'prf', 'per'] }],
   'giant|giant power': [{ kind: 'language', count: 1, label: 'Language (Giant, or another if you know Giant)' }],
   'ascendant dragon|draconic disciple': [{ kind: 'language', count: 1, label: 'Language (Draconic, or another)' }],
+  'drakewarden|draconic gift': [{ kind: 'language', count: 1, label: 'Language (Draconic, or another)' }],
+  'arcana|student of arcana': [{ kind: 'skill', count: 1, from: ['arc', 'his', 'ins', 'med', 'per', 'rel'], label: 'Skill (Arcana, or a Cleric skill)' }],
+  'enchanter|enchanting conversationalist': [{ kind: 'skill', count: 1, from: ['dec', 'itm', 'per'] }],
 };
 
 const KIND_LABEL = { skill: 'Skill', tool: 'Tool', language: 'Language', expertise: 'Expertise', feat: 'Feat', weaponProf: 'Weapon', resist: 'Damage Resistance' };

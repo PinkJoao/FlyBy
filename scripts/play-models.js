@@ -16,7 +16,9 @@
 //   - cada recurso com recuperação volta no descanso que diz;
 //   - cada feature recebe o veredito do levantamento (scripts/lib/playCoverage.js).
 //   Grava testing/COVERAGE-PLAY.md (o livro, uma linha por feature) e
-//   src/dev/playModels.json (os personagens para o botão "Load test characters").
+//   src/dev/playModels.json (os personagens para o botão "Load test characters") e
+//   testing/play-models/legacy-characters.json (os da leva Legacy, privados, para o passe ao
+//   vivo no app de dev, carregados pelo console).
 //
 // FUNÇÕES
 //   originFeatOf(name): o talento de origem da especificação como { id, source }.
@@ -30,8 +32,11 @@
 //   bookOf(rows, units): o texto do COVERAGE-PLAY.md.
 //
 // DECISÕES E ARMADILHAS
-//   - Os modelos são SÓ do SRD: o autoBuild sorteia talento, opção de classe e magia entre o
-//     que tem a marca srd52 ou srd (`spec.allow`), e o resto vem da especificação.
+//   - Os modelos do SRD sorteiam talento, opção de classe e magia só entre o que tem a marca
+//     srd52 ou srd (`spec.allow`); os da leva Legacy (DDL-0224) também no XPHB e no livro da
+//     própria subclasse (sorteando em tudo, o monge nascia com talentos de cenário), e nunca vão
+//     para src/dev/playModels.json, que vai no app e no espelho público (só o livro, privado).
+//     `model.picks` entra direto no saco da classe (o Pact of the Blade do Hexblade).
 //   - Cada modelo leva o kit inicial da classe (a opção A, como o guia de criação faz): sem
 //     ele, a primeira rodada só tinha o ataque desarmado, e o passe ao vivo achou isso
 //     (DDL-0219). Armadura e arma nascem equipadas (startingKitInventory).
@@ -133,9 +138,10 @@ function build(db, model, level) {
     seed: hashSeed(model.id, level),
     originFeat: originFeatOf(model.originFeat),
     abilityOrder: ABILITY_ORDER[model.classId],
-    allow: (raw) => !!(raw?.srd52 || raw?.srd),
+    allow: (raw) => !!(raw?.srd52 || raw?.srd) || (model.batch === 'Legacy' && [model.subclassSource, 'XPHB'].includes(raw?.source)),
     preset: (c) => {
       for (const [lvl, id] of feats) c.classes[0].choices[`feat@${lvl}`] = { kind: 'feat', picks: [id], sub: {} };
+      for (const [id, picks] of Object.entries(model.picks ?? {})) c.classes[0].choices[id] = { kind: id.startsWith('optfeat@') ? 'optionalfeature' : 'feat', picks: [...picks], sub: {} };
     },
   });
   const c = built.character;
@@ -316,8 +322,9 @@ const db = loadDb();
 const units = [];
 const rows = new Map();
 const characters = [];
+const legacy = [];
 const plan = [
-  ...MODELS.flatMap((m) => LEVELS.map((level) => ({ model: { ...m, name: `${m.batch === 'SRD 5.1' ? 'Model 2014' : 'Model 2024'} ${m.classId[0].toUpperCase()}${m.classId.slice(1)}` }, level }))),
+  ...MODELS.flatMap((m) => LEVELS.map((level) => ({ model: { ...m, name: `${m.batch === 'Legacy' ? 'Model legacy' : 'Model 2024'} ${m.classId[0].toUpperCase()}${m.classId.slice(1)}` }, level }))),
   ...LIGHT_COPIES.map((lc) => {
     const base = MODELS.find((m) => m.id === lc.of);
     return { model: { ...base, ...lc, feats: lc.feats ?? base.feats, batch: base.batch, name: `Model copy ${lc.id.replace(/^lc-/, '')}` }, level: LIGHT_LEVEL };
@@ -329,7 +336,8 @@ for (const { model, level } of plan) {
   const { character, problems } = build(db, model, level);
   const result = probe(db, character, unit);
   units.push({ unit, batch: model.batch, problems: [...problems, ...result.problems] });
-  characters.push(character);
+  // ATENÇÃO: o arquivo do botão vai no app e no espelho público: só ficha do SRD (DDL-0224).
+  (model.batch === 'Legacy' ? legacy : characters).push(character);
   for (const f of result.features) {
     const key = `${f.name}|${f.section}`;
     const prev = rows.get(key);
@@ -348,6 +356,7 @@ if (!args['no-write'] && !args.only) {
   fs.writeFileSync('testing/COVERAGE-PLAY.md', bookOf(rows, units));
   fs.mkdirSync('src/dev', { recursive: true });
   fs.writeFileSync('src/dev/playModels.json', `${JSON.stringify(characters)}\n`);
-  console.log('wrote testing/COVERAGE-PLAY.md and src/dev/playModels.json');
+  fs.writeFileSync('testing/play-models/legacy-characters.json', `${JSON.stringify(legacy)}\n`);
+  console.log('wrote testing/COVERAGE-PLAY.md, src/dev/playModels.json and testing/play-models/legacy-characters.json');
 }
 process.exitCode = failing.length || gaps.length ? 1 : 0;

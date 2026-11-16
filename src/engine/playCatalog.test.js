@@ -18,7 +18,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   evalUses, scaleValues, scaleRollData, actorResources, weaponAttacks, unarmedStrike, cantripAttacks,
-  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts,
+  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity,
 } from './playCatalog';
 
 const feat = (name, system = {}, extra = {}) => ({ type: 'feat', name, system: { identifier: '', uses: { max: '' }, ...system }, ...extra });
@@ -326,3 +326,18 @@ describe('withMartialArts', () => {
   });
 });
 
+
+describe('spendsChannelDivinity', () => {
+  const f = (name, text) => ({ name, entries: [text] });
+  it('a opção que gasta o Channel Divinity, pela frase ou pelo nome', () => {
+    expect(spendsChannelDivinity(f('Conquering Presence', 'You can use your Channel Divinity to exude a terrifying presence.'))).toBe(true);
+    expect(spendsChannelDivinity(f('Holy Bolt', 'As a Bonus Action, you expend a use of your Channel Divinity to make a ranged spell attack.'))).toBe(true);
+    expect(spendsChannelDivinity(f("Oketra's Blessing", 'you can use your reaction to grant that creature a +10 bonus, using your Channel Divinity.'))).toBe(true);
+    expect(spendsChannelDivinity(f('Channel Divinity: Touch of Death', 'When you hit a creature with a melee attack, you can deal extra necrotic damage.'))).toBe(true);
+  });
+  it('nem a que só cita as opções nem a feature guarda-chuva', () => {
+    expect(spendsChannelDivinity(f('Inescapable Destruction', "Necrotic damage dealt by your cleric spells and Channel Divinity options ignores resistance."))).toBe(false);
+    expect(spendsChannelDivinity(f('Supreme Healing', 'When you would roll dice to restore Hit Points with a spell or Channel Divinity, use the highest number.'))).toBe(false);
+    expect(spendsChannelDivinity(f('Channel Divinity', 'You can use your Channel Divinity to fuel magical effects.'))).toBe(false);
+  });
+});

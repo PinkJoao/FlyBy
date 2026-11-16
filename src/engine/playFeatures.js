@@ -26,6 +26,12 @@
 //     usa ou declara) para o alternador da aba.
 //
 // DECISÕES E ARMADILHAS
+//   - O lugar de cada feature (classe ou subclasse, e o texto) é achado por nome, nível e
+//     LIVRO, e só depois por nome e nível: a "Channel Divinity" do paladino (XPHB) e a guarda-
+//     chuva da subclasse antiga (Conquest, XGE) têm o mesmo nome e nível, e a da classe ia
+//     para a seção da subclasse (DDL-0226). A opção escolhida dentro de uma feature de
+//     subclasse ("Storm Aura: Tundra") vai para a seção da feature-mãe pelo prefixo do nome
+//     (`optionPlace`); sem isso, ficava na seção da classe.
 //   - O tipo vem do item do ator: `race` é espécie, `feat` com subtype `origin` é o
 //     talento de origem, o resto de `feat` é talento; `class` com subtype (invocação,
 //     manobra, metamagia) é OPÇÃO de classe, numa seção pelo subtype. Para `class`
@@ -168,18 +174,24 @@ export function namedEntries(entries, out = []) {
  */
 export function featureList(actor, character, db) {
   const known = new Map();
+  const subclassNames = new Map();
   const classNames = [];
   for (const cls of character?.classes ?? []) {
     const classObj = cls.classId ? resolveClassObj(db, cls.classId, cls.source) : null;
     if (!classObj) continue;
     classNames.push(classObj.name);
     for (const f of resolveClassFeatures(db, cls.classId, classObj, cls.level || 1)) {
-      known.set(`${norm(f.name)}|${f.level}`, { kind: 'class', section: classObj.name, entries: f.entries });
+      const place = { kind: 'class', section: classObj.name, entries: f.entries };
+      known.set(`${norm(f.name)}|${f.level}`, place);
+      known.set(`${norm(f.name)}|${f.level}|${norm(f.source)}`, place);
     }
     const subObj = cls.subclassId ? resolveSubclassObj(db, cls.classId, cls.subclassId, cls.subclassSource) : null;
     if (!subObj) continue;
     for (const f of resolveSubclassFeatures(subObj, cls.classId, db, { max: cls.level || 1 })) {
-      known.set(`${norm(f.name)}|${f.level}`, { kind: 'subclass', section: subObj.name, entries: f.entries });
+      const place = { kind: 'subclass', section: subObj.name, entries: f.entries };
+      subclassNames.set(norm(f.name), place);
+      known.set(`${norm(f.name)}|${f.level}`, place);
+      known.set(`${norm(f.name)}|${f.level}|${norm(f.source)}`, place);
     }
   }
   const sp = character?.species;
@@ -193,6 +205,10 @@ export function featureList(actor, character, db) {
     return (same.find((x) => norm(x.source) === book) ?? same[same.length - 1])?.entries ?? null;
   };
 
+  const optionPlace = (name) => {
+    const parent = subclassNames.get(norm(String(name).split(':')[0]));
+    return String(name).includes(':') && parent ? { ...parent, entries: null } : null;
+  };
   const out = [];
   let current = { kind: 'class', section: classNames[0] ?? 'Class' };
   let speciesName = raceObj?.name ?? 'Species';
@@ -208,7 +224,7 @@ export function featureList(actor, character, db) {
     if (type === 'race') place = { kind: 'species', section: speciesName, entries: traits.find((t) => norm(t.name) === norm(item.name))?.entries ?? null };
     else if (type === 'feat') place = { kind: 'feat', section: FEAT_LABELS[subtype] ?? 'Feats', entries: byName(feats, item) };
     else if (subtype) place = { kind: 'class', section: OPTION_LABELS[subtype] ?? current.section, entries: byName(options, item), option: true };
-    else place = known.get(`${norm(item.name)}|${level}`) ?? { ...current, entries: null };
+    else place = known.get(`${norm(item.name)}|${level}|${norm(item.system?.source?.book)}`) ?? known.get(`${norm(item.name)}|${level}`) ?? optionPlace(item.name) ?? { ...current, entries: null };
     const ident = featureIdent(item);
     out.push({
       key: `feature:${ident}|${level ?? ''}`,

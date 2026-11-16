@@ -801,6 +801,7 @@ export function deriveFromDb(character, db) {
   const langPicks = (character.classes ?? []).flatMap((c) => collectChoicePicks(c.choices, 'language'));
   const grantedLanguages = [
     ...(raceObj ? (parseSpecies(raceObj)?.languages?.fixed ?? []) : []),
+    ...auto.languages,
     ...sub.languages,
     ...clsGrants.languages,
     ...langPicks,
@@ -896,6 +897,6 @@ export function ownedFromDb(character, db) {
     owned.expertise.add(s);
   }
   for (const t of [...auto.grantedTools, ...feat.grantedTools, ...sub.grantedTools]) owned.tools.add(String(t).toLowerCase());
-  for (const l of sub.languages) owned.languages.add(String(l).toLowerCase());
+  for (const l of [...sub.languages, ...auto.languages]) owned.languages.add(String(l).toLowerCase());
   return owned;
 }

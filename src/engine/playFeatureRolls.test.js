@@ -101,7 +101,17 @@ describe('Use das features de efeito e de gasto', () => {
   });
 
   it('Stunning Strike gasta Focus e mostra a CD de CON (8 + PB + SAB)', () => {
-    expect(featureUseOf({ name: 'Stunning Strike' }, cat([]))).toEqual({ modifier: null, spend: 'pool:monks-focus', save: { abilities: ['con'], dc: 14 }, roll: null, apply: null, restore: null });
+    expect(featureUseOf({ name: 'Stunning Strike' }, cat([]))).toEqual({ modifier: null, spend: 'pool:monks-focus', amount: 1, spent: 1, save: { abilities: ['con'], dc: 14 }, roll: null, apply: null, restore: null });
+  });
+
+  it('o ki das subclasses antigas gasta Focus na quantidade do texto (DDL-0224)', () => {
+    const c = cat([]);
+    const touch = featureUseOf({ name: 'Touch of the Long Death' }, c, 4);
+    expect(touch).toMatchObject({ spend: 'pool:monks-focus', amount: { min: 1, max: 10 }, spent: 4, roll: { formula: '8d10' } });
+    expect(featureUseOf({ name: 'Touch of the Long Death' }, c, 99).spent).toBe(10);
+    expect(featureUseOf({ name: 'Searing Sunburst' }, c, 0)).toMatchObject({ spent: 0, roll: { formula: '2d6' } });
+    expect(featureUseOf({ name: 'Awakened Astral Self' }, c)).toMatchObject({ amount: 5, spent: 5 });
+    expect(featureUseOf({ name: 'Mastery of Death' }, c)).toMatchObject({ spent: 1, apply: 'heal', roll: { formula: '1' } });
   });
 
   it('o extra de rolagem não tem Use próprio', () => {

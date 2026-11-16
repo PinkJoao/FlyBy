@@ -47,6 +47,12 @@ describe('rollFormula: dados', () => {
     expect(r.groups).toEqual([{ formula: '2d6', faces: 6, results: [{ value: 4, kept: true }, { value: 5, kept: true }], total: 9 }]);
   });
 
+  it('r é o ro do Foundry: rola de novo uma vez o 1 (Tavern Brawler, "1d4r1")', () => {
+    expect(rollFormula('1d4r1 + 3', { rng: seq(1, 1) }).total).toBe(4);
+    expect(rollFormula('1d4r1', { rng: seq(3) }).total).toBe(3);
+    expect(rollFormula('round(2.6)').total).toBe(3);
+  });
+
   it('d sem número é um dado, e d% é d100', () => {
     expect(rollFormula('d8', { rng: seq(7) }).total).toBe(7);
     expect(rollFormula('d%', { rng: seq(42) }).groups[0].faces).toBe(100);

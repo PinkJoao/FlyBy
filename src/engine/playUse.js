@@ -363,9 +363,9 @@ export function withResourceMax(catalog, state) {
  * O "Log to history" de uma feature: o nome e o custo do turno, sem rolar. `spend` é a
  * chave do que o uso gasta (um); `modifier`, `save` e `roll` vêm do registro (playFeatureRolls).
  */
-export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, modifier = null, save = null, roll = null, apply = null, restore = null, rng = cryptoRng, now = new Date() }) {
+export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, rng = cryptoRng, now = new Date() }) {
   const rolls = roll ? rollParts([{ label: roll.label, formula: roll.formula }], { data: catalog.rollData, rng }) : null;
-  const ops = spend ? [{ op: 'spend', key: spend, amount: 1 }] : [];
+  const ops = spend && amount > 0 ? [{ op: 'spend', key: spend, amount }] : [];
   if (modifier) ops.push({ op: 'modifier', add: state ? withRounds(modifier, state, modifier.maxRounds) : modifier });
   let healed = null;
   let temp = null;
@@ -384,8 +384,8 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
       featureKey: feature.key ?? null,
       logged: true,
       cost,
-      costs: spend ? [{ name: nameOf(catalog, spend), amount: 1 }] : [],
-      short: spend && state && left(catalog, state, spend) < 1 ? [nameOf(catalog, spend)] : [],
+      costs: spend && amount > 0 ? [{ name: nameOf(catalog, spend), amount }] : [],
+      short: spend && state && amount > 0 && left(catalog, state, spend) < amount ? [nameOf(catalog, spend)] : [],
       save,
       effect: modifier?.label ?? null,
       rolled: !!rolls,

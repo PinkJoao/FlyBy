@@ -59,7 +59,8 @@
 //     resistência permanente.
 //   - resistByTypes varre o bag pelo KIND: há uma subclasse por classe, e um pick
 //     fora do mapa não contribui. O pick pode trazer a fonte ("Desert|XGE"),
-//     descartada na normalização.
+//     descartada na normalização. Com `id`, lê só aquela escolha: o Storm Soul lê o Storm
+//     Aura, e um pick velho da escolha do Storm Soul (antes do DDL-0227) não soma outro tipo.
 // -----------------------------------------------------------------------------
 
 import { resolveSubclassObj, resolveClassObj, resolveRaceObj } from './resolve';
@@ -103,7 +104,7 @@ export const SUBCLASS_GRANTS = {
     {
       level: 6,
       feature: 'Storm Soul',
-      resistBy: { choice: 'featureoption', map: { desert: ['fire'], sea: ['lightning'], tundra: ['cold'] } },
+      resistBy: { choice: 'featureoption', id: 'sub:featopt@Storm Aura@3', map: { desert: ['fire'], sea: ['lightning'], tundra: ['cold'] } },
     },
   ],
   'bard|valor': [
@@ -142,6 +143,8 @@ export const SUBCLASS_GRANTS = {
   'fighter|psi warrior': [{ level: 10, feature: 'Guarded Mind', resist: ['psychic'] }],
   'monk|mercy': [{ level: 3, feature: 'Implements of Mercy', skills: ['ins', 'med'], tools: ['Herbalism Kit'] }],
   'monk|drunken master': [{ level: 3, feature: 'Bonus Proficiencies', skills: ['prf'], tools: ["Brewer's Supplies"] }],
+  'monk|mystic brews': [{ level: 3, feature: 'Bonus Proficiencies', skills: ['prf'], tools: ["Brewer's Supplies"], conditionalSkillAlt: ['acr', 'ath', 'his', 'ins', 'rel', 'ste'] }],
+  'wizard|necromancer': [{ level: 3, source: 'AU', feature: 'Necromancy Spellbook', resist: ['necrotic'] }],
   'ranger|gloom stalker': [
     { level: 7, feature: 'Iron Mind', saves: ['wis'], conditionalSaveAlt: ['int', 'cha'] },
   ],
@@ -200,7 +203,8 @@ export function subclassGrantGroups(classId, subclassObj, level) {
 /** Os tipos de dano de um `resistBy`, lidos de um pick do bag da classe. */
 function resistByTypes(spec, cls) {
   const out = [];
-  for (const pick of collectChoicePicks(cls?.choices, spec.choice)) {
+  const picks = spec.id ? cls?.choices?.[spec.id]?.picks ?? [] : collectChoicePicks(cls?.choices, spec.choice);
+  for (const pick of picks) {
     const key = String(pick).split('|')[0].trim().toLowerCase();
     out.push(...(spec.map?.[key] ?? []));
   }

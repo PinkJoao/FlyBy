@@ -18,11 +18,6 @@
 //     feature, ou {}.
 //   classWeaponGrants(classId): os itens de inventário que a classe concede.
 //   srdFeatureMechanics(name, classId): { activities, effects } do SRD, ou null.
-//   srd14FeatureMechanics(classId, subclassName, name): { activities, effects, uses } do SRD
-//     de 2014 para a feature de subclasse clássica, ou null (TC-0135, DDL-0222).
-//   srd14SubclassScales(classId, subclassName): os ScaleValue do item de subclasse de 2014,
-//     que a mecânica de 2014 cita (o Divine Strike do Life Domain antigo, achado no Foundry
-//     real).
 //   srdFeatMechanics(featData): { activities, effects, uses } do talento no SRD
 //     (feats24, só o de 2024), em cópia, ou null.
 //
@@ -59,7 +54,7 @@
 //     acréscimo universal ganha título próprio.
 // -----------------------------------------------------------------------------
 
-import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS, SRD_COMMON_WEAPON_GRANTS, SRD_FEAT_MECHANICS, SRD14_SUBCLASS_FEATURES, SRD14_SUBCLASS_SCALES } from './srdActivitiesData';
+import { SRD_ACTIVITIES_BY_CLASS, SRD_ACTIVITIES_FLAT, SRD_CLASS_WEAPON_GRANTS, SRD_COMMON_WEAPON_GRANTS, SRD_FEAT_MECHANICS } from './srdActivitiesData';
 
 const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 function fid() {
@@ -324,24 +319,6 @@ export function srdFeatureMechanics(name, classId) {
   const fixes = SRD_FORMULA_FIXES[key] ?? [];
   const fix = (v) => (fixes.length ? JSON.parse(fixes.reduce((s, [a, b]) => s.split(a).join(b), JSON.stringify(v))) : v);
   return { activities: fix(entry.activities ?? {}), effects: fix(entry.effects ?? []) };
-}
-
-/**
- * A mecânica do SRD de 2014 de uma feature de subclasse clássica ({ activities, effects, uses }), em
- * cópia; null quando o SRD de 2014 não a publica.
- */
-export function srd14FeatureMechanics(classId, subclassName, name) {
-  const slug = String(subclassName ?? '').trim().toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const key = `${String(classId ?? '').trim().toLowerCase()}|${slug}|${String(name ?? '').trim().toLowerCase().replace(/’/g, "'")}`;
-  const entry = SRD14_SUBCLASS_FEATURES[key];
-  if (!entry) return null;
-  return structuredClone({ activities: entry.activities ?? {}, effects: entry.effects ?? [], uses: entry.uses ?? null });
-}
-
-/** Os ScaleValue do item de subclasse do SRD de 2014 (o "divine-strike" do Life Domain antigo), em cópia. */
-export function srd14SubclassScales(classId, subclassName) {
-  const slug = String(subclassName ?? '').trim().toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return structuredClone(SRD14_SUBCLASS_SCALES[`${String(classId ?? '').trim().toLowerCase()}|${slug}`] ?? []);
 }
 
 /**

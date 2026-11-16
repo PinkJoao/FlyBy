@@ -22,7 +22,8 @@
 //   spendKeyOf(catalog, spend): a chave do recurso que a entrada gasta (o pool pelo
 //     nome do item, ou o espaço do pacto).
 //   riderSpendOps(applied, catalog): as operações do gasto dos extras ligados.
-//   featureUseOf(feature, catalog): o que o "Use" de uma feature `toggle` ou `use`
+//   amountOf(entry, rollData): quanto a entrada gasta (número, ou { min, max } a escolher).
+//   featureUseOf(feature, catalog, chosen): o que o "Use" de uma feature `toggle` ou `use`
 //     faz: o modificador, o gasto e a salvaguarda.
 //   formulaOf(entry, rollData): a fórmula, que pode depender do nível.
 //   byLevel(classId, steps), MARTIAL(count): a fórmula pelo nível de uma classe
@@ -122,6 +123,24 @@
 //     (o Berserker antigo no chassi de 2024) é um ataque bônus em Rage, sem dano a mais. O mesmo
 //     no Supreme Sneak (o do PHB é vantagem em Stealth, não o Stealth Attack): `xphbOnly`
 //     (DDL-0221).
+//   - A adaptação do ki (DDL-0224, E3): a subclasse de monge antiga que gastava ki gasta o Focus
+//     do Monk's Focus (FOCUS), na quantidade do texto. `amount` é o gasto: um número (o Awakened
+//     Astral Self, "spend 5 ki points"), ou { min, max } que o "Use" pergunta (Touch of the Long
+//     Death "1 to 10", Sharpen the Blade "up to 3", Searing Sunburst até 3, Searing Arc Strike
+//     de 2 até metade do nível de monge); a fórmula recebe o gasto (`formulaOf(entry, rd, n)`:
+//     2d10 por ponto, 2d6 + 2d6 por ponto, o Burning Hands no nível 1 + cada ponto além de 2).
+//     A CD é a do ki (8 + PB + SAB), a mesma do Stunning Strike.
+//     Mastery of Death ("expend 1 ki point ... to have 1 hit point instead") cura 1. O gasto
+//     alternativo quando o próprio pool acabou (o Breath of the Dragon "spend 2 ki points to use
+//     this feature again", o Aspect of the Wyrm "3 ki points", e o Ascendant Aspect, 1 ponto que
+//     melhora o sopro) fica no ajuste à mão do contador (DDL-0202).
+//   - O legado no passe ao vivo (DDL-0226), pelo texto de cada um: Storm Aura de mar ("1d6
+//     lightning", 2d6 no 10, 3d6 no 15, 4d6 no 20, CD 8 + PB + CON) e de tundra (2 temporários,
+//     3 no 5, 4 no 10, 5 no 15, 6 no 20); Master's Flourish ("roll a d6 and use it instead of
+//     expending a Bardic Inspiration die"); Supernatural Defense ("add 1d6 to your roll" contra
+//     o alvo do Slayer's Prey); Improved Pact Weapon (+1 no ataque e no dano da arma do pacto);
+//     Lifedrinker do XPHB (1d6 uma vez por turno; o Dado de Vida que cura sai pelo card de PV).
+//     O Great Stature e o Runic Juggernaut só sobem o dado do Giant's Might (byLevel).
 //   - Oitava leva (DDL-0221, o passe ao vivo): Great Weapon Fighting do XPHB ("you can treat
 //     any 1 or 2 on a damage die as a 3", com uma arma corpo a corpo nas duas mãos), `diceMin`
 //     3: LIGADO na arma Two-Handed (`when: 'twoHandedMelee'`) e oferecido desligado na
@@ -338,7 +357,10 @@ export const FEATURE_ROLLS = {
   "slayer's prey": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d6', note: 'your designated target; the first hit each turn' },
   "kensei's shot": { kind: 'rider', on: ['damage'], when: 'ranged', formula: '1d4', note: 'a kensei weapon, after the Bonus Action this turn' },
   'one with the blade': { kind: 'rider', on: ['damage'], when: 'weapon', spend: FOCUS, formula: '@scale.monk.die', label: 'Deft Strike', note: 'a kensei weapon; once per turn' },
-  'searing sunburst': { kind: 'use', roll: { label: 'Radiant (Constitution save); +2d6 per Focus Point, up to 3', formula: '2d6' } },
+  'searing sunburst': { kind: 'use', spend: FOCUS, save: { ability: 'con', dc: '8 + @prof + @abilities.wis.mod' }, amount: { min: 0, max: 3 }, roll: { label: 'Radiant (Constitution save): 2d6, +2d6 per Focus Point spent', formula: (rd, n) => `${2 + 2 * n}d6` } },
+  'searing arc strike': { kind: 'use', spend: FOCUS, save: { ability: 'dex', dc: '8 + @prof + @abilities.wis.mod' }, amount: { min: 2, max: (rd) => Math.floor((rd.classes?.monk?.levels ?? 0) / 2) }, roll: { label: 'Burning Hands at level 1 + each point past 2 (Dexterity save, half on success)', formula: (rd, n) => `${1 + n}d6` } },
+  'radiant sun bolt': { kind: 'use', spend: FOCUS, note: 'two Radiant Sun Bolts as a Bonus Action, after the Attack action' },
+  'sharpen the blade': { kind: 'use', spend: FOCUS, amount: { min: 1, max: 3 }, note: 'a kensei weapon gets +1 to attack and damage per point spent, for 1 minute' },
   'halo of spores': { kind: 'use', roll: { label: 'Necrotic (Constitution save)', formula: byLevel('druid', [[14, '1d10'], [10, '1d8'], [6, '1d6'], [0, '1d4']]) } },
   'symbiotic entity': {
     kind: 'use',
@@ -372,12 +394,20 @@ export const FEATURE_ROLLS = {
     }),
   },
   'great stature': { kind: 'passive' },
+  'storm aura: sea': { kind: 'use', save: { ability: 'dex', dc: '8 + @prof + @abilities.con.mod' }, roll: { label: 'Lightning to one creature in the aura (Dexterity save, half on success)', formula: byLevel('barbarian', [[20, '4d6'], [15, '3d6'], [10, '2d6'], [0, '1d6']]) } },
+  'storm aura: tundra': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points for each creature of your choice in the aura', formula: byLevel('barbarian', [[20, '6'], [15, '5'], [10, '4'], [5, '3'], [0, '2']]) } },
+  "master's flourish": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d6', note: 'a Blade Flourish that rolls this d6 instead of spending Bardic Inspiration' },
+  'supernatural defense': { kind: 'rider', on: ['save', 'check'], formula: '1d6', note: "against the target of your Slayer's Prey (its saves, or a check to escape its grapple)" },
+  'improved pact weapon': { kind: 'rider', on: ['attack', 'damage'], when: 'weapon', formula: '1', note: 'your pact weapon, unless it is a magic weapon that already has a bonus' },
+  lifedrinker: { kind: 'rider', on: ['damage'], when: 'weapon', has: xphbOnly('Lifedrinker'), formula: '1d6', note: "your pact weapon, once per turn; Necrotic, Psychic or Radiant; spend a Hit Point Die on the HP card's Hit dice to heal" },
   'runic juggernaut': { kind: 'passive' },
   'arms of the astral self': { kind: 'use', spend: FOCUS, roll: { label: 'Force within 10 feet (Dexterity save)', formula: MARTIAL(2) } },
   'body of the astral self': { kind: 'use', roll: { label: 'Damage reduced (Deflect Energy)', formula: '1d10 + @abilities.wis.mod' } },
   'gathered swarm': { kind: 'rider', on: ['damage'], formula: '1d6', note: 'once per turn, Piercing (or push or move instead)' },
   'turn the tide': { kind: 'use', spend: CD, roll: { label: 'Healing for each creature at half its Hit Points or less', formula: '1d6 + @abilities.cha.mod' } },
-  'touch of the long death': { kind: 'use', roll: { label: 'Necrotic per Focus Point spent (Constitution save, half on success)', formula: '2d10' } },
+  'touch of the long death': { kind: 'use', spend: FOCUS, save: { ability: 'con', dc: '8 + @prof + @abilities.wis.mod' }, amount: { min: 1, max: 10 }, roll: { label: 'Necrotic: 2d10 per Focus Point spent (Constitution save, half on success)', formula: (rd, n) => `${2 * n}d10` } },
+  'mastery of death': { kind: 'use', spend: FOCUS, apply: 'heal', roll: { label: 'Back to 1 Hit Point instead of 0', formula: '1' } },
+  'visage of the astral self': { kind: 'use', spend: FOCUS },
   'defy death': { kind: 'use', apply: 'heal', roll: { label: 'Hit Points regained', formula: '1d8 + @abilities.con.mod' } },
   'indestructible life': { kind: 'use', apply: 'heal', roll: { label: 'Hit Points regained', formula: '1d8 + @classes.warlock.levels' } },
   'wrath of the storm': { kind: 'use', roll: { label: 'Lightning or Thunder (Dexterity save, half on success)', formula: '2d8' } },
@@ -389,7 +419,7 @@ export const FEATURE_ROLLS = {
   'alchemical savant': { kind: 'rider', on: ['damage'], when: 'spell', formula: 'max(1, @abilities.int.mod)', note: "one roll of a spell cast with Alchemist's Supplies; healing, or Acid, Fire or Poison damage" },
   'arcane firearm': { kind: 'rider', on: ['damage'], when: 'spell', formula: '1d8', note: 'one damage roll of an Artificer spell cast through the firearm' },
   'agile parry': { kind: 'toggle', modifier: () => ({ label: 'Agile Parry', source: 'feature', duration: 'manual', maxRounds: 1, ac: 2, effects: [] }) },
-  'awakened astral self': { kind: 'toggle', modifier: () => ({ label: 'Awakened Astral Self', source: 'feature', duration: 'manual', maxRounds: 100, endsOnIncapacitated: true, ac: 2, notes: ['5 Focus Points; spend them on the counter'], effects: [] }) },
+  'awakened astral self': { kind: 'toggle', spend: FOCUS, amount: 5, modifier: () => ({ label: 'Awakened Astral Self', source: 'feature', duration: 'manual', maxRounds: 100, endsOnIncapacitated: true, ac: 2, effects: [] }) },
   'revenant blade': { kind: 'toggle', modifier: () => ({ label: 'Revenant Blade', source: 'feature', duration: 'manual', ac: 1, notes: ['a double-bladed scimitar in two hands'], effects: [] }) },
   'devouring plague': { kind: 'use', apply: 'heal', spend: { item: 'Devouring Plague' }, roll: { label: 'Necrotic damage dealt, and Hit Points regained', formula: '1d10' } },
   'touch of the grave': { kind: 'use', apply: 'heal', roll: { label: 'Extra Necrotic damage, and Hit Points regained', formula: (rd) => `${rd.prof ?? 2}d4` } },
@@ -414,8 +444,17 @@ export function featureRollOf(name) {
 }
 
 /** A fórmula da entrada, resolvida pelo nível quando é função. */
-export function formulaOf(entry, rollData = {}) {
-  return typeof entry.formula === 'function' ? entry.formula(rollData) : entry.formula;
+export function formulaOf(entry, rollData = {}, amount = 1) {
+  return typeof entry.formula === 'function' ? entry.formula(rollData, amount) : entry.formula;
+}
+
+/** Quanto a entrada gasta: um número, ou { min, max } que o jogador escolhe (o máximo pode depender do nível). */
+export function amountOf(entry, rollData = {}) {
+  const a = entry?.amount;
+  if (a == null) return 1;
+  if (typeof a === 'number') return a;
+  const max = typeof a.max === 'function' ? a.max(rollData) : a.max;
+  return { min: a.min ?? 1, max: Math.max(a.min ?? 1, max ?? a.min ?? 1) };
 }
 
 /** A nota, que pode citar uma CD calculada. */
@@ -496,8 +535,9 @@ export function riderSpendOps(applied, catalog) {
  * O que o "Use" de uma feature `toggle` ou `use` faz: o modificador (sem id), a chave
  * do gasto, a salvaguarda, a rolagem, o `apply` e a chave do `restore`. Null para o resto.
  */
-export function featureUseOf(feature, catalog) {
+export function featureUseOf(feature, catalog, chosen = null) {
   const e = featureRollOf(feature?.name);
+  if (!e && feature?.spendItem) return { modifier: null, spend: spendKeyOf(catalog, { item: feature.spendItem }), amount: 1, spent: 1, save: null, roll: null, apply: null, restore: null };
   if (!e) {
     const prose = (catalog.proseUses ?? []).find((u) => u.name === feature?.name);
     return prose ? { modifier: null, spend: null, save: null, roll: { label: prose.label, formula: prose.formula }, apply: prose.apply, restore: null } : null;
@@ -514,6 +554,9 @@ export function featureUseOf(feature, catalog) {
     }
     save = { abilities: [e.save.ability], dc };
   }
-  const roll = e.roll ? { label: e.roll.label, formula: formulaOf(e.roll, rd) } : null;
-  return { modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore) };
+  const amount = amountOf(e, rd);
+  const n = typeof amount === 'number' ? amount : Math.min(amount.max, Math.max(amount.min, chosen ?? amount.min));
+  const formula = e.roll ? formulaOf(e.roll, rd, n) : null;
+  const roll = e.roll && formula && formula !== '0' ? { label: e.roll.label, formula } : null;
+  return { modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore) };
 }

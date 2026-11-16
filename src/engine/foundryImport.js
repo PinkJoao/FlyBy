@@ -50,6 +50,9 @@
 //     baseRace, raceItem, items, byId): a linhagem pelas marcas.
 //   Classes
 //   subclassShortName(db, classId, subclassItem): o shortName da subclasse.
+//   subclassReprint(db, classId, shortName, source): o reprint da subclasse reeditada (o
+//     `reprintedAs` do 5etools), ou null. A ficha importada com o Fiend do PHB passa a ter o
+//     Fiend do XPHB, com um aviso: o app só usa a versão mais nova (DDL-0224, E2).
 //   choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId,
 //     level): os Traits de escolha de volta no bag.
 //   addedItemIds(adv), grantedItems(adv, byId): o `value.added` nas duas formas.
@@ -967,9 +970,12 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
     choices.weaponMastery = { kind: 'weapon', picks };
   }
 
-  const subShort = subclassItem ? subclassShortName(db, classId, subclassItem) : null;
+  const foundShort = subclassItem ? subclassShortName(db, classId, subclassItem) : null;
+  const reprint = foundShort ? subclassReprint(db, classId, foundShort, itemSource(subclassItem)) : null;
+  const subShort = reprint?.shortName ?? foundShort;
+  const subSource = reprint?.source ?? (subclassItem ? itemSource(subclassItem) : null);
   const classObj = resolveClassObj(db, classId, itemSource(classItem));
-  const subclassObj = subShort ? resolveSubclassObj(db, classId, subShort, itemSource(subclassItem)) : null;
+  const subclassObj = subShort ? resolveSubclassObj(db, classId, subShort, subSource) : null;
   const featItems = (actor.items ?? []).filter((i) => i.type === 'feat');
   Object.assign(choices, featureOptionChoiceBag(db, classId, classObj, subclassObj, level, featItems));
   Object.assign(choices, subclassFeatChoiceBag(subclassItem, db, classId, classObj, subclassObj, level, byId));
@@ -994,7 +1000,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
   }
 
   if (classFlag) {
-    Object.assign(choices, classFlag);
+    Object.assign(choices, reprint ? Object.fromEntries(Object.entries(classFlag).filter(([k]) => !k.startsWith('sub:'))) : classFlag);
     for (const b of collectAbilityPicks(classFlag)) boostAcc[b.ability] += b.amount;
   }
 
@@ -1015,11 +1021,23 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
     level,
     isOriginalClass: actor.system?.details?.originalClass === classItem._id,
     subclassId: subShort,
-    subclassSource: subclassItem ? itemSource(subclassItem) : null,
+    subclassSource: subSource,
     hitPoints,
     choices,
     spells: [],
+    ...(reprint ? { reprintedFrom: reprint.from } : {}),
   };
+}
+
+/** O reprint de uma subclasse reeditada ({ shortName, source, from }), ou null: o app só usa a versão nova (DDL-0224). */
+export function subclassReprint(db, classId, shortName, source) {
+  const list = db?.[`class-${classId}`]?.subclass ?? [];
+  const old = list.find((s) => norm(s.shortName) === norm(shortName) && norm(s.source) === norm(source) && s.reprintedAs?.length);
+  if (!old) return null;
+  const uid = typeof old.reprintedAs[0] === 'string' ? old.reprintedAs[0] : old.reprintedAs[0]?.uid;
+  const [short, , , src] = String(uid ?? '').split('|');
+  const target = list.find((s) => norm(s.shortName) === norm(short) && norm(s.source) === norm(src));
+  return target ? { shortName: target.shortName, source: target.source, from: `${old.name} (${old.source})`, to: `${target.name} (${target.source})` } : null;
 }
 
 /**
@@ -1179,6 +1197,18 @@ export function foundryToCharacter(rawActor, db, out = null) {
     const sub = subclassItems.find((s) => norm(s.system?.classIdentifier) === norm(cid));
     return parseClassEntry(ci, sub, actor, byId, db, boostAcc, fixedGrantNames);
   });
+  for (const c of char.classes) {
+    if (!c.reprintedFrom) continue;
+    const to = c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null;
+    if (out) {
+      out.warnings = [
+        ...(out.warnings ?? []),
+        `${c.reprintedFrom} was reprinted as ${to?.name ?? c.subclassId} (${c.subclassSource}), so the character now `
+        + 'uses the new version. Choices of the old subclass with no match in the new one are left for you to make again.',
+      ];
+    }
+    delete c.reprintedFrom;
+  }
   if (char.classes.length === 0) char.classes = createCharacter().classes;
   else if (!char.classes.some((c) => c.isOriginalClass)) char.classes[0].isOriginalClass = true;
 

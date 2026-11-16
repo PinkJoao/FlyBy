@@ -19,7 +19,11 @@
 // FUNÇÕES
 //   parseManual(text): os números digitados, ou null se algum não é número.
 //   previewFormula(props, state): a fórmula que vai ser rolada, em texto (com o reroll do
-//     1, os 3d20 da Elven Accuracy e o `max` do Savage Attacker).
+//     1, os 3d20 da Elven Accuracy, o `max` do Savage Attacker e o piso do dado de dano
+//     do Great Weapon Fighting e do Clean Hits, `diceMin`, como rollDamageEvent faz).
+//   shownFormula(text, data): a fórmula com as refs trocadas pelo valor; o extra do Rage
+//     aparecia como "@scale.barbarian.rage-damage" (passe ao vivo, DDL-0219). Os dados
+//     que um Cunning Strike tira do Sneak Attack (`forgo`) também saem da prévia.
 //   RollPanel(props): o conteúdo do diálogo.
 //     submit(e): fecha com as opções.
 //
@@ -44,7 +48,8 @@
 // -----------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { validateFormula, resolveMode } from '../../engine/dice';
+import { validateFormula, resolveMode, resolveRefs } from '../../engine/dice';
+import { forgoDice, withDiceMin } from '../../engine/playActions';
 import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import useSettingsStore from '../../store/settingsStore';
@@ -71,9 +76,10 @@ function parseManual(text) {
 }
 
 /** A fórmula que vai ser rolada, em texto ("2d20kh + 5 + 1d4"). */
-function previewFormula({ kind, parts, versatileDice }, { mode, bonus, critical, versatile, rerollOnes, elven, twice }) {
+function previewFormula({ kind, parts, versatileDice, rollData }, { mode, bonus, critical, versatile, rerollOnes, elven, twice, diceMin }) {
   const list = (parts ?? []).map((p, i) => {
-    const f = i === 0 && versatile && versatileDice ? versatileDice : String(p.formula);
+    const base = i === 0 && versatile && versatileDice ? versatileDice : String(p.formula);
+    const f = shownFormula(i === 0 && diceMin && kind !== 'd20' ? withDiceMin(base, diceMin, rollData) : base, rollData);
     return i === 0 && twice && kind !== 'd20' ? `max(${f}, ${f})` : f;
   });
   if (kind === 'd20') {
@@ -83,6 +89,15 @@ function previewFormula({ kind, parts, versatileDice }, { mode, bonus, critical,
   if (String(bonus ?? '').trim()) list.push(String(bonus).trim());
   const text = list.filter((f) => f !== '0').join(' + ').replace(/\+ -/g, '- ');
   return critical && /d/.test(text) ? `${text} (dice doubled)` : text;
+}
+
+/** A fórmula com as refs trocadas pelo valor (a ref sem valor fica como está). */
+function shownFormula(text, data) {
+  try {
+    return resolveRefs(text, data ?? {}).replace(/^\((-?\d+|\d*d\d+)\)$/, '$1');
+  } catch {
+    return text;
+  }
 }
 
 /**
@@ -109,6 +124,7 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
   }, []);
 
   const on = effects.filter((e) => effectIds.includes(e.id));
+  const forgo = on.reduce((s, e) => s + (e.forgo ?? 0), 0);
   const netMode = resolveMode((mode === 'advantage' ? 1 : 0) + on.reduce((s, e) => s + (e.adv ?? 0), 0), (mode === 'disadvantage' ? 1 : 0) + on.reduce((s, e) => s + (e.dis ?? 0), 0));
   const bonusError = String(bonus).trim() ? validateFormula(bonus, rollData) : null;
   const manual = physical ? parseManual(manualText) : [];
@@ -125,8 +141,8 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
     <form className={styles.form} onSubmit={submit}>
       <p className={styles.formula}>
         {previewFormula(
-          { kind, parts: [...parts, ...on.filter((e) => e.part).map((e) => e.part)], versatileDice },
-          { mode: netMode, bonus, critical, versatile, rerollOnes: on.some((e) => e.rerollOnes), elven: on.some((e) => e.elven), twice: on.some((e) => e.twice) },
+          { kind, parts: [...parts, ...on.filter((e) => e.part).map((e) => (forgo && e.part.forgoable ? { ...e.part, formula: forgoDice(e.part.formula, forgo, rollData) } : e.part))], versatileDice, rollData },
+          { mode: netMode, bonus, critical, versatile, rerollOnes: on.some((e) => e.rerollOnes), elven: on.some((e) => e.elven), twice: on.some((e) => e.twice), diceMin: on.reduce((m, e) => (e.diceMin ? Math.max(m ?? 0, e.diceMin) : m), null) },
         )}
       </p>
       {note && <p className={styles.note}>{note}</p>}

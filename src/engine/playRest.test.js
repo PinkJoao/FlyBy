@@ -88,6 +88,19 @@ describe('descanso curto', () => {
     expect(hpView(run(s, e), 30).current).toBe(30);
     expect(e.rolls.total).toBe(3);
   });
+
+  it('a concentração de até uma hora acaba; a de 8 horas e a sem duração ficam', () => {
+    const sphere = st({ concentration: { name: 'Flaming Sphere', rounds: 10 } });
+    const e = shortRestEvent({ state: sphere, catalog, spends: [] });
+    expect(run(sphere, e).concentration).toBeNull();
+    expect(e.payload.lines).toContainEqual({ name: 'Concentration', detail: 'Flaming Sphere ended (it lasts less than the rest)' });
+    const hex = st({ concentration: { name: 'Hex', rounds: 600 } });
+    expect(run(hex, shortRestEvent({ state: hex, catalog, spends: [] })).concentration).toBeNull();
+    for (const value of [{ name: 'Mordenkainen\'s Private Sanctum', rounds: 4800 }, { name: 'Old', level: 2 }]) {
+      const s = st({ concentration: value });
+      expect(run(s, shortRestEvent({ state: s, catalog, spends: [] })).concentration).toEqual(value);
+    }
+  });
 });
 
 describe('descanso longo', () => {

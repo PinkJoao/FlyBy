@@ -50,7 +50,17 @@
 //     diverge do nome).
 //   subclassScaleFix(feature): troca o nome longo da subclasse nos `@scale`.
 //   featureInteropFlags(feature): a marca de procedência da feature (foundryInterop).
-//   buildFeatureItem(feature, db): o item de uma feature, com a mecânica.
+//   buildFeatureItem(feature, db): o item de uma feature, com a mecânica. A feature de
+//     subclasse CLÁSSICA (2014) usa a mecânica e o pool do SRD de 2014 (srd14FeatureMechanics)
+//     ou nenhuma (o overlay), nunca a do SRD de 2024 de mesmo nome: o Wholeness of Body do
+//     Open Hand antigo saía com o bônus e os usos pela SAB, e a Devotion antiga ganhava um
+//     segundo pool de Channel Divinity (TC-0135, DDL-0222). Pelo mesmo motivo ela não lê os
+//     registros curados SÓ por nome (FEATURE_USES, FEATURE_ACTIVITIES): são das features de
+//     classe de 2024 (o Divine Sense no Channel Divinity do paladino); o SCOPED_USES por
+//     classe e nome, curado para elas, segue valendo.
+//   subclassObjOf(feature, db), featureEdition(feature, db), subclassNameOf(feature, db): a
+//     subclasse da feature, a edição dela ('classic' ou 'one', o `edition` do 5etools) e o
+//     nome (a pasta do SRD de 2014).
 //   buildClassFeatureItems(classEntry, classObj, db): as features da classe.
 //   buildClassWeaponItems(classEntry, classObj): armas concedidas pela classe.
 //   buildClassFutureGrants(classEntry, classObj, db): a escada futura da classe.
@@ -88,7 +98,13 @@
 //   buildBackgroundItem(character, originFeatItem, db): o item de background.
 //
 //   Subclasse
-//   resolveSubclassFeatures(subclass, classId, db, range): features numa faixa.
+//   resolveSubclassFeatures(subclass, classId, db, range): features numa faixa; a que é só
+//     OPÇÃO de um bloco `options` de outra (Colossus Slayer, Giant Killer e Horde Breaker do
+//     Hunter's Prey antigo) fica de fora: a escolhida vem por buildFeatureOptionItems (o
+//     ranger antigo recebia as oito, passe ao vivo, DDL-0221). A feature do chassi da própria
+//     subclasse (`classSource`) vence a de mesmo nome do outro: o Life Domain do PHB no chassi
+//     de 2024 traz o "Channel Divinity: Preserve Life" do PHB (nível 2) e a cópia re-graduada
+//     (nível 3), e saíam os dois (DDL-0222).
 //   buildSubclassFeatureItems(subclass, classId, db, level): os itens delas.
 //   buildSubclassFutureGrants(subclass, classId, db, level, spellIds): a escada
 //     futura de features e de magias.
@@ -136,6 +152,9 @@
 //   - A feature marcada `isClassFeatureVariant` é OPCIONAL de outro livro (as do TCE nas
 //     classes PHB, o Pet Specialization do WoW na Ranger XPHB, que "replaces the Roving feature
 //     for a Hunter with the Beast Master subclass"): não entra sozinha (DDL-0216).
+//   - A feature de subclasse marcada `isClassFeatureVariant` também é OPCIONAL e não entra
+//     sozinha (DDL-0218): o Blessed Strikes do TCE em 18 domínios antigos ("which replaces
+//     the Divine Strike feature"), o Maneuver Options e o Primal Companion antigos.
 //   - O formato é o APLICADO dos premades (`value.chosen`, `value.added`): sem
 //     ele o Foundry trata o passo como pendente e pergunta de novo.
 //   - `advancement` é um OBJETO indexado pelo `_id` (MappingField), não array.
@@ -351,7 +370,7 @@ import { latestOnly } from '../selector/reprints';
 import { classGrantChoices, classGrantGroups } from './classFeatureGrants';
 import { parseClass, parseFeatureRef } from './classData';
 import { classLevelChoices, classToolChoices, subclassFeatureChoices, optionalFeatureChoices, optionalFeatureCount } from './classFeatureChoices';
-import { featureOptionChoices, subclassFeatureOptionChoices } from './featureOptions';
+import { featureOptionChoices, subclassFeatureOptionChoices, findOptionBlocks } from './featureOptions';
 import { buildClassAdvancement, curatedSubclassScales, curatedRaceScales } from './foundryAdvancement';
 import { effectChangesFor, targetEffectFor } from './foundryEffects';
 import {
@@ -367,7 +386,7 @@ import {
   overlayMechanics,
 } from './foundryOverlay';
 import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
-import { featureActivities, srdFeatureMechanics, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
+import { featureActivities, srdFeatureMechanics, srd14FeatureMechanics, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
@@ -899,9 +918,11 @@ export function buildFeatureItem(feature, db = null) {
     : null;
   const overlay = overlayMechanics(overlayEntry, feature.name);
 
-  const curatedUses = featureUses(feature.name, feature.classId);
-  const curatedActivities = featureActivities(feature.name, feature.classId, { targetEffectId });
-  const srd = Object.keys(curatedActivities).length ? null : srdFeatureMechanics(feature.name, feature.classId);
+  const classic = featureEdition(feature, db) === 'classic';
+  const legacy = classic ? srd14FeatureMechanics(feature.classId, subclassNameOf(feature, db), feature.overlayName ?? feature.name) : null;
+  const curatedUses = featureUses(feature.name, feature.classId, { srd: !classic, named: !classic }) ?? (legacy?.uses ? { max: legacy.uses.max, spent: 0, recovery: (legacy.uses.recovery ?? []).map((r) => ({ ...r })) } : null);
+  const curatedActivities = classic ? {} : featureActivities(feature.name, feature.classId, { targetEffectId });
+  const srd = Object.keys(curatedActivities).length ? null : classic ? legacy : srdFeatureMechanics(feature.name, feature.classId);
   const scaleFix = subclassScaleFix(feature);
   const activities = scaleFix(Object.keys(curatedActivities).length
     ? curatedActivities
@@ -938,6 +959,28 @@ export function buildFeatureItem(feature, db = null) {
         : classFeatureUuid(feature.classId, feature.name),
     ),
   };
+}
+
+/** O objeto da subclasse de uma feature, pelo shortName e pela fonte. */
+function subclassObjOf(feature, db) {
+  if (!feature.subclass || !db) return null;
+  const list = db[`class-${norm(feature.classId)}`]?.subclass ?? [];
+  const short = norm(feature.subclass.shortName);
+  const src = norm(feature.subclass.source);
+  return list.find((s) => norm(s.shortName) === short && (!src || norm(s.source) === src) && s.edition)
+    ?? list.find((s) => norm(s.shortName) === short && (!src || norm(s.source) === src))
+    ?? null;
+}
+
+/** A edição da feature: a da subclasse ('classic' é 2014, 'one' é 2024), ou null para a de classe. */
+export function featureEdition(feature, db) {
+  if (!feature?.subclass) return null;
+  return subclassObjOf(feature, db)?.edition ?? null;
+}
+
+/** O nome da subclasse da feature (o do SRD de 2014 é a pasta dele). */
+function subclassNameOf(feature, db) {
+  return feature.subclass?.name ?? subclassObjOf(feature, db)?.name ?? feature.subclass?.shortName ?? '';
 }
 
 /**
@@ -1403,7 +1446,7 @@ export function buildFeatureOptionItems(classEntry, classObj, subObj, db) {
             entries: opt.entries ?? [],
             classId: classEntry.classId,
             overlayName: opt.label,
-            ...(ch.id.startsWith('sub:') && subObj ? { subclass: { shortName: subObj.shortName } } : {}),
+            ...(ch.id.startsWith('sub:') && subObj ? { subclass: { shortName: subObj.shortName, source: subObj.source, name: subObj.name } } : {}),
           },
           db,
         ),
@@ -1603,10 +1646,17 @@ export function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } 
   const umbrella = new Set([short, norm(subclass.name)]);
   const seen = new Set();
   const out = [];
+  const pool = (db?.[`class-${classId}`]?.subclassFeature ?? [])
+    .filter((f) => norm(f.subclassShortName) === short && !(src && norm(f.subclassSource ?? f.source) !== src));
+  const cls = norm(subclass.classSource);
+  const ownChassis = new Set(cls ? pool.filter((f) => norm(f.classSource) === cls).map((f) => norm(f.name)) : []);
+  const optionOnly = new Set(pool.flatMap((f) => findOptionBlocks(f.entries, [], 'refSubclassFeature').filter((b) => b.explicit).flatMap((b) => b.refs.map((r) => norm(String(r).split('|')[0])))));
   for (const f of db?.[`class-${classId}`]?.subclassFeature ?? []) {
-    if (norm(f.subclassShortName) !== short) continue;
+    if (norm(f.subclassShortName) !== short || f.isClassFeatureVariant) continue;
     // ATENÇÃO: o pool mistura PHB e XPHB; sem este filtro as features duplicam.
     if (src && norm(f.subclassSource ?? f.source) !== src) continue;
+    if (optionOnly.has(norm(f.name))) continue;
+    if (cls && norm(f.classSource) !== cls && ownChassis.has(norm(f.name))) continue;
     const lvl = f.level ?? 0;
     if (lvl < min || (max != null && lvl > max)) continue;
     const n = norm(f.name);

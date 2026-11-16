@@ -11,7 +11,10 @@
 //
 // FUNÇÕES
 //   norm(s), slug(s), identOf(item): nome sem caixa, slug e o identifier do item.
-//   consumptionTargetItem(target, item, items): o item que o alvo aponta, ou null.
+//   consumptionTargetItem(target, item, items): o item que o alvo aponta, ou null. No
+//     casamento por prefixo do identifier, o item COM usos vence (só ele pode ser gasto): o
+//     "feat:channel-divinity" do SRD de 2014 caía no "channel-divinity-preserve-life", mais
+//     longo, em vez do pool "channel-divinity-cleric" (DDL-0222).
 //   linkConsumptionTargets(items): reescreve os alvos de todas as activities do
 //     ator (troca o `system` de cada item por uma cópia) e devolve quantos não
 //     resolveram.
@@ -84,7 +87,7 @@ export function consumptionTargetItem(target, item, items) {
     if (exact) return exact;
     return pool
       .filter((i) => wanted.startsWith(`${identOf(i)}-`) || identOf(i).startsWith(`${wanted}-`))
-      .sort((a, b) => identOf(b).length - identOf(a).length)[0] ?? null;
+      .sort((a, b) => Number(!!b.system?.uses?.max) - Number(!!a.system?.uses?.max) || identOf(b).length - identOf(a).length)[0] ?? null;
   }
   return null;
 }

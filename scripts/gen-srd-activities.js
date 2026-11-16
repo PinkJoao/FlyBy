@@ -27,6 +27,11 @@
 //   prune(v): poda o VAZIO (string vazia, null, array ou objeto sem nada).
 //   record(bucket, key, doc): guarda activities e effects de um documento.
 //   literal(obj): literal de objeto ordenado por chave (diff estável).
+//   legacyTarget(t): o alvo de consumo que aponta um documento do pack de 2014 vira
+//     "feat:<identifier>" (o item de 2024 de mesmo identifier).
+//   A seção do SRD de 2014 lê as features de SUBCLASSE do `classfeatures` (`rules: '2014'`)
+//   para SRD14_SUBCLASS_FEATURES: a feature de edição clássica não herda a mecânica da de
+//   2024 de mesmo nome (TC-0135, DDL-0222).
 //
 // DECISÕES E ARMADILHAS
 //   - Activity e effect saem JUNTOS, obrigatoriamente: a activity referencia os
@@ -159,6 +164,41 @@ for (const classDir of readdirSync(join(PACKS, 'classes24'))) {
   }
 }
 
+const legacy = {};
+const legacyIdent = new Map();
+for (const f of walk(join(PACKS, 'classfeatures'))) {
+  const doc = parseYaml(readFileSync(f, 'utf8'));
+  if (doc._id && doc.name) legacyIdent.set(doc._id, doc.system?.identifier || norm(doc.name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+}
+/** O alvo de consumo que aponta um documento do pack de 2014 vira `feat:<identifier>` (o item de 2024 de mesmo identifier). */
+const legacyTarget = (t) => {
+  const id = typeof t === 'string' ? t.replace(/^Compendium\.dnd5e\.classfeatures\.Item\./, '') : null;
+  return id && legacyIdent.has(id) ? `feat:${legacyIdent.get(id)}` : t;
+};
+for (const classDir of readdirSync(join(PACKS, 'classfeatures'))) {
+  const dir = join(PACKS, 'classfeatures', classDir);
+  if (!statSync(dir).isDirectory()) continue;
+  const classId = norm(classDir);
+  for (const subDir of readdirSync(dir)) {
+    const sub = join(dir, subDir);
+    if (!statSync(sub).isDirectory() || subDir === `${classDir}-features` || !subDir.endsWith('-features')) continue;
+    const slug = subDir.replace(/-features$/, '');
+    for (const f of walk(sub)) {
+      const doc = parseYaml(readFileSync(f, 'utf8'));
+      if (doc.type !== 'feat' || !doc.name) continue;
+      const activities = prune(doc.system?.activities ?? {});
+      for (const a of Object.values(activities ?? {})) {
+        for (const t of a.consumption?.targets ?? []) if (t.target) t.target = legacyTarget(t.target);
+      }
+      const cited = new Set(Object.values(activities ?? {}).flatMap((a) => (a.effects ?? []).map((e) => e?._id ?? e).filter(Boolean)));
+      const effects = prune((doc.effects ?? []).filter((e) => cited.has(e?._id)));
+      const uses = doc.system?.uses?.max ? prune(doc.system.uses) : undefined;
+      const entry = { ...(activities ? { activities } : {}), ...(effects ? { effects } : {}), ...(uses ? { uses } : {}) };
+      for (const name of new Set([doc.name, doc.name.replace(/^Channel Divinity:\s*/, '')])) legacy[`${classId}|${slug}|${norm(name)}`] ??= entry;
+    }
+  }
+}
+
 for (const f of walk(join(PACKS, 'origins24'))) {
   const doc = parseYaml(readFileSync(f, 'utf8'));
   if (doc.type !== 'feat' || !doc.name) continue;
@@ -199,6 +239,13 @@ const out = `// ================================================================
 //   SRD_COMMON_WEAPON_GRANTS: itens concedidos a QUALQUER classe.
 //   SRD_FEAT_MECHANICS: talento do feats24 -> {activities?, effects?, uses?} (as
 //     activities, os effects que elas citam ou que se transferem, e o pool).
+//   SRD14_SUBCLASS_FEATURES: "classId|subclasse-slug|feature" -> {activities?, effects?,
+//     uses?} do SRD de 2014 (classfeatures, ${Object.keys(legacy).length} chaves); a feature de
+//     edição clássica usa esta e nunca a de 2024 de mesmo nome (TC-0135). "Channel
+//     Divinity: Sacred Weapon" também responde por "Sacred Weapon", o nome do 5etools. O
+//     alvo de consumo que aponta um documento do pack de 2014 (o Channel Divinity do clérigo
+//     antigo, o Ki por uuid) vira "feat:<identifier>", que acha o item de 2024 de mesmo
+//     identifier (o Ki de 2014 já é "monks-focus").
 //
 // DECISÕES E ARMADILHAS
 //   - SRD_CLASS_WEAPON_GRANTS: o SRD só o faz no Bárbaro e no Monge, cujas
@@ -221,6 +268,8 @@ export const SRD_CLASS_WEAPON_GRANTS = ${literal(weaponGrants)};
 export const SRD_COMMON_WEAPON_GRANTS = ${JSON.stringify(Object.values(commonByName))};
 
 export const SRD_FEAT_MECHANICS = ${literal(featMech)};
+
+export const SRD14_SUBCLASS_FEATURES = ${literal(legacy)};
 `;
 
 writeFileSync(OUT, out);

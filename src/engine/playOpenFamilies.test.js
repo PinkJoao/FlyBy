@@ -19,7 +19,9 @@
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState } from './playState';
 import { sequenceRng } from './dice';
-import { castTriggers } from './playCast';
+import { castTriggers, spellRecallEvent } from './playCast';
+import { spellMechanics } from './playCatalog';
+import { resolveSubclassFeatures } from './foundryItems';
 import { rollHitDie, shortRestEvent } from './playRest';
 import { healOutcome, tempHpOutcome } from './playHealth';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from './playRerolls';
@@ -132,5 +134,33 @@ describe('o piso do dado e os registros curados', () => {
     expect(featureRiders(emptyPlayState(), tce, { kind: 'save', ability: 'dex' })).toMatchObject([{ part: { formula: '@attunement.value' }, defaultOn: true }]);
     expect(featureRiders(emptyPlayState(), efa, { kind: 'save', ability: 'dex' })).toEqual([]);
     expect(featureRiders(emptyPlayState(), catalog(['conjuration adept']), { kind: 'concentration' })).toMatchObject([{ part: { formula: '@abilities.int.mod' } }]);
+  });
+});
+
+describe('o que os personagens modelo acharam (DDL-0218)', () => {
+  it('Spell Recall: o botão aparece no espaço de círculo 1 a 4, e o 1d4 igual ao círculo devolve o espaço', () => {
+    const [t] = castTriggers(cast({ slotted: true, level: 2, slotKey: 'slot:2' }), catalog(['boon of spell recall']));
+    expect(t).toMatchObject({ recall: true, level: 2, slotKey: 'slot:2' });
+    expect(spellRecallEvent({ trigger: t, rng: sequenceRng([2]) }).ops).toEqual([{ op: 'restore', key: 'slot:2', amount: 1 }]);
+    expect(spellRecallEvent({ trigger: t, rng: sequenceRng([3]) }).ops).toEqual([]);
+    expect(castTriggers(cast({ slotted: true, level: 5, slotKey: 'slot:5' }), catalog(['boon of spell recall']))).toEqual([]);
+  });
+
+  it('o escalonamento com marcador ({{spellcasting_mod}}) fica de fora do dado do cantrip', () => {
+    const gfb = { level: 0, damageInflict: ['fire'], scalingLevelDice: [{ scaling: { 1: '{{spellcasting_mod}}', 5: '1d8 + {{spellcasting_mod}}' } }, { scaling: { 5: '1d8', 11: '2d8' } }], entries: [] };
+    expect(spellMechanics(gfb, 11).damage.dice).toBe('2d8');
+  });
+
+  it('a feature opcional de subclasse (Blessed Strikes do TCE) não entra sozinha', () => {
+    const db = { 'class-cleric': { subclassFeature: [
+      { name: 'Divine Strike', source: 'PHB', subclassShortName: 'Life', subclassSource: 'PHB', level: 8, entries: [] },
+      { name: 'Blessed Strikes', source: 'TCE', subclassShortName: 'Life', subclassSource: 'PHB', level: 8, isClassFeatureVariant: true, entries: [] },
+    ] } };
+    expect(resolveSubclassFeatures({ name: 'Life Domain', shortName: 'Life', source: 'PHB' }, 'cleric', db, { max: 8 }).map((f) => f.name)).toEqual(['Divine Strike']);
+  });
+
+  it("Storm's Thunder e Stone's Endurance rolam no Use", () => {
+    expect(featureUseOf({ name: "Storm's Thunder" }, catalog([]))).toMatchObject({ roll: { formula: '1d8' } });
+    expect(featureUseOf({ name: "Stone's Endurance" }, catalog([]))).toMatchObject({ roll: { formula: '1d12 + @abilities.con.mod' } });
   });
 });

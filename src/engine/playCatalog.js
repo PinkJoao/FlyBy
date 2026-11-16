@@ -38,7 +38,8 @@
 //       derived): as armas do inventário, equipadas primeiro.
 //     unarmedStrike(derived): o ataque desarmado.
 //     diceAverage(dice), withMartialArts(attacks, ctx): o Martial Arts do monge sobre
-//       o desarmado e as armas de monge (o dado da tabela e a DES).
+//       o desarmado e as armas de monge (o dado da tabela e a DES); o dado da Versatile
+//       nas duas mãos também (a lança do monge 11 dizia "Two hands (1d8)", DDL-0221).
 //     scaledDice(raw, level), textDice(raw), textHealDice(raw), upcastDice(raw),
 //       spellMechanics(raw, level): a mecânica de uma magia pelo dado.
 //     cantripAttacks(spellcasting, level): os cantrips que atacam ou pedem save.
@@ -50,14 +51,38 @@
 //     usesContext(actor, derived): o contexto do evalUses.
 //     actorResources(actor, derived, problems): os pools de feature.
 //     partFormula(part): a fórmula de uma parte de dano ou cura do Foundry.
-//     normActivation(a): o custo normalizado, ou null (passiva).
+//     atLeastOneDie(formula): o número de dados de um modificador nunca abaixo de 1: o
+//       Sear Undead ("a number of d8s equal to your Wisdom modifier (minimum of 1d8)") vem
+//       do SRD como `(@abilities.wis.mod)d8` e quebrava com SAB baixa (DDL-0218, só no jogo).
+//       O scaledDice pula o escalonamento com marcador `{{...}}` (o dano secundário do
+//       Green-Flame Blade), que o motor de dados não lê.
+//     normActivation(a, item): o custo normalizado, ou null (passiva). A activity sem
+//       `activation.type` que o jogador dispara sem ação (TRIGGERED_ACTIVITIES: Natural
+//       Recovery, Wild Resurgence, Font of Inspiration, Sorcerous Restoration, Sorcery
+//       Incarnate, Persistent Rage, as recargas de Intimidating Presence, Archdruid, Holy
+//       Nimbus, Hurl Through Hell e Dragon Wings, Eldritch Master, a salvaguarda e a cura da
+//       Relentless Rage, a cura do Land's Aid) vira `type: 'none'`: antes ela sumia, e o "Use"
+//       só gastava o pool da feature (passe ao vivo, DDL-0221). Sem nome, ela leva o do tipo
+//       (TYPE_NAMES). ACTIVITY_ROLLS é o dado que só o texto diz (o Cutting Words subtrai um
+//       dado de Bardic Inspiration); a CD que cresce com os usos (`@item.uses.spent`, a
+//       Relentless Rage) vai em `save.dcFormula`, lida no uso (playUse). HEAL_LABELS dá o
+//       nome do que o SRD faz como cura e é redução de dano (Deflect Attacks); ancestryTypes
+//       deixa no Breath Weapon só o tipo que a espécie resiste ("determined by your Draconic
+//       Ancestry", o mesmo da Damage Resistance), em vez dos cinco (DDL-0221).
 //     consumptionOf(a, item, ctx): o que uma activity gasta.
 //     saveDcOf(a, ctx): a CD de uma activity de save.
 //     featureActions(actor, ctx): as ações básicas e das features.
+//     castingMod(derived): o `@mod` de uma activity que não é ataque (o Empowered Evocation e
+//       o Elemental Affinity do SRD de 2014 somam "@mod"): o modificador da conjuração da
+//       classe, o maior quando há mais de uma (DDL-0222).
 //   Catálogo
 //     defensesOf(derived): as defesas a dano, com as de item.
 //     speedOf(character, db): o deslocamento a pé da espécie.
 //     speedsOf(character, db): todos os deslocamentos da espécie, em pés.
+//     featureSpeedBonus(actor, armorClass, rollData): o que as features somam ao deslocamento
+//       a pé, pelos effects `movement.walk` do ator; `SPEED_ARMOR` é a armadura que cada uma
+//       proíbe (Unarmored Movement sem armadura nem escudo; Fast Movement e Roving sem
+//       armadura pesada). O monge 11 andava 30 ft, não 50 (passe ao vivo, DDL-0221).
 //     spellRollData(spellcasting): os slots como dados de fórmula.
 //     buildRollData(character, derived, actor): os dados das fórmulas; desde o DDL-0215,
 //       `attunement.value` (os itens atunados, Soul of Artifice) e `featAbility` (o atributo
@@ -165,7 +190,7 @@ import { isBasicActionItem } from './foundryBasicActions';
 import { rangeLabel, isRitual, isConcentration } from './spells';
 import { SKILL_ABILITY } from './proficiency';
 import { collectAbilityPicks } from './choices';
-import { validateFormula } from './dice';
+import { validateFormula, rollFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList } from './playFeatures';
@@ -331,8 +356,10 @@ export function withMartialArts(attacks, { derived, rollData, features }) {
     const parts = a.toHit.parts.map((p, i) => (i === 0 ? { label, formula: mod } : p));
     const extra = a.kind === 'unarmed' ? 0 : (a.damage?.bonus ?? before) - before;
     const dice = a.damage?.dice && diceAverage(a.damage.dice) >= diceAverage(die) ? a.damage.dice : die;
+    const versatile = a.versatile && diceAverage(a.versatile) < diceAverage(die) ? die : a.versatile;
     return {
       ...a,
+      ...(a.versatile ? { versatile } : {}),
       ability,
       martialArts: true,
       toHit: { total: a.toHit.total - before + mod, parts },
@@ -364,10 +391,15 @@ export function unarmedStrike(derived) {
   };
 }
 
+/** O número de dados de um modificador nunca abaixo de 1 ("(@abilities.wis.mod)d8" do Sear Undead). */
+function atLeastOneDie(formula) {
+  return formula.replace(/\((@abilities\.[a-z]{3}\.mod)\)d(\d+)/g, '(max(1, $1))d$2');
+}
+
 /** O dado de um cantrip no nível do personagem ("2d10"). */
 function scaledDice(raw, level) {
   const list = Array.isArray(raw?.scalingLevelDice) ? raw.scalingLevelDice : raw?.scalingLevelDice ? [raw.scalingLevelDice] : [];
-  const scaling = list[0]?.scaling;
+  const scaling = (list.find((e) => !/\{\{/.test(JSON.stringify(e?.scaling ?? {}))) ?? list[0])?.scaling;
   if (!scaling) return null;
   const steps = Object.keys(scaling).map(Number).filter((n) => n <= level).sort((a, b) => b - a);
   return steps.length ? scaling[steps[0]] : null;
@@ -550,16 +582,59 @@ export function actorResources(actor, derived, problems = []) {
 
 /** A fórmula de uma parte de dano ou cura do Foundry. */
 function partFormula(part) {
-  if (part?.custom?.enabled && part.custom.formula) return String(part.custom.formula).trim();
+  if (part?.custom?.enabled && part.custom.formula) return atLeastOneDie(String(part.custom.formula).trim());
   const dice = part?.number && part?.denomination ? `${part.number}d${part.denomination}` : '';
   const bonus = String(part?.bonus ?? '').trim();
   return [dice, bonus].filter(Boolean).join(' + ');
 }
 
+/**
+ * As activities sem `activation.type` que o jogador DISPARA sem ação (troca ou devolve recurso,
+ * a salvaguarda e a cura da Relentless Rage), pelo nome da feature e o da activity (ou o tipo).
+ */
+const TRIGGERED_ACTIVITIES = {
+  'natural recovery': ['Recover Spell Slots'],
+  'wild resurgence': ['Regain Spell Slot', 'Regain Wild Shape'],
+  'font of inspiration': ['Recharge with Spell Slot'],
+  'sorcerous restoration': ['Restore Sorcery Points'],
+  'sorcery incarnate': ['Restore Innate Sorcery'],
+  'persistent rage': ['Recharge Rage on Initiative'],
+  'intimidating presence': ['Recharge with Rage'],
+  archdruid: ['Nature Magician', 'Recharge on Initiative'],
+  'holy nimbus': ['Regain Use'],
+  'hurl through hell': ['Regain Use'],
+  'dragon wings': ['Restore Use'],
+  'eldritch master': ['Eldritch Master'],
+  'relentless rage': ['save', 'heal'],
+  "land's aid": ['heal'],
+};
+
+/** A "cura" que o SRD usa no lugar de reduzir o dano (Deflect Attacks): o card diz o que é. */
+const HEAL_LABELS = { 'deflect attacks': 'Damage reduced', 'deflect energy': 'Damage reduced' };
+
+/** Os tipos de dano que a ancestralidade decide: o Breath Weapon fica com o que a espécie resiste (o mesmo tipo, XPHB). */
+function ancestryTypes(item, types, ctx) {
+  if (types.length < 2 || String(item.name).toLowerCase() !== 'breath weapon') return types;
+  const resist = new Set((ctx.derived.damageTraits?.resist ?? []).map((t) => String(t).toLowerCase()));
+  const hit = types.filter((t) => resist.has(String(t).toLowerCase()));
+  return hit.length === 1 ? hit : types;
+}
+
+/** O nome de uma activity disparada sem nome própria, pelo tipo ("Land's Aid: Healing"). */
+const TYPE_NAMES = { heal: 'Healing', save: 'Saving throw', damage: 'Damage', utility: 'Use' };
+
+/** O dado que a activity rola e que só o texto diz (o Cutting Words subtrai um dado de Bardic Inspiration). */
+const ACTIVITY_ROLLS = {
+  'cutting words': { label: 'Bardic Inspiration die (subtract it from the roll)', formula: '@scale.bard.inspiration' },
+};
+
 /** O custo normalizado de uma activity, ou null se ela é passiva. */
-function normActivation(a) {
+function normActivation(a, item = null) {
   const type = a?.activation?.type;
-  if (!type) return null;
+  if (!type) {
+    const names = TRIGGERED_ACTIVITIES[String(item?.name ?? '').toLowerCase()] ?? [];
+    return names.includes(a?.name || a?.type) ? { type: 'none', value: null, condition: a.activation?.condition || '' } : null;
+  }
   return {
     type,
     value: a.activation.value ?? null,
@@ -615,6 +690,12 @@ function saveDcOf(a, ctx) {
   return ctx.spellDc;
 }
 
+/** O modificador da conjuração da classe (o maior entre as origens de classe), ou null: o `@mod` de uma activity que não é ataque. */
+function castingMod(derived) {
+  const mods = (derived.spellcasting?.origins ?? []).filter((o) => o.kind === 'class' && o.abilityMod != null).map((o) => o.abilityMod);
+  return mods.length ? Math.max(...mods) : null;
+}
+
 /** As ações básicas e das features, com custo, consumo e fórmulas. */
 function featureActions(actor, ctx) {
   const out = [];
@@ -624,7 +705,7 @@ function featureActions(actor, ctx) {
     const ident = item.system?.identifier || slug(item.name);
     const activities = [];
     for (const a of Object.values(item.system?.activities ?? {})) {
-      const activation = normActivation(a);
+      const activation = normActivation(a, item);
       if (!activation) continue;
       const mods = ctx.derived.modifiers ?? {};
       const attackAbility = a.type === 'attack'
@@ -633,17 +714,19 @@ function featureActions(actor, ctx) {
       const entry = {
         id: a._id ?? slug(a.name),
         type: a.type,
-        name: a.name || item.name,
+        name: a.name || (activation.type === 'none' && TYPE_NAMES[a.type] ? `${item.name}: ${TYPE_NAMES[a.type]}` : item.name),
         activation,
         consumes: basic ? [] : consumptionOf(a, item, ctx),
         attack: a.type === 'attack' ? { type: a.attack?.type?.value ?? null, ability: attackAbility } : null,
-        save: a.type === 'save' ? { abilities: a.save?.ability ?? [], dc: saveDcOf(a, ctx) } : null,
-        heal: a.type === 'heal' && partFormula(a.healing) ? { formula: partFormula(a.healing), types: a.healing?.types ?? [] } : null,
-        damage: (a.damage?.parts ?? []).map((p) => ({ formula: partFormula(p), types: p.types ?? [] })).filter((p) => p.formula),
+        save: a.type === 'save' ? { abilities: a.save?.ability ?? [], dc: saveDcOf(a, ctx), ...(/@item\.uses\.spent/.test(a.save?.dc?.formula ?? '') ? { dcFormula: a.save.dc.formula } : {}) } : null,
+        roll: a.type === 'utility' && a.roll?.formula ? { label: a.roll.name || 'Roll', formula: a.roll.formula } : ACTIVITY_ROLLS[String(item.name).toLowerCase()] ?? null,
+        heal: a.type === 'heal' && partFormula(a.healing) ? { formula: partFormula(a.healing), types: a.healing?.types ?? [], ...(HEAL_LABELS[String(item.name).toLowerCase()] ? { label: HEAL_LABELS[String(item.name).toLowerCase()] } : {}) } : null,
+        damage: (a.damage?.parts ?? []).map((p) => ({ formula: partFormula(p), types: ancestryTypes(item, p.types ?? [], ctx) })).filter((p) => p.formula),
         selfTarget: a.target?.affects?.type === 'self',
       };
       entry.scalable = [entry.heal?.formula, ...entry.damage.map((p) => p.formula)].some((f) => /@scaling\b/.test(f ?? ''));
-      const data = attackAbility ? { ...ctx.rollData, mod: mods[attackAbility] ?? 0 } : ctx.rollData;
+      if (!attackAbility && ctx.castMod != null) entry.mod = ctx.castMod;
+      const data = attackAbility ? { ...ctx.rollData, mod: mods[attackAbility] ?? 0 } : { ...ctx.rollData, mod: entry.mod ?? 0 };
       for (const f of [entry.heal?.formula, ...entry.damage.map((p) => p.formula)].filter(Boolean)) {
         const error = validateFormula(f, data);
         if (error) ctx.problems.push({ where: `${item.name}: ${entry.name}`, message: `formula: ${f} (${error})` });
@@ -687,6 +770,35 @@ function speedsOf(character, db) {
     out[mode] = note ? { feet, note } : { feet };
   }
   return out;
+}
+
+/** A armadura que cada feature de deslocamento proíbe, pelo texto do XPHB. */
+const SPEED_ARMOR = {
+  'unarmored movement': (ac) => !ac.hasArmor && !ac.hasShield,
+  'fast movement': (ac) => ac.armorSlot !== 'heavy',
+  roving: (ac) => ac.armorSlot !== 'heavy',
+};
+
+/** O que as features somam ao deslocamento a pé (os effects `movement.walk` do ator), com a armadura de cada uma. */
+function featureSpeedBonus(actor, armorClass, rollData) {
+  let feet = 0;
+  for (const item of actor?.items ?? []) {
+    if (item.type !== 'feat') continue;
+    const allowed = SPEED_ARMOR[String(item.name).toLowerCase()];
+    if (allowed && !allowed(armorClass ?? {})) continue;
+    for (const e of item.effects ?? []) {
+      if (e.disabled || e.transfer === false) continue;
+      for (const ch of e.changes ?? []) {
+        if (ch.key !== 'system.attributes.movement.walk' || Number(ch.mode) !== 2) continue;
+        try {
+          feet += rollFormula(String(ch.value), { data: rollData }).total;
+        } catch {
+          // ATENÇÃO: valor que não resolve é ignorado; o levantamento o mostra como problema.
+        }
+      }
+    }
+  }
+  return feet;
 }
 
 /** O deslocamento a pé da espécie, ou null (sem db ou sem espécie). */
@@ -888,6 +1000,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     problems,
     poolKeys: new Set(pools.map((p) => p.key)),
     spellDc: spellDcs.length ? Math.max(...spellDcs) : null,
+    castMod: castingMod(d),
   };
 
   const features = [...new Set((a?.items ?? []).filter((i) => i.type === 'feat' && !isBasicActionItem(i)).map((i) => norm(i.name)))];
@@ -908,6 +1021,8 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
 
   const actions = a ? featureActions(a, ctx) : [];
   const featuresOfActor = a ? featureList(a, character, db) : [];
+  const speedBonus = featureSpeedBonus(a, d.armorClass, rollData);
+  const speeds = speedsOf(character, db);
   const withActivities = new Set(actions.filter((x) => x.activities?.length).map((x) => x.key));
   const pooled = new Set(resources.filter((r) => r.kind === 'pool').map((r) => r.item));
   const activated = (f) => f.costs?.length > 0 || !!f.trigger || withActivities.has(f.actionKey) || pooled.has(f.name);
@@ -925,8 +1040,8 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
       profBonus: d.proficiencyBonus ?? 0,
       level: d.level ?? 0,
       initiative: initiativeBonus(character, d),
-      speed: speedOf(character, db),
-      speeds: speedsOf(character, db),
+      speed: speedOf(character, db) == null ? null : speedOf(character, db) + speedBonus,
+      speeds: speedBonus && speeds.walk ? { ...speeds, walk: { ...speeds.walk, feet: speeds.walk.feet + speedBonus } } : speeds,
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),

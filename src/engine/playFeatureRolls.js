@@ -115,6 +115,24 @@
 //     que usa FOR, `when: 'strRoll'`); Aura of Hate, o CAR (mínimo +1) no dano de arma corpo
 //     a corpo, LIGADA; Alchemical Savant, o INT (mínimo +1) numa rolagem da magia; Arcane
 //     Firearm, 1d8 no dano da magia.
+//   - O Colossus Slayer genérico (`hunter's prey`, sem a opção conhecida) some quando a ficha
+//     guarda a opção ("Hunter's Prey: Giant Killer"): o ranger com Giant Killer recebia o 1d8
+//     no dano (passe ao vivo, DDL-0221).
+//   - O Frenzy do XPHB (o extra de d6 com Reckless Attack) só vale para o do XPHB: o do PHB
+//     (o Berserker antigo no chassi de 2024) é um ataque bônus em Rage, sem dano a mais. O mesmo
+//     no Supreme Sneak (o do PHB é vantagem em Stealth, não o Stealth Attack): `xphbOnly`
+//     (DDL-0221).
+//   - Oitava leva (DDL-0221, o passe ao vivo): Great Weapon Fighting do XPHB ("you can treat
+//     any 1 or 2 on a damage die as a 3", com uma arma corpo a corpo nas duas mãos), `diceMin`
+//     3: LIGADO na arma Two-Handed (`when: 'twoHandedMelee'`) e oferecido desligado na
+//     Versatile (`versatileMelee`), porque só vale com ela nas duas mãos. O export já punha o
+//     `min3` na arma (greatWeaponMinimum); o jogo não o lia.
+//   - Sétima leva (DDL-0218, achada pelos personagens modelo): Storm's Thunder ("1d8
+//     Thunder damage" na reação) e Stone's Endurance ("1d12 plus your Constitution modifier"
+//     de dano reduzido) do Goliath, com o pool de cada um; Colossus Slayer do Hunter antigo
+//     (o 1d8 da opção, que no XPHB fica no Hunter's Prey); Multiattack Defense do Hunter
+//     antigo ("a +4 bonus to AC against all subsequent attacks made by that creature for
+//     the rest of the turn"), um `toggle` de 1 rodada com a nota do alvo.
 //   - Sexta leva (DDL-0217, as features de dado do SRD): Cunning Strike (Poison, Trip,
 //     Withdraw, 1d6 cada), Devious Strikes (Daze 2d6, Knock Out 6d6, Obscure 3d6) e o
 //     Stealth Attack do Supreme Sneak (1d6): "Each effect has a die cost, which is the number
@@ -184,6 +202,9 @@ const ROGUE_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.dex?.mod ?? 0);
 
 const CLERIC_STRIKE = (rd) => (rd['scale.cleric.divine-strike'] ? '@scale.cleric.divine-strike' : '1d8');
 
+/** A entrada vale só para a feature do XPHB com esse nome (a do PHB de mesmo nome é outra regra). */
+const xphbOnly = (name) => (c) => (c.featureList ?? []).some((f) => f.name === name && f.source === 'XPHB');
+
 export const FEATURE_ROLLS = {
   'sneak attack': { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => !!c.rollData?.['scale.rogue.sneak-attack'], formula: '@scale.rogue.sneak-attack', forgoable: true, note: 'once per turn, Finesse or Ranged, with Advantage or an ally next to the target' },
   'cunning strike': {
@@ -202,18 +223,18 @@ export const FEATURE_ROLLS = {
       { on: ['damage'], when: 'weapon', forgo: 3, label: 'Devious Strikes: Obscure (3d6 of Sneak Attack)', note: (rd) => `with Sneak Attack; DC ${ROGUE_DC(rd)} Dexterity save or Blinded until the end of its next turn` },
     ],
   },
-  'supreme sneak': { kind: 'rider', on: ['damage'], when: 'weapon', forgo: 1, label: 'Stealth Attack (1d6 of Sneak Attack)', note: "with Sneak Attack; the Hide action's Invisible condition stays if you end the turn behind Three-Quarters or Total Cover" },
+  'supreme sneak': { kind: 'rider', on: ['damage'], when: 'weapon', has: xphbOnly('Supreme Sneak'), forgo: 1, label: 'Stealth Attack (1d6 of Sneak Attack)', note: "with Sneak Attack; the Hide action's Invisible condition stays if you end the turn behind Three-Quarters or Total Cover" },
   'use magic device': { kind: 'use', roll: { label: 'Charges: on a 6, none are spent', formula: '1d6' } },
   'arcane eloquence': { kind: 'rider', on: ['check'], when: 'social', defaultOn: true, formula: '1d4', label: 'Smooth Talker', note: 'Deception, Intimidation or Persuasion' },
   'brutal strike': { kind: 'rider', on: ['damage'], when: 'str', has: (c) => !!c.rollData?.['scale.barbarian.brutal-strike'], formula: '@scale.barbarian.brutal-strike', note: 'only if you gave up Advantage on the attack' },
-  frenzy: { kind: 'rider', on: ['damage'], when: 'str', needs: 'Rage', formula: (rd) => `${rd['scale.barbarian.rage-damage'] ?? 2}d6`, note: 'with Reckless Attack, the first target you hit this turn' },
+  frenzy: { kind: 'rider', on: ['damage'], when: 'str', needs: 'Rage', has: xphbOnly('Frenzy'), formula: (rd) => `${rd['scale.barbarian.rage-damage'] ?? 2}d6`, note: 'with Reckless Attack, the first target you hit this turn' },
   'divine fury': { kind: 'rider', on: ['damage'], when: 'weapon', needs: 'Rage', formula: '1d6 + floor(@classes.barbarian.levels / 2)', note: 'first creature you hit on each turn; Necrotic or Radiant' },
   'radiant strikes': { kind: 'rider', on: ['damage'], when: 'melee', defaultOn: true, formula: '1d8', label: 'Radiant Strikes (radiant)', note: 'every hit with a Melee weapon or an Unarmed Strike' },
   'blessed strikes: divine strike': { kind: 'rider', on: ['damage'], when: 'weapon', formula: CLERIC_STRIKE, label: 'Divine Strike', note: 'once on each of your turns; Necrotic or Radiant' },
   'divine strike': { kind: 'rider', on: ['damage'], when: 'weapon', formula: CLERIC_STRIKE, note: 'once on each of your turns; the damage type is in the feature' },
   'elemental fury: primal strike': { kind: 'rider', on: ['damage'], when: 'weapon', formula: (rd) => (rd['scale.druid.elemental-fury'] ? '@scale.druid.elemental-fury' : '1d8'), label: 'Primal Strike', note: 'once on each of your turns; Cold, Fire, Lightning or Thunder' },
   'dreadful strikes': { kind: 'rider', on: ['damage'], when: 'weapon', formula: (rd) => ((rd.classes?.ranger?.levels ?? 0) >= 11 ? '1d6' : '1d4'), note: 'Psychic; a target takes it only once per turn' },
-  "hunter's prey": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d8', label: 'Colossus Slayer', note: 'only with the Colossus Slayer option, if the target is missing Hit Points; once per turn' },
+  "hunter's prey": { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => (c.features ?? []).includes("hunter's prey") && !(c.features ?? []).some((f) => f.startsWith("hunter's prey: ")), formula: '1d8', label: 'Colossus Slayer', note: 'only with the Colossus Slayer option, if the target is missing Hit Points; once per turn' },
   "hunter's prey: colossus slayer": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d8', label: 'Colossus Slayer', note: 'if the target is missing Hit Points; once per turn' },
   'eldritch smite': { kind: 'rider', on: ['damage'], when: 'weapon', spend: { pact: true }, formula: (rd) => `${1 + (rd.spells?.pact?.level ?? 1)}d8`, note: 'pact weapon, once per turn; Force; a Huge or smaller target can be knocked Prone' },
   'peerless skill': { kind: 'rider', on: ['check', 'attack'], spend: { item: 'Bardic Inspiration' }, formula: (rd) => (rd['scale.bard.inspiration'] ? '@scale.bard.inspiration' : '1d6'), note: 'after you fail; not spent if it still fails' },
@@ -241,6 +262,11 @@ export const FEATURE_ROLLS = {
   'boon of fate': { kind: 'rider', on: ['attack', 'check', 'save'], spend: { item: 'Boon of Fate' }, formula: '2d4', label: 'Improve Fate', note: 'a bonus or a penalty; again after Initiative or a rest' },
   'hurl through hell': { kind: 'rider', on: ['damage'], spend: { item: 'Hurl Through Hell' }, formula: '8d10', note: 'once per turn; Charisma save against your spell save DC; Psychic, not against a Fiend' },
   "fire's burn": { kind: 'rider', on: ['damage'], spend: { item: "Fire's Burn" }, formula: '1d10', note: 'Fire' },
+  "storm's thunder": { kind: 'use', spend: { item: "Storm's Thunder" }, roll: { label: 'Thunder damage to the creature that damaged you', formula: '1d8' } },
+  "stone's endurance": { kind: 'use', spend: { item: "Stone's Endurance" }, roll: { label: 'Damage reduced', formula: '1d12 + @abilities.con.mod' } },
+  'colossus slayer': { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d8', note: 'if the target is missing Hit Points; once per turn' },
+  'multiattack defense': { kind: 'toggle', modifier: () => ({ label: 'Multiattack Defense', source: 'feature', duration: 'manual', maxRounds: 1, ac: 4, notes: ['only against the creature that hit you, for the rest of the turn'], effects: [] }) },
+  'defensive tactics: multiattack defense': { kind: 'toggle', modifier: () => ({ label: 'Multiattack Defense', source: 'feature', duration: 'manual', maxRounds: 1, ac: 4, notes: ['only against the creature that hit you, for the rest of the turn'], effects: [] }) },
   "frost's chill": { kind: 'rider', on: ['damage'], spend: { item: "Frost's Chill" }, formula: '1d6', note: 'Cold; the target loses 10 feet of Speed until your next turn' },
   'hand of harm': { kind: 'rider', on: ['damage'], when: 'unarmed', spend: { item: "Monk's Focus" }, formula: '@scale.monk.die + @abilities.wis.mod', note: 'once per turn; Necrotic' },
   charger: { kind: 'rider', on: ['damage'], when: 'melee', formula: '1d8', label: 'Charge Attack', note: 'after moving 10 feet straight at the target, once per turn (or push it instead)' },
@@ -373,6 +399,10 @@ export const FEATURE_ROLLS = {
   'conjuration adept': { kind: 'rider', on: ['concentration'], formula: (rd) => `@abilities.${rd.featAbility?.['conjuration adept'] ?? 'int'}.mod`, label: 'Persistent Conjuration', note: 'only on a Conjuration spell' },
   'savage attacker': { kind: 'rider', on: ['damage'], when: 'armed', twice: true, label: 'Savage Attacker (best of two)', note: "once per turn; the weapon's damage dice rolled twice (the 2014 feat: melee only)" },
   'vigilant rebuke': { kind: 'use', roll: { label: 'Force to the creature that forced the save', formula: '2d8 + @abilities.cha.mod' } },
+  'great weapon fighting': {
+    kind: 'rider', on: ['damage'], when: 'twoHandedMelee', defaultOn: true, diceMin: 3, label: 'Great Weapon Fighting (a 1 or 2 counts as 3)', note: 'a Melee weapon you hold with two hands',
+    also: [{ on: ['damage'], when: 'versatileMelee', diceMin: 3, label: 'Great Weapon Fighting (a 1 or 2 counts as 3)', note: 'only when you hold the Versatile weapon with two hands' }],
+  },
 };
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -419,6 +449,8 @@ function fits(when, roll) {
   if (when === 'str') return roll.attackAbility === 'str';
   if (when === 'melee') return roll.melee !== false;
   if (when === 'ranged') return roll.melee === false;
+  if (when === 'twoHandedMelee') return roll.melee !== false && !!roll.twoHanded;
+  if (when === 'versatileMelee') return roll.melee !== false && !roll.twoHanded && !!roll.versatile;
   return true;
 }
 

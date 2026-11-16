@@ -20,12 +20,13 @@
 //
 // FUNÇÕES
 //   scopeOf(f, unit): o escopo da feature ('srd52', 'srd51' ou 'other').
-//   cuesOf(text): as pistas de mecânica que o texto traz.
-//   classify(f, action, pools, bridged): 'use', 'log' ou 'passive'.
 //   visit(catalog, unit): soma as features de um catálogo.
 //   featBuild(row): o personagem hospedeiro de um talento.
 //
 // DECISÕES E ARMADILHAS
+//   - As pistas, a classificação e o `EXPLAINED` moram em scripts/lib/playCoverage.js
+//     (DDL-0218): o livro dos personagens modelo (scripts/play-models.js) usa o MESMO
+//     veredito.
 //   - Por PROSA, sem filtrar por fonte (§6.1). Uma pista é um INDÍCIO, não um defeito:
 //     "advantage on" numa feature já curada em outro lugar (a Rage) aparece em `use`
 //     e não é contada; em `passive` ela diz que o diálogo da rolagem não a oferece.
@@ -56,10 +57,9 @@ import { classMatrix, speciesMatrix, defaultSpecies, featMatrix } from './lib/ma
 import { autoBuild } from './lib/autoBuild.js';
 import { hashSeed } from './lib/rng.js';
 import { derivePlayCatalog } from '../src/engine/playCatalog.js';
-import { isActiveFeature, plainText } from '../src/engine/playFeatures.js';
+import { plainText } from '../src/engine/playFeatures.js';
 import { featureRollOf } from '../src/engine/playFeatureRolls.js';
-import { PASSIVE_FEATURES } from '../src/engine/playEffects.js';
-import { REROLL_FEATURES } from '../src/engine/playRerolls.js';
+import { EXPLAINED, cuesOf, classify } from './lib/playCoverage.js';
 import { resolveSubclassObj } from '../src/engine/resolve.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -67,84 +67,6 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return m ? [m[1], m[2] ?? true] : [a, true];
 }));
 const SCOPE = args.scope ?? 'all';
-
-const CUES = [
-  ['advantage', /\badvantage on\b/],
-  ['disadvantage', /\bdisadvantage on\b/],
-  ['reroll', /\breroll\b|\broll (?:it |the die |the dice )?again\b/],
-  ['dice', /\b\d+d\d+\b|\b(?:bardic inspiration|superiority|psionic energy|martial arts|exertion) die\b/],
-  ['heal', /\bregains? (?:a number of )?hit points\b|\bregain hit points\b/],
-  ['temp', /\btemporary hit points\b/],
-  ['bonus', /\b(?:add|adds) (?:your |a |the |\w+ )?(?:\w+ )?(?:modifier|bonus|die|roll)\b.*?\bto\b|\bbonus to\b|\+\d+ bonus\b/],
-  ['floor', /\btreat (?:a|the|any) .{0,30}roll of \d+ or lower as\b|\bcan't be lower than\b/],
-];
-
-const OTHER = 'the text gives it to another creature (an ally, an enemy, a summon, the bearer)';
-const NEGATES = 'only removes a Disadvantage the app never imposes (range, a nearby enemy, a Hostile attitude)';
-const ONCE = 'a use that gives it once, before the roll (G3, with the reroll family)';
-const SNEAK = 'about when Sneak Attack works, not a roll mode';
-const TWO_WEAPONS = 'the ability modifier of the extra attack of two weapons: the Attack panel says it (DDL-0147)';
-const FAMILY = 'in another family of the plan (F1 a new attack, F3 options on Use, F4 a table)';
-const TEXT = 'no number for the player: a description of what happens';
-const AC = 'the sheet adds it to the AC (AC_BONUS_FEATURES, SUBCLASS_AC_BONUSES, naturalArmor; DDL-0215)';
-const HP_CARD = "spends one Hit Point Die outside a rest: the HP card's Hit dice does it at any time (DDL-0120)";
-const HIT_DICE = 'changes the Hit Point Die roll: HIT_DIE_RULES and REST_HIT_DICE_BONUS in engine/playRest (DDL-0215)';
-const SLOT = 'a button on the cast card, by the slot level (CAST_TRIGGERS in engine/playCast, DDL-0215)';
-const HEAL_MOD = 'added to every healing or Temporary Hit Points (healOutcome, tempHpOutcome; Honed Spellfire in the catalog; DDL-0215)';
-const EXPLAINED = {
-  advantage: {
-    'cohort of chaos': OTHER, 'street justice': OTHER, 'team tactics': OTHER, 'adjust density': OTHER, 'potent stone': OTHER,
-    'zhentarim ruffian': ONCE, 'vigilant blessing': ONCE, 'tides of chaos': ONCE,
-    'insightful fighting': SNEAK, 'rakish audacity': SNEAK,
-    'rapid strike': 'trades an Advantage away for an extra attack; nothing to add to the roll',
-  },
-  disadvantage: {
-    'armor model: guardian': OTHER, guardian: OTHER, 'improved brutal strike': OTHER, 'heightened spell': OTHER,
-    'boon of the furious storm': OTHER, 'cohort of chaos': OTHER, 'harper teamwork': OTHER, 'illusion adept': OTHER,
-    slasher: OTHER, 'magical ambush': OTHER, 'eldritch strike': OTHER, 'adjust density': OTHER, 'eldritch hex': OTHER,
-    'defensive tactics': OTHER, 'dread lord': OTHER, 'spiritual protectors': OTHER, 'power of the wilds': OTHER,
-    'beasts of ill omen': OTHER, panache: OTHER, 'focused strike': OTHER,
-    'boon of communication': NEGATES, bomber: NEGATES, 'crossbow expert': NEGATES, gunner: NEGATES, sharpshooter: NEGATES,
-    'spell sniper': NEGATES, 'street justice': NEGATES, hawkeyed: NEGATES, 'firearms mastery': NEGATES,
-    'insightful fighting': SNEAK, 'rakish audacity': SNEAK,
-    'unpredictable movement': 'a condition of another rule (no Disadvantage on the Initiative roll)',
-  },
-  bonus: {
-    'improved brutal strike': OTHER, "oketra's blessing": OTHER, "rhonas's blessing": OTHER, 'dashing strikes': OTHER, 'health funnel': OTHER,
-    'crossbow expert': TWO_WEAPONS, 'dual wielder': TWO_WEAPONS,
-    'experimental elixir': FAMILY, 'armor model': FAMILY, 'animal enhancement': FAMILY, 'radiant sun bolt': FAMILY,
-    'soul of the forge': AC, 'agile parry': AC, 'awakened astral self': AC, defense: AC, 'tauren lineage (taunka)': AC, 'integrated protection': AC, 'revenant blade': AC,
-    'dwarven fortitude': HP_CARD,
-    'sharpen the blade': FAMILY,
-    'sanctuary vessel': TEXT, "artisan's expertise": 'double proficiency and proficiency, the sheet derives them',
-  },
-  reroll: {
-    'bountiful luck': OTHER, 'second chance': OTHER, 'shared resilience': OTHER,
-    'black blood healing': HIT_DICE,
-  },
-  heal: {
-    'guardian spirit': OTHER, 'holy deliverance': OTHER, 'rot and violence': OTHER, 'master of hexes': 'it takes a healing away; nothing to roll',
-    'pet specialization': OTHER, 'infusion of light': 'refills a pool by the damage rolled: the pool is adjusted by hand (DDL-0209)',
-    'experimental elixir': FAMILY, 'holy bolt': FAMILY, 'mystic brew': FAMILY,
-    'dwarven fortitude': HP_CARD, 'healing machine': HP_CARD, 'emergency fail-safe': HP_CARD, 'inner peace': HIT_DICE, 'troll healing': HIT_DICE, 'vigor of the hill giant': HIT_DICE, 'boon of bountiful health': HIT_DICE,
-    'boon of fortitude': HEAL_MOD,
-    'blessed healer': SLOT,
-    'necromancy spellbook': TEXT,
-  },
-  temp: {
-    tundra: OTHER, 'mote of potential': OTHER, 'improved warding flare': OTHER, 'fortifying spell': OTHER, 'luminous barrier': OTHER,
-    'durable summons': OTHER, 'create thrall': OTHER, 'health funnel': OTHER, 'semblance of life': OTHER, 'enveloping mist': OTHER,
-    'boon of bountiful health': HEAL_MOD, 'honed spellfire': HEAL_MOD,
-    'abjuration adept': SLOT,
-  },
-  floor: {},
-  dice: {
-    appearance: 'a table for how the tiefling looks (1d4 + 1 features), not a roll in play',
-    'improved elemental fury': 'the scale raises the Primal Strike die (FEATURE_ROLLS passive)',
-    'improved blessed strikes': 'the scale raises the Divine Strike die; the Use gives the temp HP',
-    'supreme healing': 'every spell healing die at its maximum (withDiceMax in spellHealEvent, DDL-0217)',
-  },
-};
 
 const db = loadDb();
 const species = defaultSpecies(db);
@@ -160,18 +82,6 @@ for (const key of Object.keys(db).filter((k) => k.startsWith('class-'))) {
 function scopeOf(f, unit) {
   if (f.kind === 'class' && unit.kind === 'class') return classFeatureFlags.get(`${f.name}|${f.source}`.toLowerCase()) ?? unit.scope;
   return unit.scope;
-}
-
-/** As pistas de mecânica do texto. */
-function cuesOf(text) {
-  const t = text.toLowerCase();
-  return CUES.filter(([, re]) => re.test(t)).map(([c]) => c);
-}
-
-/** 'use', 'log' ou 'passive'. */
-function classify(f, action, pools, bridged) {
-  if ((action?.activities ?? []).length || pools.length || (f.roll && f.roll !== 'passive') || bridged || PASSIVE_FEATURES.includes(f.name.toLowerCase()) || REROLL_FEATURES.includes(f.name.toLowerCase())) return 'use';
-  return isActiveFeature(f, action, pools) ? 'log' : 'passive';
 }
 
 /** Soma as features de um catálogo ao relatório. */

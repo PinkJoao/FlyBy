@@ -30,6 +30,7 @@
 //   Conjuração
 //   spellListClassName(classId, info): a classe cuja LISTA a origem usa.
 //   resolveSpellRefs(refs, db): refs de magia em objetos.
+//   spellbookGrants(info, level, granted): as concessões que vão ao grimório, de graça.
 //   resolveGranted(additionalSpells, level, db, ctx, entity, opts): as magias
 //     CONCEDIDAS de um additionalSpells, com usos e escolhas.
 //   usesFromGranted(spells): os usos por dia ou descanso de uma origem.
@@ -103,6 +104,14 @@
 //   - Cantrips: base mais os extras de featureoption (TC-0028), só se a classe
 //     já conjura cantrips. Grimório só para quem tem repertório (o Mago).
 //     Conhecida e não preparada conta no grimório, não no limite.
+//   - spellbookGrants (TC-0133, DDL-0220): na classe com grimório (`knownLimit`), a
+//     concessão `known` de círculo 1 ou mais é "no seu grimório, de graça" (o Savant
+//     das 8 subclasses de mago), não "Always Prepared". Ela entra no grimório com
+//     `free` (o nome da classe ou subclasse que dá), fora da conta de conhecidas, e é
+//     preparada como as outras: a bandeira `prepared` fica no ref de `cls.spells` (o
+//     DDL-0076), e sem ref ela nasce não preparada (`noRef`, que o export marca para o
+//     import não inventar um ref). O ref com esse nome não é sombra da concessão. O
+//     cantrip `#c` e o `prepared` (Abjurer 10) seguem concedidos.
 //   - resolveGranted: o registro curado funde concessões que só a prosa declara
 //     (TC-0026); `entity` deixa o overlay preencher a frequência (DDL-0011); o
 //     bag liga as escolhas de magia (TC-0011). grantedOrigin não chuta atributo
@@ -371,6 +380,12 @@ function resolveSpellRefs(refs, db) {
   return out;
 }
 
+/** As concessões `known` de círculo 1 ou mais da classe com grimório: vão para o grimório, de graça (TC-0133). */
+export function spellbookGrants(info, level, granted) {
+  if (knownLimit(info, level) == null) return [];
+  return granted.filter((s) => s.castMode === 'known' && (s.raw?.level ?? 0) > 0);
+}
+
 /** As magias concedidas por um `additionalSpells`, com o atributo de conjuração. */
 function resolveGranted(additionalSpells, level, db, ctx, entity, opts = {}) {
   const withCurated = curatedAdditionalSpells({ name: entity?.name, source: entity?.source, additionalSpells });
@@ -561,10 +576,17 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
     const grantAbility = [subGrant.ability, classGrant.ability].find((a) => typeof a === 'string') ?? null;
     const ability = info?.ability ?? grantAbility;
     const abilityMod = ability ? (modifiers?.[ability] ?? 0) : null;
-    const grantedNames = new Set(featureGranted.map((s) => s.raw.name.toLowerCase()));
+    const lc = (s) => s.raw.name.toLowerCase();
+    const book = spellbookGrants(info, cls.level, [...classGrant.spells.map((s) => ({ ...s, freeFrom: classObj?.name })), ...subGrant.spells.map((s) => ({ ...s, freeFrom: subclassObj?.name }))]);
+    const bookNames = new Set(book.map(lc));
+    const grantedNames = new Set(featureGranted.map(lc).filter((n) => !bookNames.has(n)));
     const picks = resolveSpellRefs(cls.spells, db);
-    const shadowed = (s) => !!s.raw && grantedNames.has(s.raw.name.toLowerCase());
-    const resolved = picks.filter((s) => !shadowed(s));
+    const shadowed = (s) => !!s.raw && grantedNames.has(lc(s));
+    const chosen = picks.filter((s) => !shadowed(s)).map((s) => (s.raw && bookNames.has(lc(s)) ? { ...s, free: book.find((b) => lc(b) === lc(s)).freeFrom ?? true } : s));
+    const resolved = [
+      ...chosen,
+      ...book.filter((b) => !chosen.some((s) => s.raw && lc(s) === lc(b))).map((b) => ({ id: b.raw.name, source: b.raw.source, raw: b.raw, prepared: false, free: b.freeFrom ?? true, noRef: true })),
+    ];
 
     const arcanaLevels = arcanumLevels(info?.code, cls.level);
     const isArcanum = (s) => arcanaLevels.includes(s.raw?.level);
@@ -606,7 +628,7 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
       cantrips: resolved.filter((s) => s.raw?.level === 0),
       prepared: leveled.filter((s) => !isArcanum(s) && isPreparedRef(s)),
       unprepared: leveled.filter((s) => !isArcanum(s) && !isPreparedRef(s)),
-      alwaysPrepared: granted,
+      alwaysPrepared: granted.filter((s) => !bookNames.has(lc(s))),
       shadowedPicks: picks.filter(shadowed),
       arcanumLevels: arcanaLevels,
       arcana: arcanaLevels.map((level) => ({

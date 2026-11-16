@@ -138,6 +138,13 @@ describe('G3: bônus, reroll do 1, piso', () => {
     expect(effectsFor([thrown], { kind: 'attack', weapon: true })).toEqual([]);
   });
 
+  it('"of that spell" só repete o escopo: a nota fica com a condição da frente', () => {
+    const empowered = feature('Empowered Evocation', 'Whenever you cast a Wizard spell from the {@filter Evocation|spells|school=V} school, you can add your Intelligence modifier to one damage roll of that spell.');
+    const [e] = proseRollEffects([empowered]);
+    expect(e).toMatchObject({ part: { formula: '@abilities.int.mod' }, defaultOn: false });
+    expect(e.note).toBe('Whenever you cast a Wizard spell from the Evocation school');
+  });
+
   it('"a bonus to the check equal to your Wisdom modifier": o alvo vem da frente, e fica ligado', () => {
     const courtier = feature('Elegant Courtier', 'Whenever you make a Charisma ({@skill Persuasion}) check, you gain a bonus to the check equal to your Wisdom modifier.');
     expect(effectsFor([courtier], { kind: 'check', ability: 'cha', skill: 'per' })[0]).toMatchObject({ part: { formula: '@abilities.wis.mod' }, defaultOn: true });

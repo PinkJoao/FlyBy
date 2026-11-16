@@ -59,6 +59,9 @@
 //     sai o item da concessão (`prepared: 2`, o estado nativo certo) com a marca
 //     `flags.builder5e.classPick`, a ref da escolha. O Foundry não tem campo para
 //     "também escolhida", e sem a marca o import descartava a decisão.
+//   - Magia do grimório de graça (o Savant do mago, `free`, TC-0133): sai como magia do
+//     grimório (`prepared` 0 ou 1, o estado nativo do Mago), com `flags.builder5e.free`
+//     dizendo se havia ref na classe; sem ref, o import não cria uma (DDL-0220).
 //   - Magia de INVOCAÇÃO (`grantedBy`, TC-0092): o SRD a lança por uma activity no
 //     item da própria invocação (Armor of Shadows, Pact of the Chain), sem item de
 //     magia. Quando o item exportado da invocação tem activity
@@ -300,6 +303,7 @@ export function buildSpellItems(derived, opts = {}) {
       if (pick) {
         item.flags = { ...item.flags, builder5e: { classPick: { id: pick.id, source: pick.source, ...(pick.prepared === false ? { prepared: false } : {}) } } };
       }
+      if (entry.free) item.flags = { ...item.flags, builder5e: { ...item.flags?.builder5e, free: { ref: !entry.noRef } } };
       out.push(item);
     }
   }

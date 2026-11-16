@@ -17,6 +17,8 @@
 //   resolveSubclassEntries(db, classId, subclass): os entries do preview.
 //
 // DECISÕES E ARMADILHAS
+//   - A feature marcada `isClassFeatureVariant` é OPCIONAL e não entra na lista (DDL-0218): o
+//     Blessed Strikes do TCE nos domínios antigos substitui o Divine Strike por escolha.
 //   - Algumas features são STUBS `_copy` de corpo vazio (as domains de Clérigo
 //     XPHB copiam o texto das PHB); sem resolver, preview e progressão vêm vazios.
 //   - Os refSubclassFeature DIRETOS de uma feature viram features próprias no
@@ -102,7 +104,7 @@ export function subclassFeatureList(db, classId, subclass) {
 
   const out = [];
   const emitFeature = (f, atLevel) => {
-    if (!f || seen.has(keyOf(f))) return;
+    if (!f || f.isClassFeatureVariant || seen.has(keyOf(f))) return;
     seen.add(keyOf(f));
     const level = atLevel ?? f.level;
     const directRefs = [];

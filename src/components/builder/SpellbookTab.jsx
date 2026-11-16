@@ -25,7 +25,8 @@
 //   SpellbookTab(props): a aba. Dentro dela:
 //     selectOrigin, selectCategory, toggleSection: navegação da página.
 //     addSpell(raw): adiciona (ou troca) uma magia, com as confirmações.
-//     togglePrepared(entry): prepara ou desprepara uma magia do repertório.
+//     togglePrepared(entry): prepara ou desprepara uma magia do repertório; a do
+//       grimório de graça sem ref ganha um ao ser preparada (TC-0133).
 //     assignSpell(entry), discardSpell(entry): dão destino à carga.
 //     startReplace(entry), closePicker(), removeSpell(entry): o fluxo de troca.
 //     openPrepare(), undoSessionPick(name): o "Prepare spell" em modo múltiplo.
@@ -38,6 +39,9 @@
 //     dos gastos, DDL-0165), e não passa preparar nem trocar.
 //
 // DECISÕES E ARMADILHAS
+//   - A magia "Free" (o Savant do mago, `entry.free` de resolve.spellbookGrants) está no
+//     grimório de graça: fica fora do "Known", prepara e desprepara como as outras, e não
+//     se troca nem se remove (quem a dá é a escolha da subclasse) (TC-0133, DDL-0220).
 //   - "Prepare spell" abre o seletor em modo MÚLTIPLO: segue aberto enquanto
 //     houver vaga livre (truques mais preparadas) e fecha quando acabam. A faixa
 //     mostra só o que foi adicionado NESTA abertura (`session`), não o repertório
@@ -370,7 +374,7 @@ export default function SpellbookTab({
 
   const cantripCount = origin.cantrips.length;
   const preparedCount = origin.prepared.length;
-  const knownCount = preparedCount + (origin.unprepared?.length ?? 0);
+  const knownCount = [...origin.prepared, ...(origin.unprepared ?? [])].filter((s) => !s.free).length;
   const cantripsFull = cantripCount >= origin.cantripLimit;
   const arcana = origin.arcana ?? [];
   const freeArcanumLevels = new Set(arcana.filter((a) => !a.spell).map((a) => a.level));
@@ -528,7 +532,12 @@ export default function SpellbookTab({
   const togglePrepared = (entry) => {
     if (!classEntry || entry.granted) return;
     const name = entry.raw.name.toLowerCase();
-    setSpells((classEntry.spells ?? []).map((s) => (
+    const list = classEntry.spells ?? [];
+    if (!list.some((s) => String(s.id ?? s.name).toLowerCase() === name)) {
+      setSpells([...list, { id: entry.raw.name, source: entry.raw.source }]);
+      return;
+    }
+    setSpells(list.map((s) => (
       String(s.id ?? s.name).toLowerCase() === name
         ? { ...s, prepared: s.prepared === false }
         : s
@@ -614,7 +623,7 @@ export default function SpellbookTab({
   };
 
   const removeSpell = (entry) => {
-    if (!classEntry || entry.granted) return;
+    if (!classEntry || entry.granted || entry.free) return;
     const name = entry.raw.name.toLowerCase();
     setSpells((classEntry.spells ?? []).filter((s) => String(s.id ?? s.name).toLowerCase() !== name));
     setInfoKey(null);
@@ -801,7 +810,7 @@ export default function SpellbookTab({
                         arcanum={isArc}
                         thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
                         onInfo={() => setInfoKey(entry.raw.name)}
-                        onReplace={classEntry && !entry.granted ? () => startReplace(entry) : null}
+                        onReplace={classEntry && !entry.granted && !entry.free ? () => startReplace(entry) : null}
                         onTogglePrepared={canPrepareThis ? () => togglePrepared(entry) : null}
                         onAssign={isCargo ? () => assignSpell(entry) : null}
                         assignDisabled={isCargo && assignTargets.length === 0}
@@ -843,6 +852,13 @@ export default function SpellbookTab({
                 <button type="button" className={styles.removeBtn} onClick={() => discardSpell(infoEntry)}>
                   Discard
                 </button>
+              </div>
+            ) : infoEntry.free ? (
+              <div className={styles.infoFooter}>
+                <Tag tone="accent">Free</Tag>
+                <span className={styles.infoNote}>
+                  {typeof infoEntry.free === 'string' ? infoEntry.free : origin.label} added it to your spellbook for free. It does not count against your known spells; prepare it like the others.
+                </span>
               </div>
             ) : infoEntry.granted ? (
               <div className={styles.infoFooter}>
@@ -949,6 +965,7 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
               ))}
             </span>
             {entry.granted && <Tag tone="accent">Always Prepared</Tag>}
+            {entry.free && <Tag tone="accent">Free</Tag>}
             {arcanum && <Tag tone="accent">Mystic Arcanum</Tag>}
             {arcanum && <Tag>1/Long Rest</Tag>}
             {cast && <Tag>{cast}</Tag>}

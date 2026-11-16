@@ -27,7 +27,9 @@
 //   evaluate(node, ctx): o valor de um nó, rolando os dados no ctx.
 //   dropLosers(ctx, spans, winner): em `min`/`max`, descarta os dados dos perdedores.
 //   rollDice(node, ctx): um termo de dados, com manter, piso, teto e crítico.
-//   rollFormula(text, opts): rola uma fórmula.
+//   rollFormula(text, opts): rola uma fórmula; o texto guardado tira o parêntese de fora
+//     quando ele cerca só um dado ou um número (a ref "@scale...brutal-strike" virava
+//     "(1d10)" no histórico, DDL-0219).
 //   validateFormula(text, data): null se a fórmula é válida, senão a mensagem.
 //   rollParts(parts, opts): rola partes rotuladas (atributo, PB, Bless...) com o
 //     mesmo rng e o mesmo crítico, e soma; um rng marcado `physical` (o dado da
@@ -420,7 +422,8 @@ export function rollFormula(text, { data = {}, rng = cryptoRng, critical = false
   const tree = parseFormula(resolveRefs(text, data));
   const ctx = { rng, critical, groups: [] };
   const value = evaluate(tree, ctx);
-  return { formula: formatNode(tree), total: Number.isInteger(value) ? value : Math.floor(value), groups: ctx.groups, critical };
+  const shown = tree.t === 'group' && (tree.a.t === 'dice' || tree.a.t === 'num') ? tree.a : tree;
+  return { formula: formatNode(shown), total: Number.isInteger(value) ? value : Math.floor(value), groups: ctx.groups, critical };
 }
 
 /** null se a fórmula é válida com esses dados, senão a mensagem do erro. */

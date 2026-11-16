@@ -104,6 +104,28 @@ describe('featureOptionChoices', () => {
     expect(out).toHaveLength(1);
     expect(out[0].pool.options.map((o) => o.label)).toEqual(['Divine Strike', 'Potent Spellcasting']);
   });
+
+  it('curada E com bloco `options` no dado (o Blessed Strikes do espelho atual): uma escolha só', () => {
+    const db4 = {
+      'class-cleric': {
+        classFeature: [
+          {
+            name: 'Blessed Strikes', source: 'XPHB', classSource: 'XPHB', level: 7,
+            entries: ['You gain one of the following options of your choice.', { type: 'options', count: 1, entries: [
+              { type: 'refClassFeature', classFeature: 'Divine Strike|Cleric|XPHB|7|XPHB' },
+              { type: 'refClassFeature', classFeature: 'Potent Spellcasting|Cleric|XPHB|7|XPHB' },
+            ] }],
+          },
+          { name: 'Divine Strike', source: 'XPHB', classSource: 'XPHB', level: 7, entries: ['dmg'] },
+          { name: 'Potent Spellcasting', source: 'XPHB', classSource: 'XPHB', level: 7, entries: ['cantrip+wis'] },
+        ],
+      },
+    };
+    const obj = { name: 'Cleric', source: 'XPHB', classFeatures: ['Blessed Strikes|Cleric|XPHB|7'] };
+    const out = featureOptionChoices(db4, 'cleric', obj, 7);
+    expect(out).toHaveLength(1);
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Divine Strike', 'Potent Spellcasting']);
+  });
 });
 
 describe('subclassFeatureOptionChoices', () => {
@@ -134,6 +156,25 @@ describe('subclassFeatureOptionChoices', () => {
     expect(out).toHaveLength(1);
     expect(out[0].id).toBe('sub:featopt@Rage of the Wilds@3');
     expect(out[0].pool.options.map((o) => o.label)).toEqual(['Bear', 'Eagle', 'Wolf']);
+  });
+
+  it('bloco `options` de refSubclassFeature sem curadoria vira escolha (o Multiattack do Hunter antigo, DDL-0221)', () => {
+    const db2 = {
+      'class-ranger': {
+        subclassFeature: [
+          { name: 'Multiattack', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 11,
+            entries: ['You gain one of the following features of your choice.', { type: 'options', count: 1, entries: [
+              { type: 'refSubclassFeature', subclassFeature: 'Volley|Ranger||Hunter||11' },
+              { type: 'refSubclassFeature', subclassFeature: 'Whirlwind Attack|Ranger||Hunter||11' },
+            ] }] },
+          { name: 'Volley', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 11, entries: ['volley'] },
+          { name: 'Whirlwind Attack', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 11, entries: ['whirlwind'] },
+        ],
+      },
+    };
+    const out = subclassFeatureOptionChoices(db2, 'ranger', { shortName: 'Hunter', source: 'PHB' }, 11);
+    expect(out.map((c) => c.id)).toEqual(['sub:featopt@Multiattack@11']);
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Volley', 'Whirlwind Attack']);
   });
 
   it('extrai refSubclassFeature de bloco options curado (Storm Aura Desert/Sea/Tundra - TC-0019)', () => {

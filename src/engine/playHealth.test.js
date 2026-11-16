@@ -202,6 +202,17 @@ describe('HP máximo e o painel Hurt', () => {
     expect(hpView(s1, 12)).toEqual({ max: 12, current: 10, temp: 0 });
   });
 
+  it('Hurt com tipo aplica a defesa, também a de um modificador (Rage); sem tipo, não (TC-0134)', () => {
+    const raging = st({ modifiers: [{ id: 'rage', label: 'Rage', resist: ['slashing', 'piercing', 'bludgeoning'] }] });
+    const out = hurtOutcome(raging, catalog(30), { amount: 10, type: 'slashing' });
+    expect(out.summary).toMatchObject({ taken: 5, trait: 'resist', type: 'slashing' });
+    expect(hpView(after(raging, out), 30).current).toBe(25);
+    expect(hurtOutcome(raging, catalog(30), { amount: 10 }).summary.taken).toBe(10);
+    const ev = hurtEvent({ state: st(), catalog: catalog(30, { immune: ['poison'] }), amount: 8, type: 'poison', affectMax: true });
+    expect(ev.payload).toMatchObject({ taken: 0, trait: 'immune' });
+    expect(ev.ops).toEqual([]);
+  });
+
   it('Hurt afetando o máximo corta o que passou do temporário', () => {
     const s = st({ tempHp: 3 });
     const out = hurtOutcome(s, catalog(12), { amount: 5, affectMax: true });

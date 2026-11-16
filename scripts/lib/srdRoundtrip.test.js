@@ -7,6 +7,8 @@
 //   escolhe para o grimório e que o Evocation Savant também concede saía do
 //   export como uma concessão só, e o import descartava a escolha. As sementes
 //   são as que reproduziam a perda antes do fix (1 a 6 do Evoker).
+//   Cobre também o TC-0133: as magias do Savant vão ao grimório de graça, com a marca
+//   `free` no item exportado (DDL-0220).
 //
 // DECISÕES E ARMADILHAS
 //   - O teste exige que a COLISÃO aconteça em ao menos uma semente: sem ela, o
@@ -41,6 +43,18 @@ describe('TC-0091: escolha de classe que a própria origem concede', () => {
     for (const c of builds) {
       const back = foundryToCharacter(assembleFoundryActor(c, db), db);
       expect(diffSummaries(decisionSummary(c), decisionSummary(back))).toEqual([]);
+    }
+  });
+
+  it('as magias do Savant vão ao grimório de graça e se preparam (TC-0133)', () => {
+    for (const c of builds) {
+      const o = deriveFromDb(c, db).spellcasting.origins.find((x) => x.classId === 'wizard');
+      const free = [...o.prepared, ...o.unprepared].filter((s) => s.free);
+      expect(free.length).toBeGreaterThan(0);
+      expect(o.alwaysPrepared.filter((s) => s.raw.level > 0)).toEqual([]);
+      const items = assembleFoundryActor(c, db).items.filter((i) => i.flags?.builder5e?.free);
+      expect(items.length).toBe(free.length);
+      for (const it of items) expect([0, 1]).toContain(it.system.prepared);
     }
   });
 

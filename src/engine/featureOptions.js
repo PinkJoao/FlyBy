@@ -15,7 +15,8 @@
 // FUNÇÕES
 //   norm(s), featureCopyId(f): normalização e id de cópia.
 //   poolIndex(pool): índice nome|nível do pool de features.
-//   findOptionBlocks(entries, out): os blocos `options` estruturados.
+//   findOptionBlocks(entries, out, refType): os blocos `options` estruturados (de classe ou de
+//     subclasse, `refSubclassFeature`).
 //   isOptionLike(e): é uma sub-feature nomeada ou uma ref?
 //   findChooseGroup(entries): o primeiro grupo (BFS) de 2+ opções irmãs.
 //   optionToCard(e, resolveRef): uma opção como card { value, label, entries }.
@@ -25,9 +26,21 @@
 //   subclassFeatureOptionChoices(db, classId, subclass, level): as de SUBCLASSE.
 //
 // DECISÕES E ARMADILHAS
+//   - A feature de SUBCLASSE com um bloco `options` de `refSubclassFeature` (o Hunter's Prey,
+//     o Defensive Tactics e o Multiattack do Hunter antigo) vira escolha como a de classe; antes
+//     só a lista curada valia, e o Multiattack não tinha escolha (passe ao vivo, DDL-0221). O id
+//     é o mesmo da curada (`sub:featopt@<feature>@<nível>`), então a escolha salva continua. Só
+//     o bloco com `count` é escolha: o `options` sem ele é lista (o Psionic Power do Psi Warrior
+//     dá as três).
+//   - Uma feature que o dado JÁ escreve com opções (`refClassFeature`) e que também está em
+//     CHOOSE_ONE_FEATURES vira UMA escolha: o Blessed Strikes do espelho atual saía duas vezes
+//     com o mesmo id, e o export levava a opção em dobro (passe ao vivo, DDL-0219).
 //   - A feature marcada `isClassFeatureVariant` é OPCIONAL de outro livro (as do TCE nas
 //     classes PHB, o Pet Specialization do WoW na Ranger XPHB, que "replaces the Roving feature
 //     for a Hunter with the Beast Master subclass"): não entra sozinha (DDL-0216).
+//   - A feature de subclasse marcada `isClassFeatureVariant` também é OPCIONAL e não entra
+//     sozinha (DDL-0218): o Blessed Strikes do TCE em 18 domínios antigos ("which replaces
+//     the Divine Strike feature"), o Maneuver Options e o Primal Companion antigos.
 //   - CHOOSE_ONE_FEATURES: `true` extrai as opções da feature; uma lista explícita
 //     serve quando as opções não são sub-features (tipos de dano). A chave é o nome
 //     da feature em minúsculas, único entre as classes.
@@ -69,14 +82,15 @@ function poolIndex(pool) {
   return byLoose;
 }
 
-/** Os blocos `options` de refClassFeature (forma estruturada). */
-function findOptionBlocks(entries, out = []) {
+/** Os blocos `options` de refClassFeature (ou refSubclassFeature) (forma estruturada). */
+export function findOptionBlocks(entries, out = [], refType = 'refClassFeature') {
+  const field = refType === 'refSubclassFeature' ? 'subclassFeature' : 'classFeature';
   const walk = (e) => {
     if (Array.isArray(e)) return e.forEach(walk);
     if (!e || typeof e !== 'object') return;
     if (e.type === 'options') {
-      const refs = (e.entries ?? []).filter((x) => x?.type === 'refClassFeature');
-      if (refs.length) out.push({ count: e.count ?? 1, refs: refs.map((r) => r.classFeature) });
+      const refs = (e.entries ?? []).filter((x) => x?.type === refType);
+      if (refs.length) out.push({ count: e.count ?? 1, explicit: e.count != null, refs: refs.map((r) => r[field]) });
     }
     if (e.entries) walk(e.entries);
     if (e.items) walk(e.items);
@@ -157,7 +171,7 @@ export function featureOptionChoices(db, classId, classObj, level) {
       }
     }
     const curated = curatedOptions(feature, resolveRef);
-    if (curated?.length) {
+    if (curated?.length && !out.some((c) => c.id === `featopt@${feature.name}@${feature.level}`)) {
       out.push({ id: `featopt@${feature.name}@${feature.level}`, kind: 'featureoption', count: 1, level: feature.level, label: feature.name, feature: { name: feature.name, level: feature.level }, pool: { type: 'featureoption', options: curated } });
     }
   }
@@ -181,9 +195,11 @@ export function subclassFeatureOptionChoices(db, classId, subclass, level) {
   const out = [];
   const seen = new Set();
   for (const f of pool) {
-    if (norm(f.subclassShortName) !== short) continue;
+    if (norm(f.subclassShortName) !== short || f.isClassFeatureVariant) continue;
     if ((f.level ?? 0) > level) continue;
-    const options = curatedOptions(f, resolveRef);
+    const block = findOptionBlocks(f.entries, [], 'refSubclassFeature').find((b) => b.explicit);
+    const fromBlock = block ? block.refs.map((sf) => optionToCard({ type: 'refSubclassFeature', subclassFeature: sf }, resolveRef)).filter(Boolean) : [];
+    const options = fromBlock.length ? fromBlock : curatedOptions(f, resolveRef);
     if (!options?.length) continue;
     if (seen.has(`${norm(f.name)}|${f.level}`)) continue;
     seen.add(`${norm(f.name)}|${f.level}`);

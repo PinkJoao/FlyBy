@@ -84,6 +84,10 @@
 //     2`) que TAMBÉM é escolha da classe; a ref da marca volta para a classe, e a
 //     concessão segue sendo derivada. Vale só para o nosso export; ator sem flag
 //     não tem como dizer isso.
+//   - `flags.builder5e.free` (TC-0133): a magia do grimório de graça (o Savant do mago)
+//     só volta como ref da classe quando havia uma (`ref`); sem ela, a derivação já a
+//     põe no grimório pela escolha da subclasse. Ator sem a marca: cada magia do
+//     grimório volta como ref, e conta no limite de conhecidas.
 //   - Magia sem `sourceItem` vai para a classe original. Magia que nenhuma classe
 //     conjura (a Riswynn, Ladina, traz 35) e magia de ITEM (o pergaminho da
 //     Quillathe) vão para o balde de CARGA, com aviso: antes sumiam em silêncio.
@@ -261,6 +265,7 @@ export function importSpellsByClass(items) {
       continue;
     }
     if (item.type !== 'spell' || !isPlayerChosenSpell(item)) continue;
+    if (item.flags?.builder5e?.free && !item.flags.builder5e.free.ref) continue;
     const key = spellSourceClass(item);
     const list = out.get(key) ?? [];
     const { method, prepared } = spellPreparation(item);

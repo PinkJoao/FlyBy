@@ -17,7 +17,14 @@
 //   resolveCosts(catalog, state, activity, options): os gastos concretos da
 //     activity, com a escala e o slot escolhidos.
 //   liveRollData(catalog, state): o rollData com o PV atual e o Bloodied do estado.
-//   activityEvent(args): o evento de usar uma activity.
+//   activityEvent(args): o evento de usar uma activity; o que ela DEVOLVE para no que foi
+//     gasto (o Magical Cunning com os 3 espaços cheios dizia "2 regained", DDL-0221).
+//     Rola também o `roll` da activity (o dado do Cutting Words).
+//   saveDcNow(activity, action, state, data): a CD da activity no uso; a que cresce com os
+//     usos (`dcFormula` com `@item.uses.spent`, a Relentless Rage) lê o gasto do estado.
+//   activityLabel(action, activity): o nome do uso; a activity que já contém o nome da
+//     feature fica sozinha ("Channel Divinity: Preserve Life", não "Preserve Life: Channel
+//     Divinity: Preserve Life", DDL-0219).
 //   specialRecovery(action): a regra curada de uma recuperação especial, ou null.
 //   slotRecoveryEvent(args): o Arcane Recovery e o Natural Recovery.
 //   fontOfMagicEvent(args): criar um slot com pontos, ou converter um slot em pontos.
@@ -144,6 +151,16 @@ export function liveRollData(catalog, state) {
   };
 }
 
+/** O nome de um uso: a feature, a activity, ou as duas quando uma não contém a outra. */
+export function activityLabel(action, activity) {
+  const a = String(action?.name ?? '');
+  const b = String(activity?.name ?? '');
+  if (!b || b === a) return a;
+  if (b.toLowerCase().includes(a.toLowerCase())) return b;
+  if (a.toLowerCase().includes(b.toLowerCase())) return a;
+  return `${a}: ${b}`;
+}
+
 /**
  * O evento de usar uma activity: gasta, rola e, quando é em si mesmo, cura.
  * @param {{ catalog: object, state: object, action: object, activity: object, options?: object, rng?: Function, now?: Date }} args
@@ -151,7 +168,9 @@ export function liveRollData(catalog, state) {
 export function activityEvent({ catalog, state, action, activity, options = {}, rng = cryptoRng, now = new Date() }) {
   const free = !!options.free;
   const only = options.only === 'attack' || options.only === 'effect' ? options.only : null;
-  const costs = free ? [] : resolveCosts(catalog, state, activity, options);
+  const costs = (free ? [] : resolveCosts(catalog, state, activity, options))
+    .map((c) => (c.amount < 0 && state ? { ...c, amount: -Math.min(-c.amount, state.spent?.[c.key] ?? 0) } : c))
+    .filter((c) => c.amount !== 0);
   const ops = costs.map((c) => (c.amount >= 0
     ? { op: 'spend', key: c.key, amount: c.amount }
     : { op: 'restore', key: c.key, amount: -c.amount }));
@@ -160,7 +179,7 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
   const scaling = Math.max(1, Math.floor(Number(options.scaling) || 1));
   const mods = catalog.rollData?.abilities ?? {};
   const ability = activity.attack?.ability ?? null;
-  const data = { ...liveRollData(catalog, state), scaling, ...(ability ? { mod: mods[ability]?.mod ?? 0 } : {}) };
+  const data = { ...liveRollData(catalog, state), scaling, ...(ability ? { mod: mods[ability]?.mod ?? 0 } : activity.mod != null ? { mod: activity.mod } : {}) };
   const r = rngFor(options, rng);
   const parts = [];
   let attack = null;
@@ -177,7 +196,9 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
       rng: r,
     });
   }
-  if (activity.heal && only !== 'attack') parts.push({ label: 'Healing', formula: activity.heal.formula });
+  const healLabel = activity.heal?.label ?? 'Healing';
+  if (activity.heal && only !== 'attack') parts.push({ label: healLabel, formula: activity.heal.formula });
+  if (activity.roll && only !== 'attack') parts.push({ label: activity.roll.label, formula: activity.roll.formula });
   for (const p of only === 'attack' ? [] : activity.damage ?? []) parts.push({ label: (p.types ?? []).join('/') || 'Damage', formula: p.formula });
   const rolls = parts.length
     ? rollParts([...parts, ...(attack ? [] : bonusParts(options))], { data, rng: r, critical: !!(options.critical || attack?.isCritical) })
@@ -189,21 +210,21 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
   const healSelf = activity.heal && (options.applyHeal ?? activity.selfTarget);
   let healed = null;
   if (healSelf && rolls) {
-    const amount = rolls.parts.find((p) => p.label === 'Healing')?.total ?? 0;
+    const amount = rolls.parts.find((p) => p.label === healLabel)?.total ?? 0;
     const heal = healOutcome(state, catalog, amount);
     ops.push(...heal.ops);
     healed = heal.summary;
   }
 
   return makeEvent('use', {
-    label: activity.name && activity.name !== action.name ? `${action.name}: ${activity.name}` : action.name,
+    label: activityLabel(action, activity),
     ops,
     payload: {
       actionKey: action.key,
       activityId: activity.id,
       costs: costs.map((c) => ({ name: nameOf(catalog, c.key), amount: c.amount })),
       short,
-      save: activity.save ? { abilities: activity.save.abilities, dc: activity.save.dc } : null,
+      save: activity.save ? { abilities: activity.save.abilities, dc: saveDcNow(activity, action, state, data) } : null,
       types: (activity.damage ?? []).flatMap((p) => p.types ?? []),
       healed,
       attack: attack ? { total: attack.total, natural: attack.natural, critical: attack.isCritical } : null,
@@ -213,6 +234,17 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
     },
     rolls: attack ? { ...attack, parts: [...attack.parts, ...(rolls?.parts ?? [])], total: attack.total, damage: rolls?.total ?? null } : rolls,
   }, now);
+}
+
+/** A CD da activity agora: a que cresce com os usos (Relentless Rage, "10 + 5 por uso") lê o gasto do estado. */
+function saveDcNow(activity, action, state, data) {
+  if (!activity.save?.dcFormula) return activity.save?.dc ?? null;
+  const spent = action.pool ? (state?.spent?.[action.pool] ?? 0) : 0;
+  try {
+    return rollFormula(activity.save.dcFormula.replace(/@item\.uses\.spent/g, String(spent)), { data }).total;
+  } catch {
+    return activity.save.dc ?? null;
+  }
 }
 
 /** A regra curada de uma recuperação especial da ação, com o orçamento do nível, ou null. */

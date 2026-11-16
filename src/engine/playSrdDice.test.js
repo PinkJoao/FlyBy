@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   Prova o DDL-0217 com as frases do XPHB: o Supreme Healing (cada dado de cura no máximo),
 //   o Cunning Strike e o Devious Strikes (dados do Sneak Attack que se tiram), o Smooth Talker
-//   do Arcane Eloquence, o "Use" do Use Magic Device e o limite de atunement pela prosa.
+//   do Arcane Eloquence, o "Use" do Use Magic Device e o limite de atunement pela prosa; e o
+//   Disciple of Life (2 mais o círculo na cura de magia, DDL-0219).
 //
 // FUNÇÕES
 //   catalog(features): um catálogo mínimo de ladino com Sneak Attack 3d6, DES +4 e PB 3.
@@ -15,7 +16,7 @@
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState } from './playState';
 import { sequenceRng } from './dice';
-import { spellHealEvent } from './playCast';
+import { spellHealEvent, healParts } from './playCast';
 import { rollDamageEvent, forgoDice, withDiceMax } from './playActions';
 import { featureRiders, featureUseOf } from './playFeatureRolls';
 import { rollEffects, applyEffects } from './playEffects';
@@ -39,6 +40,18 @@ describe('Supreme Healing', () => {
   });
 });
 
+describe('Disciple of Life', () => {
+  it('a cura de magia ganha 2 mais o círculo do espaço; o cantrip não', () => {
+    const spell = { key: 's', name: 'Cure Wounds', level: 1, mechanics: { heal: { dice: '2d8', addMod: true }, upcast: '2d8' } };
+    const origin = { abilityMod: 3 };
+    expect(healParts(origin, spell, 2, catalog(['disciple of life']))).toContainEqual({ label: 'Disciple of Life', formula: 4 });
+    const ev = spellHealEvent({ catalog: catalog(['disciple of life', 'supreme healing']), state: emptyPlayState(), origin, spell, level: 1 });
+    expect(ev.rolls.total).toBe(16 + 3 + 3);
+    expect(healParts(origin, { ...spell, level: 0 }, 0, catalog(['disciple of life'])).some((p) => p.label === 'Disciple of Life')).toBe(false);
+    expect(healParts(origin, spell, 1).some((p) => p.label === 'Disciple of Life')).toBe(false);
+  });
+});
+
 describe('Cunning Strike e Devious Strikes', () => {
   it('cada efeito é um extra que tira dados do Sneak Attack, com a CD 8 + DES + PB', () => {
     const riders = featureRiders(emptyPlayState(), catalog(['cunning strike', 'devious strikes']), { kind: 'damage', weapon: true }).filter((r) => r.id !== 'rider:sneak-attack');
@@ -54,7 +67,7 @@ describe('Cunning Strike e Devious Strikes', () => {
     expect(applied.forgo).toBe(1);
     const attack = { key: 'a', name: 'Rapier', damage: { dice: '1d8', bonus: 4, types: ['piercing'] } };
     const ev = rollDamageEvent({ catalog: c, attack, options: { applied }, rng: sequenceRng([5, 6, 6]) });
-    expect(ev.rolls.parts.find((p) => /Sneak Attack/.test(p.label))).toMatchObject({ formula: '(2d6)', total: 12 });
+    expect(ev.rolls.parts.find((p) => /Sneak Attack/.test(p.label))).toMatchObject({ formula: '2d6', total: 12 });
     expect(forgoDice('3d6', 6)).toBe('0d6');
   });
 });

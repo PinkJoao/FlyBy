@@ -207,13 +207,13 @@ import {
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
-import { activityEvent, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { activityEvent, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers } from '../engine/playCast';
+import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
@@ -478,9 +478,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** O Hurt do card de HP; com concentração, o dano já pede o save de CON. */
   const openHurt = async () => {
-    const r = await askHurt({ vitals: hp });
+    const r = await askHurt({ vitals: hp, defenses: effectiveDefenses(catalog, state) });
     if (!r) return;
-    const event = hurtEvent({ state, catalog, amount: r.amount, affectMax: r.affectMax });
+    const event = hurtEvent({ state, catalog, amount: r.amount, type: r.type, affectMax: r.affectMax });
     record(event);
     if (event.payload.concentrationDc) rollConcentration(event.payload.concentrationDc);
   };
@@ -600,7 +600,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       || (activity.consumes ?? []).some((c) => c.spellSlot != null);
     let options = {};
     if (needs) {
-      options = await askUse({ title: action.name === activity.name || !activity.name ? action.name : `${action.name}: ${activity.name}`, catalog, state, action, activity });
+      options = await askUse({ title: activityLabel(action, activity), catalog, state, action, activity });
       if (!options) return;
     }
     const short = resolveCosts(catalog, state, activity, options).filter((c) => c.amount > 0 && leftOf(catalog, state, c.key) < c.amount);
@@ -766,7 +766,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const rollSpellHeal = (origin, spell, level, quick = false) =>
     roll(
       (options) => spellHealEvent({ catalog, state, origin, spell, level, options }),
-      { title: `${spell.name}: healing`, kind: 'damage', parts: healParts(origin, spell, level), rollData: catalog.rollData, healOption: true },
+      { title: `${spell.name}: healing`, kind: 'damage', parts: healParts(origin, spell, level, catalog), rollData: catalog.rollData, healOption: true },
       quick,
     );
 
@@ -976,7 +976,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     castTriggersOf: (event) => castTriggers(event, catalog),
     canRerollDice: (event) => rerollDiceOptions(event, catalog, state).length > 0,
     onRerollDice: rerollDiceFromHistory,
-    onCastTrigger: (t) => record(featureLogEvent({ catalog, state, feature: { name: t.label.split(':')[0] }, roll: { label: t.label, formula: t.formula }, apply: t.apply })),
+    onCastTrigger: (t) => record(t.recall ? spellRecallEvent({ trigger: t }) : featureLogEvent({ catalog, state, feature: { name: t.label.split(':')[0] }, roll: { label: t.label, formula: t.formula }, apply: t.apply })),
   };
 
   /** Dispensa o grupo, perguntando antes. */
@@ -1024,7 +1024,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, twoHanded: (attack.properties ?? []).includes('2H') }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
       spend ? cost : null,
     );
 

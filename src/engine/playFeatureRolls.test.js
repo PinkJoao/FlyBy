@@ -51,11 +51,28 @@ describe('extras na rolagem', () => {
   });
 
   it('Frenzy e Divine Fury só com a Rage ligada', () => {
-    const c = cat(['frenzy', 'divine fury']);
+    const c = cat(['frenzy', 'divine fury'], { featureList: [{ name: 'Frenzy', source: 'XPHB' }] });
     const roll = { kind: 'damage', weapon: true, melee: true, attackAbility: 'str' };
     expect(featureRiders(st(), c, roll)).toEqual([]);
     const raging = st({ modifiers: [{ id: 'r', label: 'Rage', effects: [] }] });
     expect(ids(featureRiders(raging, c, roll))).toEqual(['rider:frenzy', 'rider:divine-fury']);
+    const old = cat(['frenzy'], { featureList: [{ name: 'Frenzy', source: 'PHB' }] });
+    expect(ids(featureRiders(raging, old, roll))).toEqual([]);
+  });
+
+  it('Great Weapon Fighting: ligado na arma de duas mãos, desligado na Versatile, fora na de uma mão (DDL-0221)', () => {
+    const c = cat(['great weapon fighting']);
+    const base = { kind: 'damage', weapon: true, melee: true, attackAbility: 'str' };
+    expect(featureRiders(st(), c, { ...base, twoHanded: true })).toMatchObject([{ diceMin: 3, defaultOn: true }]);
+    expect(featureRiders(st(), c, { ...base, versatile: true })).toMatchObject([{ diceMin: 3, defaultOn: false }]);
+    expect(featureRiders(st(), c, base)).toEqual([]);
+    expect(featureRiders(st(), c, { ...base, melee: false, twoHanded: true })).toEqual([]);
+  });
+
+  it("o Colossus Slayer genérico some quando a opção do Hunter's Prey está na ficha (DDL-0221)", () => {
+    const roll = { kind: 'damage', weapon: true };
+    expect(ids(featureRiders(st(), cat(["hunter's prey"]), roll))).toEqual(["rider:hunters-prey"]);
+    expect(ids(featureRiders(st(), cat(["hunter's prey", "hunter's prey: giant killer"]), roll))).toEqual([]);
   });
 
   it('o extra que gasta leva a chave, e applyEffects devolve o gasto só ligado', () => {

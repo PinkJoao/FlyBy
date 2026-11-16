@@ -12,7 +12,8 @@
 //
 // FUNÇÕES
 //   ShortRestPanel(props): o conteúdo do diálogo.
-//     spend(faces): rola um dado daquela face (o digitado, se houver).
+//     spend(faces): rola um dado daquela face (o digitado, se houver); o chip mostra o dado e
+//       a cura ("d12 2: +3 HP"), porque só o total parecia sem a CON (DDL-0219).
 //     undoLast(): devolve o último dado rolado no painel.
 //
 // DECISÕES E ARMADILHAS
@@ -94,7 +95,7 @@ export default function ShortRestPanel({ catalog, state }) {
       {spends.length > 0 && (
         <div className={styles.rolled}>
           {spends.map((s, i) => (
-            <Chip key={i} size="sm" onCard>d{s.faces}: {s.healed}</Chip>
+            <Chip key={i} size="sm" onCard>d{s.faces} {s.rolls?.groups?.[0]?.total ?? '-'}: +{s.healed} HP</Chip>
           ))}
           <button type="button" className={styles.link} onClick={undoLast}>Undo last</button>
         </div>

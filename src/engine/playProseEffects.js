@@ -31,7 +31,8 @@
 //     Ranger level", "twice your Wizard level") como fórmula, ou null.
 //   readClause(sentence, m, at): o alvo, a condição da frente e a de trás de uma oração.
 //   proseClauses(entries): as orações de vantagem, bônus, reroll e piso do próprio personagem.
-//   proseRollEffects(features, opts): as entradas do catálogo (`proseEffects`).
+//   proseRollEffects(features, opts): as entradas do catálogo (`proseEffects`); o resto que só
+//     repete o escopo (`SCOPE_ONLY`, "of that spell" da Empowered Evocation) não vira nota.
 //   proseUses(features, opts): a cura e os PV temporários do "Use" (`proseUses`).
 //   fitsGroup(g, roll), fitsProse(e, roll): um grupo do alvo, e a entrada, valem para esta rolagem?
 //   proseEffects(catalog, roll, ctx): os extras, no formato de rollEffects (`ctx`: as
@@ -325,6 +326,9 @@ export function proseClauses(entries) {
   return out;
 }
 
+/** O resto que só repete o escopo da rolagem ("one damage roll of that spell"): não vira nota. */
+const SCOPE_ONLY = /^of (?:that|the|this) (?:spell|attack|weapon|roll)$/i;
+
 /**
  * As entradas do catálogo: uma por oração, com quando vale e se começa ligada.
  * @param {{ name: string, actionKey?: string, entries?: any[] }[]} features
@@ -346,7 +350,8 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
       const when = c.lead ? autoCondition(c.lead) : null;
       const activation = !!c.lead && ACTIVATION.test(c.lead);
       const active = activated(f) || activation;
-      const conditions = [c.lead && !when && !activation ? c.lead : null, c.tail && !incapacitated && !concentration ? c.tail : null].filter(Boolean);
+      const tail = SCOPE_ONLY.test(c.tail) ? '' : c.tail;
+      const conditions = [c.lead && !when && !activation ? c.lead : null, tail && !incapacitated && !concentration ? tail : null].filter(Boolean);
       let note = conditions.map(noteOf).join('; ');
       if (when) note = note ? `${noteOf(c.lead)}; ${note}` : noteOf(c.lead);
       if (!note && active) note = `After you use ${f.name}`;

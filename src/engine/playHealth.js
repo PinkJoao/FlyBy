@@ -40,8 +40,9 @@
 //     corte do Hurt com "afeta o máximo" (o dreno de um vampiro) desce o máximo
 //     pelo que passou do temporário, o atual fica no máximo novo se passar dele, e
 //     o máximo em 0 mata. O descanso longo desfaz o ajuste (playRest).
-//   - O painel Hurt não tem tipo de dano: resistência e imunidade não entram
-//     (quem quer o tipo usa o dano de um ataque, que já vem com ele).
+//   - O tipo de dano do painel Hurt é OPCIONAL (vazio por padrão, o pedido do DDL-0120):
+//     com ele, a defesa entra (a resistência da Rage, a imunidade da espécie), e o card
+//     diz "resisted"; sem ele, o dano é o número digitado (TC-0134, DDL-0220).
 //   - Temporário é gasto PRIMEIRO; não soma com outro temporário (o jogador
 //     escolhe: o padrão é ficar com o MAIOR, `replace` força o novo); cura não o
 //     restaura; some no descanso longo.
@@ -216,11 +217,11 @@ export function maxHpOutcome(state, catalog, amount) {
 }
 
 /**
- * O dano do painel Hurt; com `affectMax`, o máximo cai pelo que passou do temporário.
- * @param {{ amount: number, affectMax?: boolean }} opts
+ * O dano do painel Hurt, com o tipo opcional; com `affectMax`, o máximo cai pelo que passou do temporário.
+ * @param {{ amount: number, type?: string, affectMax?: boolean }} opts
  */
-export function hurtOutcome(state, catalog, { amount, affectMax = false }) {
-  const out = damageOutcome(state, catalog, { amount });
+export function hurtOutcome(state, catalog, { amount, type = '', affectMax = false }) {
+  const out = damageOutcome(state, catalog, { amount, type });
   if (!affectMax) return out;
   const v = vitals(state, catalog);
   const { summary } = out;
@@ -262,9 +263,9 @@ export function maxHpEvent({ state, catalog, amount, label = 'Hit point maximum'
   return makeEvent('maxHp', { label, ops, payload: summary }, now);
 }
 
-/** O evento do painel Hurt (dano sem tipo, que pode cortar o máximo). */
-export function hurtEvent({ state, catalog, amount, affectMax = false, label = 'Damage taken', now = new Date() }) {
-  const { ops, summary } = hurtOutcome(state, catalog, { amount, affectMax });
+/** O evento do painel Hurt (o tipo é opcional; pode cortar o máximo). */
+export function hurtEvent({ state, catalog, amount, type = '', affectMax = false, label = 'Damage taken', now = new Date() }) {
+  const { ops, summary } = hurtOutcome(state, catalog, { amount, type, affectMax });
   return makeEvent('damage', { label, ops, payload: { ...summary, critical: false } }, now);
 }
 

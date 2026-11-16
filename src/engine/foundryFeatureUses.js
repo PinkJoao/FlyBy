@@ -14,6 +14,9 @@
 //     overlay). O classId escolhe a linha quando o nome colide entre classes e
 //     monta a referência; sem ele, só a tabela plana (traços, talentos). Para um
 //     membro de pool compartilhado devolve NO_POOL, que o firstUses respeita.
+//     `srd: false` pula o pool do SRD de 2024 e `named: false` o curado só por nome: a
+//     feature de subclasse clássica (2014) não pega o pool da feature de classe de 2024 de
+//     mesmo nome (TC-0135, DDL-0222).
 //   featUses(name): o pool curado de um TALENTO (FEAT_USES), ou null.
 //   hasActivityUses(activities): alguma activity já traz o pool dela?
 //   proseUses(name, classId, activities): o pool que SÓ a prosa declara, ou null;
@@ -343,21 +346,22 @@ export const NOT_A_POOL = new Set([
  * @param {string} [classId]
  * @returns {{max:string, spent:number, recovery:object[]}|null}
  */
-export function featureUses(name, classId) {
+export function featureUses(name, classId, { srd = true, named = true } = {}) {
   const key = String(name ?? '').trim().toLowerCase();
   const scopedKey = classId ? `${String(classId).toLowerCase()}|${key}` : null;
   const scoped = scopedKey ? SCOPED_USES[scopedKey] : null;
   if (scoped) return { max: scoped.max, spent: 0, recovery: scoped.recovery.map((r) => ({ ...r })) };
   if (scopedKey && SHARED_POOL_MEMBERS.has(scopedKey)) return NO_POOL;
-  const entry = FEATURE_USES[key];
+  const entry = named ? FEATURE_USES[key] : null;
   if (entry) {
     const max = entry.max ?? `@scale.${classId}.${entry.id ?? slug(entry.scale)}`;
     return { max, spent: 0, recovery: entry.recovery.map((r) => ({ ...r })) };
   }
-  const srd = (classId ? FEATURE_USES_BY_CLASS[`${String(classId).toLowerCase()}|${key}`] : null)
-    ?? FEATURE_USES_FLAT[key];
   if (!srd) return null;
-  return { max: srd.max, spent: 0, recovery: srd.recovery.map((r) => ({ ...r })) };
+  const doc = (classId ? FEATURE_USES_BY_CLASS[`${String(classId).toLowerCase()}|${key}`] : null)
+    ?? FEATURE_USES_FLAT[key];
+  if (!doc) return null;
+  return { max: doc.max, spent: 0, recovery: doc.recovery.map((r) => ({ ...r })) };
 }
 
 /** Alguma activity já tem pool próprio (`activity.uses`, a forma do SRD)? */

@@ -24,6 +24,11 @@
 //     matches(targets, roll): um efeito de modificador vale para esta rolagem?
 //   Ficha
 //     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins.
+//     attackRollContext(attack, kind): o contexto de rolagem de um ataque (acerto ou dano).
+//     fixedRollBonus(state, catalog, roll): os efeitos ligados que são número fixo; a lista
+//       de ataques soma (o arco do ranger com Archery dizia +7, e o diálogo rolava +9,
+//       DDL-0221).
+//     DAMAGE_TYPES: os 13 tipos de dano (o Petrified e o tipo opcional do Hurt).
 //     effectiveAc(catalog, state), effectiveSpeed(catalog, state): CA e
 //       deslocamento com condições e modificadores.
 //     effectiveSpeeds(catalog, state): cada deslocamento (voo, natação...) com as
@@ -94,11 +99,15 @@
 // -----------------------------------------------------------------------------
 
 import { makeId } from '../schema/character';
+import { rollFormula } from './dice';
 import { makeEvent, hpView } from './playState';
 import { revertOps } from './playForms';
 import { featureRiders } from './playFeatureRolls';
 import { bridgedEffects } from './playActorEffects';
 import { proseEffects } from './playProseEffects';
+
+/** Os 13 tipos de dano do XPHB, em ordem alfabética. */
+export const DAMAGE_TYPES = ['acid', 'bludgeoning', 'cold', 'fire', 'force', 'lightning', 'necrotic', 'piercing', 'poison', 'psychic', 'radiant', 'slashing', 'thunder'];
 
 export const CONDITIONS = {
   blinded: { name: 'Blinded', attack: 'dis', notes: ['Auto-fail checks that need sight', 'Attacks against you have Advantage'] },
@@ -276,7 +285,7 @@ export function effectiveDefenses(catalog, state) {
   for (const m of state.modifiers ?? []) for (const r of m.resist ?? []) resist.add(r);
   const { ids } = conditionList(state);
   const all = ids.some((id) => CONDITIONS[id]?.resistAll);
-  if (all) for (const t of ['acid', 'bludgeoning', 'cold', 'fire', 'force', 'lightning', 'necrotic', 'piercing', 'poison', 'psychic', 'radiant', 'slashing', 'thunder']) resist.add(t);
+  if (all) for (const t of DAMAGE_TYPES) resist.add(t);
   return { ...base, resist: [...resist] };
 }
 
@@ -347,6 +356,34 @@ export function endConcentrationOps(state) {
     ...(state.summons ?? []).filter((g) => g.concentration).map((g) => ({ op: 'summon', remove: g.id })),
     ...(state.form?.concentration ? revertOps(state) : []),
   ];
+}
+
+/** O contexto de rolagem de um ataque do catálogo (acerto ou dano), o mesmo da tela. */
+export function attackRollContext(attack, kind = 'attack') {
+  return {
+    kind,
+    weapon: attack.kind === 'weapon' || attack.kind === 'unarmed',
+    melee: attack.range === 'melee',
+    unarmed: attack.kind === 'unarmed',
+    spell: attack.kind === 'spell',
+    attackAbility: attack.ability,
+    ...(kind === 'damage' ? { twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile } : {}),
+  };
+}
+
+/** A soma dos efeitos LIGADOS por padrão que são número fixo (Archery, o extra da Rage), para a lista mostrar o que o diálogo rola. */
+export function fixedRollBonus(state, catalog, roll) {
+  let sum = 0;
+  for (const e of rollEffects(state, catalog, roll)) {
+    if (!e.defaultOn || !e.part) continue;
+    try {
+      const r = rollFormula(String(e.part.formula), { data: catalog.rollData ?? {} });
+      if (!r.groups.length) sum += r.total;
+    } catch {
+      // ATENÇÃO: fórmula que não resolve não entra na soma; o diálogo a mostra como está.
+    }
+  }
+  return sum;
 }
 
 /** O que um descanso tira: efeitos de feature e de magia sem concentração, e os manuais com a duração. */

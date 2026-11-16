@@ -27,6 +27,9 @@
 //     contagem e o primeiro nível de uma progressão de optional features.
 //   optionalFeatureChoices(classObj, subclass, level): invocations, metamagic,
 //     maneuvers e afins, na classe e na subclasse.
+//   curatedFightingStyle(subShort): a subclasse já dá um estilo de luta pelo registro? Então
+//     o `optionalfeatureProgression` de estilo da subclasse é a mesma escolha: o Champion do
+//     PHB no chassi de 2024 recebia DOIS estilos no nível 10 (passe ao vivo, DDL-0221).
 //   pruneChoicesAboveLevel(bag, level), dropSubclassGrants(bag): podas do bag.
 //   isOptionalFeatureId(id): o id é de uma escolha de optional feature?
 //   cleanupClassEntry(cls, ctx): a limpeza central em toda mudança de nível.
@@ -551,6 +554,12 @@ function firstOfpLevel(progression) {
   return levels.length ? Math.min(...levels) : 1;
 }
 
+/** A subclasse já dá um estilo de luta por SUBCLASS_FEATURE_GRANTS (o Additional Fighting Style do Champion)? */
+function curatedFightingStyle(subShort) {
+  const key = `${String(subShort).toLowerCase()}|`;
+  return Object.entries(SUBCLASS_FEATURE_GRANTS).some(([k, v]) => k.startsWith(key) && v.some((g) => g.kind === 'feat' && (g.category ?? []).includes('FS')));
+}
+
 /**
  * As escolhas de optional features por nível.
  * @param {object} classObj
@@ -573,6 +582,7 @@ export function optionalFeatureChoices(classObj, subclass, level) {
       ? { name: ofp.name, level: ofpLevel, ...(subShort ? { subclass: subShort } : {}) }
       : undefined;
     if (types.length && types.every((t) => t.startsWith('FS'))) {
+      if (subShort && curatedFightingStyle(subShort)) continue;
       out.push({
         id: `feat@fs@${types.join(',')}`,
         kind: 'feat',

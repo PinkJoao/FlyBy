@@ -16,6 +16,8 @@
 //
 // FUNÇÕES
 //   SettingsMenu({ onReplayTutorials }): as preferências, vivas (lê os stores).
+//   onLoadTestCharacters(), onRemoveTestCharacters(): carregar e tirar os personagens
+//     modelo, perguntando antes (DDL-0218).
 //   GameDataMenu({ source, onChooseSource, onUpdate, onCopyLink }): a fonte.
 //   SheetFilesMenu({ onExportFoundry, onExportPdf, onImport }): exportar e
 //     importar.
@@ -29,7 +31,8 @@
 //   - A janela do histórico (HISTORY_EVENT_CHOICES, HISTORY_DAY_CHOICES) vale o
 //     que vier PRIMEIRO; o padrão do plano é 500 ações ou 30 dias (DDL-0108).
 //   - "Features in development" liga o que ainda não foi publicado (o play mode);
-//     desligado, nada dele aparece, nem a janela do histórico.
+//     desligado, nada dele aparece, nem a janela do histórico. Com ele ligado aparecem
+//     também "Load test characters" e "Remove test characters" (DDL-0218, src/dev).
 //   - Update e o link da mesa só existem com fonte por URL: o SRD embutido não tem
 //     o que re-baixar nem endereço a passar.
 //   - A Character Guidance aparece duas vezes, de propósito: em Settings é o
@@ -44,6 +47,8 @@ import useCharacterStore from '../../store/characterStore';
 import { guidanceActive } from '../wizard/guidancePendencies';
 import { describeSource } from '../../data/dataSource';
 import { THEME_CHOICES } from '../../theme';
+import { confirm, alert } from './dialog';
+import { loadTestCharacters, removeTestCharacters } from '../../dev/testCharacters';
 
 const GUIDANCE_CHOICES = [
   { value: 'ask', label: 'Ask each time', sub: 'Choose when you create a character' },
@@ -55,6 +60,20 @@ const HISTORY_EVENT_CHOICES = [100, 500, 2000];
 const HISTORY_DAY_CHOICES = [7, 30, 90];
 
 /** As preferências do aparelho: tema, guia e tutoriais. */
+/** Grava os personagens modelo, perguntando antes. */
+async function onLoadTestCharacters() {
+  if (!(await confirm({ title: 'Load test characters', message: 'Adds the SRD model characters (every class at levels 3, 11 and 20) to this device. Loading again replaces them.', confirmLabel: 'Load' }))) return;
+  const n = await loadTestCharacters();
+  await alert({ title: 'Test characters', message: `${n} model characters are on your list.` });
+}
+
+/** Tira os personagens modelo, perguntando antes. */
+async function onRemoveTestCharacters() {
+  if (!(await confirm({ title: 'Remove test characters', message: 'Deletes the model characters and their play history from this device. Your own characters stay.', confirmLabel: 'Remove', danger: true }))) return;
+  const n = await removeTestCharacters();
+  await alert({ title: 'Test characters', message: n ? `${n} model characters removed.` : 'No model characters were on this device.' });
+}
+
 export function SettingsMenu({ onReplayTutorials }) {
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
@@ -126,6 +145,9 @@ export function SettingsMenu({ onReplayTutorials }) {
               { label: 'Track ammunition', sub: 'Each shot spends an arrow, bolt or bullet from the inventory', checked: trackAmmo !== false, toggle: true, keepOpen: true, onClick: () => setTrackAmmo(trackAmmo === false) },
               { heading: 'Sound' },
               { label: 'Dice sounds', sub: 'Rolling, landing, bonuses, natural 20 and natural 1', checked: diceSound !== false, toggle: true, keepOpen: true, onClick: () => setDiceSound(diceSound === false) },
+              { heading: 'Test characters' },
+              { label: 'Load test characters', sub: 'The SRD model characters of every class, at levels 3, 11 and 20', onClick: onLoadTestCharacters },
+              { label: 'Remove test characters', sub: 'Deletes only the model characters from this device', onClick: onRemoveTestCharacters },
             ]
           : []),
         ...(experimental ? [{ heading: 'Play history' }] : []),

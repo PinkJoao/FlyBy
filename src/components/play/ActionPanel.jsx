@@ -18,6 +18,8 @@
 //   ActionPanel(props): o painel.
 //
 // DECISÕES E ARMADILHAS
+//   - A linha de cada ataque soma os efeitos ligados que são número fixo (`fixedRollBonus`:
+//     Archery, o extra da Rage), para dizer o que o diálogo vai rolar (DDL-0221).
 //   - O painel só ESCOLHE; quem grava é a tela (pages/Play, takeAction), que já
 //     sabe rolar, lançar e usar. Assim cada ação reaproveita o fluxo que existe.
 //   - O custo começa no primeiro LIVRE; gasto continua escolhível, com aviso.
@@ -38,6 +40,7 @@ import { useState } from 'react';
 import { ACTION_MEANS, ACTION_SKILLS } from '../../engine/playBasicActions';
 import { testBreakdown } from '../../engine/playChecks';
 import { remainingOf } from '../../engine/playState';
+import { fixedRollBonus, attackRollContext } from '../../engine/playEffects';
 import { formatBonus } from '../../engine/math';
 import { SKILL_LABEL } from '../builder/labels';
 import { useDialogClose } from '../common/dialogContext';
@@ -105,7 +108,11 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
   const readied = state.combat?.used?.readied ?? null;
 
   const attacks = item.name === 'Opportunity Attack' ? ctx.melee : item.name === 'Two-Weapon Fighting' ? ctx.light : ctx.attacks;
-  const attackDetail = (a) => [a.toHit ? `${formatBonus(a.toHit.total)} to hit` : null, a.damage ? `${a.damage.dice ? `${a.damage.dice}${a.damage.bonus ? formatBonus(a.damage.bonus) : ''}` : Math.max(0, a.damage.bonus ?? 0)} ${a.damage.types?.[0] ?? ''}`.trim() : null].filter(Boolean).join(', ');
+  const attackDetail = (a) => {
+    const hit = a.toHit ? a.toHit.total + fixedRollBonus(state, catalog, attackRollContext(a)) : null;
+    const dmg = a.damage ? (a.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(a, 'damage')) : 0;
+    return [hit != null ? `${formatBonus(hit)} to hit` : null, a.damage ? `${a.damage.dice ? `${a.damage.dice}${dmg ? formatBonus(dmg) : ''}` : Math.max(0, dmg)} ${a.damage.types?.[0] ?? ''}`.trim() : null].filter(Boolean).join(', ');
+  };
 
   return (
     <div className={styles.panel}>

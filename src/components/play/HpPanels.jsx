@@ -6,8 +6,8 @@
 //   app (playDialogs.jsx):
 //   - HealPanel: o número e o tipo da cura: curar o HP, dar HP temporário ou
 //     aumentar o HP máximo. Fecha com { kind, amount, replace }.
-//   - HurtPanel: o número e se o dano corta também o HP máximo. Fecha com
-//     { amount, affectMax }.
+//   - HurtPanel: o número, o tipo de dano opcional e se o dano corta também o HP
+//     máximo. Fecha com { amount, type, affectMax }.
 //   - HitDicePanel: quantos dados de vida rolar para curar; negativo devolve os
 //     gastos. Fecha com { count }.
 //   Cada um mostra antes o que vai acontecer. O número vem com menos, mais e
@@ -16,13 +16,18 @@
 //
 // FUNÇÕES
 //   HealPanel(props), HurtPanel(props), HitDicePanel(props): os painéis.
+//   defenseLine(defenses): as defesas do personagem numa linha, para o Hurt.
 //
 // DECISÕES E ARMADILHAS
 //   - O foco e o corte no mínimo são do AmountStepper (o foco só com mouse).
 //   - A prévia é uma conta da TELA, curta, para o jogador conferir; o que vale é o
 //     evento do engine (playHealth, playRest), que faz a mesma regra.
-//   - O Hurt não tem tipo de dano (pedido do usuário): resistência e imunidade não
-//     entram; o dano de um ataque, que tem tipo, é outro caminho.
+//   - O tipo de dano do Hurt é OPCIONAL e vazio por padrão (o DDL-0120 pedia só o
+//     número): tocar um tipo aplica a defesa do personagem (`defenses`, já com a Rage
+//     e as condições), e a nota diz quanto fica ("Resistant (halved): 10 becomes 5").
+//     As defesas do personagem aparecem numa linha abaixo do título (`defenseLine`), não
+//     no tom do Chip: o tom "info" ficava igual ao chip escolhido. Sem `defenses` (o
+//     membro de um summon), não há tipo (TC-0134, DDL-0220).
 //   - Temporário não soma (XPHB): o padrão fica com o maior, "replace" força o novo.
 //   - Heal e Hurt servem também ao membro de um summon (DDL-0201): a mesma regra, o
 //     mesmo painel; `maxNote` troca a nota do máximo. "To full" põe no número o que
@@ -38,6 +43,9 @@ import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
 import Button from '../common/Button';
 import Toggle from '../common/Toggle';
+import Chip from '../common/Chip';
+import { traitFor, adjustDamage } from '../../engine/playHealth';
+import { DAMAGE_TYPES } from '../../engine/playEffects';
 
 const HEAL_KINDS = [
   { value: 'heal', label: 'Heal' },
@@ -46,6 +54,16 @@ const HEAL_KINDS = [
 ];
 
 const HP_JUMPS = [5, 10];
+
+const TRAIT_NOTE = { immune: 'Immune', resist: 'Resistant (halved)', vulnerable: 'Vulnerable (doubled)', 'resist+vulnerable': 'Resistant and vulnerable' };
+
+/** As defesas do personagem numa linha ("Resistant: bludgeoning, piercing, slashing"). */
+function defenseLine(defenses) {
+  const parts = [['Immune', defenses?.immune], ['Resistant', defenses?.resist], ['Vulnerable', defenses?.vulnerable]]
+    .filter(([, list]) => list?.length)
+    .map(([word, list]) => `${word}: ${list.join(', ')}`);
+  return parts.join(' · ');
+}
 
 /**
  * O painel de cura: HP, temporário ou máximo.
@@ -99,14 +117,17 @@ export function HealPanel({ vitals, maxNote = 'Like Aid: lasts until your next L
 }
 
 /**
- * O painel de dano: o número e se corta o máximo.
- * @param {{ vitals: { current: number, max: number, temp: number } }} props
+ * O painel de dano: o número, o tipo opcional (com `defenses`) e se corta o máximo.
+ * @param {{ vitals: { current: number, max: number, temp: number }, defenses?: object }} props
  */
-export function HurtPanel({ vitals }) {
+export function HurtPanel({ vitals, defenses = null }) {
   const close = useDialogClose();
   const [amount, setAmount] = useState('');
+  const [type, setType] = useState('');
   const [affectMax, setAffectMax] = useState(false);
-  const n = Math.max(0, Math.floor(Number(amount) || 0));
+  const typed = Math.max(0, Math.floor(Number(amount) || 0));
+  const trait = defenses ? traitFor({ defenses }, type) : null;
+  const n = adjustDamage(typed, trait);
   const toTemp = Math.min(vitals.temp, n);
   const toHp = Math.min(n - toTemp, vitals.current);
   const max = affectMax ? Math.max(0, vitals.max - (n - toTemp)) : vitals.max;
@@ -117,19 +138,33 @@ export function HurtPanel({ vitals }) {
       className={panel.form}
       onSubmit={(e) => {
         e.preventDefault();
-        if (n > 0) close({ amount: n, affectMax });
+        if (typed > 0) close({ amount: typed, type, affectMax });
       }}
     >
       <p className={styles.now}>{vitals.current} / {vitals.max} HP{vitals.temp ? ` · ${vitals.temp} temporary` : ''}</p>
       <AmountStepper value={amount} onChange={setAmount} jumps={HP_JUMPS} />
+      {defenses && (
+        <div className={panel.field}>
+          <span className={panel.label}>Damage type (optional)</span>
+          {defenseLine(defenses) && <span className={panel.note}>{defenseLine(defenses)}</span>}
+          <div className={panel.chips}>
+            {DAMAGE_TYPES.map((t) => (
+              <Chip key={t} size="sm" active={type === t} onClick={() => setType(type === t ? '' : t)}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </Chip>
+            ))}
+          </div>
+        </div>
+      )}
       <Toggle checked={affectMax} onChange={setAffectMax} label="Also lowers the hit point maximum" />
-      {n > 0 && (
+      {trait && typed > 0 && <p className={panel.note}>{TRAIT_NOTE[trait]}: {typed} becomes {n}</p>}
+      {typed > 0 && (
         <p className={styles.preview}>
           {toTemp ? `${toTemp} from temporary, ` : ''}{vitals.current} to {current} hit points{affectMax ? `, maximum ${vitals.max} to ${max}` : ''}
         </p>
       )}
       <div className={panel.actions}>
-        <Button type="submit" variant="danger" disabled={n <= 0}>Apply</Button>
+        <Button type="submit" variant="danger" disabled={typed <= 0}>Apply</Button>
       </div>
     </form>
   );

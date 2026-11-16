@@ -13,6 +13,7 @@
 //   hitDieRules(catalog, rest): as regras dos dados de vida que valem agora.
 //   hitDiceLeft(catalog, state): os dados de vida que sobram, por face.
 //   shortRestEvent(args): o descanso curto com os dados de vida gastos.
+//   concentrationLapses(state): a concentração acaba no descanso curto (dura até uma hora).
 //   hitDiceEvent(args): gastar dados de vida fora do descanso (cura) ou, com
 //     um número negativo, devolver os gastos.
 //   longRestEvent(args): o descanso longo.
@@ -22,7 +23,11 @@
 //   - Curto: cada dado de vida gasto é rolado com o modificador de CON e cura no
 //     MÍNIMO 1; o jogador decide depois de cada rolagem se gasta outro (por isso
 //     a tela rola dado a dado e só grava no fim). Recupera o que é de descanso
-//     curto. Exige pelo menos 1 HP: a tela avisa, não bloqueia (§6.4).
+//     curto. Exige pelo menos 1 HP: a tela avisa, não bloqueia (§6.4). O curto dura
+//     uma hora, então a concentração de uma magia de até uma hora (a duração vai no
+//     estado, `rounds`) acaba nele (`concentrationLapses`); a de 8 horas fica, e a
+//     gravada sem a duração também (o passe ao vivo achou o Flaming Sphere de 1 minuto
+//     vivo depois do descanso, DDL-0219).
 //   - Longo: todo o HP, TODOS os dados de vida gastos (2024), o temporário some,
 //     a exaustão baixa 1 nível, a contagem da morte zera, e a concentração
 //     termina (dormir dá a condição Inconsciente) com o que dependia dela; os
@@ -52,6 +57,9 @@ import { rollFormula, cryptoRng } from './dice';
 import { makeEvent, hpView } from './playState';
 import { healOutcome } from './playHealth';
 import { endConcentrationOps, restModifierOps } from './playEffects';
+
+/** Uma hora em rodadas: o descanso curto do XPHB. */
+const SHORT_REST_ROUNDS = 600;
 
 const PERIODS = { sr: ['sr'], lr: ['lr', 'sr', 'day', 'dawn', 'dusk'] };
 
@@ -147,9 +155,15 @@ export function shortRestEvent({ state, catalog, spends = [], rng, now = new Dat
   const rec = recoveryFor(catalog, state, 'sr', { rng });
   ops.push(...rec.ops);
   lines.push(...rec.lines);
-  const ended = restModifierOps(state, 'sr');
+  const lapsed = concentrationLapses(state);
+  const gone = lapsed ? endConcentrationOps(state) : [];
+  const ended = restModifierOps(state, 'sr').filter((o) => !gone.some((g) => g.op === 'modifier' && g.remove === o.remove));
   ops.push(...ended);
   if (ended.length) lines.push({ name: 'Effects', detail: `${ended.length} ended` });
+  if (lapsed) {
+    ops.push(...gone);
+    lines.push({ name: 'Concentration', detail: `${state.concentration.name ?? 'spell'} ended (it lasts less than the rest)` });
+  }
   return makeEvent('shortRest', {
     label: 'Short rest',
     ops,
@@ -204,6 +218,12 @@ export function hitDiceEvent({ state, catalog, count, rng = cryptoRng, now = new
       parts: spends.map((s) => ({ label: `d${s.faces} + Con`, formula: s.rolls.formula, total: s.healed, groups: s.rolls.groups })),
     },
   }, now);
+}
+
+/** A concentração que não passa de uma hora acaba durante o descanso curto (que dura uma hora). */
+export function concentrationLapses(state) {
+  const rounds = state.concentration?.rounds;
+  return rounds != null && rounds <= SHORT_REST_ROUNDS;
 }
 
 /** O descanso longo: HP, dados de vida, recursos, exaustão, morte e concentração. */

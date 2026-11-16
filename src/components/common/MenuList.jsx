@@ -18,6 +18,8 @@
 //     hora e a marca anda, então o submenu é também a pré-visualização. Uma ação
 //     que leva a outro lugar (outro diálogo, o seletor de arquivo) fecha ANTES de
 //     rodar, para a janela nova não nascer por baixo desta.
+//   - A chave de cada item leva a posição: dois grupos podem ter um item com o mesmo
+//     rótulo ("Off" em Dice animation e em Physical dice, DDL-0218).
 //   - A lista não guarda estado: quem a monta lê os stores com hooks, e a marca
 //     acompanha porque o conteúdo é um componente vivo dentro do DialogHost.
 // -----------------------------------------------------------------------------
@@ -58,7 +60,7 @@ export default function MenuList({ items }) {
           const external = /^https?:/.test(item.href);
           return (
             <a
-              key={item.label}
+              key={`${i}-${item.label}`}
               role="menuitem"
               className={className}
               href={item.href}
@@ -72,7 +74,7 @@ export default function MenuList({ items }) {
         }
         return (
           <button
-            key={item.label}
+            key={`${i}-${item.label}`}
             type="button"
             role={!choice ? 'menuitem' : item.toggle ? 'menuitemcheckbox' : 'menuitemradio'}
             aria-checked={choice ? item.checked : undefined}

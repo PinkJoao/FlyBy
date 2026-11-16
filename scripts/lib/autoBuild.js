@@ -24,7 +24,7 @@
 //     dos tipos) e tags.
 //   fillBag(choices, bag, ctx): todas as escolhas INCOMPLETAS de uma lista, pela
 //     régua de completude do guia (choicesComplete).
-//   fillSpells(db, character, derived, rng, problems): cantrips, preparadas
+//   fillSpells(db, character, derived, rng, problems, allow): cantrips, preparadas
 //     (círculos até maxPrepareLevel) e um Mystic Arcanum por círculo destravado,
 //     até o limite de cada origem de classe.
 //   autoBuild(db, spec): o personagem completo de uma linha da matriz.
@@ -38,6 +38,9 @@
 //     deduplica só contra si mesma, como a featureoption.
 //   - `pool.excludeFrom` de uma featureoption (o Animal Enhancement do nível 5, TC-0128) tira
 //     o que a escolha irmã já pegou: a tela gera as opções com o bag, a passada não.
+//   - O talento não repetível escolhido entra no `owned.feats` na hora: duas escolhas de
+//     talento na mesma passada sorteavam o mesmo (o paladino modelo tinha Grappler no 4 e no
+//     8, passe ao vivo, DDL-0221).
 //   - tagCandidates segue o ChoiceList: os planos do Artificer pela entity de item com
 //     `planAllows` (DDL-0212); proficiência de arma individual (Kensei),
 //     restrição de classe da Weapon Mastery (Barbarian só corpo a corpo, TC-0021),
@@ -45,11 +48,16 @@
 //     instrumento) e lista de códigos dos grants curados (`ch.from`).
 //   - Expertise pode legitimamente esperar as perícias serem escolhidas antes; só
 //     vira problema se o loop externo travar.
+//   - `spec.allow(raw)` (DDL-0218) restringe o que a passada SORTEIA (talento, opção de
+//     classe, magia): os personagens modelo do SRD passam "só o que tem a marca srd52 ou
+//     srd". O que o preset põe à mão não passa por ele.
 //   - `spec.preset(character)` (T3, TESTING-PLAN §5b) roda ANTES do laço: põe a
 //     unidade sob teste no lugar real (o talento no `feat@4`, a magia no grimório, o
 //     item no inventário) e o laço preenche o resto e as sub-escolhas dela.
 //   - autoBuild: standard array numa ordem semeada (a variedade exercita
-//     pré-requisitos); talento de origem FIXO por padrão (Alert XPHB, sem
+//     pré-requisitos), ou na ordem de `spec.abilityOrder` (os personagens modelo: o mago
+//     com INT 12 não mostrava a CD de um mago de verdade, DDL-0219), que leva os aumentos
+//     da origem para os dois primeiros; talento de origem FIXO por padrão (Alert XPHB, sem
 //     sub-escolhas) para isolar a unidade, com os feats de classe semeados. Cada
 //     iteração preenche espécie (tamanho e sub-escolhas da linhagem resolvida),
 //     talento de origem, proficiências da origem custom (2 perícias, 1 ferramenta,
@@ -167,7 +175,7 @@ function fillChoice(ch, entry, bag, ctx) {
     while (picks.length < (ch.count ?? 1)) {
       const cands = entity.list(ctx.db).filter((f) => {
         const id = `${f.name}|${f.source}`;
-        if (picks.includes(id)) return false;
+        if (picks.includes(id) || !ctx.allow(f)) return false;
         if (!f.repeatable && ctx.owned.feats?.has(id)) return false;
         return true;
       });
@@ -178,6 +186,7 @@ function fillChoice(ch, entry, bag, ctx) {
         break;
       }
       picks.push(`${f.name}|${f.source}`);
+      if (!f.repeatable) ctx.owned.feats?.add?.(`${f.name}|${f.source}`);
       changed = true;
     }
     for (const id of picks) {
@@ -198,7 +207,7 @@ function fillChoice(ch, entry, bag, ctx) {
     const entity = makeOptionalFeatureEntity(ch.pool.featureType, ch.label, pctx);
     let changed = false;
     while (picks.length < (ch.count ?? 1)) {
-      const cands = entity.list(ctx.db).filter((f) => !picks.includes(`${f.name}|${f.source}`));
+      const cands = entity.list(ctx.db).filter((f) => ctx.allow(f) && !picks.includes(`${f.name}|${f.source}`));
       const ok = cands.filter((f) => prereqStatus(f, pctx) === 'ok');
       const f = pickOne(ctx.rng, ok.length ? ok : cands);
       if (!f) {
@@ -260,6 +269,7 @@ function fillChoice(ch, entry, bag, ctx) {
     const eligible = spellChoosePredicate(ch.pool, ctx.db);
     const cands = allSpells(ctx.db)
       .filter(eligible)
+      .filter(ctx.allow)
       .map((s) => `${s.name}|${s.source}`)
       .filter((v) => !picks.includes(v));
     const next = [...picks];
@@ -339,9 +349,9 @@ function fillBag(choices, bag, ctx) {
 }
 
 /** Preenche cantrips, preparadas e arcanum de cada origem de classe. */
-function fillSpells(db, character, derived, rng, problems) {
+function fillSpells(db, character, derived, rng, problems, allow = () => true) {
   let changed = false;
-  const catalog = allSpells(db);
+  const catalog = allSpells(db).filter(allow);
   for (const origin of derived.spellcasting?.origins ?? []) {
     if (origin.kind !== 'class') continue;
     const cls = character.classes.find((x) => x.uid === origin.uid);
@@ -405,11 +415,14 @@ export function autoBuild(db, spec) {
   const rng = mulberry32(spec.seed ?? 1);
   const c = createCharacter({ name: spec.name ?? 'Sweep Build', scoreMethod: 'standard-array' });
 
-  const order = shuffled(rng, ABILITIES);
+  const seeded = shuffled(rng, ABILITIES);
+  const first = (spec.abilityOrder ?? []).filter((a) => ABILITIES.includes(a));
+  const order = [...first, ...seeded.filter((a) => !first.includes(a))];
   order.forEach((a, i) => {
     c.scores[a] = STANDARD_ARRAY[i];
   });
-  const boostOrder = shuffled(rng, ABILITIES);
+  const boostSeeded = shuffled(rng, ABILITIES);
+  const boostOrder = first.length ? order : boostSeeded;
   c.origin.abilityBoosts = [
     { ability: boostOrder[0], amount: 2 },
     { ability: boostOrder[1], amount: 1 },
@@ -444,7 +457,7 @@ export function autoBuild(db, spec) {
     if (pend.total === 0) break;
 
     const owned = ownedFromDb(c, db);
-    const ctx = { db, character: c, rng, owned, problems, level: cls.level, where: spec.id ?? 'row' };
+    const ctx = { db, character: c, rng, owned, problems, level: cls.level, where: spec.id ?? 'row', allow: spec.allow ?? (() => true) };
     let changed = false;
 
     const raceObj = resolveRaceObj(db, c.species.id, c.species.source, c.species.lineage);
@@ -490,7 +503,7 @@ export function autoBuild(db, spec) {
       }
     }
 
-    if (fillSpells(db, c, derived, rng, problems)) changed = true;
+    if (fillSpells(db, c, derived, rng, problems, spec.allow)) changed = true;
 
     if (!changed) break;
   }

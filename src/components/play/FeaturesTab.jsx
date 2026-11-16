@@ -12,7 +12,8 @@
 //   nome abre o texto dela.
 //
 // FUNÇÕES
-//   costLabel(activation): o rótulo curto de um custo de activity.
+//   costLabel(activation): o rótulo curto de um custo de activity; os tipos são os de
+//     `activityActivationTypes` do dnd5e (o "shortRest" do Arcane Recovery saía cru, DDL-0219).
 //   Pips(props): o contador em bolinhas ou gemas (até 12) ou em número.
 //   showFeatureText(feature, onLog): o texto da feature num diálogo, com "Log to
 //     history".
@@ -73,11 +74,15 @@ import { transformRuleOf } from '../../engine/playForms';
 import styles from '../builder/SpellbookTab.module.css';
 import play from './PlayTabs.module.css';
 
-const COST_LABELS = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', minute: 'Minute', hour: 'Hour', special: 'Special', legendary: 'Legendary' };
+const COST_LABELS = {
+  action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', minute: 'Minute', hour: 'Hour', day: 'Day', special: 'Special',
+  shortRest: 'Short Rest', longRest: 'Long Rest', encounter: 'Encounter', turnStart: 'Turn Start', turnEnd: 'Turn End',
+  legendary: 'Legendary', mythic: 'Mythic', lair: 'Lair', none: '',
+};
 
 /** O rótulo curto de um custo de activity ("Bonus Action", "1 Minute"). */
 function costLabel(activation) {
-  const base = COST_LABELS[activation?.type] ?? activation?.type ?? '';
+  const base = COST_LABELS[activation?.type] ?? String(activation?.type ?? '').replace(/([a-z])([A-Z])/g, '$1 $2');
   if (['minute', 'hour'].includes(activation?.type)) return `${activation.value ?? 1} ${base}${(activation.value ?? 1) > 1 ? 's' : ''}`;
   return base;
 }
@@ -130,7 +135,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
     const id = await ask({
       title: feature.name,
       message: 'Which use?',
-      actions: activities.map((a) => ({ label: `${a.name || feature.name} (${costLabel(a.activation)})`, value: a.id })),
+      actions: activities.map((a) => ({ label: costLabel(a.activation) ? `${a.name || feature.name} (${costLabel(a.activation)})` : a.name || feature.name, value: a.id })),
     });
     const activity = activities.find((a) => a.id === id);
     if (activity) onUse(action, activity);

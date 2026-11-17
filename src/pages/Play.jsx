@@ -61,6 +61,7 @@
 //       (o Find Familiar, as feras de ND 0); a feature de companheiro tem "Summon"; a
 //       regra de turno vem da prosa e aparece na linha dos summons do combate (DDL-0193).
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
+//     attackNotes(attack, catalog): as notas do ataque (a da arma e a da Weapon Mastery, DDL-0242).
 //     withFixedDamage(attack, state, catalog): o ataque com os extras fixos ligados no dano (o rótulo
 //       mostra o mesmo número que o diálogo rola: o +4 do Agonizing Blast, DDL-0239).
 //     askRollKind(opts), damageText(attack): a pergunta "d20 ou os outros dados" e o
@@ -126,6 +127,12 @@
 //   toastNumber(event): o número do aviso de um evento.
 //
 // DECISÕES E ARMADILHAS
+//   - O estado da arma (DDL-0242, engine/playWeapons): a magia de arma pede a arma (`pickWeapon`) e, se
+//     houver, o tipo; o IMBUE e o CREATE gravam um efeito com `weapon` no evento do lançamento (com a
+//     concentração da magia); o STRIKE abre o ataque com a arma escolhida (`strikeAttack`). A feature
+//     com activity (Sacred Weapon) faz o mesmo no `applyFeature`; a sem activity (Blessing of the
+//     Forge, Hex Warrior) pelo "Use" da linha (`useWeaponFeature`). Os diálogos de ataque e de dano
+//     mostram a nota da arma e a da Weapon Mastery (`attackNotes`).
 //   - O "Bond" do Pact of the Blade (DDL-0239): um botão por arma carregada, "Conjure a weapon" abre o
 //     painel seletor de armas (só as que o pacto deixa invocar, `pactChoices`) e "End the bond"; a lista
 //     nativa de 34 armas saiu (UI-PATTERNS: escolher é pelo painel).
@@ -216,6 +223,7 @@ import {
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
 import { withPactWeapon, pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
+import { withWeaponStates, weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote } from '../engine/playWeapons';
 import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
@@ -306,11 +314,15 @@ const damageText = (attack) => {
   const d = attack?.damage;
   if (!d) return '';
   const bonus = d.bonus ? `${d.bonus > 0 ? ' + ' : ' - '}${Math.abs(d.bonus)}` : '';
-  return d.dice ? `${d.dice}${bonus}` : String(Math.max(0, d.bonus ?? 0));
+  const extra = (d.extra ?? []).map((x) => ` + ${x.formula}`).join('');
+  return d.dice ? `${d.dice}${bonus}${extra}` : `${Math.max(0, d.bonus ?? 0)}${extra}`;
 };
 
 /** O ataque com os extras fixos ligados por padrão somados ao dano (o CAR do Agonizing Blast), para o rótulo. */
 const withFixedDamage = (attack, state, catalog) => (attack?.damage ? { ...attack, damage: { ...attack.damage, bonus: (attack.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(attack, 'damage')) } } : attack);
+
+/** As notas de um ataque: a da arma (Shadow Blade, Booming Blade) e a da Weapon Mastery, com os números. */
+const attackNotes = (attack, catalog) => [attack?.note, masteryNote(attack, catalog)].filter(Boolean).join('. ');
 
 /** O evento com operações a mais na frente (o gasto da feature que deu o custo). */
 const withOps = (event, ops = []) => (ops.length ? { ...event, ops: [...ops, ...event.ops] } : event);
@@ -376,8 +388,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const resourceMax = play.state?.resourceMax;
   const pactWeapon = play.state?.pactWeapon ?? null;
   const catalog = useMemo(
-    () => withPactWeapon(withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }), pactWeapon),
-    [baseCatalog, form, formBlock, resourceMax, pactWeapon],
+    () => withWeaponStates(withPactWeapon(withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }), pactWeapon), play.state?.modifiers),
+    [baseCatalog, form, formBlock, resourceMax, pactWeapon, play.state?.modifiers],
   );
   const beastDb = useMemo(() => ({ ...db, bestiary: { monster: bestiary.list } }), [db, bestiary.list]);
   const [formPick, setFormPick] = useState(null);
@@ -642,6 +654,16 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (choice) record(pactEvent({ choice, state, character }), 'bonus');
   };
 
+  /** Uma feature de arma sem activity (Blessing of the Forge, Hex Warrior): escolhe a arma e grava o estado. */
+  const useWeaponFeature = async (feature, spend = null) => {
+    const rule = weaponRuleOf(feature.name);
+    if (spend && leftOf(catalog, state, spend) < 1 && !(await confirm({ title: feature.name, message: 'None left. Use anyway?', confirmLabel: 'Use anyway' }))) return;
+    const ops = rule ? await weaponStateOps(rule) : null;
+    if (!ops) return;
+    const ev = featureLogEvent({ catalog, state, feature, spend, amount: spend ? 1 : 0 });
+    record({ ...ev, ops: [...ev.ops, ...ops] });
+  };
+
   /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
   const askApotheosis = (title) => ask({
     title,
@@ -651,6 +673,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** Usa uma feature: pergunta o que ela precisa, avisa o que falta, grava. */
   const applyFeature = async (action, activity, extra = {}) => {
+    const weaponRule = !extra.free && !extra.only ? weaponRuleOf(action.name) : null;
+    const weaponOps = weaponRule ? await weaponStateOps(weaponRule) : [];
+    if (!weaponOps) return;
     let only = extra.only ?? null;
     if (!only && activity.attack && (activity.heal || (activity.damage ?? []).length)) {
       only = await askRollKind({ title: action.name, effect: (activity.damage ?? []).map((p) => p.formula).join(' + ') || activity.heal?.formula, effectLabel: activity.heal ? 'Healing' : 'Damage' });
@@ -675,6 +700,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     try {
       const applied = activity.attack ? applyEffects(rollEffects(state, catalog, { kind: 'attack', attackAbility: activity.attack.ability })) : undefined;
       event = activityEvent({ catalog, state, action, activity, options: { ...options, applied, only, noCost, free: !!extra.free, critical: options.critical || !!extra.critical } });
+      if (weaponOps.length) event = { ...event, ops: [...event.ops, ...weaponOps] };
     } catch (e) {
       await alert({ title: 'Could not use it', message: String(e?.message ?? e) });
       return;
@@ -790,6 +816,34 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** Lança uma magia: escolhe a forma, grava e abre a rolagem dela. */
+  /** Escolhe a arma de uma magia ou feature de arma (botões, só as que a regra aceita); null cancela. */
+  const pickWeapon = async (title, list) => {
+    if (!list.length) {
+      await alert({ title, message: 'No weapon you carry fits this. Check the weapon in your inventory (equipped, and nonmagical when the text asks).' });
+      return null;
+    }
+    if (list.length === 1) return list[0];
+    const key = await ask({ title, message: 'Which weapon?', actions: [...list.map((a) => ({ label: a.name, value: a.key })), { label: 'Cancel', value: null }] });
+    return list.find((a) => a.key === key) ?? null;
+  };
+
+  /** As operações do estado de arma de uma regra: tira o anterior da mesma fonte e põe o novo. */
+  const weaponStateOps = async (rule, { slot = 0, abilityKey = null, concentration = null } = {}) => {
+    let attack = null;
+    if (rule.kind !== 'create') {
+      attack = await pickWeapon(rule.name, eligibleWeapons(rule, catalog));
+      if (!attack) return null;
+    }
+    let type = null;
+    if (rule.types) {
+      type = await ask({ title: rule.name, message: 'Which damage type?', actions: [...rule.types.map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), value: t })), { label: 'Cancel', value: null }] });
+      if (!type) return null;
+    }
+    const mod = makeModifier({ ...weaponModifier({ rule, attack, catalog, slot, type, abilityKey }), ...(concentration ? { concentration } : {}) });
+    const old = (state.modifiers ?? []).filter((m) => m.weapon && m.label === rule.name).map((m) => ({ op: 'modifier', remove: m.id }));
+    return [...old, { op: 'modifier', add: withRounds(mod, state, rule.rounds) }];
+  };
+
   const castSpell = async (origin, spell) => {
     if (state.form && !state.form.spells && !(await confirm({ title: 'No spellcasting in this form', message: `${state.form.source}: you can't cast spells in this form. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
     const transformRule = transformRuleOf(spell.name);
@@ -830,7 +884,26 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       if (v === 'free') cost = { ...cost, spend: null };
     }
     if (way.key && (way.left ?? 0) < 1 && !(await confirm({ title: 'Nothing left', message: `No ${way.label.toLowerCase()} is left. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
-    record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]), costOfActivation(cost.cost));
+    const weaponRule = weaponRuleOf(spell.name);
+    let weaponOps = [];
+    let strikeWith = null;
+    if (weaponRule?.kind === 'strike') {
+      strikeWith = await pickWeapon(spell.name, eligibleWeapons(weaponRule, catalog));
+      if (!strikeWith) return;
+    } else if (weaponRule) {
+      weaponOps = await weaponStateOps(weaponRule, { slot: way.level, abilityKey: origin.ability, concentration: spell.concentration ? spell.key : null });
+      if (!weaponOps) return;
+    }
+    const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]);
+    record({ ...castEv, ops: [...castEv.ops, ...weaponOps] }, costOfActivation(cost.cost));
+    if (strikeWith) {
+      const atk = strikeAttack(strikeWith, weaponRule, catalog, origin.ability);
+      const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk))), effect: damageText(withFixedDamage(atk, state, catalog)) });
+      if (kind === 'attack') rollAttack(atk);
+      else if (kind === 'effect') rollDamage(atk);
+      return;
+    }
+    if (weaponRule) return;
     if (summon?.pick) {
       setFormPick({ summon: { creatures, spell, level: way.level, origin, classLevel, turn, count: summon.count } });
       setPicker('form');
@@ -1086,6 +1159,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         kind: 'd20',
         parts: attack.toHit?.parts ?? [{ label: 'Spell attack', formula: attack.attack?.bonus ?? 0 }],
         rollData: catalog.rollData,
+        note: attackNotes(attack, catalog),
       },
       quick,
       rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null }),
@@ -1113,7 +1187,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         defaultCritical: critical,
         versatileDice: attack.versatile ?? null,
         damageTypes: attack.damage?.typeOptions ?? null,
-        note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
+        note: [attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '', attackNotes(attack, catalog)].filter(Boolean).join('. '),
       },
       quick,
       rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
@@ -1400,7 +1474,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
-            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} onPact={hasPactOfTheBlade(catalog) ? bondPactWeapon : null} />
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} onPact={hasPactOfTheBlade(catalog) ? bondPactWeapon : null} onWeapon={useWeaponFeature} />
           )}
 
           {activeTab === 'Spells' && (

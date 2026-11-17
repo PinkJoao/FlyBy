@@ -23,7 +23,7 @@
 //   triggerOf(entries): 'free' (no action required), 'rider' (o extra do acerto, o
 //     uma vez por turno, o gasto de N pontos) ou null.
 //   isActiveFeature(feature, action, pools): se a feature é ATIVA (algo que o jogador
-//     usa ou declara) para o alternador da aba.
+//     usa ou declara) para o alternador da aba; a feature de arma (Hex Warrior, engine/playWeapons) é ativa.
 //
 // DECISÕES E ARMADILHAS
 //   - O lugar de cada feature (classe ou subclasse, e o texto) é achado por nome, nível e
@@ -69,6 +69,7 @@
 
 import { isBasicActionItem } from './foundryBasicActions';
 import { featureRollOf } from './playFeatureRolls';
+import { weaponRuleOf } from './playWeapons';
 import { resolveClassFeatures, resolveSubclassFeatures } from './foundryItems';
 import { resolveClassObj, resolveRaceObj, resolveSubclassObj } from './resolve';
 
@@ -147,7 +148,7 @@ export function triggerOf(entries) {
 /** A feature é ativa (o jogador a usa ou declara): activity, pool, custo, gatilho ou registro. */
 export function isActiveFeature(feature, action, pools = []) {
   if (feature?.roll === 'passive') return false;
-  return (action?.activities?.length ?? 0) > 0 || pools.length > 0 || (feature?.costs?.length ?? 0) > 0 || !!feature?.trigger || !!feature?.roll;
+  return (action?.activities?.length ?? 0) > 0 || pools.length > 0 || (feature?.costs?.length ?? 0) > 0 || !!feature?.trigger || !!feature?.roll || weaponRuleOf(feature?.name)?.source === 'feature';
 }
 
 /** O texto de reserva: os parágrafos do HTML simples do export, sem as tags. */

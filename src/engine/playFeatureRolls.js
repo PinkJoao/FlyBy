@@ -156,6 +156,8 @@
 //     Summon Wildfire Spirit (o 2d6 da chegada; o summon não tem activity), o Acid Spit do Simic
 //     Hybrid (só com a opção escolhida, `optionPicks` do catálogo), o dado de superioridade do
 //     Martial Adept e do Superior Technique (d6 sem a escala do Battle Master; o pool deles, `alt` no SUP).
+//   - TC-0169 (DDL-0242): o Hexblade's Curse soma a proficiência no dano contra o alvo amaldiçoado (desligado,
+//     o jogador liga quando o alvo é o amaldiçoado); o resto da família da arma está em engine/playWeapons.
 //   - TC-0166 e TC-0167 (DDL-0238): o Fire Rune soma 2d6 de fogo no dano de arma e gasta o pool da
 //     runa (CD 8 + PB + CON); o Gift of the Ever-Living Ones é um interruptor com `healMax` (o
 //     familiar a 100 pés); o Health Funnel gasta Dados de Vida (`spend.hitDie`, quantos o jogador
@@ -503,6 +505,7 @@ export const FEATURE_ROLLS = {
   'cohort of chaos': { kind: 'use', roll: { label: 'Chaotic Flare: the d4 of the table in the feature (after a 1 or a 20)', formula: '1d4' } },
   'spellfire spark': { kind: 'use', roll: { label: 'Damage reduced (Magic Absorption, once per turn)', formula: '1d4' } },
   'natural weapons': { kind: 'rider', on: ['damage'], when: 'unarmed', formula: '1d4', label: 'Bite poison', note: 'the bite only, if the target fails the Constitution save (8 + PB + CON)' },
+  "hexblade's curse": { kind: 'rider', on: ['damage'], formula: '@prof', label: "Hexblade's Curse (cursed target)", note: 'against the cursed target; a d20 of 19 or 20 is a Critical Hit; regain Hit Points when it dies' },
   'protection of the talisman': { kind: 'rider', on: ['save'], spend: { item: 'Protection of the Talisman' }, formula: '1d4', note: 'after a failed save, you or the wearer of your talisman' },
   'warding maneuver': { kind: 'use', roll: { label: 'AC bonus against the attack', formula: '1d8' } },
   'favored by the gods': { kind: 'rider', on: ['attack', 'save'], spend: { item: 'Favored by the Gods' }, formula: '2d4', note: 'after a failed save or a miss' },

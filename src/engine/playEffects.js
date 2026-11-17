@@ -44,7 +44,8 @@
 //     endConcentrationOps(state): termina a concentração e o que dependia dela (os
 //       efeitos e, desde o DDL-0193, os summons ligados a ela; desde o DDL-0195, a
 //       forma de uma magia de concentração, com os PV temporários dela).
-//     restModifierOps(state, period): o que um descanso tira.
+//     restModifierOps(state, period): o que um descanso tira (o efeito `longRest` de feature, o Hex
+//       Warrior e o Blessing of the Forge, só sai no longo, DDL-0242).
 //     conditionEvent(args), modifierEvent(args), removeModifierEvent(args): os
 //       eventos.
 //
@@ -446,7 +447,7 @@ export function fixedRollBonus(state, catalog, roll) {
 /** O que um descanso tira: efeitos de feature e de magia sem concentração, e os manuais com a duração. */
 export function restModifierOps(state, period) {
   return (state.modifiers ?? [])
-    .filter((m) => (m.source !== 'manual' && !m.concentration)
+    .filter((m) => (m.source !== 'manual' && !m.concentration && m.duration !== 'longRest')
       || m.duration === 'shortRest'
       || (period === 'lr' && (m.duration === 'longRest' || m.concentration)))
     .map((m) => ({ op: 'modifier', remove: m.id }));

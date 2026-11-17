@@ -18,6 +18,7 @@
 //   ActionPanel(props): o painel.
 //
 // DECISÕES E ARMADILHAS
+//   - A linha do ataque mostra o dano extra da arma (Elemental Weapon) e a Weapon Mastery (DDL-0242).
 //   - A linha de cada ataque soma os efeitos ligados que são número fixo (`fixedRollBonus`:
 //     Archery, o extra da Rage), para dizer o que o diálogo vai rolar (DDL-0221).
 //   - O painel só ESCOLHE; quem grava é a tela (pages/Play, takeAction), que já
@@ -111,7 +112,7 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
   const attackDetail = (a) => {
     const hit = a.toHit ? a.toHit.total + fixedRollBonus(state, catalog, attackRollContext(a)) : null;
     const dmg = a.damage ? (a.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(a, 'damage')) : 0;
-    return [hit != null ? `${formatBonus(hit)} to hit` : null, a.damage ? `${a.damage.dice ? `${a.damage.dice}${dmg ? formatBonus(dmg) : ''}` : Math.max(0, dmg)} ${a.damage.types?.[0] ?? ''}`.trim() : null].filter(Boolean).join(', ');
+    return [hit != null ? `${formatBonus(hit)} to hit` : null, a.damage ? `${a.damage.dice ? `${a.damage.dice}${dmg ? formatBonus(dmg) : ''}` : Math.max(0, dmg)} ${a.damage.types?.[0] ?? ''}`.trim() : null, ...(a.damage?.extra ?? []).map((x) => `+${x.formula} ${x.type}`), a.mastery ? `mastery ${a.mastery}` : null].filter(Boolean).join(', ');
   };
 
   return (

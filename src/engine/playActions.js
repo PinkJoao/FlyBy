@@ -27,7 +27,8 @@
 //     quando o jogador digitou o dado da mesa.
 //   rollTestEvent(args): o evento de um teste de d20.
 //   rollAttackEvent(args): o evento do acerto de um ataque.
-//   damageParts(attack, options): as partes do dano de um ataque; com `applied.twice`
+//   damageParts(attack, options): as partes do dano de um ataque (com o dano extra tipado de
+//     `damage.extra`: o Elemental Weapon, os STRIKE, DDL-0242); com `applied.twice`
 //     (Savage Attacker) o dado da arma vira `max(dado, dado)`.
 //   rollDamageEvent(args): o evento do dano de um ataque.
 //   forgoDice(formula, n, data): o dado com `n` dados a menos (Cunning Strike, DDL-0217).
@@ -201,6 +202,7 @@ export function damageParts(attack, options = {}) {
   return [
     ...(dice ? [{ label: twice ? `${attack.name} (best of two)` : attack.name, formula: twice ? `max(${dice}, ${dice})` : dice }] : []),
     ...(d.bonus ? [{ label: 'Modifier', formula: d.bonus }] : []),
+    ...(d.extra ?? []).map((x) => ({ label: `${x.label} (${x.type})`, formula: x.formula })),
   ];
 }
 

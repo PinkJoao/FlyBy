@@ -101,6 +101,8 @@
 //       Psychic Blades do Soulknife, TC-0161, só ladino: o College of Whispers tem outra feature com o
 //       mesmo nome; os espinhos da Battlerager Armor, DDL-0239), no formato dos de arma.
 //     hasClass(character, classId): o personagem tem a classe?
+//     kenseiWeapons(character): as Kensei Weapons escolhidas, que o withMartialArts trata como armas de
+//       monge (inclusive à distância, DDL-0242).
 //     NATURAL_PATTERNS, naturalHit(text), naturalAttacks(features, derived, picked): as armas naturais
 //       pela prosa ("the strike deals 1d6 + your Strength modifier slashing damage"; Claws, Horns,
 //       Bite, Talons, Hooves, Ram, Dragon Hide), um Unarmed Strike com o dado e o tipo; numa feature
@@ -458,6 +460,15 @@ function featureOptionPicks(character) {
   return new Set(bags.flatMap((b) => collectChoicePicks(b ?? {}, 'featureoption')));
 }
 
+/** As Kensei Weapons escolhidas no builder ("count as monk weapons for you"), em minúsculas. */
+function kenseiWeapons(character) {
+  const out = new Set();
+  for (const c of character?.classes ?? []) {
+    for (const [key, e] of Object.entries(c.choices ?? {})) if (/kensei/i.test(key) && e?.kind === 'weaponProf') for (const pick of e.picks ?? []) out.add(String(pick).toLowerCase());
+  }
+  return out;
+}
+
 /** Os ataques das features (FEATURE_ATTACKS), no formato dos ataques de arma. */
 function featureAttacks(features, derived, character = null) {
   const { str = 0, dex = 0 } = derived.modifiers ?? {};
@@ -496,14 +507,15 @@ function diceAverage(dice) {
  * Martial Arts (XPHB): sem armadura nem escudo, o desarmado e as armas de monge usam
  * DES se for maior e rolam o dado da tabela (ou o da arma, se maior).
  */
-export function withMartialArts(attacks, { derived, rollData, features }) {
+export function withMartialArts(attacks, { derived, rollData, features, monkWeapons = new Set() }) {
   const die = rollData?.['scale.monk.die'];
   if (!die || !(features ?? []).includes('martial arts')) return attacks;
   if (derived.armorClass?.hasArmor || derived.armorClass?.hasShield) return attacks;
   const mods = derived.modifiers ?? {};
   return attacks.map((a) => {
-    const monkWeapon = a.kind === 'weapon' && a.range === 'melee'
-      && (a.category === 'simple' || (a.category === 'martial' && (a.properties ?? []).includes('L')));
+    const monkWeapon = (a.kind === 'weapon' && a.range === 'melee'
+      && (a.category === 'simple' || (a.category === 'martial' && (a.properties ?? []).includes('L'))))
+      || (a.kind === 'weapon' && monkWeapons.has(String(a.name).toLowerCase().replace(/^\+\d+\s+/, '')));
     if (a.kind !== 'unarmed' && !monkWeapon) return a;
     const before = mods[a.ability] ?? 0;
     const ability = (mods.dex ?? 0) > before ? 'dex' : a.ability;
@@ -1211,7 +1223,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     if (pool && !(pool.recovery ?? []).some((r) => r.period === extra.recovery.period)) pool.recovery = [...(pool.recovery ?? []), extra.recovery];
   }
   const attacks = [
-    ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features }),
+    ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features, monkWeapons: kenseiWeapons(character) }),
     ...featureAttacks(features, d, character),
     ...cantripAttacks(d.spellcasting, level),
   ];

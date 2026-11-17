@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { applyUsesOverlay, INNATE_USES, curatedAdditionalSpells, tableColumnAt } from './grantedSpellUses';
-import { grantedSpells, castTypeLabel } from './grantedSpells';
+import { grantedSpells, castTypeLabel, additionalSpellChoices } from './grantedSpells';
 
 /** Parseia um `additionalSpells` real e aplica o overlay da entidade. */
 function granted(additionalSpells, level, entity) {
@@ -239,5 +239,17 @@ describe('overlay sobre uma concessão PREPARED (Contact Patron, Warlock @9)', (
   it('frequência já declarada pelo dado passa intacta', () => {
     const out = granted(drowLineage, 5, { name: 'Elf', source: 'XPHB' });
     expect(out.find((s) => s.name === 'faerie fire').castType).toBe('daily');
+  });
+});
+
+describe('Spell Mastery e Signature Spells do mago XPHB (TC-0149)', () => {
+  const wizard = { name: 'Wizard', source: 'XPHB' };
+  it('viram escolhas innate: à vontade no 18, uma por descanso cada no 20', () => {
+    const groups = curatedAdditionalSpells(wizard);
+    expect(groups[0].innate[18].will).toHaveLength(2);
+    expect(groups[0].innate[20].rest['1e'][0]).toEqual({ choose: 'level=3|class=Wizard', count: 2, label: 'Signature Spells' });
+    expect(additionalSpellChoices(groups, 17, {}, 'class:')).toHaveLength(0);
+    expect(additionalSpellChoices(groups, 18, {}, 'class:')).toHaveLength(2);
+    expect(additionalSpellChoices(groups, 20, {}, 'class:').map((c) => c.count)).toEqual([1, 1, 2]);
   });
 });

@@ -21,7 +21,8 @@
 //   walkLevelValue(value, castMode, push): cada folha de um nível.
 //   groupFallbackLabel(group, index): o nome de um grupo sem `name`.
 //   parseSpellChooseFilter(expr): a expressão de filtro de um `{choose}`.
-//   spellChooseLabel(pool, count): "Choose 2 Cleric cantrips".
+//   spellChooseLabel(pool, count): "Choose 2 Cleric cantrips"; um `label` curado na folha (o
+//     nome da feature, "Spell Mastery") vai na frente.
 //   grantedSpells(additionalSpells, level, opts): magias, atributo, escolhas.
 //   additionalSpellChoices(additionalSpells, level, bag, idPrefix): só os
 //     descritores de escolha (o que parseChoices consome).
@@ -266,7 +267,7 @@ export function grantedSpells(additionalSpells, level, opts = {}) {
               id,
               kind: 'spell',
               count,
-              label: spellChooseLabel(pool, count),
+              label: leaf.label ? `${leaf.label} - ${spellChooseLabel(pool, count)}` : spellChooseLabel(pool, count),
               level: Number.isFinite(numLevel) ? numLevel : 1,
               pool,
             });

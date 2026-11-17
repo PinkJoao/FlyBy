@@ -6,7 +6,8 @@
 //   app (playDialogs.jsx):
 //   - HealPanel: o número e o tipo da cura: curar o HP, dar HP temporário ou
 //     aumentar o HP máximo. Fecha com { kind, amount, replace }.
-//   - HurtPanel: o número, o tipo de dano opcional e se o dano corta também o HP
+//   - HurtPanel: o número, o tipo de dano opcional, a salvaguarda de "metade no sucesso" (com o
+//     Evasion, nada no sucesso e metade na falha, TC-0154) e se o dano corta também o HP
 //     máximo. Fecha com { amount, type, affectMax }.
 //   - HitDicePanel: quantos dados de vida rolar para curar; negativo devolve os
 //     gastos. Fecha com { count }.
@@ -44,7 +45,7 @@ import styles from './HpPanels.module.css';
 import Button from '../common/Button';
 import Toggle from '../common/Toggle';
 import Chip from '../common/Chip';
-import { traitFor, adjustDamage } from '../../engine/playHealth';
+import { traitFor, adjustDamage, saveDamage } from '../../engine/playHealth';
 import { DAMAGE_TYPES } from '../../engine/playEffects';
 
 const HEAL_KINDS = [
@@ -120,14 +121,15 @@ export function HealPanel({ vitals, maxNote = 'Like Aid: lasts until your next L
  * O painel de dano: o número, o tipo opcional (com `defenses`) e se corta o máximo.
  * @param {{ vitals: { current: number, max: number, temp: number }, defenses?: object }} props
  */
-export function HurtPanel({ vitals, defenses = null }) {
+export function HurtPanel({ vitals, defenses = null, evasion = false }) {
   const close = useDialogClose();
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('');
   const [affectMax, setAffectMax] = useState(false);
+  const [save, setSave] = useState('none');
   const typed = Math.max(0, Math.floor(Number(amount) || 0));
   const trait = defenses ? traitFor({ defenses }, type) : null;
-  const n = adjustDamage(typed, trait);
+  const n = adjustDamage(saveDamage(typed, save, evasion), trait);
   const toTemp = Math.min(vitals.temp, n);
   const toHp = Math.min(n - toTemp, vitals.current);
   const max = affectMax ? Math.max(0, vitals.max - (n - toTemp)) : vitals.max;
@@ -138,7 +140,7 @@ export function HurtPanel({ vitals, defenses = null }) {
       className={panel.form}
       onSubmit={(e) => {
         e.preventDefault();
-        if (typed > 0) close({ amount: typed, type, affectMax });
+        if (typed > 0) close({ amount: typed, type, affectMax, save: save === 'none' ? null : save, evasion });
       }}
     >
       <p className={styles.now}>{vitals.current} / {vitals.max} HP{vitals.temp ? ` · ${vitals.temp} temporary` : ''}</p>
@@ -156,8 +158,15 @@ export function HurtPanel({ vitals, defenses = null }) {
           </div>
         </div>
       )}
+      {defenses && (
+        <div className={panel.field}>
+          <span className={panel.label}>Save for half damage</span>
+          {evasion && <span className={panel.note}>Evasion: no damage on a success, half on a failure</span>}
+          <SegmentedControl block ariaLabel="Save for half damage" value={save} onChange={setSave} options={[['none', 'No save'], ['saved', 'Saved'], ['failed', 'Failed']]} />
+        </div>
+      )}
       <Toggle checked={affectMax} onChange={setAffectMax} label="Also lowers the hit point maximum" />
-      {trait && typed > 0 && <p className={panel.note}>{TRAIT_NOTE[trait]}: {typed} becomes {n}</p>}
+      {(trait || save !== 'none') && typed > 0 && <p className={panel.note}>{trait ? TRAIT_NOTE[trait] : 'After the save'}: {typed} becomes {n}</p>}
       {typed > 0 && (
         <p className={styles.preview}>
           {toTemp ? `${toTemp} from temporary, ` : ''}{vitals.current} to {current} hit points{affectMax ? `, maximum ${vitals.max} to ${max}` : ''}

@@ -134,6 +134,15 @@
 //     alternativo quando o próprio pool acabou (o Breath of the Dragon "spend 2 ki points to use
 //     this feature again", o Aspect of the Wyrm "3 ki points", e o Ascendant Aspect, 1 ponto que
 //     melhora o sopro) fica no ajuste à mão do contador (DDL-0202).
+//   - As famílias do XPHB (DDL-0232): Elemental Epitome (o Martial Arts die no desarmado),
+//     Envenom Weapons (2d6 de veneno no Use), Homing Strikes e Psi-Bolstered Knack (um dado de
+//     Psionic Energy depois de errar ou falhar; `scale.soulknife.die.die`, porque `.die` traz o
+//     número de dados do pool), Chalice (a cura pela escala da Starry Form, 2d8 no 10).
+//   - O registro de features no XPHB (DDL-0231): Relentless do Battle Master devolve um Superiority
+//     Die na Iniciativa (`restoreUpTo` 1), Guarded Mind gasta um dado de Psionic Power, Portent rola
+//     2d20 depois do descanso longo e Greater Portent 3d20 (o "Use" de cada um).
+//   - O registro de features no SRD (DDL-0228, TC-0152): Perfect Focus devolve o Focus até 4
+//     (`restoreUpTo`), no "Use" quando o jogador rola a Iniciativa.
 //   - O legado no passe ao vivo (DDL-0226), pelo texto de cada um: Storm Aura de mar ("1d6
 //     lightning", 2d6 no 10, 3d6 no 15, 4d6 no 20, CD 8 + PB + CON) e de tundra (2 temporários,
 //     3 no 5, 4 no 10, 5 no 15, 6 no 20); Master's Flourish ("roll a d6 and use it instead of
@@ -295,7 +304,16 @@ export const FEATURE_ROLLS = {
   'improved blessed strikes': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points (Potent Spellcasting)', formula: '2 * @abilities.wis.mod' } },
   'improved elemental fury': { kind: 'passive' },
   'improved brutal strike (2)': { kind: 'passive' },
-  relentless: { kind: 'passive' },
+  relentless: { kind: 'use', restore: SUP, restoreUpTo: 1, note: 'when you roll Initiative with no Superiority Dice left' },
+  'guarded mind': { kind: 'use', spend: { item: 'Psionic Power' }, note: 'ends every Charmed and Frightened condition on you' },
+  'elemental epitome': { kind: 'rider', on: ['damage'], when: 'unarmed', formula: '@scale.monk.die', label: 'Empowered Strikes (Elemental Epitome)', note: 'once on each of your turns, while Elemental Attunement is active; the type of the strike' },
+  'envenom weapons': { kind: 'use', roll: { label: 'Poison when the target fails the Poison save (ignores Resistance)', formula: '2d6' } },
+  'homing strikes': { kind: 'rider', on: ['attack'], when: 'weapon', spend: { item: 'Psionic Power' }, formula: (rd) => `1${rd['scale.soulknife.die.die'] ?? 'd6'}`, note: 'Psychic Blade only, after a miss; not spent if it still misses' },
+  'psi-bolstered knack': { kind: 'rider', on: ['check'], spend: { item: 'Psionic Power' }, formula: (rd) => `1${rd['scale.soulknife.die.die'] ?? 'd6'}`, note: 'after you fail with a proficient skill or tool; not spent if it still fails' },
+  chalice: { kind: 'use', roll: { label: 'Chalice: healing to you or a creature within 30 feet', formula: (rd) => `${rd['scale.stars.die'] ? '@scale.stars.die' : '1d8'} + @abilities.wis.mod` } },
+  portent: { kind: 'use', roll: { label: 'Portent: keep each number to replace a d20 Test (the total does not matter)', formula: '2d20' } },
+  'greater portent': { kind: 'use', roll: { label: 'Greater Portent: keep each number to replace a d20 Test (the total does not matter)', formula: '3d20' } },
+  'perfect focus': { kind: 'use', restore: FOCUS, restoreUpTo: 4, note: 'when you roll Initiative without using Uncanny Metabolism' },
   'heightened focus': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points (Patient Defense)', formula: MARTIAL(2) } },
   'combat inspiration': { kind: 'passive' },
   'pact magic': { kind: 'passive' },
@@ -558,5 +576,5 @@ export function featureUseOf(feature, catalog, chosen = null) {
   const n = typeof amount === 'number' ? amount : Math.min(amount.max, Math.max(amount.min, chosen ?? amount.min));
   const formula = e.roll ? formulaOf(e.roll, rd, n) : null;
   const roll = e.roll && formula && formula !== '0' ? { label: e.roll.label, formula } : null;
-  return { modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore) };
+  return { modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore), restoreUpTo: e.restoreUpTo ?? null };
 }

@@ -16,10 +16,15 @@
 //     foi escolhido.
 //   collectOwned(character, grantedLanguages): tudo que a ficha já possui, para o
 //     ChoiceList não oferecer de novo.
+//   hasJackOfAllTrades(character): bardo no nível 2 ou mais.
 //   skillBonus(character, skill, profBonus, skillProfs, scores), saveBonus(
 //     character, ability, profBonus, proficientSaves, scores): os bônus.
 //
 // DECISÕES E ARMADILHAS
+//   - Jack of All Trades (TC-0150, DDL-0228): metade do PB, para baixo, em teste de PERÍCIA sem
+//     proficiência ("an ability check ... that uses a skill proficiency you lack"); o texto de
+//     2024 não vale para o teste de atributo puro nem para a Iniciativa. O bardo do PHB foi
+//     reeditado, então a regra é por classe e nível.
 //   - Todo personagem sabe Common (as raças 2024 deixaram de conceder; foi para o
 //     background). Tokens que não são línguas ("other", "anyStandard") saem, e o
 //     caixa é normalizado.
@@ -182,7 +187,14 @@ export function skillBonus(character, skill, profBonus, skillProfs, scores) {
   const profs = skillProfs ?? collectSkillProficiencies(character);
   const ability = SKILL_ABILITY[skill];
   const mod = abilityModifier((scores ?? finalScores(character))[ability]);
-  return profValueBonus(mod, profBonus, profs[skill] ?? 0);
+  const level = profs[skill] ?? 0;
+  const jack = !level && hasJackOfAllTrades(character) ? Math.floor(profBonus / 2) : 0;
+  return profValueBonus(mod, profBonus, level) + jack;
+}
+
+/** O personagem tem o Jack of All Trades (bardo no nível 2 ou mais)? */
+export function hasJackOfAllTrades(character) {
+  return (character?.classes ?? []).some((c) => c.classId === 'bard' && (c.level ?? 0) >= 2);
 }
 
 /**

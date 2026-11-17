@@ -113,6 +113,7 @@ export function d20Options(options = {}) {
     advantage: m.advantage + (a.advantage ?? 0),
     disadvantage: m.disadvantage + (a.disadvantage ?? 0),
     d20Min: a.d20Min ?? null,
+    totalMin: a.totalMin ?? null,
     rerollOnes: !!a.rerollOnes,
     elven: !!a.elven,
     critThreshold: options.critThreshold ?? a.critThreshold ?? 20,

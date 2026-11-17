@@ -51,7 +51,7 @@ describe('TC-0091: escolha de classe que a própria origem concede', () => {
       const o = deriveFromDb(c, db).spellcasting.origins.find((x) => x.classId === 'wizard');
       const free = [...o.prepared, ...o.unprepared].filter((s) => s.free);
       expect(free.length).toBeGreaterThan(0);
-      expect(o.alwaysPrepared.filter((s) => s.raw.level > 0)).toEqual([]);
+      expect(o.alwaysPrepared.filter((s) => s.raw.level > 0 && s.castMode !== 'innate')).toEqual([]);
       const items = assembleFoundryActor(c, db).items.filter((i) => i.flags?.builder5e?.free);
       expect(items.length).toBe(free.length);
       for (const it of items) expect([0, 1]).toContain(it.system.prepared);

@@ -123,6 +123,20 @@ export const DELIBERATE = [
 /** ESPERADAS: divergências reais já investigadas, fora da contagem. */
 export const EXPECTED = [
   {
+    id: 'land-ward-resistance',
+    why:
+      "O Nature's Ward (Circle of the Land, nível 10) dá a resistência da terra escolhida. O premade "
+      + 'deixa isso para um dos cinco Active Effects desligados, que o jogador liga à mão no Foundry; '
+      + 'nós guardamos a terra (a escolha do Circle of the Land Spells) e a resistência sai pronta no '
+      + 'ator (DDL-0228, TC-0155). Se o jogador ligar o efeito igual, o tipo repete sem somar.',
+    test: (f, ours) =>
+      f.cat === 'traits.dr'
+      && Array.isArray(f.before) && f.before.length === 0
+      && Array.isArray(f.after) && f.after.length === 1
+      && ['fire', 'cold', 'lightning', 'poison'].includes(f.after[0])
+      && (ours?.items ?? []).some((i) => i.name === "Nature's Ward"),
+  },
+  {
     id: 'baked-feature-grant',
     why:
       'O premade deixa a proficiência concedida por uma feature a cargo de um Active Effect '
@@ -600,7 +614,7 @@ export function comparePremade(premade, ours, db = null) {
   compareSystem(premade, ours, out);
   compareItems(premade, ours, out, db);
   return out.map((f) => {
-    const e = EXPECTED.find((x) => x.test(f));
+    const e = EXPECTED.find((x) => x.test(f, ours));
     return e ? { ...f, expected: e.id } : f;
   });
 }

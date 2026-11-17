@@ -208,6 +208,16 @@ describe('d20Test', () => {
     expect(d20Test({ rng: seq(1) }).isFumble).toBe(true);
   });
 
+  it('o piso do total (Indomitable Might) levanta o total e guarda o rolado', () => {
+    const low = d20Test({ parts: [{ label: 'STR', formula: 4 }], totalMin: 20, rng: seq(3) });
+    expect(low.total).toBe(20);
+    expect(low.raisedFrom).toBe(7);
+    expect(low.natural).toBe(3);
+    const high = d20Test({ parts: [{ label: 'STR', formula: 4 }], totalMin: 20, rng: seq(18) });
+    expect(high.total).toBe(22);
+    expect(high.raisedFrom).toBeUndefined();
+  });
+
   it('o piso do d20 (Reliable Talent) sobe o total mas não muda o natural', () => {
     const r = d20Test({ parts: [{ label: 'Stealth', formula: 7 }], d20Min: 10, rng: seq(3) });
     expect(r.total).toBe(17);

@@ -10,7 +10,8 @@
 //   Mais três registros da mesma família, onde a PROSA manda no dado:
 //     INNATE_USES: a frequência (castType 'restLong', 'rest', 'will', ou null
 //       quando NÃO há conjuração grátis).
-//     MISSING_ADDITIONAL_SPELLS: concessões que o dado omite (TC-0026), fundidas
+//     MISSING_ADDITIONAL_SPELLS: concessões que o dado omite (TC-0026; o Spell Mastery e o
+//     Signature Spells do mago XPHB como escolhas `innate`, "will" e "rest" 1e, TC-0149), fundidas
 //       no PRIMEIRO grupo do dado, nunca como grupo novo (seria alternativa).
 //     REGRADED_ADDITIONAL_SPELLS: concessões no nível errado (TC-0044).
 //     REMOVED_ADDITIONAL_SPELLS: concessões que a regra não dá (TC-0082).
@@ -24,6 +25,7 @@
 //   applyRegrades(groups, regrades): move as magias de nível.
 //   refName(s), stripSpells(node, wanted), applyRemovals(groups, spells): tira as
 //     não-concedidas de todos os baldes, em qualquer profundidade.
+//   mergeByCast(base, extra): funde um nível por tipo de conjuração (o `innate`).
 //   curatedAdditionalSpells(entity): o campo com as três correções; sem entrada,
 //     o original intacto. Nunca muta o dado.
 //   applyUsesOverlay(spells, entity, level): a frequência curada.
@@ -58,6 +60,11 @@
 //     "Spell List"), só sem o atributo: a entrada tem apenas `ability`, que vale para TODOS
 //     os grupos sem um. A primeira versão (DDL-0212) somava também a escolha ao primeiro
 //     grupo e a duplicava; vista na tela em 2026-11-15.
+//   - Telekinetic Master (Psi Warrior, XPHB): o Telekinesis sem espaço uma vez por descanso longo,
+//     com INT ("your spellcasting ability for it is Intelligence", `ability` no MISSING)
+//     (TC-0162); devolver o uso com um dado de Psionic Energy é ajuste à mão do contador.
+//   - Faithful Steed (XPHB): o Find Steed sempre preparado e grátis uma vez por descanso longo
+//     ("You can also cast the spell once without expending a spell slot", TC-0157).
 //   - MISSING: o Channeler do College of Spirits RHW conhece Guidance @3; o dado só
 //     codifica o Spirit Guardians @6 (a versão VRGR trazia).
 //   - O curado em `subrace` (Merge with Stone) existe por completude: a derivação
@@ -70,6 +77,14 @@
 export const INNATE_USES = {
   'Warlock|XPHB': {
     'contact other plane': { castType: 'restLong', count: 1 },
+  },
+
+  'Psi Warrior|XPHB': {
+    telekinesis: { castType: 'restLong', count: 1 },
+  },
+
+  'Paladin|XPHB': {
+    'find steed': { castType: 'restLong', count: 1 },
   },
 
   'Ranger|XPHB': {
@@ -184,7 +199,29 @@ export const MISSING_ADDITIONAL_SPELLS = {
   // ATENÇÃO: cada entrada é FUNDIDA no primeiro grupo; um grupo novo viraria alternativa (TC-0011).
   'College of Spirits|RHW': { known: { 3: ['guidance|xphb#c'] } },
   'Path of the Giant|BGG': { ability: 'wis' },
+  'Psi Warrior|XPHB': { ability: 'int' },
+  'Wizard|XPHB': {
+    innate: {
+      18: { will: [{ choose: 'level=1|class=Wizard', label: 'Spell Mastery' }, { choose: 'level=2|class=Wizard', label: 'Spell Mastery' }] },
+      20: { rest: { '1e': [{ choose: 'level=3|class=Wizard', count: 2, label: 'Signature Spells' }] } },
+    },
+  },
 };
+
+/** Funde um nível por tipo de conjuração ({ will: [...], rest: { '1e': [...] } }) no que já havia. */
+function mergeByCast(base, extra) {
+  const out = Array.isArray(base) ? { _: [...base] } : { ...(base ?? {}) };
+  for (const [cast, inner] of Object.entries(extra)) {
+    if (Array.isArray(inner)) out[cast] = [...(Array.isArray(out[cast]) ? out[cast] : []), ...inner];
+    else {
+      const prev = out[cast] && !Array.isArray(out[cast]) ? out[cast] : {};
+      const next = { ...prev };
+      for (const [key, list] of Object.entries(inner)) next[key] = [...(prev[key] ?? []), ...list];
+      out[cast] = next;
+    }
+  }
+  return out;
+}
 
 /** Poda arrays e objetos que ficaram vazios. */
 function pruneEmpty(node) {
@@ -287,7 +324,7 @@ export function curatedAdditionalSpells(entity) {
     if (bucket === 'ability') continue;
     const merged = { ...(first[bucket] ?? {}) };
     for (const [lvl, spells] of Object.entries(byLevel)) {
-      merged[lvl] = [...(merged[lvl] ?? []), ...spells];
+      merged[lvl] = Array.isArray(spells) ? [...(merged[lvl] ?? []), ...spells] : mergeByCast(merged[lvl], spells);
     }
     first[bucket] = merged;
   }

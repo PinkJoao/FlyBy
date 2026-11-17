@@ -101,7 +101,7 @@ describe('Use das features de efeito e de gasto', () => {
   });
 
   it('Stunning Strike gasta Focus e mostra a CD de CON (8 + PB + SAB)', () => {
-    expect(featureUseOf({ name: 'Stunning Strike' }, cat([]))).toEqual({ modifier: null, spend: 'pool:monks-focus', amount: 1, spent: 1, save: { abilities: ['con'], dc: 14 }, roll: null, apply: null, restore: null });
+    expect(featureUseOf({ name: 'Stunning Strike' }, cat([]))).toEqual({ modifier: null, spend: 'pool:monks-focus', amount: 1, spent: 1, save: { abilities: ['con'], dc: 14 }, roll: null, apply: null, restore: null, restoreUpTo: null });
   });
 
   it('o ki das subclasses antigas gasta Focus na quantidade do texto (DDL-0224)', () => {

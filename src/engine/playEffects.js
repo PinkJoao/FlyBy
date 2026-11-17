@@ -83,9 +83,12 @@
 //     termina incapacitado; em combate dura no máximo 10 minutos, `maxRounds`) e
 //     Dodge (vantagem em saves de DES, e a nota "ataques contra você têm
 //     desvantagem", que é do atacante: até o começo do seu próximo turno, 1 rodada).
+//   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
+//     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
+//     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
 //   - SPELL_EFFECTS: Bless (+1d4 em ataques e saves), Shield of Faith (+2 CA),
 //     Divine Favor (+1d4 radiante com arma), Hunter's Mark (+1d6 de força no alvo
-//     marcado), Hex (+1d6 necrótico no alvo amaldiçoado). `self` diz se a magia é
+//     marcado; 1d10 com o Foe Slayer do catálogo, TC-0153), Hex (+1d6 necrótico no alvo amaldiçoado). `self` diz se a magia é
 //     só em si mesmo; senão a tela pergunta.
 //   - RIDERS: os extras das features (Sneak Attack, Brutal Strike, Divine Strike,
 //     Peerless Skill...) moram em engine/playFeatureRolls.js (DDL-0205); o que gasta
@@ -95,7 +98,8 @@
 //     dela pela chave da ação, e o Bloodied e a Rage ativa vão pelo estado.
 //   - PASSIVES (pelo nome da feature no catálogo): Improved Critical (19),
 //     Superior Critical (18), Reliable Talent (piso 10 nos testes com
-//     proficiência).
+//     proficiência), Indomitable Might (o TOTAL de teste e salvaguarda de FOR não fica abaixo
+//     do valor de FOR, `totalMin`, TC-0151).
 // -----------------------------------------------------------------------------
 
 import { makeId } from '../schema/character';
@@ -128,6 +132,23 @@ export const CONDITIONS = {
 };
 
 const FEATURE_EFFECTS = {
+  'action:starry-form': (catalog) => {
+    const has = (n) => (catalog?.features ?? []).includes(n);
+    return {
+      label: 'Starry Form',
+      source: 'feature',
+      duration: 'manual',
+      maxRounds: 100,
+      endsOnIncapacitated: true,
+      ...(has('full of stars') ? { resist: ['bludgeoning', 'piercing', 'slashing'] } : {}),
+      notes: [
+        'Archer: the Archer attack on the Features tab; Chalice: its Use after a healing spell with a slot',
+        'Dragon: a d20 of 9 or lower counts as 10 on Intelligence and Wisdom checks and on Constitution saves to keep Concentration (an option in those rolls)',
+        ...(has('twinkling constellations') ? ['Dragon: Fly Speed 20 feet, can hover; change the constellation at the start of each turn'] : []),
+      ],
+      effects: [{ targets: ['check:int', 'check:wis', 'save:con'], d20Min: 10, optional: true, label: 'Starry Form: Dragon' }],
+    };
+  },
   'action:rage': (catalog) => ({
     label: 'Rage',
     source: 'feature',
@@ -155,7 +176,7 @@ const SPELL_EFFECTS = {
   bless: { self: false, make: () => ({ label: 'Bless', effects: [{ targets: ['attack', 'save'], formula: '1d4', label: 'Bless' }] }) },
   'shield of faith': { self: false, make: () => ({ label: 'Shield of Faith', ac: 2, effects: [] }) },
   'divine favor': { self: true, make: () => ({ label: 'Divine Favor', effects: [{ targets: ['damage'], formula: '1d4', when: 'weaponAttack', label: 'Divine Favor (radiant)' }] }) },
-  "hunter's mark": { self: true, make: () => ({ label: "Hunter's Mark", effects: [{ targets: ['damage'], formula: '1d6', optional: true, label: "Hunter's Mark (force, marked target)" }] }) },
+  "hunter's mark": { self: true, make: (c) => ({ label: "Hunter's Mark", effects: [{ targets: ['damage'], formula: (c?.features ?? []).includes('foe slayer') ? '1d10' : '1d6', optional: true, label: "Hunter's Mark (force, marked target)" }] }) },
   hex: { self: true, make: () => ({ label: 'Hex', effects: [{ targets: ['damage'], formula: '1d6', optional: true, label: 'Hex (necrotic, cursed target)' }] }) },
 };
 
@@ -163,6 +184,7 @@ const PASSIVES = {
   'improved critical': { critThreshold: 19 },
   'superior critical': { critThreshold: 18 },
   'reliable talent': { d20Min: 10 },
+  'indomitable might': { totalMin: 'str' },
 };
 
 /** Os nomes das features que as PASSIVES tratam (o levantamento as conta como `use`). */
@@ -235,6 +257,7 @@ export function rollEffects(state, catalog, roll) {
       const entry = { id: `mod:${m.id}:${i}`, label: e.label ?? m.label, source: m.label, defaultOn: !e.optional };
       if (e.mode === 'advantage') entry.adv = 1;
       else if (e.mode === 'disadvantage') entry.dis = 1;
+      else if (e.d20Min) entry.d20Min = e.d20Min;
       else if (e.formula != null && e.formula !== '') entry.part = { label: e.label ?? m.label, formula: e.formula };
       else return;
       out.push(entry);
@@ -250,6 +273,10 @@ export function rollEffects(state, catalog, roll) {
   for (const [name, p] of Object.entries(PASSIVES)) {
     if (!features.has(name)) continue;
     if (p.critThreshold && roll.kind === 'attack' && roll.weapon) out.push({ id: `passive:${name}`, label: `${name[0].toUpperCase()}${name.slice(1)} (crit on ${p.critThreshold})`, source: name, critThreshold: p.critThreshold, defaultOn: true });
+    if (p.totalMin && (roll.kind === 'check' || roll.kind === 'save') && roll.ability === p.totalMin) {
+      const score = (catalog.checks?.abilities ?? []).find((a) => a.ability === p.totalMin)?.score ?? 0;
+      out.push({ id: `passive:${name}`, label: `Indomitable Might (a total below ${score} counts as ${score})`, source: name, totalMin: score, defaultOn: true });
+    }
     if (p.d20Min && roll.kind === 'check' && roll.proficient) out.push({ id: `passive:${name}`, label: `Reliable Talent (9 or lower counts as ${p.d20Min})`, source: name, d20Min: p.d20Min, defaultOn: true });
   }
   return out;
@@ -266,6 +293,7 @@ export function applyEffects(effects, enabledIds = null) {
     disadvantage: on.reduce((s, e) => s + (e.dis ?? 0), 0),
     parts: on.filter((e) => e.part).map((e) => e.part),
     d20Min: on.reduce((m, e) => (e.d20Min ? Math.max(m ?? 0, e.d20Min) : m), null),
+    totalMin: on.reduce((m, e) => (e.totalMin ? Math.max(m ?? 0, e.totalMin) : m), null),
     critThreshold: on.reduce((m, e) => (e.critThreshold ? Math.min(m ?? 20, e.critThreshold) : m), null),
     autoFail: on.some((e) => e.autoFail),
     labels: on.map((e) => e.label),
@@ -332,12 +360,12 @@ export function featureModifier(action, catalog) {
 }
 
 /** O efeito curado de uma magia lançada, com `self` (só em si mesmo), ou null. */
-export function spellModifier(spell) {
+export function spellModifier(spell, catalog = null) {
   const entry = SPELL_EFFECTS[String(spell?.name ?? '').toLowerCase()];
   if (!entry) return null;
   return {
     self: entry.self,
-    modifier: makeModifier({ ...entry.make(), source: 'spell', ...(spell.concentration ? { concentration: spell.key } : {}) }),
+    modifier: makeModifier({ ...entry.make(catalog), source: 'spell', ...(spell.concentration ? { concentration: spell.key } : {}) }),
   };
 }
 

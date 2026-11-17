@@ -99,6 +99,8 @@ export function testBreakdown(catalog, state, test) {
       conditional.push({ label: e.label, text: MODE_TEXT[e.adv ? 'adv' : 'dis'], on });
     } else if (e.autoFail) {
       conditional.push({ label: e.label, text: 'automatic failure', on });
+    } else if (e.totalMin) {
+      conditional.push({ label: e.label, text: `total minimum ${e.totalMin}`, on });
     } else if (e.d20Min) {
       conditional.push({ label: e.label, text: `d20 minimum ${e.d20Min}`, on });
     }

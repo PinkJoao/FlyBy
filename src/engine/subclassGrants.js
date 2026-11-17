@@ -59,7 +59,9 @@
 //     resistência permanente.
 //   - resistByTypes varre o bag pelo KIND: há uma subclasse por classe, e um pick
 //     fora do mapa não contribui. O pick pode trazer a fonte ("Desert|XGE"),
-//     descartada na normalização. Com `id`, lê só aquela escolha: o Storm Soul lê o Storm
+//     descartada na normalização. O Nature's Ward (XPHB) lê a terra do Circle of the Land
+//     Spells ("Temperate Land" -> Lightning, TC-0155); a imunidade a Poisoned dele não tem onde
+//     morar na ficha (o app ainda não guarda imunidade a condição), só no export. Com `id`, lê só aquela escolha: o Storm Soul lê o Storm
 //     Aura, e um pick velho da escolha do Storm Soul (antes do DDL-0227) não soma outro tipo.
 // -----------------------------------------------------------------------------
 
@@ -105,6 +107,17 @@ export const SUBCLASS_GRANTS = {
       level: 6,
       feature: 'Storm Soul',
       resistBy: { choice: 'featureoption', id: 'sub:featopt@Storm Aura@3', map: { desert: ['fire'], sea: ['lightning'], tundra: ['cold'] } },
+    },
+  ],
+  'paladin|ancients': [
+    { level: 7, source: 'XPHB', feature: 'Aura of Warding', resist: ['necrotic', 'psychic', 'radiant'] },
+  ],
+  'druid|land': [
+    {
+      level: 10,
+      source: 'XPHB',
+      feature: "Nature's Ward",
+      resistBy: { choice: 'spellSet', id: 'sub:spellSet-0', map: { 'arid land': ['fire'], 'polar land': ['cold'], 'temperate land': ['lightning'], 'tropical land': ['poison'] } },
     },
   ],
   'bard|valor': [

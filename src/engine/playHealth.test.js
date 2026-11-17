@@ -19,7 +19,7 @@ import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
   vitals, traitFor, adjustDamage, concentrationDc, damageOutcome, healOutcome, tempHpOutcome, deathSaveOutcome,
-  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent, maxHpOutcome, hurtOutcome, hurtEvent,
+  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent, maxHpOutcome, hurtOutcome, hurtEvent, saveDamage,
 } from './playHealth';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -234,5 +234,15 @@ describe('HP máximo e o painel Hurt', () => {
     const s1 = ev.ops.reduce(applyOp, s);
     expect(hpView(s1, 12).max).toBe(0);
     expect(s1.death.dead).toBe(true);
+  });
+});
+
+describe('saveDamage (TC-0154)', () => {
+  it('metade no sucesso; com Evasion, nada no sucesso e metade na falha', () => {
+    expect(saveDamage(21, null)).toBe(21);
+    expect(saveDamage(21, 'saved')).toBe(10);
+    expect(saveDamage(21, 'failed')).toBe(21);
+    expect(saveDamage(21, 'saved', true)).toBe(0);
+    expect(saveDamage(21, 'failed', true)).toBe(10);
   });
 });

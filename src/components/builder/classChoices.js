@@ -39,6 +39,7 @@ import { collectSkillProficiencies } from '../../engine/proficiency';
 import { subclassConditionalChoices } from '../../engine/subclassGrants';
 import { classGrantChoices } from '../../engine/classFeatureGrants';
 import { additionalSpellChoices } from '../../engine/grantedSpells';
+import { curatedAdditionalSpells } from '../../engine/grantedSpellUses';
 import { featureOptionChoices, subclassFeatureOptionChoices } from '../../engine/featureOptions';
 import { lookupEntityLink } from '../common/entityLinks';
 import { SKILL_LABEL } from './labels';
@@ -129,8 +130,8 @@ export function buildClassChoices(db, cls, character) {
   const condChoices = subObj ? subclassConditionalChoices(db, cls, subObj, character).map(resolvePool) : [];
   const grantChoices = classGrantChoices(cls.classId, cls.level);
   const spellChoices = [
-    ...additionalSpellChoices(classObj.additionalSpells, cls.level, cls.choices, 'class:'),
-    ...(subObj ? additionalSpellChoices(subObj.additionalSpells, cls.level, cls.choices, 'sub:') : []),
+    ...additionalSpellChoices(curatedAdditionalSpells(classObj), cls.level, cls.choices, 'class:'),
+    ...(subObj ? additionalSpellChoices(curatedAdditionalSpells(subObj), cls.level, cls.choices, 'sub:') : []),
   ];
 
   return [

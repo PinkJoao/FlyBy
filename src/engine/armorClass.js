@@ -25,7 +25,8 @@
 //     `minLevel` quando a feature chega depois. `allowsShield` espelha o RAW: o
 //     Monge perde a fórmula com escudo; Bárbaro e Draconic Resilience não. A
 //     Draconic é a XPHB (10 + Dex + Cha, nível 3); a PHB 2014 (13 + Dex) está fora
-//     do latestOnly.
+//     do latestOnly. O Dazzling Footwork do College of Dance (XPHB, nível 3) é 10 + Dex + Cha
+//     sem armadura nem escudo (DDL-0231).
 //   - Só uma fórmula de CA vale por vez (RAW): todos os candidatos de BASE
 //     concorrem (10 + Dex, cada Defesa sem Armadura, a CA sem armadura da espécie,
 //     a armadura vestida) e vence o MAIOR. Com escudo, os que o proíbem saem ANTES
@@ -81,6 +82,7 @@ const UNARMORED_DEFENSE = [
   { classId: 'barbarian', abilities: ['dex', 'con'], allowsShield: true, label: 'Unarmored Defense' },
   { classId: 'monk', abilities: ['dex', 'wis'], allowsShield: false, label: 'Unarmored Defense' },
   { classId: 'sorcerer', subclassId: 'Draconic', minLevel: 3, abilities: ['dex', 'cha'], allowsShield: true, label: 'Draconic Resilience' },
+  { classId: 'bard', subclassId: 'Dance', minLevel: 3, abilities: ['dex', 'cha'], allowsShield: false, label: 'Dazzling Footwork' },
 ];
 
 /** As fórmulas de Defesa sem Armadura ativas (classe, subclasse e nível). */

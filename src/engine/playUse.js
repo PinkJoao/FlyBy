@@ -17,6 +17,9 @@
 //   resolveCosts(catalog, state, activity, options): os gastos concretos da
 //     activity, com a escala e o slot escolhidos.
 //   liveRollData(catalog, state): o rollData com o PV atual e o Bloodied do estado.
+//   apotheosisApplies(catalog, { action, spendKey }): o Arcane Apotheosis pode tirar este gasto
+//     (Metamagic ou Sorcery Points); o jogo pergunta, porque não guarda se o Innate Sorcery está
+//     ativo nem quantos Metamagic já foram no turno (TC-0158). `options.noCost` tira o gasto.
 //   activityEvent(args): o evento de usar uma activity; o que ela DEVOLVE para no que foi
 //     gasto (o Magical Cunning com os 3 espaços cheios dizia "2 regained", DDL-0221).
 //     Rola também o `roll` da activity (o dado do Cutting Words).
@@ -79,7 +82,8 @@
 //     (Stunning Strike) do registro curado; desde o DDL-0206 também a rolagem (`roll`:
 //     o dado de superioridade do Commander's Strike, os PV do Inspiring Smite), e desde
 //     o DDL-0207 `apply` (cura ou PV temporários com o total, healOutcome e tempHpOutcome)
-//     e `restore` (devolve todo o gasto de um pool, o Focus do Uncanny Metabolism).
+//     e `restore` (devolve todo o gasto de um pool, o Focus do Uncanny Metabolism); com
+//     `restoreUpTo`, só até sobrar aquele tanto (o Perfect Focus: "until you have 4", TC-0152).
 // -----------------------------------------------------------------------------
 
 import { rollFormula, rollParts, d20Test, cryptoRng } from './dice';
@@ -165,10 +169,18 @@ export function activityLabel(action, activity) {
  * O evento de usar uma activity: gasta, rola e, quando é em si mesmo, cura.
  * @param {{ catalog: object, state: object, action: object, activity: object, options?: object, rng?: Function, now?: Date }} args
  */
+/** O Arcane Apotheosis vale para este gasto? (o personagem tem a feature e o gasto é Metamagic ou Sorcery Points) */
+export function apotheosisApplies(catalog, { action = null, spendKey = null } = {}) {
+  if (!(catalog?.features ?? []).includes('arcane apotheosis')) return false;
+  if (action?.subtype === 'metamagic') return true;
+  const pool = (catalog.resources ?? []).find((r) => r.key === spendKey);
+  return /^font of magic$/i.test(pool?.item ?? '');
+}
+
 export function activityEvent({ catalog, state, action, activity, options = {}, rng = cryptoRng, now = new Date() }) {
   const free = !!options.free;
   const only = options.only === 'attack' || options.only === 'effect' ? options.only : null;
-  const costs = (free ? [] : resolveCosts(catalog, state, activity, options))
+  const costs = (free || options.noCost ? [] : resolveCosts(catalog, state, activity, options))
     .map((c) => (c.amount < 0 && state ? { ...c, amount: -Math.min(-c.amount, state.spent?.[c.key] ?? 0) } : c))
     .filter((c) => c.amount !== 0);
   const ops = costs.map((c) => (c.amount >= 0
@@ -363,7 +375,7 @@ export function withResourceMax(catalog, state) {
  * O "Log to history" de uma feature: o nome e o custo do turno, sem rolar. `spend` é a
  * chave do que o uso gasta (um); `modifier`, `save` e `roll` vêm do registro (playFeatureRolls).
  */
-export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, rng = cryptoRng, now = new Date() }) {
+export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, restoreUpTo = null, rng = cryptoRng, now = new Date() }) {
   const rolls = roll ? rollParts([{ label: roll.label, formula: roll.formula }], { data: catalog.rollData, rng }) : null;
   const ops = spend && amount > 0 ? [{ op: 'spend', key: spend, amount }] : [];
   if (modifier) ops.push({ op: 'modifier', add: state ? withRounds(modifier, state, modifier.maxRounds) : modifier });
@@ -375,7 +387,9 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
     if (apply === 'heal') healed = outcome.summary;
     else temp = outcome.summary;
   }
-  const restoredBack = restore && state ? Math.min(state.spent?.[restore] ?? 0, (catalog.resources ?? []).find((r) => r.key === restore)?.max ?? 0) : 0;
+  const poolMax = (catalog.resources ?? []).find((r) => r.key === restore)?.max ?? 0;
+  const spentNow = Math.min(state?.spent?.[restore] ?? 0, poolMax);
+  const restoredBack = restore && state ? (restoreUpTo == null ? spentNow : Math.max(0, Math.min(spentNow, restoreUpTo - (poolMax - spentNow)))) : 0;
   if (restoredBack > 0) ops.push({ op: 'restore', key: restore, amount: restoredBack });
   return makeEvent('use', {
     label: feature.name,

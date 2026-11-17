@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
-  left, slotKey, resolveCosts, activityEvent, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
+  left, slotKey, resolveCosts, activityEvent, apotheosisApplies, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
 } from './playUse';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -264,5 +264,15 @@ describe('featureLogEvent', () => {
     const e = featureLogEvent({ catalog, state: { ...st(), tempHp: 3 }, feature: { name: 'Form of Dread' }, roll: { label: 'Temporary Hit Points', formula: '1d10' }, apply: 'temp', rng: seq(7) });
     expect(e.ops).toContainEqual({ op: 'hp', temp: 4 });
     expect(e.payload.temp).toMatchObject({ from: 3, to: 7 });
+  });
+});
+
+describe('Arcane Apotheosis (TC-0158)', () => {
+  const cat = { features: ['arcane apotheosis'], resources: [{ key: 'pool:font-of-magic', kind: 'pool', item: 'Font of Magic', max: 20 }, { key: 'pool:rage', kind: 'pool', item: 'Rage', max: 3 }] };
+  it('vale para Metamagic e para os Sorcery Points; sem a feature, nunca', () => {
+    expect(apotheosisApplies(cat, { action: { subtype: 'metamagic' } })).toBe(true);
+    expect(apotheosisApplies(cat, { spendKey: 'pool:font-of-magic' })).toBe(true);
+    expect(apotheosisApplies(cat, { spendKey: 'pool:rage' })).toBe(false);
+    expect(apotheosisApplies({ ...cat, features: [] }, { action: { subtype: 'metamagic' } })).toBe(false);
   });
 });

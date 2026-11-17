@@ -42,6 +42,10 @@ const catalog = {
 const origin = { key: 'class:cleric', label: 'Cleric', attackBonus: 6, saveDc: 14, abilityMod: 3 };
 
 describe('castWays', () => {
+  it('o ritual do grimório pelo Ritual Adept só tem o caminho do ritual (TC-0158)', () => {
+    expect(castWays(catalog, st(), spell({ level: 1, ritual: true, ritualOnly: true })).map((w) => w.id)).toEqual(['ritual']);
+  });
+
   it('cantrip sai de graça e só de graça', () => {
     expect(castWays(catalog, st(), spell({ level: 0 })).map((w) => w.id)).toEqual(['free']);
   });

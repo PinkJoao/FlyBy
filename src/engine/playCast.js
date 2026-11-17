@@ -23,10 +23,14 @@
 //   spellHealEvent(args): rola a cura e, se for em si mesmo, aplica.
 //   castTriggers(event, catalog): o que uma feature dá DEPOIS de lançar, pelo card da magia
 //     (Blessed Healer, Abjuration Adept), com o valor pelo círculo do espaço gasto.
+//   slotRegainEvent(args): o Expert Divination devolve o maior espaço gasto abaixo do círculo
+//     lançado, até o 5 (TC-0162).
 //   spellRecallEvent(args): o Free Casting da Boon of Spell Recall (1d4 igual ao círculo
 //     devolve o espaço, DDL-0218).
 //
 // DECISÕES E ARMADILHAS
+//   - A magia `ritualOnly` (o ritual do grimório pelo Ritual Adept) só tem o caminho do ritual
+//     (TC-0158).
 //   - Boon of Spell Recall (DDL-0218): "Whenever you cast a spell with a level 1-4 spell
 //     slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't
 //     expended". O evento da magia guarda `slotKey`; o botão do card rola e devolve o espaço.
@@ -83,6 +87,7 @@ const leftOf = (catalog, state, key) => {
  */
 export function castWays(catalog, state, spell) {
   const ways = [];
+  if (spell.ritualOnly) return [{ id: 'ritual', label: 'As a ritual from your spellbook (Ritual Adept)', level: spell.level, key: null, left: null }];
   if (spell.level === 0 || spell.castType === 'will' || (spell.castType === 'innate' && !spell.uses)) {
     ways.push({ id: 'free', label: spell.level === 0 ? 'Cantrip' : spell.castType === 'will' ? 'At will' : 'Innate', level: spell.level, key: null, left: null });
     if (spell.level === 0) return ways;
@@ -122,6 +127,7 @@ export function slotPoolsFor(catalog, state, level) {
 const CAST_TRIGGERS = {
   'blessed healer': { when: (p) => p.heal && p.slotted && p.level >= 1, apply: 'heal', formula: (p) => `${2 + p.level}`, label: (p) => `Blessed Healer: regain ${2 + p.level} HP` },
   'boon of spell recall': { when: (p) => p.slotted && p.level >= 1 && p.level <= 4, recall: true, label: () => 'Spell Recall: roll 1d4' },
+  'expert divination': { when: (p) => p.school === 'D' && /^slot:/.test(p.slotKey ?? '') && p.level >= 2, regain: true, label: (p) => `Expert Divination: regain a slot below level ${Math.min(p.level, 6)}` },
   'abjuration adept': { when: (p) => p.school === 'A' && p.slotted && p.level >= 1, apply: 'temp', formula: (p) => `${2 * p.level}`, label: (p) => `Protective Ward: ${2 * p.level} temp HP` },
 };
 
@@ -132,7 +138,22 @@ export function castTriggers(event, catalog) {
   const features = new Set(catalog?.features ?? []);
   return Object.entries(CAST_TRIGGERS)
     .filter(([name, t]) => features.has(name) && t.when(p))
-    .map(([name, t]) => (t.recall ? { name, label: t.label(p), recall: true, level: p.level, slotKey: p.slotKey } : { name, label: t.label(p), apply: t.apply, formula: t.formula(p) }));
+    .map(([name, t]) => (t.recall ? { name, label: t.label(p), recall: true, level: p.level, slotKey: p.slotKey }
+      : t.regain ? { name, label: t.label(p), regain: true, level: p.level }
+        : { name, label: t.label(p), apply: t.apply, formula: t.formula(p) }));
+}
+
+/** O Expert Divination: devolve o maior espaço gasto abaixo do círculo lançado, até o 5. */
+export function slotRegainEvent({ catalog, state, trigger, now = new Date() }) {
+  const top = Math.min(trigger.level - 1, 5);
+  const slot = (catalog.resources ?? [])
+    .filter((r) => r.kind === 'slot' && r.level <= top && (state.spent?.[r.key] ?? 0) > 0)
+    .sort((a, b) => b.level - a.level)[0];
+  return makeEvent('use', {
+    label: 'Expert Divination',
+    ops: slot ? [{ op: 'restore', key: slot.key, amount: 1 }] : [],
+    payload: { logged: true, costs: [], short: [], lines: [slot ? `A level ${slot.level} slot is regained` : `No expended slot of level ${top} or lower`] },
+  }, now);
 }
 
 /** O Free Casting da Boon of Spell Recall: 1d4, e igual ao círculo, o espaço volta. */
@@ -151,14 +172,14 @@ export function spellRecallEvent({ trigger, rng = cryptoRng, now = new Date() })
  * O evento de conjurar: gasta o que a forma pede e liga a concentração.
  * @param {{ catalog?: object, state: object, origin: object, spell: object, way: object, now?: Date }} args
  */
-export function castEvent({ state, origin, spell, way, onSelf = false, now = new Date() }) {
+export function castEvent({ state, catalog = null, origin, spell, way, onSelf = false, now = new Date() }) {
   const ops = [];
   if (way.key) ops.push({ op: 'spend', key: way.key, amount: 1 });
   const ended = spell.concentration && state.concentration ? state.concentration.name : null;
   if (spell.concentration) ops.push(...endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon' || o.op === 'form' || (o.op === 'hp' && o.temp < 0)));
   const expiresRound = state.combat && spell.durationRounds ? state.combat.round + spell.durationRounds : null;
   if (spell.concentration) ops.push({ op: 'concentration', value: { name: spell.name, spellKey: spell.key, level: way.level, ...(expiresRound ? { expiresRound } : {}), ...(spell.durationRounds ? { rounds: spell.durationRounds } : {}) } });
-  const effect = spellModifier(spell);
+  const effect = spellModifier(spell, catalog);
   const applied = effect && (effect.self || onSelf);
   if (applied) ops.push({ op: 'modifier', add: withRounds(effect.modifier, state, spell.durationRounds) });
   return makeEvent('cast', {

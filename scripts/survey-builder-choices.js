@@ -15,25 +15,12 @@
 //   escolha nova no builder, ou um motivo escrito em `NOT_A_CHOICE`.
 //
 // FUNÇÕES
-//   cueOf(text): a pista de escolha duradoura do texto: { kind } ou null.
-//   bagEntries(character): cada escolha guardada como { where, key, kind }.
 //   visit(character, unit, only): soma as candidatas de um personagem.
 //   featBuild(row): o hospedeiro de um talento (o mesmo do survey-play-coverage).
 //
 // DECISÕES E ARMADILHAS
-//   - "Of your choice" sozinho NÃO é pista: quase sempre é escolha na hora ("a creature
-//     of your choice"). Só conta perto de proficiency, language, skill, tool, resistance,
-//     damage type ou cantrip.
-//   - A escolha de uma feature de SUBCLASSE tem de ser `sub:` (a da classe não prova a dela:
-//     a perícia do Student of Arcana passava pela escolha de perícia do clérigo, DDL-0228).
-//   - O saco de escolhas é a prova do builder porque o autoBuild preenche tudo o que as
-//     telas oferecem (choicesComplete, a mesma régua do guia).
-//   - O Spellcasting e o Pact Magic guardam as magias em `classes[].spells`, não no saco;
-//     "Fighting Style" de subclasse guarda em `feat@fs` (`ALIASES`); "skills or tools"
-//     é uma escolha `mixed`.
-//   - `NOT_A_CHOICE` nomeia, com o motivo, a candidata que foi lida e não é escolha
-//     guardada (a escolha é a cada uso, ou outra feature a guarda). Predicado estreito,
-//     pelo nome (§6.2).
+//   - As pistas, o saco de escolhas e o `NOT_A_CHOICE` moram em scripts/lib/builderCues.js,
+//     divididos com o gerador do registro de features (scripts/feature-audit.js, DDL-0228).
 // -----------------------------------------------------------------------------
 import process from 'node:process';
 import { loadDb } from './lib/loadDb.js';
@@ -42,65 +29,12 @@ import { autoBuild } from './lib/autoBuild.js';
 import { hashSeed } from './lib/rng.js';
 import { derivePlayCatalog } from '../src/engine/playCatalog.js';
 import { plainText } from '../src/engine/playFeatures.js';
+import { bagEntries, pendingChoice } from './lib/builderCues.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
   return m ? [m[1], m[2] ?? true] : [a, true];
 }));
-
-const PER_REST = 'a escolha vale até o próximo descanso: é de jogo, não de ficha';
-const PER_USE = 'a escolha é a cada uso';
-const NOT_A_CHOICE = {
-  trance: PER_REST,
-  'astral trance': PER_REST,
-  'severed from dreams': PER_REST,
-  'bestial soul': PER_REST,
-  'steps of the fey': PER_USE,
-  'master transmuter': PER_USE,
-  'master brewer': PER_USE,
-  'elemental burst': PER_USE,
-  'aspect of the wyrm': PER_USE,
-  'breath of the dragon': PER_USE,
-  'drake companion': 'o tipo de dano se escolhe ao invocar o drake',
-  'aura of elemental shielding': 'o tipo muda no começo de cada turno',
-};
-const ALIASES = { 'fighting style': 'feat@fs' };
-
-const KIND_CUES = [
-  ['skill', /\b(?:proficiency|proficient) (?:in|with) (?:one|two|three|four|a|an)\b[^.]{0,60}\bskills?\b[^.]{0,40}\bof your choice|\bskills? of your choice/],
-  ['tool', /\btools? of your choice|\bproficiency with (?:one|two|a) [^.]{0,40}\btools?\b[^.]{0,30}\bof your choice/],
-  ['language', /\blanguages? of your choice|\blearn (?:one|two|three) (?:additional |extra )?languages?/],
-  ['resist', /\bresistance to [^.]{0,60}\bdamage types? (?:of your choice|you choose)|\bchoose (?:a|one) damage type\b/],
-  ['spell', /\b(?:learn|know) (?:one|two|three|an?) (?:\w+ )?(?:cantrips?|spells?)\b[^.]{0,40}\bof your choice|\bcantrip of your choice/],
-  ['spell', /\bchoose (?:a|one|two|three) level \d+ (?:and a level \d+ )?[^.]{0,30}spells?\b/],
-  ['ability', /\bincrease (?:one|an) ability score of your choice/],
-];
-const ABILITY_CUE = /(?:intelligence|wisdom|charisma|strength|constitution)[^.]{0,90}\(choose|\bchoose the ability when/;
-const NAMED_CUE = /\bchoose (?:one|two|three|an?) (?:of the following|\w+ (?:option|benefit|form|type|kind|element|aspect|enhancement))s?\b|\bwhen you (?:take|gain|choose) this (?:feat|feature|trait)[^.]{0,20}\bchoose\b|\bchoose (?:one|two|a|an) of the \w+(?: \w+)?:|\b(?:choose|chosen?) (?:the [a-z]+ )?when you (?:gain|select|choose|take) this\b/;
-
-/** A pista de escolha duradoura do texto: { kind } ou null. */
-function cueOf(text) {
-  const t = text.toLowerCase();
-  for (const [kind, re] of KIND_CUES) if (re.test(t)) return { kind };
-  if (ABILITY_CUE.test(t)) return { kind: 'spellAbility' };
-  return NAMED_CUE.test(t) ? { kind: 'named' } : null;
-}
-
-/** Cada escolha guardada: { where, key, kind }. */
-function bagEntries(c) {
-  const out = [];
-  const walk = (bag, where) => {
-    for (const [key, v] of Object.entries(bag ?? {})) {
-      out.push({ where: where === 'class' && key.startsWith('sub:') ? 'subclass' : where, key: key.toLowerCase(), kind: v?.kind, picks: (v?.picks ?? []).map((p) => String(p).toLowerCase()) });
-      for (const sub of Object.values(v?.sub ?? {})) walk(sub, where);
-    }
-  };
-  for (const cls of c.classes ?? []) walk(cls.choices, 'class');
-  walk(c.species?.choices, 'species');
-  walk(c.origin?.choices, 'origin');
-  walk(c.origin?.originFeat?.choices, 'feat');
-  return out;
-}
 
 const db = loadDb();
 const species = defaultSpecies(db);
@@ -110,20 +44,13 @@ const seen = new Map();
 function visit(character, unit, only = null) {
   const catalog = derivePlayCatalog(character, db);
   const entries = bagEntries(character);
-  const wantWhere = { class: ['class'], subclass: ['subclass'], species: ['species'], feat: ['feat', 'class'] };
   for (const f of catalog.featureList ?? []) {
     if (only && !(f.kind === 'feat' && f.name === only)) continue;
     const key = `${f.name}|${f.source}|${f.section}`;
-    if (seen.has(key) || NOT_A_CHOICE[f.name.toLowerCase()]) continue;
+    if (seen.has(key)) continue;
     const text = plainText(f.entries);
-    const cue = cueOf(text);
-    if (!cue) continue;
-    const name = f.name.toLowerCase();
-    const named = entries.some((e) => e.key.includes(name) || (ALIASES[name] && e.key.includes(ALIASES[name])) || e.picks.some((p) => p.startsWith(`${name}|`)));
-    const typed = cue.kind !== 'named' && entries.some((e) => (wantWhere[f.kind] ?? []).includes(e.where) && (e.kind === cue.kind || (cue.kind === 'spell' && /spell/.test(e.kind ?? '')) || ((cue.kind === 'skill' || cue.kind === 'tool') && e.kind === 'mixed')));
-    const spells = cue.kind === 'spell' && /^(?:spellcasting|pact magic)$/.test(name) && (character.classes ?? []).some((c) => Object.keys(c.spells ?? {}).length || (c.spells?.length ?? 0));
-    if (named || typed || spells) continue;
-    seen.set(key, { name: f.name, source: f.source, kind: f.kind, section: f.section, unit, cue: cue.kind, text });
+    const kind = pendingChoice(f, character, entries, text);
+    if (kind) seen.set(key, { name: f.name, source: f.source, kind: f.kind, section: f.section, unit, cue: kind, text });
   }
 }
 

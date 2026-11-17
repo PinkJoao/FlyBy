@@ -57,7 +57,8 @@
 //       O scaledDice pula o escalonamento com marcador `{{...}}` (o dano secundário do
 //       Green-Flame Blade), que o motor de dados não lê.
 //     normActivation(a, item): o custo normalizado, ou null (passiva). A activity sem
-//       `activation.type` que o jogador dispara sem ação (TRIGGERED_ACTIVITIES: Natural
+//       `activation.type` que o jogador dispara sem ação (TRIGGERED_ACTIVITIES; desde o DDL-0228 também as opções do Open Hand Technique e do
+//       Improved Brutal Strike e o Superior Defense, que gasta 3 de Focus: Natural
 //       Recovery, Wild Resurgence, Font of Inspiration, Sorcerous Restoration, Sorcery
 //       Incarnate, Persistent Rage, as recargas de Intimidating Presence, Archdruid, Holy
 //       Nimbus, Hurl Through Hell e Dragon Wings, Eldritch Master, a salvaguarda e a cura da
@@ -89,8 +90,13 @@
 //       que cada talento aumentou, Conjuration Adept).
 //     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
 //     checkList(derived, character): os testes.
-//     spellResources(spellcasting), spellOrigins(spellcasting, level): magias.
+//     spellResources(spellcasting), spellOrigins(spellcasting, level, opts): magias; com o
+//       Ritual Adept, o ritual do grimório do mago sem preparar vem com `ritualOnly` (TC-0158).
 //     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity?
+//     withFeatureSpeeds(speeds, features): escalada e natação de feature (FEATURE_SPEEDS:
+//       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156).
+//     featureAttacks(features, derived): os ataques que uma feature cria (FEATURE_ATTACKS: as
+//       Psychic Blades do Soulknife, TC-0161), no formato dos de arma.
 //     derivePlayCatalog(character, db, opts): o catálogo.
 //
 // DECISÕES E ARMADILHAS
@@ -338,6 +344,42 @@ export function weaponAttacks(character, derived) {
       distance: raw.range ?? null,
     };
   });
+}
+
+/** Os ataques que uma feature cria, pelo texto do XPHB (as Psychic Blades do Soulknife: 1d6 psíquico, Finesse, Thrown 60/120, Vex; a segunda, de ação bônus, 1d4). */
+const FEATURE_ATTACKS = {
+  'psychic blades': [
+    { key: 'feature:psychic-blade', name: 'Psychic Blade', dice: '1d6' },
+    { key: 'feature:psychic-blade-bonus', name: 'Psychic Blade (Bonus Action, after the first)', dice: '1d4' },
+  ],
+};
+
+/** Os ataques das features (FEATURE_ATTACKS), no formato dos ataques de arma. */
+function featureAttacks(features, derived) {
+  const { str = 0, dex = 0 } = derived.modifiers ?? {};
+  const ability = dex > str ? 'dex' : 'str';
+  const mod = Math.max(dex, str);
+  const prof = derived.proficiencyBonus ?? 0;
+  return features.flatMap((name) => (FEATURE_ATTACKS[name] ?? []).map((a) => ({
+    key: a.key,
+    kind: 'weapon',
+    name: a.name,
+    uid: null,
+    range: 'melee',
+    category: 'simple',
+    equipped: true,
+    ability,
+    proficient: true,
+    toHit: { total: mod + prof, parts: [{ label: ability === 'dex' ? 'Dexterity' : 'Strength', formula: mod }, { label: 'Proficiency', formula: prof }] },
+    damage: { dice: a.dice, bonus: mod, types: ['psychic'] },
+    versatile: null,
+    properties: ['F', 'T'],
+    mastery: 'Vex',
+    thrown: true,
+    ammunition: false,
+    ammoType: null,
+    distance: '60/120',
+  })));
 }
 
 /** A média de um dado "NdM" (0 sem dado). */
@@ -617,6 +659,9 @@ const TRIGGERED_ACTIVITIES = {
   'eldritch master': ['Eldritch Master'],
   'relentless rage': ['save', 'heal'],
   "land's aid": ['heal'],
+  'open hand technique': ['Addle', 'Push', 'Topple'],
+  'improved brutal strike': ['Sundering Blow', 'Staggering Blow'],
+  'superior defense': ['utility'],
 };
 
 /** A "cura" que o SRD usa no lugar de reduzir o dano (Deflect Attacks): o card diz o que é. */
@@ -797,6 +842,24 @@ const SPEED_ARMOR = {
   roving: (ac) => ac.armorSlot !== 'heavy',
 };
 
+/** Os deslocamentos que uma feature dá iguais ao deslocamento a pé, pelo texto do XPHB ("a Climb Speed equal to your Speed"). */
+const FEATURE_SPEEDS = {
+  'second-story work': ['climb'],
+  roving: ['climb', 'swim'],
+  'aquatic affinity': ['swim'],
+};
+
+/** Os deslocamentos com os das features (FEATURE_SPEEDS), iguais ao a pé final; o maior vence. */
+function withFeatureSpeeds(speeds, features) {
+  const walk = speeds.walk?.feet;
+  if (!walk) return speeds;
+  const out = { ...speeds };
+  for (const name of features) {
+    for (const mode of FEATURE_SPEEDS[name] ?? []) if (!(out[mode]?.feet >= walk)) out[mode] = { feet: walk };
+  }
+  return out;
+}
+
 /** O que as features somam ao deslocamento a pé (os effects `movement.walk` do ator), com a armadura de cada uma. */
 function featureSpeedBonus(actor, armorClass, rollData) {
   let feet = 0;
@@ -914,7 +977,7 @@ function checkList(derived, character) {
         ability,
         bonus,
         prof,
-        parts: [{ kind: 'ability', ability, value: mod }, ...(prof ? [{ kind: 'proficiency', level: prof, value: bonus - mod }] : [])],
+        parts: [{ kind: 'ability', ability, value: mod }, ...(prof ? [{ kind: 'proficiency', level: prof, value: bonus - mod }] : bonus - mod > 0 ? [{ kind: 'proficiency', level: 0.5, value: bonus - mod }] : [])],
       };
     }),
     initiative: { bonus: initiativeBonus(character, derived) },
@@ -946,7 +1009,7 @@ function spellResources(spellcasting) {
 }
 
 /** As magias por origem, com a mecânica de cada uma. */
-function spellOrigins(spellcasting, level) {
+function spellOrigins(spellcasting, level, { ritualAdept = false } = {}) {
   return (spellcasting?.origins ?? []).map((o) => {
     const entry = (s, extra) => ({
       key: `spell:${o.key}|${s.raw.name}`,
@@ -964,7 +1027,7 @@ function spellOrigins(spellcasting, level) {
     const spells = [
       ...(o.cantrips ?? []).filter((s) => s.raw).map((s) => entry(s, { prepared: true, castType: null, uses: null })),
       ...(o.prepared ?? []).filter((s) => s.raw).map((s) => entry(s, { prepared: true, castType: null, uses: null })),
-      ...(o.unprepared ?? []).filter((s) => s.raw).map((s) => entry(s, { prepared: false, castType: null, uses: null })),
+      ...(o.unprepared ?? []).filter((s) => s.raw).map((s) => entry(s, { prepared: false, castType: null, uses: null, ...(ritualAdept && o.classId === 'wizard' && isRitual(s.raw) ? { ritualOnly: true } : {}) })),
       ...(o.alwaysPrepared ?? []).filter((s) => s.raw).map((s) => entry(s, {
         prepared: true,
         granted: true,
@@ -1024,6 +1087,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
   const features = [...new Set((a?.items ?? []).filter((i) => i.type === 'feat' && !isBasicActionItem(i)).map((i) => norm(i.name)))];
   const attacks = [
     ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features }),
+    ...featureAttacks(features, d),
     ...cantripAttacks(d.spellcasting, level),
   ];
   for (const at of attacks) {
@@ -1068,7 +1132,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
       level: d.level ?? 0,
       initiative: initiativeBonus(character, d),
       speed: speedOf(character, db) == null ? null : speedOf(character, db) + speedBonus,
-      speeds: speedBonus && speeds.walk ? { ...speeds, walk: { ...speeds.walk, feet: speeds.walk.feet + speedBonus } } : speeds,
+      speeds: withFeatureSpeeds(speedBonus && speeds.walk ? { ...speeds, walk: { ...speeds.walk, feet: speeds.walk.feet + speedBonus } } : speeds, features),
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),
@@ -1080,7 +1144,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     attacks,
     actions,
     resources,
-    spells: spellOrigins(d.spellcasting, level),
+    spells: spellOrigins(d.spellcasting, level, { ritualAdept: features.includes('ritual adept') }),
     problems,
   };
 }

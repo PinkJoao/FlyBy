@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createCharacter } from '../schema/character';
-import { collectToolProficiencies, collectLanguages, collectOwned, collectFeatIds, collectSkillProficiencies } from './proficiency';
+import { collectToolProficiencies, collectLanguages, collectOwned, collectFeatIds, collectSkillProficiencies, skillBonus } from './proficiency';
 
 describe('collectToolProficiencies / collectLanguages - agrega origem + escolhas', () => {
   it('junta ferramentas da origem e de uma escolha de espécie aninhada (recursivo)', () => {
@@ -118,5 +118,16 @@ describe('Expertise (Fase 6) - escolhas de classe', () => {
     const owned = collectOwned(c);
     expect(owned.expertise.has('ste')).toBe(true);
     expect(owned.expertise.has('slt')).toBe(false);
+  });
+});
+
+describe('Jack of All Trades (TC-0150)', () => {
+  const scores = { str: 10, dex: 14, con: 10, int: 10, wis: 12, cha: 16 };
+  const bard = (level) => ({ ...createCharacter(), classes: [{ classId: 'bard', source: 'XPHB', level, choices: {} }] });
+  it('metade do PB, para baixo, só na perícia sem proficiência, do nível 2 em diante', () => {
+    expect(skillBonus(bard(2), 'ath', 3, { per: 1 }, scores)).toBe(1);
+    expect(skillBonus(bard(2), 'per', 3, { per: 1 }, scores)).toBe(6);
+    expect(skillBonus(bard(1), 'ath', 2, {}, scores)).toBe(0);
+    expect(skillBonus(bard(9), 'ste', 4, {}, scores)).toBe(4);
   });
 });

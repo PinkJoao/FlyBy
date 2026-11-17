@@ -12,7 +12,10 @@
 //   traitFor(catalog, type): a defesa do personagem contra um tipo de dano.
 //   adjustDamage(amount, trait): o dano depois de resistência, imunidade ou
 //     vulnerabilidade.
+//   saveDamage(amount, save, evasion): o dano depois da salvaguarda de "metade no sucesso"; o
+//     Evasion (monge e ladino) zera no sucesso e corta à metade na falha (TC-0154).
 //   concentrationDc(damage): a CD do save de concentração.
+//     O Relentless Hunter tira o save quando a concentração é no Hunter's Mark (TC-0153).
 //   damageOutcome(state, catalog, opts): o que um dano faz (ops e resumo).
 //   healOutcome(state, catalog, amount): o que uma cura faz.
 //   tempHpOutcome(state, amount, opts): o temporário novo, sem somar (`opts.catalog` para o
@@ -115,6 +118,14 @@ export function concentrationDc(damage) {
  * O que um dano faz agora: as operações e o resumo para o cartão.
  * @param {{ amount: number, type?: string, critical?: boolean }} opts
  */
+/** O dano depois da salvaguarda de "metade no sucesso"; com Evasion, nada no sucesso e metade na falha. */
+export function saveDamage(amount, save = null, evasion = false) {
+  const n = Math.max(0, Math.floor(Number(amount) || 0));
+  if (save === 'saved') return evasion ? 0 : Math.floor(n / 2);
+  if (save === 'failed') return evasion ? Math.floor(n / 2) : n;
+  return n;
+}
+
 export function damageOutcome(state, catalog, { amount, type = '', critical = false }) {
   const v = vitals(state, catalog);
   const trait = traitFor({ ...catalog, defenses: effectiveDefenses(catalog, state) }, type);
@@ -151,7 +162,8 @@ export function damageOutcome(state, catalog, { amount, type = '', critical = fa
     notes.push(`${state.form.source} ends (no temporary hit points left)`);
   }
 
-  const dc = state.concentration && taken > 0 && !formEnds ? concentrationDc(taken) : null;
+  const unbroken = /^hunter's mark$/i.test(state.concentration?.name ?? '') && (catalog?.features ?? []).includes('relentless hunter');
+  const dc = state.concentration && taken > 0 && !formEnds && !unbroken ? concentrationDc(taken) : null;
   return {
     ops,
     summary: { amount: Math.max(0, Math.floor(Number(amount) || 0)), taken, trait, type: type || null, toTemp, toHp, notes, concentrationDc: dc },
@@ -220,8 +232,9 @@ export function maxHpOutcome(state, catalog, amount) {
  * O dano do painel Hurt, com o tipo opcional; com `affectMax`, o máximo cai pelo que passou do temporário.
  * @param {{ amount: number, type?: string, affectMax?: boolean }} opts
  */
-export function hurtOutcome(state, catalog, { amount, type = '', affectMax = false }) {
-  const out = damageOutcome(state, catalog, { amount, type });
+export function hurtOutcome(state, catalog, { amount, type = '', affectMax = false, save = null, evasion = false }) {
+  const out = damageOutcome(state, catalog, { amount: saveDamage(amount, save, evasion), type });
+  if (save === 'saved' || save === 'failed') out.summary.notes.unshift(evasion ? `Evasion: ${save === 'saved' ? 'no damage' : 'half damage'}` : save === 'saved' ? 'Saved: half damage' : 'Failed the save');
   if (!affectMax) return out;
   const v = vitals(state, catalog);
   const { summary } = out;
@@ -264,8 +277,8 @@ export function maxHpEvent({ state, catalog, amount, label = 'Hit point maximum'
 }
 
 /** O evento do painel Hurt (o tipo é opcional; pode cortar o máximo). */
-export function hurtEvent({ state, catalog, amount, type = '', affectMax = false, label = 'Damage taken', now = new Date() }) {
-  const { ops, summary } = hurtOutcome(state, catalog, { amount, type, affectMax });
+export function hurtEvent({ state, catalog, amount, type = '', affectMax = false, save = null, evasion = false, label = 'Damage taken', now = new Date() }) {
+  const { ops, summary } = hurtOutcome(state, catalog, { amount, type, affectMax, save, evasion });
   return makeEvent('damage', { label, ops, payload: { ...summary, critical: false } }, now);
 }
 

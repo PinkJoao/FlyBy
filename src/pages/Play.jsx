@@ -208,13 +208,13 @@ import {
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
-import { activityEvent, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent } from '../engine/playCast';
+import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
@@ -479,9 +479,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** O Hurt do card de HP; com concentração, o dano já pede o save de CON. */
   const openHurt = async () => {
-    const r = await askHurt({ vitals: hp, defenses: effectiveDefenses(catalog, state) });
+    const evasion = (catalog.features ?? []).some((f) => f === 'evasion' || f === 'leading evasion') && !conditionList(state).ids.includes('incapacitated');
+    const r = await askHurt({ vitals: hp, defenses: effectiveDefenses(catalog, state), evasion });
     if (!r) return;
-    const event = hurtEvent({ state, catalog, amount: r.amount, type: r.type, affectMax: r.affectMax });
+    const event = hurtEvent({ state, catalog, amount: r.amount, type: r.type, affectMax: r.affectMax, save: r.save, evasion: r.evasion });
     record(event);
     if (event.payload.concentrationDc) rollConcentration(event.payload.concentrationDc);
   };
@@ -590,6 +591,13 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (r) record(shortRestEvent({ state, catalog, spends: r.spends }));
   };
 
+  /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
+  const askApotheosis = (title) => ask({
+    title,
+    message: 'Arcane Apotheosis: while Innate Sorcery is active, one Metamagic option on each of your turns costs no Sorcery Points.',
+    actions: [{ label: 'Pay', value: 'pay' }, { label: 'Free', value: 'free', tone: 'primary' }],
+  });
+
   /** Usa uma feature: pergunta o que ela precisa, avisa o que falta, grava. */
   const applyFeature = async (action, activity, extra = {}) => {
     let only = extra.only ?? null;
@@ -604,12 +612,18 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       options = await askUse({ title: activityLabel(action, activity), catalog, state, action, activity });
       if (!options) return;
     }
-    const short = resolveCosts(catalog, state, activity, options).filter((c) => c.amount > 0 && leftOf(catalog, state, c.key) < c.amount);
+    let noCost = false;
+    if (apotheosisApplies(catalog, { action })) {
+      const v = await askApotheosis(action.name);
+      if (!v) return;
+      noCost = v === 'free';
+    }
+    const short = noCost ? [] : resolveCosts(catalog, state, activity, options).filter((c) => c.amount > 0 && leftOf(catalog, state, c.key) < c.amount);
     if (short.length && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
     let event;
     try {
       const applied = activity.attack ? applyEffects(rollEffects(state, catalog, { kind: 'attack', attackAbility: activity.attack.ability })) : undefined;
-      event = activityEvent({ catalog, state, action, activity, options: { ...options, applied, only, free: !!extra.free, critical: options.critical || !!extra.critical } });
+      event = activityEvent({ catalog, state, action, activity, options: { ...options, applied, only, noCost, free: !!extra.free, critical: options.critical || !!extra.critical } });
     } catch (e) {
       await alert({ title: 'Could not use it', message: String(e?.message ?? e) });
       return;
@@ -704,7 +718,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const pay = spend ?? use?.spend ?? null;
     const amount = spend ? 1 : use?.spent ?? 1;
     if (pay && amount > 0 && leftOf(catalog, state, pay) < amount && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
-    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null }), cost);
+    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null, restoreUpTo: use?.restoreUpTo ?? null }), cost);
   };
 
   /** O ajuste à mão de um recurso (o mestre tira, dá ou muda o máximo): o painel e o evento. */
@@ -750,6 +764,11 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const summonExtra = summon?.light
       ? lightOps({ state, spell, level: way.level, origin, catalog, rules: lightRulesOf(rawSpell?.entries), casterHpMax: hpView(state, catalog.stats?.hpMax ?? 0).max })
       : summon && !summon.pick ? summonOps({ state, creature: summon.creature, spell, level: way.level, variant: summon.variant, count: summon.count, origin, catalog, classLevel, turn }) : [];
+    if (cost.spend && apotheosisApplies(catalog, { spendKey: cost.spend.key })) {
+      const v = await askApotheosis(cost.label ?? spell.name);
+      if (!v) return;
+      if (v === 'free') cost = { ...cost, spend: null };
+    }
     if (way.key && (way.left ?? 0) < 1 && !(await confirm({ title: 'Nothing left', message: `No ${way.label.toLowerCase()} is left. Cast anyway?`, confirmLabel: 'Cast anyway' }))) return;
     record(withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]), costOfActivation(cost.cost));
     if (summon?.pick) {
@@ -988,7 +1007,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     castTriggersOf: (event) => castTriggers(event, catalog),
     canRerollDice: (event) => rerollDiceOptions(event, catalog, state).length > 0,
     onRerollDice: rerollDiceFromHistory,
-    onCastTrigger: (t) => record(t.recall ? spellRecallEvent({ trigger: t }) : featureLogEvent({ catalog, state, feature: { name: t.label.split(':')[0] }, roll: { label: t.label, formula: t.formula }, apply: t.apply })),
+    onCastTrigger: (t) => record(t.recall ? spellRecallEvent({ trigger: t }) : t.regain ? slotRegainEvent({ catalog, state, trigger: t }) : featureLogEvent({ catalog, state, feature: { name: t.label.split(':')[0] }, roll: { label: t.label, formula: t.formula }, apply: t.apply })),
   };
 
   /** Dispensa o grupo, perguntando antes. */

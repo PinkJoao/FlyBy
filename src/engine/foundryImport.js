@@ -202,6 +202,7 @@ import { parseChoices, collectAbilityPicks } from './choices';
 import { resolveSpellObj, spellChoosePredicate } from './spells';
 import { dedupeSpellPicks } from './dedupeSpellPicks';
 import { grantedSpells, additionalSpellChoices } from './grantedSpells';
+import { curatedAdditionalSpells } from './grantedSpellUses';
 import { casterInfo } from './spellcasting';
 import { deriveHpBonus } from './hpBonuses';
 import { classWeaponGrants } from './foundryActivities';
@@ -990,10 +991,11 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
     };
     const spellItems = (actor.items ?? []).filter((i) => i.type === 'spell');
     for (const [obj, prefix] of [[classObj, 'class:'], [subclassObj, 'sub:']]) {
-      if (!obj?.additionalSpells?.length) continue;
+      const curated = obj ? curatedAdditionalSpells(obj) : null;
+      if (!curated?.length) continue;
       Object.assign(choices, spellChoiceBag({
-        descriptorsFor: (bag) => additionalSpellChoices(obj.additionalSpells, level, bag, prefix),
-        grantedFor: (bag) => grantedSpells(obj.additionalSpells, level, { bag, idPrefix: prefix }).spells.map((s) => s.name),
+        descriptorsFor: (bag) => additionalSpellChoices(curated, level, bag, prefix),
+        grantedFor: (bag) => grantedSpells(curated, level, { bag, idPrefix: prefix }).spells.map((s) => s.name),
         accepts: mine,
       }, spellItems, db, fixedGrantNames));
     }

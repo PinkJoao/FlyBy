@@ -48,7 +48,7 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
   const ways = castWays(catalog, state, spell);
   const first = ways.find((w) => w.left == null || w.left > 0) ?? ways[0];
   const [pick, setPick] = useState(first?.id ?? null);
-  const effect = spellModifier(spell);
+  const effect = spellModifier(spell, catalog);
   const [onSelf, setOnSelf] = useState(false);
   const [summonOn, setSummonOn] = useState(creatures.length > 0 || light);
   const [selfOn, setSelfOn] = useState(transform?.kind === 'shapechange');

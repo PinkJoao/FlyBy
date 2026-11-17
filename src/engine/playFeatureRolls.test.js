@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   Confere as fórmulas pelo nível (o texto do XPHB), quando cada extra aparece
 //   (arma, FOR, corpo a corpo, Rage), o gasto dos extras ligados e o "Use" das
-//   features de efeito e de gasto.
+//   features de efeito e de gasto; as opções de classe (Agonizing Blast, Arcane Shots do AU,
+//   manobras com o dado no teste e no dano, DDL-0237).
 //
 // FUNÇÕES
 //   st(patch): um estado de jogo com o que o teste muda.
@@ -229,5 +230,34 @@ describe('options no Use (DDL-0235)', () => {
     expect(featureUseOf(f, catalog, null, 0).roll.formula).toBe('3d8');
     expect(featureUseOf(f, catalog, null, 1)).toMatchObject({ roll: { formula: '3d4' }, save: { abilities: ['dex'], dc: 15 } });
     expect(featureUseOf(f, catalog, null, 2).roll.formula).toBe('3d6');
+  });
+});
+
+describe('opções de classe (DDL-0237)', () => {
+  const opt = (features) => cat(features, {
+    rollData: { prof: 4, abilities: { str: { mod: 4 }, dex: { mod: 2 }, int: { mod: 3 }, cha: { mod: 5 } }, 'scale.battle-master.superiority.die': 'd10', 'scale.arcane-archer.arcane-shot.die': 'd8' },
+    resources: [{ key: 'pool:sup', kind: 'pool', item: 'Combat Superiority', max: 5 }, { key: 'pool:shot', kind: 'pool', item: 'Arcane Shot', max: 3 }],
+  });
+
+  it('o Agonizing Blast só no dano de cantrip, ligado', () => {
+    const c = opt(['agonizing blast']);
+    expect(featureRiders(st(), c, { kind: 'damage', spell: true })).toEqual([]);
+    const [r] = featureRiders(st(), c, { kind: 'damage', spell: true, cantrip: true });
+    expect(r).toMatchObject({ defaultOn: true, part: { formula: '@abilities.cha.mod' } });
+  });
+
+  it('o Arcane Shot do AU usa o dado da escala e a CD de INT', () => {
+    const [r] = featureRiders(st(), opt(['beguiling shot']), { kind: 'damage', weapon: true, melee: false });
+    expect(r).toMatchObject({ spend: { key: 'pool:shot', amount: 1 }, part: { formula: '2d8' } });
+    expect(r.note).toContain('DC 15 Wisdom');
+  });
+
+  it('a manobra de teste vale só nas perícias dela; a de dano tem a CD de FOR ou DES', () => {
+    const c = opt(['commanding presence', 'trip attack']);
+    expect(ids(featureRiders(st(), c, { kind: 'check', skill: 'per' }))).toEqual(['rider:commanding-presence']);
+    expect(featureRiders(st(), c, { kind: 'check', skill: 'ath' })).toEqual([]);
+    const [trip] = featureRiders(st(), c, { kind: 'damage', weapon: true });
+    expect(trip).toMatchObject({ spend: { key: 'pool:sup', amount: 1 }, part: { formula: '1d10' } });
+    expect(trip.note).toContain('DC 16 Strength');
   });
 });

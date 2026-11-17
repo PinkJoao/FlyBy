@@ -34,9 +34,11 @@
 //     "training with Light armor and Shields" só no texto, e um mago com ele ficava sem
 //     armadura nenhuma; o Poisoner sem o Poisoner's Kit, o Fey Teleportation sem Sylvan.
 //     Só o fixo (`true`); `choose` e `any` são escolhas do talento, no saco dele.
+//   - As opções de classe escolhidas (invocações, manobras) também (DDL-0237): o Beguiling
+//     Influence dava Deception e Persuasion só no `skillProficiencies` e a ficha não tinha.
 // -----------------------------------------------------------------------------
 
-import { resolveClassObj, resolveRaceObj, resolveFeat } from './resolve';
+import { resolveClassObj, resolveRaceObj, resolveFeat, resolveOptionalFeature } from './resolve';
 import { collectFeatIds } from './proficiency';
 import { skillCode } from './classData';
 
@@ -152,6 +154,11 @@ export function deriveGrantedProficiencies(character, db) {
   };
   addFixed(race, { ...sink, tool: (k) => addTo(tools, cap(k)), language: null });
   for (const id of collectFeatIds(character ?? {})) addFixed(resolveFeat(db, id), sink);
+  for (const cls of character?.classes ?? []) {
+    for (const entry of Object.values(cls.choices ?? {})) {
+      if (entry?.kind === 'optionalfeature') for (const pick of entry.picks ?? []) addFixed(resolveOptionalFeature(db, pick), sink);
+    }
+  }
 
   return {
     armor: [...armor.values()],

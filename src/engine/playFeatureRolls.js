@@ -27,6 +27,8 @@
 //     (`option` escolhe entre as `options` da entrada, cada uma com a sua rolagem e salvaguarda);
 //     faz: o modificador, o gasto e a salvaguarda.
 //   formulaOf(entry, rollData): a fórmula, que pode depender do nível.
+//   SHOT_DIE(n), SHOT_DC(rd), BM_DC(rd): n dados de Arcane Shot do AU, a CD dele (8 + INT + PB)
+//     e a CD das manobras (8 + PB + FOR ou DES) (DDL-0237).
 //   byLevel(classId, steps), MARTIAL(count): a fórmula pelo nível de uma classe
 //     ([[nível, fórmula], ...] do maior ao menor) e N rolagens do dado de Martial Arts.
 //   ridersOf(entry): os extras de uma entrada (ela mesma, se for `rider`, e os `also`).
@@ -137,6 +139,12 @@
 //     melhora o sopro) fica no ajuste à mão do contador (DDL-0202).
 //   - TC-0164 (DDL-0236): o Murderous Intent do Dread Incarnate é um piso só nos dados do Sneak
 //     Attack (`forgoableMin`, a parte marcada `forgoable`), não na rolagem inteira como o `diceMin`.
+//   - As opções de classe (DDL-0237, a camada `options` do registro de features): os Arcane Shots
+//     do AU ("... Shot", o dado da escala `arcane-archer.arcane-shot`, CD 8 + INT + PB; os "...
+//     Arrow" do XGE ficam para as fichas antigas), o Agonizing Blast (`when: 'cantrip'`, o CAR
+//     no dano do cantrip, ligado), e as manobras que somam o dado de superioridade no ataque, no
+//     dano ou no teste (`when` como lista de perícias: Commanding Presence, Tactical Assessment,
+//     Grappling Strike), com a CD 8 + PB + FOR ou DES; Sweeping Attack e Heroic Leap no Use.
 //     `when: 'pact'` (Eldritch Smite, Lifedrinker) vale só no ataque da arma de pacto
 //     (engine/playPact.js), achado no passe ao vivo do warlock: antes aparecia em qualquer arma.
 //   - As famílias pós-2024 (DDL-0235), cada uma pela frase do texto: Raging Elements com `options`
@@ -240,6 +248,9 @@ const SHOT = { item: 'Arcane Shot' };
 const ARROW = byLevel('fighter', [[18, '4d6'], [0, '2d6']]);
 
 const ROGUE_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.dex?.mod ?? 0);
+const SHOT_DIE = (n) => (rd) => `${n}${rd['scale.arcane-archer.arcane-shot.die'] ?? 'd6'}`;
+const SHOT_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.int?.mod ?? 0);
+const BM_DC = (rd) => 8 + (rd.prof ?? 0) + Math.max(rd.abilities?.str?.mod ?? 0, rd.abilities?.dex?.mod ?? 0);
 
 const CLERIC_STRIKE = (rd) => (rd['scale.cleric.divine-strike'] ? '@scale.cleric.divine-strike' : '1d8');
 
@@ -407,6 +418,29 @@ export const FEATURE_ROLLS = {
   'grasping arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: ARROW, note: 'Poison; Speed -10 and the same in Slashing when it moves' },
   'shadow arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: ARROW, note: 'Psychic; Wisdom save or sees only 5 feet' },
   'piercing arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: byLevel('fighter', [[18, '2d6'], [0, '1d6']]), note: 'a 30-foot line, Dexterity save instead of the attack; Piercing' },
+  'banishing shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(1), note: (rd) => `Psychic; DC ${SHOT_DC(rd)} Charisma save or banished until the end of its next turn` },
+  'beguiling shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: (rd) => `Psychic; DC ${SHOT_DC(rd)} Wisdom save or Charmed until the start of your next turn` },
+  'bursting shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: 'Force, to the target and each creature within 10 feet of it' },
+  'enfeebling shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: (rd) => `Necrotic; DC ${SHOT_DC(rd)} Constitution save or Poisoned, its hits deal one Arcane Shot Die less` },
+  'grasping shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(1), note: (rd) => `Slashing; DC ${SHOT_DC(rd)} Strength save or Restrained for 1 minute` },
+  'piercing shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: (rd) => `a 30-foot line instead of the attack roll, DC ${SHOT_DC(rd)} Dexterity save; Piercing` },
+  'seeking shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: (rd) => `no attack roll: DC ${SHOT_DC(rd)} Dexterity save; Force` },
+  'shadow shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(1), note: (rd) => `Psychic; DC ${SHOT_DC(rd)} Wisdom save or Blinded until the end of its next turn` },
+  'agonizing blast': { kind: 'rider', on: ['damage'], when: 'cantrip', defaultOn: true, formula: '@abilities.cha.mod', label: 'Agonizing Blast (Charisma)', note: 'only the Warlock cantrip you chose for it' },
+  'precision attack': { kind: 'rider', on: ['attack'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: 'after a miss, to turn it into a hit' },
+  'trip attack': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: (rd) => `a Large or smaller target makes a DC ${BM_DC(rd)} Strength save or has the Prone condition` },
+  'disarming attack': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: (rd) => `DC ${BM_DC(rd)} Strength save or it drops one object you choose` },
+  'distracting strike': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: 'the next attack by someone else against the target has Advantage' },
+  'maneuvering attack': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: 'an ally moves half its Speed without Opportunity Attacks from the target' },
+  'pushing attack': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: (rd) => `a Large or smaller target makes a DC ${BM_DC(rd)} Strength save or is pushed up to 15 feet` },
+  'mortal strike': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: "the target can't regain Hit Points until the end of your next turn" },
+  'quick toss': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: 'the Bonus Action attack with a Thrown weapon' },
+  'sweeping attack': { kind: 'use', spend: SUP, roll: { label: 'Damage to a second creature within 5 feet of the target (the type of the attack)', formula: SUPERIORITY } },
+  'heroic leap': { kind: 'use', spend: SUP, roll: { label: 'Bludgeoning when you land (Strength save, half on success)', formula: SUPERIORITY } },
+  'commanding presence': { kind: 'rider', on: ['check'], when: ['itm', 'prf', 'per'], spend: SUP, formula: SUPERIORITY, note: 'Intimidation, Performance or Persuasion' },
+  'tactical assessment': { kind: 'rider', on: ['check'], when: ['his', 'inv', 'ins'], spend: SUP, formula: SUPERIORITY, note: 'History, Investigation or Insight' },
+  'grappling strike': { kind: 'rider', on: ['check'], when: ['ath'], spend: SUP, formula: SUPERIORITY, note: 'the grapple right after a melee hit, as a Bonus Action' },
+  'protection of the talisman': { kind: 'rider', on: ['save'], spend: { item: 'Protection of the Talisman' }, formula: '1d4', note: 'after a failed save, you or the wearer of your talisman' },
   'warding maneuver': { kind: 'use', roll: { label: 'AC bonus against the attack', formula: '1d8' } },
   'favored by the gods': { kind: 'rider', on: ['attack', 'save'], spend: { item: 'Favored by the Gods' }, formula: '2d4', note: 'after a failed save or a miss' },
   'defensive flourish': { kind: 'rider', on: ['damage'], when: 'weapon', spend: BI, formula: BARDIC, note: 'add the roll to your AC until your next turn' },
@@ -538,6 +572,8 @@ function fits(when, roll) {
   if (!when) return true;
   if (when === 'stealth') return roll.kind === 'initiative' || roll.skill === 'ste';
   if (when === 'social') return ['dec', 'itm', 'per'].includes(roll.skill);
+  if (Array.isArray(when)) return when.includes(roll.skill);
+  if (when === 'cantrip') return !!roll.spell && !!roll.cantrip;
   if (when === 'spell') return !!roll.spell;
   if (when === 'strRoll') return roll.attackAbility === 'str' || roll.ability === 'str';
   if (!roll.weapon) return false;

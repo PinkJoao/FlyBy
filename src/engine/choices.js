@@ -22,6 +22,9 @@
 //   parseDamageField(field, kind, push): resist, immune ou vulnerable.
 //   weaponFilterAllows(filter, raw): a arma passa no filtro de uma escolha?
 //   parseFeatField(field, push): talento à escolha (recursivo).
+//   parseOptionFeatProgression(field, level, push): o talento do `featProgression` de uma opção
+//     de classe (só com `featureType`: as classes têm caminho próprio; DDL-0237, Lessons of the
+//     First Ones); o talento fica no `sub` da opção e o collectChoicePicks o acha.
 //   parseChoices(entity, opts): todos os descritores de uma entidade.
 //   collectChoicePicks(bag, kind, out): os picks de um tipo, recursivo.
 //   spellAbilityPick(bag): o atributo de conjuração escolhido, ou null.
@@ -317,6 +320,17 @@ function parseFeatField(field, push) {
   }
 }
 
+/** O talento que uma opção de classe dá pelo `featProgression` (Lessons of the First Ones: "*" vale em qualquer nível). */
+function parseOptionFeatProgression(field, level, push) {
+  for (const entry of field ?? []) {
+    const count = Object.entries(entry?.progression ?? {})
+      .filter(([k]) => k === '*' || Number(k) <= level)
+      .reduce((n, [, v]) => Math.max(n, Number(v) || 0), 0);
+    if (!count) continue;
+    push({ kind: 'feat', count, label: entry.name ?? 'Choose a feat', pool: { type: 'feat', category: entry.category ?? ['O'] } });
+  }
+}
+
 /**
  * Os descritores de escolha de uma entidade 5etools.
  * @param {object} entity
@@ -335,6 +349,7 @@ export function parseChoices(entity, { level = Infinity, bag = null } = {}) {
   parseDamageField(entity?.immune, 'immune', push);
   parseDamageField(entity?.vulnerable, 'vulnerable', push);
   parseFeatField(entity?.feats, push);
+  if (entity?.featureType) parseOptionFeatProgression(entity.featProgression, level, push);
   parseSpellAbilityField(entity?.additionalSpells, push);
   for (const c of additionalSpellChoices(entity?.additionalSpells, level, bag)) push(c);
 

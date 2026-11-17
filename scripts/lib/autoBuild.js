@@ -16,10 +16,14 @@
 //     do ChoiceList/createGuideContext (level e bag alimentam as de MAGIA, TC-0011).
 //   siblingPicks(ch, bag): os picks das OUTRAS escolhas do mesmo kind no bag.
 //   tagCandidates(ch, picks, ctx, bag): os candidatos de um kind "tag" (skill, tool,
-//     language, expertise, weapon), com os filtros do ChoiceList.
+//     language, expertise, weapon), com os filtros do ChoiceList; sem nenhum que o personagem
+//     ainda não tenha, os que ele tem (o Boon of Skill dá todas as perícias e as escolhas de
+//     perícia ficavam sem candidato; o jogador real já as escolheu antes, DDL-0237).
 //   fillChoice(ch, entry, bag, ctx): preenche UMA escolha (entry nova ou null). Um
 //     caso por kind: feat (entity da categoria + recursão nas sub-escolhas, profundo
-//     como choicesComplete cobra), optional feature, sub-feature option, ability,
+//     como choicesComplete cobra), optional feature (com as sub-escolhas de cada pick, como
+//     o OptionalFeatureChoice do builder: os cantrips do Pact of the Tome, DDL-0237),
+//     sub-feature option, ability,
 //     select único, MAGIA de additionalSpells, pool misto (`fromByKind` restringe um
 //     dos tipos) e tags.
 //   fillBag(choices, bag, ctx): todas as escolhas INCOMPLETAS de uma lista, pela
@@ -72,6 +76,7 @@ import {
   ownedFromDb,
   resolveRaceObj,
   resolveFeat,
+  resolveOptionalFeature,
 } from '../../src/engine/resolve';
 import { parseChoices, LEGACY_ABILITY_CHOICE, weaponFilterAllows } from '../../src/engine/choices';
 import { skillCode } from '../../src/engine/classData';
@@ -154,11 +159,9 @@ function tagCandidates(ch, picks, ctx, bag) {
     return null;
   }
   const siblings = siblingPicks(ch, bag);
-  return values.filter((v) => {
-    if (picks.includes(v) || siblings.includes(v)) return false;
-    if (kind === 'weapon' || kind === 'weaponProf') return true;
-    return !isOwned(ctx.owned, kind, v);
-  });
+  const fresh = values.filter((v) => !picks.includes(v) && !siblings.includes(v));
+  const unowned = fresh.filter((v) => kind === 'weapon' || kind === 'weaponProf' || !isOwned(ctx.owned, kind, v));
+  return unowned.length || kind === 'expertise' ? unowned : fresh;
 }
 
 /** Preenche UMA escolha; devolve a entry nova ou null. */
@@ -217,7 +220,18 @@ function fillChoice(ch, entry, bag, ctx) {
       picks.push(`${f.name}|${f.source}`);
       changed = true;
     }
-    return changed ? { kind: 'optionalfeature', picks } : null;
+    const sub = { ...(entry?.sub ?? {}) };
+    for (const id of picks) {
+      const raw = resolveOptionalFeature(ctx.db, id);
+      const subChoices = raw ? parseChoices(raw, { level: ctx.level, bag: sub[id] ?? null }) : [];
+      if (!subChoices.length) continue;
+      const r = fillBag(subChoices, sub[id] ?? {}, { ...ctx, where: `${ctx.where} > ${id}` });
+      if (r.changed) {
+        sub[id] = r.bag;
+        changed = true;
+      }
+    }
+    return changed ? { kind: 'optionalfeature', picks, ...(Object.keys(sub).length ? { sub } : {}) } : null;
   }
 
   if (ch.pool.type === 'featureoption') {
@@ -290,14 +304,16 @@ function fillChoice(ch, entry, bag, ctx) {
     const next = [...picks];
     let changed = false;
     while (next.length < (ch.count ?? 1)) {
-      const kind = pickOne(ctx.rng, ch.pool.of);
-      const entity = ADD_ENTITY[kind];
-      const values = entity
+      const first = pickOne(ctx.rng, ch.pool.of);
+      const fresh = (k) => ADD_ENTITY[k]
         .list(ctx.db)
-        .map((r) => (kind === 'skill' ? skillCode(r.name) : r.name))
-        .filter((v) => !ch.fromByKind?.[kind] || ch.fromByKind[kind].includes(v))
-        .filter((v) => !next.some((p) => p.value === v) && !isOwned(ctx.owned, kind, v));
-      const v = pickOne(ctx.rng, values);
+        .map((r) => (k === 'skill' ? skillCode(r.name) : r.name))
+        .filter((v) => !ch.fromByKind?.[k] || ch.fromByKind[k].includes(v))
+        .filter((v) => !next.some((p) => p.value === v));
+      const order = [first, ...ch.pool.of.filter((k) => k !== first)];
+      const kind = order.find((k) => fresh(k).some((v) => !isOwned(ctx.owned, k, v))) ?? first;
+      const unowned = fresh(kind).filter((v) => !isOwned(ctx.owned, kind, v));
+      const v = pickOne(ctx.rng, unowned.length ? unowned : fresh(kind));
       if (!v) {
         ctx.problems.push(`${ctx.where}: mixed choice "${ch.label}" (${ch.id}) has no candidates`);
         break;

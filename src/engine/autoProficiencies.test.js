@@ -4,7 +4,7 @@
 // O QUE FAZ
 //   Grants fixos de classe e espécie, a escolha de ferramenta que NÃO vira grant
 //   (nem vaza a prosa "of your choice"), e a regra condicional de arma enumerada a
-//   partir do dado (TC-0078).
+//   partir do dado (TC-0078); a perícia fixa de uma opção de classe (DDL-0237).
 //
 // FUNÇÕES
 //   charWith(opts): um personagem mínimo com classe e espécie.
@@ -88,6 +88,13 @@ describe('deriveGrantedProficiencies', () => {
   it('coleta perícia FIXA da espécie (Bugbear → Stealth); ignora choose (Elf)', () => {
     expect(deriveGrantedProficiencies(charWith({ classId: 'rogue', raceName: 'Bugbear' }), db).grantedSkills).toEqual(['ste']);
     expect(deriveGrantedProficiencies(charWith({ classId: 'rogue', raceName: 'Elf' }), db).grantedSkills).toEqual([]);
+  });
+
+  it('coleta a perícia FIXA de uma opção de classe escolhida (Beguiling Influence, DDL-0237)', () => {
+    const c = charWith({ classId: 'rogue' });
+    c.classes[0].choices = { 'optfeat@EI': { kind: 'optionalfeature', picks: ['Beguiling Influence|PHB'] } };
+    const withOpt = { ...db, optionalfeatures: { optionalfeature: [{ name: 'Beguiling Influence', source: 'PHB', featureType: ['EI'], skillProficiencies: [{ deception: true, persuasion: true }] }] } };
+    expect(deriveGrantedProficiencies(c, withOpt).grantedSkills).toEqual(['dec', 'per']);
   });
 
   it('sem classe/espécie → tudo vazio', () => {

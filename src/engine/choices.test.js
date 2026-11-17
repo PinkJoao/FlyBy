@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   Usa formas reais (confirmadas no compêndio): o Human que escolhe Athletics e o
 //   talento Skilled que dá Stealth (picks aninhados), e o filtro de Weapon Mastery
-//   do Ladino (simples sempre passam; marciais só com Finesse ou Light).
+//   do Ladino (simples sempre passam; marciais só com Finesse ou Light), e o talento do
+//   featProgression de uma opção de classe (Lessons of the First Ones, DDL-0237).
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
@@ -213,5 +214,18 @@ describe('weaponFilterAllows (Kensei)', () => {
     expect(weaponFilterAllows(f, longsword)).toBe(false);
     expect(weaponFilterAllows(f, greatsword)).toBe(false);
     expect(weaponFilterAllows(f, longbow)).toBe(false);
+  });
+});
+
+describe('featProgression de uma opção de classe (DDL-0237)', () => {
+  const lessons = { name: 'Lessons of the First Ones', source: 'XPHB', featureType: ['EI'], featProgression: [{ name: 'Origin Feat', category: ['O'], progression: { '*': 1 } }] };
+
+  it('vira uma escolha de talento da categoria', () => {
+    expect(parseChoices(lessons).filter((c) => c.kind === 'feat')).toMatchObject([{ count: 1, label: 'Origin Feat', pool: { type: 'feat', category: ['O'] } }]);
+  });
+
+  it('só em opção de classe: a classe tem o caminho dela', () => {
+    const asClass = { ...lessons, featureType: undefined };
+    expect(parseChoices(asClass).filter((c) => c.kind === 'feat')).toEqual([]);
   });
 });

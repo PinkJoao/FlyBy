@@ -1060,7 +1060,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         rollData: catalog.rollData,
       },
       quick,
-      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact }),
+      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip }),
       spend ? cost : null,
     );
 
@@ -1087,7 +1087,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
       spend ? cost : null,
     );
 

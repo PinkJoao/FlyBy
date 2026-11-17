@@ -2,7 +2,7 @@
 // feature-audit: o registro de cada feature de classe e subclasse no app
 // =============================================================================
 // O QUE FAZ
-//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy] [--review] [--only=<classId>]
+//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy|options] [--review] [--only=<classId ou tipo>]
 //   O registro do DDL-0228: cada feature de classe e de subclasse que o seletor oferece, numa
 //   camada (srd: as 12 classes do XPHB e as 12 subclasses do SRD 5.2; xphb: as outras do XPHB;
 //   post: os livros depois de 2024; legacy: as antigas sem reprint), com o que o app faz
@@ -32,6 +32,12 @@
 //   facetsOf(...): todas as facetas de uma feature, e a assinatura delas.
 //   stateOf(row): o estado do veredito (sem veredito, ok, lacuna, explicada, ou "mudou").
 //   bookOf(): o texto do livro.
+//   optionUniverse(): as opções de classe oferecidas (invocações, manobras, metamagias, Arcane
+//     Shots, runas; OPTION_TYPES), sem as reeditadas.
+//   hostRow(type): a linha da matriz que hospeda o tipo (a classe do XPHB primeiro).
+//   optionPrereqs(o): as opções que ela pede (o pacto do XGE vira a invocação do XPHB).
+//   attackView(catalog), attackDiff(a, b): os ataques e as magias do jogo, e o que mudou.
+//   screenCatalog(character): o catálogo da tela, com uma arma de pacto invocada se houver o pacto.
 //
 // DECISÕES E ARMADILHAS
 //   - O universo é o da lista de features da classe e da subclasse (resolveClassFeatures,
@@ -41,6 +47,11 @@
 //     revisor atribui. Quem diz qual feature muda o quê são os registros que a citam.
 //   - A assinatura cobre as facetas, não o texto: um veredito antigo vira "mudou" quando o
 //     app passa a tratar a feature de outro jeito, e o revisor confere de novo.
+//   - A camada `options` (DDL-0237) mede cada opção pela DIFERENÇA: o hospedeiro de nível 20 com a
+//     opção (o autoBuild preenche as sub-escolhas dela; `allow` não deixa sortear outra do tipo)
+//     contra a cópia dele só com os pré-requisitos e sem o `sub` dela (a ficha, os ataques e as magias do jogo,
+//     os ataques por ação). A pista `jogo:ataque` é o texto que fala de ataque ou dano sem nenhuma
+//     mudança nos ataques e sem registro: o furo que deixou o Pact of the Blade passar (DDL-0236).
 //   - Nada de texto de livro no registro: só nomes e o que o app faz (`testing/` é privado).
 // -----------------------------------------------------------------------------
 import fs from 'node:fs';
@@ -62,13 +73,18 @@ import { transformRuleOf } from '../src/engine/playForms.js';
 import { deriveFromDb, resolveClassObj, resolveSubclassObj } from '../src/engine/resolve.js';
 import { resolveClassFeatures, resolveSubclassFeatures } from '../src/engine/foundryItems.js';
 import { buildClassChoices } from '../src/components/builder/classChoices.js';
+import { optionalFeatureChoices } from '../src/engine/classFeatureChoices.js';
+import { collectFeatIds } from '../src/engine/proficiency.js';
+import { attacksPerAction } from '../src/engine/playBasicActions.js';
+import { withPactWeapon } from '../src/engine/playPact.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
   return m ? [m[1], m[2] ?? true] : [a, true];
 }));
 const TIER = args.tier ?? 'srd';
-const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint' };
+const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint', options: 'Opções de classe' };
+const OPTION_TYPES = { EI: 'Eldritch Invocations', 'MV:B': 'Maneuvers', MM: 'Metamagic', AS: 'Arcane Shots', RN: 'Runes' };
 const OUT_DIR = 'testing/feature-audit';
 const VERDICTS = path.join(OUT_DIR, 'verdicts.json');
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -250,7 +266,7 @@ const verdicts = fs.existsSync(VERDICTS) ? JSON.parse(fs.readFileSync(VERDICTS, 
 const rows = [];
 const doneClasses = new Set();
 
-for (const row of classMatrix(db)) {
+for (const row of TIER === 'options' ? [] : classMatrix(db)) {
   if (args.only && row.classId !== args.only) continue;
   const classObj = resolveClassObj(db, row.classId, row.classSource);
   const sub = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
@@ -284,6 +300,127 @@ for (const row of classMatrix(db)) {
     }
   }
 }
+
+/** As opções de classe que o seletor oferece (sem reprint), por tipo de escolha. */
+function optionUniverse() {
+  return (db.optionalfeatures?.optionalfeature ?? [])
+    .filter((o) => !o.reprintedAs && (o.featureType ?? []).some((t) => OPTION_TYPES[t]))
+    .map((o) => ({ ...o, type: o.featureType.find((t) => OPTION_TYPES[t]) }));
+}
+
+/** A linha da matriz que hospeda um tipo de opção (a classe do XPHB primeiro). */
+function hostRow(type) {
+  const rows = classMatrix(db).filter((r) => {
+    const c = resolveClassObj(db, r.classId, r.classSource);
+    const sub = r.subclassId ? resolveSubclassObj(db, r.classId, r.subclassId, r.subclassSource) : null;
+    return optionalFeatureChoices(c, sub, 20).some((ch) => (ch.pool.featureType ?? []).includes(type));
+  });
+  return rows.find((r) => r.classSource === 'XPHB' && (!r.subclassSource || r.subclassSource === 'XPHB')) ?? rows.find((r) => r.classSource === 'XPHB') ?? rows[0];
+}
+
+/** Os pré-requisitos de opção que a opção pede (outra opção, ou o pacto do XGE como invocação do XPHB). */
+function optionPrereqs(o) {
+  const out = [];
+  for (const pre of o.prerequisite ?? []) {
+    for (const ref of pre.optionalfeature ?? []) {
+      const [name, source] = ref.split('|');
+      const hit = (db.optionalfeatures?.optionalfeature ?? []).find((x) => norm(x.name) === norm(name) && norm(x.source) === norm(source ?? 'phb'));
+      if (hit) out.push(`${hit.name}|${hit.source}`);
+    }
+    if (pre.pact) out.push(`Pact of the ${pre.pact}|XPHB`);
+  }
+  return [...new Set(out)];
+}
+
+/** O que os ataques e as magias do jogo mostram (para o antes e o depois de uma opção). */
+function attackView(catalog) {
+  const out = new Map();
+  for (const a of catalog.attacks ?? []) out.set(`ataque ${a.name}`, `${a.ability} +${a.toHit?.total ?? '?'} ${a.damage?.dice ?? ''}+${a.damage?.bonus ?? 0}`);
+  for (const o of catalog.spells ?? []) for (const sp of o.spells ?? []) out.set(`magia ${sp.name}`, JSON.stringify([sp.mechanics, sp.uses, sp.castType]));
+  out.set('ataques por ação', String(attacksPerAction(catalog)));
+  return out;
+}
+
+/** O que mudou nos ataques e nas magias. */
+function attackDiff(a, b) {
+  const out = [];
+  for (const [k, v] of b) if (a.get(k) !== v) out.push(a.has(k) ? `${k} ${a.get(k)}->${v}` : `+${k}`);
+  return out;
+}
+
+/** O catálogo da tela: com o Pact of the Blade, uma espada longa invocada (o vínculo é estado do jogo). */
+function screenCatalog(character) {
+  const catalog = derivePlayCatalog(character, db);
+  return withPactWeapon(catalog, { kind: 'conjure', name: 'Longsword', weapon: { name: 'Longsword', dmg1: '1d8', dmgType: 'S', versatile: '1d10', props: ['V'], ranged: false, category: 'martial' } });
+}
+
+const ATTACK_CUE = /\b(?:attack rolls?|damage rolls?|pact weapon|weapon attack|attack action|extra attack|attack with|use your \w+ modifier|to hit)\b/;
+
+if (TIER === 'options') {
+  const hosts = new Map();
+  for (const o of optionUniverse()) {
+    if (args.only && norm(o.type) !== norm(args.only)) continue;
+    if (!hosts.has(o.type)) {
+      const row = hostRow(o.type);
+      const c = resolveClassObj(db, row.classId, row.classSource);
+      const sub = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
+      const id = optionalFeatureChoices(c, sub, 20).find((ch) => (ch.pool.featureType ?? []).includes(o.type)).id;
+      hosts.set(o.type, { row, id, label: OPTION_TYPES[o.type] });
+    }
+    const host = hosts.get(o.type);
+    const prereqs = optionPrereqs(o);
+    const picks = [...prereqs, `${o.name}|${o.source}`];
+    const allowed = new Set(picks);
+    const character = autoBuild(db, {
+      ...host.row,
+      level: 20,
+      ...species,
+      seed: hashSeed(host.row.id, 1),
+      allow: (raw) => !(raw.featureType ?? []).includes(o.type) || allowed.has(`${raw.name}|${raw.source}`),
+      preset: (c) => { c.classes[0].choices[host.id] = { kind: 'optionalfeature', picks: [...picks] }; },
+    }).character;
+    const base = structuredClone(character);
+    const entry = base.classes[0].choices[host.id];
+    entry.picks = [...prereqs];
+    entry.sub = Object.fromEntries(Object.entries(entry.sub ?? {}).filter(([k]) => prereqs.includes(k)));
+    let derived; let catalog; let baseCatalog; let actor;
+    try {
+      derived = deriveFromDb(character, db);
+      catalog = screenCatalog(character);
+      baseCatalog = screenCatalog(base);
+      actor = safeActor(character, db);
+    } catch (e) {
+      rows.push({ id: `options|${o.type}|${o.name}|${o.source}`, book: o.source, className: host.label, sub: '(opção)', level: 0, name: o.name, facets: { builder: 'ERRO', ficha: String(e.message).slice(0, 80), jogo: '-', export: '-', pistas: 'erro' }, sig: 'erro', text: '' });
+      continue;
+    }
+    const entries = bagEntries(character);
+    const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+    const f = (catalog.featureList ?? []).find((x) => norm(x.name) === norm(o.name));
+    const text = plainText(o.entries ?? []);
+    const play = playOf(f, catalog, bridged);
+    const sheet = diff(snapshot(deriveFromDb(base, db)), snapshot(derived));
+    const feats = collectFeatIds(character).filter((id) => !collectFeatIds(base).includes(id));
+    if (feats.length) sheet.push(`talentos +${feats.join(',')}`);
+    const attacks = attackDiff(attackView(baseCatalog), attackView(catalog));
+    const regs = mentions(o.name, host.row.classId, null);
+    const choice = f ? pendingChoice(f, character, entries, text) : null;
+    const grants = GRANT_EXPLAINED[norm(o.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+    const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+    const attackCue = ATTACK_CUE.test(text.toLowerCase()) && !attacks.length && !regs.length && !featureRollOf(o.name);
+    const kept = !!f;
+    const facets = {
+      builder: kept ? `${host.id}${prereqs.length ? ` (com ${prereqs.join(', ')})` : ''}` : 'não chega ao jogo',
+      ficha: [...sheet, ...regs.map((m) => `reg:${m}`)].join('; ') || '-',
+      jogo: [play.cat, ...play.parts, ...attacks].join('; '),
+      export: exportOf(o.name, null, actor),
+      pistas: [...playCues.map((c) => `jogo:${c}`), ...(attackCue ? ['jogo:ataque'] : []), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
+    };
+    const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+    const level = (o.prerequisite ?? []).map((pre) => pre.level?.level ?? 0).reduce((m, n) => Math.max(m, n), 0);
+    rows.push({ id: `options|${o.type}|${o.name}|${o.source}`, book: o.source, className: host.label, sub: `(${host.row.id})`, level, name: o.name, facets, sig, text });
+  }
+}
+
 
 /** O estado do veredito de uma linha. */
 function stateOf(r) {

@@ -178,7 +178,8 @@
 //     "Cunning Action: Hiding" saiu duplicado). `uses` e `activities` do overlay
 //     entram sempre que o curado não cobrir aquele campo. Sem `uses` em nenhum dos
 //     três (curado, SRD, overlay), vale o pool que só a PROSA declara
-//     (proseUses, DDL-0106), em feature, traço de espécie e talento.
+//     (proseUses, DDL-0106), em feature, traço de espécie, talento e opção de classe (DDL-0237:
+//     o Protection of the Talisman e o Bond of the Talisman ficavam sem pool no ator).
 //
 //   Classe e features
 //   - Classe, subclasse, features, talentos, optional features, magias e itens
@@ -1494,6 +1495,10 @@ export function buildOptionalFeatureItems(classEntry, db) {
         item.effects.push(...ofOverlay.effects.filter((e) => cited.has(e._id) && !item.effects.some((x) => x._id === e._id)));
       }
       if (ofOverlay.system.uses && !item.system.uses.max) item.system.uses = ofOverlay.system.uses;
+      if (!item.system.uses?.max) {
+        const prose = proseUses(raw.name, null, item.system.activities);
+        if (prose) item.system.uses = prose;
+      }
       Object.assign(item.system, overlaySystemExtras(ofOverlay.system));
       const subtype = (raw.featureType ?? []).map((t) => OPTFEAT_SUBTYPE[t]).find(Boolean);
       if (subtype) item.system.type.subtype = subtype;

@@ -55,6 +55,8 @@
 //     Shape é o exemplo: `wild-shape` é a escala de CR, os USOS moram em "Wild
 //     Shape Uses".
 //   - Recuperação comum: descanso longo recupera tudo; curto recupera 1.
+//   - As duas invocações do Pact of the Talisman (Protection, Bond) entraram à mão no PROSE_USES_FLAT
+//     (DDL-0237): o levantamento não olha as opções de classe; mantenha-as ao regenerar.
 //   - PROSE_USES_* (DDL-0106) vem de `npx vite-node scripts/survey-feature-uses.js`:
 //     a frase de uso limitado da prosa ("Once you use this trait, you can't use it
 //     again until you finish a Long Rest", "a number of times equal to your
@@ -256,11 +258,13 @@ const PROSE_USES_BY_CLASS = {
 };
 
 const PROSE_USES_FLAT = {
+  "protection of the talisman": ['@prof', 'lr'],
   "aberrant dragonmark": ['1', 'lr'],
   "adept of the red robes": ['@prof', 'lr'],
   "agent of order": ['@prof', 'lr'],
   "baleful scion": ['@prof', 'lr'],
   "bloodlust": ['@prof', 'lr'],
+  "bond of the talisman": ['@prof', 'lr'],
   "boon of exquisite radiance": ['1', 'lr'],
   "boon of fluid forms": ['1', 'lr'],
   "boon of misty escape": ['1', 'lr'],

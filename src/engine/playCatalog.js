@@ -97,8 +97,19 @@
 //       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156).
 //     EXTRA_RECOVERY: a recuperação que uma feature soma ao pool de outra (o Cutthroat do Dread
 //       Incarnate devolve um Bloodthirst no descanso curto, DDL-0236).
-//     featureAttacks(features, derived): os ataques que uma feature cria (FEATURE_ATTACKS: as
-//       Psychic Blades do Soulknife, TC-0161), no formato dos de arma.
+//     featureAttacks(features, derived, character): os ataques que uma feature cria (FEATURE_ATTACKS: as
+//       Psychic Blades do Soulknife, TC-0161, só ladino: o College of Whispers tem outra feature com o
+//       mesmo nome; os espinhos da Battlerager Armor, DDL-0239), no formato dos de arma.
+//     hasClass(character, classId): o personagem tem a classe?
+//     NATURAL_PATTERNS, naturalHit(text), naturalAttacks(features, derived, picked): as armas naturais
+//       pela prosa ("the strike deals 1d6 + your Strength modifier slashing damage"; Claws, Horns,
+//       Bite, Talons, Hooves, Ram, Dragon Hide), um Unarmed Strike com o dado e o tipo; numa feature
+//       de opções (SPECIES_OPTION_FEATURES) só a opção escolhida (DDL-0239).
+//     featureOptionPicks(character): as opções escolhidas em escolhas `featureoption` (vão no catálogo
+//       como `optionPicks`, para o registro curado saber qual opção vale: o Acid Spit). A feature que
+//       gera um ataque (natural ou do FEATURE_ATTACKS) ganha `attack`, que o levantamento conta como uso.
+//       Um traço de espécie cujo texto diz "the DC equals 8" ganha `dc` (8 + PB + o atributo escolhido
+//       no `dcAbility` da espécie: Taunt, Fey Step, as linhagens Tauren, TC-0159, DDL-0239).
 //     derivePlayCatalog(character, db, opts): o catálogo.
 //
 // DECISÕES E ARMADILHAS
@@ -202,12 +213,12 @@
 
 import { ABILITIES } from '../schema/character';
 import { deriveFromDb, resolveRaceObj } from './resolve';
-import { parseSpecies } from './speciesData';
+import { parseSpecies, SPECIES_OPTION_FEATURES } from './speciesData';
 import { assembleFoundryActor } from './foundryActor';
 import { isBasicActionItem } from './foundryBasicActions';
 import { rangeLabel, isRitual, isConcentration } from './spells';
 import { SKILL_ABILITY } from './proficiency';
-import { collectAbilityPicks } from './choices';
+import { collectAbilityPicks, collectChoicePicks, dcAbilityPick } from './choices';
 import { validateFormula, rollFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
@@ -356,18 +367,97 @@ const EXTRA_RECOVERY = {
 /** Os ataques que uma feature cria, pelo texto do XPHB (as Psychic Blades do Soulknife: 1d6 psíquico, Finesse, Thrown 60/120, Vex; a segunda, de ação bônus, 1d4). */
 const FEATURE_ATTACKS = {
   'psychic blades': [
-    { key: 'feature:psychic-blade', name: 'Psychic Blade', dice: '1d6' },
-    { key: 'feature:psychic-blade-bonus', name: 'Psychic Blade (Bonus Action, after the first)', dice: '1d4' },
+    { key: 'feature:psychic-blade', name: 'Psychic Blade', dice: '1d6', has: (c) => hasClass(c, 'rogue') },
+    { key: 'feature:psychic-blade-bonus', name: 'Psychic Blade (Bonus Action, after the first)', dice: '1d4', has: (c) => hasClass(c, 'rogue') },
+  ],
+  'battlerager armor': [
+    { key: 'feature:armor-spikes', name: 'Armor Spikes (Bonus Action, while raging)', dice: '1d4', types: ['piercing'], ability: 'str', properties: [], mastery: null, distance: null },
   ],
 };
 
+/** O personagem tem a classe? (a Psychic Blades do College of Whispers não é a do Soulknife). */
+const hasClass = (character, classId) => (character?.classes ?? []).some((c) => c.classId === classId);
+
+const NATURAL_PATTERNS = [
+  /\b(?:deal|deals|takes?)\s+(\w+) damage equal to (\d+d\d+) (?:\+|plus) your strength modifier/i,
+  /\bthe strike deals (\d+d\d+) (?:\+|plus) your strength modifier (\w+) damage/i,
+  /\bunarmed strikes?, which deal (\d+d\d+) (\w+) damage/i,
+  /\bnatural attack that deals (\d+d\d+) (\w+) damage/i,
+];
+
+/** O dado e o tipo de uma frase de arma natural, ou null; `str` diz se soma a FOR. */
+function naturalHit(text) {
+  for (const [i, re] of NATURAL_PATTERNS.entries()) {
+    const m = text.match(re);
+    if (!m) continue;
+    const [dice, type] = i === 0 ? [m[2], m[1]] : [m[1], m[2]];
+    return { dice, type: type.toLowerCase(), str: i !== 3 };
+  }
+  return null;
+}
+
+/**
+ * As armas naturais das features ("the strike deals 1d6 + your Strength modifier slashing damage, instead of
+ * the bludgeoning damage normal for an unarmed strike"): um Unarmed Strike com o dado e o tipo do texto.
+ */
+export function naturalAttacks(features, derived, picked = new Set()) {
+  const str = derived.modifiers?.str ?? 0;
+  const prof = derived.proficiencyBonus ?? 0;
+  const out = new Map();
+  const visit = (name, entries, ownerOptions) => {
+    for (const e of entries ?? []) {
+      if (typeof e === 'string') {
+        const hit = naturalHit(plainText([e]));
+        const key = hit && `${name}|${hit.dice}|${hit.type}`;
+        if (hit && !out.has(key)) {
+          out.set(key, {
+            key: `natural:${slug(name)}`,
+            kind: 'unarmed',
+            name: `Unarmed Strike (${name})`,
+            range: 'melee',
+            equipped: true,
+            ability: 'str',
+            proficient: true,
+            toHit: { total: str + prof, parts: [{ label: 'Strength', formula: str }, { label: 'Proficiency', formula: prof }] },
+            damage: { dice: hit.dice, bonus: hit.str ? str : 0, types: [hit.type] },
+            versatile: null,
+            properties: [],
+            mastery: null,
+            thrown: false,
+            ammunition: false,
+            distance: null,
+          });
+        }
+      } else if (e?.type === 'list') {
+        for (const item of e.items ?? []) {
+          if (typeof item === 'string') visit(name, [item], false);
+          if (!item?.name) continue;
+          if (ownerOptions && !picked.has(item.name)) continue;
+          visit(item.name, item.entries ?? (item.entry ? [item.entry] : []), false);
+        }
+      } else if (e && typeof e === 'object') {
+        visit(e.name ?? name, e.entries ?? (e.entry ? [e.entry] : []), ownerOptions);
+      }
+    }
+  };
+  for (const f of features ?? []) visit(f.name, f.entries, SPECIES_OPTION_FEATURES.has(f.name));
+  const seen = new Set();
+  return [...out.values()].filter((a) => !seen.has(a.name) && seen.add(a.name));
+}
+
+/** As opções escolhidas em escolhas `featureoption` (o Animal Enhancement do Simic Hybrid). */
+function featureOptionPicks(character) {
+  const bags = [character?.species?.choices, ...(character?.classes ?? []).map((c) => c.choices)];
+  return new Set(bags.flatMap((b) => collectChoicePicks(b ?? {}, 'featureoption')));
+}
+
 /** Os ataques das features (FEATURE_ATTACKS), no formato dos ataques de arma. */
-function featureAttacks(features, derived) {
+function featureAttacks(features, derived, character = null) {
   const { str = 0, dex = 0 } = derived.modifiers ?? {};
   const ability = dex > str ? 'dex' : 'str';
   const mod = Math.max(dex, str);
   const prof = derived.proficiencyBonus ?? 0;
-  return features.flatMap((name) => (FEATURE_ATTACKS[name] ?? []).map((a) => ({
+  return features.flatMap((name) => (FEATURE_ATTACKS[name] ?? []).filter((a) => !a.has || a.has(character)).map((a) => ({
     key: a.key,
     kind: 'weapon',
     name: a.name,
@@ -375,17 +465,17 @@ function featureAttacks(features, derived) {
     range: 'melee',
     category: 'simple',
     equipped: true,
-    ability,
+    ability: a.ability ?? ability,
     proficient: true,
-    toHit: { total: mod + prof, parts: [{ label: ability === 'dex' ? 'Dexterity' : 'Strength', formula: mod }, { label: 'Proficiency', formula: prof }] },
-    damage: { dice: a.dice, bonus: mod, types: ['psychic'] },
+    toHit: { total: (a.ability ? derived.modifiers?.[a.ability] ?? 0 : mod) + prof, parts: [{ label: (a.ability ?? ability) === 'dex' ? 'Dexterity' : 'Strength', formula: a.ability ? derived.modifiers?.[a.ability] ?? 0 : mod }, { label: 'Proficiency', formula: prof }] },
+    damage: { dice: a.dice, bonus: a.ability ? derived.modifiers?.[a.ability] ?? 0 : mod, types: a.types ?? ['psychic'] },
     versatile: null,
-    properties: ['F', 'T'],
-    mastery: 'Vex',
-    thrown: true,
+    properties: a.properties ?? ['F', 'T'],
+    mastery: a.mastery === undefined ? 'Vex' : a.mastery,
+    thrown: !a.properties,
     ammunition: false,
     ammoType: null,
-    distance: '60/120',
+    distance: a.distance === undefined ? '60/120' : a.distance,
   })));
 }
 
@@ -1099,7 +1189,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
   }
   const attacks = [
     ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features }),
-    ...featureAttacks(features, d),
+    ...featureAttacks(features, d, character),
     ...cantripAttacks(d.spellcasting, level),
   ];
   for (const at of attacks) {
@@ -1124,6 +1214,17 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     .map((u) => (u.name === 'Bolstering Flames' && features.includes('honed spellfire') ? { ...u, formula: `${u.formula} + @classes.sorcerer.levels` } : u))
     .filter((u) => !validateFormula(u.formula, rollData));
   for (const f of featuresOfActor) if (!f.roll && uses.some((u) => u.name === f.name)) f.roll = 'use';
+  const optionPicks = featureOptionPicks(character);
+  const dcAbility = dcAbilityPick(character?.species?.choices);
+  if (dcAbility) {
+    const dc = 8 + (d.proficiencyBonus ?? 0) + (d.modifiers?.[dcAbility] ?? 0);
+    for (const f of featuresOfActor) if (f.kind === 'species' && /\bDC equals 8\b/i.test(plainText(f.entries ?? []))) f.dc = dc;
+  }
+  attacks.push(...naturalAttacks(featuresOfActor, d, optionPicks));
+  for (const f of featuresOfActor) {
+    const own = FEATURE_ATTACKS[norm(f.name)] ?? [];
+    if (naturalAttacks([f], d, optionPicks).length || own.some((x) => attacks.some((at) => at.key === x.key))) f.attack = true;
+  }
   const channelKey = resources.find((r) => r.kind === 'pool' && String(r.item ?? '').toLowerCase() === 'channel divinity')?.key ?? null;
   for (const f of featuresOfActor) {
     if (!channelKey || !spendsChannelDivinity(f)) continue;
@@ -1150,6 +1251,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     defenses: defensesOf(d),
     features,
     featureList: featuresOfActor,
+    optionPicks: [...optionPicks],
     actorEffects: bridged,
     proseEffects: proseRollEffects(featuresOfActor, { activated, bridged }).filter((e) => !e.part || !validateFormula(e.part.formula, rollData)),
     proseUses: uses,

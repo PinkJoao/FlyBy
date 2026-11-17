@@ -12,7 +12,11 @@
 //     cantrip" (Thrown Weapon Fighting, Elegant Courtier, Potent Spellcasting);
 //   - rolar de novo o 1 do d20: "When you roll a 1 on the d20 of a D20 Test, you can reroll
 //     the die" (o Luck das linhagens antigas, Kor, Khenra);
-//   - o piso do d20: "you can treat a d20 roll of 9 or lower as a 10" (Silver Tongue).
+//   - o piso do d20: "you can treat a d20 roll of 9 or lower as a 10" (Silver Tongue);
+//   - um dado somado ao teste: "When you make a Wisdom (Perception or Survival) check, you can roll
+//     1d4 and add the number rolled to the ability check" (as marcas de dragão do EFA, DDL-0239),
+//     com "or an ability check using Thieves' Tools" como alvo de FERRAMENTA (o grupo `tools`,
+//     nunca todo teste); o Greater Mark troca o dado ("you can roll 1d6 instead of 1d4", diceUpgrades).
 //   LIGADO quando a frase não traz condição, DESLIGADO com a condição do texto na nota
 //   quando traz. E a cura ou os PV temporários que a feature dá ("you gain Temporary Hit
 //   Points equal to your Charisma modifier plus your Warlock level") viram o "Use" dela.
@@ -30,7 +34,8 @@
 //   termFormula(term), exprFormula(text): um termo e uma expressão do texto ("1d10 plus your
 //     Ranger level", "twice your Wizard level") como fórmula, ou null.
 //   readClause(sentence, m, at): o alvo, a condição da frente e a de trás de uma oração.
-//   proseClauses(entries): as orações de vantagem, bônus, reroll e piso do próprio personagem.
+//   proseClauses(entries): as orações de vantagem, bônus, reroll, piso e dado somado do próprio personagem.
+//   diceUpgrades(features): o dado que uma feature troca no de outra (o Greater Mark, DDL-0239).
 //   proseRollEffects(features, opts): as entradas do catálogo (`proseEffects`); o resto que só
 //     repete o escopo (`SCOPE_ONLY`, "of that spell" da Empowered Evocation) não vira nota.
 //   proseUses(features, opts): a cura e os PV temporários do "Use" (`proseUses`).
@@ -106,6 +111,9 @@ const BONUS_SUBJECT = /\b(?:you (?:also )?(?:gain|have|get)|you all gain|you and
 const ADD_SUBJECT = new RegExp(`(?:\\b(you (?:can |also )*))?\\badd your (${ABILITY_WORDS}|proficiency|rage damage) (?:modifier|bonus) to\\s+`, 'gi');
 const REROLL_ONES = /\b(?:when|whenever) you roll an? 1 on (?:the d20 (?:of|for) )?/gi;
 const FLOOR = /\b(?:you )?can treat an? d20 roll of (\d+) or lower as an? (\d+)\b/gi;
+const ROLL_ADD = /\byou can roll (\d+d\d+) and add the number rolled to the (?:ability check|check|roll)\b/gi;
+const TOOL_CHECK = /\s*,?\s*or an ability check using ([^,]+?)(?=,|$)/i;
+const UPGRADE = /\bbenefit of your (.+?) feat, you can roll (\d+d\d+) instead of (\d+d\d+)/i;
 const HEAL = /\b(?:(you (?:also |can |immediately )*(?:take an? (?:bonus action|action|reaction|magic action) to )?(?:gain|regain))|(granting you)|(you or (?:another|one|a) creature[^.;]{0,70}?(?:gains?|regains?)))\s+(?:a number of\s+)?(temporary hit points|hit points)\s+equal to\s+/gi;
 const HEAL_PER_LEVEL = /\byou (?:gain|regain) (\d+) (temporary hit points|hit points) per ([a-z]+) level\b/i;
 const HEAL_FIXED = /\byou(?: and [^.;]{1,60}?)? (?:gain|regain) (\d+) (temporary hit points|hit points)\b(?! per)/i;
@@ -317,6 +325,17 @@ export function proseClauses(entries) {
       push({ rerollOnes: true }, { groups: target.groups, lead: leadingCondition(sentence.slice(0, m.index)), tail: '' });
     }
 
+    ROLL_ADD.lastIndex = 0;
+    while ((m = ROLL_ADD.exec(sentence))) {
+      let lead = sentence.slice(0, m.index);
+      const tool = lead.match(TOOL_CHECK);
+      if (tool) lead = lead.replace(TOOL_CHECK, '');
+      const lt = leadTarget(lead);
+      const tools = tool ? tool[1].split(/\s*(?:,|\bor\b)\s*/).map(norm).filter(Boolean) : [];
+      const groups = [...(lt?.groups ?? []), ...(tools.length ? [{ kind: 'check', abilities: [], skills: [], tools }] : [])];
+      if (groups.length) push({ part: m[1] }, { groups, lead: lt?.tail || null, tail: clauseTail(sentence.slice(m.index + m[0].length)) });
+    }
+
     FLOOR.lastIndex = 0;
     while ((m = FLOOR.exec(sentence))) {
       const lt = leadTarget(sentence.slice(0, m.index));
@@ -336,6 +355,7 @@ const SCOPE_ONLY = /^of (?:that|the|this) (?:spell|attack|weapon|roll)$/i;
  */
 export function proseRollEffects(features, { activated = () => false, bridged = [] } = {}) {
   const owned = new Set(bridged.map((e) => norm(e.name)));
+  const upgrades = diceUpgrades(features);
   const out = [];
   const seen = new Set();
   for (const f of features ?? []) {
@@ -360,7 +380,7 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
         name: f.name,
         actionKey: f.actionKey ?? null,
         ...(c.effect.mode ? { mode: c.effect.mode } : {}),
-        ...(c.effect.part ? { part: { label: f.name, formula: c.effect.part } } : {}),
+        ...(c.effect.part ? { part: { label: upgrades.get(`${norm(f.name)}|${c.effect.part}`) ? `${f.name} (${upgrades.get(`${norm(f.name)}|${c.effect.part}`).by})` : f.name, formula: upgrades.get(`${norm(f.name)}|${c.effect.part}`)?.to ?? c.effect.part } } : {}),
         ...(c.effect.rerollOnes ? { rerollOnes: true } : {}),
         ...(c.effect.d20Min ? { d20Min: c.effect.d20Min } : {}),
         groups: concentration ? c.groups.map((g) => ({ ...g, kind: g.kind === 'save' ? 'concentration' : g.kind })) : c.groups,
@@ -371,6 +391,18 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
         index: i,
       });
     });
+  }
+  return out;
+}
+
+/** O dado que outra feature troca ("When you use the ... benefit of your Mark of Detection feat, you can roll 1d6 instead of 1d4"): "feature|de" -> { to, by }. */
+export function diceUpgrades(features) {
+  const out = new Map();
+  for (const f of features ?? []) {
+    for (const sentence of sentencesOf(f.entries)) {
+      const m = sentence.match(UPGRADE);
+      if (m) out.set(`${norm(m[1])}|${m[3]}`, { to: m[2], by: f.name });
+    }
   }
   return out;
 }
@@ -443,6 +475,7 @@ function fitsGroup(g, roll) {
       if (roll.kind === 'concentration') return has('con');
       return roll.kind === 'deathSave' && !g.abilities.length;
     case 'check':
+      if (g.tools) return roll.kind === 'check' && !!roll.tool && g.tools.includes(norm(roll.tool));
       if (roll.kind === 'check') return has(roll.ability) && (!g.skills.length || g.skills.includes(roll.skill));
       return roll.kind === 'initiative' && !g.skills.length && has('dex');
     default: return false;

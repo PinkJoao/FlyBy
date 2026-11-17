@@ -4,7 +4,7 @@
 // O QUE FAZ
 //   Prova o estado dos summons pelo log (applyEvent), a troca de concentração que
 //   tira o summon anterior, a vista com o PV pelo bloco e o contexto, e a ação no
-//   formato de ataque do play mode.
+//   formato de ataque do play mode; as invocações no familiar e o Master Demonologist (DDL-0238).
 //
 // FUNÇÕES
 //   (só testes)
@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyEvent, makeEvent } from './playState';
-import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps } from './playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, familiarSpecialForms } from './playSummons';
 import { objectSummons, creatureStats } from './creature';
 import { endConcentrationOps } from './playEffects';
 import { nextTurnEvent } from './playCombat';
@@ -167,5 +167,43 @@ describe('summons no play mode (DDL-0192)', () => {
     expect(stats.actions[0].save).toEqual({ ability: 'dex', dc: 15 });
     expect(stats.actions[1].attack).toEqual({ bonus: 7, kind: 'ranged' });
     expect(stats.actions[1].damage).toEqual([{ formula: '2d8', type: 'force' }]);
+  });
+});
+
+describe('as invocações no familiar (TC-0166, DDL-0238)', () => {
+  const familiar = { id: 'f', label: 'Owl', spell: { name: 'Find Familiar' }, ctx: { spellDc: 17, spellAttack: 9 }, members: [{ damage: 0 }] };
+  const stats = { actions: [{ name: 'Talons', attack: { bonus: 3 }, save: null, damage: [] }, { name: 'Screech', attack: null, save: { ability: 'con', dc: 10 }, damage: [] }], bonus: [], reactions: [] };
+
+  it('Investment of the Chain Master dá a CD do invocador e as notas; Call of the Void o ataque', () => {
+    const b = familiarBoons(familiar, ['investment of the chain master', 'call of the void']);
+    expect(b).toMatchObject({ dc: 17, attack: 9 });
+    expect(b.notes).toHaveLength(2);
+    expect(familiarBoons({ ...familiar, spell: { name: 'Summon Fey' } }, ['investment of the chain master']).notes).toEqual([]);
+    expect(stats).toBeTruthy();
+  });
+
+  it('Master Demonologist: o Hex só no dano de um diabo, ligado se você concentra no Hex', () => {
+    const cat = { features: ['master demonologist'] };
+    expect(summonRiders({ stats: { type: 'beast' } }, cat, {})).toEqual([]);
+    const [r] = summonRiders({ stats: { type: 'fiend' } }, cat, { concentration: { name: 'Hex' } });
+    expect(r).toMatchObject({ defaultOn: true, part: { formula: '1d6' } });
+  });
+});
+
+describe('as formas especiais do Pact of the Chain (DDL-0238)', () => {
+  const chain = { name: 'Pact of the Chain', entries: ['You learn the {@spell Find Familiar|XPHB} spell.', 'You choose one of the normal forms for your familiar or one of the following special forms: {@creature Imp|XMM}, {@creature Pseudodragon|XMM}, or {@creature Sprite|XMM}.'] };
+
+  it('lê os nomes no texto da opção', () => {
+    expect(familiarSpecialForms([chain])).toEqual(['imp', 'pseudodragon', 'sprite']);
+  });
+
+  it('o seletor oferece as feras de ND 0 e as especiais, a do XMM quando há duas', () => {
+    const b = [
+      { name: 'Cat', source: 'XMM', type: 'beast', cr: '0' },
+      { name: 'Imp', source: 'MM', type: 'fiend', cr: '1' },
+      { name: 'Imp', source: 'XMM', type: 'fiend', cr: '1' },
+      { name: 'Wolf', source: 'XMM', type: 'beast', cr: '1/4' },
+    ];
+    expect(familiarForms(b, familiarSpecialForms([chain])).map((m) => `${m.name}|${m.source}`)).toEqual(['Cat|XMM', 'Imp|XMM']);
   });
 });

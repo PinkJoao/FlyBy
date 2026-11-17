@@ -28,6 +28,7 @@ import { useState } from 'react';
 import { rollHitDie, hitDiceLeft } from '../../engine/playRest';
 import { sequenceRng } from '../../engine/dice';
 import { hpView } from '../../engine/playState';
+import { healDiceMaxed } from '../../engine/playEffects';
 import { useDialogClose } from '../common/dialogContext';
 import Chip from '../common/Chip';
 import styles from './ShortRestPanel.module.css';
@@ -52,7 +53,7 @@ export default function ShortRestPanel({ catalog, state }) {
     const value = String(typed[faces] ?? '').trim();
     try {
       const rng = value ? sequenceRng([Number(value)], () => NaN) : undefined;
-      setSpends([...spends, rollHitDie({ catalog, faces, rng, rest: true })]);
+      setSpends([...spends, rollHitDie({ catalog, faces, rng, rest: true, maxed: healDiceMaxed(state) })]);
       setTyped({ ...typed, [faces]: '' });
       setError(null);
     } catch (e) {

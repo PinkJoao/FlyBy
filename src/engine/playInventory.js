@@ -25,6 +25,7 @@
 //     nome do item em `item`, para listar o item e não "X charges").
 //
 // DECISÕES E ARMADILHAS
+//   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo: a poção também.
 //   - A operação guarda a entrada CRUA do personagem (`character.inventory`), não a
 //     derivada: é ela que o applyCharacterOps compara para achar conflito.
 //   - Quantidade zero tira o item da lista (e desfazer o devolve no mesmo lugar,
@@ -44,6 +45,8 @@
 import { rollParts, cryptoRng } from './dice';
 import { makeEvent } from './playState';
 import { healOutcome } from './playHealth';
+import { healDiceMaxed } from './playEffects';
+import { withDiceMax } from './playActions';
 
 const USABLE = new Set(['P', 'SC', 'FD']);
 
@@ -109,7 +112,7 @@ export function itemUseEvent({ catalog, state, character, entry, options = {}, r
   let rolls = null;
   let healed = null;
   if (formula) {
-    rolls = rollParts([{ label: entry.raw.name, formula }], { data: catalog.rollData, rng });
+    rolls = rollParts([{ label: entry.raw.name, formula: healDiceMaxed(state) ? withDiceMax(formula, catalog.rollData) : formula }], { data: catalog.rollData, rng });
     if (options.applyHeal !== false) {
       const heal = healOutcome(state, catalog, rolls.total);
       ops.push(...heal.ops);

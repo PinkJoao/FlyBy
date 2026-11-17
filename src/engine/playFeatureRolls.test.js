@@ -260,4 +260,15 @@ describe('opções de classe (DDL-0237)', () => {
     expect(trip).toMatchObject({ spend: { key: 'pool:sup', amount: 1 }, part: { formula: '1d10' } });
     expect(trip.note).toContain('DC 16 Strength');
   });
+
+  it('Fire Rune e Health Funnel (DDL-0238)', () => {
+    const c = opt(['fire rune']);
+    c.resources.push({ key: 'pool:fire-rune', kind: 'pool', item: 'Fire Rune', max: 1 }, { key: 'hd:d8', kind: 'hitDice', faces: 8, max: 5 });
+    c.rollData.abilities.con = { mod: 2 };
+    const [r] = featureRiders(st(), c, { kind: 'damage', weapon: true });
+    expect(r).toMatchObject({ spend: { key: 'pool:fire-rune' }, part: { formula: '2d6' } });
+    expect(r.note).toContain('DC 14 Strength');
+    const use = featureUseOf({ name: 'Health Funnel' }, { ...c, rollData: { ...c.rollData, classes: { warlock: { levels: 5 } } } }, 3);
+    expect(use).toMatchObject({ spend: 'hd:d8', spent: 3, roll: { formula: '3d8 + 15' } });
+  });
 });

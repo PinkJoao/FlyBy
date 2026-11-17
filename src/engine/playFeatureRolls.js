@@ -20,15 +20,17 @@
 //   featureRiders(state, catalog, roll): os extras que valem para uma rolagem, no
 //     formato de rollEffects (engine/playEffects).
 //   spendKeyOf(catalog, spend): a chave do recurso que a entrada gasta (o pool pelo
-//     nome do item, ou o espaço do pacto).
+//     nome do item, o espaço do pacto, ou um Dado de Vida com `hitDie`: o Health Funnel).
 //   riderSpendOps(applied, catalog): as operações do gasto dos extras ligados.
 //   amountOf(entry, rollData): quanto a entrada gasta (número, ou { min, max } a escolher).
 //   featureUseOf(feature, catalog, chosen, option): o que o "Use" de uma feature `toggle` ou `use`
 //     (`option` escolhe entre as `options` da entrada, cada uma com a sua rolagem e salvaguarda);
 //     faz: o modificador, o gasto e a salvaguarda.
 //   formulaOf(entry, rollData): a fórmula, que pode depender do nível.
+//   AZERITE(rd): o dado do Azerite Surge pelo nível do personagem (1d10, 2d10 no 5, 3d10 no 11, 4d10 no 17).
 //   SHOT_DIE(n), SHOT_DC(rd), BM_DC(rd): n dados de Arcane Shot do AU, a CD dele (8 + INT + PB)
-//     e a CD das manobras (8 + PB + FOR ou DES) (DDL-0237).
+//     e a CD das manobras (8 + PB + FOR ou DES) (DDL-0237). RUNE_DC(rd): a CD das runas do Rune
+//     Knight, 8 + PB + CON (DDL-0238).
 //   byLevel(classId, steps), MARTIAL(count): a fórmula pelo nível de uma classe
 //     ([[nível, fórmula], ...] do maior ao menor) e N rolagens do dado de Martial Arts.
 //   ridersOf(entry): os extras de uma entrada (ela mesma, se for `rider`, e os `also`).
@@ -145,6 +147,19 @@
 //     no dano do cantrip, ligado), e as manobras que somam o dado de superioridade no ataque, no
 //     dano ou no teste (`when` como lista de perícias: Commanding Presence, Tactical Assessment,
 //     Grappling Strike), com a CD 8 + PB + FOR ou DES; Sweeping Attack e Heroic Leap no Use.
+//   - As 69 com dado fora do SRD (DDL-0239), cada uma pela frase do texto: Order's Wrath (2d8 do aliado),
+//     Improved Warding Flare (2d6 + SAB de temporários ao alvo), Eye for Weakness (3d6 no Sneak Attack),
+//     a Psychic Blades do College of Whispers (`has`: só bardo; o FEATURE_ATTACKS do Soulknife só
+//     ladino), Dread Lord, Ascendant Aspect, Lunar Phenomenon e Azerite Surge com `options`, Poisonous
+//     Skin, Cohort of Chaos (o d4 da tabela), Spellfire Spark (a redução), o veneno da mordida das
+//     Natural Weapons, o Gathered Swarm em 1d8 com o Mighty Swarm, e o dado de superioridade do
+//     Summon Wildfire Spirit (o 2d6 da chegada; o summon não tem activity), o Acid Spit do Simic
+//     Hybrid (só com a opção escolhida, `optionPicks` do catálogo), o dado de superioridade do
+//     Martial Adept e do Superior Technique (d6 sem a escala do Battle Master; o pool deles, `alt` no SUP).
+//   - TC-0166 e TC-0167 (DDL-0238): o Fire Rune soma 2d6 de fogo no dano de arma e gasta o pool da
+//     runa (CD 8 + PB + CON); o Gift of the Ever-Living Ones é um interruptor com `healMax` (o
+//     familiar a 100 pés); o Health Funnel gasta Dados de Vida (`spend.hitDie`, quantos o jogador
+//     escolher) e rola os temporários do familiar, que o jogador põe no cartão dele.
 //     `when: 'pact'` (Eldritch Smite, Lifedrinker) vale só no ataque da arma de pacto
 //     (engine/playPact.js), achado no passe ao vivo do warlock: antes aparecia em qualquer arma.
 //   - As famílias pós-2024 (DDL-0235), cada uma pela frase do texto: Raging Elements com `options`
@@ -232,9 +247,9 @@ import { rollFormula } from './dice';
 import { remainingOf } from './playState';
 
 const maneuverDc = (rd) => 8 + (rd.prof ?? 0) + Math.max(rd.abilities?.str?.mod ?? 0, rd.abilities?.dex?.mod ?? 0);
-const SUPERIORITY = (rd) => `1${rd['scale.battle-master.superiority.die'] ?? 'd8'}`;
+const SUPERIORITY = (rd) => `1${rd['scale.battle-master.superiority.die'] ?? 'd6'}`;
 const BARDIC = (rd) => (rd['scale.bard.inspiration'] ? '@scale.bard.inspiration' : '1d6');
-const SUP = { item: 'Combat Superiority' };
+const SUP = { item: 'Combat Superiority', alt: ['Martial Adept', 'Superior Technique'] };
 
 const byLevel = (classId, steps) => (rd) => {
   const level = rd.classes?.[classId]?.levels ?? 0;
@@ -250,6 +265,8 @@ const ARROW = byLevel('fighter', [[18, '4d6'], [0, '2d6']]);
 const ROGUE_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.dex?.mod ?? 0);
 const SHOT_DIE = (n) => (rd) => `${n}${rd['scale.arcane-archer.arcane-shot.die'] ?? 'd6'}`;
 const SHOT_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.int?.mod ?? 0);
+const AZERITE = (rd) => { const l = rd.details?.level ?? 1; return `${1 + (l >= 5) + (l >= 11) + (l >= 17)}d10`; };
+const RUNE_DC = (rd) => 8 + (rd.prof ?? 0) + (rd.abilities?.con?.mod ?? 0);
 const BM_DC = (rd) => 8 + (rd.prof ?? 0) + Math.max(rd.abilities?.str?.mod ?? 0, rd.abilities?.dex?.mod ?? 0);
 
 const CLERIC_STRIKE = (rd) => (rd['scale.cleric.divine-strike'] ? '@scale.cleric.divine-strike' : '1d8');
@@ -440,6 +457,50 @@ export const FEATURE_ROLLS = {
   'commanding presence': { kind: 'rider', on: ['check'], when: ['itm', 'prf', 'per'], spend: SUP, formula: SUPERIORITY, note: 'Intimidation, Performance or Persuasion' },
   'tactical assessment': { kind: 'rider', on: ['check'], when: ['his', 'inv', 'ins'], spend: SUP, formula: SUPERIORITY, note: 'History, Investigation or Insight' },
   'grappling strike': { kind: 'rider', on: ['check'], when: ['ath'], spend: SUP, formula: SUPERIORITY, note: 'the grapple right after a melee hit, as a Bonus Action' },
+  'fire rune': { kind: 'rider', on: ['damage'], when: 'weapon', spend: { item: 'Fire Rune' }, formula: '2d6', note: (rd) => `Fire; DC ${RUNE_DC(rd)} Strength save or Restrained for 1 minute, taking 2d6 Fire at the start of each of its turns` },
+  'gift of the ever-living ones': { kind: 'toggle', modifier: () => ({ label: 'Gift of the Ever-Living Ones', source: 'feature', duration: 'manual', healMax: true, notes: ['your familiar is within 100 feet: the dice of every healing you receive count as their maximum'], effects: [] }) },
+  'health funnel': { kind: 'use', spend: { hitDie: 8 }, amount: { min: 1, max: (rd) => rd.classes?.warlock?.levels ?? 1 }, roll: { label: 'Temporary Hit Points for your familiar or a Fiend you command (its card on the Summons tab)', formula: (rd, n) => `${n}d8 + ${n * (rd.abilities?.cha?.mod ?? 0)}` } },
+  "order's wrath": { kind: 'use', roll: { label: 'Psychic when an ally hits the creature your Divine Strike cursed (the curse ends)', formula: '2d8' } },
+  'improved warding flare': { kind: 'use', apply: null, roll: { label: 'Temporary Hit Points for the target of the attack (with Warding Flare)', formula: '2d6 + @abilities.wis.mod' } },
+  'eye for weakness': { kind: 'rider', on: ['damage'], when: 'weapon', formula: '3d6', label: 'Eye for Weakness (Sneak Attack)', note: 'with Sneak Attack, against the creature of your Insightful Fighting' },
+  'psychic blades': { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => (c.rollData?.classes?.bard?.levels ?? 0) > 0, spend: BI, formula: byLevel('bard', [[15, '8d6'], [10, '5d6'], [5, '3d6'], [0, '2d6']]), note: 'College of Whispers: Psychic, once per turn' },
+  'dread lord': {
+    kind: 'use',
+    options: [
+      { label: 'Aura: Psychic to a Frightened enemy that starts its turn in it', roll: { label: 'Psychic (Dread Lord aura)', formula: '4d10' } },
+      { label: 'Shadows: a melee spell attack as a Bonus Action', roll: { label: 'Necrotic (Dread Lord shadows)', formula: '3d10 + @abilities.cha.mod' } },
+    ],
+  },
+  'ascendant aspect': {
+    kind: 'use',
+    options: [
+      { label: 'Augment Breath (1 Focus Point more on Breath of the Dragon)', roll: { label: 'Breath of the Dragon, augmented (Dexterity save, half on success)', formula: MARTIAL(4) } },
+      { label: 'Explosive Fury (when you activate Draconic Presence)', roll: { label: 'Acid, Cold, Fire, Lightning or Poison (Dexterity save)', formula: '3d10' } },
+    ],
+  },
+  'lunar phenomenon': {
+    kind: 'use',
+    spend: { item: 'Lunar Phenomenon' },
+    options: [
+      { label: 'Full Moon: Constitution save or Blinded, and one creature regains Hit Points', roll: { label: 'Hit Points one creature regains (Full Moon)', formula: '3d8' } },
+      { label: 'New Moon: Dexterity save or Necrotic and Speed 0', roll: { label: 'Necrotic (New Moon, Dexterity save)', formula: '3d10' } },
+      { label: 'Crescent Moon: teleport and Resistance (no roll)', roll: null },
+    ],
+  },
+  'azerite surge': {
+    kind: 'use',
+    spend: { item: 'Azerite Surge' },
+    options: [
+      { label: 'Healing to each creature of your choice in the cone', roll: { label: 'Hit Points regained (Azerite Surge)', formula: AZERITE } },
+      { label: 'Radiant to each other creature in the cone', roll: { label: 'Radiant (Dexterity save, half on success)', formula: AZERITE }, save: { ability: 'dex', dc: '8 + @abilities.con.mod + @prof' } },
+    ],
+  },
+  'summon wildfire spirit': { kind: 'use', roll: { label: 'Fire to each creature within 10 feet when the spirit appears (Dexterity save, your spell save DC)', formula: '2d6' } },
+  'animal enhancement': { kind: 'use', has: (c) => (c.optionPicks ?? []).includes('Acid Spit'), roll: { label: 'Acid Spit (Dexterity save, DC 8 + CON + PB)', formula: (rd) => `${2 + ((rd.details?.level ?? 1) >= 11) + ((rd.details?.level ?? 1) >= 17)}d10` } },
+  'poisonous skin': { kind: 'use', roll: { label: 'Poison on a piercing weapon hit (DC 12 Constitution save)', formula: '2d4' } },
+  'cohort of chaos': { kind: 'use', roll: { label: 'Chaotic Flare: the d4 of the table in the feature (after a 1 or a 20)', formula: '1d4' } },
+  'spellfire spark': { kind: 'use', roll: { label: 'Damage reduced (Magic Absorption, once per turn)', formula: '1d4' } },
+  'natural weapons': { kind: 'rider', on: ['damage'], when: 'unarmed', formula: '1d4', label: 'Bite poison', note: 'the bite only, if the target fails the Constitution save (8 + PB + CON)' },
   'protection of the talisman': { kind: 'rider', on: ['save'], spend: { item: 'Protection of the Talisman' }, formula: '1d4', note: 'after a failed save, you or the wearer of your talisman' },
   'warding maneuver': { kind: 'use', roll: { label: 'AC bonus against the attack', formula: '1d8' } },
   'favored by the gods': { kind: 'rider', on: ['attack', 'save'], spend: { item: 'Favored by the Gods' }, formula: '2d4', note: 'after a failed save or a miss' },
@@ -465,7 +526,6 @@ export const FEATURE_ROLLS = {
   'cauterizing flames': { kind: 'use', roll: { label: 'Healing or Fire damage', formula: '2d10 + @abilities.wis.mod' } },
   'unsettling words': { kind: 'use', spend: BI, roll: { label: 'Subtracted from its next saving throw', formula: BARDIC } },
   brace: { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: 'the reaction attack' },
-  "order's wrath": { kind: 'passive' },
   'spirit shield': { kind: 'use', roll: { label: 'Damage reduced', formula: byLevel('barbarian', [[14, '4d6'], [10, '3d6'], [0, '2d6']]) } },
   'infectious fury': { kind: 'use', roll: { label: 'Psychic (Wisdom save against 8 + CON + PB)', formula: '2d12' } },
   'wild surge': { kind: 'use', roll: { label: 'Wild Magic table', formula: '1d8' } },
@@ -495,7 +555,7 @@ export const FEATURE_ROLLS = {
   'runic juggernaut': { kind: 'passive' },
   'arms of the astral self': { kind: 'use', spend: FOCUS, roll: { label: 'Force within 10 feet (Dexterity save)', formula: MARTIAL(2) } },
   'body of the astral self': { kind: 'use', roll: { label: 'Damage reduced (Deflect Energy)', formula: '1d10 + @abilities.wis.mod' } },
-  'gathered swarm': { kind: 'rider', on: ['damage'], formula: '1d6', note: 'once per turn, Piercing (or push or move instead)' },
+  'gathered swarm': { kind: 'rider', on: ['damage'], formula: byLevel('ranger', [[11, '1d8'], [0, '1d6']]), note: 'once per turn, Piercing (or push or move instead)' },
   'turn the tide': { kind: 'use', spend: CD, roll: { label: 'Healing for each creature at half its Hit Points or less', formula: '1d6 + @abilities.cha.mod' } },
   'touch of the long death': { kind: 'use', spend: FOCUS, save: { ability: 'con', dc: '8 + @prof + @abilities.wis.mod' }, amount: { min: 1, max: 10 }, roll: { label: 'Necrotic: 2d10 per Focus Point spent (Constitution save, half on success)', formula: (rd, n) => `${2 * n}d10` } },
   'mastery of death': { kind: 'use', spend: FOCUS, apply: 'heal', roll: { label: 'Back to 1 Hit Point instead of 0', formula: '1' } },
@@ -559,7 +619,9 @@ export function spendKeyOf(catalog, spend) {
   if (!spend) return null;
   const resources = catalog.resources ?? [];
   if (spend.pact) return resources.some((r) => r.key === 'pact') ? 'pact' : null;
-  return resources.find((r) => r.kind === 'pool' && norm(r.item) === norm(spend.item))?.key ?? null;
+  if (spend.hitDie) return (resources.find((r) => r.kind === 'hitDice' && r.faces === spend.hitDie) ?? resources.find((r) => r.kind === 'hitDice'))?.key ?? null;
+  const byItem = (name) => resources.find((r) => r.kind === 'pool' && norm(r.item) === norm(name))?.key ?? null;
+  return [spend.item, ...(spend.alt ?? [])].map(byItem).find(Boolean) ?? null;
 }
 
 /** Os extras de uma entrada: ela mesma, se for `rider`, e os `also`. */

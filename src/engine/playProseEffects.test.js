@@ -6,7 +6,8 @@
 //   Gnomish Cunning, Hippo Build, Keen Smell, Bloodied Frenzy, Danger Sense) e o que não pode
 //   (aliados, inimigos, "give yourself", "doesn't impose", "if you have advantage"), e a
 //   escolha da rolagem certa no diálogo, ligada ou desligada. Desde o G3, o bônus (com o
-//   alvo da condição da frente), o reroll do 1, o piso e a cura e os temporários do "Use".
+//   alvo da condição da frente), o reroll do 1, o piso e a cura e os temporários do "Use"; o dado
+//   somado das marcas de dragão, com ferramentas e o Greater Mark (DDL-0239).
 //
 // FUNÇÕES
 //   feature(name, text, extra): uma feature do catálogo com um parágrafo.
@@ -16,7 +17,7 @@
 //   - Os textos são frases reais do 5etools (XPHB, MPMM, AAG, WoW, FRHoF), com as tags.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { proseClauses, proseRollEffects, proseEffects, proseUses, exprFormula } from './playProseEffects';
+import { proseClauses, proseRollEffects, proseEffects, proseUses, exprFormula, fitsProse } from './playProseEffects';
 import { rollEffects } from './playEffects';
 
 const feature = (name, text, extra = {}) => ({ name, actionKey: `action:${name.toLowerCase()}`, entries: [text], costs: [], ...extra });
@@ -205,5 +206,24 @@ describe('G3: a cura e os temporários do "Use"', () => {
     expect(proseUses([feature('Fortifying Spell', 'One target of the spell gains a number of Temporary Hit Points equal to 2d8 plus your Cleric level.')])).toEqual([]);
     const withActivity = feature('Second Wind', 'You regain Hit Points equal to 1d10 plus your Fighter level.');
     expect(proseUses([withActivity], { hasActivity: () => true })).toEqual([]);
+  });
+});
+
+describe('o dado somado das marcas de dragão (DDL-0239)', () => {
+  const warding = { name: 'Mark of Warding', entries: [{ type: 'entries', name: "Warder's Intuition", entries: ["When you make an Intelligence ({@skill Investigation}) check or an ability check using {@item Thieves' Tools|XPHB}, you can roll {@dice 1d4} and add the number rolled to the ability check."] }] };
+  const detection = { name: 'Mark of Detection', entries: ['When you make an Intelligence ({@skill Investigation}) or Wisdom ({@skill Insight}) check, you can roll {@dice 1d4} and add the number rolled to the ability check.'] };
+  const greater = { name: 'Greater Mark of Detection', entries: [{ type: 'entries', name: 'Improved Intuition', entries: ['When you use the Deductive Intuition benefit of your Mark of Detection feat, you can roll {@dice 1d6} instead of {@dice 1d4}.'] }] };
+
+  it('vale na perícia e na ferramenta citadas, nunca em todo teste', () => {
+    const [e] = proseRollEffects([warding]);
+    expect(e).toMatchObject({ part: { formula: '1d4' }, defaultOn: true });
+    expect(fitsProse(e, { kind: 'check', ability: 'int', skill: 'inv' })).toBe(true);
+    expect(fitsProse(e, { kind: 'check', ability: 'dex', tool: "Thieves' Tools" })).toBe(true);
+    expect(fitsProse(e, { kind: 'check', ability: 'str', skill: 'ath' })).toBe(false);
+  });
+
+  it('o Greater Mark troca o dado da marca base', () => {
+    expect(proseRollEffects([detection])[0].part.formula).toBe('1d4');
+    expect(proseRollEffects([detection, greater])[0].part).toEqual({ label: 'Mark of Detection (Greater Mark of Detection)', formula: '1d6' });
   });
 });

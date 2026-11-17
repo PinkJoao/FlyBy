@@ -12,6 +12,8 @@
 //   e applyEffects soma o que o jogador deixou ligado.
 //
 // FUNÇÕES
+//   healDiceMaxed(state): um efeito ligado põe no máximo os dados de toda cura que o personagem
+//     recebe (`healMax`, o Gift of the Ever-Living Ones, DDL-0238).
 //   Registro
 //     conditionList(state): as condições ativas, com as incluídas (Paralyzed
 //       inclui Incapacitated), e o nível da exaustão.
@@ -88,6 +90,10 @@
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
+//   - FEATURE_EFFECTS das runas do Rune Knight (TC-0167, DDL-0238): o Use do Frost Rune liga +2 nos
+//     testes e salvaguardas de FOR e CON por 10 minutos, o do Hill Rune a resistência a contundente,
+//     perfurante e cortante por 1 minuto, o do Storm Rune o estado profético como nota. No ator esses
+//     efeitos saem desligados (INVOKED_EFFECTS em engine/foundryItems): antes valiam o tempo todo.
 //   - SPELL_EFFECTS: Bless (+1d4 em ataques e saves), Shield of Faith (+2 CA),
 //     Divine Favor (+1d4 radiante com arma), Hunter's Mark (+1d6 de força no alvo
 //     marcado; 1d10 com o Foe Slayer do catálogo, TC-0153), Hex (+1d6 necrótico no alvo amaldiçoado). `self` diz se a magia é
@@ -151,6 +157,23 @@ const FEATURE_EFFECTS = {
       effects: [{ targets: ['check:int', 'check:wis', 'save:con'], d20Min: 10, optional: true, label: 'Starry Form: Dragon' }],
     };
   },
+  'action:frost-rune': () => ({
+    label: 'Frost Rune',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 100,
+    effects: [{ targets: ['check:str', 'save:str', 'check:con', 'save:con'], formula: '2', label: 'Frost Rune' }],
+  }),
+  'action:hill-rune': () => ({ label: 'Hill Rune', source: 'feature', duration: 'manual', maxRounds: 10, resist: ['bludgeoning', 'piercing', 'slashing'], effects: [] }),
+  'action:storm-rune': () => ({
+    label: 'Storm Rune',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 10,
+    endsOnIncapacitated: true,
+    notes: ['prophetic state: a Reaction gives Advantage or Disadvantage to an attack roll, save or check you can see within 60 feet'],
+    effects: [],
+  }),
   'action:rage': (catalog) => ({
     label: 'Rage',
     source: 'feature',
@@ -451,4 +474,9 @@ export function modifierEvent({ modifier, now = new Date() }) {
 export function removeModifierEvent({ state, id, now = new Date() }) {
   const m = (state.modifiers ?? []).find((x) => x.id === id);
   return makeEvent('modifier', { label: `${m?.label ?? 'Effect'} ended`, ops: [{ op: 'modifier', remove: id }], payload: { added: false } }, now);
+}
+
+/** Um efeito ligado põe no máximo os dados de toda cura que o personagem recebe (Gift of the Ever-Living Ones). */
+export function healDiceMaxed(state) {
+  return (state?.modifiers ?? []).some((m) => m.healMax);
 }

@@ -28,6 +28,14 @@
 //   parseChoices(entity, opts): todos os descritores de uma entidade.
 //   collectChoicePicks(bag, kind, out): os picks de um tipo, recursivo.
 //   spellAbilityPick(bag): o atributo de conjuração escolhido, ou null.
+//   dcAbilityPick(bag): o atributo da CD que a prosa pede, escolhido, ou null.
+//   proseOf(entity), parseProseDcAbility(entity, push), parseProseResist(entity, push): as escolhas
+//     que só a prosa pede (TC-0159, DDL-0239): "the DC equals 8 + your proficiency bonus + your
+//     Intelligence, Wisdom, or Charisma modifier (choose when you select this race)" vira
+//     `dcAbility` (kind próprio, pool `spellAbility`: nunca troca o atributo de conjuração); e
+//     "Resistance to one of the following damage types: ... (choose when you select this feat)" vira
+//     a escolha `resist` do campo do 5etools (o Portal Jumper do AU).
+//   ABILITY_BY_NAME, PROSE_DC, PROSE_RESIST: o vocabulário dessas leituras.
 //   collectAbilityPicks(bag, out): os aumentos de atributo, recursivo.
 //
 // DECISÕES E ARMADILHAS
@@ -320,6 +328,31 @@ function parseFeatField(field, push) {
   }
 }
 
+const ABILITY_BY_NAME = { strength: 'str', dexterity: 'dex', constitution: 'con', intelligence: 'int', wisdom: 'wis', charisma: 'cha' };
+const PROSE_DC = /\bDC equals 8 (?:\+|plus) (?:your proficiency bonus (?:\+|plus) )?your ([A-Za-z, ]+?) modifier[^.]*?\(choose when you select/i;
+const PROSE_RESIST = /\bResistance to one of the following damage types: ([A-Za-z, ]+?) \(choose when you select/i;
+
+/** O texto corrido de uma entidade, sem as tags do 5etools. */
+function proseOf(entity) {
+  return JSON.stringify(entity?.entries ?? []).replace(/[{]@\w+ ([^|}]*)[^}]*[}]/g, '$1');
+}
+
+/** O atributo da CD que só a prosa pede ("8 + your proficiency bonus + your Intelligence, Wisdom, or Charisma modifier (choose when you select this race)"). */
+function parseProseDcAbility(entity, push) {
+  const m = proseOf(entity).match(PROSE_DC);
+  const from = m ? m[1].split(/\s*(?:,|\bor\b)\s*/).map((w) => ABILITY_BY_NAME[w.trim().toLowerCase()]).filter(Boolean) : [];
+  if (from.length < 2) return;
+  push({ id: 'dcAbility', kind: 'dcAbility', count: 1, label: 'Save DC ability', pool: { type: 'spellAbility', options: from.map((a) => ({ value: a, label: ABILITY_FULL_NAME[a] ?? a })) } });
+}
+
+/** A resistância à escolha que só a prosa pede ("Resistance to one of the following damage types: Necrotic, Psychic, or Radiant (choose when you select this feat)"). */
+function parseProseResist(entity, push) {
+  if (entity?.resist) return;
+  const m = proseOf(entity).match(PROSE_RESIST);
+  const from = m ? m[1].split(/\s*(?:,|\bor\b)\s*/).map((w) => w.trim().toLowerCase()).filter(Boolean) : [];
+  if (from.length > 1) parseDamageField([{ choose: { from } }], 'resist', push);
+}
+
 /** O talento que uma opção de classe dá pelo `featProgression` (Lessons of the First Ones: "*" vale em qualquer nível). */
 function parseOptionFeatProgression(field, level, push) {
   for (const entry of field ?? []) {
@@ -346,6 +379,8 @@ export function parseChoices(entity, { level = Infinity, bag = null } = {}) {
   parseProfField(entity?.languageProficiencies, 'language', push, (v) => resolveOtherLanguage(entity, v));
   parseStlField(entity?.skillToolLanguageProficiencies, push);
   parseDamageField(entity?.resist, 'resist', push);
+  parseProseResist(entity, push);
+  parseProseDcAbility(entity, push);
   parseDamageField(entity?.immune, 'immune', push);
   parseDamageField(entity?.vulnerable, 'vulnerable', push);
   parseFeatField(entity?.feats, push);
@@ -389,6 +424,11 @@ export function collectChoicePicks(bag, kind, out = []) {
  * @param {object} bag
  * @returns {string|null}
  */
+/** O atributo da CD que a prosa pede, escolhido num bag (`dcAbility`, DDL-0239), ou null. */
+export function dcAbilityPick(bag) {
+  return bag?.dcAbility?.picks?.[0] ?? null;
+}
+
 export function spellAbilityPick(bag) {
   // ATENÇÃO: sem recursão de propósito; o atributo escolhido dentro de um talento é da origem dele.
   for (const choice of Object.values(bag ?? {})) {

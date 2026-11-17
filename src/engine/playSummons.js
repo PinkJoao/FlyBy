@@ -14,7 +14,10 @@
 //   summonTurnOf(entries), turnText(turn): a regra de turno pela prosa e o texto dela.
 //   featureSummons(bestiary, featureName, source), isSummonFeature(featureName): os
 //     companheiros de classe (CLASS_SUMMONS), os do livro da feature quando há.
-//   familiarForms(bestiary): as feras de ND 0 do Find Familiar.
+//   familiarForms(bestiary, special): as feras de ND 0 do Find Familiar e as formas especiais (uma
+//     por nome, a do XMM).
+//   familiarSpecialForms(options): as formas especiais que as opções escolhidas dão, lidas no texto
+//     ("special forms: Imp, Pseudodragon, ...": o Pact of the Chain, DDL-0238).
 //   isLightSummon(spell), lightRulesOf(entries), lightOps(opts): a instância leve
 //     (S4, DDL-0194): a magia sem bloco que fica em campo (LIGHT_SUMMONS).
 //   lcText(entries): a prosa em minúsculas, sem as marcas do 5etools.
@@ -23,12 +26,23 @@
 //     de Conjuration com espaço; DDL-0236), ou 0.
 //   summonOps({ state, creature, spell, level, variant, count, origin, catalog }):
 //     as operações de invocar (e as que tiram os summons da concentração anterior).
-//   summonGroupView(group, block): a criatura resolvida e os PV de cada membro.
+//   summonGroupView(group, block, features): a criatura resolvida e os PV de cada membro; as
+//     features do invocador aplicam o que as invocações dão ao familiar (`notes`).
+//   isFamiliar(group): o grupo é o familiar do Find Familiar (a magia, o Pact of the Chain ou do Legion)?
+//   familiarBoons(group, features): o que as invocações mudam no familiar (TC-0166): a CD do
+//     invocador (Investment of the Chain Master), o ataque dele (Call of the Void) e as notas.
+//   withBoons(stats, boons): as ações do bloco com esse ataque e essa CD.
+//   summonRiders(view, catalog, state, action): os extras do invocador no dano do summon (Master
+//     Demonologist: o 1d6 do Hex num diabo que você comanda, ligado se você concentra no Hex; o
+//     Magic Fang do Bond of Fang and Scale: 1d6 na mordida do drake, DDL-0239).
 //   summonVitalsEvent(opts), dismissEvent(group): os eventos do card (PV pelos
 //     painéis Heal e Hurt do jogador, dispensar).
 //   summonAttack(group, action, stats): uma ação no formato de ataque do play mode.
 //
 // DECISÕES E ARMADILHAS
+//   - As invocações do familiar (DDL-0238) são estado do PERSONAGEM, não do grupo: a vista as lê a cada
+//     desenho, então trocar a invocação muda o familiar já invocado. O que não tem número (o voo de 40
+//     pés, a Reação que dá Resistência, o tipo de dano trocável) vai como nota no cartão.
 //   - O CONTEXTO do invocador (círculo, nível de classe, modificadores, PB, ataque,
 //     CD e modificador de magia, variante) é gravado no grupo na hora de invocar: o
 //     reducer não lê a ficha (DDL-0108), e a vista resolve a criatura só com o que o
@@ -170,10 +184,26 @@ export function isSummonFeature(featureName) {
   return !!CLASS_SUMMONS[lc(featureName)];
 }
 
-/** As formas do Find Familiar: as feras de ND 0 (o XPHB permite qualquer uma). */
-export function familiarForms(bestiary) {
-  return (bestiary ?? []).filter((m) => (m.type?.type ?? m.type) === 'beast' && String(m.cr?.cr ?? m.cr) === '0' && !m.summonedBySpell && !m.summonedByClass)
-    .sort((a, b) => a.name.localeCompare(b.name));
+/** As formas do Find Familiar: as feras de ND 0 (o XPHB permite qualquer uma) e as formas especiais, uma por nome (a do XMM). */
+export function familiarForms(bestiary, special = []) {
+  const want = new Set(special.map(lc));
+  const beasts = (bestiary ?? []).filter((m) => !m.summonedBySpell && !m.summonedByClass && (m.type?.type ?? m.type) === 'beast' && String(m.cr?.cr ?? m.cr) === '0');
+  const extra = new Map();
+  for (const m of bestiary ?? []) {
+    const k = lc(m.name);
+    if (want.has(k) && !m.summonedBySpell && (!extra.has(k) || m.source === 'XMM')) extra.set(k, m);
+  }
+  return [...new Set([...beasts, ...extra.values()])].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** As formas especiais de familiar que as opções escolhidas dão, pelo texto ("one of the following special forms: Imp, ..."). */
+export function familiarSpecialForms(options = []) {
+  const out = [];
+  for (const o of options) {
+    const m = lcText(o?.entries).match(/special forms: ([^.]+)\./);
+    if (m) out.push(...m[1].split(/, (?:or )?| or /).map((n) => n.replace(/[(].*$/, '').trim()).filter(Boolean));
+  }
+  return out;
 }
 
 // ATENÇÃO: só magia cuja prosa cria uma coisa que fica e que o jogador move ou repete; emanação em si mesmo não entra.
@@ -216,8 +246,46 @@ export function lightOps({ state, spell, level, origin, catalog, rules, casterHp
   return [...old, add];
 }
 
-/** A criatura resolvida e os PV de cada membro. */
-export function summonGroupView(group, block) {
+/** O grupo é o familiar do Find Familiar (pelo Pact of the Chain, do Legion ou a magia)? */
+function isFamiliar(group) {
+  return lc(group?.spell?.name) === 'find familiar' || /^pact of the (chain|legion)$/.test(lc(group?.feature));
+}
+
+/**
+ * O que as invocações do bruxo mudam no familiar (TC-0166): o ataque e a CD do invocador, e as notas.
+ * @returns {{ attack: number|null, dc: number|null, notes: string[] }}
+ */
+export function familiarBoons(group, features = []) {
+  const has = (n) => features.includes(n);
+  const out = { attack: null, dc: null, notes: [] };
+  if (!isFamiliar(group)) return out;
+  const ctx = group.ctx ?? {};
+  if (has('investment of the chain master')) {
+    out.dc = ctx.spellDc ?? null;
+    out.notes.push('Investment of the Chain Master: Fly or Swim Speed 40 ft (your choice); a Bonus Action commands its Attack action; its Bludgeoning, Piercing or Slashing damage can be Necrotic or Radiant; your Reaction gives it Resistance to a damage it takes');
+  }
+  if (has('call of the void')) {
+    out.attack = ctx.spellAttack ?? null;
+    out.notes.push('Call of the Void: it uses your spell attack bonus; a Bonus Action commands its Attack action; your Reaction gives a Voidwalker Resistance to a damage it takes');
+  }
+  if (has('gift of the ever-living ones')) out.notes.push('Gift of the Ever-Living Ones: while it is within 100 feet, turn on the effect on your Features tab and your healing dice count as their maximum');
+  if (has('voice of the chain master')) out.notes.push('Voice of the Chain Master: telepathy and its senses on the same plane; you can speak through it');
+  return out;
+}
+
+/** As ações do bloco com o ataque e a CD que as invocações dão ao familiar. */
+function withBoons(stats, boons) {
+  if (!stats || (boons.attack == null && boons.dc == null)) return stats;
+  const fix = (a) => ({
+    ...a,
+    ...(a.attack && boons.attack != null ? { attack: { ...a.attack, bonus: boons.attack } } : {}),
+    ...(a.save && boons.dc != null ? { save: { ...a.save, dc: boons.dc } } : {}),
+  });
+  return { ...stats, actions: stats.actions.map(fix), bonus: stats.bonus.map(fix), reactions: stats.reactions.map(fix) };
+}
+
+/** A criatura resolvida e os PV de cada membro; `features` são as do invocador (as invocações do familiar). */
+export function summonGroupView(group, block, features = []) {
   const member = (base) => (m, index) => {
     const max = base == null ? null : Math.max(0, base + (m.maxDelta ?? 0));
     const out = { index, max, current: max == null ? null : Math.min(max, Math.max(0, max - (m.damage ?? 0))), conditions: m.conditions ?? [] };
@@ -229,9 +297,10 @@ export function summonGroupView(group, block) {
     const members = base == null ? [] : (group.members ?? []).map(member(base));
     return { group, stats: null, members, light: group.light };
   }
-  const stats = block ? creatureStats(block, group.ctx ?? {}) : null;
+  const boons = familiarBoons(group, features);
+  const stats = withBoons(block ? creatureStats(block, group.ctx ?? {}) : null, boons);
   const members = (group.members ?? []).map(member(stats?.hp?.value ?? null));
-  return { group, stats, members };
+  return { group, stats, members, ...(boons.notes.length ? { notes: boons.notes } : {}) };
 }
 
 /**
@@ -301,4 +370,18 @@ export function summonAttack(group, action, stats) {
     damage: dice.length ? { dice: dice.join(' + '), bonus: 0, types: [...new Set(action.damage.map((d) => d.type).filter(Boolean))] } : null,
     versatile: null,
   };
+}
+
+/** Os extras do invocador no dano de um summon (Master Demonologist: o Hex num diabo que você comanda). */
+export function summonRiders(view, catalog, state, action = null) {
+  const features = catalog?.features ?? [];
+  const out = [];
+  if (features.includes('master demonologist') && lc(view?.stats?.type) === 'fiend') {
+    const hex = lc(state?.concentration?.name) === 'hex';
+    out.push({ id: 'rider:master-demonologist', label: 'Master Demonologist (Hex)', source: 'Master Demonologist', part: { label: 'Hex', formula: '1d6' }, note: 'only against the target of your Hex; Necrotic', defaultOn: hex });
+  }
+  if (features.includes('bond of fang and scale') && lc(view?.group?.feature) === 'drake companion' && (!action || /bite/i.test(action.name))) {
+    out.push({ id: 'rider:magic-fang', label: 'Magic Fang (Bond of Fang and Scale)', source: 'Bond of Fang and Scale', part: { label: 'Magic Fang', formula: '1d6' }, note: 'the Bite; the type of its Draconic Essence', defaultOn: true });
+  }
+  return out;
 }

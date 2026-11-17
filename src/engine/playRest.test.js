@@ -1,6 +1,9 @@
 // =============================================================================
 // playRest.test: testes dos descansos do play mode
 // =============================================================================
+// O QUE FAZ
+//   Os descansos, o Dado de Vida e o Gift of the Ever-Living Ones (DDL-0238).
+//
 // FUNÇÕES
 //   seq(...values): um rng que devolve os valores em ordem e falha se acabarem.
 //   st(patch): um estado de jogo com o patch por cima do descansado.
@@ -154,5 +157,18 @@ describe('hitDiceEvent', () => {
     const s1 = run(s, longRestEvent({ state: s, catalog }));
     expect(s1.maxHpDelta).toBe(0);
     expect(hpView(s1, 30)).toEqual({ max: 30, current: 30, temp: 0 });
+  });
+});
+
+describe('Gift of the Ever-Living Ones (DDL-0238)', () => {
+  it('com `maxed`, o Dado de Vida vai ao máximo', () => {
+    const r = rollHitDie({ catalog, faces: 8, rng: seq(), maxed: true });
+    expect(r.healed).toBe(10);
+    expect(r.rules).toContain('Gift of the Ever-Living Ones');
+  });
+
+  it('o hitDiceEvent põe no máximo com o efeito `healMax` ligado', () => {
+    const ev = hitDiceEvent({ state: st({ damage: 20, modifiers: [{ id: 'g', healMax: true, effects: [] }] }), catalog, count: 1, rng: seq() });
+    expect(ev.rolls.total).toBe(12);
   });
 });

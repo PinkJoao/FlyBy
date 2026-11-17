@@ -61,6 +61,8 @@
 //       (o Find Familiar, as feras de ND 0); a feature de companheiro tem "Summon"; a
 //       regra de turno vem da prosa e aparece na linha dos summons do combate (DDL-0193).
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
+//     withFixedDamage(attack, state, catalog): o ataque com os extras fixos ligados no dano (o rótulo
+//       mostra o mesmo número que o diálogo rola: o +4 do Agonizing Blast, DDL-0239).
 //     askRollKind(opts), damageText(attack): a pergunta "d20 ou os outros dados" e o
 //       texto do dano (DDL-0156).
 //     attackOrDamage(attack, cost, extraOps), withAmmo(event, attack): o ataque da
@@ -118,10 +120,15 @@
 //     rollTool(name): o teste de uma ferramenta, com o atributo escolhido.
 //   withOps(event, ops): o evento com operações a mais na frente (o gasto de Focus
 //     ou dos usos da feature que deu o custo alternativo, num evento só).
+//   chosenOptions(character, db): as opções de classe escolhidas, resolvidas (as formas especiais
+//     de familiar do Pact of the Chain saem do texto delas, DDL-0238).
 //   HistoryHead(props): o título do histórico com desfazer, refazer e limpar.
 //   toastNumber(event): o número do aviso de um evento.
 //
 // DECISÕES E ARMADILHAS
+//   - O "Bond" do Pact of the Blade (DDL-0239): um botão por arma carregada, "Conjure a weapon" abre o
+//     painel seletor de armas (só as que o pacto deixa invocar, `pactChoices`) e "End the bond"; a lista
+//     nativa de 34 armas saiu (UI-PATTERNS: escolher é pelo painel).
 //   - O histórico é uma COLUNA ao lado da página a partir de 1140px (WIDE_QUERY,
 //     o mesmo número do Play.module.css) e, mais estreito, a PRIMEIRA aba
 //     (DDL-0115); não há botão nem gaveta. Saindo do estreito para o largo com a
@@ -215,7 +222,7 @@ import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
@@ -232,8 +239,8 @@ import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
 import SummonsTab from '../components/play/SummonsTab';
 import useBestiary from '../hooks/useBestiary';
-import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, familiarForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
-import { resolveClassObj, resolveSubclassObj } from '../engine/resolve';
+import { summonCreaturesFor, summonOps, summonGroupView, summonRiders, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, familiarForms, familiarSpecialForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
+import { resolveClassObj, resolveSubclassObj, resolveOptionalFeature } from '../engine/resolve';
 import { resolveSpellObj } from '../engine/spells';
 import RollButton from '../components/play/RollButton';
 import { CombatDock, CombatFloat, RoundBadge } from '../components/play/CombatControls';
@@ -253,6 +260,7 @@ import EffectsCard from '../components/play/EffectsCard';
 import { SKILL_LABEL } from '../components/builder/labels';
 import SelectorPanel from '../selector/SelectorPanel';
 import conditionEntity from '../selector/entities/condition';
+import weaponEntity from '../selector/entities/weapon';
 import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
 import useSettingsStore from '../store/settingsStore';
@@ -301,10 +309,21 @@ const damageText = (attack) => {
   return d.dice ? `${d.dice}${bonus}` : String(Math.max(0, d.bonus ?? 0));
 };
 
+/** O ataque com os extras fixos ligados por padrão somados ao dano (o CAR do Agonizing Blast), para o rótulo. */
+const withFixedDamage = (attack, state, catalog) => (attack?.damage ? { ...attack, damage: { ...attack.damage, bonus: (attack.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(attack, 'damage')) } } : attack);
+
 /** O evento com operações a mais na frente (o gasto da feature que deu o custo). */
 const withOps = (event, ops = []) => (ops.length ? { ...event, ops: [...ops, ...event.ops] } : event);
 
 /** O título do histórico com desfazer e refazer (na coluna e na aba). */
+/** As opções de classe escolhidas pelo personagem (invocações, manobras), resolvidas no compêndio. */
+function chosenOptions(character, db) {
+  return (character?.classes ?? []).flatMap((c) => Object.values(c.choices ?? {}))
+    .filter((e) => e?.kind === 'optionalfeature')
+    .flatMap((e) => (e.picks ?? []).map((p) => resolveOptionalFeature(db, p)))
+    .filter(Boolean);
+}
+
 function HistoryHead({ onUndo, onRedo, onClear, canUndo, canRedo, canClear, lastLabel, nextLabel, round = null }) {
   return (
     <div className={styles.historyHead}>
@@ -595,23 +614,32 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** O Pact of the Blade: vincular uma arma que carrega, invocar uma, ou desfazer o vínculo (ação bônus). */
   const bondPactWeapon = async () => {
-    const { carried, conjure } = pactChoices(db, baseCatalog);
-    const options = [
-      ...carried.map((c, i) => ({ label: `Bond: ${c.name}`, value: `b${i}` })),
-      ...conjure.map((c, i) => ({ label: `Conjure: ${c.name}`, value: `c${i}` })),
-      ...(state.pactWeapon ? [{ label: 'End the bond', value: 'end' }] : []),
-    ];
-    const r = await ask({
+    const { carried } = pactChoices(db, baseCatalog);
+    const v = await ask({
       title: 'Pact of the Blade',
-      message: state.pactWeapon ? `Your pact weapon: ${state.pactWeapon.name}. Bond with another or end the bond (Bonus Action).` : 'Bond with a weapon you carry or conjure one (Bonus Action).',
-      fields: [{ type: 'select', name: 'w', label: 'Weapon', default: options[0]?.value, options }],
-      actions: [{ label: 'Cancel', value: false }, { label: 'Bond', value: true, tone: 'primary' }],
+      message: state.pactWeapon ? `Your pact weapon: ${state.pactWeapon.name}. Bond with another, conjure one or end the bond (Bonus Action).` : 'Bond with a weapon you carry or conjure one (Bonus Action).',
+      actions: [
+        ...carried.map((c, i) => ({ label: `Bond: ${c.name}`, value: `b${i}` })),
+        { label: 'Conjure a weapon', value: 'conjure', tone: 'primary' },
+        ...(state.pactWeapon ? [{ label: 'End the bond', value: 'end', tone: 'danger' }] : []),
+        { label: 'Cancel', value: null },
+      ],
     });
-    if (!r?.action) return;
-    const v = String(r.values?.w ?? '');
-    const choice = v === 'end' ? null : v.startsWith('b') ? carried[Number(v.slice(1))] : conjure[Number(v.slice(1))];
+    if (v == null || v === false) return;
+    if (v === 'conjure') {
+      setPicker('pact');
+      return;
+    }
+    const choice = v === 'end' ? null : carried[Number(String(v).slice(1))];
     if (v !== 'end' && !choice) return;
     record(pactEvent({ choice }), v === 'end' ? null : 'bonus');
+  };
+
+  /** A arma escolhida no painel para invocar como arma de pacto. */
+  const conjurePactWeapon = (raw) => {
+    setPicker(null);
+    const choice = pactChoices(db, baseCatalog).conjure.find((c) => c.name === raw.name);
+    if (choice) record(pactEvent({ choice }), 'bonus');
   };
 
   /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
@@ -780,7 +808,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const rawSpell = resolveSpellObj(db, spell.name, spell.source);
     const summoning = (rawSpell?.miscTags ?? []).includes('SMN');
     const beasts = summoning ? await bestiary.load() : [];
-    const creatures = !summoning ? [] : /^find familiar$/i.test(spell.name) ? familiarForms(beasts) : summonCreaturesFor(beasts, spell);
+    const creatures = !summoning ? [] : /^find familiar$/i.test(spell.name) ? familiarForms(beasts, familiarSpecialForms(chosenOptions(character, db))) : summonCreaturesFor(beasts, spell);
     const light = !creatures.length && isLightSummon(spell);
     let transformSelf = false;
     if (!way || creatures.length || light || transformRule) {
@@ -817,7 +845,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
     if (spell.mechanics?.attack && spell.mechanics?.damage?.dice) {
       const atk = spellAttackOf(origin, spell, way.level);
-      const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus) : '', effect: damageText(atk) });
+      const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus + fixedRollBonus(state, catalog, attackRollContext(atk))) : '', effect: damageText(withFixedDamage(atk, state, catalog)) });
       if (kind === 'attack') rollAttack(atk);
       else if (kind === 'effect') rollDamage(atk);
     } else if (spell.mechanics?.attack) rollAttack(spellAttackOf(origin, spell, way.level));
@@ -911,9 +939,9 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (r?.action && ability) rollTest({ type: 'tool', id: name, ability }, `${name} (${ABILITY_FULL[ability]})`);
   };
 
-  /** As vistas dos grupos de summon: a criatura resolvida e os PV de cada membro. */
+  /** As vistas dos grupos de summon: a criatura resolvida e os PV de cada membro (com as invocações do familiar). */
   const summonViews = (state.summons ?? []).map((g) =>
-    summonGroupView(g, bestiary.list.find((m) => m.name === g.ref?.name && m.source === g.ref?.source) ?? null));
+    summonGroupView(g, bestiary.list.find((m) => m.name === g.ref?.name && m.source === g.ref?.source) ?? null, catalog.features ?? []));
 
   /** A linha dos summons no controle de turno: quem age e como. */
   const summonLine = (state.summons ?? []).map((g) => ({ label: g.label, note: turnText(g.turn) || 'acts as the text says' }));
@@ -932,7 +960,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (kind === 'attack') {
       roll((options) => rollAttackEvent({ catalog, attack: atk, options }), { title: `${atk.name}: attack`, kind: 'd20', parts: [{ label: 'Attack', formula: atk.attack?.bonus ?? 0 }], rollData: catalog.rollData }, false, []);
     } else {
-      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData }, false, []);
+      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData }, false, summonRiders(view, catalog, state, action));
     }
   };
 
@@ -1097,7 +1125,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
    */
   const attackOrDamage = async (attack, cost, extraOps = []) => {
     const kind = attack.damage
-      ? await askRollKind({ title: attack.name, attack: attack.toHit ? formatBonus(attack.toHit.total) : '', effect: damageText(attack) })
+      ? await askRollKind({ title: attack.name, attack: attack.toHit ? formatBonus(attack.toHit.total + fixedRollBonus(state, catalog, attackRollContext(attack))) : '', effect: damageText(withFixedDamage(attack, state, catalog)) })
       : 'attack';
     if (kind === 'attack') rollAttack(attack, false, true, cost, extraOps);
     else if (kind === 'effect') rollDamage(attack, {}, false, true, cost, extraOps);
@@ -1432,6 +1460,18 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           hint="Conditions, statuses like Concentration, and diseases."
           exclude={(c) => c.name !== 'Concentration' && !!state.conditions?.[conditionId(c.name)]}
           onSelect={pickCondition}
+          onClose={() => setPicker(null)}
+        />
+      )}
+      {picker === 'pact' && (
+        <SelectorPanel
+          entity={weaponEntity}
+          db={db}
+          currentId={null}
+          heading="Pact of the Blade: conjure a weapon"
+          hint="Simple or Martial Melee weapons; with Improved Pact Weapon, also bows and crossbows."
+          exclude={(w) => !pactChoices(db, baseCatalog).conjure.some((c) => c.name === w.name)}
+          onSelect={conjurePactWeapon}
           onClose={() => setPicker(null)}
         />
       )}

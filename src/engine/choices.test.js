@@ -229,3 +229,18 @@ describe('featProgression de uma opção de classe (DDL-0237)', () => {
     expect(parseChoices(asClass).filter((c) => c.kind === 'feat')).toEqual([]);
   });
 });
+
+describe('escolhas que só a prosa pede (TC-0159, DDL-0239)', () => {
+  it('o atributo da CD de um traço ("choose when you select this race")', () => {
+    const kender = { name: 'Kender', entries: [{ type: 'entries', name: 'Taunt', entries: ['The DC equals 8 + your proficiency bonus + your Intelligence, Wisdom, or Charisma modifier (choose when you select this race).'] }] };
+    expect(parseChoices(kender).find((c) => c.kind === 'dcAbility')).toMatchObject({ id: 'dcAbility', pool: { type: 'spellAbility', options: [{ value: 'int' }, { value: 'wis' }, { value: 'cha' }] } });
+    const tauren = { name: 'Tauren', entries: ['If your lineage grants you an ability that allows a saving throw, the DC equals 8 plus your Strength, Constitution, or Wisdom modifier (choose when you select the lineage) and Proficiency.'] };
+    expect(parseChoices(tauren).find((c) => c.kind === 'dcAbility').pool.options.map((o) => o.value)).toEqual(['str', 'con', 'wis']);
+  });
+
+  it('a resistância à escolha do Portal Jumper; com o campo resist do dado, nada a mais', () => {
+    const portal = { name: 'Portal Jumper', entries: [{ type: 'entries', name: 'Otherworldly Resilience', entries: ['You have Resistance to one of the following damage types: Necrotic, Psychic, or Radiant (choose when you select this feat).'] }] };
+    expect(parseChoices(portal).find((c) => c.kind === 'resist').pool.options.map((o) => o.value)).toEqual(['necrotic', 'psychic', 'radiant']);
+    expect(parseChoices({ ...portal, resist: [{ choose: { from: ['fire', 'cold'] } }] }).filter((c) => c.kind === 'resist')).toHaveLength(1);
+  });
+});

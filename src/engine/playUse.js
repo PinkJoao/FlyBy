@@ -37,6 +37,7 @@
 //   featureLogEvent(args): o "Log to history" de uma feature (nome e custo, sem rolar).
 //
 // DECISÕES E ARMADILHAS
+//   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo: a activity que cura o próprio personagem e o "Use" com `apply: 'heal'`.
 //   - activityEvent NÃO se chama "use...": o lint do React trata todo nome que
 //     começa com "use" como hook e recusa chamá-lo dentro de um handler.
 //   - Liberdade com aviso (§6.4): sem recurso suficiente, o evento sai mesmo assim
@@ -89,8 +90,8 @@
 import { rollFormula, rollParts, d20Test, cryptoRng } from './dice';
 import { makeEvent, remainingOf, hpView } from './playState';
 import { healOutcome, tempHpOutcome } from './playHealth';
-import { bonusParts, rngFor, d20Options } from './playActions';
-import { featureModifier } from './playEffects';
+import { bonusParts, rngFor, d20Options, withDiceMax } from './playActions';
+import { featureModifier, healDiceMaxed } from './playEffects';
 import { withRounds } from './playCombat';
 
 const SPECIAL_RECOVERY = {
@@ -209,7 +210,8 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
     });
   }
   const healLabel = activity.heal?.label ?? 'Healing';
-  if (activity.heal && only !== 'attack') parts.push({ label: healLabel, formula: activity.heal.formula });
+  const giftMax = activity.heal && (options.applyHeal ?? activity.selfTarget) && healDiceMaxed(state);
+  if (activity.heal && only !== 'attack') parts.push({ label: healLabel, formula: giftMax ? withDiceMax(activity.heal.formula, data) : activity.heal.formula });
   if (activity.roll && only !== 'attack') parts.push({ label: activity.roll.label, formula: activity.roll.formula });
   for (const p of only === 'attack' ? [] : activity.damage ?? []) parts.push({ label: (p.types ?? []).join('/') || 'Damage', formula: p.formula });
   const rolls = parts.length
@@ -376,7 +378,8 @@ export function withResourceMax(catalog, state) {
  * chave do que o uso gasta (um); `modifier`, `save` e `roll` vêm do registro (playFeatureRolls).
  */
 export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, restoreUpTo = null, rng = cryptoRng, now = new Date() }) {
-  const rolls = roll ? rollParts([{ label: roll.label, formula: roll.formula }], { data: catalog.rollData, rng }) : null;
+  const maxed = apply === 'heal' && healDiceMaxed(state) && /d\d/.test(String(roll?.formula ?? ''));
+  const rolls = roll ? rollParts([{ label: maxed ? `${roll.label} (Gift of the Ever-Living Ones)` : roll.label, formula: maxed ? withDiceMax(roll.formula, catalog.rollData) : roll.formula }], { data: catalog.rollData, rng }) : null;
   const ops = spend && amount > 0 ? [{ op: 'spend', key: spend, amount }] : [];
   if (modifier) ops.push({ op: 'modifier', add: state ? withRounds(modifier, state, modifier.maxRounds) : modifier });
   let healed = null;

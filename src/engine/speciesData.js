@@ -13,6 +13,7 @@
 //   E o catálogo: o compêndio com o `_copy` resolvido, mais as espécies legadas.
 //
 // FUNÇÕES
+//   SPECIES_OPTION_FEATURES: os traços cujas listas nomeadas são opções escolhidas (DDL-0239).
 //   Variantes
 //   applyArrMods(arr, ops): os ops de `_mod` sobre um array.
 //   substituteVars(value, vars): troca `{{var}}` em toda string, recursivo.
@@ -466,6 +467,9 @@ export function speciesChoices({ db, baseRace, raceObj, lineage = null, level = 
 const SPECIES_OPTIONS = {
   'Simic Hybrid|GGR': { feature: 'Animal Enhancement', steps: [{ level: 1, lists: [0] }, { level: 5, lists: [0, 1], exclude: 1 }] },
 };
+
+/** Os traços cujas listas nomeadas são opções escolhidas (só a escolhida vale no jogo: as armas naturais, DDL-0239). */
+export const SPECIES_OPTION_FEATURES = new Set(Object.values(SPECIES_OPTIONS).map((o) => o.feature));
 
 /**
  * As escolhas de opção que só a prosa de um traço pede (o Animal Enhancement do Simic

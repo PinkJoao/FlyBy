@@ -56,7 +56,9 @@
 //     Shape Uses".
 //   - Recuperação comum: descanso longo recupera tudo; curto recupera 1.
 //   - As duas invocações do Pact of the Talisman (Protection, Bond) entraram à mão no PROSE_USES_FLAT
-//     (DDL-0237): o levantamento não olha as opções de classe; mantenha-as ao regenerar.
+//     (DDL-0237), e as seis runas do Rune Knight (DDL-0238: uma vez por descanso curto, duas a
+//     partir do Master of Runes no nível 15 de Fighter): o levantamento não olha as opções de
+//     classe; mantenha-as ao regenerar.
 //   - PROSE_USES_* (DDL-0106) vem de `npx vite-node scripts/survey-feature-uses.js`:
 //     a frase de uso limitado da prosa ("Once you use this trait, you can't use it
 //     again until you finish a Long Rest", "a number of times equal to your
@@ -258,6 +260,13 @@ const PROSE_USES_BY_CLASS = {
 };
 
 const PROSE_USES_FLAT = {
+  "azerite surge": ['@prof', 'lr'],
+  "cloud rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
+  "fire rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
+  "frost rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
+  "hill rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
+  "stone rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
+  "storm rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
   "protection of the talisman": ['@prof', 'lr'],
   "aberrant dragonmark": ['1', 'lr'],
   "adept of the red robes": ['@prof', 'lr'],

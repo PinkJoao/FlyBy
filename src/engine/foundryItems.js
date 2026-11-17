@@ -92,6 +92,8 @@
 //   buildFeatureOptionItems(classEntry, classObj, subObj, db): itens "Feature:
 //     Opção".
 //   buildOptionalFeatureItems(classEntry, db): invocations, metamagic e afins.
+//   INVOKED_EFFECTS: os efeitos que a opção só liga ao ser invocada (o +2 do Frost Rune, a
+//     resistência do Hill Rune; o overlay os dá ligados, DDL-0238): saem desligados.
 //
 //   Background
 //   buildOriginFeatItem(character, db): o talento de origem.
@@ -179,7 +181,8 @@
 //     entram sempre que o curado não cobrir aquele campo. Sem `uses` em nenhum dos
 //     três (curado, SRD, overlay), vale o pool que só a PROSA declara
 //     (proseUses, DDL-0106), em feature, traço de espécie, talento e opção de classe (DDL-0237:
-//     o Protection of the Talisman e o Bond of the Talisman ficavam sem pool no ator).
+//     o Protection of the Talisman e o Bond of the Talisman ficavam sem pool no ator); a activity
+//     sem gasto passa a gastar o próprio item (as runas do Rune Knight, DDL-0238).
 //
 //   Classe e features
 //   - Classe, subclasse, features, talentos, optional features, magias e itens
@@ -1452,6 +1455,9 @@ export function buildFeatureOptionItems(classEntry, classObj, subObj, db) {
   return out;
 }
 
+/** Os efeitos que a opção só liga ao ser invocada (as runas do Rune Knight): saem desligados. */
+const INVOKED_EFFECTS = { 'frost rune': ['Sturdy'], 'hill rune': ['Resilience'] };
+
 const OPTFEAT_SUBTYPE = {
   EI: 'eldritchInvocation',
   MM: 'metamagic',
@@ -1495,11 +1501,17 @@ export function buildOptionalFeatureItems(classEntry, db) {
         item.effects.push(...ofOverlay.effects.filter((e) => cited.has(e._id) && !item.effects.some((x) => x._id === e._id)));
       }
       if (ofOverlay.system.uses && !item.system.uses.max) item.system.uses = ofOverlay.system.uses;
-      if (!item.system.uses?.max) {
-        const prose = proseUses(raw.name, null, item.system.activities);
-        if (prose) item.system.uses = prose;
+      const prose = proseUses(raw.name, null, item.system.activities);
+      if (prose && !item.system.uses?.max) item.system.uses = prose;
+      if (prose && item.system.uses?.max === prose.max) {
+        for (const a of Object.values(item.system.activities ?? {})) {
+          if (a.activation?.type && !(a.consumption?.targets ?? []).length) {
+            a.consumption = { ...(a.consumption ?? {}), targets: [{ type: 'itemUses', target: '', value: '1', scaling: { mode: '', formula: '' } }] };
+          }
+        }
       }
       Object.assign(item.system, overlaySystemExtras(ofOverlay.system));
+      for (const e of item.effects) if ((INVOKED_EFFECTS[norm(raw.name)] ?? []).includes(e.name)) e.disabled = true;
       const subtype = (raw.featureType ?? []).map((t) => OPTFEAT_SUBTYPE[t]).find(Boolean);
       if (subtype) item.system.type.subtype = subtype;
       item.flags.builder5e.choiceId = choiceId;
@@ -2047,7 +2059,7 @@ export function buildSpeciesItem(character, raceObj, db = null, featItems = [], 
   );
 
   const residual = {};
-  const RESIDUAL_SPECIES_KINDS = ['spellAbility', 'size', 'mixed', 'resist', 'immune', 'vulnerable', 'spell', 'spellSet', 'featureoption'];
+  const RESIDUAL_SPECIES_KINDS = ['spellAbility', 'dcAbility', 'size', 'mixed', 'resist', 'immune', 'vulnerable', 'spell', 'spellSet', 'featureoption'];
   for (const [id, entry] of Object.entries(speciesChoices ?? {})) {
     if (!entry || typeof entry !== 'object') continue;
     if ((entry.picks?.length ?? 0) === 0) continue;

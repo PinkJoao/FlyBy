@@ -7,6 +7,10 @@
 //   classItem(identifier, levels, advancement): um item de classe com escalas.
 //   baseDerived(extra): uma derivação mínima.
 //
+// O QUE FAZ
+//   Também as armas naturais lidas na prosa (Claws, Horns, Dragon Hide, o Animal Enhancement só
+//   com a opção escolhida, DDL-0239).
+//
 // DECISÕES E ARMADILHAS
 //   - O ator e a derivação são FIXTURES pequenas, passadas pelo `opts` do
 //     derivePlayCatalog: os testes miram as regras de leitura (chaves, consumo,
@@ -18,7 +22,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   evalUses, scaleValues, scaleRollData, actorResources, weaponAttacks, unarmedStrike, cantripAttacks,
-  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity,
+  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity, naturalAttacks,
 } from './playCatalog';
 
 const feat = (name, system = {}, extra = {}) => ({ type: 'feat', name, system: { identifier: '', uses: { max: '' }, ...system }, ...extra });
@@ -339,5 +343,26 @@ describe('spendsChannelDivinity', () => {
     expect(spendsChannelDivinity(f('Inescapable Destruction', "Necrotic damage dealt by your cleric spells and Channel Divinity options ignores resistance."))).toBe(false);
     expect(spendsChannelDivinity(f('Supreme Healing', 'When you would roll dice to restore Hit Points with a spell or Channel Divinity, use the highest number.'))).toBe(false);
     expect(spendsChannelDivinity(f('Channel Divinity', 'You can use your Channel Divinity to fuel magical effects.'))).toBe(false);
+  });
+});
+
+describe('armas naturais pela prosa (DDL-0239)', () => {
+  const d = { modifiers: { str: 3 }, proficiencyBonus: 2 };
+  const f = (name, entries) => ({ name, entries });
+
+  it('"the strike deals 1d6 + your Strength modifier slashing damage" vira um Unarmed Strike', () => {
+    const [a] = naturalAttacks([f('Claws', ['You have claws that you can use to make unarmed strikes. When you hit with them, the strike deals 1d6 + your Strength modifier slashing damage, instead of the bludgeoning damage normal for an unarmed strike.'])], d);
+    expect(a).toMatchObject({ name: 'Unarmed Strike (Claws)', kind: 'unarmed', toHit: { total: 5 }, damage: { dice: '1d6', bonus: 3, types: ['slashing'] } });
+  });
+
+  it('"plus your Strength modifier" e o texto num item de lista sem nome (Tauren, Dragon Hide)', () => {
+    expect(naturalAttacks([f('Horns', ['When you hit with your Unarmed Strike and deal damage, you can deal Piercing damage equal to 1d6 plus your Strength modifier instead of the normal damage of an Unarmed Strike.'])], d)[0].damage).toMatchObject({ dice: '1d6', types: ['piercing'] });
+    expect(naturalAttacks([f('Dragon Hide', [{ type: 'list', items: ['The claws are natural weapons. If you hit with them, you deal slashing damage equal to 1d4 + your Strength modifier, instead of the normal bludgeoning damage.'] }])], d)[0]).toMatchObject({ name: 'Unarmed Strike (Dragon Hide)', damage: { dice: '1d4' } });
+  });
+
+  it('numa feature de opções, só a escolhida (Animal Enhancement)', () => {
+    const ae = f('Animal Enhancement', [{ type: 'list', items: [{ type: 'item', name: 'Grappling Appendages', entries: ['If you hit with it, the target takes bludgeoning damage equal to 1d6 + your Strength modifier, instead of the bludgeoning damage normal for an unarmed strike.'] }, { type: 'item', name: 'Manta Glide', entries: ['You can glide.'] }] }]);
+    expect(naturalAttacks([ae], d)).toEqual([]);
+    expect(naturalAttacks([ae], d, new Set(['Grappling Appendages'])).map((a) => a.name)).toEqual(['Unarmed Strike (Grappling Appendages)']);
   });
 });

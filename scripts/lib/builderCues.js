@@ -13,6 +13,9 @@
 //     guarda, ou null.
 //
 // DECISÕES E ARMADILHAS
+//   - A pista de atributo ("Intelligence, Wisdom, or Charisma ... (choose") também se satisfaz com o
+//     `dcAbility` (o atributo da CD de um traço, DDL-0239); "resistance to one of the following damage
+//     types" é pista de resistência (o Portal Jumper).
 //   - "Of your choice" sozinho NÃO é pista: quase sempre é escolha na hora ("a creature
 //     of your choice"). Só conta perto de proficiency, language, skill, tool, resistance,
 //     damage type ou cantrip.
@@ -59,7 +62,7 @@ const KIND_CUES = [
   ['skill', /\b(?:proficiency|proficient) (?:in|with) (?:one|two|three|four|a|an)\b[^.]{0,60}\bskills?\b[^.]{0,40}\bof your choice|\bskills? of your choice/],
   ['tool', /\btools? of your choice|\bproficiency with (?:one|two|a) [^.]{0,40}\btools?\b[^.]{0,30}\bof your choice/],
   ['language', /\blanguages? of your choice|\blearn (?:one|two|three) (?:additional |extra )?languages?/],
-  ['resist', /\bresistance to [^.]{0,60}\bdamage types? (?:of your choice|you choose)|\bchoose (?:a|one) damage type\b/],
+  ['resist', /\bresistance to [^.]{0,60}\bdamage types? (?:of your choice|you choose)|\bchoose (?:a|one) damage type\b|\bresistance to one of the following damage types\b/],
   ['spell', /\b(?:learn|know) (?:one|two|three|an?) (?:\w+ )?(?:cantrips?|spells?)\b[^.]{0,40}\bof your choice|\bcantrip of your choice/],
   ['spell', /\bchoose (?:a|one|two|three) level \d+ (?:and a level \d+ )?[^.]{0,30}spells?\b/],
   ['ability', /\bincrease (?:one|an) ability score of your choice/],
@@ -100,7 +103,7 @@ export function pendingChoice(f, character, entries, text) {
   const cue = cueOf(text);
   if (!cue) return null;
   const named = entries.some((e) => e.key.includes(name) || (ALIASES[name] && e.key.includes(ALIASES[name])) || e.picks.some((p) => p.startsWith(`${name}|`)));
-  const typed = cue.kind !== 'named' && entries.some((e) => (WANT_WHERE[f.kind] ?? []).includes(e.where) && (e.kind === cue.kind || (cue.kind === 'spell' && /spell/.test(e.kind ?? '')) || ((cue.kind === 'skill' || cue.kind === 'tool') && e.kind === 'mixed')));
+  const typed = cue.kind !== 'named' && entries.some((e) => (WANT_WHERE[f.kind] ?? []).includes(e.where) && (e.kind === cue.kind || (cue.kind === 'spellAbility' && e.kind === 'dcAbility') || (cue.kind === 'spell' && /spell/.test(e.kind ?? '')) || ((cue.kind === 'skill' || cue.kind === 'tool') && e.kind === 'mixed')));
   const spells = cue.kind === 'spell' && /^(?:spellcasting|pact magic)$/.test(name) && (character.classes ?? []).some((c) => Object.keys(c.spells ?? {}).length || (c.spells?.length ?? 0));
   return named || typed || spells ? null : cue.kind;
 }

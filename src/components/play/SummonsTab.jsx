@@ -17,6 +17,7 @@
 //   SummonsTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - As notas do familiar (`view.notes`: o que as invocações dão, DDL-0238) aparecem abaixo da linha de detalhes.
 //   - Usa os painéis e linhas da aba Features e do grimório (SpellbookTab.module.css),
 //     o mesmo desenho (§6.4: o que parece a ficha usa o CSS da ficha).
 //   - PV sem número (molde em prosa que o núcleo não leu) mostra o texto e "?": a
@@ -130,6 +131,13 @@ export default function SummonsTab({ views, loading = false, onHp, onAttack, onD
                   </span>
                 </li>
               )}
+              {(view.notes ?? []).map((n) => (
+                <li key={n} className={styles.row}>
+                  <span className={styles.rowText}>
+                    <span className={styles.rowMetaLine}>{n}</span>
+                  </span>
+                </li>
+              ))}
               {members.map((m) => (
                 <li key={m.index} className={styles.row}>
                   <span className={styles.rowText}>

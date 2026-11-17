@@ -38,6 +38,9 @@
 //     (DDL-0086): o dado diz `prepared` e só o texto dá o uso de 1 por descanso
 //     longo; sem a linha, o jogador perdia o recurso no export. O Eldritch Hex é o
 //     oposto: bucket `innate` mas sem conjuração grátis (castType null).
+//   - `overrides` (DDL-0238): a única entrada que troca um castType que o dado DECLARA: o Find Familiar
+//     do Pact of the Chain do XPHB vem como ritual, e a prosa diz "as a Magic action without expending
+//     a spell slot" (o Pact of the Legion do WoW, mesmo texto, já vem certo).
 //   - Invocações (TC-0092): o dado traz a magia como `innate` sem frequência, e a
 //     prosa diz "without expending a spell slot" sem limite (2024) ou "at will"
 //     (2014): castType 'will'. Linha por "Nome|Fonte", lida no texto de cada uma.
@@ -151,6 +154,8 @@ export const INNATE_USES = {
     'see invisibility': { castType: 'rest', count: 1 },
   },
 
+  // ATENÇÃO: o dado diz ritual; a prosa diz 'as a Magic action without expending a spell slot' (DDL-0238).
+  'Pact of the Chain|XPHB': { 'find familiar': { castType: 'will', overrides: 'ritual' } },
   'Armor of Shadows|XPHB': { 'mage armor': { castType: 'will' } },
   'Ascendant Step|XPHB': { levitate: { castType: 'will' } },
   'Fiendish Vigor|XPHB': { 'false life': { castType: 'will' } },
@@ -341,9 +346,9 @@ export function applyUsesOverlay(spells, entity, level = 1) {
   const table = INNATE_USES[overlayKey(entity)];
   if (!table) return spells ?? [];
   return (spells ?? []).map((s) => {
-    if (s.castType && s.castType !== 'innate') return s;
     const override = table[s.name.toLowerCase()];
     if (!override) return s;
+    if (s.castType && s.castType !== 'innate' && s.castType !== override.overrides) return s;
     const count = override.countColumn ? tableColumnAt(entity, override.countColumn, level) : (override.count ?? null);
     return {
       ...s,

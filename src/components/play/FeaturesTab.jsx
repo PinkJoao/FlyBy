@@ -21,6 +21,8 @@
 //   FeaturesTab(props): a aba; `poolsOf(f)` são os pools da linha.
 //
 // DECISÕES E ARMADILHAS
+//   - A CD de um traço de espécie que o texto deixa o jogador escolher o atributo (`feature.dc`, TC-0159)
+//     vai como etiqueta "Save DC" na linha.
 //   - O Pact of the Blade ganha "Bond": vincular uma arma que carrega, invocar uma ou desfazer o
 //     vínculo (`onPact`, engine/playPact.js, DDL-0236); a arma vinculada vira ataque com CAR.
 //   - O pool vai para a linha pelo NOME do item; quando duas features têm o mesmo nome (a
@@ -160,6 +162,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
               <Tag key={label} tone={type ?? undefined}>{label}</Tag>
             ))}
             {recovery && <Tag>{recovery}</Tag>}
+            {feature.dc != null && <Tag>{`Save DC ${feature.dc}`}</Tag>}
             {rider && <Tag tone="info">{rider.on.includes('damage') ? (rider.on.length > 1 ? 'In d20 and damage rolls' : 'In damage rolls') : 'In d20 rolls'}</Tag>}
           </span>
         </span>

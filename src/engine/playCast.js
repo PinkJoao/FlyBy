@@ -29,6 +29,7 @@
 //     devolve o espaço, DDL-0218).
 //
 // DECISÕES E ARMADILHAS
+//   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo, como o Supreme Healing em spellHealEvent; a parte diz qual dos dois.
 //   - A magia `ritualOnly` (o ritual do grimório pelo Ritual Adept) só tem o caminho do ritual
 //     (TC-0158).
 //   - Boon of Spell Recall (DDL-0218): "Whenever you cast a spell with a level 1-4 spell
@@ -72,7 +73,7 @@ import { rollParts, cryptoRng } from './dice';
 import { makeEvent, remainingOf } from './playState';
 import { healOutcome } from './playHealth';
 import { bonusParts, rngFor, withDiceMax } from './playActions';
-import { endConcentrationOps, spellModifier } from './playEffects';
+import { endConcentrationOps, spellModifier, healDiceMaxed } from './playEffects';
 import { withRounds } from './playCombat';
 
 /** O resto de um recurso do catálogo, com o máximo dele. */
@@ -250,7 +251,8 @@ const SPELL_HEAL_BONUS = {
 /** Rola a cura de uma magia e, se for no próprio personagem, aplica. */
 export function spellHealEvent({ catalog, state, origin, spell, level, options = {}, rng = cryptoRng, now = new Date() }) {
   const supreme = (catalog.features ?? []).includes('supreme healing');
-  const parts = healParts(origin, spell, level, catalog).map((p) => (supreme && /d\d/.test(String(p.formula)) ? { label: `${p.label} (Supreme Healing)`, formula: withDiceMax(p.formula, catalog.rollData) } : p));
+  const maxBy = supreme ? 'Supreme Healing' : healDiceMaxed(state) ? 'Gift of the Ever-Living Ones' : null;
+  const parts = healParts(origin, spell, level, catalog).map((p) => (maxBy && /d\d/.test(String(p.formula)) ? { label: `${p.label} (${maxBy})`, formula: withDiceMax(p.formula, catalog.rollData) } : p));
   const rolls = rollParts([...parts, ...bonusParts(options)], { data: catalog.rollData, rng: rngFor(options, rng) });
   const ops = [];
   let healed = null;

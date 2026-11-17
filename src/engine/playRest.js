@@ -19,6 +19,7 @@
 //   longRestEvent(args): o descanso longo.
 //
 // DECISÕES E ARMADILHAS
+//   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo: rollHitDie recebe `maxed` e o dado vai ao máximo, como a regra `max` das features.
 //   Regras medidas no XPHB (variantrules "Short Rest", "Long Rest" e o capítulo 1)
 //   - Curto: cada dado de vida gasto é rolado com o modificador de CON e cura no
 //     MÍNIMO 1; o jogador decide depois de cada rolagem se gasta outro (por isso
@@ -56,7 +57,7 @@
 import { rollFormula, cryptoRng } from './dice';
 import { makeEvent, hpView } from './playState';
 import { healOutcome } from './playHealth';
-import { endConcentrationOps, restModifierOps } from './playEffects';
+import { endConcentrationOps, restModifierOps, healDiceMaxed } from './playEffects';
 
 /** Uma hora em rodadas: o descanso curto do XPHB. */
 const SHORT_REST_ROUNDS = 600;
@@ -115,8 +116,8 @@ export function recoveryFor(catalog, state, period, { rng = cryptoRng } = {}) {
 }
 
 /** Rola um dado de vida com a CON (e as regras das features); cura no mínimo 1 (XPHB). */
-export function rollHitDie({ catalog, faces, rng = cryptoRng, rest = false }) {
-  const rules = hitDieRules(catalog, rest);
+export function rollHitDie({ catalog, faces, rng = cryptoRng, rest = false, maxed = false }) {
+  const rules = [...hitDieRules(catalog, rest), ...(maxed ? [{ max: true, label: 'Gift of the Ever-Living Ones' }] : [])];
   const reroll = rules.find((r) => r.reroll)?.reroll;
   const die = rules.some((r) => r.max) ? `${faces}` : `1d${faces}${reroll ? `ro${reroll}` : ''}`;
   const plus = rules.reduce((s, r) => s + (r.plus ?? 0), 0);
@@ -203,7 +204,7 @@ export function hitDiceEvent({ state, catalog, count, rng = cryptoRng, now = new
   const spends = [];
   let want = n;
   for (const d of dice) {
-    for (let i = 0; i < d.left && want > 0; i++, want--) spends.push(rollHitDie({ catalog, faces: d.faces, rng }));
+    for (let i = 0; i < d.left && want > 0; i++, want--) spends.push(rollHitDie({ catalog, faces: d.faces, rng, maxed: healDiceMaxed(state) }));
   }
   for (const s of spends) byFace[s.faces] = (byFace[s.faces] ?? 0) + 1;
   for (const d of dice) if (byFace[d.faces]) ops.push({ op: 'spend', key: d.key, amount: byFace[d.faces] });

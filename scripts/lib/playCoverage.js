@@ -48,6 +48,9 @@ const SLOT = 'a button on the cast card, by the slot level (CAST_TRIGGERS in eng
 const SPELL_HEAL = 'added to the healing of a spell of level 1 or higher (SPELL_HEAL_BONUS in engine/playCast, DDL-0219)';
 const HEAL_MOD = 'added to every healing or Temporary Hit Points (healOutcome, tempHpOutcome; Honed Spellfire in the catalog; DDL-0215)';
 const PACT = 'the +1 lives on the pact weapon attack (withPactWeapon in engine/playPact, DDL-0236)';
+const MARK_UP = 'raises the die of its Mark benefit (diceUpgrades in engine/playProseEffects, DDL-0239)';
+const OTHERS = 'a die another creature rolls (an ally with your inspiration die)';
+const SUP_DIE = 'the fighter level raises the Superiority Die (the scale of the Battle Master)';
 export const EXPLAINED = {
   advantage: {
     'cohort of chaos': OTHER, 'street justice': OTHER, 'team tactics': OTHER, 'adjust density': OTHER, 'potent stone': OTHER,
@@ -98,6 +101,29 @@ export const EXPLAINED = {
   },
   floor: {},
   dice: {
+    'greater mark of detection': MARK_UP,
+    'greater mark of finding': MARK_UP,
+    'greater mark of healing': MARK_UP,
+    'greater mark of making': MARK_UP,
+    'greater mark of passage': MARK_UP,
+    'greater mark of sentinel': MARK_UP,
+    'greater mark of shadow': MARK_UP,
+    'greater mark of storm': MARK_UP,
+    'replicate magic item': TEXT, 'limited wish': TEXT, 'lethargy resilience': TEXT,
+    'hot streak': 'raises the damage of the Burning condition, which the burning creature takes on its turn (the DM rolls it)',
+    'planar wanderer': 'damage you take on a failed check: the Hurt panel takes it',
+    'mote of potential': OTHERS, 'unfailing inspiration': OTHERS, 'combat inspiration': OTHERS,
+    'demiurgic colossus': 'the barbarian level raises the Elemental Cleaver die (FEATURE_ROLLS byLevel)',
+    'mighty swarm': 'the ranger level raises the Gathered Swarm die (FEATURE_ROLLS byLevel, DDL-0239)',
+    'improved combat superiority': SUP_DIE, 'ultimate combat superiority': SUP_DIE,
+    'twinkling constellations': 'the 2d8 of the Archer and the Chalice in the Starry Form (DDL-0232)',
+    'telekinetic master': 'the Telekinesis cast with no slot (DDL-0232)',
+    "stalker's flurry": "the Dreadful Strike die (FEATURE_ROLLS, DDL-0232)",
+    'honed spellfire': 'the Radiant Fire die and the Bolstering Flames bonus (FEATURE_ROLLS byLevel, the catalog)',
+    'vampiric embrace': 'the healing is the same d6 rolled as extra spell damage (DDL-0235)',
+    'mystic brew': 'a drink made at each rest, effects in text (DDL-0235)',
+    'bond of fang and scale': "the Magic Fang 1d6 on the drake's Bite (summonRiders, DDL-0239)",
+    'martial adept': "its pool pays the maneuvers' Superiority Die (d6, the SUP alt in FEATURE_ROLLS, DDL-0239)",
     'giant ancestry': "the umbrella of the goliath's ancestries: the chosen one is its own feature with its own pool and roll",
     'improved brutal strike (2)': 'the scale raises the Brutal Strike die; the two effects are two riders',
     'boon of spell recall': 'a button on the cast card rolls the 1d4 and gives the slot back (CAST_TRIGGERS, DDL-0218)',
@@ -118,7 +144,7 @@ export function cuesOf(text) {
 
 /** 'use', 'log' ou 'passive'. */
 export function classify(f, action, pools, bridged) {
-  if ((action?.activities ?? []).length || pools.length || (f.roll && f.roll !== 'passive') || bridged || PASSIVE_FEATURES.includes(f.name.toLowerCase()) || REROLL_FEATURES.includes(f.name.toLowerCase())) return 'use';
+  if ((action?.activities ?? []).length || pools.length || f.attack || (f.roll && f.roll !== 'passive') || bridged || PASSIVE_FEATURES.includes(f.name.toLowerCase()) || REROLL_FEATURES.includes(f.name.toLowerCase())) return 'use';
   return isActiveFeature(f, action, pools) ? 'log' : 'passive';
 }
 

@@ -21,6 +21,8 @@
 //   FeaturesTab(props): a aba; `poolsOf(f)` são os pools da linha.
 //
 // DECISÕES E ARMADILHAS
+//   - O Pact of the Blade ganha "Bond": vincular uma arma que carrega, invocar uma ou desfazer o
+//     vínculo (`onPact`, engine/playPact.js, DDL-0236); a arma vinculada vira ataque com CAR.
 //   - O pool vai para a linha pelo NOME do item; quando duas features têm o mesmo nome (a
 //     "Channel Divinity" do paladino e a guarda-chuva da subclasse antiga), só a do
 //     identificador do pool o mostra (DDL-0226).
@@ -121,7 +123,7 @@ function showFeatureText(feature, onLog) {
 }
 
 /** Uma feature: nome, nível e custos; o pool e o botão de usar ao lado. */
-function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource }) {
+function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact }) {
   const activities = action?.activities ?? [];
   const special = action ? specialRecovery(action, catalog) : null;
   const turn = featureCosts(feature, action);
@@ -173,6 +175,11 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
             {special ? 'Choose' : 'Use'}
           </Button>
         )}
+        {onPact && /^pact of the blade$/i.test(feature.name) && (
+          <Button size="sm" variant="primary" onClick={() => onPact(feature)} title="Bond with a weapon or conjure your pact weapon">
+            Bond
+          </Button>
+        )}
         {onTransform && transformRuleOf(feature.name)?.kind === 'wildShape' && (
           <Button size="sm" variant="primary" onClick={() => onTransform(feature)} title="Assume one of your known forms">
             Transform
@@ -202,7 +209,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
  * A aba de features do jogo.
  * @param {{ catalog: object, state: object, onUse: Function, onSpecial: Function, onLog?: Function, onResource?: Function }} props
  */
-export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource }) {
+export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact }) {
   const [kind, setKind] = useState('all');
   const [mode, setMode] = useState('active');
   const [query, setQuery] = useState('');
@@ -234,7 +241,7 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, o
       else next.add(label);
       return next;
     });
-  const rowProps = { catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource };
+  const rowProps = { catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact };
 
   if (!features.length && !orphans.length) return <p className={styles.empty}>This character has no features.</p>;
 

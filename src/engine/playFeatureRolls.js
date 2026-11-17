@@ -135,6 +135,10 @@
 //     alternativo quando o próprio pool acabou (o Breath of the Dragon "spend 2 ki points to use
 //     this feature again", o Aspect of the Wyrm "3 ki points", e o Ascendant Aspect, 1 ponto que
 //     melhora o sopro) fica no ajuste à mão do contador (DDL-0202).
+//   - TC-0164 (DDL-0236): o Murderous Intent do Dread Incarnate é um piso só nos dados do Sneak
+//     Attack (`forgoableMin`, a parte marcada `forgoable`), não na rolagem inteira como o `diceMin`.
+//     `when: 'pact'` (Eldritch Smite, Lifedrinker) vale só no ataque da arma de pacto
+//     (engine/playPact.js), achado no passe ao vivo do warlock: antes aparecia em qualquer arma.
 //   - As famílias pós-2024 (DDL-0235), cada uma pela frase do texto: Raging Elements com `options`
 //     (o Use pergunta Icefury, Lava Burst ou Lightning Bolt; os dados são o Rage Damage em d8, d4 e
 //     d6), Spiritual Protectors (1d4 na fúria), Experimental Elixir (1d6 da tabela), Adventurer's
@@ -155,7 +159,8 @@
 //     lightning", 2d6 no 10, 3d6 no 15, 4d6 no 20, CD 8 + PB + CON) e de tundra (2 temporários,
 //     3 no 5, 4 no 10, 5 no 15, 6 no 20); Master's Flourish ("roll a d6 and use it instead of
 //     expending a Bardic Inspiration die"); Supernatural Defense ("add 1d6 to your roll" contra
-//     o alvo do Slayer's Prey); Improved Pact Weapon (+1 no ataque e no dano da arma do pacto);
+//     o alvo do Slayer's Prey); Improved Pact Weapon (o +1 saiu daqui no DDL-0236: mora no ataque da
+//     arma de pacto, engine/playPact.js);
 //     Lifedrinker do XPHB (1d6 uma vez por turno; o Dado de Vida que cura sai pelo card de PV).
 //     O Great Stature e o Runic Juggernaut só sobem o dado do Giant's Might (byLevel).
 //   - Oitava leva (DDL-0221, o passe ao vivo): Great Weapon Fighting do XPHB ("you can treat
@@ -272,7 +277,7 @@ export const FEATURE_ROLLS = {
   'dreadful strikes': { kind: 'rider', on: ['damage'], when: 'weapon', formula: (rd) => ((rd.classes?.ranger?.levels ?? 0) >= 11 ? '1d6' : '1d4'), note: 'Psychic; a target takes it only once per turn' },
   "hunter's prey": { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => (c.features ?? []).includes("hunter's prey") && !(c.features ?? []).some((f) => f.startsWith("hunter's prey: ")), formula: '1d8', label: 'Colossus Slayer', note: 'only with the Colossus Slayer option, if the target is missing Hit Points; once per turn' },
   "hunter's prey: colossus slayer": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d8', label: 'Colossus Slayer', note: 'if the target is missing Hit Points; once per turn' },
-  'eldritch smite': { kind: 'rider', on: ['damage'], when: 'weapon', spend: { pact: true }, formula: (rd) => `${1 + (rd.spells?.pact?.level ?? 1)}d8`, note: 'pact weapon, once per turn; Force; a Huge or smaller target can be knocked Prone' },
+  'eldritch smite': { kind: 'rider', on: ['damage'], when: 'pact', spend: { pact: true }, formula: (rd) => `${1 + (rd.spells?.pact?.level ?? 1)}d8`, note: 'pact weapon, once per turn; Force; a Huge or smaller target can be knocked Prone' },
   'peerless skill': { kind: 'rider', on: ['check', 'attack'], spend: { item: 'Bardic Inspiration' }, formula: (rd) => (rd['scale.bard.inspiration'] ? '@scale.bard.inspiration' : '1d6'), note: 'after you fail; not spent if it still fails' },
   'tactical mind': { kind: 'rider', on: ['check'], spend: { item: 'Second Wind' }, formula: '1d10', note: 'after you fail the check; not spent if it still fails' },
   'reckless attack': {
@@ -368,6 +373,7 @@ export const FEATURE_ROLLS = {
   'circle of mortality': { kind: 'rider', on: ['damage'], formula: byLevel('cleric', [[11, '1d6'], [0, '1d4']]), label: 'Pull of Death', note: 'a creature missing Hit Points; once per turn; Necrotic' },
   'hungering might': { kind: 'use', apply: 'heal', roll: { label: 'Hit Points regained (Bloodied, transformed)', formula: '1d10 + @abilities.wis.mod' } },
   'knowledge from a past life': { kind: 'rider', on: ['check'], spend: { item: 'Knowledge from a Past Life' }, formula: '1d6', note: 'after you fail the check' },
+  'dread incarnate': { kind: 'rider', on: ['damage'], when: 'weapon', forgoableMin: 3, defaultOn: true, label: 'Murderous Intent (Sneak Attack: a 1 or 2 counts as 3)', note: 'only the Sneak Attack dice' },
   'raging elements': {
     kind: 'use',
     options: [
@@ -451,8 +457,7 @@ export const FEATURE_ROLLS = {
   'storm aura: tundra': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points for each creature of your choice in the aura', formula: byLevel('barbarian', [[20, '6'], [15, '5'], [10, '4'], [5, '3'], [0, '2']]) } },
   "master's flourish": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d6', note: 'a Blade Flourish that rolls this d6 instead of spending Bardic Inspiration' },
   'supernatural defense': { kind: 'rider', on: ['save', 'check'], formula: '1d6', note: "against the target of your Slayer's Prey (its saves, or a check to escape its grapple)" },
-  'improved pact weapon': { kind: 'rider', on: ['attack', 'damage'], when: 'weapon', formula: '1', note: 'your pact weapon, unless it is a magic weapon that already has a bonus' },
-  lifedrinker: { kind: 'rider', on: ['damage'], when: 'weapon', has: xphbOnly('Lifedrinker'), formula: '1d6', note: "your pact weapon, once per turn; Necrotic, Psychic or Radiant; spend a Hit Point Die on the HP card's Hit dice to heal" },
+  lifedrinker: { kind: 'rider', on: ['damage'], when: 'pact', has: xphbOnly('Lifedrinker'), formula: '1d6', note: "your pact weapon, once per turn; Necrotic, Psychic or Radiant; spend a Hit Point Die on the HP card's Hit dice to heal" },
   'runic juggernaut': { kind: 'passive' },
   'arms of the astral self': { kind: 'use', spend: FOCUS, roll: { label: 'Force within 10 feet (Dexterity save)', formula: MARTIAL(2) } },
   'body of the astral self': { kind: 'use', roll: { label: 'Damage reduced (Deflect Energy)', formula: '1d10 + @abilities.wis.mod' } },
@@ -538,6 +543,7 @@ function fits(when, roll) {
   if (!roll.weapon) return false;
   if (when === 'unarmed') return !!roll.unarmed;
   if (when === 'armed') return !roll.unarmed;
+  if (when === 'pact') return !!roll.pact;
   if (when === 'str') return roll.attackAbility === 'str';
   if (when === 'melee') return roll.melee !== false;
   if (when === 'ranged') return roll.melee === false;
@@ -566,7 +572,7 @@ export function featureRiders(state, catalog, roll) {
         id: `rider:${slug(name)}${entry.kind === 'rider' ? (i ? `-${i}` : '') : `-${i + 1}`}`,
         label: none ? `${label} (none left)` : label,
         source: label,
-        ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
+        ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgoableMin ? { forgoableMin: e.forgoableMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
         note: noteOf(e, rd),
         defaultOn: !!e.defaultOn,
         ...(key ? { spend: { key, amount: 1 } } : {}),

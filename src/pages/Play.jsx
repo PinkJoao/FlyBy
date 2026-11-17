@@ -208,6 +208,7 @@ import {
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
+import { withPactWeapon, pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
 import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
@@ -354,9 +355,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const bestiary = useBestiary(summonsActive || !!form);
   const formBlock = form ? bestiary.list.find((m) => m.name === form.ref?.name && m.source === form.ref?.source) ?? null : null;
   const resourceMax = play.state?.resourceMax;
+  const pactWeapon = play.state?.pactWeapon ?? null;
   const catalog = useMemo(
-    () => withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }),
-    [baseCatalog, form, formBlock, resourceMax],
+    () => withPactWeapon(withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }), pactWeapon),
+    [baseCatalog, form, formBlock, resourceMax, pactWeapon],
   );
   const beastDb = useMemo(() => ({ ...db, bestiary: { monster: bestiary.list } }), [db, bestiary.list]);
   const [formPick, setFormPick] = useState(null);
@@ -589,6 +591,27 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
     const r = await askShortRest({ catalog, state });
     if (r) record(shortRestEvent({ state, catalog, spends: r.spends }));
+  };
+
+  /** O Pact of the Blade: vincular uma arma que carrega, invocar uma, ou desfazer o vínculo (ação bônus). */
+  const bondPactWeapon = async () => {
+    const { carried, conjure } = pactChoices(db, baseCatalog);
+    const options = [
+      ...carried.map((c, i) => ({ label: `Bond: ${c.name}`, value: `b${i}` })),
+      ...conjure.map((c, i) => ({ label: `Conjure: ${c.name}`, value: `c${i}` })),
+      ...(state.pactWeapon ? [{ label: 'End the bond', value: 'end' }] : []),
+    ];
+    const r = await ask({
+      title: 'Pact of the Blade',
+      message: state.pactWeapon ? `Your pact weapon: ${state.pactWeapon.name}. Bond with another or end the bond (Bonus Action).` : 'Bond with a weapon you carry or conjure one (Bonus Action).',
+      fields: [{ type: 'select', name: 'w', label: 'Weapon', default: options[0]?.value, options }],
+      actions: [{ label: 'Cancel', value: false }, { label: 'Bond', value: true, tone: 'primary' }],
+    });
+    if (!r?.action) return;
+    const v = String(r.values?.w ?? '');
+    const choice = v === 'end' ? null : v.startsWith('b') ? carried[Number(v.slice(1))] : conjure[Number(v.slice(1))];
+    if (v !== 'end' && !choice) return;
+    record(pactEvent({ choice }), v === 'end' ? null : 'bonus');
   };
 
   /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
@@ -1037,7 +1060,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         rollData: catalog.rollData,
       },
       quick,
-      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability }),
+      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact }),
       spend ? cost : null,
     );
 
@@ -1064,7 +1087,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
       spend ? cost : null,
     );
 
@@ -1348,7 +1371,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
-            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} />
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} onPact={hasPactOfTheBlade(catalog) ? bondPactWeapon : null} />
           )}
 
           {activeTab === 'Spells' && (

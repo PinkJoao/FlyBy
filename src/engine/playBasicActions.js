@@ -216,6 +216,7 @@ export function attacksPerAction(catalog) {
   const f = new Set((catalog?.features ?? []).map(lower));
   if (f.has('three extra attacks')) return 4;
   if (f.has('two extra attacks')) return 3;
+  if (f.has('devouring blade')) return 3;
   return f.has('extra attack') || f.has('thirsting blade') ? 2 : 1;
 }
 

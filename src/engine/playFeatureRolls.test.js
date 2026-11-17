@@ -82,7 +82,8 @@ describe('extras na rolagem', () => {
     expect(applyEffects([peer]).spends).toEqual([]);
     const applied = applyEffects([peer], [peer.id]);
     expect(riderSpendOps(applied, c)).toEqual({ ops: [{ op: 'spend', key: 'pool:bardic-inspiration', amount: 1 }], lines: [{ name: 'Bardic Inspiration', amount: 1 }] });
-    const [smite] = featureRiders(st(), c, { kind: 'damage', weapon: true });
+    expect(featureRiders(st(), c, { kind: 'damage', weapon: true })).toEqual([]);
+    const [smite] = featureRiders(st(), c, { kind: 'damage', weapon: true, pact: true });
     expect(smite.spend.key).toBe('pact');
   });
 

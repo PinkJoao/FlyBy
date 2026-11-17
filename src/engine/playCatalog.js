@@ -95,6 +95,8 @@
 //     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity?
 //     withFeatureSpeeds(speeds, features): escalada e natação de feature (FEATURE_SPEEDS:
 //       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156).
+//     EXTRA_RECOVERY: a recuperação que uma feature soma ao pool de outra (o Cutthroat do Dread
+//       Incarnate devolve um Bloodthirst no descanso curto, DDL-0236).
 //     featureAttacks(features, derived): os ataques que uma feature cria (FEATURE_ATTACKS: as
 //       Psychic Blades do Soulknife, TC-0161), no formato dos de arma.
 //     derivePlayCatalog(character, db, opts): o catálogo.
@@ -345,6 +347,11 @@ export function weaponAttacks(character, derived) {
     };
   });
 }
+
+/** A recuperação que uma feature soma ao pool de outra (Cutthroat: "You regain one expended use of Bloodthirst when you finish a Short Rest"). */
+const EXTRA_RECOVERY = {
+  'dread incarnate': { item: 'Bloodthirst', recovery: { period: 'sr', type: 'formula', formula: '1' } },
+};
 
 /** Os ataques que uma feature cria, pelo texto do XPHB (as Psychic Blades do Soulknife: 1d6 psíquico, Finesse, Thrown 60/120, Vex; a segunda, de ação bônus, 1d4). */
 const FEATURE_ATTACKS = {
@@ -1085,6 +1092,11 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
   };
 
   const features = [...new Set((a?.items ?? []).filter((i) => i.type === 'feat' && !isBasicActionItem(i)).map((i) => norm(i.name)))];
+  for (const [name, extra] of Object.entries(EXTRA_RECOVERY)) {
+    if (!features.includes(name)) continue;
+    const pool = resources.find((r) => r.kind === 'pool' && r.item === extra.item);
+    if (pool && !(pool.recovery ?? []).some((r) => r.period === extra.recovery.period)) pool.recovery = [...(pool.recovery ?? []), extra.recovery];
+  }
   const attacks = [
     ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features }),
     ...featureAttacks(features, d),

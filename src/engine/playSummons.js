@@ -19,6 +19,8 @@
 //     (S4, DDL-0194): a magia sem bloco que fica em campo (LIGHT_SUMMONS).
 //   lcText(entries): a prosa em minúsculas, sem as marcas do 5etools.
 //   summonContext(catalog, origin, opts): o contexto do invocador, congelado.
+//   durableTemp(catalog, spell, level): os temporários do Durable Summons (2 x nível de mago, magia
+//     de Conjuration com espaço; DDL-0236), ou 0.
 //   summonOps({ state, creature, spell, level, variant, count, origin, catalog }):
 //     as operações de invocar (e as que tiram os summons da concentração anterior).
 //   summonGroupView(group, block): a criatura resolvida e os PV de cada membro.
@@ -84,7 +86,14 @@ export function summonContext(catalog, origin, { spellLevel = null, classLevel =
   };
 }
 
+/** O Durable Summons: temporários iguais a duas vezes o nível de mago na criatura de uma magia de Conjuration lançada com espaço, ou 0. */
+function durableTemp(catalog, spell, level) {
+  if (!(catalog?.features ?? []).includes('durable summons') || spell?.school !== 'C' || !(level > 0)) return 0;
+  return 2 * (catalog.rollData?.classes?.wizard?.levels ?? 0);
+}
+
 /** As operações de invocar, e as que tiram os summons da concentração anterior. */
+
 export function summonOps({ state, creature, spell, level, variant = null, count = 1, origin, catalog, classLevel = null, turn = null, feature = null }) {
   const ops = [];
   const expiresRound = state?.combat && spell?.durationRounds && !spell?.concentration ? state.combat.round + spell.durationRounds : null;
@@ -101,7 +110,7 @@ export function summonOps({ state, creature, spell, level, variant = null, count
       turn,
       ...(expiresRound ? { expiresRound } : {}),
       ctx: summonContext(catalog, origin, { spellLevel: level ?? null, classLevel, variant }),
-      members: Array.from({ length: n }, () => ({ damage: 0, conditions: [] })),
+      members: Array.from({ length: n }, () => ({ damage: 0, conditions: [], ...(durableTemp(catalog, spell, level) ? { temp: durableTemp(catalog, spell, level) } : {}) })),
     },
   });
   return ops;

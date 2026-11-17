@@ -16,6 +16,8 @@
 // DECISÕES E ARMADILHAS
 //   - Movido do survey-play-coverage sem mudar nada: as regras e os motivos estão nos
 //     DDL-0213 a DDL-0217. Uma feature em `use` não tem pista pendente: o app faz a conta.
+//   - O +1 do Improved Pact Weapon saiu do FEATURE_ROLLS para o ataque da arma de pacto
+//     (DDL-0236): a pista `bonus` dele tem motivo nomeado (PACT).
 // -----------------------------------------------------------------------------
 import { isActiveFeature } from '../../src/engine/playFeatures.js';
 import { PASSIVE_FEATURES } from '../../src/engine/playEffects.js';
@@ -45,6 +47,7 @@ const HIT_DICE = 'changes the Hit Point Die roll: HIT_DIE_RULES and REST_HIT_DIC
 const SLOT = 'a button on the cast card, by the slot level (CAST_TRIGGERS in engine/playCast, DDL-0215)';
 const SPELL_HEAL = 'added to the healing of a spell of level 1 or higher (SPELL_HEAL_BONUS in engine/playCast, DDL-0219)';
 const HEAL_MOD = 'added to every healing or Temporary Hit Points (healOutcome, tempHpOutcome; Honed Spellfire in the catalog; DDL-0215)';
+const PACT = 'the +1 lives on the pact weapon attack (withPactWeapon in engine/playPact, DDL-0236)';
 export const EXPLAINED = {
   advantage: {
     'cohort of chaos': OTHER, 'street justice': OTHER, 'team tactics': OTHER, 'adjust density': OTHER, 'potent stone': OTHER,
@@ -71,6 +74,7 @@ export const EXPLAINED = {
     'soul of the forge': AC, 'agile parry': AC, 'awakened astral self': AC, defense: AC, 'tauren lineage (taunka)': AC, 'integrated protection': AC, 'revenant blade': AC,
     'dwarven fortitude': HP_CARD,
     'sharpen the blade': FAMILY,
+    'improved pact weapon': PACT,
     'sanctuary vessel': TEXT, "artisan's expertise": 'double proficiency and proficiency, the sheet derives them',
   },
   reroll: {
@@ -88,7 +92,7 @@ export const EXPLAINED = {
   },
   temp: {
     tundra: OTHER, 'mote of potential': OTHER, 'improved warding flare': OTHER, 'fortifying spell': OTHER, 'luminous barrier': OTHER,
-    'durable summons': OTHER, 'create thrall': OTHER, 'health funnel': OTHER, 'semblance of life': OTHER, 'enveloping mist': OTHER,
+    'durable summons': 'the summon is born with the temporary Hit Points (durableTemp in engine/playSummons, DDL-0236)', 'create thrall': OTHER, 'health funnel': OTHER, 'semblance of life': OTHER, 'enveloping mist': OTHER,
     'boon of bountiful health': HEAL_MOD, 'honed spellfire': HEAL_MOD,
     'abjuration adept': SLOT,
   },

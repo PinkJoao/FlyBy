@@ -303,6 +303,7 @@ export function applyEffects(effects, enabledIds = null) {
     twice: on.some((e) => e.twice),
     diceMin: on.reduce((m, e) => (e.diceMin ? Math.max(m ?? 0, e.diceMin) : m), null),
     forgo: on.reduce((s, e) => s + (e.forgo ?? 0), 0),
+    forgoableMin: on.reduce((m, e) => (e.forgoableMin ? Math.max(m ?? 0, e.forgoableMin) : m), null),
     rerollOnes: on.some((e) => e.rerollOnes),
     elven: on.some((e) => e.elven),
   };
@@ -397,6 +398,7 @@ export function attackRollContext(attack, kind = 'attack') {
     unarmed: attack.kind === 'unarmed',
     spell: attack.kind === 'spell',
     attackAbility: attack.ability,
+    pact: !!attack.pact,
     ...(kind === 'damage' ? { twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile } : {}),
   };
 }

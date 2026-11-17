@@ -210,7 +210,10 @@ export function damageParts(attack, options = {}) {
  */
 export function rollDamageEvent({ catalog, attack, options = {}, rng, now = new Date() }) {
   const forgo = options.applied?.forgo ?? 0;
-  const riders = (options.applied?.parts ?? []).map((p) => (forgo && p.forgoable ? { ...p, label: `${p.label} (${forgo} die${forgo > 1 ? 's' : ''} forgone)`, formula: forgoDice(p.formula, forgo, catalog.rollData) } : p));
+  const floor = options.applied?.forgoableMin ?? null;
+  const riders = (options.applied?.parts ?? [])
+    .map((p) => (forgo && p.forgoable ? { ...p, label: `${p.label} (${forgo} die${forgo > 1 ? 's' : ''} forgone)`, formula: forgoDice(p.formula, forgo, catalog.rollData) } : p))
+    .map((p) => (floor && p.forgoable ? { ...p, formula: withDiceMin(p.formula, floor, catalog.rollData) } : p));
   const result = rollParts([...damageParts(attack, { ...options, data: catalog.rollData }), ...riders, ...bonusParts(options)], {
     data: catalog.rollData,
     rng: rngFor(options, rng),

@@ -1,0 +1,82 @@
+// =============================================================================
+// playPact.test: a arma de pacto do Pact of the Blade no play mode
+// =============================================================================
+// O QUE FAZ
+//   Confere sobre um catálogo montado à mão (warlock 12, CAR +4, PB +4): a arma
+//   vinculada vira ataque com CAR e proficiência e SUBSTITUI a original na lista; o
+//   +1 do Improved Pact Weapon só sem bônus mágico; a arma invocada pelos dados da
+//   arma-base; o Devouring Blade com três ataques; o evento do vínculo e o estado.
+//
+// FUNÇÕES
+//   catalogWith(features): o catálogo do warlock com as features dadas.
+//
+// DECISÕES E ARMADILHAS
+//   - Os números são os do passe ao vivo (DDL-0236): +1 Longsword vinculada a +9 e
+//     1d8+5, Longbow invocado a +9 e 1d8+5 com o Improved Pact Weapon.
+// -----------------------------------------------------------------------------
+import { describe, it, expect } from 'vitest';
+import { pactAttack, conjuredAttack, withPactWeapon, pactEvent, hasPactOfTheBlade } from './playPact';
+import { attacksPerAction } from './playBasicActions';
+import { applyOp, emptyPlayState } from './playState';
+
+const sword = {
+  key: 'w:sword', kind: 'weapon', name: '+1 Longsword', uid: 'u1', range: 'melee', ability: 'str', proficient: false,
+  toHit: { total: 0, parts: [{ label: 'Strength', formula: -1 }, { label: 'Magic', formula: 1 }] },
+  damage: { dice: '1d8', bonus: 0, types: ['slashing'] }, versatile: '1d10', properties: ['V'],
+};
+const rapier = {
+  key: 'w:rapier', kind: 'weapon', name: 'Rapier', uid: 'u2', range: 'melee', ability: 'dex', proficient: false,
+  toHit: { total: 1, parts: [{ label: 'Dexterity', formula: 1 }] }, damage: { dice: '1d8', bonus: 1, types: ['piercing'] }, properties: ['F'],
+};
+
+/** O catálogo do warlock com as features dadas. */
+function catalogWith(features) {
+  return {
+    features,
+    stats: { profBonus: 4 },
+    rollData: { abilities: { str: { mod: -1 }, dex: { mod: 1 }, cha: { mod: 4 } } },
+    attacks: [sword, rapier],
+  };
+}
+
+describe('arma de pacto', () => {
+  it('a arma vinculada usa CAR e proficiência, guarda o bônus mágico e substitui a original', () => {
+    const c = catalogWith(['pact of the blade', 'improved pact weapon']);
+    const out = withPactWeapon(c, { kind: 'bond', uid: 'u1', name: '+1 Longsword' });
+    expect(out.attacks.map((a) => a.name)).toEqual(['+1 Longsword (pact weapon)', 'Rapier']);
+    const [pact] = out.attacks;
+    expect(pact).toMatchObject({ pact: true, ability: 'cha', proficient: true, toHit: { total: 9 } });
+    expect(pact.toHit.parts.map((p) => p.label)).toEqual(['Charisma', 'Proficiency', 'Magic']);
+    expect(pact.damage).toMatchObject({ dice: '1d8', bonus: 5 });
+  });
+
+  it('o Improved Pact Weapon soma +1 só na arma sem bônus mágico', () => {
+    const c = catalogWith(['pact of the blade', 'improved pact weapon']);
+    expect(pactAttack(rapier, c)).toMatchObject({ toHit: { total: 9 }, damage: { bonus: 5 } });
+    expect(pactAttack(rapier, catalogWith(['pact of the blade']))).toMatchObject({ toHit: { total: 8 }, damage: { bonus: 4 } });
+  });
+
+  it('a arma invocada sai dos dados da arma-base', () => {
+    const c = catalogWith(['pact of the blade', 'improved pact weapon']);
+    const bow = conjuredAttack({ name: 'Longbow', dmg1: '1d8', dmgType: 'P', props: ['A', 'H', '2H'], ranged: true, distance: '150/600' }, c);
+    expect(bow).toMatchObject({ name: 'Longbow (pact weapon)', range: 'ranged', ability: 'cha', ammunition: false, toHit: { total: 9 }, damage: { dice: '1d8', bonus: 5 } });
+  });
+
+  it('sem o Pact of the Blade o catálogo não muda', () => {
+    const c = catalogWith([]);
+    expect(hasPactOfTheBlade(c)).toBe(false);
+    expect(withPactWeapon(c, { kind: 'bond', uid: 'u1' })).toBe(c);
+  });
+
+  it('o evento grava e desfaz o vínculo no estado', () => {
+    const bond = pactEvent({ choice: { kind: 'bond', uid: 'u1', name: '+1 Longsword' } });
+    const on = bond.ops.reduce(applyOp, emptyPlayState());
+    expect(on.pactWeapon).toEqual({ kind: 'bond', uid: 'u1', name: '+1 Longsword' });
+    expect(pactEvent({ choice: null }).ops.reduce(applyOp, on).pactWeapon).toBeNull();
+  });
+
+  it('Thirsting Blade dá dois ataques e Devouring Blade três', () => {
+    expect(attacksPerAction({ features: ['thirsting blade'] })).toBe(2);
+    expect(attacksPerAction({ features: ['thirsting blade', 'devouring blade'] })).toBe(3);
+  });
+});

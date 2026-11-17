@@ -41,6 +41,8 @@
 //       personagem, com a lista do que conflitou.
 //
 // DECISÕES E ARMADILHAS
+//   - `pactWeapon` é a arma de pacto do Pact of the Blade (op `pact`, engine/playPact.js, DDL-0236):
+//     `{ kind: 'bond', uid, name }` (uma arma que carrega) ou `{ kind: 'conjure', weapon, name }`.
 //   - Summons (DDL-0192): `summons` é a lista de grupos; a operação `summon` põe
 //     (`add`), tira (`remove`) ou muda um membro (`damage`, `temp`, `max`, `condition`
 //     com `on`). O temporário e o ajuste do máximo (`maxDelta`) só entram no membro
@@ -109,6 +111,7 @@ export function emptyPlayState() {
     combat: null,
     summons: [],
     form: null,
+    pactWeapon: null,
   };
 }
 
@@ -174,6 +177,8 @@ export function applyOp(state, op) {
       return { ...state, summons: summonsAfter(state.summons ?? [], op) };
     case 'form':
       return { ...state, form: op.clear ? null : op.set ?? state.form ?? null };
+    case 'pact':
+      return { ...state, pactWeapon: op.value ?? null };
     case 'modifier':
       if (op.add) return { ...state, modifiers: [...state.modifiers.filter((m) => m.id !== op.add.id), op.add] };
       if (op.remove) return { ...state, modifiers: state.modifiers.filter((m) => m.id !== op.remove) };
@@ -245,6 +250,7 @@ export function normalizePlayDoc(raw, characterId) {
     modifiers: Array.isArray(b.modifiers) ? b.modifiers : [],
     summons: Array.isArray(b.summons) ? b.summons : [],
     form: b.form && typeof b.form === 'object' ? b.form : null,
+    pactWeapon: b.pactWeapon && typeof b.pactWeapon === 'object' ? b.pactWeapon : null,
   };
   const events = Array.isArray(raw.events) ? raw.events.filter((e) => e && typeof e === 'object') : [];
   const cursor = clamp(Number.isInteger(raw.cursor) ? raw.cursor : events.length, 0, events.length);

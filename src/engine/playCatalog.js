@@ -106,10 +106,14 @@
 //       Bite, Talons, Hooves, Ram, Dragon Hide), um Unarmed Strike com o dado e o tipo; numa feature
 //       de opções (SPECIES_OPTION_FEATURES) só a opção escolhida (DDL-0239).
 //     featureOptionPicks(character): as opções escolhidas em escolhas `featureoption` (vão no catálogo
-//       como `optionPicks`, para o registro curado saber qual opção vale: o Acid Spit). A feature que
+//       como `optionPicks`, para o registro curado saber qual opção vale: o Acid Spit). As cantrips que
+//       uma invocação melhora vão como `optionTargets` (o Agonizing Blast, engine/optionTargets, DDL-0240). A feature que
 //       gera um ataque (natural ou do FEATURE_ATTACKS) ganha `attack`, que o levantamento conta como uso.
 //       Um traço de espécie cujo texto diz "the DC equals 8" ganha `dc` (8 + PB + o atributo escolhido
 //       no `dcAbility` da espécie: Taunt, Fey Step, as linhagens Tauren, TC-0159, DDL-0239).
+//     TYPE_CHOICE, TYPE_PAIR, spellTypeOptions(raw): os tipos de dano que a magia deixa escolher, pelo
+//       texto (DDL-0240): todos os do dado com "of your choice"; só o par em "Radiant or Necrotic damage
+//       (your choice)" (Destructive Wave). O diálogo de dano oferece a escolha (`typeOptions`).
 //     derivePlayCatalog(character, db, opts): o catálogo.
 //
 // DECISÕES E ARMADILHAS
@@ -219,6 +223,7 @@ import { isBasicActionItem } from './foundryBasicActions';
 import { rangeLabel, isRitual, isConcentration } from './spells';
 import { SKILL_ABILITY } from './proficiency';
 import { collectAbilityPicks, collectChoicePicks, dcAbilityPick } from './choices';
+import { optionTargets } from './optionTargets';
 import { validateFormula, rollFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
@@ -339,6 +344,8 @@ export function weaponAttacks(character, derived) {
       kind: 'weapon',
       name: raw.name,
       uid: e.uid ?? null,
+      magical: !!(Number(raw.bonusWeapon ?? 0) || (raw.rarity && raw.rarity !== 'none')),
+      ...(e.pactConjured ? { pactConjured: true } : {}),
       range: e.kind === 'ranged' ? 'ranged' : 'melee',
       category: e.category ?? null,
       equipped: e.equipped === true,
@@ -569,6 +576,22 @@ function upcastDice(raw) {
   return JSON.stringify(raw?.entriesHigherLevel ?? []).match(/\{@scale(?:damage|dice) [^|}]+\|[^|}]+\|([^|}]+)\}/)?.[1] ?? null;
 }
 
+const TYPE_CHOICE = /(?:type|damage) (?:of )?your choice|\(your choice\)|of a type you choose|choose (?:one of )?(?:the following|acid|cold|fire)/i;
+const TYPE_PAIR = /\b([a-z]+) or ([a-z]+) damage \(your choice\)/i;
+
+/** Os tipos de dano que a magia deixa escolher, pelo texto (Chromatic Orb: todos; Destructive Wave: só o par da frase), ou null. */
+export function spellTypeOptions(raw) {
+  const types = raw?.damageInflict ?? [];
+  if (types.length < 2) return null;
+  const text = JSON.stringify(raw?.entries ?? []).replace(/[{]@\w+ ([^|}]*)[^}]*[}]/g, '$1');
+  const pair = text.match(TYPE_PAIR);
+  if (pair) {
+    const two = [pair[1], pair[2]].map((t) => t.toLowerCase()).filter((t) => types.includes(t));
+    if (two.length === 2) return two;
+  }
+  return TYPE_CHOICE.test(text) ? types : null;
+}
+
 /** A mecânica de uma magia pelo dado do 5etools. */
 export function spellMechanics(raw, level) {
   const types = raw?.damageInflict ?? [];
@@ -578,7 +601,7 @@ export function spellMechanics(raw, level) {
   return {
     attack: raw?.spellAttack?.[0] ?? null,
     save: raw?.savingThrow?.[0] ? raw.savingThrow[0].slice(0, 3) : null,
-    damage: types.length ? { dice, types } : null,
+    damage: types.length ? { dice, types, ...(spellTypeOptions(raw) ? { typeOptions: spellTypeOptions(raw) } : {}) } : null,
     heal: healing ? { dice: healing, addMod } : null,
     upcast: raw?.level > 0 ? upcastDice(raw) : null,
   };
@@ -1252,6 +1275,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     features,
     featureList: featuresOfActor,
     optionPicks: [...optionPicks],
+    optionTargets: optionTargets(character),
     actorEffects: bridged,
     proseEffects: proseRollEffects(featuresOfActor, { activated, bridged }).filter((e) => !e.part || !validateFormula(e.part.formula, rollData)),
     proseUses: uses,

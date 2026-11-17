@@ -16,7 +16,9 @@
 //   hasPactOfTheBlade(catalog): o personagem tem o Pact of the Blade?
 //   conjurableWeapons(db, catalog): as armas que dá para invocar (com o Improved, os arcos e bestas).
 //   pactChoices(db, catalog): as escolhas do vínculo: as armas que carrega e as que invoca.
-//   pactEvent({ choice, now }): o evento que vincula (ou desfaz, com `choice` null).
+//   pactEvent({ choice, state, character, now }): o evento que vincula uma arma mágica, conjura uma (a
+//     arma entra no inventário, equipada e com "(pact weapon)" no nome) ou desfaz o vínculo; a conjurada
+//     anterior sai do inventário (operações `inventory`, que o desfazer devolve).
 //   pactAttack(attack, catalog): um ataque transformado em ataque da arma de pacto.
 //   conjuredAttack(weapon, catalog): o ataque de uma arma invocada, pelos dados da arma-base.
 //   withPactWeapon(catalog, pact): o catálogo com o ataque da arma de pacto.
@@ -31,9 +33,12 @@
 //     de pacto, e a linha comum ao lado (+0 no warlock sem proficiência marcial) só confundia.
 //   - O Eldritch Smite e o Lifedrinker valem só na arma de pacto: `when: 'pact'` no FEATURE_ROLLS,
 //     pelo `pact` do contexto da rolagem (attackRollContext).
-//   - A arma invocada não gasta munição (o jogo não rastreia a munição da arma conjurada).
-//   - O tipo de dano trocável é nota no nome do tipo ("or necrotic, psychic, radiant"): o jogador
-//     escolhe na mesa.
+//   - DDL-0240: só arma MÁGICA se vincula ("create a bond with a magic weapon you touch"); a conjurada
+//     é corpo a corpo simples ou marcial (arcos e bestas só com o Improved Pact Weapon) e VIRA ITEM do
+//     inventário (`pactConjured`, o jogador troca a imagem na ficha); o vínculo aponta o uid dela. O
+//     estado antigo `{ kind: 'conjure', weapon }` ainda vira ataque (conjuredAttack), sem item.
+//   - O tipo de dano é escolha do diálogo (`damage.typeOptions`: o da arma, necrótico, psíquico ou
+//     radiante), gravada no evento.
 //   - Só a arma de pacto conta para o Thirsting Blade e o Devouring Blade; a contagem de ataques
 //     é do Attack (playBasicActions), e a escolha da arma fica com o jogador.
 // -----------------------------------------------------------------------------
@@ -42,7 +47,7 @@ import { makeEvent } from './playState';
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 const RANGED_OK = ['shortbow', 'longbow', 'light crossbow', 'heavy crossbow'];
-const PACT_TYPES = 'or necrotic, psychic, radiant';
+const PACT_TYPES = ['necrotic', 'psychic', 'radiant'];
 
 /** O personagem tem o Pact of the Blade? */
 export function hasPactOfTheBlade(catalog) {
@@ -68,24 +73,38 @@ export function conjurableWeapons(db, catalog) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** As escolhas do vínculo: as armas que o personagem carrega e as que invoca. */
+/** As escolhas do vínculo: as armas MÁGICAS que o personagem carrega (não a conjurada) e as que invoca. */
 export function pactChoices(db, catalog) {
-  const carried = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid).map((a) => ({ kind: 'bond', uid: a.uid, name: a.name }));
+  const carried = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid && a.magical && !a.pactConjured).map((a) => ({ kind: 'bond', uid: a.uid, name: a.name }));
   const conjure = conjurableWeapons(db, catalog).map((w) => ({ kind: 'conjure', weapon: w, name: w.name }));
   return { carried, conjure };
 }
 
-/** O evento que vincula uma arma (ou desfaz o vínculo, com `choice` null). */
-export function pactEvent({ choice, now = new Date() }) {
-  const value = choice ? (choice.kind === 'bond' ? { kind: 'bond', uid: choice.uid, name: choice.name } : { kind: 'conjure', weapon: choice.weapon, name: choice.weapon.name }) : null;
+/**
+ * O evento que vincula uma arma mágica, conjura uma (entra no inventário, equipada) ou desfaz o vínculo
+ * (`choice` null); a arma conjurada antes sai do inventário.
+ */
+export function pactEvent({ choice, state = null, character = null, now = new Date() }) {
+  const ops = [];
+  const inventory = character?.inventory ?? [];
+  const old = state?.pactWeapon?.conjured ? inventory.findIndex((e) => e.uid === state.pactWeapon.uid) : -1;
+  if (old >= 0) ops.push({ op: 'inventory', uid: inventory[old].uid, before: inventory[old], after: null, index: old });
+  let value = null;
+  if (choice?.kind === 'bond') value = { kind: 'bond', uid: choice.uid, name: choice.name };
+  else if (choice?.kind === 'conjure') {
+    const entry = { uid: `pact-${Date.now().toString(36)}`, itemId: choice.weapon.name, source: choice.weapon.source, quantity: 1, equipped: true, attuned: false, customName: `${choice.weapon.name} (pact weapon)`, pactConjured: true };
+    ops.push({ op: 'inventory', uid: entry.uid, before: null, after: entry, index: inventory.length - (old >= 0 ? 1 : 0) });
+    value = { kind: 'bond', uid: entry.uid, name: choice.weapon.name, conjured: true };
+  }
+  ops.push({ op: 'pact', value });
   return makeEvent('use', {
     label: 'Pact of the Blade',
-    ops: [{ op: 'pact', value }],
+    ops,
     payload: {
       logged: true,
       costs: [],
       short: [],
-      lines: [value ? (value.kind === 'bond' ? `Bonded with ${value.name}` : `Conjured a ${value.name}`) : 'The bond ends'],
+      lines: [value ? (value.conjured ? `Conjured a ${value.name}` : `Bonded with ${value.name}`) : 'The bond ends'],
     },
   }, now);
 }
@@ -116,7 +135,7 @@ export function pactAttack(attack, catalog) {
     ability,
     proficient: true,
     toHit: { total: mod + prof + magic + improved, parts },
-    damage: attack.damage ? { ...attack.damage, bonus: mod + magic + improved, types: [...(attack.damage.types ?? []), PACT_TYPES] } : null,
+    damage: attack.damage ? { ...attack.damage, bonus: mod + magic + improved, typeOptions: [...new Set([...(attack.damage.types ?? []), ...PACT_TYPES])] } : null,
   };
 }
 

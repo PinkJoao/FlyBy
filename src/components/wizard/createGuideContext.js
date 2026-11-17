@@ -18,6 +18,7 @@
 //   createGuideContext(db, character): as flags.
 //
 // DECISÕES E ARMADILHAS
+//   - O `sub` de cada ocorrência de uma opção repetível tem a sua chave (`subKeyOf`, DDL-0240).
 //   - Regra com o usuário (2026-07-15, DDL-0018): na criação, TODO passo
 //     não-biográfico é OBRIGATÓRIO, e a completude é PROFUNDA: um talento só
 //     completa com o sub-bag dele (o Magic Initiate sem as magias, o ASI sem o
@@ -32,6 +33,7 @@
 
 import { parseChoices, LEGACY_ABILITY_CHOICE } from '../../engine/choices';
 import { resolveFeat, resolveOptionalFeature, resolveRaceObj, resolveClassObj } from '../../engine/resolve';
+import { subKeyOf } from '../../engine/optionTargets';
 import { totalLevel } from '../../schema/character';
 import { requiresLineage, speciesChoices } from '../../engine/speciesData';
 import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
@@ -68,10 +70,10 @@ export function choiceComplete(ch, bag, db, level = Infinity) {
   const picks = entry?.picks ?? [];
   if (picks.length < targetCount(ch, entry)) return false;
   if (ch.kind === 'optionalfeature') {
-    return picks.every((pick) => {
+    return picks.every((pick, i) => {
       const of = resolveOptionalFeature(db, pick);
       if (!of) return true;
-      const sub = entry?.sub?.[pick] ?? {};
+      const sub = entry?.sub?.[subKeyOf(picks, i)] ?? {};
       return choicesComplete(parseChoices(of, { level, bag: sub }), sub, db, level);
     });
   }

@@ -28,6 +28,11 @@
 //     tipos.
 //
 // DECISÕES E ARMADILHAS
+//   - A cantrip que uma invocação melhora (`cantripTarget`) usa o painel de magias, restrito às opções
+//     que o personagem tem (as cantrips de bruxo que passam no filtro do texto, DDL-0240).
+//   - A opção repetível (Agonizing Blast, "more than once") entra mais de uma vez; cada ocorrência tem
+//     o seu `sub` (`subKeyOf`: "Nome|Fonte#2") e a escolha da cantrip não repete a das outras
+//     (`withTargetOptions`, engine/optionTargets, DDL-0240). Os chips e o remover vão por posição.
 //   - PlanChoice (os planos do Artificer, DDL-0212) escolhe ITENS concretos pela entity de
 //     item, como a loja: o chip abre o detalhe do item (sintonia, raridade) e o painel só
 //     mostra o que `planAllows` aceita. Pílulas não serviam: 56 linhas sem detalhe, e a linha
@@ -68,11 +73,12 @@
 import { useMemo, useState } from 'react';
 import { parseChoices, LEGACY_ABILITY_CHOICE, weaponFilterAllows } from '../../engine/choices';
 import { resolveFeat, resolveOptionalFeature, deriveFromDb } from '../../engine/resolve';
+import { isRepeatableOption, subKeyOf, withTargetOptions } from '../../engine/optionTargets';
 import { preparedElsewhere } from '../../engine/spellcasting';
 import { skillCode } from '../../engine/classData';
 import { spellChoosePredicate } from '../../engine/spells';
 import { totalLevel } from '../../schema/character';
-import { makeSpellEntity } from '../../selector/entities/spell';
+import spellEntity, { makeSpellEntity } from '../../selector/entities/spell';
 import { prereqContext, prereqStatus } from '../../engine/prereq';
 import PickerField from '../common/PickerField';
 import ClearableSelect from '../common/ClearableSelect';
@@ -101,6 +107,7 @@ const ADD_ENTITY = {
   expertise: skillEntity,
   weapon: weaponEntity,
   weaponProf: weaponEntity,
+  cantripTarget: spellEntity,
 };
 const OWNED_KEY = { skill: 'skills', tool: 'tools', language: 'languages', expertise: 'expertise' };
 
@@ -245,7 +252,7 @@ function TagChoice({ choice, picks, onChange, db, owned }) {
       : null;
   const valueOf = (raw) => (skillLike ? skillCode(raw.name) : raw.name);
   const labelOf = (v) => (skillLike ? (SKILL_LABEL[v] ?? v) : v);
-  const addLabel = kind === 'expertise' ? 'skill' : kind === 'weaponProf' ? 'weapon' : kind;
+  const addLabel = kind === 'expertise' ? 'skill' : kind === 'weaponProf' ? 'weapon' : kind === 'cantripTarget' ? 'cantrip' : kind;
 
   const add = (raw) => {
     const value = valueOf(raw);
@@ -304,26 +311,38 @@ function OptionalFeatureChoice({ choice, entry, picks, onChange, db, owned, char
   const isInvocation = (choice.pool.featureType ?? []).includes('EI');
 
   const nameOf = (id) => id.split('|')[0];
+  const repeatable = (id) => isRepeatableOption(resolveOptionalFeature(db, id));
   const add = (raw) => {
     const id = `${raw.name}|${raw.source}`;
     let total = picks.length;
-    if (!picks.includes(id) && picks.length < choice.count) {
+    if ((!picks.includes(id) || repeatable(id)) && picks.length < choice.count) {
       onChange({ ...entry, kind: 'optionalfeature', picks: [...picks, id] });
       total += 1;
     }
     if (total >= choice.count) setOpen(false);
   };
-  const remove = (id) => {
-    const sub = { ...(entry?.sub ?? {}) };
-    delete sub[id];
-    onChange({ kind: 'optionalfeature', picks: picks.filter((p) => p !== id), ...(Object.keys(sub).length ? { sub } : {}) });
+  const keys = picks.map((_, i) => subKeyOf(picks, i));
+  const remove = (key) => {
+    const index = keys.indexOf(key);
+    if (index < 0) return;
+    const nextPicks = picks.filter((_, i) => i !== index);
+    const old = entry?.sub ?? {};
+    const sub = {};
+    nextPicks.forEach((id, i) => {
+      const from = keys[i >= index ? i + 1 : i];
+      if (old[from]) sub[subKeyOf(nextPicks, i)] = old[from];
+    });
+    onChange({ kind: 'optionalfeature', picks: nextPicks, ...(Object.keys(sub).length ? { sub } : {}) });
   };
-  const setSub = (id, subBag) => onChange({ kind: 'optionalfeature', picks, sub: { ...(entry?.sub ?? {}), [id]: subBag } });
+  const setSub = (key, subBag) => onChange({ kind: 'optionalfeature', picks, sub: { ...(entry?.sub ?? {}), [key]: subBag } });
   const level = character ? totalLevel(character) : Infinity;
   const withSubs = picks
-    .map((id) => {
+    .map((id, i) => {
+      const key = keys[i];
       const raw = resolveOptionalFeature(db, id);
-      return { id, choices: raw ? parseChoices(raw, { level, bag: entry?.sub?.[id] ?? null }) : [] };
+      const taken = keys.filter((k, j) => j !== i && picks[j] === id).flatMap((k) => entry?.sub?.[k]?.cantripTarget?.picks ?? []);
+      const choices = raw ? withTargetOptions(parseChoices(raw, { level, bag: entry?.sub?.[key] ?? null }), { character, db, taken }) : [];
+      return { id, key, choices };
     })
     .filter((x) => x.choices.length > 0);
   const openDetail = (id) => {
@@ -342,8 +361,8 @@ function OptionalFeatureChoice({ choice, entry, picks, onChange, db, owned, char
   return (
     <div className={styles.featSlot}>
       <div className={styles.tags}>
-        {picks.map((id) => (
-          <Chip key={id} onClick={() => openDetail(id)} onRemove={() => remove(id)}>{nameOf(id)}</Chip>
+        {picks.map((id, i) => (
+          <Chip key={keys[i]} onClick={() => openDetail(id)} onRemove={() => remove(keys[i])}>{nameOf(id)}</Chip>
         ))}
         {picks.length < choice.count && (
           <Chip add onClick={() => setOpen(true)}>Add</Chip>
@@ -354,25 +373,25 @@ function OptionalFeatureChoice({ choice, entry, picks, onChange, db, owned, char
             db={db}
             currentId={null}
             initialFilterState={isInvocation ? PREREQ_MET_FILTER : undefined}
-            exclude={(raw) => picks.includes(`${raw.name}|${raw.source}`)}
+            exclude={(raw) => picks.includes(`${raw.name}|${raw.source}`) && !isRepeatableOption(raw)}
             onSelect={confirmAdd}
             onClose={() => setOpen(false)}
-            multi={{ total: choice.count, chosen: picks.map((id) => ({ key: id, label: nameOf(id) })), onRemove: remove }}
+            multi={{ total: choice.count, chosen: picks.map((id, i) => ({ key: keys[i], label: nameOf(id) })), onRemove: remove }}
           />
         )}
       </div>
-      {withSubs.map(({ id, choices }) => (
-        <div key={id} className={styles.nested}>
-          <span className={styles.nestedTitle}>{nameOf(id)}</span>
+      {withSubs.map(({ id, key, choices }) => (
+        <div key={key} className={styles.nested}>
+          <span className={styles.nestedTitle}>{nameOf(id)}{key !== id ? ` (${key.split('#')[1]})` : ''}</span>
           <ChoiceList
             choices={choices}
-            bag={entry?.sub?.[id] ?? {}}
+            bag={entry?.sub?.[key] ?? {}}
             db={db}
             owned={owned}
             character={character}
             guided={guided}
             spellsOwned={spellsOwned}
-            onChange={(subBag) => setSub(id, subBag)}
+            onChange={(subBag) => setSub(key, subBag)}
           />
         </div>
       ))}

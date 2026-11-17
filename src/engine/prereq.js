@@ -16,8 +16,11 @@
 //   classProfsOf(character, db): as proficiências de armadura e arma das classes.
 //   prereqContext(character, opts): o contexto de checagem.
 //   checkLevel, checkAbility, checkRace, checkFeature, checkFeat,
-//     checkFeatCategory, checkExclusiveFeatCategory, checkSpellcasting, checkOptionalfeature, checkPact, checkProficiency(req,
-//     ctx): cada critério, 'ok', 'bad' ou 'unknown'.
+//     checkFeatCategory, checkExclusiveFeatCategory, checkSpellcasting, checkOptionalfeature, checkPact, checkProficiency,
+//     checkSpell, checkOtherSummary(req, ctx): cada critério, 'ok', 'bad' ou 'unknown'.
+//   knownClassSpells(character, db), reachedClassFeatures(character, db): as magias de classe conhecidas e
+//     as features de classe e subclasse alcançadas, para o `spell` e o `feature` (DDL-0240).
+//   spellPasses(known, choose, entry): a magia conhecida passa no filtro do pré-requisito?
 //   levelText, abilityText, raceText, optionalfeatureText, pactText, spellText,
 //     categoryLabel, featCategoryText, exclusiveFeatCategoryText, otherText: o texto curto de cada critério.
 //   evalEntry(entry, ctx): uma alternativa.
@@ -32,13 +35,19 @@
 //     Wood Elf Magic e o Drow High Magic acusavam um elfo da linhagem certa (T3,
 //     TC-0113). A linhagem também é um grupo ("Vampire (Ixalan)" é a linhagem do
 //     Vampire).
-//   - checkFeature só afirma quando o contexto CONCEDE a feature (o pool de
-//     Fighting Style); senão não dá para negar.
+//   - checkFeature afirma quando o contexto CONCEDE a feature (o pool de Fighting Style) ou quando o
+//     personagem já ALCANÇOU uma feature de classe com o nome (qualquer uma da lista: "Spellcasting" ou
+//     "Pact Magic"); com o compêndio, nega o resto (DDL-0240).
+//   - Pré-requisito que só a mesa sabe (`campaign`, o renome de casa do EFA, o `item` das infusões, o
+//     `background`: a origem do app é por peças) segue 'unknown'. O "When Gaining the Level 2 Paladin
+//     'Fighting Style' Feature" do `otherSummary` é o nível na classe (DDL-0240).
 //   - Talento com variante (Initiate of High Sorcery (Nuitari)): possuir o talento
 //     não diz a variante, então é 'unknown'.
 //   - Pré-requisito de MAGIA (TC-0041, só invocações): as duas formas portadas do
 //     5etools, a string `nome#c` (cantrip; `#x` é o Hex) e o objeto { choose,
-//     entry, entrySummary } das versões XPHB.
+//     entry, entrySummary } das versões XPHB. Checado nas magias de classe conhecidas (DDL-0240): o
+//     filtro "level=0|class=Warlock|spell attack=m;r;o" e "That Deals Damage" do texto; o `#x` sem o
+//     Hex fica 'unknown' (a alternativa é uma feature de maldição).
 //   - Metadados de picker no `prerequisite` não são requisito do jogador.
 //   - Categoria de talento (DDL-0172, dragonmarks do EFA): `featCategory` pede um
 //     talento da categoria (Potent Dragonmark: um Dragonmark); `exclusiveFeatCategory`
@@ -52,6 +61,8 @@ import { finalScores } from './abilities';
 import { titleCase } from './choices';
 import { collectFeatIds, collectOptionalFeatureIds } from './proficiency';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj, resolveFeat } from './resolve';
+import { allSpells } from './spells';
+import { resolveClassFeatures, resolveSubclassFeatures } from './foundryItems';
 
 const ABILITY_ABBR = { str: 'Str', dex: 'Dex', con: 'Con', int: 'Int', wis: 'Wis', cha: 'Cha' };
 
@@ -139,6 +150,8 @@ export function prereqContext(character, { db = null, grantedFeatures = [] } = {
       collectOptionalFeatureIds(character ?? {}).map((id) => id.split('|')[0].toLowerCase())
     ),
     canCast: canCastOf(character, db),
+    knownSpells: db ? knownClassSpells(character, db) : null,
+    classFeatures: db ? reachedClassFeatures(character, db) : null,
     armorProfs: armor,
     weaponProfs: weapons,
   };
@@ -176,8 +189,68 @@ function checkRace(req, ctx) {
 }
 
 function checkFeature(req, ctx) {
-  const all = (req ?? []).every((f) => ctx.grantedFeatures.includes(String(f).toLowerCase()));
-  return all ? 'ok' : 'unknown';
+  const names = (req ?? []).map((f) => String(f).toLowerCase());
+  if (names.some((n) => ctx.grantedFeatures.includes(n) || ctx.classFeatures?.has(n))) return 'ok';
+  return ctx.classFeatures ? 'bad' : 'unknown';
+}
+
+/** As magias das classes que o personagem conhece, resolvidas no compêndio ({ classId, raw }). */
+function knownClassSpells(character, db) {
+  const all = allSpells(db);
+  return (character?.classes ?? []).flatMap((c) => (c.spells ?? []).map((s) => ({
+    classId: String(c.classId ?? '').toLowerCase(),
+    raw: all.find((x) => x.name === s.id && x.source === s.source) ?? all.find((x) => x.name === s.id) ?? null,
+  }))).filter((x) => x.raw);
+}
+
+/** Os nomes das features de classe e subclasse já alcançadas (minúsculas). */
+function reachedClassFeatures(character, db) {
+  const out = new Set();
+  for (const c of character?.classes ?? []) {
+    const classObj = c.classId ? resolveClassObj(db, c.classId, c.source) : null;
+    if (!classObj) continue;
+    for (const f of resolveClassFeatures(db, c.classId, classObj, c.level || 1)) out.add(String(f.name).toLowerCase());
+    const sub = c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null;
+    if (sub) for (const f of resolveSubclassFeatures(sub, c.classId, db, { max: c.level || 1 })) out.add(String(f.name).toLowerCase());
+  }
+  return out;
+}
+
+/** Uma magia conhecida passa no filtro "level=0|class=Warlock|spell attack=m;r;o" e no texto ("That Deals Damage")? */
+function spellPasses(known, choose, entry) {
+  const f = Object.fromEntries(String(choose ?? '').split('|').map((kv) => kv.split('=').map((x) => x.trim().toLowerCase())));
+  if (f.level != null && String(known.raw.level) !== f.level) return false;
+  if (f.class && known.classId !== f.class) return false;
+  if (f['spell attack'] && !(known.raw.spellAttack ?? []).length) return false;
+  if (/deals damage/i.test(entry ?? '') && !(known.raw.damageInflict ?? []).length) return false;
+  return true;
+}
+
+function checkSpell(req, ctx) {
+  if (!ctx.knownSpells) return 'unknown';
+  let status = 'ok';
+  for (const v of req ?? []) {
+    let s;
+    if (v && typeof v === 'object') s = ctx.knownSpells.some((k) => spellPasses(k, v.choose, v.entry)) ? 'ok' : 'bad';
+    else {
+      const [names, suffix] = String(v).toLowerCase().split('#');
+      const first = names.split('/')[0].split('|')[0];
+      const has = ctx.knownSpells.some((k) => k.raw.name.toLowerCase() === first);
+      s = has ? 'ok' : suffix === 'x' ? 'unknown' : 'bad';
+    }
+    if (s === 'bad') return 'bad';
+    if (s === 'unknown') status = 'unknown';
+  }
+  return status;
+}
+
+/** "When Gaining the Level 2 Paladin "Fighting Style" Feature": o nível na classe; outro texto, a mesa decide. */
+function checkOtherSummary(req, ctx) {
+  const m = String(req?.entry ?? '').match(/When Gaining the Level (\d+) (\w+(?: \w+)?) "/i);
+  if (!m) return 'unknown';
+  const cls = m[2].toLowerCase().replace(/ /g, '-');
+  const lvl = ctx.classLevels?.[cls] ?? ctx.classLevels?.[m[2].toLowerCase()] ?? 0;
+  return lvl >= Number(m[1]) ? 'ok' : 'bad';
 }
 
 function checkFeat(req, ctx) {
@@ -351,6 +424,8 @@ const CHECKERS = {
   proficiency: checkProficiency,
   optionalfeature: checkOptionalfeature,
   pact: checkPact,
+  spell: checkSpell,
+  otherSummary: checkOtherSummary,
 };
 const TEXTS = {
   level: levelText,

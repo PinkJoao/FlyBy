@@ -25,6 +25,8 @@
 //   parseOptionFeatProgression(field, level, push): o talento do `featProgression` de uma opção
 //     de classe (só com `featureType`: as classes têm caminho próprio; DDL-0237, Lessons of the
 //     First Ones); o talento fica no `sub` da opção e o collectChoicePicks o acha.
+//   (a sub-escolha `cantripTarget` de uma opção que pede "one of your known Warlock cantrips" vem de
+//     cantripTargetChoice, engine/optionTargets; as opções saem do personagem, DDL-0240.)
 //   parseChoices(entity, opts): todos os descritores de uma entidade.
 //   collectChoicePicks(bag, kind, out): os picks de um tipo, recursivo.
 //   spellAbilityPick(bag): o atributo de conjuração escolhido, ou null.
@@ -72,6 +74,7 @@
 import { skillCode } from './classData';
 import { resolveOtherLanguage } from './speciesLanguages';
 import { additionalSpellChoices } from './grantedSpells';
+import { cantripTargetChoice } from './optionTargets';
 
 /**
  * @typedef {Object} Choice
@@ -385,6 +388,7 @@ export function parseChoices(entity, { level = Infinity, bag = null } = {}) {
   parseDamageField(entity?.vulnerable, 'vulnerable', push);
   parseFeatField(entity?.feats, push);
   if (entity?.featureType) parseOptionFeatProgression(entity.featProgression, level, push);
+  if (entity?.featureType && cantripTargetChoice(entity)) push(cantripTargetChoice(entity));
   parseSpellAbilityField(entity?.additionalSpells, push);
   for (const c of additionalSpellChoices(entity?.additionalSpells, level, bag)) push(c);
 

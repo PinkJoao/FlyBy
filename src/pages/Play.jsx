@@ -617,7 +617,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const { carried } = pactChoices(db, baseCatalog);
     const v = await ask({
       title: 'Pact of the Blade',
-      message: state.pactWeapon ? `Your pact weapon: ${state.pactWeapon.name}. Bond with another, conjure one or end the bond (Bonus Action).` : 'Bond with a weapon you carry or conjure one (Bonus Action).',
+      message: `${state.pactWeapon ? `Your pact weapon: ${state.pactWeapon.name}. ` : ''}Bond with a magic weapon you carry or conjure a weapon (Bonus Action). The conjured weapon goes to your inventory.`,
       actions: [
         ...carried.map((c, i) => ({ label: `Bond: ${c.name}`, value: `b${i}` })),
         { label: 'Conjure a weapon', value: 'conjure', tone: 'primary' },
@@ -632,14 +632,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
     const choice = v === 'end' ? null : carried[Number(String(v).slice(1))];
     if (v !== 'end' && !choice) return;
-    record(pactEvent({ choice }), v === 'end' ? null : 'bonus');
+    record(pactEvent({ choice, state, character }), v === 'end' ? null : 'bonus');
   };
 
   /** A arma escolhida no painel para invocar como arma de pacto. */
   const conjurePactWeapon = (raw) => {
     setPicker(null);
     const choice = pactChoices(db, baseCatalog).conjure.find((c) => c.name === raw.name);
-    if (choice) record(pactEvent({ choice }), 'bonus');
+    if (choice) record(pactEvent({ choice, state, character }), 'bonus');
   };
 
   /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
@@ -1088,7 +1088,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         rollData: catalog.rollData,
       },
       quick,
-      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip }),
+      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null }),
       spend ? cost : null,
     );
 
@@ -1112,10 +1112,11 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         rollData: catalog.rollData,
         defaultCritical: critical,
         versatileDice: attack.versatile ?? null,
+        damageTypes: attack.damage?.typeOptions ?? null,
         note: attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '',
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
       spend ? cost : null,
     );
 

@@ -96,6 +96,7 @@ import weaponEntity from '../../src/selector/entities/weapon';
 import itemEntity from '../../src/selector/entities/item';
 import { planAllows } from '../../src/engine/classFeatureChoices';
 import { mulberry32, pickOne, shuffled } from './rng';
+import { subKeyOf, withTargetOptions } from '../../src/engine/optionTargets';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
@@ -221,16 +222,18 @@ function fillChoice(ch, entry, bag, ctx) {
       changed = true;
     }
     const sub = { ...(entry?.sub ?? {}) };
-    for (const id of picks) {
+    picks.forEach((id, i) => {
+      const key = subKeyOf(picks, i);
       const raw = resolveOptionalFeature(ctx.db, id);
-      const subChoices = raw ? parseChoices(raw, { level: ctx.level, bag: sub[id] ?? null }) : [];
-      if (!subChoices.length) continue;
-      const r = fillBag(subChoices, sub[id] ?? {}, { ...ctx, where: `${ctx.where} > ${id}` });
+      const taken = picks.map((p, j) => (j !== i && p === id ? sub[subKeyOf(picks, j)]?.cantripTarget?.picks ?? [] : [])).flat();
+      const subChoices = raw ? withTargetOptions(parseChoices(raw, { level: ctx.level, bag: sub[key] ?? null }), { character: ctx.character, db: ctx.db, taken }) : [];
+      if (!subChoices.length) return;
+      const r = fillBag(subChoices, sub[key] ?? {}, { ...ctx, where: `${ctx.where} > ${key}` });
       if (r.changed) {
-        sub[id] = r.bag;
+        sub[key] = r.bag;
         changed = true;
       }
-    }
+    });
     return changed ? { kind: 'optionalfeature', picks, ...(Object.keys(sub).length ? { sub } : {}) } : null;
   }
 

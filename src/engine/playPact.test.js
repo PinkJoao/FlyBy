@@ -5,7 +5,8 @@
 //   Confere sobre um catálogo montado à mão (warlock 12, CAR +4, PB +4): a arma
 //   vinculada vira ataque com CAR e proficiência e SUBSTITUI a original na lista; o
 //   +1 do Improved Pact Weapon só sem bônus mágico; a arma invocada pelos dados da
-//   arma-base; o Devouring Blade com três ataques; o evento do vínculo e o estado.
+//   arma-base; o Devouring Blade com três ataques; o evento do vínculo e o estado; só arma mágica
+//   no vínculo, a conjurada no inventário e os tipos de dano (DDL-0240).
 //
 // FUNÇÕES
 //   catalogWith(features): o catálogo do warlock com as features dadas.
@@ -15,7 +16,7 @@
 //     1d8+5, Longbow invocado a +9 e 1d8+5 com o Improved Pact Weapon.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { pactAttack, conjuredAttack, withPactWeapon, pactEvent, hasPactOfTheBlade } from './playPact';
+import { pactAttack, conjuredAttack, withPactWeapon, pactEvent, hasPactOfTheBlade, pactChoices } from './playPact';
 import { attacksPerAction } from './playBasicActions';
 import { applyOp, emptyPlayState } from './playState';
 
@@ -78,5 +79,30 @@ describe('arma de pacto', () => {
   it('Thirsting Blade dá dois ataques e Devouring Blade três', () => {
     expect(attacksPerAction({ features: ['thirsting blade'] })).toBe(2);
     expect(attacksPerAction({ features: ['thirsting blade', 'devouring blade'] })).toBe(3);
+  });
+});
+
+describe('vínculo e arma conjurada (DDL-0240)', () => {
+  const c = { ...catalogWith(['pact of the blade']), attacks: [{ ...sword, magical: true }, rapier] };
+
+  it('só arma mágica entra no vínculo', () => {
+    expect(pactChoices({}, c).carried.map((x) => x.name)).toEqual(['+1 Longsword']);
+  });
+
+  it('conjurar põe a arma no inventário e vincula a ela; outra conjurada troca o item', () => {
+    const weapon = { name: 'Longsword', source: 'XPHB' };
+    const ev = pactEvent({ choice: { kind: 'conjure', weapon }, state: emptyPlayState(), character: { inventory: [] } });
+    const add = ev.ops.find((o) => o.op === 'inventory');
+    expect(add).toMatchObject({ before: null, after: { itemId: 'Longsword', equipped: true, customName: 'Longsword (pact weapon)', pactConjured: true } });
+    const state = ev.ops.reduce(applyOp, emptyPlayState());
+    expect(state.pactWeapon).toMatchObject({ kind: 'bond', uid: add.uid, conjured: true });
+    const again = pactEvent({ choice: { kind: 'conjure', weapon: { name: 'Mace', source: 'XPHB' } }, state, character: { inventory: [add.after] } });
+    expect(again.ops.filter((o) => o.op === 'inventory').map((o) => [o.before?.itemId ?? null, o.after?.itemId ?? null])).toEqual([['Longsword', null], [null, 'Mace']]);
+    const end = pactEvent({ choice: null, state, character: { inventory: [add.after] } });
+    expect(end.ops.map((o) => o.op)).toEqual(['inventory', 'pact']);
+  });
+
+  it('o dano da arma de pacto oferece o tipo dela ou necrótico, psíquico ou radiante', () => {
+    expect(pactAttack(sword, c).damage.typeOptions).toEqual(['slashing', 'necrotic', 'psychic', 'radiant']);
   });
 });

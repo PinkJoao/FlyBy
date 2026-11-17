@@ -23,7 +23,8 @@
 //   speciesFor(db, races): a linha de espécie (e linhagem) da primeira raça do
 //     pré-requisito que existe na matriz ("gnome / deep" é a espécie Deep Gnome).
 //   featHost(db, row, feat, species): classe, nível, espaço, espécie e o talento
-//     exigido de um talento.
+//     exigido de um talento (o talento do Fighting Style de uma classe que o app não oferece, o
+//     Void Warrior do Demon Hunter: não aplicável, DDL-0240).
 //   spellHost(db, row): a classe e o nível que preparam a magia.
 //   exportChecks(db, character, hasUnit): shape, presença da unidade e round-trip.
 //   flagged(actor, page, name, source): o ator tem o item com a marca de procedência?
@@ -143,6 +144,8 @@ function speciesFor(db, races) {
 
 function featHost(db, row, feat, species) {
   const alt = (feat.prerequisite ?? [])[0] ?? {};
+  const styleOf = String(alt.otherSummary?.entry ?? '').match(/When Gaining the Level \d+ (.+?) "Fighting Style"/i)?.[1];
+  if (styleOf && !classMatrix(db).some((r) => r.classId === styleOf.toLowerCase().replace(/ /g, ''))) return { skip: `estilo do Fighting Style de uma classe que o app não oferece (${styleOf})` };
   const caster = alt.spellcasting || alt.spellcasting2020 || alt.spellcastingFeature || alt.spellcastingPrepared
     || (alt.feature ?? []).some((x) => /spellcasting|pact magic/i.test(String(x)));
   const minLevel = typeof alt.level === 'number' ? alt.level : (alt.level?.level ?? 0);

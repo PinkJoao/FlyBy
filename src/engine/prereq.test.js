@@ -257,3 +257,33 @@ describe('categoria de talento (dragonmarks, DDL-0172)', () => {
     expect(prereqStatus(potent, prereqContext(withOrigin('Mark of Healing')))).toBe('unknown');
   });
 });
+
+describe('pré-requisitos checáveis na ficha (DDL-0240)', () => {
+  const eb = { classId: 'warlock', raw: { name: 'Eldritch Blast', level: 0, damageInflict: ['force'], spellAttack: ['R'] } };
+  const thunder = { classId: 'warlock', raw: { name: 'Thunderclap', level: 0, damageInflict: ['thunder'] } };
+  const ctx = (knownSpells, extra = {}) => ({ knownSpells, classFeatures: new Set(), grantedFeatures: [], classLevels: {}, ...extra });
+  const agonizing = { prerequisite: [{ spell: [{ choose: 'level=0|class=Warlock', entry: 'a Warlock Cantrip That Deals Damage' }] }] };
+  const repelling = { prerequisite: [{ spell: [{ choose: 'level=0|class=Warlock|spell attack=m;r;o', entry: 'a Warlock Cantrip That Deals Damage via an Attack Roll' }] }] };
+
+  it('uma cantrip de bruxo com dano (e com ataque, quando pede)', () => {
+    expect(prereqStatus(agonizing, ctx([thunder]))).toBe('ok');
+    expect(prereqStatus(agonizing, ctx([]))).toBe('bad');
+    expect(prereqStatus(repelling, ctx([thunder]))).toBe('bad');
+    expect(prereqStatus(repelling, ctx([eb]))).toBe('ok');
+  });
+
+  it('"eldritch blast#c" pela magia conhecida; "hex/curse#x" sem o Hex fica para a mesa', () => {
+    expect(prereqStatus({ prerequisite: [{ spell: ['eldritch blast#c'] }] }, ctx([eb]))).toBe('ok');
+    expect(prereqStatus({ prerequisite: [{ spell: ['eldritch blast#c'] }] }, ctx([thunder]))).toBe('bad');
+    expect(prereqStatus({ prerequisite: [{ spell: ['hex/curse#x'] }] }, ctx([thunder]))).toBe('unknown');
+  });
+
+  it('a feature de classe alcançada e o nível do "When Gaining the Level 2 ... Fighting Style"', () => {
+    const style = { prerequisite: [{ feature: ['Fighting Style'] }] };
+    expect(prereqStatus(style, ctx([], { classFeatures: new Set(['fighting style']) }))).toBe('ok');
+    expect(prereqStatus(style, ctx([]))).toBe('bad');
+    const blessed = { prerequisite: [{ otherSummary: { entry: 'When Gaining the Level 2 Paladin "Fighting Style" Feature' } }] };
+    expect(prereqStatus(blessed, ctx([], { classLevels: { paladin: 2 } }))).toBe('ok');
+    expect(prereqStatus(blessed, ctx([], { classLevels: { paladin: 1 } }))).toBe('bad');
+  });
+});

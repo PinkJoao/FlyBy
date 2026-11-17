@@ -23,8 +23,8 @@
 // DECISÕES E ARMADILHAS
 //   - A CD de um traço de espécie que o texto deixa o jogador escolher o atributo (`feature.dc`, TC-0159)
 //     vai como etiqueta "Save DC" na linha.
-//   - O Pact of the Blade ganha "Bond": vincular uma arma que carrega, invocar uma ou desfazer o
-//     vínculo (`onPact`, engine/playPact.js, DDL-0236); a arma vinculada vira ataque com CAR.
+//   - O "Use" do Pact of the Blade abre o vínculo (vincular uma arma mágica, conjurar uma ou desfazer;
+//     `onPact`, engine/playPact.js, DDL-0236, DDL-0240): um botão só, no lugar das activities.
 //   - O pool vai para a linha pelo NOME do item; quando duas features têm o mesmo nome (a
 //     "Channel Divinity" do paladino e a guarda-chuva da subclasse antiga), só a do
 //     identificador do pool o mostra (DDL-0226).
@@ -136,7 +136,9 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
     ]).entries(),
   ];
   const recovery = pools.map((p) => recoveryText(p.recovery)).find(Boolean);
+  const pactUse = onPact && /^pact of the blade$/i.test(feature.name);
   const use = async () => {
+    if (pactUse) return onPact(feature);
     if (special) return onSpecial(action, special);
     if (activities.length === 1) return onUse(action, activities[0]);
     const id = await ask({
@@ -173,14 +175,9 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
             <Pips left={remainingOf(state, p.key, p.max)} max={p.max} />
           </button>
         ))}
-        {activities.length > 0 && (
+        {(activities.length > 0 || pactUse) && (
           <Button size="sm" variant="primary" onClick={use} title={`Use ${feature.name}`}>
             {special ? 'Choose' : 'Use'}
-          </Button>
-        )}
-        {onPact && /^pact of the blade$/i.test(feature.name) && (
-          <Button size="sm" variant="primary" onClick={() => onPact(feature)} title="Bond with a weapon or conjure your pact weapon">
-            Bond
           </Button>
         )}
         {onTransform && transformRuleOf(feature.name)?.kind === 'wildShape' && (

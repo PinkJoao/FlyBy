@@ -160,6 +160,8 @@
 //     runa (CD 8 + PB + CON); o Gift of the Ever-Living Ones é um interruptor com `healMax` (o
 //     familiar a 100 pés); o Health Funnel gasta Dados de Vida (`spend.hitDie`, quantos o jogador
 //     escolher) e rola os temporários do familiar, que o jogador põe no cartão dele.
+//     `targets` (Agonizing Blast, DDL-0240): com cantrips escolhidas no builder (`catalog.optionTargets`),
+//     o extra só vale nelas (`roll.spellName`); sem escolha (ficha antiga), em toda cantrip.
 //     `when: 'pact'` (Eldritch Smite, Lifedrinker) vale só no ataque da arma de pacto
 //     (engine/playPact.js), achado no passe ao vivo do warlock: antes aparecia em qualquer arma.
 //   - As famílias pós-2024 (DDL-0235), cada uma pela frase do texto: Raging Elements com `options`
@@ -443,7 +445,7 @@ export const FEATURE_ROLLS = {
   'piercing shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: (rd) => `a 30-foot line instead of the attack roll, DC ${SHOT_DC(rd)} Dexterity save; Piercing` },
   'seeking shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(2), note: (rd) => `no attack roll: DC ${SHOT_DC(rd)} Dexterity save; Force` },
   'shadow shot': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: SHOT_DIE(1), note: (rd) => `Psychic; DC ${SHOT_DC(rd)} Wisdom save or Blinded until the end of its next turn` },
-  'agonizing blast': { kind: 'rider', on: ['damage'], when: 'cantrip', defaultOn: true, formula: '@abilities.cha.mod', label: 'Agonizing Blast (Charisma)', note: 'only the Warlock cantrip you chose for it' },
+  'agonizing blast': { kind: 'rider', on: ['damage'], when: 'cantrip', targets: true, defaultOn: true, formula: '@abilities.cha.mod', label: 'Agonizing Blast (Charisma)', note: 'the Warlock cantrip you chose for it' },
   'precision attack': { kind: 'rider', on: ['attack'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: 'after a miss, to turn it into a hit' },
   'trip attack': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: (rd) => `a Large or smaller target makes a DC ${BM_DC(rd)} Strength save or has the Prone condition` },
   'disarming attack': { kind: 'rider', on: ['damage'], when: 'weapon', spend: SUP, formula: SUPERIORITY, note: (rd) => `DC ${BM_DC(rd)} Strength save or it drops one object you choose` },
@@ -658,6 +660,8 @@ export function featureRiders(state, catalog, roll) {
   const out = [];
   for (const [name, entry] of Object.entries(FEATURE_ROLLS)) {
     if (!(entry.has ? entry.has(catalog) : features.has(name))) continue;
+    const targets = entry.targets ? catalog.optionTargets?.[name] ?? [] : [];
+    if (targets.length && roll.spellName && !targets.includes(roll.spellName)) continue;
     ridersOf(entry).forEach((e, i) => {
       if (!e.on.includes(roll.kind)) return;
       if (e.needs === 'Rage' && !raging) return;

@@ -22,7 +22,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   evalUses, scaleValues, scaleRollData, actorResources, weaponAttacks, unarmedStrike, cantripAttacks,
-  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity, naturalAttacks,
+  spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity, naturalAttacks, spellTypeOptions,
 } from './playCatalog';
 
 const feat = (name, system = {}, extra = {}) => ({ type: 'feat', name, system: { identifier: '', uses: { max: '' }, ...system }, ...extra });
@@ -364,5 +364,13 @@ describe('armas naturais pela prosa (DDL-0239)', () => {
     const ae = f('Animal Enhancement', [{ type: 'list', items: [{ type: 'item', name: 'Grappling Appendages', entries: ['If you hit with it, the target takes bludgeoning damage equal to 1d6 + your Strength modifier, instead of the bludgeoning damage normal for an unarmed strike.'] }, { type: 'item', name: 'Manta Glide', entries: ['You can glide.'] }] }]);
     expect(naturalAttacks([ae], d)).toEqual([]);
     expect(naturalAttacks([ae], d, new Set(['Grappling Appendages'])).map((a) => a.name)).toEqual(['Unarmed Strike (Grappling Appendages)']);
+  });
+});
+
+describe('tipo de dano à escolha nas magias (DDL-0240)', () => {
+  it('todos os do dado com "of your choice"; só o par em "(your choice)"', () => {
+    expect(spellTypeOptions({ damageInflict: ['acid', 'cold', 'fire'], entries: ['You hurl an orb. Choose Acid, Cold, or Fire damage of your choice.'] })).toEqual(['acid', 'cold', 'fire']);
+    expect(spellTypeOptions({ damageInflict: ['necrotic', 'radiant', 'thunder'], entries: ['Each creature takes 5d6 Thunder damage and 5d6 Radiant or Necrotic damage (your choice).'] })).toEqual(['radiant', 'necrotic']);
+    expect(spellTypeOptions({ damageInflict: ['bludgeoning', 'cold'], entries: ['2d10 Bludgeoning damage and 4d6 Cold damage.'] })).toBeNull();
   });
 });

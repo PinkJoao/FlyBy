@@ -12,6 +12,8 @@
 //   InventoryTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - A arma de pacto vinculada (`state.pactWeapon`) aparece com "(pact weapon)" no nome (DDL-0240); a
+//     conjurada já entra no inventário com esse nome.
 //   - Sem loja, sem quantidade, sem equipar, sem guardar em contêiner (definições do
 //     dono, DDL-0146 e P6): isso é da ficha. As moedas também saíram (DDL-0160): no
 //     jogo quase não servem, e a ficha as edita. A quantidade aparece só lida ("x3"); o
@@ -60,7 +62,9 @@ export default function InventoryTab({ catalog, state, inventory, db, onUse, onC
       return next;
     });
 
-  const row = (entry) => {
+  const row = (raw) => {
+    const pact = state?.pactWeapon?.uid === raw.uid && !/[(]pact weapon[)]$/.test(nameOf(raw));
+    const entry = pact ? { ...raw, customName: nameOf(raw) + ' (pact weapon)' } : raw;
     const charge = charges.get(entry.uid);
     const attack = attacks.get(entry.uid);
     return (

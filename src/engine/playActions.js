@@ -223,7 +223,7 @@ export function rollDamageEvent({ catalog, attack, options = {}, rng, now = new 
     label: attack.name,
     payload: {
       attackKey: attack.key,
-      types: attack.damage?.types ?? [],
+      types: options.damageType ? [options.damageType] : attack.damage?.types ?? [],
       critical: !!options.critical,
       versatile: !!(options.versatile && attack.versatile),
       save: attack.save ?? null,

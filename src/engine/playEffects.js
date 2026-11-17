@@ -423,6 +423,7 @@ export function attackRollContext(attack, kind = 'attack') {
     attackAbility: attack.ability,
     pact: !!attack.pact,
     cantrip: !!attack.cantrip,
+    spellName: attack.kind === 'spell' ? attack.name : null,
     ...(kind === 'damage' ? { twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile } : {}),
   };
 }

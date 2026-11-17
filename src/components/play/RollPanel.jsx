@@ -105,12 +105,13 @@ function shownFormula(text, data) {
  * @param {{ kind: 'd20'|'damage', parts: { label: string, formula: string|number }[], rollData: object,
  *   defaultMode?: string, defaultCritical?: boolean, versatileDice?: string|null, note?: string, healOption?: boolean, effects?: object[] }} props
  */
-export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal', defaultCritical = false, versatileDice = null, note = '', healOption = false, effects = [] }) {
+export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal', defaultCritical = false, versatileDice = null, damageTypes = null, note = '', healOption = false, effects = [] }) {
   const close = useDialogClose();
   const [mode, setMode] = useState(defaultMode);
   const [bonus, setBonus] = useState('');
   const [critical, setCritical] = useState(defaultCritical);
   const [versatile, setVersatile] = useState(false);
+  const [damageType, setDamageType] = useState(damageTypes?.[0] ?? null);
   const physicalDice = useSettingsStore((s) => s.physicalDice);
   const physical = physicalDice === 'all' || (physicalDice === 'd20' && kind === 'd20');
   const [manualText, setManualText] = useState('');
@@ -134,7 +135,7 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
   const submit = (e) => {
     e.preventDefault();
     if (bonusError || manualError) return;
-    close({ mode, bonus: String(bonus).trim(), manual: manual ?? [], critical, versatile, applyHeal, effectIds });
+    close({ mode, bonus: String(bonus).trim(), manual: manual ?? [], critical, versatile, applyHeal, effectIds, ...(damageType ? { damageType } : {}) });
   };
 
   return (
@@ -186,6 +187,16 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
           value={critical ? 'critical' : 'normal'}
           options={HITS}
           onChange={(v) => setCritical(v === 'critical')}
+        />
+      )}
+      {kind === 'damage' && !healOption && damageTypes?.length > 1 && (
+        <SegmentedControl
+          block
+          role="radiogroup"
+          ariaLabel="Damage type"
+          value={damageType}
+          options={damageTypes.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))}
+          onChange={setDamageType}
         />
       )}
       {kind === 'damage' && !healOption && versatileDice && (

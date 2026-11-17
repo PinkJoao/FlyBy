@@ -246,3 +246,13 @@ describe('saveDamage (TC-0154)', () => {
     expect(saveDamage(21, 'failed', true)).toBe(10);
   });
 });
+
+describe('concentração que o dano não quebra (DDL-0234)', () => {
+  const base = { stats: { hpMax: 40 }, features: ['focused conjuration'], spells: [{ key: 'class:wizard', spells: [{ key: 'spell:class:wizard|Summon Fey', school: 'C' }, { key: 'spell:class:wizard|Haste', school: 'T' }] }] };
+  it('Focused Conjuration: sem save numa magia de Conjuration, com save nas outras', () => {
+    const conj = { ...emptyPlayState(), concentration: { name: 'Summon Fey', spellKey: 'spell:class:wizard|Summon Fey' } };
+    const other = { ...emptyPlayState(), concentration: { name: 'Haste', spellKey: 'spell:class:wizard|Haste' } };
+    expect(hurtOutcome(conj, base, { amount: 10 }).summary.concentrationDc).toBeNull();
+    expect(hurtOutcome(other, base, { amount: 10 }).summary.concentrationDc).toBe(10);
+  });
+});

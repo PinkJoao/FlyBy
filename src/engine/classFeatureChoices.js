@@ -153,7 +153,7 @@ const SUBCLASS_FEATURE_GRANTS = {
   ],
   'nature|acolyte of nature': [{ kind: 'skill', count: 1, from: ['ani', 'nat', 'sur'] }],
   'strength (psa)|acolyte of strength': [{ kind: 'skill', count: 1, from: ['ani', 'ath', 'nat', 'sur'] }],
-  'arcane archer|arcane archer lore': [{ kind: 'skill', count: 1, from: ['arc', 'nat'] }],
+  'arcane archer|arcane archer lore': [{ source: 'XGE', grants: [{ kind: 'skill', count: 1, from: ['arc', 'nat'] }] }],
   'cavalier|bonus proficiency': [{ kind: 'mixed', count: 1, of: ['skill', 'language'], fromByKind: { skill: ['ani', 'his', 'ins', 'prf', 'per'] } }],
   'samurai|bonus proficiency': [{ kind: 'mixed', count: 1, of: ['skill', 'language'], fromByKind: { skill: ['his', 'ins', 'prf', 'per'] } }],
   'banneret|knightly envoy': [{ kind: 'skill', count: 1, from: ['ins', 'itm', 'per', 'prf'] }],

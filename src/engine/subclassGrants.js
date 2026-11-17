@@ -157,6 +157,8 @@ export const SUBCLASS_GRANTS = {
   'monk|mercy': [{ level: 3, feature: 'Implements of Mercy', skills: ['ins', 'med'], tools: ['Herbalism Kit'] }],
   'monk|drunken master': [{ level: 3, feature: 'Bonus Proficiencies', skills: ['prf'], tools: ["Brewer's Supplies"] }],
   'monk|mystic brews': [{ level: 3, feature: 'Bonus Proficiencies', skills: ['prf'], tools: ["Brewer's Supplies"], conditionalSkillAlt: ['acr', 'ath', 'his', 'ins', 'rel', 'ste'] }],
+  // ATENÇÃO: o Arcane Archer Lore do AU dá Arcana E Nature; a escolha "uma das duas" é só do XGE (SUBCLASS_FEATURE_GRANTS).
+  'fighter|arcane archer': [{ level: 3, source: 'AU', feature: 'Arcane Archer Lore', skills: ['arc', 'nat'], conditionalSkillAlt: ['acr', 'ani', 'ath', 'his', 'ins', 'itm', 'per', 'prc', 'sur'] }],
   'wizard|necromancer': [{ level: 3, source: 'AU', feature: 'Necromancy Spellbook', resist: ['necrotic'] }],
   'ranger|gloom stalker': [
     { level: 7, feature: 'Iron Mind', saves: ['wis'], conditionalSaveAlt: ['int', 'cha'] },

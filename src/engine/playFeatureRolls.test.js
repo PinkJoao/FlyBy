@@ -219,3 +219,14 @@ describe('Savage Attacker: o dado da arma rolado duas vezes', () => {
     expect(crit.rolls.total).toBe(27);
   });
 });
+
+describe('options no Use (DDL-0235)', () => {
+  it('Raging Elements: cada opção com o seu dado pela Rage e a sua salvaguarda', () => {
+    const catalog = { rollData: { 'scale.barbarian.rage-damage': 3, prof: 4, abilities: { con: { mod: 3 } } }, resources: [] };
+    const f = { name: 'Raging Elements' };
+    expect(featureUseOf(f, catalog).options).toEqual(['Icefury', 'Lava Burst', 'Lightning Bolt']);
+    expect(featureUseOf(f, catalog, null, 0).roll.formula).toBe('3d8');
+    expect(featureUseOf(f, catalog, null, 1)).toMatchObject({ roll: { formula: '3d4' }, save: { abilities: ['dex'], dc: 15 } });
+    expect(featureUseOf(f, catalog, null, 2).roll.formula).toBe('3d6');
+  });
+});

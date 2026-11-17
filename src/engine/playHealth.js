@@ -15,7 +15,8 @@
 //   saveDamage(amount, save, evasion): o dano depois da salvaguarda de "metade no sucesso"; o
 //     Evasion (monge e ladino) zera no sucesso e corta à metade na falha (TC-0154).
 //   concentrationDc(damage): a CD do save de concentração.
-//     O Relentless Hunter tira o save quando a concentração é no Hunter's Mark (TC-0153).
+//     O Relentless Hunter tira o save quando a concentração é no Hunter's Mark (TC-0153), e o
+//     Focused Conjuration quando é numa magia de Conjuration (pela escola no catálogo, DDL-0234).
 //   damageOutcome(state, catalog, opts): o que um dano faz (ops e resumo).
 //   healOutcome(state, catalog, amount): o que uma cura faz.
 //   tempHpOutcome(state, amount, opts): o temporário novo, sem somar (`opts.catalog` para o
@@ -162,7 +163,10 @@ export function damageOutcome(state, catalog, { amount, type = '', critical = fa
     notes.push(`${state.form.source} ends (no temporary hit points left)`);
   }
 
-  const unbroken = /^hunter's mark$/i.test(state.concentration?.name ?? '') && (catalog?.features ?? []).includes('relentless hunter');
+  const concKey = state.concentration?.spellKey ?? null;
+  const concSchool = concKey ? (catalog?.spells ?? []).flatMap((o) => o.spells ?? []).find((sp) => sp.key === concKey)?.school : null;
+  const unbroken = (/^hunter's mark$/i.test(state.concentration?.name ?? '') && (catalog?.features ?? []).includes('relentless hunter'))
+    || (concSchool === 'C' && (catalog?.features ?? []).includes('focused conjuration'));
   const dc = state.concentration && taken > 0 && !formEnds && !unbroken ? concentrationDc(taken) : null;
   return {
     ops,

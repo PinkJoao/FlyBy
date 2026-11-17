@@ -49,6 +49,7 @@ export const NOT_A_CHOICE = {
   'tools of the trade': 'só se já tiver a ferramenta: conditionalArtisanTool cria a escolha na hora',
   "reanimator's skill set": 'só se já tiver a ferramenta: conditionalArtisanTool cria a escolha na hora',
   'bonus proficiencies': 'só se já tiver a perícia: conditionalSkillAlt cria a escolha na hora',
+  'arcane archer lore': 'só se já tiver Arcana ou Nature: conditionalSkillAlt cria a escolha na hora',
   visage: 'aparência, sem mecânica',
   'vestige companion': 'o tipo de criatura do bloco, escolhido ao invocar',
 };

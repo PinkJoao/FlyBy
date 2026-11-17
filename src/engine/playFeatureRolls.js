@@ -23,7 +23,8 @@
 //     nome do item, ou o espaço do pacto).
 //   riderSpendOps(applied, catalog): as operações do gasto dos extras ligados.
 //   amountOf(entry, rollData): quanto a entrada gasta (número, ou { min, max } a escolher).
-//   featureUseOf(feature, catalog, chosen): o que o "Use" de uma feature `toggle` ou `use`
+//   featureUseOf(feature, catalog, chosen, option): o que o "Use" de uma feature `toggle` ou `use`
+//     (`option` escolhe entre as `options` da entrada, cada uma com a sua rolagem e salvaguarda);
 //     faz: o modificador, o gasto e a salvaguarda.
 //   formulaOf(entry, rollData): a fórmula, que pode depender do nível.
 //   byLevel(classId, steps), MARTIAL(count): a fórmula pelo nível de uma classe
@@ -104,9 +105,9 @@
 //     PHB: Turn the Tide 1d6 + CAR; Touch of the Long Death 2d10 por ponto; Defy Death
 //     1d8 + CON e Indestructible Life 1d8 + nível de Warlock (curam); Wrath of the Storm
 //     2d8; Vigilant Rebuke 2d8 + CAR. BGG: Elemental Cleaver 1d6 com Rage (2d6 no 14,
-//     Demiurgic Colossus). Passivas: Improved Defender, Bond of Fang and Scale,
-//     Eventide's Splendor, Order's Wrath, Great Stature, Runic Juggernaut, Demiurgic
-//     Colossus.
+//     Demiurgic Colossus). Passivas: Bond of Fang and Scale, Order's Wrath, Great
+//     Stature, Runic Juggernaut, Demiurgic Colossus (Improved Defender e Eventide's Splendor
+//     viraram `use` no DDL-0235).
 //   - Improved Blessed Strikes e Heightened Focus deixaram de ser passivas (DDL-0214): o
 //     "Use" dá os PV temporários que o texto conta ("twice your Wisdom modifier" do Potent
 //     Spellcasting; "two rolls of your Martial Arts die" do Patient Defense). A escala do
@@ -134,6 +135,13 @@
 //     alternativo quando o próprio pool acabou (o Breath of the Dragon "spend 2 ki points to use
 //     this feature again", o Aspect of the Wyrm "3 ki points", e o Ascendant Aspect, 1 ponto que
 //     melhora o sopro) fica no ajuste à mão do contador (DDL-0202).
+//   - As famílias pós-2024 (DDL-0235), cada uma pela frase do texto: Raging Elements com `options`
+//     (o Use pergunta Icefury, Lava Burst ou Lightning Bolt; os dados são o Rage Damage em d8, d4 e
+//     d6), Spiritual Protectors (1d4 na fúria), Experimental Elixir (1d6 da tabela), Adventurer's
+//     Atlas (1d4 na Iniciativa), Improved Reanimation (4d4), Improved Defender (1d4 + INT), Fortifying
+//     e Tenacious Spell, Eventide's Splendor, Lightbringer's Aura, Aura of Malevolence, Radiant Fire
+//     (1d8 no 14 pelo Honed Spellfire), Absorb Spells, as opções novas do Cunning Strike (Panache,
+//     Dashing Strikes) e Superior Dread (um interruptor com as resistências, junto da Form of Dread).
 //   - As famílias do XPHB (DDL-0232): Elemental Epitome (o Martial Arts die no desarmado),
 //     Envenom Weapons (2d6 de veneno no Use), Homing Strikes e Psi-Bolstered Knack (um dado de
 //     Psionic Energy depois de errar ou falhar; `scale.soulknife.die.die`, porque `.die` traz o
@@ -322,7 +330,7 @@ export const FEATURE_ROLLS = {
   'armor model: infiltrator': { kind: 'rider', on: ['damage'], when: 'ranged', formula: '1d6', label: 'Lightning Launcher', note: 'with the launcher only; once per turn; Lightning' },
   'explosive cannon': { kind: 'use', roll: { label: 'Detonate: Force within 20 feet (Dexterity save, half on success)', formula: '3d10' } },
   'arcane jolt': { kind: 'rider', on: ['damage'], when: 'weapon', spend: { item: 'Arcane Jolt' }, formula: byLevel('artificer', [[15, '4d6'], [0, '2d6']]), note: 'a magic weapon or your Steel Defender; or heal that much instead; once per turn; Force' },
-  'improved defender': { kind: 'passive' },
+  'improved defender': { kind: 'use', roll: { label: 'Force to the attacker (Improved Deflection, with the Deflect Attack)', formula: '1d4 + @abilities.int.mod' } },
   'shifting (beasthide)': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points', formula: '2 * @prof + 1d6' } },
   'shifting (longtooth)': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points', formula: '2 * @prof' } },
   'reclaim potential': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points', formula: '2d6 + @abilities.con.mod' } },
@@ -334,7 +342,7 @@ export const FEATURE_ROLLS = {
   'group recovery': { kind: 'use', roll: { label: 'Healing for each chosen ally', formula: '1d4 + @classes.fighter.levels' } },
   'blessing of moonlight': { kind: 'use', roll: { label: 'Healing for another creature', formula: '2d4' } },
   "moon's inspiration": { kind: 'use', spend: BI, roll: { label: 'Extra healing (Lunar Vitality)', formula: BARDIC } },
-  "eventide's splendor": { kind: 'passive' },
+  "eventide's splendor": { kind: 'use', roll: { label: 'Vibrance of the Full Moon: in place of a Bardic Inspiration die (Lunar Vitality)', formula: '1d6' } },
   'cold caster': { kind: 'use', roll: { label: 'Subtracted from its next saving throw (Frostbite)', formula: '1d4' } },
   'purple dragon commandant': { kind: 'use', roll: { label: "Ally's Temporary Hit Points (add the feat's ability modifier)", formula: '2d6' } },
   "efreeti's fury": { kind: 'rider', on: ['damage'], when: 'spell', formula: '2d4', note: 'with Divine Smite; a second creature within 30 feet takes 2d4 too; Fire' },
@@ -360,6 +368,33 @@ export const FEATURE_ROLLS = {
   'circle of mortality': { kind: 'rider', on: ['damage'], formula: byLevel('cleric', [[11, '1d6'], [0, '1d4']]), label: 'Pull of Death', note: 'a creature missing Hit Points; once per turn; Necrotic' },
   'hungering might': { kind: 'use', apply: 'heal', roll: { label: 'Hit Points regained (Bloodied, transformed)', formula: '1d10 + @abilities.wis.mod' } },
   'knowledge from a past life': { kind: 'rider', on: ['check'], spend: { item: 'Knowledge from a Past Life' }, formula: '1d6', note: 'after you fail the check' },
+  'raging elements': {
+    kind: 'use',
+    options: [
+      { label: 'Icefury', roll: { label: 'Icefury: Cold on a hit (spell attack with Constitution); the next Fire damage it takes adds 1d10', formula: (rd) => `${rd['scale.barbarian.rage-damage'] ?? 2}d8` } },
+      { label: 'Lava Burst', save: { ability: 'dex', dc: '8 + @prof + @abilities.con.mod' }, roll: { label: 'Lava Burst: Fire on a failed save; the next Lightning damage it takes adds 1d8', formula: (rd) => `${rd['scale.barbarian.rage-damage'] ?? 2}d4` } },
+      { label: 'Lightning Bolt', save: { ability: 'dex', dc: '8 + @prof + @abilities.con.mod' }, roll: { label: 'Lightning Bolt: Lightning, half on a success; the next Cold damage it takes adds 1d6', formula: (rd) => `${rd['scale.barbarian.rage-damage'] ?? 2}d6` } },
+    ],
+  },
+  'spiritual protectors': { kind: 'rider', on: ['damage'], when: 'weapon', needs: 'Rage', formula: '1d4', label: 'Spiritual Protectors: Strike', note: 'Cold, Fire or Lightning; or Distract or Hinder instead' },
+  'experimental elixir': { kind: 'use', roll: { label: 'Experimental Elixir table (one roll for each elixir)', formula: '1d6' } },
+  "adventurer's atlas": { kind: 'rider', on: ['initiative'], formula: '1d4', defaultOn: true, label: "Adventurer's Atlas: Awareness", note: 'while you carry your magical map' },
+  'improved reanimation': { kind: 'use', roll: { label: 'Death Burst of the Reanimated Companion (Necrotic ignores Resistance)', formula: '4d4' } },
+  'fortifying spell': { kind: 'use', roll: { label: 'Temporary Hit Points for one target of the spell', formula: '2d8 + @classes.cleric.levels' } },
+  'tenacious spell': { kind: 'use', roll: { label: "Subtracted from the target's first save against the spell's effect", formula: '1d6' } },
+  "lightbringer's aura": { kind: 'use', roll: { label: 'Extra healing for a Bloodied creature in your Aura of Protection', formula: '1d6' } },
+  'aura of malevolence': { kind: 'use', roll: { label: 'Damage to each chosen creature near your teleport (ignores Resistance)', formula: '@abilities.int.mod' } },
+  'radiant fire': { kind: 'use', roll: { label: 'Fire or Radiant to one creature within 30 feet', formula: byLevel('sorcerer', [[14, '1d8'], [0, '1d4']]) } },
+  'absorb spells': { kind: 'use', roll: { label: 'Sorcery Points regained (a target failed the save against your Counterspell)', formula: '1d4' } },
+  panache: {
+    kind: 'rider', on: ['damage'], when: 'weapon', forgo: 1, label: 'Cunning Strike: Goad (1d6 of Sneak Attack)', note: (rd) => `with Sneak Attack; DC ${ROGUE_DC(rd)} Wisdom save or Disadvantage against others than you`,
+    also: [{ on: ['damage'], when: 'weapon', forgo: 3, label: 'Cunning Strike: Awe (3d6 of Sneak Attack)', note: (rd) => `with Sneak Attack; each chosen creature within 30 feet makes a DC ${ROGUE_DC(rd)} Wisdom save or is Charmed` }],
+  },
+  'dashing strikes': {
+    kind: 'rider', on: ['damage'], when: 'weapon', forgo: 2, label: 'Cunning Strike: Invigorate (2d6 of Sneak Attack)', note: 'a creature within 30 feet adds 1d6 to its attack rolls and saves until the end of its next turn',
+    also: [{ on: ['damage'], when: 'weapon', forgo: 2, label: 'Cunning Strike: Parrying Stance (2d6 of Sneak Attack)', note: 'roll 1d6: a bonus to your AC until the start of your next turn' }],
+  },
+  'superior dread': { kind: 'toggle', modifier: () => ({ label: 'Superior Dread', source: 'feature', duration: 'manual', maxRounds: 10, resist: ['bludgeoning', 'piercing', 'slashing'], notes: ['while in your Form of Dread: Fly Speed equal to your Speed, hover; 1d10 Force if you end your turn inside a creature or object'], effects: [] }) },
   'form of dread': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points', formula: '1d10 + @classes.warlock.levels' } },
   'necrotic husk': { kind: 'use', roll: { label: 'Necrotic around you (Constitution save, half on success)', formula: '2d10 + @abilities.cha.mod' } },
   'beguiling arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: ARROW, note: 'Psychic; Wisdom save or Charmed by an ally' },
@@ -553,7 +588,7 @@ export function riderSpendOps(applied, catalog) {
  * O que o "Use" de uma feature `toggle` ou `use` faz: o modificador (sem id), a chave
  * do gasto, a salvaguarda, a rolagem, o `apply` e a chave do `restore`. Null para o resto.
  */
-export function featureUseOf(feature, catalog, chosen = null) {
+export function featureUseOf(feature, catalog, chosen = null, option = null) {
   const e = featureRollOf(feature?.name);
   if (!e && feature?.spendItem) return { modifier: null, spend: spendKeyOf(catalog, { item: feature.spendItem }), amount: 1, spent: 1, save: null, roll: null, apply: null, restore: null };
   if (!e) {
@@ -562,19 +597,23 @@ export function featureUseOf(feature, catalog, chosen = null) {
   }
   if (e.kind !== 'toggle' && e.kind !== 'use') return null;
   const rd = catalog.rollData ?? {};
+  const src = e.options ? e.options[Math.max(0, Math.min(option ?? 0, e.options.length - 1))] : e;
   let save = null;
-  if (e.save) {
+  if (src.save) {
     let dc;
     try {
-      dc = rollFormula(e.save.dc, { data: rd }).total;
+      dc = rollFormula(src.save.dc, { data: rd }).total;
     } catch {
       dc = null;
     }
-    save = { abilities: [e.save.ability], dc };
+    save = { abilities: [src.save.ability], dc };
   }
   const amount = amountOf(e, rd);
   const n = typeof amount === 'number' ? amount : Math.min(amount.max, Math.max(amount.min, chosen ?? amount.min));
-  const formula = e.roll ? formulaOf(e.roll, rd, n) : null;
-  const roll = e.roll && formula && formula !== '0' ? { label: e.roll.label, formula } : null;
-  return { modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore), restoreUpTo: e.restoreUpTo ?? null };
+  const formula = src.roll ? formulaOf(src.roll, rd, n) : null;
+  const roll = src.roll && formula && formula !== '0' ? { label: src.roll.label, formula } : null;
+  return {
+    modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore), restoreUpTo: e.restoreUpTo ?? null,
+    ...(e.options ? { options: e.options.map((o) => o.label) } : {}),
+  };
 }

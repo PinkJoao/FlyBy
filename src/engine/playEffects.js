@@ -83,6 +83,8 @@
 //     termina incapacitado; em combate dura no máximo 10 minutos, `maxRounds`) e
 //     Dodge (vantagem em saves de DES, e a nota "ataques contra você têm
 //     desvantagem", que é do atacante: até o começo do seu próximo turno, 1 rodada).
+//   - A Rage soma a resistência do Primordial Bond (Path of the Elements, nível 10: frio, fogo e
+//     raio, DDL-0234) quando o catálogo tem a feature.
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
@@ -155,7 +157,7 @@ const FEATURE_EFFECTS = {
     duration: 'manual',
     endsOnIncapacitated: true,
     maxRounds: 100,
-    resist: ['bludgeoning', 'piercing', 'slashing'],
+    resist: ['bludgeoning', 'piercing', 'slashing', ...((catalog.features ?? []).includes('primordial bond') ? ['cold', 'fire', 'lightning'] : [])],
     effects: [
       { targets: ['damage'], formula: catalog.rollData?.['scale.barbarian.rage-damage'] != null ? '@scale.barbarian.rage-damage' : '2', when: 'strAttack', label: 'Rage damage' },
       { targets: ['check:str', 'save:str'], mode: 'advantage', label: 'Rage' },

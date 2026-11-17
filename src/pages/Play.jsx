@@ -704,6 +704,15 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       cost = v === 'none' ? null : v;
     }
     let use = featureUseOf(feature, catalog);
+    if (use?.options?.length > 1) {
+      const pick = await ask({
+        title: feature.name,
+        message: 'Which option?',
+        actions: use.options.map((label, i) => ({ label, value: String(i), tone: i === 0 ? 'primary' : undefined })),
+      });
+      if (pick == null || pick === false) return;
+      use = featureUseOf(feature, catalog, null, Number(pick));
+    }
     if (use?.amount && typeof use.amount === 'object') {
       const r = await ask({
         title: feature.name,

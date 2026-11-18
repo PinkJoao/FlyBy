@@ -272,3 +272,19 @@ describe('opções de classe (DDL-0237)', () => {
     expect(use).toMatchObject({ spend: 'hd:d8', spent: 3, roll: { formula: '3d8 + 15' } });
   });
 });
+
+describe('TC-0170 (DDL-0243)', () => {
+  it('Elemental Adept só na magia do tipo escolhido', () => {
+    const c = cat(['elemental adept'], { damageTypePicks: ['fire'] });
+    expect(ids(featureRiders(st(), c, { kind: 'damage', spell: true, types: ['cold'] }))).toEqual([]);
+    const on = featureRiders(st(), c, { kind: 'damage', spell: true, types: ['fire'] });
+    expect(ids(on)).toEqual(['rider:elemental-adept']);
+  });
+
+  it('Aura of Elemental Shielding: uma opção por tipo, cada uma uma resistência', () => {
+    const use = featureUseOf({ name: 'Aura of Elemental Shielding' }, cat(['aura of elemental shielding']));
+    expect(use.options.length).toBe(5);
+    const fire = featureUseOf({ name: 'Aura of Elemental Shielding' }, cat(['aura of elemental shielding']), null, 2);
+    expect(fire.modifier.resist).toEqual(['fire']);
+  });
+});

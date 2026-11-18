@@ -21,6 +21,10 @@
 //   PlayHistory(props): a lista, com os separadores de dia.
 //
 // DECISÕES E ARMADILHAS
+//   - DDL-0243: o card de uma feature usada ou de uma magia lançada tem o título como botão que abre a
+//     descrição (`onRead`: a magia, ou a feature de `payload.feature` ou da activity), e a opção usada
+//     (`payload.option`: Bond, Conjure, a activity escolhida, a opção do "Use", a arma da magia de arma) vem
+//     em destaque, na primeira etiqueta.
 //   - A feature levada ao histórico à mão (`logged`, DDL-0203) mostra o custo do turno
 //     na Tag do tom do gasto e diz que nada foi rolado. O gasto de um extra ligado na
 //     rolagem (`spent`, DDL-0205) vira uma linha em qualquer tipo de card.
@@ -59,6 +63,7 @@ import { ABILITY_FULL } from '../builder/labels';
 import styles from './PlayHistory.module.css';
 import Button from '../common/Button';
 import Tag from '../common/Tag';
+import Icon from '../common/Icon';
 import RevertFormButton from './RevertFormButton';
 
 /** O tom da Tag de cada etiqueta do cartão (o acerto em verde, a falha em vermelho). */
@@ -309,7 +314,8 @@ function DiceList({ group }) {
 }
 
 /** O cartão de um evento. */
-function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, onReroll, live }) {
+function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, onReroll, onRead, live }) {
+  const readable = !!onRead && (event.kind === 'cast' || !!event.payload?.feature || !!event.payload?.actionKey);
   const rolls = event.rolls ?? {};
   const critical = event.kind === 'damageRoll' ? event.payload?.critical : rolls.isCritical;
   const save = event.kind === 'damageRoll' ? event.payload?.save : null;
@@ -321,12 +327,20 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
     <li className={undone ? `${styles.card} ${styles.undone}` : styles.card}>
       <div className={styles.head}>
         <span className={styles.kind}>{KIND_LABEL[event.kind] ?? event.kind}</span>
-        <span className={styles.title}>{event.label}</span>
+        {readable ? (
+          <button type="button" className={`${styles.title} ${styles.titleButton}`} onClick={() => onRead(event)} title={`What ${event.label} does`}>
+            {event.label}
+            <Icon name="info" className={styles.readIcon} />
+          </button>
+        ) : (
+          <span className={styles.title}>{event.label}</span>
+        )}
         <span className={styles.time}>{undone ? 'Undone' : timeLabel(event.at)}</span>
       </div>
       <div className={styles.body}>
         {detail.total != null && <span className={styles.total}>{detail.total}</span>}
         <span className={styles.tags}>
+          {event.payload?.option && <Tag tone="info">{event.payload.option}</Tag>}
           {rolls.mode && rolls.mode !== 'normal' && (
             <Tag>{rolls.mode === 'advantage' ? 'Advantage' : 'Disadvantage'}</Tag>
           )}
@@ -417,7 +431,7 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
  * O histórico: do mais novo para o mais velho, separado por dia.
  * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function, onReroll?: Function, live?: object }} props
  */
-export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, onReroll, live }) {
+export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, onReroll, onRead, live }) {
   const events = doc?.events ?? [];
   if (!events.length) {
     return <p className={styles.empty}>Nothing rolled yet. Your rolls and actions show up here, and you can undo them.</p>;
@@ -442,6 +456,7 @@ export default function PlayHistory({ doc, onDamage, onConcentration, concentrat
         onSpell={onSpell}
         onFeatureEffect={onFeatureEffect}
         onReroll={onReroll}
+        onRead={onRead}
         live={live}
       />,
     );

@@ -156,6 +156,9 @@
 //     Summon Wildfire Spirit (o 2d6 da chegada; o summon não tem activity), o Acid Spit do Simic
 //     Hybrid (só com a opção escolhida, `optionPicks` do catálogo), o dado de superioridade do
 //     Martial Adept e do Superior Technique (d6 sem a escala do Battle Master; o pool deles, `alt` no SUP).
+//   - TC-0170 (DDL-0243): Elemental Adept (o 1 conta como 2 no dano de magia, ligado; o tipo escolhido no
+//     builder vai na nota) e Aura of Elemental Shielding (`toggle` com `options`, cada uma com o seu
+//     modificador: o "Use" pergunta o tipo e liga a resistência).
 //   - TC-0169 (DDL-0242): o Hexblade's Curse soma a proficiência no dano contra o alvo amaldiçoado (desligado,
 //     o jogador liga quando o alvo é o amaldiçoado); o resto da família da arma está em engine/playWeapons.
 //   - TC-0166 e TC-0167 (DDL-0238): o Fire Rune soma 2d6 de fogo no dano de arma e gasta o pool da
@@ -506,6 +509,11 @@ export const FEATURE_ROLLS = {
   'spellfire spark': { kind: 'use', roll: { label: 'Damage reduced (Magic Absorption, once per turn)', formula: '1d4' } },
   'natural weapons': { kind: 'rider', on: ['damage'], when: 'unarmed', formula: '1d4', label: 'Bite poison', note: 'the bite only, if the target fails the Constitution save (8 + PB + CON)' },
   "hexblade's curse": { kind: 'rider', on: ['damage'], formula: '@prof', label: "Hexblade's Curse (cursed target)", note: 'against the cursed target; a d20 of 19 or 20 is a Critical Hit; regain Hit Points when it dies' },
+  'elemental adept': { kind: 'rider', on: ['damage'], when: 'spell', typesFrom: 'damageTypePicks', defaultOn: true, diceMin: 2, label: 'Elemental Adept (a 1 counts as 2)', note: (rd, c) => `only a spell of ${(c?.damageTypePicks ?? []).join(' or ') || 'the chosen type'}; it ignores Resistance to it` },
+  'aura of elemental shielding': {
+    kind: 'toggle',
+    options: ['acid', 'cold', 'fire', 'lightning', 'thunder'].map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), modifier: () => ({ label: `Aura of Elemental Shielding (${t})`, source: 'feature', duration: 'manual', resist: [t], notes: ['you and your allies in your Aura of Protection; change the type at the start of each of your turns'], effects: [] }) })),
+  },
   'protection of the talisman': { kind: 'rider', on: ['save'], spend: { item: 'Protection of the Talisman' }, formula: '1d4', note: 'after a failed save, you or the wearer of your talisman' },
   'warding maneuver': { kind: 'use', roll: { label: 'AC bonus against the attack', formula: '1d8' } },
   'favored by the gods': { kind: 'rider', on: ['attack', 'save'], spend: { item: 'Favored by the Gods' }, formula: '2d4', note: 'after a failed save or a miss' },
@@ -615,8 +623,8 @@ export function amountOf(entry, rollData = {}) {
 }
 
 /** A nota, que pode citar uma CD calculada. */
-export function noteOf(entry, rollData = {}) {
-  return typeof entry.note === 'function' ? entry.note(rollData) : entry.note;
+export function noteOf(entry, rollData = {}, catalog = null) {
+  return typeof entry.note === 'function' ? entry.note(rollData, catalog) : entry.note;
 }
 
 /** A chave do recurso que a entrada gasta, ou null. */
@@ -663,6 +671,8 @@ export function featureRiders(state, catalog, roll) {
   const out = [];
   for (const [name, entry] of Object.entries(FEATURE_ROLLS)) {
     if (!(entry.has ? entry.has(catalog) : features.has(name))) continue;
+    const wantTypes = entry.typesFrom ? catalog[entry.typesFrom] ?? [] : [];
+    if (wantTypes.length && roll.types && !roll.types.some((t) => wantTypes.includes(String(t).toLowerCase()))) continue;
     const targets = entry.targets ? catalog.optionTargets?.[name] ?? [] : [];
     if (targets.length && roll.spellName && !targets.includes(roll.spellName)) continue;
     ridersOf(entry).forEach((e, i) => {
@@ -678,7 +688,7 @@ export function featureRiders(state, catalog, roll) {
         label: none ? `${label} (none left)` : label,
         source: label,
         ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgoableMin ? { forgoableMin: e.forgoableMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
-        note: noteOf(e, rd),
+        note: noteOf(e, rd, catalog),
         defaultOn: !!e.defaultOn,
         ...(key ? { spend: { key, amount: 1 } } : {}),
       });
@@ -724,7 +734,7 @@ export function featureUseOf(feature, catalog, chosen = null, option = null) {
   const formula = src.roll ? formulaOf(src.roll, rd, n) : null;
   const roll = src.roll && formula && formula !== '0' ? { label: src.roll.label, formula } : null;
   return {
-    modifier: e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore), restoreUpTo: e.restoreUpTo ?? null,
+    modifier: src.modifier ? src.modifier(rd) : e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore), restoreUpTo: e.restoreUpTo ?? null,
     ...(e.options ? { options: e.options.map((o) => o.label) } : {}),
   };
 }

@@ -11,7 +11,7 @@
 //   catalog(level): um catálogo com um cajado e uma espada +1, no nível dado.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { weaponRuleOf, eligibleWeapons, weaponModifier, withWeaponStates, strikeAttack, masteryNote } from './playWeapons';
+import { weaponRuleOf, eligibleWeapons, weaponModifier, withWeaponStates, strikeAttack, masteryNote, withMasteryAttacks, armorBlessing } from './playWeapons';
 import { damageParts } from './playActions';
 
 const staff = { key: 'w:staff', kind: 'weapon', name: 'Quarterstaff', uid: 's1', range: 'melee', ability: 'str', proficient: true, toHit: { total: 3, parts: [{ label: 'Strength', formula: 0 }, { label: 'Proficiency', formula: 3 }] }, damage: { dice: '1d6', bonus: 0, types: ['bludgeoning'] }, versatile: '1d8', properties: ['V'], mastery: 'Topple' };
@@ -64,5 +64,26 @@ describe('a nota da mastery', () => {
     expect(masteryNote(staff, catalog())).toContain('DC 11 Constitution');
     expect(masteryNote({ ...staff, mastery: 'Graze', ability: 'dex' }, catalog())).toContain('takes 2 bludgeoning');
     expect(masteryNote({ ...staff, mastery: null }, catalog())).toBeNull();
+  });
+});
+
+describe('DDL-0243: Cleave, a armadura abençoada e o Magic Stone', () => {
+  it('o Cleave vira uma variante sem o modificador positivo', () => {
+    const axe = { ...sword, key: 'w:axe', name: 'Greataxe', uid: 's3', mastery: 'Cleave', damage: { dice: '1d12', bonus: 3, types: ['slashing'] } };
+    const c = { ...catalog(), rollData: { abilities: { str: { mod: 3 } } }, attacks: [axe] };
+    const out = withMasteryAttacks(c).attacks;
+    expect(out.map((a) => a.name)).toEqual(['Greataxe', 'Greataxe (Cleave)']);
+    expect(out[1]).toMatchObject({ mastery: null, cleave: true, damage: { bonus: 0 } });
+  });
+
+  it('o Blessing of the Forge pergunta arma ou armadura e a armadura dá +1 de CA', () => {
+    expect(weaponRuleOf('Blessing of the Forge').armorOption).toBe(true);
+    expect(armorBlessing('Blessing of the Forge')).toMatchObject({ ac: 1, duration: 'longRest' });
+  });
+
+  it('o Magic Stone cria a pedra com o ataque de magia do lançador', () => {
+    const mod = weaponModifier({ rule: weaponRuleOf('Magic Stone'), catalog: catalog(), origin: { attackBonus: 7, abilityMod: 4 } });
+    const stone = withWeaponStates(catalog(), [mod]).attacks[0];
+    expect(stone).toMatchObject({ kind: 'created', name: 'Magic Stone', range: 'ranged', toHit: { total: 7 }, damage: { dice: '1d6', bonus: 4, types: ['bludgeoning'] } });
   });
 });

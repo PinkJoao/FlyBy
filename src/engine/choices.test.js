@@ -244,3 +244,14 @@ describe('escolhas que só a prosa pede (TC-0159, DDL-0239)', () => {
     expect(parseChoices({ ...portal, resist: [{ choose: { from: ['fire', 'cold'] } }] }).filter((c) => c.kind === 'resist')).toHaveLength(1);
   });
 });
+
+describe('escolhas da prosa (DDL-0243)', () => {
+  it('Weapon Master pede a arma da mastery, Elemental Adept pede o tipo', () => {
+    const wm = parseChoices({ name: 'Weapon Master', entries: ['You gain the following benefits.', { type: 'entries', name: 'Mastery Property', entries: ['Your training with weapons allows you to use the mastery property of one kind of Simple or Martial weapon of your choice, provided you have proficiency with it.'] }] });
+    expect(wm.find((c) => c.id === 'masteryWeapon')).toMatchObject({ kind: 'weapon', count: 1 });
+    const ea = parseChoices({ name: 'Elemental Adept', entries: [{ type: 'entries', name: 'Energy Mastery', entries: ['Choose one of the following damage types: Acid, Cold, Fire, Lightning, or Thunder. Spells you cast ignore Resistance to damage of the chosen type.'] }] });
+    const t = ea.find((c) => c.id === 'damageType');
+    expect(t.kind).toBe('damageType');
+    expect(t.pool.options.map((o) => String(o.value ?? o).toLowerCase())).toEqual(['acid', 'cold', 'fire', 'lightning', 'thunder']);
+  });
+});

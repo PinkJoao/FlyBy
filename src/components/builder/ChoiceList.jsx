@@ -517,7 +517,7 @@ function SelectChoice({ choice, picks, onChange }) {
   );
 }
 
-const PILL_KINDS = new Set(['resist', 'immune', 'vulnerable', 'save']);
+const PILL_KINDS = new Set(['resist', 'immune', 'vulnerable', 'save', 'damageType']);
 
 /** Lista curta sem entity, em pills de toggle. */
 function PillsChoice({ choice, picks, onChange }) {

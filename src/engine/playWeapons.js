@@ -5,7 +5,8 @@
 //   O TC-0169 (DDL-0242): as magias e features que mudam uma arma não mudavam nada no jogo. Três formas:
 //   - IMBUE: a magia ou a feature marca uma arma, e o ataque com ela muda enquanto durar (Shillelagh,
 //     Magic Weapon, Elemental Weapon, Holy Weapon, Sacred Weapon, Blessing of the Forge, Hex Warrior);
-//   - CREATE: a magia cria uma arma, um ataque novo enquanto durar (Shadow Blade);
+//   - CREATE: a magia cria uma arma, um ataque novo enquanto durar (Shadow Blade; o Magic Stone, com o
+//     bônus de ataque de magia e o modificador de conjuração do lançador, DDL-0243);
 //   - STRIKE: a magia É um ataque com a arma, feito no lançamento (True Strike, Booming Blade,
 //     Green-Flame Blade).
 //   O estado vive num efeito ativo (`state.modifiers`) com o campo `weapon`: termina pela concentração,
@@ -22,6 +23,9 @@
 //   applyWeaponState(attack, w, catalog): o ataque com o estado aplicado.
 //   withWeaponStates(catalog, modifiers): o catálogo com os ataques mudados e os criados.
 //   strikeAttack(attack, rule, catalog, abilityKey): o ataque do lançamento de um STRIKE.
+//   armorBlessing(name): o efeito do Blessing of the Forge na armadura (+1 de CA, até o descanso longo).
+//   withMasteryAttacks(catalog): a variante do Cleave na lista de ataques (a segunda criatura, sem o
+//     modificador positivo no dano, DDL-0243).
 //   MASTERY_TEXT, masteryNote(attack, catalog): a nota da Weapon Mastery do ataque, com o dano do Graze e
 //     a CD do Topple.
 //
@@ -41,6 +45,8 @@
 //     diálogo: dependem do que o alvo faz ou de outra criatura.
 //   - O Shillelagh do XPHB não torna a arma mágica (o texto não diz; o de 2014 dizia): ela segue elegível
 //     para o Magic Weapon e o Elemental Weapon.
+//   - O Nick dispensa a ação bônus do ataque extra da propriedade Light quando a arma dele tem Nick (o
+//     Two-Weapon Fighting do Play.jsx); o Cleave é uma variante do ataque na lista (DDL-0243).
 //   - A mastery é nota (o app não sabe se acertou nem quem está ao lado); os números vêm calculados.
 // -----------------------------------------------------------------------------
 
@@ -81,6 +87,11 @@ export const WEAPON_SPELLS = {
     make: ({ slot }) => ({ create: { name: 'Shadow Blade', dice: slot >= 7 ? '5d8' : slot >= 5 ? '4d8' : slot >= 3 ? '3d8' : '2d8', type: 'psychic', properties: ['F', 'L', 'T'], distance: '20/60' } }),
     note: 'Advantage when the target is in Dim Light or Darkness',
   },
+  'magic stone': {
+    kind: 'create', rounds: 10,
+    make: ({ origin }) => ({ create: { name: 'Magic Stone', dice: '1d6', type: 'bludgeoning', distance: '60', ranged: true, spell: { toHit: origin?.attackBonus ?? 0, bonus: origin?.abilityMod ?? 0 } } }),
+    note: 'Up to three pebbles; anyone can throw one, with your spell attack bonus',
+  },
   'true strike': {
     kind: 'strike', eligible: isWeapon,
     make: ({ level }) => ({ ability: 'spell', always: true, typeOptions: ['radiant'], ...(level >= 5 ? { extra: { label: 'True Strike', formula: byCharLevel(level, [[17, '3d6'], [11, '2d6'], [5, '1d6']]), type: 'radiant' } } : {}) }),
@@ -103,7 +114,7 @@ export const WEAPON_FEATURES = {
     make: ({ catalog }) => ({ attackBonus: Math.max(1, catalog?.rollData?.abilities?.cha?.mod ?? 0), typeOptions: ['radiant'] }),
   },
   'blessing of the forge': {
-    kind: 'imbue', lasts: 'longRest', eligible: (a) => isWeapon(a) && !a.magical,
+    kind: 'imbue', lasts: 'longRest', armorOption: true, eligible: (a) => isWeapon(a) && !a.magical,
     make: () => ({ bonus: 1, magical: true }),
   },
   'hex warrior': {
@@ -127,9 +138,9 @@ export function eligibleWeapons(rule, catalog) {
 }
 
 /** O efeito ativo que marca a arma (ou cria uma), para o evento do lançamento ou do uso. */
-export function weaponModifier({ rule, attack = null, catalog, slot = 0, type = null, abilityKey = null }) {
+export function weaponModifier({ rule, attack = null, catalog, slot = 0, type = null, abilityKey = null, origin = null }) {
   const level = catalog?.stats?.level ?? catalog?.rollData?.details?.level ?? 1;
-  const w = rule.make({ level, slot, type, catalog });
+  const w = rule.make({ level, slot, type, catalog, origin });
   return {
     label: rule.name,
     source: rule.source === 'spell' ? 'spell' : 'feature',
@@ -179,11 +190,12 @@ export function withWeaponStates(catalog, modifiers) {
       const dex = mods.dex?.mod ?? 0;
       const ability = dex > str ? 'dex' : 'str';
       const mod = Math.max(str, dex);
+      const sp = w.create.spell;
       attacks = [{
         key: `created:${norm(w.create.name).replace(/[^a-z0-9]+/g, '-')}`,
-        kind: 'weapon', name: w.create.name, uid: null, range: 'melee', category: 'simple', equipped: true, ability, proficient: true,
-        toHit: { total: mod + prof, parts: [{ label: ABILITY_LABEL[ability], formula: mod }, { label: 'Proficiency', formula: prof }] },
-        damage: { dice: w.create.dice, bonus: mod, types: [w.create.type] },
+        kind: sp ? 'created' : 'weapon', name: w.create.name, uid: null, range: w.create.ranged ? 'ranged' : 'melee', category: 'simple', equipped: true, ability, proficient: true,
+        toHit: sp ? { total: sp.toHit, parts: [{ label: 'Spell attack', formula: sp.toHit }] } : { total: mod + prof, parts: [{ label: ABILITY_LABEL[ability], formula: mod }, { label: 'Proficiency', formula: prof }] },
+        damage: { dice: w.create.dice, bonus: sp ? sp.bonus : mod, types: [w.create.type] },
         versatile: null, properties: w.create.properties ?? [], mastery: null, thrown: (w.create.properties ?? []).includes('T'), ammunition: false, ammoType: null,
         distance: w.create.distance ?? null, magical: true, ...(w.note ? { note: w.note } : {}),
       }, ...attacks];
@@ -202,6 +214,24 @@ export function strikeAttack(attack, rule, catalog, abilityKey = null) {
   const note = typeof rule.note === 'function' ? rule.note({ level, mod }) : rule.note ?? null;
   const out = applyWeaponState(attack, { ...w, ...(w.ability === 'spell' ? { abilityKey } : {}), ...(note ? { note } : {}) }, catalog, rule.name);
   return { ...out, key: `${attack.key}#${norm(rule.name).replace(/[^a-z0-9]+/g, '-')}`, name: `${rule.name}: ${attack.name}`, strike: rule.name };
+}
+
+/** O efeito do Blessing of the Forge na armadura: +1 de CA até o descanso longo. */
+export function armorBlessing(name) {
+  return { label: name, source: 'feature', duration: 'longRest', ac: 1, notes: [`${name}: +1 AC from the blessed armor (nonmagical, until your next Long Rest)`], effects: [] };
+}
+
+/** A lista de ataques com a variante do Cleave: a segunda criatura, sem o modificador positivo no dano. */
+export function withMasteryAttacks(catalog) {
+  const mods = catalog?.rollData?.abilities ?? {};
+  const out = [];
+  for (const a of catalog?.attacks ?? []) {
+    out.push(a);
+    if (norm(a.mastery) !== 'cleave' || !a.damage) continue;
+    const mod = mods[a.ability]?.mod ?? 0;
+    out.push({ ...a, key: `${a.key}#cleave`, name: `${a.name} (Cleave)`, mastery: null, cleave: true, damage: { ...a.damage, bonus: (a.damage.bonus ?? 0) - Math.max(0, mod) }, note: 'Cleave: a second creature within 5 feet of the first and within your reach; the same attack roll is not reused, roll again; once per turn' });
+  }
+  return { ...catalog, attacks: out };
 }
 
 export const MASTERY_TEXT = {

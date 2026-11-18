@@ -167,6 +167,9 @@ const SUBCLASS_FEATURE_GRANTS = {
     { kind: 'weaponProf', count: 1, tag: 'l11', level: 11, label: 'Kensei Weapon (Level 11)', weaponFilter: { noProps: ['H', 'S'], allow: ['Longbow'] } },
     { kind: 'weaponProf', count: 1, tag: 'l17', level: 17, label: 'Kensei Weapon (Level 17)', weaponFilter: { noProps: ['H', 'S'], allow: ['Longbow'] } },
   ],
+  'scion of the three|dread allegiance': [
+    { kind: 'resist', count: 1, from: ['psychic', 'poison', 'necrotic'], label: 'Dread Allegiance (Bane: Psychic, Bhaal: Poison, Myrkul: Necrotic)' },
+  ],
   'draconic|elemental affinity': [
     { kind: 'resist', count: 1, from: ['acid', 'cold', 'fire', 'lightning', 'poison'] },
   ],

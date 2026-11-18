@@ -37,7 +37,10 @@
 //     `dcAbility` (kind próprio, pool `spellAbility`: nunca troca o atributo de conjuração); e
 //     "Resistance to one of the following damage types: ... (choose when you select this feat)" vira
 //     a escolha `resist` do campo do 5etools (o Portal Jumper do AU).
-//   ABILITY_BY_NAME, PROSE_DC, PROSE_RESIST: o vocabulário dessas leituras.
+//   parseProseMastery(entity, push), parseProseType(entity, push): a arma da mastery do Weapon Master
+//     (kind `weapon`, que o catálogo junta às masteries de classe) e o tipo do Elemental Adept
+//     (`damageType`), que só a prosa pede (TC-0170, DDL-0243).
+//   ABILITY_BY_NAME, PROSE_DC, PROSE_RESIST, PROSE_MASTERY, PROSE_TYPE: o vocabulário dessas leituras.
 //   collectAbilityPicks(bag, out): os aumentos de atributo, recursivo.
 //
 // DECISÕES E ARMADILHAS
@@ -333,6 +336,8 @@ function parseFeatField(field, push) {
 
 const ABILITY_BY_NAME = { strength: 'str', dexterity: 'dex', constitution: 'con', intelligence: 'int', wisdom: 'wis', charisma: 'cha' };
 const PROSE_DC = /\bDC equals 8 (?:\+|plus) (?:your proficiency bonus (?:\+|plus) )?your ([A-Za-z, ]+?) modifier[^.]*?\(choose when you select/i;
+const PROSE_MASTERY = /\buse the mastery property of one kind of Simple or Martial weapon of your choice/i;
+const PROSE_TYPE = /\bChoose one of the following damage types: ([A-Za-z, ]+?)\. Spells you cast ignore Resistance/i;
 const PROSE_RESIST = /\bResistance to one of the following damage types: ([A-Za-z, ]+?) \(choose when you select/i;
 
 /** O texto corrido de uma entidade, sem as tags do 5etools. */
@@ -348,7 +353,19 @@ function parseProseDcAbility(entity, push) {
   push({ id: 'dcAbility', kind: 'dcAbility', count: 1, label: 'Save DC ability', pool: { type: 'spellAbility', options: from.map((a) => ({ value: a, label: ABILITY_FULL_NAME[a] ?? a })) } });
 }
 
-/** A resistância à escolha que só a prosa pede ("Resistance to one of the following damage types: Necrotic, Psychic, or Radiant (choose when you select this feat)"). */
+/** A arma da mastery que só a prosa pede (Weapon Master: "use the mastery property of one kind of ... weapon of your choice"). */
+function parseProseMastery(entity, push) {
+  if (PROSE_MASTERY.test(proseOf(entity))) push({ id: 'masteryWeapon', kind: 'weapon', count: 1, label: 'Weapon Mastery', pool: { type: 'weapon', weaponFilter: null } });
+}
+
+/** O tipo de dano que só a prosa pede (Elemental Adept: "Choose one of the following damage types: Acid, ..."). */
+function parseProseType(entity, push) {
+  const m = proseOf(entity).match(PROSE_TYPE);
+  const from = m ? m[1].split(/\s*(?:,|\bor\b)\s*/).map((w) => w.trim().toLowerCase()).filter(Boolean) : [];
+  if (from.length > 1) push({ id: 'damageType', kind: 'damageType', count: 1, label: 'Damage type', pool: { type: 'list', options: from.map((v) => ({ value: v, label: titleCase(v) })) } });
+}
+
+/** A resistência à escolha que só a prosa pede ("Resistance to one of the following damage types: Necrotic, Psychic, or Radiant (choose when you select this feat)"). */
 function parseProseResist(entity, push) {
   if (entity?.resist) return;
   const m = proseOf(entity).match(PROSE_RESIST);
@@ -383,6 +400,8 @@ export function parseChoices(entity, { level = Infinity, bag = null } = {}) {
   parseStlField(entity?.skillToolLanguageProficiencies, push);
   parseDamageField(entity?.resist, 'resist', push);
   parseProseResist(entity, push);
+  parseProseMastery(entity, push);
+  parseProseType(entity, push);
   parseProseDcAbility(entity, push);
   parseDamageField(entity?.immune, 'immune', push);
   parseDamageField(entity?.vulnerable, 'vulnerable', push);

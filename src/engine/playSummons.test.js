@@ -207,3 +207,11 @@ describe('as formas especiais do Pact of the Chain (DDL-0238)', () => {
     expect(familiarForms(b, familiarSpecialForms([chain])).map((m) => `${m.name}|${m.source}`)).toEqual(['Cat|XMM', 'Imp|XMM']);
   });
 });
+
+describe('Witch Bolt (DDL-0243)', () => {
+  it('a instância leve guarda o dano automático da Ação Bônus', () => {
+    expect(isLightSummon({ name: 'Witch Bolt' })).toBe(true);
+    const r = lightRulesOf(['On each of your subsequent turns, you can take a {@variantrule Bonus Action|XPHB} to deal {@damage 1d12} Lightning damage to the target automatically, even if the first attack missed.']);
+    expect(r).toMatchObject({ command: 'bonus', repeat: { dice: '1d12', type: 'lightning' } });
+  });
+});

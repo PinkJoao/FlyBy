@@ -236,6 +236,8 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
     payload: {
       actionKey: action.key,
       activityId: activity.id,
+      feature: action.name,
+      ...((action.activities ?? []).length > 1 && activity.name && activity.name !== action.name ? { option: activity.name } : {}),
       costs: costs.map((c) => ({ name: nameOf(catalog, c.key), amount: c.amount })),
       short,
       save: activity.save ? { abilities: activity.save.abilities, dc: saveDcNow(activity, action, state, data) } : null,
@@ -377,7 +379,7 @@ export function withResourceMax(catalog, state) {
  * O "Log to history" de uma feature: o nome e o custo do turno, sem rolar. `spend` é a
  * chave do que o uso gasta (um); `modifier`, `save` e `roll` vêm do registro (playFeatureRolls).
  */
-export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, restoreUpTo = null, rng = cryptoRng, now = new Date() }) {
+export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, restoreUpTo = null, option = null, rng = cryptoRng, now = new Date() }) {
   const maxed = apply === 'heal' && healDiceMaxed(state) && /d\d/.test(String(roll?.formula ?? ''));
   const rolls = roll ? rollParts([{ label: maxed ? `${roll.label} (Gift of the Ever-Living Ones)` : roll.label, formula: maxed ? withDiceMax(roll.formula, catalog.rollData) : roll.formula }], { data: catalog.rollData, rng }) : null;
   const ops = spend && amount > 0 ? [{ op: 'spend', key: spend, amount }] : [];
@@ -398,6 +400,8 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
     label: feature.name,
     ops,
     payload: {
+      feature: feature.name,
+      ...(option ? { option } : {}),
       featureKey: feature.key ?? null,
       logged: true,
       cost,

@@ -69,8 +69,7 @@ import { remainingOf } from '../../engine/playState';
 import { recoveryText } from '../../engine/playCatalog';
 import { specialRecovery } from '../../engine/playUse';
 import { ask } from '../common/dialog';
-import useDialogStore from '../../store/dialogStore';
-import EntryContent from '../common/EntryContent';
+import { showFeatureText } from './featureText';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
 import Button from '../common/Button';
@@ -107,24 +106,6 @@ export function Pips({ left, max, shape }) {
   );
 }
 
-/** O texto da feature num diálogo, com o renderizador da ficha e o "Log to history". */
-function showFeatureText(feature, onLog) {
-  return useDialogStore.getState().open({
-    variant: 'alert',
-    title: feature.name,
-    message: (
-      <div style={{ whiteSpace: 'normal', textAlign: 'left' }}>
-        {feature.entries.length ? <EntryContent entries={feature.entries} /> : <p>No description.</p>}
-      </div>
-    ),
-    dismissable: true,
-    showClose: true,
-    actions: onLog ? [{ label: 'Log to history', value: 'log', tone: 'primary' }] : [],
-    maxWidth: 560,
-  }).then((v) => {
-    if (v === 'log') onLog(feature);
-  });
-}
 
 /** Uma feature: nome, nível e custos; o pool e o botão de usar ao lado. */
 function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon }) {

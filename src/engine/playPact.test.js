@@ -106,3 +106,11 @@ describe('vínculo e arma conjurada (DDL-0240)', () => {
     expect(pactAttack(sword, c).damage.typeOptions).toEqual(['slashing', 'necrotic', 'psychic', 'radiant']);
   });
 });
+
+describe('a opção do Pact of the Blade no histórico (DDL-0243)', () => {
+  it('Bond, Conjure e End the bond ficam no evento', () => {
+    expect(pactEvent({ choice: { kind: 'bond', uid: 'u1', name: '+1 Longsword' } }).payload).toMatchObject({ feature: 'Pact of the Blade', option: 'Bond' });
+    expect(pactEvent({ choice: { kind: 'conjure', weapon: { name: 'Longsword', source: 'XPHB' } } }).payload.option).toBe('Conjure');
+    expect(pactEvent({ choice: null }).payload.option).toBe('End the bond');
+  });
+});

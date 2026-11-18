@@ -97,6 +97,7 @@
 //     Step, Reaction do Shield, e os de SPELL_COSTS: com o Quickened Spell, Magic
 //     vale pela bônus): no livro de 2024 elas não são a ação Magic, mas é
 //     por ela que o jogador as procura na aba; o painel lança cada uma no tempo dela.
+//   - O ataque `created` (a pedra do Magic Stone, DDL-0243) entra na ação Attack como uma arma.
 //   - Extra Attack (DDL-0148): a ação Attack conta os ataques em `used.attacks`; o
 //     primeiro gasta a ação, os seguintes (até o máximo: 2, 3 com Two Extra Attacks,
 //     4 com Three) não gastam nada, e o card mostra "1 of 2". O "Next turn" zera
@@ -259,7 +260,7 @@ export function costAvailable(cost, state) {
  * @param {object[]} [inventory] o inventário derivado
  */
 export function actionContext(catalog, state, inventory = []) {
-  const attacks = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' || a.kind === 'unarmed' || a.kind === 'form');
+  const attacks = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' || a.kind === 'unarmed' || a.kind === 'form' || a.kind === 'created');
   const spells = (catalog?.spells ?? []).flatMap((o) => o.spells.filter((s) => s.prepared !== false).map((s) => ({ origin: o, spell: s })));
   const items = (inventory ?? []).filter((e) => e?.raw);
   const typeOf = (e) => String(e.raw.type ?? '').split('|')[0];

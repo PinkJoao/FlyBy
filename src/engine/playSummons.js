@@ -70,7 +70,9 @@
 //     (lightRulesOf): Ação Bônus ou ação Magic para mover e repetir, a CA ("has AC 20")
 //     e os PV ("equal to your Hit Points maximum", congelados ao conjurar), e a troca
 //     ao lançar de novo (Mage Hand). Sem PV, o grupo não tem membro. As rolagens são as
-//     da magia no círculo gravado, sem gastar espaço.
+//     da magia no círculo gravado, sem gastar espaço. O Witch Bolt (DDL-0243) guarda em
+//     `light.repeat` o dano automático da Ação Bônus ("deal 1d12 Lightning damage to the target
+//     automatically"): o "again" do grupo rola só esse dano, sem ataque.
 // -----------------------------------------------------------------------------
 
 import { makeEvent } from './playState';
@@ -209,7 +211,7 @@ export function familiarSpecialForms(options = []) {
 // ATENÇÃO: só magia cuja prosa cria uma coisa que fica e que o jogador move ou repete; emanação em si mesmo não entra.
 const LIGHT_SUMMONS = new Set([
   'mage hand', 'dancing lights', 'spiritual weapon', 'flaming sphere', 'cloud of daggers', 'moonbeam',
-  'call lightning', 'arcane eye', "bigby's hand", "mordenkainen's sword", "mordenkainen's faithful hound",
+  'call lightning', 'arcane eye', "bigby's hand", 'witch bolt', "mordenkainen's sword", "mordenkainen's faithful hound",
   'grasping vine', 'conjure fey', 'conjure animals', 'conjure celestial', 'conjure elemental', 'healing spirit',
 ]);
 
@@ -224,15 +226,17 @@ export function isLightSummon(spell) {
  */
 export function lightRulesOf(entries) {
   const t = lcText(entries);
-  const command = /(?:as a|take a) bonus action[^.]*(?:move|teleport|repeat|cause)/.test(t) ? 'bonus'
+  const command = /(?:as a|take a) bonus action[^.]*(?:move|teleport|repeat|cause|deal)/.test(t) ? 'bonus'
     : /magic action[^.]*(?:move|teleport|control|call)/.test(t) ? 'action'
       : /when you move on your turn, you can also move/.test(t) ? 'free' : null;
   const ac = t.match(/\bhas ac ([0-9]+)/)?.[1];
+  const repeat = t.match(/take a bonus action to deal ([0-9]+d[0-9]+) ([a-z]+) damage to the target automatically/);
   return {
     command,
     ac: ac ? Number(ac) : null,
     hp: /hit points equal to your hit points maximum/.test(t) ? 'casterMax' : null,
     replaces: /if you cast this spell again/.test(t),
+    ...(repeat ? { repeat: { dice: repeat[1], type: repeat[2] } } : {}),
   };
 }
 
@@ -241,7 +245,7 @@ export function lightOps({ state, spell, level, origin, catalog, rules, casterHp
   const old = rules.replaces ? (state?.summons ?? []).filter((g) => g.light && g.spell?.name === spell.name).map((g) => ({ op: 'summon', remove: g.id })) : [];
   const [add] = summonOps({ state, creature: { name: spell.name, source: spell.source }, spell, level, origin, catalog, turn: { order: null, command: rules.command } });
   add.add.ref = null;
-  add.add.light = { ac: rules.ac, hp: rules.hp === 'casterMax' ? casterHpMax : null };
+  add.add.light = { ac: rules.ac, hp: rules.hp === 'casterMax' ? casterHpMax : null, ...(rules.repeat ? { repeat: rules.repeat } : {}) };
   if (add.add.light.hp == null) add.add.members = [];
   return [...old, add];
 }
@@ -269,6 +273,8 @@ export function familiarBoons(group, features = []) {
     out.notes.push('Call of the Void: it uses your spell attack bonus; a Bonus Action commands its Attack action; your Reaction gives a Voidwalker Resistance to a damage it takes');
   }
   if (has('gift of the ever-living ones')) out.notes.push('Gift of the Ever-Living Ones: while it is within 100 feet, turn on the effect on your Features tab and your healing dice count as their maximum');
+  if (has('elemental familiar')) out.notes.push('Elemental Familiar: choose Acid, Cold, Fire, Lightning or Thunder when you cast Find Familiar; its benefits follow that type until you cast it again');
+  if (has('otherworldly familiar')) out.notes.push('Otherworldly Familiar: choose Necrotic, Poison, Psychic, Radiant or Thunder for its Resistance; the benefits last until you cast Find Familiar again');
   if (has('voice of the chain master')) out.notes.push('Voice of the Chain Master: telepathy and its senses on the same plane; you can speak through it');
   return out;
 }

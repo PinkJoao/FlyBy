@@ -316,12 +316,8 @@ export function weaponAttacks(character, derived) {
   weapons.sort((a, b) => (b.equipped === true) - (a.equipped === true));
 
   const masteryPicks = new Set();
-  for (const cls of character.classes ?? []) {
-    for (const entry of Object.values(cls.choices ?? {})) {
-      if (entry?.kind !== 'weapon') continue;
-      for (const p of entry.picks ?? []) masteryPicks.add(String(p).split('|')[0].toLowerCase());
-    }
-  }
+  const bags = [...(character.classes ?? []).map((c) => c.choices), character.origin?.originFeat?.choices, character.species?.choices];
+  for (const bag of bags) for (const p of collectChoicePicks(bag ?? {}, 'weapon')) masteryPicks.add(String(p).split('|')[0].toLowerCase());
 
   return weapons.map((e) => {
     const raw = e.raw;
@@ -1288,6 +1284,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     featureList: featuresOfActor,
     optionPicks: [...optionPicks],
     optionTargets: optionTargets(character),
+    damageTypePicks: [...(character.classes ?? []).map((c) => c.choices), character.origin?.originFeat?.choices].flatMap((b) => collectChoicePicks(b ?? {}, 'damageType')),
     actorEffects: bridged,
     proseEffects: proseRollEffects(featuresOfActor, { activated, bridged }).filter((e) => !e.part || !validateFormula(e.part.formula, rollData)),
     proseUses: uses,

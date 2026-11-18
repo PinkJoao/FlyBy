@@ -61,6 +61,7 @@
 //       (o Find Familiar, as feras de ND 0); a feature de companheiro tem "Summon"; a
 //       regra de turno vem da prosa e aparece na linha dos summons do combate (DDL-0193).
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
+//     readFromHistory(event) (no PlayInner): a descrição da magia ou da feature de um card do histórico (DDL-0243).
 //     attackNotes(attack, catalog): as notas do ataque (a da arma e a da Weapon Mastery, DDL-0242).
 //     withFixedDamage(attack, state, catalog): o ataque com os extras fixos ligados no dano (o rótulo
 //       mostra o mesmo número que o diálogo rola: o +4 do Agonizing Blast, DDL-0239).
@@ -133,6 +134,11 @@
 //     com activity (Sacred Weapon) faz o mesmo no `applyFeature`; a sem activity (Blessing of the
 //     Forge, Hex Warrior) pelo "Use" da linha (`useWeaponFeature`). Os diálogos de ataque e de dano
 //     mostram a nota da arma e a da Weapon Mastery (`attackNotes`).
+//   - DDL-0243: o Blessing of the Forge pergunta arma ou armadura (`armorOption`; a armadura é um efeito
+//     de +1 de CA, `armorBlessing`); o Two-Weapon Fighting com arma Nick não gasta a ação bônus; o Cleave
+//     é uma variante do ataque (`withMasteryAttacks`); o Magic Stone cria a pedra com o ataque de magia
+//     do lançador (`origin`); o "again" do Witch Bolt rola só o dano automático (`light.repeat`). O card
+//     do histórico abre a descrição (`readFromHistory`) e destaca a opção usada (`payload.option`).
 //   - O "Bond" do Pact of the Blade (DDL-0239): um botão por arma carregada, "Conjure a weapon" abre o
 //     painel seletor de armas (só as que o pacto deixa invocar, `pactChoices`) e "End the bond"; a lista
 //     nativa de 34 armas saiu (UI-PATTERNS: escolher é pelo painel).
@@ -223,7 +229,7 @@ import {
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
 import { withPactWeapon, pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
-import { withWeaponStates, weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote } from '../engine/playWeapons';
+import { withWeaponStates, withMasteryAttacks, weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing } from '../engine/playWeapons';
 import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
@@ -269,6 +275,8 @@ import { SKILL_LABEL } from '../components/builder/labels';
 import SelectorPanel from '../selector/SelectorPanel';
 import conditionEntity from '../selector/entities/condition';
 import weaponEntity from '../selector/entities/weapon';
+import spellEntity from '../selector/entities/spell';
+import { showFeatureText } from '../components/play/featureText';
 import effectSourceEntity from '../selector/entities/effectSource';
 import { showDetailPopup } from '../components/common/detailPopup';
 import useSettingsStore from '../store/settingsStore';
@@ -388,7 +396,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const resourceMax = play.state?.resourceMax;
   const pactWeapon = play.state?.pactWeapon ?? null;
   const catalog = useMemo(
-    () => withWeaponStates(withPactWeapon(withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }), pactWeapon), play.state?.modifiers),
+    () => withMasteryAttacks(withWeaponStates(withPactWeapon(withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }), pactWeapon), play.state?.modifiers)),
     [baseCatalog, form, formBlock, resourceMax, pactWeapon, play.state?.modifiers],
   );
   const beastDb = useMemo(() => ({ ...db, bestiary: { monster: bestiary.list } }), [db, bestiary.list]);
@@ -660,8 +668,21 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (spend && leftOf(catalog, state, spend) < 1 && !(await confirm({ title: feature.name, message: 'None left. Use anyway?', confirmLabel: 'Use anyway' }))) return;
     const ops = rule ? await weaponStateOps(rule) : null;
     if (!ops) return;
-    const ev = featureLogEvent({ catalog, state, feature, spend, amount: spend ? 1 : 0 });
+    const target = ops.find((o) => o.add)?.add;
+    const ev = featureLogEvent({ catalog, state, feature, spend, amount: spend ? 1 : 0, option: target?.weapon ? (target.notes?.[0] ?? '').replace(`${rule.name}: `, '') || null : target?.ac ? 'Armor (+1 AC)' : null });
     record({ ...ev, ops: [...ev.ops, ...ops] });
+  };
+
+  /** A descrição da fonte de um evento do histórico: a magia lançada ou a feature usada. */
+  const readFromHistory = (event) => {
+    const p = event.payload ?? {};
+    const spell = p.spellKey ? catalog.spells.flatMap((o) => o.spells).find((s) => s.key === p.spellKey) : null;
+    const raw = spell ? resolveSpellObj(db, spell.name, spell.source) : null;
+    if (raw) return showDetailPopup({ entity: spellEntity, raw, db });
+    const name = p.feature ?? catalog.actions.find((a) => a.key === p.actionKey)?.name ?? null;
+    const feature = name ? (catalog.featureList ?? []).find((f) => f.name === name) : null;
+    if (feature) return showFeatureText(feature);
+    return alert({ title: event.label, message: 'This is no longer on the character.' });
   };
 
   /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
@@ -781,6 +802,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       cost = v === 'none' ? null : v;
     }
     let use = featureUseOf(feature, catalog);
+    let optionLabel = null;
     if (use?.options?.length > 1) {
       const pick = await ask({
         title: feature.name,
@@ -789,6 +811,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       });
       if (pick == null || pick === false) return;
       use = featureUseOf(feature, catalog, null, Number(pick));
+      optionLabel = use?.options?.[Number(pick)] ?? null;
     }
     if (use?.amount && typeof use.amount === 'object') {
       const r = await ask({
@@ -804,7 +827,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const pay = spend ?? use?.spend ?? null;
     const amount = spend ? 1 : use?.spent ?? 1;
     if (pay && amount > 0 && leftOf(catalog, state, pay) < amount && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
-    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null, restoreUpTo: use?.restoreUpTo ?? null }), cost);
+    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null, restoreUpTo: use?.restoreUpTo ?? null, option: optionLabel }), cost);
   };
 
   /** O ajuste à mão de um recurso (o mestre tira, dá ou muda o máximo): o painel e o evento. */
@@ -828,8 +851,16 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** As operações do estado de arma de uma regra: tira o anterior da mesma fonte e põe o novo. */
-  const weaponStateOps = async (rule, { slot = 0, abilityKey = null, concentration = null } = {}) => {
+  const weaponStateOps = async (rule, { slot = 0, abilityKey = null, concentration = null, origin = null } = {}) => {
     let attack = null;
+    if (rule.armorOption) {
+      const which = await ask({ title: rule.name, message: 'A weapon or a suit of armor?', actions: [{ label: 'Weapon', value: 'weapon', tone: 'primary' }, { label: 'Armor', value: 'armor' }, { label: 'Cancel', value: null }] });
+      if (!which) return null;
+      if (which === 'armor') {
+        const old = (state.modifiers ?? []).filter((m) => m.label === rule.name).map((m) => ({ op: 'modifier', remove: m.id }));
+        return [...old, { op: 'modifier', add: makeModifier(armorBlessing(rule.name)) }];
+      }
+    }
     if (rule.kind !== 'create') {
       attack = await pickWeapon(rule.name, eligibleWeapons(rule, catalog));
       if (!attack) return null;
@@ -839,8 +870,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       type = await ask({ title: rule.name, message: 'Which damage type?', actions: [...rule.types.map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), value: t })), { label: 'Cancel', value: null }] });
       if (!type) return null;
     }
-    const mod = makeModifier({ ...weaponModifier({ rule, attack, catalog, slot, type, abilityKey }), ...(concentration ? { concentration } : {}) });
-    const old = (state.modifiers ?? []).filter((m) => m.weapon && m.label === rule.name).map((m) => ({ op: 'modifier', remove: m.id }));
+    const mod = makeModifier({ ...weaponModifier({ rule, attack, catalog, slot, type, abilityKey, origin }), ...(concentration ? { concentration } : {}) });
+    const old = (state.modifiers ?? []).filter((m) => m.label === rule.name).map((m) => ({ op: 'modifier', remove: m.id }));
     return [...old, { op: 'modifier', add: withRounds(mod, state, rule.rounds) }];
   };
 
@@ -891,11 +922,12 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       strikeWith = await pickWeapon(spell.name, eligibleWeapons(weaponRule, catalog));
       if (!strikeWith) return;
     } else if (weaponRule) {
-      weaponOps = await weaponStateOps(weaponRule, { slot: way.level, abilityKey: origin.ability, concentration: spell.concentration ? spell.key : null });
+      weaponOps = await weaponStateOps(weaponRule, { slot: way.level, abilityKey: origin.ability, concentration: spell.concentration ? spell.key : null, origin });
       if (!weaponOps) return;
     }
     const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]);
-    record({ ...castEv, ops: [...castEv.ops, ...weaponOps] }, costOfActivation(cost.cost));
+    const weaponPick = strikeWith?.name ?? (weaponOps.find((o) => o.add)?.add?.notes?.[0] ?? '').replace(`${spell.name}: `, '');
+    record({ ...castEv, ops: [...castEv.ops, ...weaponOps], payload: { ...castEv.payload, ...(weaponPick && weaponPick !== spell.name ? { option: weaponPick } : {}) } }, costOfActivation(cost.cost));
     if (strikeWith) {
       const atk = strikeAttack(strikeWith, weaponRule, catalog, origin.ability);
       const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk))), effect: damageText(withFixedDamage(atk, state, catalog)) });
@@ -957,7 +989,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
     const cost = costOfActivation(group.turn?.command);
     const pay = cost ? [economyOp(state, cost)].filter(Boolean) : [];
-    const atk = spellAttackOf(origin, spell, group.ctx?.spellLevel ?? spell.level);
+    const repeat = group.light?.repeat;
+    const atk = repeat
+      ? { key: `${spell.key}#again`, kind: 'spell', name: `${spell.name} (again)`, attack: null, damage: { dice: repeat.dice, bonus: 0, types: [repeat.type] }, versatile: null }
+      : spellAttackOf(origin, spell, group.ctx?.spellLevel ?? spell.level);
     if (kind === 'attack') rollAttack(atk, false, false, null, pay);
     else if (kind === 'damage') rollDamage(atk, {}, false, false, null, pay);
     else rollSpellHeal(origin, spell, group.ctx?.spellLevel ?? spell.level);
@@ -965,6 +1000,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** O que a instância leve rola: ataque, dano ou cura da magia. */
   const lightKinds = (group) => {
+    if (group.light?.repeat) return ['damage'];
     const spell = catalog.spells.flatMap((o) => o.spells).find((s) => s.key === group.spell?.key);
     const m = spell?.mechanics ?? {};
     return [m.attack && 'attack', m.damage?.dice && 'damage', m.heal?.dice && 'heal'].filter(Boolean);
@@ -1162,7 +1198,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attackNotes(attack, catalog),
       },
       quick,
-      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null }),
+      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, types: attack.damage?.types ?? null }),
       spend ? cost : null,
     );
 
@@ -1190,7 +1226,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: [attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '', attackNotes(attack, catalog)].filter(Boolean).join('. '),
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
+      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, types: attack.damage?.types ?? null, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
       spend ? cost : null,
     );
 
@@ -1287,7 +1323,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const cost = ECONOMY.includes(r.cost.cost) ? r.cost.cost : null;
     const step = r.kind === 'attack' && item.name === 'Attack' && !r.cost.via ? attackStepOp(catalog, state) : null;
     if (r.kind === 'attack' && step) attackOrDamage(r.attack, null, [...extra, step]);
-    else if (r.kind === 'attack' && item.name === 'Two-Weapon Fighting') attackOrDamage(offhandAttack(r.attack, catalog), cost ?? 'bonus', extra);
+    else if (r.kind === 'attack' && item.name === 'Two-Weapon Fighting') attackOrDamage(offhandAttack(r.attack, catalog), String(r.attack.mastery ?? '').toLowerCase() === 'nick' ? 'attack' : cost ?? 'bonus', extra);
     else if (r.kind === 'attack') attackOrDamage(r.attack, cost ?? 'action', extra);
     else if (r.kind === 'spell') castSpell(r.origin, r.spell);
     else if (r.kind === 'charge') spendCharge(r.resource, cost);
@@ -1467,7 +1503,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'History' && (
             <>
               {historyHead}
-              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} live={historyLive} />
+              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} onRead={readFromHistory} live={historyLive} />
             </>
           )}
 
@@ -1515,7 +1551,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} round={state.combat ? state.combat.round : null} />
           </div>
           <div className={styles.sideScroll}>
-            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} live={historyLive} />
+            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} onRead={readFromHistory} live={historyLive} />
             {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} summons={summonLine} />}
           </div>
         </div>,

@@ -102,6 +102,8 @@ export function pactEvent({ choice, state = null, character = null, now = new Da
     ops,
     payload: {
       logged: true,
+      feature: 'Pact of the Blade',
+      option: value ? (value.conjured ? 'Conjure' : 'Bond') : 'End the bond',
       costs: [],
       short: [],
       lines: [value ? (value.conjured ? `Conjured a ${value.name}` : `Bonded with ${value.name}`) : 'The bond ends'],

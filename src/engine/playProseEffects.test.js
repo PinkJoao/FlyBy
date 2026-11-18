@@ -18,7 +18,7 @@
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
 import { proseClauses, proseRollEffects, proseEffects, proseUses, exprFormula, fitsProse } from './playProseEffects';
-import { rollEffects } from './playEffects';
+import { rollEffects, applyEffects, castOnceEffects } from './playEffects';
 
 const feature = (name, text, extra = {}) => ({ name, actionKey: `action:${name.toLowerCase()}`, entries: [text], costs: [], ...extra });
 const effectsFor = (features, roll, ctx = {}, opts = {}) => proseEffects({ proseEffects: proseRollEffects(features, opts) }, roll, ctx);
@@ -258,3 +258,35 @@ describe('o tipo do dano da magia (DDL-0249)', () => {
   });
 });
 
+
+describe('uma rolagem de dano por lançamento e o tipo escolhido', () => {
+  const affinity = { name: 'Elemental Affinity', entries: ['Your draconic magic has an affinity with a damage type associated with dragons. Choose one of those types: Acid, Cold, Fire, Lightning, or Poison.', 'You have Resistance to that damage type, and when you cast a spell that deals damage of that type, you can add your Charisma modifier to one damage roll of that spell.'] };
+  const evocation = { name: 'Empowered Evocation', entries: ['Whenever you cast a Wizard spell from the Evocation school, you can add your Intelligence modifier to one damage roll of that spell.'] };
+
+  it('o Elemental Affinity vale ligado só na magia do tipo escolhido', () => {
+    const catalog = { proseEffects: proseRollEffects([affinity], { chosenTypes: () => ['fire'] }), features: [], rollData: {} };
+    const fire = proseEffects(catalog, { kind: 'damage', spell: true, types: ['fire'] });
+    expect(fire).toHaveLength(1);
+    expect(fire[0]).toMatchObject({ defaultOn: true, oncePerCast: true, part: { formula: '@abilities.cha.mod' } });
+    expect(proseEffects(catalog, { kind: 'damage', spell: true, types: ['cold'] })).toEqual([]);
+    expect(proseEffects(catalog, { kind: 'damage', weapon: true, types: ['fire'] })).toEqual([]);
+  });
+
+  it('sem o tipo escolhido, o Elemental Affinity fica desligado com a condição do texto', () => {
+    const [e] = proseRollEffects([affinity]);
+    expect(e.defaultOn).toBe(false);
+    expect(e.spellOf).toBeUndefined();
+  });
+
+  it('a Empowered Evocation já usada numa rolagem do lançamento sai desligada nas seguintes', () => {
+    const catalog = { proseEffects: proseRollEffects([evocation]), features: [], rollData: {} };
+    const first = proseEffects(catalog, { kind: 'damage', spell: true, school: 'V', spellClass: 'wizard' });
+    expect(first[0].oncePerCast).toBe(true);
+    const used = applyEffects(first).oncePerCast;
+    expect(used).toEqual([first[0].id]);
+    const [later] = castOnceEffects(first, used);
+    expect(later.defaultOn).toBe(false);
+    expect(later.note).toMatch(/earlier damage roll/);
+    expect(castOnceEffects(first, [])[0].defaultOn).toBe(true);
+  });
+});

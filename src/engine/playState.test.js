@@ -292,3 +292,17 @@ describe('clearPlayHistory', () => {
   });
 });
 
+
+describe('o extra de uma rolagem por lançamento no grupo (DDL-0250)', () => {
+  it('castUsed fica no grupo, não repete e sai com o desfazer', () => {
+    const group = { id: 'g1', spell: { key: 'melf' }, light: { count: { left: 6, max: 6, most: 2, noun: 'meteor' } }, members: [] };
+    let doc = play(ev([{ op: 'summon', add: group }]));
+    doc = recordEvent(doc, ev([{ op: 'summon', id: 'g1', count: -1 }, { op: 'summon', id: 'g1', castUsed: ['prose:empowered-evocation:0'] }])).doc;
+    let s = currentPlayState(doc);
+    expect(s.summons[0].castUsed).toEqual(['prose:empowered-evocation:0']);
+    expect(s.summons[0].light.count.left).toBe(5);
+    s = applyOp(s, { op: 'summon', id: 'g1', castUsed: ['prose:empowered-evocation:0'] });
+    expect(s.summons[0].castUsed).toHaveLength(1);
+    expect(currentPlayState(undoEvent(doc).doc).summons[0].castUsed).toBeUndefined();
+  });
+});

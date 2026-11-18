@@ -41,6 +41,9 @@
 //   spellScope(lead): a condição da frente que só diz de que magia é (escola, classe, ou o tipo do dano:
 //     "when a spell you cast deals Radiant or Fire damage"): vira `spellOf` e a entrada vale ligada só
 //     nessa magia (a Empowered Evocation, DDL-0247; o Radiant Soul, DDL-0249).
+//     "When you cast a spell that deals damage of that type" (Elemental Affinity) devolve `chosen`, e o
+//     `proseRollEffects` troca pelo tipo escolhido no builder (`chosenTypes`); sem escolha, fica
+//     desligada com a condição. "One damage roll of that spell" marca `oncePerCast` (DDL-0250).
 //   cantripScope(tail): o resto da oração que só diz o cantrip ("with any Druid cantrip": o Potent
 //     Spellcasting do druida e do clérigo); o mesmo `spellOf`, com `cantrip` (DDL-0249).
 //   proseUses(features, opts): a cura e os PV temporários do "Use" (`proseUses`).
@@ -357,9 +360,12 @@ const CLASSES = ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 's
 const SPELL_SCOPE = /^(?:whenever|when) you cast an? (?:(\w+) )?spell from the (\w+) school$|^(?:whenever|when) you cast an? (?:(\w+) )?(\w+) spell$/i;
 const SPELL_TYPES = /^(once per turn, )?(?:whenever|when) a spell you cast deals (\w+)(?:,? or (\w+))? damage$/i;
 
+const CHOSEN_TYPE = /^(?:whenever|when) you cast a spell that deals damage of that type$/i;
+
 /** A condição da frente que só diz de que magia é ("Whenever you cast a Wizard spell from the Evocation school"): { school, cls }, ou null. */
 export function spellScope(lead) {
   const text = String(lead ?? '').trim().replace(/[,\s]+$/, '');
+  if (CHOSEN_TYPE.test(text)) return { chosen: true };
   const t = text.match(SPELL_TYPES);
   if (t) return { types: [t[2], t[3]].filter(Boolean).map(norm), ...(t[1] ? { oncePerTurn: true } : {}) };
   const m = text.match(SPELL_SCOPE);
@@ -391,7 +397,7 @@ const SCOPE_ONLY = /^(?:of (?:that|the|this) (?:spell|attack|weapon|roll)|agains
  * @param {{ name: string, actionKey?: string, entries?: any[] }[]} features
  * @param {{ activated?: (f: object) => boolean, bridged?: object[] }} [opts]
  */
-export function proseRollEffects(features, { activated = () => false, bridged = [] } = {}) {
+export function proseRollEffects(features, { activated = () => false, bridged = [], chosenTypes = () => [] } = {}) {
   const owned = new Set(bridged.map((e) => norm(e.name)));
   const upgrades = diceUpgrades(features);
   const out = [];
@@ -407,7 +413,10 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
       const incapacitated = /^unless you have the incapacitated condition$/i.test(c.tail);
       const when = c.lead ? autoCondition(c.lead) : null;
       const tailScope = cantripScope(c.tail);
-      const scope = spellScope(c.lead) ?? tailScope;
+      const leadScope = spellScope(c.lead);
+      const picked = leadScope?.chosen ? (chosenTypes(f) ?? []).map(norm) : [];
+      const scope = (leadScope?.chosen ? (picked.length ? { types: picked } : null) : leadScope) ?? tailScope;
+      const oncePerCast = !!scope && /\bone damage roll\b/i.test(c.sentence);
       const activation = !!c.lead && !scope && ACTIVATION.test(c.lead);
       const active = (!scope && activated(f)) || activation;
       const tail = SCOPE_ONLY.test(c.tail) || tailScope ? '' : c.tail;
@@ -416,7 +425,7 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
       if (when) note = note ? `${noteOf(c.lead)}; ${note}` : noteOf(c.lead);
       if (!note && active) note = `After you use ${f.name}`;
       if (!note && scope && /\bone damage roll\b/i.test(c.sentence)) note = 'One damage roll each time you cast the spell';
-      if (!note && scope?.types) note = `${scope.oncePerTurn ? 'Once per turn, a' : 'A'}gainst one of the spell's targets`;
+      if (!note && scope?.types && !oncePerCast) note = `${scope.oncePerTurn ? 'Once per turn, a' : 'A'}gainst one of the spell's targets`;
       if (incapacitated) note = note ? `${note}; not while Incapacitated` : 'Not while Incapacitated';
       out.push({
         name: f.name,
@@ -427,6 +436,7 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
         ...(c.effect.d20Min ? { d20Min: c.effect.d20Min } : {}),
         groups: concentration ? c.groups.map((g) => ({ ...g, kind: g.kind === 'save' ? 'concentration' : g.kind })) : scope ? c.groups.map((g) => ({ ...g, spell: true })) : c.groups,
         ...(scope ? { spellOf: scope } : {}),
+        ...(oncePerCast ? { oncePerCast: true } : {}),
         defaultOn: !conditions.length && (!!when || !active),
         ...(when ? { when } : {}),
         ...(incapacitated ? { unless: 'incapacitated' } : {}),
@@ -546,7 +556,7 @@ export function proseEffects(catalog, roll, { conditionIds = [], skipKeys = [], 
     else if (e.when) on = on && conditionIds.includes(e.when);
     if (e.unless && conditionIds.includes(e.unless)) on = false;
     const label = e.rerollOnes ? `${e.name} (reroll a 1)` : e.d20Min ? `${e.name} (${e.d20Min - 1} or lower counts as ${e.d20Min})` : e.name;
-    const entry = { id: `prose:${slug(e.name)}:${e.index}`, label, source: e.name, defaultOn: on, ...(e.note ? { note: e.note } : {}) };
+    const entry = { id: `prose:${slug(e.name)}:${e.index}`, label, source: e.name, defaultOn: on, ...(e.note ? { note: e.note } : {}), ...(e.oncePerCast ? { oncePerCast: true } : {}) };
     if (e.mode === 'adv') entry.adv = 1;
     else if (e.mode === 'dis') entry.dis = 1;
     else if (e.part) entry.part = e.part;

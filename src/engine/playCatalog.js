@@ -1345,7 +1345,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     optionTargets: optionTargets(character),
     damageTypePicks: [...(character.classes ?? []).map((c) => c.choices), character.origin?.originFeat?.choices].flatMap((b) => collectChoicePicks(b ?? {}, 'damageType')),
     actorEffects: bridged,
-    proseEffects: proseRollEffects(featuresOfActor, { activated, bridged }).filter((e) => !e.part || !validateFormula(e.part.formula, rollData)),
+    proseEffects: proseRollEffects(featuresOfActor, { activated, bridged, chosenTypes: () => (character.classes ?? []).flatMap((c) => collectChoicePicks(c.choices ?? {}, 'resist')) }).filter((e) => !e.part || !validateFormula(e.part.formula, rollData)),
     proseUses: uses,
     attacks,
     actions,

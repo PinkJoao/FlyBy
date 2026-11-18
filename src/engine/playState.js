@@ -23,7 +23,8 @@
 //   Estado
 //     emptyPlayState(): o estado descansado.
 //     applyOp(state, op), applyEvent(state, event): o redutor puro.
-//     summonsAfter(list, op): a lista de summons depois de uma operação `summon`.
+//     summonsAfter(list, op): a lista de summons depois de uma operação `summon` (`castUsed`: os extras
+//       de uma rolagem por lançamento já usados no grupo, DDL-0250).
 //     hpView(state, maxHp), remainingOf(state, key, max): os valores atuais.
 //   Documento e log
 //     createPlayDoc(characterId), normalizePlayDoc(raw, characterId): o
@@ -194,6 +195,7 @@ function summonsAfter(list, op) {
   if (op.remove) return list.filter((g) => g.id !== op.remove);
   return list.map((g) => {
     if (g.id !== op.id) return g;
+    if (op.castUsed) return { ...g, castUsed: [...new Set([...(g.castUsed ?? []), ...op.castUsed])] };
     if (op.count && g.light?.count) return { ...g, light: { ...g.light, count: { ...g.light.count, left: Math.max(0, g.light.count.left + op.count) } } };
     const members = (g.members ?? []).map((m, i) => {
       if (i !== op.member) return m;

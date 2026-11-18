@@ -22,7 +22,10 @@
 //   Rolagens
 //     rollEffects(state, catalog, roll): o que se aplica a uma rolagem.
 //     applyEffects(effects, enabledIds): vantagem, desvantagem, partes, piso,
-//       limiar de crítico, falha automática e gastos do que ficou ligado.
+//       limiar de crítico, falha automática e gastos do que ficou ligado; `oncePerCast`, os ids
+//       do que vale numa rolagem de dano por lançamento.
+//     castOnceEffects(effects, used): numa magia de várias rolagens (os grupos do Magic Missile, os
+//       meteoros), o extra "one damage roll of that spell" já usado sai desligado com a nota (DDL-0250).
 //     matches(targets, roll): um efeito de modificador vale para esta rolagem?
 //   Ficha
 //     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins (resistência e imunidade de um
@@ -335,7 +338,13 @@ export function applyEffects(effects, enabledIds = null) {
     forgoableMin: on.reduce((m, e) => (e.forgoableMin ? Math.max(m ?? 0, e.forgoableMin) : m), null),
     rerollOnes: on.some((e) => e.rerollOnes),
     elven: on.some((e) => e.elven),
+    oncePerCast: on.filter((e) => e.oncePerCast).map((e) => e.id),
   };
+}
+
+/** Numa magia de várias rolagens de dano, o extra de "one damage roll of that spell" já usado sai desligado, com a nota. */
+export function castOnceEffects(effects, used = []) {
+  return (effects ?? []).map((e) => (e.oncePerCast && used.includes(e.id) ? { ...e, defaultOn: false, note: 'Already added to an earlier damage roll of this casting' } : e));
 }
 
 /** As defesas com os modificadores e as condições (Rage, Petrified). */

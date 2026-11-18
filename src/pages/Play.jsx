@@ -49,7 +49,8 @@
 //       na lista de ataques e é achada nas magias, no círculo gravado (TC-0174, DDL-0249).
 //     rollPieces(group, origin, spell, pay): gasta um ou dois pedaços da magia (os meteoros do Melf's) e
 //       rola o dano de cada um, no lançamento e na instância leve; o último acaba a magia e a concentração
-//       nela (DDL-0247).
+//       nela (DDL-0247). O extra de uma rolagem por lançamento (Empowered Evocation) já usado fica no
+//       grupo (`castUsed`, pela op do próprio dano) e sai desligado nos meteoros seguintes (DDL-0250).
 //     lightRoll(group, kind), lightKinds(group): a rolagem da instância leve (S4,
 //       DDL-0194), a da magia no círculo gravado, com o custo que a prosa diz.
 //     transformWildShape(feature), pickForm(m), revertForm(): a forma (DDL-0195): o
@@ -124,7 +125,8 @@
 //       depois (`damage.later`: Hunter's Mark, Hex, Produce Flame, Flaming Sphere) não abre a rolagem
 //       quando outro caminho a rola (o efeito curado no dano, a instância leve; DDL-0247).
 //     rollShots(origin, spell, level, shots): os projéteis da magia (Eldritch Blast, Scorching Ray: um
-//       ataque por raio; Magic Missile: o dano por alvo, quantos dardos em cada; TC-0175, DDL-0249).
+//       ataque por raio; Magic Missile: o dano por alvo, quantos dardos em cada; TC-0175, DDL-0249); o
+//       extra de uma rolagem por lançamento só vem ligado na primeira em que entrou (DDL-0250).
 //     useZone(origin, spell): o "Use" da magia de área ativa (encerrar, lançar de novo, o dano de novo;
 //       DDL-0249); o lançamento dela não abre a rolagem.
 //     consumeItem(entry): usar um item do inventário.
@@ -255,7 +257,7 @@ import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, projectileCount, timesFormula } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, castOnceEffects,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
@@ -517,6 +519,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const riders = riderSpendOps(options.applied, catalog);
     if (riders.ops.length) event = { ...event, ops: [...event.ops, ...riders.ops], payload: { ...event.payload, spent: riders.lines } };
     record(event, cost);
+    return options.applied;
   };
 
   /** Grava o evento (com o custo do turno, em combate) e mostra o aviso. */
@@ -1024,6 +1027,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       return;
     }
     let left = count;
+    const castUsed = [];
     while (left > 0) {
       const r = left === 1 ? { action: true, values: { n: '1' } } : await ask({
         title: spell.name,
@@ -1033,7 +1037,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       });
       const k = Number(r?.values?.n);
       if (!r?.action || !k) return;
-      await rollDamage({ ...atk, name: `${spell.name} (${k} ${noun}${k > 1 ? 's' : ''})`, damage: { ...atk.damage, dice: timesFormula(atk.damage.dice, k), bonus: (atk.damage.bonus ?? 0) * k } });
+      const applied = await rollDamage({ ...atk, name: `${spell.name} (${k} ${noun}${k > 1 ? 's' : ''})`, damage: { ...atk.damage, dice: timesFormula(atk.damage.dice, k), bonus: (atk.damage.bonus ?? 0) * k } }, { castUsed });
+      castUsed.push(...(applied?.oncePerCast ?? []));
       left -= k;
     }
   };
@@ -1123,8 +1128,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const last = count.left - n <= 0;
     const spend = [{ op: 'summon', id: group.id, count: -n }, ...(last ? [{ op: 'summon', remove: group.id }, ...(group.concentration ? [{ op: 'concentration', value: null }] : [])] : [])];
     const atk = spellAttackOf(origin, spell, group.ctx?.spellLevel ?? spell.level);
+    const castUsed = [...(group.castUsed ?? [])];
     for (let i = 0; i < n; i += 1) {
-      await rollDamage({ ...atk, name: n > 1 ? `${spell.name} (${count.noun} ${i + 1} of ${n})` : spell.name }, {}, false, false, null, i === 0 ? [...pay, ...spend] : []);
+      const used = (options) => {
+        const fresh = (options.applied?.oncePerCast ?? []).filter((id) => !castUsed.includes(id));
+        return !last && fresh.length ? [{ op: 'summon', id: group.id, castUsed: fresh }] : [];
+      };
+      const applied = await rollDamage({ ...atk, name: n > 1 ? `${spell.name} (${count.noun} ${i + 1} of ${n})` : spell.name }, { castUsed }, false, false, null, (options) => [...(i === 0 ? [...pay, ...spend] : []), ...used(options)]);
+      castUsed.push(...(applied?.oncePerCast ?? []));
     }
   };
 
@@ -1342,10 +1353,10 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     return { ...event, ops: [...event.ops, ...ammo.ops], payload: { ...event.payload, ammo: ammo.ammo, ammoLeft: ammo.left, ammoMissing: ammo.missing } };
   };
 
-  const rollDamage = (attack, { critical = false } = {}, quick = false, spend = false, cost = null, extraOps = []) =>
+  const rollDamage = (attack, { critical = false, castUsed = [] } = {}, quick = false, spend = false, cost = null, extraOps = []) =>
     roll(
       (options) => {
-        const event = withOps(rollDamageEvent({ catalog, attack, options }), extraOps);
+        const event = withOps(rollDamageEvent({ catalog, attack, options }), typeof extraOps === 'function' ? extraOps(options) : extraOps);
         return spend ? withAmmo(event, attack) : event;
       },
       {
@@ -1363,7 +1374,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: [attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '', attackNotes(attack, catalog)].filter(Boolean).join('. '),
       },
       quick,
-      rollEffects(state, catalog, attackRollContext(attack, 'damage', catalog)),
+      castOnceEffects(rollEffects(state, catalog, attackRollContext(attack, 'damage', catalog)), castUsed),
       spend ? cost : null,
     );
 

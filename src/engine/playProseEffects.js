@@ -38,6 +38,8 @@
 //   diceUpgrades(features): o dado que uma feature troca no de outra (o Greater Mark, DDL-0239).
 //   proseRollEffects(features, opts): as entradas do catálogo (`proseEffects`); o resto que só
 //     repete o escopo (`SCOPE_ONLY`, "of that spell" da Empowered Evocation) não vira nota.
+//   spellScope(lead): a condição da frente que só diz de que magia é (escola, classe): vira `spellOf` e
+//     a entrada vale ligada só nessa magia (a Empowered Evocation, DDL-0247).
 //   proseUses(features, opts): a cura e os PV temporários do "Use" (`proseUses`).
 //   fitsGroup(g, roll), fitsProse(e, roll): um grupo do alvo, e a entrada, valem para esta rolagem?
 //   proseEffects(catalog, roll, ctx): os extras, no formato de rollEffects (`ctx`: as
@@ -345,6 +347,22 @@ export function proseClauses(entries) {
   return out;
 }
 
+const SCHOOLS = { abjuration: 'A', conjuration: 'C', divination: 'D', enchantment: 'E', evocation: 'V', illusion: 'I', necromancy: 'N', transmutation: 'T' };
+const CLASSES = ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'warlock', 'wizard'];
+const SPELL_SCOPE = /^(?:whenever|when) you cast an? (?:(\w+) )?spell from the (\w+) school$|^(?:whenever|when) you cast an? (?:(\w+) )?(\w+) spell$/i;
+
+/** A condição da frente que só diz de que magia é ("Whenever you cast a Wizard spell from the Evocation school"): { school, cls }, ou null. */
+export function spellScope(lead) {
+  const m = String(lead ?? '').trim().replace(/[,\s]+$/, '').match(SPELL_SCOPE);
+  if (!m) return null;
+  const a = norm(m[1] ?? m[3]);
+  const b = norm(m[2] ?? m[4]);
+  const cls = CLASSES.includes(a) ? a : m[3] && CLASSES.includes(b) ? b : null;
+  const school = SCHOOLS[b] ?? (m[3] ? SCHOOLS[a] : null) ?? null;
+  if (a && !cls && !SCHOOLS[a]) return null;
+  return school || cls ? { school, cls } : null;
+}
+
 /** O resto que só repete o escopo da rolagem ("one damage roll of that spell"): não vira nota. */
 const SCOPE_ONLY = /^of (?:that|the|this) (?:spell|attack|weapon|roll)$/i;
 
@@ -368,13 +386,15 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
       const concentration = /\bmaintain\b.*\bconcentration\b/i.test(c.tail);
       const incapacitated = /^unless you have the incapacitated condition$/i.test(c.tail);
       const when = c.lead ? autoCondition(c.lead) : null;
-      const activation = !!c.lead && ACTIVATION.test(c.lead);
-      const active = activated(f) || activation;
+      const scope = spellScope(c.lead);
+      const activation = !!c.lead && !scope && ACTIVATION.test(c.lead);
+      const active = (!scope && activated(f)) || activation;
       const tail = SCOPE_ONLY.test(c.tail) ? '' : c.tail;
-      const conditions = [c.lead && !when && !activation ? c.lead : null, tail && !incapacitated && !concentration ? tail : null].filter(Boolean);
+      const conditions = [c.lead && !when && !activation && !scope ? c.lead : null, tail && !incapacitated && !concentration ? tail : null].filter(Boolean);
       let note = conditions.map(noteOf).join('; ');
       if (when) note = note ? `${noteOf(c.lead)}; ${note}` : noteOf(c.lead);
       if (!note && active) note = `After you use ${f.name}`;
+      if (!note && scope && /\bone damage roll\b/i.test(c.sentence)) note = 'One damage roll each time you cast the spell';
       if (incapacitated) note = note ? `${note}; not while Incapacitated` : 'Not while Incapacitated';
       out.push({
         name: f.name,
@@ -383,7 +403,8 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
         ...(c.effect.part ? { part: { label: upgrades.get(`${norm(f.name)}|${c.effect.part}`) ? `${f.name} (${upgrades.get(`${norm(f.name)}|${c.effect.part}`).by})` : f.name, formula: upgrades.get(`${norm(f.name)}|${c.effect.part}`)?.to ?? c.effect.part } } : {}),
         ...(c.effect.rerollOnes ? { rerollOnes: true } : {}),
         ...(c.effect.d20Min ? { d20Min: c.effect.d20Min } : {}),
-        groups: concentration ? c.groups.map((g) => ({ ...g, kind: g.kind === 'save' ? 'concentration' : g.kind })) : c.groups,
+        groups: concentration ? c.groups.map((g) => ({ ...g, kind: g.kind === 'save' ? 'concentration' : g.kind })) : scope ? c.groups.map((g) => ({ ...g, spell: true })) : c.groups,
+        ...(scope ? { spellOf: scope } : {}),
         defaultOn: !conditions.length && (!!when || !active),
         ...(when ? { when } : {}),
         ...(incapacitated ? { unless: 'incapacitated' } : {}),
@@ -484,6 +505,7 @@ function fitsGroup(g, roll) {
 
 /** A entrada vale para esta rolagem? */
 export function fitsProse(e, roll) {
+  if (e.spellOf && (!roll.spell || (e.spellOf.school && roll.school !== e.spellOf.school) || (e.spellOf.cls && roll.spellClass !== e.spellOf.cls))) return false;
   return e.groups.some((g) => fitsGroup(g, roll));
 }
 

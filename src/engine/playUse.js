@@ -215,7 +215,7 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
   if (activity.roll && only !== 'attack') parts.push({ label: activity.roll.label, formula: activity.roll.formula });
   for (const p of only === 'attack' ? [] : activity.damage ?? []) parts.push({ label: (p.types ?? []).join('/') || 'Damage', formula: p.formula });
   const rolls = parts.length
-    ? rollParts([...parts, ...(attack ? [] : bonusParts(options))], { data, rng: r, critical: !!(options.critical || attack?.isCritical) })
+    ? rollParts([...parts, ...(attack ? [] : bonusParts(options))], { data, rng: r, critical: !!activity.attack && !!(options.critical || attack?.isCritical) })
     : null;
 
   const effect = free ? null : featureModifier(action, catalog);

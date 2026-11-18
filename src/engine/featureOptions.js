@@ -25,6 +25,7 @@
 //     de CLASSE até o nível.
 //   subclassFeatureOptionChoices(db, classId, subclass, level, opts): as de SUBCLASSE; com
 //     `followers` também as que SEGUEM outra (FOLLOWS), marcadas com `follows`.
+//   canonicalPick(ch, pick): a escolha salva como uma das opções (pelo nome, se veio de outra edição).
 //   optionPicks(choices, ch, all): os picks de uma escolha; a que segue outra lê os da líder.
 //
 // DECISÕES E ARMADILHAS
@@ -53,6 +54,12 @@
 //     `count` delas virava uma escolha à parte, e o modelo saía Tundra e Desert (TC-0148). A
 //     seguidora não aparece no builder nem no import; o export (o item e o ItemChoice do
 //     Foundry) toma a opção de MESMO nome da líder (`optionPicks`, DDL-0227).
+//   - A feature de subclasse vale só para a subclasse de MESMO livro (`subclassSource`), como em
+//     classFeatureChoices: o Hunter do XPHB pegava as quatro escolhas do Hunter do PHB (o Giant
+//     Killer no Hunter's Prey, o Multiattack, as listas antigas do Defensive Tactics e do Superior
+//     Hunter's Defense), porque o primeiro de mesmo nome vencia (DDL-0247). A escolha já salva com
+//     o valor da outra edição ("Colossus Slayer|PHB") vale pelo nome (`canonicalPick`); a que não
+//     existe nesta edição (o Giant Killer) cai.
 //   - Os ids de subclasse começam com `sub:`, para serem podados quando a
 //     subclasse troca.
 // -----------------------------------------------------------------------------
@@ -185,6 +192,14 @@ export function featureOptionChoices(db, classId, classObj, level) {
   return out;
 }
 
+/** A escolha salva como uma das opções: o valor exato, ou o nome antes do `|` (a escolha de outra edição). */
+function canonicalPick(ch, pick) {
+  const options = ch.pool?.options ?? [];
+  if (!options.length || options.some((o) => o.value === pick)) return pick;
+  const name = norm(String(pick).split('|')[0]);
+  return options.find((o) => norm(o.label) === name)?.value ?? null;
+}
+
 /**
  * Escolhas de sub-feature da subclasse (ids com `sub:`).
  * @returns {import('./choices').Choice[]}
@@ -192,7 +207,9 @@ export function featureOptionChoices(db, classId, classObj, level) {
 export function subclassFeatureOptionChoices(db, classId, subclass, level, { followers = false } = {}) {
   if (!subclass) return [];
   const short = norm(subclass.shortName);
-  const pool = resolveCopies(db?.[`class-${classId}`]?.subclassFeature ?? [], featureCopyId);
+  const src = norm(subclass.source);
+  const own = (f) => norm(f.subclassShortName) === short && !(src && f.subclassSource && norm(f.subclassSource) !== src);
+  const pool = resolveCopies(db?.[`class-${classId}`]?.subclassFeature ?? [], featureCopyId).filter(own);
   const idx = poolIndex(pool);
   const resolveRef = (e) => {
     const [name, , , , source, lvl] = String(e.subclassFeature).split('|');
@@ -202,7 +219,7 @@ export function subclassFeatureOptionChoices(db, classId, subclass, level, { fol
   const out = [];
   const seen = new Set();
   for (const f of pool) {
-    if (norm(f.subclassShortName) !== short || f.isClassFeatureVariant) continue;
+    if (f.isClassFeatureVariant) continue;
     if ((f.level ?? 0) > level) continue;
     const block = findOptionBlocks(f.entries, [], 'refSubclassFeature').find((b) => b.explicit);
     const fromBlock = block ? block.refs.map((sf) => optionToCard({ type: 'refSubclassFeature', subclassFeature: sf }, resolveRef)).filter(Boolean) : [];
@@ -221,8 +238,8 @@ export function subclassFeatureOptionChoices(db, classId, subclass, level, { fol
 
 /** Os picks de uma escolha; a que segue outra toma a opção de mesmo nome da líder. */
 export function optionPicks(choices, ch, all) {
-  if (!ch.follows) return choices?.[ch.id]?.picks ?? [];
+  if (!ch.follows) return (choices?.[ch.id]?.picks ?? []).map((p) => canonicalPick(ch, p)).filter(Boolean);
   const leader = all.find((x) => x.id === ch.follows);
-  const labels = (choices?.[ch.follows]?.picks ?? []).map((p) => (leader?.pool?.options ?? []).find((o) => o.value === p)?.label).filter(Boolean);
+  const labels = (choices?.[ch.follows]?.picks ?? []).map((p) => leader && canonicalPick(leader, p)).map((p) => (leader?.pool?.options ?? []).find((o) => o.value === p)?.label).filter(Boolean);
   return (ch.pool?.options ?? []).filter((o) => labels.some((l) => norm(l) === norm(o.label))).map((o) => o.value);
 }

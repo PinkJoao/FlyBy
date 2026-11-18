@@ -110,8 +110,8 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
 
   const attacks = item.name === 'Opportunity Attack' ? ctx.melee : item.name === 'Two-Weapon Fighting' ? ctx.light : ctx.attacks;
   const attackDetail = (a) => {
-    const hit = a.toHit ? a.toHit.total + fixedRollBonus(state, catalog, attackRollContext(a)) : null;
-    const dmg = a.damage ? (a.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(a, 'damage')) : 0;
+    const hit = a.toHit ? a.toHit.total + fixedRollBonus(state, catalog, attackRollContext(a, 'attack', catalog)) : null;
+    const dmg = a.damage ? (a.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(a, 'damage', catalog)) : 0;
     return [hit != null ? `${formatBonus(hit)} to hit` : null, a.damage ? `${a.damage.dice ? `${a.damage.dice}${dmg ? formatBonus(dmg) : ''}` : Math.max(0, dmg)} ${a.damage.types?.[0] ?? ''}`.trim() : null, ...(a.damage?.extra ?? []).map((x) => `+${x.formula} ${x.type}`), a.mastery ? `mastery ${a.mastery}` : null].filter(Boolean).join(', ');
   };
 

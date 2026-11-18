@@ -139,11 +139,11 @@ describe('G3: bônus, reroll do 1, piso', () => {
     expect(effectsFor([thrown], { kind: 'attack', weapon: true })).toEqual([]);
   });
 
-  it('"of that spell" só repete o escopo: a nota fica com a condição da frente', () => {
+  it('"of that spell" só repete o escopo; a condição da frente que só diz a magia vira `spellOf` (DDL-0247)', () => {
     const empowered = feature('Empowered Evocation', 'Whenever you cast a Wizard spell from the {@filter Evocation|spells|school=V} school, you can add your Intelligence modifier to one damage roll of that spell.');
     const [e] = proseRollEffects([empowered]);
-    expect(e).toMatchObject({ part: { formula: '@abilities.int.mod' }, defaultOn: false });
-    expect(e.note).toBe('Whenever you cast a Wizard spell from the Evocation school');
+    expect(e).toMatchObject({ part: { formula: '@abilities.int.mod' }, defaultOn: true, spellOf: { school: 'V', cls: 'wizard' } });
+    expect(e.note).toBe('One damage roll each time you cast the spell');
   });
 
   it('"a bonus to the check equal to your Wisdom modifier": o alvo vem da frente, e fica ligado', () => {
@@ -225,5 +225,19 @@ describe('o dado somado das marcas de dragão (DDL-0239)', () => {
   it('o Greater Mark troca o dado da marca base', () => {
     expect(proseRollEffects([detection])[0].part.formula).toBe('1d4');
     expect(proseRollEffects([detection, greater])[0].part).toEqual({ label: 'Mark of Detection (Greater Mark of Detection)', formula: '1d6' });
+  });
+});
+
+describe('a escola e a classe da magia (DDL-0247)', () => {
+  const evocation = { name: 'Empowered Evocation', entries: ['Whenever you cast a Wizard spell from the Evocation school, you can add your Intelligence modifier to one damage roll of that spell.'] };
+
+  it('vale ligada na magia de Evocação do mago e não aparece nas outras', () => {
+    const catalog = { proseEffects: proseRollEffects([evocation]), features: [], rollData: {} };
+    const on = proseEffects(catalog, { kind: 'damage', spell: true, school: 'V', spellClass: 'wizard' });
+    expect(on).toHaveLength(1);
+    expect(on[0].defaultOn).toBe(true);
+    expect(proseEffects(catalog, { kind: 'damage', spell: true, school: 'N', spellClass: 'wizard' })).toEqual([]);
+    expect(proseEffects(catalog, { kind: 'damage', spell: true, school: 'V', spellClass: null })).toEqual([]);
+    expect(proseEffects(catalog, { kind: 'damage', weapon: true })).toEqual([]);
   });
 });

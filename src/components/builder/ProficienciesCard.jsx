@@ -9,7 +9,9 @@
 //
 //   No play mode (DDL-0120), saves, perícias, expertise e ferramentas são
 //   botões que abrem a rolagem (`onSave`, `onSkill`, `onTool`); na ficha, sem
-//   essas props, é só listagem.
+//   essas props, é só listagem. `extra` soma ao número da ficha o que a rolagem soma
+//   ligado e fixo (a Aura of Protection nas salvaguardas, DDL-0247): a lista mostrava +4 e o
+//   paladino rolava +7.
 //
 // FUNÇÕES
 //   ProficienciesCard(props): o card.
@@ -26,24 +28,24 @@ import Collapse from '../common/Collapse';
 
 /**
  * O card de proficiências; com os callbacks, os itens roláveis viram botões.
- * @param {{ derived: object, onSave?: Function, onSkill?: Function, onTool?: Function }} props
+ * @param {{ derived: object, onSave?: Function, onSkill?: Function, onTool?: Function, extra?: { saves?: object, skills?: object } }} props
  */
-export default function ProficienciesCard({ derived, onSave, onSkill, onTool }) {
+export default function ProficienciesCard({ derived, onSave, onSkill, onTool, extra = null }) {
   const [open, setOpen] = useState(false);
 
   const saves = ABILITIES.filter((a) => derived.proficientSaves.includes(a)).map((a) => ({
     name: ABILITY_FULL[a],
-    bonus: derived.saves[a],
+    bonus: derived.saves[a] + (extra?.saves?.[a] ?? 0),
     onRoll: onSave ? () => onSave(a) : null,
   }));
 
   const skillCodes = Object.keys(SKILL_LABEL);
   const skills = skillCodes
     .filter((s) => derived.skills[s]?.proficiency >= 1)
-    .map((s) => ({ name: SKILL_LABEL[s], bonus: derived.skills[s].bonus, onRoll: onSkill ? () => onSkill(s) : null }));
+    .map((s) => ({ name: SKILL_LABEL[s], bonus: derived.skills[s].bonus + (extra?.skills?.[s] ?? 0), onRoll: onSkill ? () => onSkill(s) : null }));
   const expertise = skillCodes
     .filter((s) => derived.skills[s]?.proficiency >= 2)
-    .map((s) => ({ name: SKILL_LABEL[s], bonus: derived.skills[s].bonus, onRoll: onSkill ? () => onSkill(s) : null }));
+    .map((s) => ({ name: SKILL_LABEL[s], bonus: derived.skills[s].bonus + (extra?.skills?.[s] ?? 0), onRoll: onSkill ? () => onSkill(s) : null }));
 
   const armor = (derived.armor ?? []).map((a) => ({ name: a }));
   const weapons = (derived.weapons ?? []).map((w) => ({ name: w }));

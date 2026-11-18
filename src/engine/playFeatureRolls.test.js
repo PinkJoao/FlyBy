@@ -288,3 +288,15 @@ describe('TC-0170 (DDL-0243)', () => {
     expect(fire.modifier.resist).toEqual(['fire']);
   });
 });
+
+describe('Psychic Blades só no College of Whispers (DDL-0246)', () => {
+  const roll = { kind: 'damage', weapon: true, melee: true };
+  const bard = (features) => ({ features, rollData: { classes: { bard: { levels: 11 } } }, resources: [] });
+  it('um bardo de outro colégio não recebe o extra', () => {
+    expect(featureRiders(emptyPlayState(), bard(['blade flourish']), roll).some((e) => e.source === 'Psychic Blades')).toBe(false);
+  });
+  it('o de Whispers recebe, com o dado do nível', () => {
+    const e = featureRiders(emptyPlayState(), bard(['psychic blades']), roll).find((x) => x.source === 'Psychic Blades');
+    expect(e?.part?.formula).toBe('5d6');
+  });
+});

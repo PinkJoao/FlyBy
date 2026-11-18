@@ -27,7 +27,11 @@
 //   Ficha
 //     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins (resistência e imunidade de um
 //       modificador: o Tasha's Otherworldly Guise, DDL-0245).
-//     attackRollContext(attack, kind): o contexto de rolagem de um ataque (acerto ou dano).
+//     attackRollContext(attack, kind, catalog): o contexto de rolagem de um ataque (acerto ou dano); no dano,
+//       as mãos da arma (`hands`), a empunhadura padrão (`grip`), e a escola e a classe da magia.
+//     defaultGrip(attack, catalog): a empunhadura padrão: duas mãos só se a arma pede, ou a Lance sem escudo
+//       na mão (montado, uma mão, com escudo); um efeito com `grip` (o Dueling, o Great Weapon Fighting na
+//       versátil e na Lance) começa ligado só nessa empunhadura (DDL-0247).
 //     fixedRollBonus(state, catalog, roll): os efeitos ligados que são número fixo; a lista
 //       de ataques soma (o arco do ranger com Archery dizia +7, e o diálogo rolava +9,
 //       DDL-0221).
@@ -306,7 +310,7 @@ export function rollEffects(state, catalog, roll) {
     }
     if (p.d20Min && roll.kind === 'check' && roll.proficient) out.push({ id: `passive:${name}`, label: `Reliable Talent (9 or lower counts as ${p.d20Min})`, source: name, d20Min: p.d20Min, defaultOn: true });
   }
-  return out;
+  return roll.grip ? out.map((e) => (e.grip ? { ...e, defaultOn: e.grip === roll.grip } : e)) : out;
 }
 
 /**
@@ -416,8 +420,18 @@ export function endConcentrationOps(state) {
   ];
 }
 
+/** A empunhadura padrão do ataque: duas mãos só quando a arma pede, ou a Lance sem escudo na mão. */
+export function defaultGrip(attack, catalog = null) {
+  const hands = attack?.hands ?? 'one';
+  const shield = catalog?.shield && !catalog.shield.handsFree;
+  if (hands === 'two') return 'two';
+  if (hands === 'mounted') return shield ? 'one' : 'two';
+  return 'one';
+}
+
 /** O contexto de rolagem de um ataque do catálogo (acerto ou dano), o mesmo da tela. */
-export function attackRollContext(attack, kind = 'attack') {
+export function attackRollContext(attack, kind = 'attack', catalog = null) {
+  const hands = attack.hands ?? ((attack.properties ?? []).includes('2H') ? 'two' : attack.versatile ? 'versatile' : 'one');
   return {
     kind,
     weapon: attack.kind === 'weapon' || attack.kind === 'unarmed',
@@ -428,8 +442,10 @@ export function attackRollContext(attack, kind = 'attack') {
     pact: !!attack.pact,
     cantrip: !!attack.cantrip,
     spellName: attack.kind === 'spell' ? attack.name : null,
+    school: attack.school ?? null,
+    spellClass: attack.spellClass ?? null,
     types: attack.damage?.types ?? null,
-    ...(kind === 'damage' ? { twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile } : {}),
+    ...(kind === 'damage' ? { hands, grip: defaultGrip(attack, catalog), twoHanded: hands === 'two', versatile: hands === 'versatile' || hands === 'mounted' } : {}),
   };
 }
 

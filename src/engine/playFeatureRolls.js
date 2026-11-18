@@ -470,7 +470,7 @@ export const FEATURE_ROLLS = {
   "order's wrath": { kind: 'use', roll: { label: 'Psychic when an ally hits the creature your Divine Strike cursed (the curse ends)', formula: '2d8' } },
   'improved warding flare': { kind: 'use', apply: null, roll: { label: 'Temporary Hit Points for the target of the attack (with Warding Flare)', formula: '2d6 + @abilities.wis.mod' } },
   'eye for weakness': { kind: 'rider', on: ['damage'], when: 'weapon', formula: '3d6', label: 'Eye for Weakness (Sneak Attack)', note: 'with Sneak Attack, against the creature of your Insightful Fighting' },
-  'psychic blades': { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => (c.rollData?.classes?.bard?.levels ?? 0) > 0, spend: BI, formula: byLevel('bard', [[15, '8d6'], [10, '5d6'], [5, '3d6'], [0, '2d6']]), note: 'College of Whispers: Psychic, once per turn' },
+  'psychic blades': { kind: 'rider', on: ['damage'], when: 'weapon', has: (c) => (c.features ?? []).includes('psychic blades') && (c.rollData?.classes?.bard?.levels ?? 0) > 0, spend: BI, formula: byLevel('bard', [[15, '8d6'], [10, '5d6'], [5, '3d6'], [0, '2d6']]), note: 'College of Whispers: Psychic, once per turn' },
   'dread lord': {
     kind: 'use',
     options: [
@@ -596,7 +596,7 @@ export const FEATURE_ROLLS = {
   'vigilant rebuke': { kind: 'use', roll: { label: 'Force to the creature that forced the save', formula: '2d8 + @abilities.cha.mod' } },
   'great weapon fighting': {
     kind: 'rider', on: ['damage'], when: 'twoHandedMelee', defaultOn: true, diceMin: 3, label: 'Great Weapon Fighting (a 1 or 2 counts as 3)', note: 'a Melee weapon you hold with two hands',
-    also: [{ on: ['damage'], when: 'versatileMelee', diceMin: 3, label: 'Great Weapon Fighting (a 1 or 2 counts as 3)', note: 'only when you hold the Versatile weapon with two hands' }],
+    also: [{ on: ['damage'], when: 'versatileMelee', grip: 'two', diceMin: 3, label: 'Great Weapon Fighting (a 1 or 2 counts as 3)', note: 'only when you hold the weapon with two hands' }],
   },
 };
 
@@ -690,6 +690,7 @@ export function featureRiders(state, catalog, roll) {
         ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgoableMin ? { forgoableMin: e.forgoableMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
         note: noteOf(e, rd, catalog),
         defaultOn: !!e.defaultOn,
+        ...(e.grip ? { grip: e.grip } : {}),
         ...(key ? { spend: { key, amount: 1 } } : {}),
       });
     });

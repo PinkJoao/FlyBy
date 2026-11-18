@@ -18,6 +18,8 @@
 //     por nome, a do XMM).
 //   familiarSpecialForms(options): as formas especiais que as opções escolhidas dão, lidas no texto
 //     ("special forms: Imp, Pseudodragon, ...": o Pact of the Chain, DDL-0238).
+//   lightCount(spell, level): quantos pedaços a magia cria (`LIGHT_COUNTS`: os meteoros do Melf's), com o
+//     resto em `light.count` do grupo; a op `summon` com `count` gasta (DDL-0247).
 //   isLightSummon(spell), lightRulesOf(entries), lightOps(opts): a instância leve
 //     (S4, DDL-0194): a magia sem bloco que fica em campo (LIGHT_SUMMONS).
 //   LIGHT_REPEATS, repeatDice(repeat, level): o "again" que rola outra coisa que o lançamento (Storm
@@ -229,6 +231,19 @@ const LIGHT_SUMMONS = new Set([
   'draconic transformation', "fizban's platinum shield", 'conjure constructs',
 ]);
 
+/** As magias que criam um número de pedaços gastos um a um, pelo texto (Melf's Minute Meteors: "You create six tiny meteors", "expend one or two of the meteors", "increases by two for each slot level above 3rd"). */
+export const LIGHT_COUNTS = {
+  "melf's minute meteors": { base: 6, from: 3, per: 2, most: 2, noun: 'meteor' },
+};
+
+/** Quantos pedaços a magia cria no círculo lançado. */
+export function lightCount(spell, level) {
+  const c = LIGHT_COUNTS[lc(spell?.name)];
+  if (!c) return null;
+  const max = c.base + Math.max(0, (level ?? c.from) - c.from) * c.per;
+  return { left: max, max, most: c.most, noun: c.noun };
+}
+
 export const LIGHT_REPEATS = {
   'storm sphere': { dice: '4d6', type: 'lightning', attack: true, upcast: { from: 4, dice: '1d6' } },
   'wall of light': { dice: '4d8', type: 'radiant', attack: true, upcast: { from: 5, dice: '1d8' } },
@@ -276,7 +291,8 @@ export function lightOps({ state, spell, level, origin, catalog, rules, casterHp
   add.add.ref = null;
   const curated = LIGHT_REPEATS[lc(spell.name)];
   const repeat = rules.repeat ?? (curated ? { dice: repeatDice(curated, level), type: curated.type, attack: !!curated.attack } : null);
-  add.add.light = { ac: rules.ac, hp: rules.hp === 'casterMax' ? casterHpMax : null, ...(rules.moves ? { moves: true } : {}), ...(repeat ? { repeat } : {}) };
+  const count = lightCount(spell, level);
+  add.add.light = { ac: rules.ac, hp: rules.hp === 'casterMax' ? casterHpMax : null, ...(rules.moves ? { moves: true } : {}), ...(repeat ? { repeat } : {}), ...(count ? { count } : {}) };
   if (add.add.light.hp == null) add.add.members = [];
   return [...old, add];
 }

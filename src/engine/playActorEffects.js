@@ -30,7 +30,7 @@
 //   - `CONDITIONAL` nomeia, pelo texto, o que o efeito do ator traz ligado mas o livro
 //     condiciona: Frost Rune (só com a runa invocada), Transmuter's Stone (só o benefício
 //     escolhido para a pedra), Skulker (vantagem em Stealth só ao se esconder), Dueling (uma
-//     arma corpo a corpo numa mão). Esses aparecem DESLIGADOS, com a condição na nota
+//     arma corpo a corpo numa mão; nunca no Unarmed Strike, que não é arma: DDL-0246). Esses aparecem DESLIGADOS, com a condição na nota
 //     (liberdade com aviso, §6.4). `when: 'form'` liga só na forma do Wild Shape (Improved
 //     Circle Forms); `unless` desliga com a condição presente (Danger Sense e Incapacitated).
 //   - O valor vem como o Foundry escreve ("+2", "@abilities.cha.mod", "(max(1,@abilities.wis.mod))")
@@ -137,12 +137,13 @@ export function bridgedEffects(state, catalog, roll, conditionIds = []) {
   for (const e of catalog.actorEffects ?? []) {
     if (!fitsRoll(e, roll)) continue;
     const c = CONDITIONAL[norm(e.name)] ?? {};
-    if (c.oneHanded && roll.twoHanded) continue;
+    if (c.oneHanded && (roll.twoHanded || roll.unarmed)) continue;
+    const grip = c.oneHanded && (roll.hands === 'versatile' || roll.hands === 'mounted') ? 'one' : null;
     let on = c.defaultOn ?? !c.note;
     if (c.when === 'form') on = !!state.form;
     if (c.unless && conditionIds.includes(c.unless)) on = false;
     const label = e.mode === 'dis' ? `${e.name} (disadvantage)` : e.rerollOnes ? `${e.name} (reroll a 1)` : e.elven ? `${e.name} (3d20 with Advantage)` : e.name;
-    const entry = { id: `actor:${slug(e.name)}:${slug(e.key)}`, label, source: e.name, defaultOn: on, ...(c.note ? { note: c.note } : {}) };
+    const entry = { id: `actor:${slug(e.name)}:${slug(e.key)}`, label, source: e.name, defaultOn: on, ...(c.note ? { note: c.note } : {}), ...(grip ? { grip } : {}) };
     if (e.mode === 'adv') entry.adv = 1;
     else if (e.mode === 'dis') entry.dis = 1;
     else if (e.rerollOnes) entry.rerollOnes = true;

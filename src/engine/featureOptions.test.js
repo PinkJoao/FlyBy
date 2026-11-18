@@ -237,3 +237,37 @@ describe('subclassFeatureOptionChoices', () => {
     expect(subclassFeatureOptionChoices(db, 'barbarian', null, 3)).toEqual([]);
   });
 });
+
+describe('a escolha de subclasse é do mesmo livro (DDL-0247)', () => {
+  const db = {
+    'class-ranger': {
+      subclassFeature: [
+        { name: "Hunter's Prey", source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3,
+          entries: ['At 3rd level, you gain one of the following features of your choice.', { type: 'options', count: 1, entries: [
+            { type: 'refSubclassFeature', subclassFeature: 'Colossus Slayer|Ranger||Hunter||3' },
+            { type: 'refSubclassFeature', subclassFeature: 'Giant Killer|Ranger||Hunter||3' },
+            { type: 'refSubclassFeature', subclassFeature: 'Horde Breaker|Ranger||Hunter||3' },
+          ] }] },
+        { name: 'Colossus Slayer', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3, entries: ['1d8'] },
+        { name: 'Giant Killer', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3, entries: ['reaction'] },
+        { name: 'Horde Breaker', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3, entries: ['another attack'] },
+        { name: "Hunter's Prey", source: 'XPHB', classSource: 'XPHB', subclassShortName: 'Hunter', subclassSource: 'XPHB', level: 3,
+          entries: ['You gain one of the following feature options of your choice.', { type: 'entries', entries: [
+            { type: 'entries', name: 'Colossus Slayer', entries: ['1d8'] },
+            { type: 'entries', name: 'Horde Breaker', entries: ['another attack'] },
+          ] }] },
+      ],
+    },
+  };
+
+  it("o Hunter do XPHB não recebe o Giant Killer do PHB", () => {
+    const [ch] = subclassFeatureOptionChoices(db, 'ranger', { shortName: 'Hunter', source: 'XPHB' }, 3);
+    expect(ch.pool.options.map((o) => o.label)).toEqual(['Colossus Slayer', 'Horde Breaker']);
+  });
+
+  it('a escolha salva com o valor da outra edição vale pelo nome; a que não existe cai', () => {
+    const [ch] = subclassFeatureOptionChoices(db, 'ranger', { shortName: 'Hunter', source: 'XPHB' }, 3);
+    expect(optionPicks({ [ch.id]: { picks: ['Colossus Slayer|PHB'] } }, ch, [ch])).toEqual(['Colossus Slayer']);
+    expect(optionPicks({ [ch.id]: { picks: ['Giant Killer|PHB'] } }, ch, [ch])).toEqual([]);
+  });
+});

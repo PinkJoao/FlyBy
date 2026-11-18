@@ -387,3 +387,16 @@ describe('o modificador e o tipo do dano pela frase (DDL-0245)', () => {
     expect(star.damage).toMatchObject({ dice: '4d10', types: ['force', 'radiant'], typeOptions: ['force', 'radiant'], addMod: true });
   });
 });
+
+describe('o dano que só vem depois do lançamento (DDL-0247)', () => {
+  it("Hunter's Mark e Produce Flame: `later`; Fireball e Witch Bolt não", () => {
+    const mark = { name: "Hunter's Mark", level: 1, damageInflict: ['force'], entries: ['You magically mark one creature you can see within range as your quarry. Until the spell ends, you deal an extra {@damage 1d6} Force damage to the target whenever you hit it with an attack roll.'] };
+    const flame = { name: 'Produce Flame', level: 0, damageInflict: ['fire'], spellAttack: ['R'], entries: ['A flickering flame appears in your hand and remains there for the duration.', 'Until the spell ends, you can take a Magic action to hurl fire at a creature or an object within 60 feet of you. Make a ranged spell attack. On a hit, the target takes {@damage 1d8} Fire damage.'] };
+    const fireball = { name: 'Fireball', level: 3, damageInflict: ['fire'], entries: ['A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking {@damage 8d6} Fire damage on a failed save or half as much damage on a successful one.'] };
+    const bolt = { name: 'Witch Bolt', level: 1, damageInflict: ['lightning'], spellAttack: ['R'], entries: ['A beam of crackling energy lances toward a creature within range, forming a sustained arc of lightning between you and the target. Make a ranged spell attack against it. On a hit, the target takes {@damage 2d12} Lightning damage.', 'On each of your subsequent turns, you can take a Bonus Action to deal {@damage 1d12} Lightning damage to the target automatically, even if the first attack missed.'] };
+    expect(spellMechanics(mark, 5).damage.later).toBe(true);
+    expect(spellMechanics(flame, 5).damage.later).toBe(true);
+    expect(spellMechanics(fireball, 5).damage.later).toBeUndefined();
+    expect(spellMechanics(bolt, 5).damage.later).toBeUndefined();
+  });
+});

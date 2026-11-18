@@ -42,7 +42,7 @@
 //   - Só a arma de pacto conta para o Thirsting Blade e o Devouring Blade; a contagem de ataques
 //     é do Attack (playBasicActions), e a escolha da arma fica com o jogador.
 // -----------------------------------------------------------------------------
-import { DAMAGE_NAME } from './playCatalog';
+import { DAMAGE_NAME, handsOf } from './playCatalog';
 import { makeEvent } from './playState';
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -65,6 +65,7 @@ export function conjurableWeapons(db, catalog) {
       dmg1: i.dmg1 ?? null,
       dmgType: i.dmgType ?? null,
       versatile: i.dmg2 ?? null,
+      hands: handsOf(i),
       props: (i.property ?? []).map((p) => String(typeof p === 'string' ? p : p?.uid ?? '').split('|')[0]),
       ranged: String(i.type ?? '').startsWith('R|'),
       distance: i.range ?? null,
@@ -156,6 +157,7 @@ export function conjuredAttack(weapon, catalog) {
     toHit: { total: 0, parts: [] },
     damage: weapon.dmg1 ? { dice: weapon.dmg1, bonus: 0, types: [DAMAGE_NAME[weapon.dmgType] ?? weapon.dmgType ?? ''].filter(Boolean) } : null,
     versatile: weapon.versatile ?? null,
+    ...(weapon.hands ? { hands: weapon.hands } : {}),
     properties: weapon.props ?? [],
     mastery: null,
     thrown: (weapon.props ?? []).includes('T'),

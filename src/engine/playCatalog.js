@@ -46,6 +46,10 @@
 //       Weapon, Flame Blade, Bigby's Hand, Mordenkainen's Sword, Conjure Fey; DDL-0245), e os tipos vêm do
 //       par do texto quando o dado não traz `damageInflict` (Holy Star of Mystra: Force or Radiant).
 //     damageAddsMod(raw, dice): a frase do dado soma o modificador de conjuração?
+//     damageLater(raw): o dano só vem DEPOIS do lançamento? O parágrafo até o primeiro dado tem um gatilho
+//       posterior ("whenever you hit", "Until the spell ends, you can take a Magic action", "starts its
+//       turn") e nenhum do lançamento ("When you cast", "when it appears"); vira `damage.later`, e o
+//       lançamento não abre a rolagem quando outro caminho rola depois (DDL-0247). Medido: 25 magias.
 //     cantripAttacks(spellcasting, level): os cantrips que atacam ou pedem save.
 //   Ator em memória
 //     safeActor(character, db): o ator montado, ou null se a montagem falhar.
@@ -111,6 +115,8 @@
 //       pela prosa ("the strike deals 1d6 + your Strength modifier slashing damage"; Claws, Horns,
 //       Bite, Talons, Hooves, Ram, Dragon Hide), um Unarmed Strike com o dado e o tipo; numa feature
 //       de opções (SPECIES_OPTION_FEATURES) só a opção escolhida (DDL-0239).
+//     handsOf(raw, props): quantas mãos a arma pede (uma, duas, versátil, a Lance montada).
+//     shieldInHand(inventory): o escudo equipado e se ele deixa as mãos livres.
 //     featureOptionPicks(character): as opções escolhidas em escolhas `featureoption` (vão no catálogo
 //       como `optionPicks`, para o registro curado saber qual opção vale: o Acid Spit). As cantrips que
 //       uma invocação melhora vão como `optionTargets` (o Agonizing Blast, engine/optionTargets, DDL-0240). A feature que
@@ -314,6 +320,20 @@ function weaponProficient(entry, weaponProfs, weaponNames = []) {
   return profs.some((p) => p === cat || p === name || p === `${name}s`);
 }
 
+/** Quantas mãos a arma pede: 'one', 'two', 'versatile' (uma ou duas) ou 'mounted' (duas, uma se montado: a Lance). */
+export function handsOf(raw, props = propCodes(raw)) {
+  if (raw?.lance) return 'mounted';
+  if (props.includes('2H')) return 'two';
+  return raw?.dmg2 ? 'versatile' : 'one';
+}
+
+/** O escudo equipado e se ele pode deixar as mãos livres (o Animated Shield: "leaving your hands free"). */
+export function shieldInHand(inventory) {
+  const sh = (inventory ?? []).find((e) => e.group === 'armor' && e.armorSlot === 'shield' && e.equipped);
+  if (!sh) return null;
+  return { name: sh.raw?.name ?? 'Shield', handsFree: /leaving your hands free/i.test(plainText(sh.raw?.entries ?? [])) };
+}
+
 /** As armas do inventário como ataques estruturados, equipadas primeiro. */
 export function weaponAttacks(character, derived) {
   const weapons = (derived.inventory ?? []).filter((e) => e.group === 'weapon' && e.raw);
@@ -358,6 +378,7 @@ export function weaponAttacks(character, derived) {
         ? { dice: raw.dmg1, bonus: mod + magic, types: [DAMAGE_NAME[raw.dmgType] ?? raw.dmgType ?? ''].filter(Boolean) }
         : null,
       versatile: raw.dmg2 ?? null,
+      hands: handsOf(raw, props),
       properties: props,
       mastery,
       thrown: props.includes('T'),
@@ -610,6 +631,27 @@ export function damageAddsMod(raw, dice) {
   return !!m && m[1] === dice && !/\{@damage/.test(m[2]);
 }
 
+const DAMAGE_NOW = /\bwhen (you cast|it appears|the [\w ]+ appears|they appear)|\bas part of (casting|the action)|\bimmediately\b/i;
+const DAMAGE_LATER = /\bwhenever\b|until the spell ends, (you can|a creature|any creature)|\b(starts|ends) (its|their) turn\b|for the first time on a turn|\bfirst time each turn\b|\blater turns?\b|\bon each of your turns\b|\bexposed to\b/i;
+
+/** O dano da magia só acontece DEPOIS do lançamento (Hunter's Mark, Hex, Produce Flame, Flaming Sphere)? Lê o parágrafo do primeiro dado até ele. */
+export function damageLater(raw) {
+  const paras = [];
+  const walk = (e) => {
+    if (typeof e === 'string') paras.push(e.replace(/[{]@\w+ ([^|}]*)[^}]*[}]/g, '$1'));
+    else for (const x of [...(e?.entries ?? []), ...(e?.items ?? [])]) walk(x);
+  };
+  for (const e of raw?.entries ?? []) walk(e);
+  for (const p of paras) {
+    const sentences = p.split(/(?<=[.!?])\s+/);
+    const i = sentences.findIndex((x) => /\b\d+d\d+\b/.test(x));
+    if (i < 0) continue;
+    const lead = sentences.slice(0, i + 1).join(' ');
+    return !DAMAGE_NOW.test(lead) && DAMAGE_LATER.test(lead);
+  }
+  return false;
+}
+
 /** A mecânica de uma magia pelo dado do 5etools. */
 export function spellMechanics(raw, level) {
   const text = JSON.stringify(raw?.entries ?? []).replace(/[{]@\w+ ([^|}]*)[^}]*[}]/g, '$1');
@@ -621,7 +663,7 @@ export function spellMechanics(raw, level) {
   return {
     attack: raw?.spellAttack?.[0] ?? null,
     save: raw?.savingThrow?.[0] ? raw.savingThrow[0].slice(0, 3) : null,
-    damage: types.length ? { dice, types, ...(pair ? { typeOptions: types } : spellTypeOptions(raw) ? { typeOptions: spellTypeOptions(raw) } : {}), ...(damageAddsMod(raw, dice) ? { addMod: true } : {}) } : null,
+    damage: types.length ? { dice, types, ...(pair ? { typeOptions: types } : spellTypeOptions(raw) ? { typeOptions: spellTypeOptions(raw) } : {}), ...(damageAddsMod(raw, dice) ? { addMod: true } : {}), ...(damageLater(raw) ? { later: true } : {}) } : null,
     heal: healing ? { dice: healing, addMod } : null,
     upcast: raw?.level > 0 ? upcastDice(raw) : null,
   };
@@ -1186,6 +1228,7 @@ function spellOrigins(spellcasting, level, { ritualAdept = false } = {}) {
       saveDc: o.saveDc ?? null,
       attackBonus: o.attackBonus ?? null,
       isPact: !!o.isPact,
+      classId: o.classId ?? null,
       spells,
     };
   });
@@ -1292,6 +1335,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),
+    shield: shieldInHand(d.inventory),
     features,
     featureList: featuresOfActor,
     optionPicks: [...optionPicks],

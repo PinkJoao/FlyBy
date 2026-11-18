@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import {
-  testParts, bonusParts, rngFor, modeFlags, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent,
+  testParts, bonusParts, rngFor, modeFlags, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit,
 } from './playActions';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -112,5 +112,23 @@ describe('efeitos aplicados', () => {
     const e = rollTestEvent({ catalog, test: { type: 'skill', id: 'ath' }, name: 'Athletics', options: { applied }, rng: seq(3), now: new Date() });
     expect(e.rolls.total).toBe(15);
     expect(e.payload.autoFail).toBe(true);
+  });
+});
+
+describe('crítico só com rolagem de ataque (DDL-0248)', () => {
+  const fireball = { key: 'spell:w|Fireball', kind: 'spell', name: 'Fireball', attack: null, save: { ability: 'dex', dc: 15 }, damage: { dice: '8d6', bonus: 0, types: ['fire'] } };
+  const firebolt = { key: 'spell:w|Fire Bolt', kind: 'spell', name: 'Fire Bolt', attack: { bonus: 7 }, save: null, damage: { dice: '2d10', bonus: 0, types: ['fire'] } };
+
+  it('arma e magia de ataque podem; salvaguarda e dano automático não', () => {
+    expect(canCrit(longsword)).toBe(true);
+    expect(canCrit(firebolt)).toBe(true);
+    expect(canCrit(fireball)).toBe(false);
+    expect(canCrit({ kind: 'spell', name: 'Magic Missile', attack: null, save: null })).toBe(false);
+  });
+
+  it('o dano da salvaguarda ignora um crítico pedido: os dados não dobram', () => {
+    const e = rollDamageEvent({ catalog, attack: fireball, options: { critical: true }, rng: seq(1, 2, 3, 4, 5, 6, 1, 2), now: new Date(0) });
+    expect(e.payload.critical).toBe(false);
+    expect(e.rolls.total).toBe(24);
   });
 });

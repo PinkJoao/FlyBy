@@ -89,3 +89,25 @@ describe('no diálogo da rolagem', () => {
     expect(adv.natural).toBe(15);
   });
 });
+
+describe('Dueling só com arma (DDL-0246)', () => {
+  it('soma na arma de uma mão e não no Unarmed Strike', () => {
+    const catalog = catalogOf([item('Dueling', [['system.bonuses.mwak.damage', '+2']])]);
+    const sword = rollEffects(st(), catalog, { kind: 'damage', weapon: true, melee: true });
+    const fist = rollEffects(st(), catalog, { kind: 'damage', weapon: true, melee: true, unarmed: true });
+    expect(labels(sword)).toContain('Dueling');
+    expect(labels(fist).some((l) => l.startsWith('Dueling'))).toBe(false);
+  });
+});
+
+describe('o Dueling acompanha a empunhadura (DDL-0247)', () => {
+  it('na versátil e na Lance o Dueling vale só com uma mão; na Two-Handed não aparece', () => {
+    const catalog = catalogOf([item('Dueling', [['system.bonuses.mwak.damage', '+2']])]);
+    const versatile = rollEffects(st(), catalog, { kind: 'damage', weapon: true, melee: true, hands: 'versatile', grip: 'one' });
+    expect(versatile.find((e) => e.label === 'Dueling')).toMatchObject({ grip: 'one', defaultOn: true });
+    const lanceOnFoot = rollEffects(st(), catalog, { kind: 'damage', weapon: true, melee: true, hands: 'mounted', grip: 'two' });
+    expect(lanceOnFoot.find((e) => e.label === 'Dueling')).toMatchObject({ grip: 'one', defaultOn: false });
+    const greatsword = rollEffects(st(), catalog, { kind: 'damage', weapon: true, melee: true, hands: 'two', twoHanded: true });
+    expect(labels(greatsword).some((l) => l.startsWith('Dueling'))).toBe(false);
+  });
+});

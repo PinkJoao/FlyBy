@@ -194,6 +194,7 @@ function summonsAfter(list, op) {
   if (op.remove) return list.filter((g) => g.id !== op.remove);
   return list.map((g) => {
     if (g.id !== op.id) return g;
+    if (op.count && g.light?.count) return { ...g, light: { ...g.light, count: { ...g.light.count, left: Math.max(0, g.light.count.left + op.count) } } };
     const members = (g.members ?? []).map((m, i) => {
       if (i !== op.member) return m;
       const conditions = op.condition

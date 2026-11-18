@@ -46,11 +46,14 @@
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
 //     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque.
+//     rollPieces(group, origin, spell, pay): gasta um ou dois pedaços da magia (os meteoros do Melf's) e
+//       rola o dano de cada um, no lançamento e na instância leve; o último acaba a magia e a concentração
+//       nela (DDL-0247).
 //     lightRoll(group, kind), lightKinds(group): a rolagem da instância leve (S4,
 //       DDL-0194), a da magia no círculo gravado, com o custo que a prosa diz.
 //     transformWildShape(feature), pickForm(m), revertForm(): a forma (DDL-0195): o
 //       Wild Shape pelas formas conhecidas, a magia de transformação pelo painel
-//       seletor, e sair dela; o catálogo da tela é o da forma (formCatalog). O mesmo
+//       seletor, e sair dela; o catálogo da tela é o da forma (formCatalog, por `screenCatalog`). O mesmo
 //       painel escolhe a criatura do Find Familiar (`formPick.summon`, DDL-0197).
 //     historyLive: o estado vivo dos cards do histórico (os summons em campo, o
 //       evento da forma atual, Dismiss e Revert por ali, DDL-0201).
@@ -64,6 +67,9 @@
 //     historySource(event), canReadHistory(event), readFromHistory(event) (no PlayInner): o que um card do
 //     histórico abre, se abre, e a descrição da magia ou da feature (DDL-0243, DDL-0245).
 //     attackNotes(attack, catalog): as notas do ataque (a da arma e a da Weapon Mastery, DDL-0242).
+//     shieldNote(attack, catalog): o aviso da arma Two-Handed com o escudo na mão (DDL-0247).
+//     shownTestExtra(state, catalog): o que a rolagem de cada salvaguarda e perícia soma, ligado e
+//       fixo, além do número da ficha (a Aura of Protection, DDL-0247).
 //     withFixedDamage(attack, state, catalog): o ataque com os extras fixos ligados no dano (o rótulo
 //       mostra o mesmo número que o diálogo rola: o +4 do Agonizing Blast, DDL-0239).
 //     askRollKind(opts), damageText(attack): a pergunta "d20 ou os outros dados" e o
@@ -113,7 +119,9 @@
 //       condições e efeitos.
 //     castSpell(origin, spell), spellRoll(spellKey, level, kind): lançar (com o gasto
 //       do turno escolhido entre os de spellCosts, e o recurso dele, DDL-0165),
-//       rollSpellHeal(origin, spell, level): lançar e as rolagens da magia.
+//       rollSpellHeal(origin, spell, level): lançar e as rolagens da magia. A magia cujo dano só vem
+//       depois (`damage.later`: Hunter's Mark, Hex, Produce Flame, Flaming Sphere) não abre a rolagem
+//       quando outro caminho a rola (o efeito curado no dano, a instância leve; DDL-0247).
 //     consumeItem(entry): usar um item do inventário.
 //     startCombat(quick), nextTurn(), endCombat(): o combate.
 //     slotInfo, pickSlot(slot): o que a ação, a bônus e a reação pagam, e o toque nos
@@ -226,24 +234,25 @@ import useActiveInView from '../hooks/useActiveInView';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { directionOf, slideClass } from '../motion';
 import { derivePlayCatalog } from '../engine/playCatalog';
-import { transformRuleOf, transformOps, revertOps, formTempHp, formCatalog, formStats, formEligible, wildShapeOf, formEventId } from '../engine/playForms';
+import { transformRuleOf, transformOps, revertOps, formTempHp, formStats, formEligible, wildShapeOf, formEventId } from '../engine/playForms';
 import creatureEntity, { beastFormEntity } from '../selector/entities/creature';
 import {
   vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
-import { withPactWeapon, pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
-import { withWeaponStates, withMasteryAttacks, weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing } from '../engine/playWeapons';
-import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
+import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing } from '../engine/playWeapons';
+import { screenCatalog } from '../engine/playView';
+import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier,
 } from '../engine/playEffects';
-import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent } from '../engine/playActions';
+import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
@@ -335,10 +344,22 @@ const damageText = (attack) => {
 };
 
 /** O ataque com os extras fixos ligados por padrão somados ao dano (o CAR do Agonizing Blast), para o rótulo. */
-const withFixedDamage = (attack, state, catalog) => (attack?.damage ? { ...attack, damage: { ...attack.damage, bonus: (attack.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(attack, 'damage')) } } : attack);
+const withFixedDamage = (attack, state, catalog) => (attack?.damage ? { ...attack, damage: { ...attack.damage, bonus: (attack.damage.bonus ?? 0) + fixedRollBonus(state, catalog, attackRollContext(attack, 'damage', catalog)) } } : attack);
 
 /** As notas de um ataque: a da arma (Shadow Blade, Booming Blade) e a da Weapon Mastery, com os números. */
-const attackNotes = (attack, catalog) => [attack?.note, masteryNote(attack, catalog)].filter(Boolean).join('. ');
+const attackNotes = (attack, catalog) => [attack?.note, masteryNote(attack, catalog), shieldNote(attack, catalog)].filter(Boolean).join('. ');
+
+/** O que a rolagem de cada salvaguarda e perícia soma, ligado e fixo, além do número da ficha (a Aura of Protection). */
+function shownTestExtra(state, catalog) {
+  const saves = {};
+  const skills = {};
+  for (const a of catalog.checks?.abilities ?? []) saves[a.ability] = fixedRollBonus(state, catalog, rollOf(catalog, { type: 'save', id: a.ability }));
+  for (const s of catalog.checks?.skills ?? []) skills[s.skill] = fixedRollBonus(state, catalog, rollOf(catalog, { type: 'skill', id: s.skill }));
+  return { saves, skills };
+}
+
+/** O aviso da arma de duas mãos com o escudo na outra (o Animated Shield deixa as mãos livres; a Lance vale com escudo se montado). */
+const shieldNote = (attack, catalog) => (attack?.hands === 'two' && catalog?.shield && !catalog.shield.handsFree ? `Two-Handed weapon: your ${catalog.shield.name} must be off to wield it` : '');
 
 /** O evento com operações a mais na frente (o gasto da feature que deu o custo). */
 const withOps = (event, ops = []) => (ops.length ? { ...event, ops: [...ops, ...event.ops] } : event);
@@ -404,7 +425,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const resourceMax = play.state?.resourceMax;
   const pactWeapon = play.state?.pactWeapon ?? null;
   const catalog = useMemo(
-    () => withMasteryAttacks(withWeaponStates(withPactWeapon(withResourceMax(form && formBlock ? formCatalog(baseCatalog, form, formStats(formBlock)) : baseCatalog, { resourceMax }), pactWeapon), play.state?.modifiers)),
+    () => screenCatalog(baseCatalog, { form, resourceMax, pactWeapon, modifiers: play.state?.modifiers }, form && formBlock ? formStats(formBlock) : null),
     [baseCatalog, form, formBlock, resourceMax, pactWeapon, play.state?.modifiers],
   );
   const beastDb = useMemo(() => ({ ...db, bestiary: { monster: bestiary.list } }), [db, bestiary.list]);
@@ -951,7 +972,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     record({ ...castEv, ops: [...castEv.ops, ...weaponOps], payload: { ...castEv.payload, ...(weaponPick && weaponPick !== spell.name ? { option: weaponPick } : {}) } }, costOfActivation(cost.cost));
     if (strikeWith) {
       const atk = strikeAttack(strikeWith, weaponRule, catalog, origin.ability);
-      const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk))), effect: damageText(withFixedDamage(atk, state, catalog)) });
+      const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))), effect: damageText(withFixedDamage(atk, state, catalog)) });
       if (kind === 'attack') rollAttack(atk);
       else if (kind === 'effect') rollDamage(atk);
       return;
@@ -969,9 +990,15 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       setPicker('form');
       return;
     }
+    if (spell.mechanics?.damage?.later && (summon?.light || spellModifier(spell, catalog))) return;
+    const pieces = summon?.light ? summonExtra.find((o) => o.add?.light?.count)?.add : null;
+    if (pieces) {
+      await rollPieces(pieces, origin, spell);
+      return;
+    }
     if (spell.mechanics?.attack && spell.mechanics?.damage?.dice) {
       const atk = spellAttackOf(origin, spell, way.level);
-      const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus + fixedRollBonus(state, catalog, attackRollContext(atk))) : '', effect: damageText(withFixedDamage(atk, state, catalog)) });
+      const kind = await askRollKind({ title: spell.name, attack: atk.attack?.bonus != null ? formatBonus(atk.attack.bonus + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))) : '', effect: damageText(withFixedDamage(atk, state, catalog)) });
       if (kind === 'attack') rollAttack(atk);
       else if (kind === 'effect') rollDamage(atk);
     } else if (spell.mechanics?.attack) rollAttack(spellAttackOf(origin, spell, way.level));
@@ -1016,6 +1043,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       return;
     }
     const rollPay = FREE_LIGHT_ROLLS.has(spell.name.toLowerCase()) ? [] : pay;
+    if (group.light?.count && kind === 'damage') return rollPieces(group, origin, spell, rollPay);
     const repeat = group.light?.repeat;
     const atk = repeat
       ? { key: `${spell.key}#again`, kind: 'spell', name: `${spell.name} (again)`, attack: repeat.attack ? { bonus: origin.attackBonus ?? 0 } : null, damage: { dice: repeat.dice, bonus: 0, types: [repeat.type] }, versatile: null }
@@ -1023,6 +1051,23 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (kind === 'attack') rollAttack(atk, false, false, null, rollPay);
     else if (kind === 'damage') rollDamage(atk, {}, false, false, null, rollPay);
     else rollSpellHeal(origin, spell, group.ctx?.spellLevel ?? spell.level);
+  };
+
+  /** Gasta um ou mais pedaços da magia (os meteoros do Melf's) e rola o dano de cada um; o último acaba a magia. */
+  const rollPieces = async (group, origin, spell, pay = []) => {
+    const count = group.light.count;
+    if (count.left < 1) return;
+    const most = Math.min(count.most ?? 1, count.left);
+    const n = most > 1
+      ? await ask({ title: spell.name, message: `${count.left} of ${count.max} ${count.noun}s left. How many do you send?`, actions: [{ label: 'Cancel', value: 0 }, { label: `One ${count.noun}`, value: 1 }, { label: `${most} ${count.noun}s`, value: most, tone: 'primary' }] })
+      : 1;
+    if (!n) return;
+    const last = count.left - n <= 0;
+    const spend = [{ op: 'summon', id: group.id, count: -n }, ...(last ? [{ op: 'summon', remove: group.id }, ...(group.concentration ? [{ op: 'concentration', value: null }] : [])] : [])];
+    const atk = spellAttackOf(origin, spell, group.ctx?.spellLevel ?? spell.level);
+    for (let i = 0; i < n; i += 1) {
+      await rollDamage({ ...atk, name: n > 1 ? `${spell.name} (${count.noun} ${i + 1} of ${n})` : spell.name }, {}, false, false, null, i === 0 ? [...pay, ...spend] : []);
+    }
   };
 
   /** O que a instância leve rola: ataque, dano ou cura da magia. */
@@ -1099,7 +1144,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (kind === 'attack') {
       roll((options) => rollAttackEvent({ catalog, attack: atk, options }), { title: `${atk.name}: attack`, kind: 'd20', parts: [{ label: 'Attack', formula: atk.attack?.bonus ?? 0 }], rollData: catalog.rollData }, false, []);
     } else {
-      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData }, false, summonRiders(view, catalog, state, action));
+      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData, canCrit: canCrit(atk) }, false, summonRiders(view, catalog, state, action));
     }
   };
 
@@ -1228,7 +1273,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: attackNotes(attack, catalog),
       },
       quick,
-      rollEffects(state, catalog, { kind: 'attack', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, types: attack.damage?.types ?? null }),
+      rollEffects(state, catalog, attackRollContext(attack, 'attack', catalog)),
       spend ? cost : null,
     );
 
@@ -1250,13 +1295,17 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         kind: 'damage',
         parts: damageParts(attack),
         rollData: catalog.rollData,
-        defaultCritical: critical,
+        defaultCritical: critical && canCrit(attack),
+        canCrit: canCrit(attack),
         versatileDice: attack.versatile ?? null,
+        hands: attack.hands ?? null,
+        defaultGrip: defaultGrip(attack, catalog),
+        shield: catalog.shield ?? null,
         damageTypes: attack.damage?.typeOptions ?? null,
         note: [attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '', attackNotes(attack, catalog)].filter(Boolean).join('. '),
       },
       quick,
-      rollEffects(state, catalog, { kind: 'damage', weapon: attack.kind === 'weapon' || attack.kind === 'unarmed', melee: attack.range === 'melee', unarmed: attack.kind === 'unarmed', spell: attack.kind === 'spell', attackAbility: attack.ability, pact: !!attack.pact, cantrip: !!attack.cantrip, spellName: attack.kind === 'spell' ? attack.name : null, types: attack.damage?.types ?? null, twoHanded: (attack.properties ?? []).includes('2H'), versatile: !!attack.versatile }),
+      rollEffects(state, catalog, attackRollContext(attack, 'damage', catalog)),
       spend ? cost : null,
     );
 
@@ -1266,7 +1315,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
    */
   const attackOrDamage = async (attack, cost, extraOps = []) => {
     const kind = attack.damage
-      ? await askRollKind({ title: attack.name, attack: attack.toHit ? formatBonus(attack.toHit.total + fixedRollBonus(state, catalog, attackRollContext(attack))) : '', effect: damageText(withFixedDamage(attack, state, catalog)) })
+      ? await askRollKind({ title: attack.name, attack: attack.toHit ? formatBonus(attack.toHit.total + fixedRollBonus(state, catalog, attackRollContext(attack, 'attack', catalog))) : '', effect: damageText(withFixedDamage(attack, state, catalog)) })
       : 'attack';
     if (kind === 'attack') rollAttack(attack, false, true, cost, extraOps);
     else if (kind === 'effect') rollDamage(attack, {}, false, true, cost, extraOps);
@@ -1410,6 +1459,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   const nextUndone = play.doc && play.doc.cursor < play.doc.events.length ? play.doc.events[play.doc.cursor] : null;
 
   const checks = catalog.checks;
+  const testExtra = shownTestExtra(state, catalog);
   const wildLevel = state.form?.kind === 'wildShape' ? (character.classes ?? []).map((c) => wildShapeOf(db, c)).find(Boolean)?.level ?? 0 : 0;
   const formNote = !state.form ? '' : [
     formBlock ? `AC ${catalog.stats.ac}` : bestiary.loading ? 'Loading the form…' : 'Form not in the bestiary',
@@ -1463,13 +1513,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           dataTour={TUT.PLAY_STATS}
         />
 
-        <AbilityCards abilities={checks.abilities} onCheck={checkAbility} onSave={saveAbility} dataTour={TUT.PLAY_ABILITIES} />
+        <AbilityCards abilities={checks.abilities.map((a) => ({ ...a, save: a.save + (testExtra.saves[a.ability] ?? 0) }))} onCheck={checkAbility} onSave={saveAbility} dataTour={TUT.PLAY_ABILITIES} />
       </div>
 
       <div className={sheetPage.stack} data-flip="profs">
         <ProficienciesCard
           derived={derived}
           onSave={saveAbility}
+          extra={testExtra}
           onSkill={(skill) => rollTest({ type: 'skill', id: skill }, `${SKILL_LABEL[skill] ?? skill} check`)}
           onTool={rollTool}
         />

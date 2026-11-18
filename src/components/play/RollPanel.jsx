@@ -24,7 +24,10 @@
 //   shownFormula(text, data): a fórmula com as refs trocadas pelo valor; o extra do Rage
 //     aparecia como "@scale.barbarian.rage-damage" (passe ao vivo, DDL-0219). Os dados
 //     que um Cunning Strike tira do Sneak Attack (`forgo`) também saem da prévia.
+//   gripOptions(hands, oneDice, twoDice): as empunhaduras do controle (versátil: uma ou duas mãos com
+//     o dado de cada; a Lance: montado com uma mão ou a pé com duas).
 //   RollPanel(props): o conteúdo do diálogo.
+//     changeGrip(next): troca a empunhadura e liga ou desliga os efeitos que dependem dela.
 //     submit(e): fecha com as opções.
 //
 // DECISÕES E ARMADILHAS
@@ -42,6 +45,14 @@
 //     com o botão de rolar desligado, nunca um erro depois.
 //   - Dado físico fora da face (um 7 num d6) só é pego ao rolar (o sequenceRng
 //     do dice.js); quem abre o diálogo mostra o erro num alerta.
+//   - A EMPUNHADURA (DDL-0247): `hands` vem do catálogo ('versatile' ou 'mounted', a Lance, que pede
+//     duas mãos a não ser montado) e `defaultGrip` do motor (a Lance com escudo começa montada). Um
+//     efeito com `grip` (o Dueling só com uma mão, o Great Weapon Fighting só com duas) acompanha a
+//     troca; o jogador ainda pode mudá-lo à mão. Com escudo na mão (`shield`, menos o que deixa as
+//     mãos livres, o Animated Shield), duas mãos fica oferecido com o aviso: liberdade com aviso.
+//   - O crítico só aparece no dano de uma rolagem de ataque (`canCrit`, DDL-0248): o de uma salvaguarda
+//     (Fireball, Sacred Flame, a ação de save de um summon) e o automático (Magic Missile) não dobram,
+//     nem na falha crítica, porque quem rola é o alvo.
 //   - Os dados da mesa saíram do diálogo para as configurações (DDL-0158): com "Only
 //     the d20", o campo só aparece nos testes de d20, e o d20 digitado é o primeiro
 //     da fila (o Bless e o resto o app rola). Campo vazio, o app rola tudo.
@@ -75,6 +86,12 @@ function parseManual(text) {
   return values.every((v) => Number.isInteger(v) && v > 0) ? values : null;
 }
 
+/** As empunhaduras do controle: a versátil com o dado de cada, a Lance montada ou a pé. */
+function gripOptions(hands, oneDice, twoDice) {
+  if (hands === 'mounted') return [{ value: 'one', label: 'Mounted, one hand' }, { value: 'two', label: 'On foot, two hands' }];
+  return [{ value: 'one', label: `One hand (${oneDice})` }, { value: 'two', label: `Two hands (${twoDice})` }];
+}
+
 /** A fórmula que vai ser rolada, em texto ("2d20kh + 5 + 1d4"). */
 function previewFormula({ kind, parts, versatileDice, rollData }, { mode, bonus, critical, versatile, rerollOnes, elven, twice, diceMin }) {
   const list = (parts ?? []).map((p, i) => {
@@ -105,12 +122,14 @@ function shownFormula(text, data) {
  * @param {{ kind: 'd20'|'damage', parts: { label: string, formula: string|number }[], rollData: object,
  *   defaultMode?: string, defaultCritical?: boolean, versatileDice?: string|null, note?: string, healOption?: boolean, effects?: object[] }} props
  */
-export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal', defaultCritical = false, versatileDice = null, damageTypes = null, note = '', healOption = false, effects = [] }) {
+export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal', defaultCritical = false, canCrit = true, versatileDice = null, hands = null, defaultGrip = 'one', shield = null, damageTypes = null, note = '', healOption = false, effects = [] }) {
   const close = useDialogClose();
   const [mode, setMode] = useState(defaultMode);
   const [bonus, setBonus] = useState('');
-  const [critical, setCritical] = useState(defaultCritical);
-  const [versatile, setVersatile] = useState(false);
+  const [critical, setCritical] = useState(canCrit && defaultCritical);
+  const gripHands = hands === 'mounted' || (versatileDice && (hands ?? 'versatile') === 'versatile') ? (hands ?? 'versatile') : null;
+  const [grip, setGrip] = useState(gripHands ? defaultGrip : 'one');
+  const versatile = gripHands === 'versatile' && grip === 'two';
   const [damageType, setDamageType] = useState(damageTypes?.[0] ?? null);
   const physicalDice = useSettingsStore((s) => s.physicalDice);
   const physical = physicalDice === 'all' || (physicalDice === 'd20' && kind === 'd20');
@@ -130,6 +149,14 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
   const bonusError = String(bonus).trim() ? validateFormula(bonus, rollData) : null;
   const manual = physical ? parseManual(manualText) : [];
   const manualError = physical && manual === null ? 'Type whole numbers, separated by spaces' : null;
+
+  /** Troca a empunhadura; o Dueling e o Great Weapon Fighting acompanham. */
+  const changeGrip = (next) => {
+    setGrip(next);
+    const follow = effects.filter((e) => e.grip);
+    setEffectIds((ids) => [...ids.filter((id) => !follow.some((e) => e.id === id)), ...follow.filter((e) => e.grip === next).map((e) => e.id)]);
+  };
+  const shieldWarning = gripHands && grip === 'two' && shield && !shield.handsFree ? `Your ${shield.name} is equipped: holding the weapon with two hands needs it off` : '';
 
   /** Fecha com as opções escolhidas. */
   const submit = (e) => {
@@ -179,7 +206,7 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
         <Toggle checked={applyHeal} onChange={setApplyHeal} label="Heal myself with it" />
       )}
 
-      {kind === 'damage' && !healOption && (
+      {kind === 'damage' && !healOption && canCrit && (
         <SegmentedControl
           block
           role="radiogroup"
@@ -199,19 +226,17 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
           onChange={setDamageType}
         />
       )}
-      {kind === 'damage' && !healOption && versatileDice && (
+      {kind === 'damage' && !healOption && gripHands && (
         <SegmentedControl
           block
           role="radiogroup"
           ariaLabel="Grip"
-          value={versatile ? 'two' : 'one'}
-          options={[
-            { value: 'one', label: `One hand (${parts[0]?.formula ?? ''})` },
-            { value: 'two', label: `Two hands (${versatileDice})` },
-          ]}
-          onChange={(v) => setVersatile(v === 'two')}
+          value={grip}
+          options={gripOptions(gripHands, parts[0]?.formula ?? '', versatileDice)}
+          onChange={changeGrip}
         />
       )}
+      {shieldWarning && <p className={styles.note}>{shieldWarning}</p>}
 
       <label className={styles.field}>
         <span className={styles.label}>Situational bonus</span>

@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyEvent, makeEvent } from './playState';
-import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, familiarSpecialForms, repeatDice, LIGHT_REPEATS } from './playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, familiarSpecialForms, repeatDice, LIGHT_REPEATS, lightCount } from './playSummons';
 import { objectSummons, creatureStats } from './creature';
 import { endConcentrationOps } from './playEffects';
 import { nextTurnEvent } from './playCombat';
@@ -231,5 +231,23 @@ describe('as magias que se repetem (TC-0171, DDL-0245)', () => {
     const sphere = { name: 'Storm Sphere', source: 'XGE', key: 'spell:x|Storm Sphere', concentration: true };
     const ops = lightOps({ state: emptyPlayState(), spell: sphere, level: 5, origin, catalog, rules: { command: 'bonus', ac: null, hp: null, replaces: false } });
     expect(ops[0].add.light.repeat).toEqual({ dice: '5d6', type: 'lightning', attack: true });
+  });
+});
+
+describe('os meteoros do Melf\'s Minute Meteors (DDL-0247)', () => {
+  const melf = { name: "Melf's Minute Meteors", source: 'XGE', key: "spell:x|Melf's Minute Meteors", concentration: true };
+
+  it('seis no 3º círculo, mais dois por círculo acima', () => {
+    expect(lightCount(melf, 3)).toEqual({ left: 6, max: 6, most: 2, noun: 'meteor' });
+    expect(lightCount(melf, 5).max).toBe(10);
+    expect(lightCount({ name: 'Moonbeam' }, 2)).toBeNull();
+  });
+
+  it('a instância leva a contagem e a op `summon` com `count` gasta', () => {
+    const ops = lightOps({ state: emptyPlayState(), spell: melf, level: 3, origin, catalog, rules: { command: 'bonus', ac: null, hp: null, replaces: false } });
+    let state = applyEvent(emptyPlayState(), makeEvent('cast', { label: 'Melf', ops }));
+    const id = state.summons[0].id;
+    state = applyEvent(state, makeEvent('roll', { label: 'Meteor', ops: [{ op: 'summon', id, count: -2 }] }));
+    expect(state.summons[0].light.count.left).toBe(4);
   });
 });

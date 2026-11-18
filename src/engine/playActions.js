@@ -27,6 +27,8 @@
 //     quando o jogador digitou o dado da mesa.
 //   rollTestEvent(args): o evento de um teste de d20.
 //   rollAttackEvent(args): o evento do acerto de um ataque.
+//   canCrit(attack): o dano pode ser crítico? Só com rolagem de ataque; o de salvaguarda e o automático
+//     nunca (DDL-0248), e rollDamageEvent ignora o `critical` pedido fora disso.
 //   damageParts(attack, options): as partes do dano de um ataque (com o dano extra tipado de
 //     `damage.extra`: o Elemental Weapon, os STRIKE, DDL-0242); com `applied.twice`
 //     (Savage Attacker) o dado da arma vira `max(dado, dado)`.
@@ -191,6 +193,11 @@ export function withDiceMax(formula, data = {}) {
   return text.replace(/(\d*)d(\d+)(?!\d)/g, (m, count, faces) => `${count}d${faces}min${faces}`);
 }
 
+/** O dano pode ser crítico? Só o de uma rolagem de ataque (arma, magia de ataque, ataque de summon); o de uma salvaguarda nunca: quem rola é o alvo. */
+export function canCrit(attack) {
+  return attack?.kind === 'weapon' || attack?.kind === 'unarmed' || !!(attack?.toHit || attack?.attack);
+}
+
 /** As partes do dano de um ataque (dado, modificador), com o versátil se pedido. */
 export function damageParts(attack, options = {}) {
   const d = attack.damage;
@@ -216,17 +223,18 @@ export function rollDamageEvent({ catalog, attack, options = {}, rng, now = new 
   const riders = (options.applied?.parts ?? [])
     .map((p) => (forgo && p.forgoable ? { ...p, label: `${p.label} (${forgo} die${forgo > 1 ? 's' : ''} forgone)`, formula: forgoDice(p.formula, forgo, catalog.rollData) } : p))
     .map((p) => (floor && p.forgoable ? { ...p, formula: withDiceMin(p.formula, floor, catalog.rollData) } : p));
+  const critical = !!options.critical && canCrit(attack);
   const result = rollParts([...damageParts(attack, { ...options, data: catalog.rollData }), ...riders, ...bonusParts(options)], {
     data: catalog.rollData,
     rng: rngFor(options, rng),
-    critical: !!options.critical,
+    critical,
   });
   return makeEvent('damageRoll', {
     label: attack.name,
     payload: {
       attackKey: attack.key,
       types: options.damageType ? [options.damageType] : attack.damage?.types ?? [],
-      critical: !!options.critical,
+      critical,
       versatile: !!(options.versatile && attack.versatile),
       save: attack.save ?? null,
       effects: options.applied?.labels ?? [],

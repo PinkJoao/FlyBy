@@ -224,6 +224,8 @@ export function spellAttackOf(origin, spell, level = spell.level) {
     kind: 'spell',
     name: spell.name,
     cantrip: spell.level === 0,
+    school: spell.school ?? null,
+    spellClass: origin.classId ?? null,
     attack: spell.mechanics?.attack ? { bonus: origin.attackBonus ?? 0 } : null,
     save: spell.mechanics?.save ? { ability: spell.mechanics.save, dc: origin.saveDc } : null,
     damage: d?.dice ? { dice: diceWithUpcast(d.dice, spell, level), bonus: d.addMod ? origin.abilityMod ?? 0 : 0, types: d.types ?? [], ...(d.typeOptions ? { typeOptions: d.typeOptions } : {}) } : null,

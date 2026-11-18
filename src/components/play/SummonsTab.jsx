@@ -120,7 +120,7 @@ export default function SummonsTab({ views, loading = false, onHp, onAttack, onD
             <div className={styles.panelHead}>
               <span className={styles.panelTitle}>{group.label}{many ? ` ×${members.length}` : ''}</span>
               <span className={styles.panelCount}>
-                {view.light ? (view.light.ac != null ? `AC ${view.light.ac}` : 'Spell effect') : stats ? `AC ${stats.ac.value ?? '?'}` : 'Not in the bestiary'}
+                {view.light ? (view.light.count ? `${view.light.count.left} of ${view.light.count.max} ${view.light.count.noun}s left` : view.light.ac != null ? `AC ${view.light.ac}` : 'Spell effect') : stats ? `AC ${stats.ac.value ?? '?'}` : 'Not in the bestiary'}
               </span>
               <Button size="sm" variant="link" onClick={() => onDismiss(group)}>Dismiss</Button>
             </div>

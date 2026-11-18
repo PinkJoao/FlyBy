@@ -16,6 +16,7 @@ import { emptyPlayState, applyOp } from './playState';
 import {
   conditionList, rollEffects, applyEffects, effectiveDefenses, effectiveAc, effectiveSpeed, makeModifier,
   featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier,
+  defaultGrip, attackRollContext,
 } from './playEffects';
 
 const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
@@ -176,5 +177,37 @@ describe('imunidade de um modificador (DDL-0245)', () => {
   it('soma às imunidades da ficha', () => {
     const d = effectiveDefenses({ defenses: { resist: [], immune: ['poison'], vulnerable: [] } }, st({ modifiers: [{ id: 'm1', immune: ['fire'] }] }));
     expect(d.immune).toEqual(['poison', 'fire']);
+  });
+});
+
+describe('a empunhadura (DDL-0247)', () => {
+  const lance = { kind: 'weapon', name: 'Lance', range: 'melee', hands: 'mounted', properties: ['H', 'R', '2H'], damage: { dice: '1d10', types: ['piercing'] } };
+  const longsword = { kind: 'weapon', name: 'Longsword', range: 'melee', hands: 'versatile', versatile: '1d10', properties: ['V'], damage: { dice: '1d8', types: ['slashing'] } };
+  const shield = { shield: { name: 'Shield', handsFree: false } };
+  const animated = { shield: { name: 'Animated Shield', handsFree: true } };
+
+  it('a Lance começa a pé (duas mãos) sem escudo e montada (uma mão) com escudo', () => {
+    expect(defaultGrip(lance, {})).toBe('two');
+    expect(defaultGrip(lance, shield)).toBe('one');
+    expect(defaultGrip(lance, animated)).toBe('two');
+  });
+
+  it('a versátil começa com uma mão; a Two-Handed com duas', () => {
+    expect(defaultGrip(longsword, {})).toBe('one');
+    expect(defaultGrip({ ...longsword, hands: 'two' }, {})).toBe('two');
+  });
+
+  it('o contexto do dano leva as mãos e a empunhadura; a Lance não é Two-Handed para o Dueling', () => {
+    const ctx = attackRollContext(lance, 'damage', shield);
+    expect(ctx).toMatchObject({ hands: 'mounted', grip: 'one', twoHanded: false, versatile: true });
+  });
+
+  it('o Great Weapon Fighting na versátil acompanha a empunhadura', () => {
+    const cat = { features: ['great weapon fighting'], rollData: {} };
+    const one = rollEffects(emptyPlayState(), cat, attackRollContext(longsword, 'damage', {}));
+    const gwf = one.find((e) => /Great Weapon Fighting/.test(e.label));
+    expect(gwf).toMatchObject({ grip: 'two', defaultOn: false });
+    const onLance = rollEffects(emptyPlayState(), cat, attackRollContext(lance, 'damage', {})).find((e) => /Great Weapon Fighting/.test(e.label));
+    expect(onLance.defaultOn).toBe(true);
   });
 });

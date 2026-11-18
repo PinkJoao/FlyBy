@@ -33,6 +33,9 @@
 //     automático: a leitura do número segue regras fixas (a frase do limite, ou
 //     a anterior quando ela só fala em recuperar) e cada linha é conferida à mão.
 //     O que não é pool próprio vai para o NOT_A_POOL e some do relatório.
+//   - A feature de subclasse é montada com os MESMOS campos do export (`className`, `classSource`, a `source`
+//     da subclasse, `foundryItems.js`): sem eles a busca por edição não achava os usos do SRD e 22 pools
+//     reais (Holy Nimbus, Dragon Wings) apareciam como faltando (DDL-0253).
 // -----------------------------------------------------------------------------
 import process from 'node:process';
 import { loadDb } from './lib/loadDb.js';
@@ -131,7 +134,7 @@ for (const row of classMatrix(db)) {
   const subObj = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
   if (!subObj) continue;
   for (const f of resolveSubclassFeatures(subObj, classId, db, { max: 20 })) {
-    check('subclass', `${classObj.name}/${subObj.shortName}`, buildFeatureItem({ ...f, classId, subclass: { shortName: subObj.shortName, name: subObj.name } }, db), classId);
+    check('subclass', `${classObj.name}/${subObj.shortName}`, buildFeatureItem({ ...f, classId, className: subObj.className, classSource: subObj.classSource, subclass: { shortName: subObj.shortName, name: subObj.name, source: subObj.source } }, db), classId);
   }
 }
 

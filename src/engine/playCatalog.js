@@ -101,11 +101,16 @@
 //     spellResources(spellcasting), spellOrigins(spellcasting, level, opts): magias; com o
 //       Ritual Adept, o ritual do grimório do mago sem preparar vem com `ritualOnly` (TC-0158).
 //     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity? Também o `consumes` do
-//       dado (Djinni's Escape, TC-0178, DDL-0251).
+//       dado (Djinni's Escape, TC-0178, DDL-0251). Qualquer outro `consumes` que o CONSUMES_BY_NAME liga a um
+//       pool (Sorcery Point: Waxing and Waning) dá o "Use" que gasta, fora as features dos registros de
+//       rerrolagem, que gastam ao rerrolar (Empowered Healing), e a que tem pool próprio (Crown of Spellfire: os
+//       pontos só restauram o uso; DDL-0253).
 //     withFeatureSpeeds(speeds, features): escalada e natação de feature (FEATURE_SPEEDS:
-//       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156).
+//       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156); uma entrada
+//       `{ mode, feet, note }` dá um número fixo ou uma nota (Gift of the Sea nada 40, Stormborn voa ao ar livre, DDL-0253).
 //     EXTRA_RECOVERY: a recuperação que uma feature soma ao pool de outra (o Cutthroat do Dread
-//       Incarnate devolve um Bloodthirst no descanso curto, DDL-0236).
+//       Incarnate devolve um Bloodthirst no descanso curto, DDL-0236); com `replace`, a que troca a do pool (o
+//       Power Surge volta a 1 no descanso longo, `resetTo`, e ganha 1 no curto se estiver vazio, `ifEmpty`, DDL-0253).
 //     featureAttacks(features, derived, character): os ataques que uma feature cria (FEATURE_ATTACKS: as
 //       Psychic Blades do Soulknife, TC-0161, só ladino: o College of Whispers tem outra feature com o
 //       mesmo nome; os espinhos da Battlerager Armor, DDL-0239), no formato dos de arma.
@@ -241,7 +246,8 @@ import { validateFormula, rollFormula } from './dice';
 import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList, plainText } from './playFeatures';
-import { consumptionTargetItem } from './foundryConsumption';
+import { consumptionTargetItem, CONSUMES_BY_NAME } from './foundryConsumption';
+import { REROLL_FEATURES } from './playRerolls';
 import { actorRollEffects } from './playActorEffects';
 import { proseRollEffects, proseUses } from './playProseEffects';
 
@@ -269,7 +275,10 @@ export function recoveryText(recovery) {
   const partial = list
     .filter((r) => r.type === 'formula' && r.formula)
     .map((r) => `${r.formula} on ${PERIOD[r.period] ?? r.period}`);
-  return [all.join(' or '), ...partial].filter(Boolean).join(', ');
+  const special = list
+    .filter((r) => r.type === 'resetTo' || r.type === 'ifEmpty')
+    .map((r) => (r.type === 'resetTo' ? `${r.formula} on ${PERIOD[r.period] ?? r.period}` : `${r.formula} on ${PERIOD[r.period] ?? r.period} if empty`));
+  return [all.join(' or '), ...partial, ...special].filter(Boolean).join(', ');
 }
 
 /**
@@ -393,6 +402,7 @@ export function weaponAttacks(character, derived) {
 /** A recuperação que uma feature soma ao pool de outra (Cutthroat: "You regain one expended use of Bloodthirst when you finish a Short Rest"). */
 const EXTRA_RECOVERY = {
   'dread incarnate': { item: 'Bloodthirst', recovery: { period: 'sr', type: 'formula', formula: '1' } },
+  'power surge': { item: 'Power Surge', replace: [{ period: 'lr', type: 'resetTo', formula: '1' }, { period: 'sr', type: 'ifEmpty', formula: '1' }] },
 };
 
 /** Os ataques que uma feature cria, pelo texto do XPHB (as Psychic Blades do Soulknife: 1d6 psíquico, Finesse, Thrown 60/120, Vex; a segunda, de ação bônus, 1d4). */
@@ -400,6 +410,11 @@ const FEATURE_ATTACKS = {
   'psychic blades': [
     { key: 'feature:psychic-blade', name: 'Psychic Blade', dice: '1d6', has: (c) => hasClass(c, 'rogue') },
     { key: 'feature:psychic-blade-bonus', name: 'Psychic Blade (Bonus Action, after the first)', dice: '1d4', has: (c) => hasClass(c, 'rogue') },
+  ],
+  'form of the beast': [
+    { key: 'feature:beast-bite', name: 'Bite (Form of the Beast)', dice: '1d8', types: ['piercing'], ability: 'str', properties: [], mastery: null, distance: null },
+    { key: 'feature:beast-claws', name: 'Claws (Form of the Beast; one more claw attack with the Attack action)', dice: '1d6', types: ['slashing'], ability: 'str', properties: [], mastery: null, distance: null },
+    { key: 'feature:beast-tail', name: 'Tail (Form of the Beast, reach 10 feet)', dice: '1d8', types: ['piercing'], ability: 'str', properties: ['R'], mastery: null, distance: null },
   ],
   'battlerager armor': [
     { key: 'feature:armor-spikes', name: 'Armor Spikes (Bonus Action, while raging)', dice: '1d4', types: ['piercing'], ability: 'str', properties: [], mastery: null, distance: null },
@@ -1034,6 +1049,8 @@ const FEATURE_SPEEDS = {
   'second-story work': ['climb'],
   roving: ['climb', 'swim'],
   'aquatic affinity': ['swim'],
+  stormborn: [{ mode: 'fly', note: 'not underground or indoors' }],
+  'gift of the sea': [{ mode: 'swim', feet: 40 }],
 };
 
 /** Os deslocamentos com os das features (FEATURE_SPEEDS), iguais ao a pé final; o maior vence. */
@@ -1042,7 +1059,10 @@ function withFeatureSpeeds(speeds, features) {
   if (!walk) return speeds;
   const out = { ...speeds };
   for (const name of features) {
-    for (const mode of FEATURE_SPEEDS[name] ?? []) if (!(out[mode]?.feet >= walk)) out[mode] = { feet: walk };
+    for (const entry of FEATURE_SPEEDS[name] ?? []) {
+      const { mode, feet = walk, note = null } = typeof entry === 'string' ? { mode: entry } : entry;
+      if (!(out[mode]?.feet >= feet)) out[mode] = { feet, ...(note ? { note } : {}) };
+    }
   }
   return out;
 }
@@ -1276,7 +1296,8 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
   for (const [name, extra] of Object.entries(EXTRA_RECOVERY)) {
     if (!features.includes(name)) continue;
     const pool = resources.find((r) => r.kind === 'pool' && r.item === extra.item);
-    if (pool && !(pool.recovery ?? []).some((r) => r.period === extra.recovery.period)) pool.recovery = [...(pool.recovery ?? []), extra.recovery];
+    if (pool && extra.replace) pool.recovery = extra.replace.map((r) => ({ ...r }));
+    else if (pool && !(pool.recovery ?? []).some((r) => r.period === extra.recovery.period)) pool.recovery = [...(pool.recovery ?? []), extra.recovery];
   }
   const attacks = [
     ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features, monkWeapons: kenseiWeapons(character) }),
@@ -1324,6 +1345,12 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     if (f.roll || withActivities.has(f.actionKey)) continue;
     f.roll = 'use';
     f.spendItem = 'Channel Divinity';
+  }
+  for (const f of featuresOfActor) {
+    const item = CONSUMES_BY_NAME[norm(f.consumes)];
+    if (!item || f.roll || withActivities.has(f.actionKey) || REROLL_FEATURES.includes(norm(f.name)) || resources.some((r) => r.kind === 'pool' && r.item === f.name) || !resources.some((r) => r.kind === 'pool' && r.item === item)) continue;
+    f.roll = 'use';
+    f.spendItem = item;
   }
 
   return {

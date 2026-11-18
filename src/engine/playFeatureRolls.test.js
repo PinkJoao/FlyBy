@@ -300,3 +300,13 @@ describe('Psychic Blades só no College of Whispers (DDL-0246)', () => {
     expect(e?.part?.formula).toBe('5d6');
   });
 });
+
+describe("Genie's Wrath em qualquer acerto de rolagem de ataque (DDL-0253)", () => {
+  const cat = { features: ["genie's wrath"], rollData: { prof: 4 }, resources: [] };
+  it('arma e magia de ataque sim; magia de salvaguarda não', () => {
+    const on = (roll) => featureRiders({ modifiers: [] }, cat, { kind: 'damage', ...roll }).filter((e) => e.source === "Genie's Wrath");
+    expect(on({ weapon: true, attackRoll: true })).toHaveLength(1);
+    expect(on({ spell: true, attackRoll: true })).toHaveLength(1);
+    expect(on({ spell: true, attackRoll: false })).toEqual([]);
+  });
+});

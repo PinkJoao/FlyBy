@@ -99,6 +99,8 @@
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
+//   - PROSE_OWNED: a feature cuja prosa um efeito curado já carrega; o piso do Dragon ("a roll of 9 or lower on
+//     the d20") passou a ser lido pela prosa no DDL-0253 e repetiria o da Starry Form.
 //   - FEATURE_EFFECTS das formas (TC-0177, DDL-0251): Rage of the Gods, Ghost Walk, Djinni's Escape, Shadowform,
 //     Form of Dread e Wrath of the Wild ligam no Use (a activity, ou o "Use" do registro e do Channel Divinity) as
 //     resistências, a CA, o voo (`speeds` do modificador: um número ou 'walk', o maior vence em
@@ -152,6 +154,9 @@ export const CONDITIONS = {
   stunned: { name: 'Stunned', includes: ['incapacitated'], autoFail: ['str', 'dex'], notes: ['Attacks against you have Advantage'] },
   unconscious: { name: 'Unconscious', includes: ['incapacitated', 'prone'], speedZero: true, autoFail: ['str', 'dex'], notes: ['Hits from within 5 feet are critical'] },
 };
+
+/** Features cuja prosa um efeito curado já carrega: o leitor da prosa não as repete (o piso do Dragon está na Starry Form). */
+const PROSE_OWNED = ['dragon'];
 
 const FEATURE_EFFECTS = {
   'action:starry-form': (catalog) => {
@@ -257,6 +262,11 @@ const FEATURE_EFFECTS = {
     notes: ['Prowling Retribution: an Opportunity Attack against a creature within 5 feet that damages you or an ally', 'Unnerving Aura: at the start of each of your turns, creatures of your choice within 10 feet make a Wisdom save or are Frightened'],
     effects: [],
   }),
+  'action:otherworldly-wings': () => ({ label: 'Otherworldly Wings', source: 'feature', duration: 'manual', speeds: { fly: 30 }, notes: ['Until you dismiss them (a Bonus Action), are Incapacitated or die'], effects: [] }),
+  'action:steps-of-night': () => ({ label: 'Steps of Night', source: 'feature', duration: 'manual', maxRounds: 10, speeds: { fly: 'walk' }, notes: ['Used in Dim Light or Darkness'], effects: [] }),
+  'action:wings-unfurled': () => ({ label: 'Wings Unfurled', source: 'feature', duration: 'manual', maxRounds: 1, speeds: { fly: 'walk' }, notes: ['The wings vanish at the end of your turn'], effects: [] }),
+  'action:writhing-tide': () => ({ label: 'Writhing Tide', source: 'feature', duration: 'manual', maxRounds: 10, endsOnIncapacitated: true, speeds: { fly: 10 }, notes: ['Can hover'], effects: [] }),
+  'action:elemental-gift': () => ({ label: 'Elemental Gift', source: 'feature', duration: 'manual', maxRounds: 100, speeds: { fly: 30 }, notes: ['Can hover'], effects: [] }),
   'action:dodge': () => ({
     label: 'Dodge',
     source: 'feature',
@@ -365,7 +375,7 @@ export function rollEffects(state, catalog, roll) {
   out.push(...featureRiders(state, catalog, roll));
   out.push(...bridgedEffects(state, catalog, roll, ids));
   const hp = hpView(state, catalog.stats?.hpMax ?? 0);
-  out.push(...proseEffects(catalog, roll, { conditionIds: [...ids], skipKeys: Object.keys(FEATURE_EFFECTS), bloodied: hp.max > 0 && hp.current <= hp.max / 2, raging: (state.modifiers ?? []).some((m) => m.label === 'Rage'), concentrating: !!state.concentration, skipNames: Object.keys(PASSIVES) }));
+  out.push(...proseEffects(catalog, roll, { conditionIds: [...ids], skipKeys: Object.keys(FEATURE_EFFECTS), bloodied: hp.max > 0 && hp.current <= hp.max / 2, raging: (state.modifiers ?? []).some((m) => m.label === 'Rage'), concentrating: !!state.concentration, skipNames: [...Object.keys(PASSIVES), ...PROSE_OWNED] }));
 
   const features = new Set(catalog.features ?? []);
   for (const [name, p] of Object.entries(PASSIVES)) {
@@ -517,6 +527,7 @@ export function attackRollContext(attack, kind = 'attack', catalog = null) {
   return {
     kind,
     weapon: attack.kind === 'weapon' || attack.kind === 'unarmed',
+    attackRoll: attack.kind === 'weapon' || attack.kind === 'unarmed' || !!attack.attack || !!attack.toHit,
     melee: attack.range === 'melee',
     unarmed: attack.kind === 'unarmed',
     spell: attack.kind === 'spell' || attack.kind === 'cantrip',

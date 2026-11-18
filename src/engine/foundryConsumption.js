@@ -47,7 +47,7 @@
 //     contagem devolvida é a rede dos testes.
 // -----------------------------------------------------------------------------
 
-const CONSUMES_BY_NAME = {
+export const CONSUMES_BY_NAME = {
   'focus point': "Monk's Focus",
   'sorcery point': 'Font of Magic',
   'superiority die': 'Combat Superiority',

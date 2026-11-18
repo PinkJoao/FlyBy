@@ -172,3 +172,21 @@ describe('Gift of the Ever-Living Ones (DDL-0238)', () => {
     expect(ev.rolls.total).toBe(12);
   });
 });
+
+describe('o pool que volta a um número (Power Surge, DDL-0253)', () => {
+  const cat = { rollData: {}, resources: [{ key: 'pool:power-surge', kind: 'pool', name: 'Power Surge', item: 'Power Surge', max: 4, recovery: [{ period: 'lr', type: 'resetTo', formula: '1' }, { period: 'sr', type: 'ifEmpty', formula: '1' }] }] };
+  const run = (state, ops) => ops.reduce(applyOp, state);
+  it('no descanso longo volta a 1, gaste o que tiver gasto', () => {
+    const s = { ...emptyPlayState(), spent: { 'pool:power-surge': 0 } };
+    const r = recoveryFor(cat, s, 'lr');
+    expect(run(s, r.ops).spent['pool:power-surge']).toBe(3);
+    const empty = { ...emptyPlayState(), spent: { 'pool:power-surge': 4 } };
+    expect(run(empty, recoveryFor(cat, empty, 'lr').ops).spent['pool:power-surge']).toBe(3);
+  });
+  it('no curto ganha 1 só se estava vazio', () => {
+    const empty = { ...emptyPlayState(), spent: { 'pool:power-surge': 4 } };
+    expect(run(empty, recoveryFor(cat, empty, 'sr').ops).spent['pool:power-surge']).toBe(3);
+    const two = { ...emptyPlayState(), spent: { 'pool:power-surge': 2 } };
+    expect(recoveryFor(cat, two, 'sr').ops).toEqual([]);
+  });
+});

@@ -26,6 +26,8 @@
 //     NO_POOL antes de qualquer máximo encerra a busca no vazio.
 //
 // DECISÕES E ARMADILHAS
+//   - DDL-0253: 18 pools da prosa dos livros novos (AU, WoW) e o Power Surge; o Spell Subterfuge usa o maior entre
+//     INT, SAB e CAR (a fórmula do Foundry não sabe qual atributo o talento aumentou): aproximação.
 //   - SCOPED_USES (TC-0093, TC-0094): pools com nome que colide entre classes ou
 //     cuja escala mora na SUBCLASSE, por `classe|nome`, cada um conferido no texto
 //     do XPHB: Combat Superiority (todos no curto ou longo, `sr`), Psionic Power
@@ -130,6 +132,16 @@ const FEAT_USES = {
 
 // ATENÇÃO: reserva de precedência MAIS BAIXA; regenere a lista com o survey, não por memória do livro.
 const PROSE_USES_BY_CLASS = {
+  "wizard|power surge": ['max(1, @abilities.int.mod)', 'lr'],
+  "wizard|death's master": ['1', 'lr'],
+  "cleric|devouring plague": ['max(1, @abilities.wis.mod)', 'lr'],
+  "cleric|dispelling recovery": ['1', 'sr'],
+  "cleric|dispersion": ['1', 'sr'],
+  "paladin|holy deliverance": ['1', 'lr'],
+  "fighter|magical ammunition": ['1', 'sr'],
+  "warlock|semblance of life": ['1', 'lr'],
+  "wizard|shape-shifter": ['1', 'lr'],
+  "warlock|vestige recovery": ['1', 'lr'],
   "artificer|flash of genius": ['max(1, @abilities.int.mod)', 'lr'],
   "artificer|magic item tinker": ['1', 'lr'],
   "artificer|tinker's magic": ['max(1, @abilities.int.mod)', 'lr'],
@@ -260,6 +272,15 @@ const PROSE_USES_BY_CLASS = {
 };
 
 const PROSE_USES_FLAT = {
+  "arcane artist": ['1', 'lr'],
+  "arcane overload": ['1', 'lr'],
+  "arcane safeguard": ['@prof', 'lr'],
+  "arcane undertaker": ['1', 'lr'],
+  "divination adept": ['1', 'lr'],
+  "spell subterfuge": ['max(1, @abilities.int.mod, @abilities.wis.mod, @abilities.cha.mod)', 'lr'],
+  "darkflight": ['@prof', 'lr'],
+  "emergency fail-safe": ['1', 'sr'],
+  "touch of the grave": ['1', 'lr'],
   "azerite surge": ['@prof', 'lr'],
   "cloud rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],
   "fire rune": ['1 + min(1, floor(@classes.fighter.levels / 15))', 'sr'],

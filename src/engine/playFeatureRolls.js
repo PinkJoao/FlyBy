@@ -185,6 +185,13 @@
 //     2d20 depois do descanso longo e Greater Portent 3d20 (o "Use" de cada um).
 //   - O registro de features no SRD (DDL-0228, TC-0152): Perfect Focus devolve o Focus até 4
 //     (`restoreUpTo`), no "Use" quando o jogador rola a Iniciativa.
+//   - A camada legado do registro de features (DDL-0253), pelo texto de cada um: os números que só a prosa
+//     dava (Sun Shield 5 + SAB, Pyromancer's Fury e Storm's Fury o nível de feiticeiro, Heart of Fire, Scornful
+//     Rebuke, Deflecting Shroud, Aura of Conquest, Guardian Spirit, Spiked Retribution), a tabela do Wild Magic
+//     (Unstable Backlash, a segunda rolagem do Controlled Surge), Bolstering Magic e Aspect of the Wyrm por
+//     opções (a resistência escolhida é o modificador da opção), Balm of the Summer Court e Call the Hunt por
+//     `amount`, Fighting Spirit com temporários e vantagem; riders Genie's Wrath (`when: 'attackRoll'`, qualquer
+//     acerto de rolagem de ataque), Power Surge (pool próprio) e Enhanced Bond.
 //   - O legado no passe ao vivo (DDL-0226), pelo texto de cada um: Storm Aura de mar ("1d6
 //     lightning", 2d6 no 10, 3d6 no 15, 4d6 no 20, CD 8 + PB + CON) e de tundra (2 temporários,
 //     3 no 5, 4 no 10, 5 no 15, 6 no 20); Master's Flourish ("roll a d6 and use it instead of
@@ -542,6 +549,58 @@ export const FEATURE_ROLLS = {
   'spirit shield': { kind: 'use', roll: { label: 'Damage reduced', formula: byLevel('barbarian', [[14, '4d6'], [10, '3d6'], [0, '2d6']]) } },
   'infectious fury': { kind: 'use', roll: { label: 'Psychic (Wisdom save against 8 + CON + PB)', formula: '2d12' } },
   'wild surge': { kind: 'use', roll: { label: 'Wild Magic table', formula: '1d8' } },
+  'unstable backlash': { kind: 'use', roll: { label: 'Wild Magic table (replaces the current effect)', formula: '1d8' } },
+  'controlled surge': { kind: 'use', roll: { label: 'Second roll on the Wild Magic table (choose either; a double lets you choose any)', formula: '1d8' } },
+  'bolstering magic': {
+    kind: 'use',
+    options: [
+      { label: 'Bolster (a d3 on attack rolls and ability checks for 10 minutes)', roll: { label: 'd3 to add, this time', formula: '1d3' } },
+      { label: 'Regain a spell slot (level 1d3 or lower)', roll: { label: 'Highest slot level regained', formula: '1d3' } },
+    ],
+  },
+  'sun shield': { kind: 'use', roll: { label: 'Radiant to the attacker', formula: '5 + @abilities.wis.mod' } },
+  "pyromancer's fury": { kind: 'use', roll: { label: 'Fire to the attacker (ignores fire resistance)', formula: '@classes.sorcerer.levels' } },
+  "storm's fury": { kind: 'use', save: { ability: 'str', dc: '8 + @prof + @abilities.cha.mod' }, roll: { label: 'Lightning to the attacker (Strength save or pushed 20 feet)', formula: '@classes.sorcerer.levels' } },
+  'heart of fire': { kind: 'use', roll: { label: 'Fire to each creature of your choice within 10 feet', formula: 'floor(@classes.sorcerer.levels / 2)' } },
+  'scornful rebuke': { kind: 'use', roll: { label: 'Psychic to the creature that hit you', formula: 'max(1, @abilities.cha.mod)' } },
+  'deflecting shroud': { kind: 'use', roll: { label: 'Force to up to three creatures within 60 feet', formula: 'floor(@classes.wizard.levels / 2)' } },
+  'armor of hexes': { kind: 'use', roll: { label: 'On 4 or higher, the attack misses you', formula: '1d6' } },
+  'spreading spores': { kind: 'use', roll: { label: 'Necrotic in the cube (Constitution save), your Halo of Spores damage', formula: byLevel('druid', [[14, '1d10'], [10, '1d8'], [6, '1d6'], [0, '1d4']]) } },
+  'unearthly recovery': { kind: 'use', apply: 'heal', roll: { label: 'Healing (half your Hit Point maximum)', formula: 'floor(@attributes.hp.max / 2)' } },
+  'balm of the summer court': {
+    kind: 'use',
+    apply: 'heal',
+    spend: { item: 'Balm of the Summer Court' },
+    amount: { min: 1, max: (rd) => Math.max(1, Math.floor((rd.classes?.druid?.levels ?? 2) / 2)) },
+    roll: { label: 'Healing (also 1 Temporary Hit Point per die)', formula: (rd, n) => `${n}d6` },
+  },
+  'fighting spirit': {
+    kind: 'use',
+    apply: 'temp',
+    roll: { label: 'Temporary Hit Points', formula: byLevel('fighter', [[15, '15'], [10, '10'], [0, '5']]) },
+    modifier: () => ({ label: 'Fighting Spirit', source: 'feature', duration: 'manual', maxRounds: 1, effects: [{ targets: ['attack'], mode: 'advantage', when: 'weaponAttack', label: 'Fighting Spirit' }], notes: ['Advantage on weapon attack rolls until the end of the turn'] }),
+  },
+  'aspect of the wyrm': {
+    kind: 'use',
+    options: [
+      { label: 'Frightful Presence', save: { ability: 'wis', dc: '8 + @prof + @abilities.wis.mod' } },
+      ...['acid', 'cold', 'fire', 'lightning', 'poison'].map((t) => ({ label: `Resistance: ${t}`, modifier: () => ({ label: 'Aspect of the Wyrm', source: 'feature', duration: 'manual', maxRounds: 10, resist: [t], notes: ['You and your allies within 10 feet have the resistance'], effects: [] }) })),
+    ],
+  },
+  "genie's wrath": { kind: 'rider', on: ['damage'], when: 'attackRoll', formula: '@prof', note: 'once on each of your turns, on a hit with an attack roll; Bludgeoning (dao), Thunder (djinni), Fire (efreeti) or Cold (marid)' },
+  'call the hunt': {
+    kind: 'use',
+    apply: 'temp',
+    amount: { min: 1, max: (rd) => Math.max(1, rd.abilities?.con?.mod ?? 1) },
+    roll: { label: 'Temporary Hit Points (5 for each creature that joins; they deal +1d6 once per turn while you rage)', formula: (rd, n) => `${5 * n}` },
+  },
+  'mighty impel': { kind: 'use', save: { ability: 'str', dc: '8 + @prof + @abilities.str.mod' } },
+  'ferocious charger': { kind: 'use', save: { ability: 'str', dc: '8 + @prof + @abilities.str.mod' } },
+  'aura of conquest': { kind: 'use', roll: { label: 'Psychic to a Frightened creature that starts its turn in the aura', formula: 'floor(@classes.paladin.levels / 2)' } },
+  'guardian spirit': { kind: 'use', roll: { label: 'Healing for a beast or fey you summoned that ends its turn in your Spirit Totem', formula: 'floor(@classes.druid.levels / 2)' } },
+  'spiked retribution': { kind: 'use', roll: { label: 'Piercing to the creature that hit you (raging, in spiked armor)', formula: '3' } },
+  'power surge': { kind: 'rider', on: ['damage'], when: 'spell', spend: { item: 'Power Surge' }, formula: 'floor(@classes.wizard.levels / 2)', note: 'once per turn, a wizard spell; Force' },
+  'enhanced bond': { kind: 'rider', on: ['damage'], when: 'spell', formula: '1d8', note: 'while your wildfire spirit is summoned, a spell that deals Fire damage, one roll (also one healing roll)' },
   'channel divinity: balm of peace': { kind: 'use', spend: CD, roll: { label: 'Healing for each creature you pass', formula: '2d6 + @abilities.wis.mod' } },
   'channel divinity: twilight sanctuary': { kind: 'use', spend: CD, roll: { label: 'Temporary Hit Points for a creature ending its turn in the sphere', formula: '1d6 + @classes.cleric.levels' } },
   'guardian coil': { kind: 'use', roll: { label: 'Damage reduced', formula: byLevel('warlock', [[10, '2d8'], [0, '1d8']]) } },
@@ -650,6 +709,7 @@ function fits(when, roll) {
   if (Array.isArray(when)) return when.includes(roll.skill);
   if (when === 'cantrip') return !!roll.spell && !!roll.cantrip;
   if (when === 'spell') return !!roll.spell;
+  if (when === 'attackRoll') return !!roll.attackRoll;
   if (when === 'strRoll') return roll.attackAbility === 'str' || roll.ability === 'str';
   if (!roll.weapon) return false;
   if (when === 'unarmed') return !!roll.unarmed;

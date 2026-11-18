@@ -50,7 +50,8 @@
 //     card de HP (`hitDiceEvent`), que vale a qualquer hora.
 //   - Períodos: o curto recupera `sr`; o longo, `lr`, `sr`, `day`, `dawn` e
 //     `dusk` (o "1 por dia" da magia concedida e do item volta no longo).
-//     Recuperação `recoverAll` devolve tudo; `formula` devolve o valor da
+//     Recuperação `resetTo` deixa o pool com aquele número (o Power Surge volta a 1); `ifEmpty` devolve só
+//     se ele estava vazio (DDL-0253). Recuperação `recoverAll` devolve tudo; `formula` devolve o valor da
 //     fórmula (rolada aqui e gravada no evento) até o gasto.
 // -----------------------------------------------------------------------------
 
@@ -92,11 +93,27 @@ export function recoveryFor(catalog, state, period, { rng = cryptoRng } = {}) {
   const groups = [];
   for (const r of catalog.resources ?? []) {
     const spent = Math.min(state.spent?.[r.key] ?? 0, r.max);
-    if (!spent) continue;
     const list = r.recovery ?? [];
+    const reset = list.find((x) => x.type === 'resetTo' && periods.includes(x.period));
+    if (reset) {
+      const keep = Number(reset.formula) || 0;
+      const want = Math.max(0, r.max - keep);
+      if (want !== spent) {
+        ops.push({ op: 'restore', key: r.key }, ...(want ? [{ op: 'spend', key: r.key, amount: want }] : []));
+        lines.push({ name: r.name, detail: `reset to ${keep}` });
+      }
+      continue;
+    }
+    if (!spent) continue;
     if (list.some((x) => x.type === 'recoverAll' && periods.includes(x.period))) {
       ops.push({ op: 'restore', key: r.key });
       lines.push({ name: r.name, detail: `${spent} restored` });
+      continue;
+    }
+    const empty = list.find((x) => x.type === 'ifEmpty' && periods.includes(x.period));
+    if (empty && spent >= r.max) {
+      ops.push({ op: 'restore', key: r.key, amount: Number(empty.formula) || 1 });
+      lines.push({ name: r.name, detail: `${Number(empty.formula) || 1} restored (it was empty)` });
       continue;
     }
     let amount = 0;

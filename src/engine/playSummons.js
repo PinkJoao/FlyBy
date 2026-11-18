@@ -465,5 +465,8 @@ export function summonRiders(view, catalog, state, action = null) {
   if (features.includes('bond of fang and scale') && lc(view?.group?.feature) === 'drake companion' && (!action || /bite/i.test(action.name))) {
     out.push({ id: 'rider:magic-fang', label: 'Magic Fang (Bond of Fang and Scale)', source: 'Bond of Fang and Scale', part: { label: 'Magic Fang', formula: '1d6' }, note: 'the Bite; the type of its Draconic Essence', defaultOn: true });
   }
+  if (features.includes('perfected bond') && lc(view?.group?.feature) === 'drake companion' && (!action || /bite/i.test(action.name))) {
+    out.push({ id: 'rider:empowered-bite', label: 'Empowered Bite (Perfected Bond)', source: 'Perfected Bond', part: { label: 'Empowered Bite', formula: '1d6' }, note: 'the Bite; the type of its Draconic Essence', defaultOn: true });
+  }
   return out;
 }

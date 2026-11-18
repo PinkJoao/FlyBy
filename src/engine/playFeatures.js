@@ -9,7 +9,9 @@
 //   (docs/PLAY-MODE-V2-PLAN.md §6 e a resposta P3, DDL-0151).
 //
 // FUNÇÕES
-//   featureList(actor, character, db): as features, na ordem da aba (com o `consumes` do dado, DDL-0251).
+//   featureList(actor, character, db): as features, na ordem da aba (com o `consumes` do dado, DDL-0251); as
+//     opções que a "Channel Divinity" de uma subclasse antiga lista por referência (Control Undead, Dreadful
+//     Aspect do Oathbreaker) ganham `consumes: Channel Divinity` (DDL-0253).
 //   htmlToEntries(html): o texto de reserva, do HTML que o export guarda no item.
 //   namedEntries(entries, out): os blocos com nome de umas entries, achatados.
 //   featureIdent(item): a identidade do item, a mesma das chaves do catálogo.
@@ -193,6 +195,13 @@ export function featureList(actor, character, db) {
       subclassNames.set(norm(f.name), place);
       known.set(`${norm(f.name)}|${f.level}`, place);
       known.set(`${norm(f.name)}|${f.level}|${norm(f.source)}`, place);
+    }
+  }
+  for (const [key, place] of known) {
+    if (place.kind !== 'subclass' || !/^channel divinity\|/.test(key)) continue;
+    for (const e of place.entries ?? []) {
+      const ref = e?.type === 'refSubclassFeature' ? norm(String(e.subclassFeature).split('|')[0]) : null;
+      for (const [k, p] of known) if (ref && k.startsWith(`${ref}|`) && p.kind === 'subclass') p.consumes ??= 'Channel Divinity';
     }
   }
   const sp = character?.species;

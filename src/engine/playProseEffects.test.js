@@ -290,3 +290,14 @@ describe('uma rolagem de dano por lançamento e o tipo escolhido', () => {
     expect(castOnceEffects(first, [])[0].defaultOn).toBe(true);
   });
 });
+
+describe('o piso "treat a roll of 7 or lower on the d20 as an 8" (Ear for Deceit, DDL-0253)', () => {
+  const ear = { name: 'Ear for Deceit', entries: ['Whenever you make a Wisdom ({@skill Insight}) check to determine whether a creature is lying, treat a roll of 7 or lower on the {@dice d20} as an 8.'] };
+  it('vale no Insight, desligado com a condição; nada no Perception', () => {
+    const catalog = { proseEffects: proseRollEffects([ear]), features: [], rollData: {} };
+    const ins = proseEffects(catalog, { kind: 'check', ability: 'wis', skill: 'ins' });
+    expect(ins).toHaveLength(1);
+    expect(ins[0]).toMatchObject({ d20Min: 8 });
+    expect(proseEffects(catalog, { kind: 'check', ability: 'wis', skill: 'prc' })).toEqual([]);
+  });
+});

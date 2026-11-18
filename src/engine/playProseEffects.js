@@ -118,7 +118,7 @@ const MODE_SUBJECT = /\b(?:(you (?:also |still )?(?:have|gain)|you and [^.,;]{1,
 const BONUS_SUBJECT = /\b(?:you (?:also )?(?:gain|have|get)|you all gain|you and [^.,;]{1,40}? gain|you can give yourself|you grant yourself)\s+an?\s+(?:([+-]\d+)\s+)?bonus to\s+/gi;
 const ADD_SUBJECT = new RegExp(`(?:\\b(you (?:can |also )*))?\\badd your (${ABILITY_WORDS}|proficiency|rage damage) (?:modifier|bonus) to\\s+`, 'gi');
 const REROLL_ONES = /\b(?:when|whenever) you roll an? 1 on (?:the d20 (?:of|for) )?/gi;
-const FLOOR = /\b(?:you )?can treat an? d20 roll of (\d+) or lower as an? (\d+)\b/gi;
+const FLOOR = /\b(?:(?:you )?can treat an? d20 roll of (\d+) or lower as an? (\d+)|treat an? roll of (\d+) or lower on the d20 as an? (\d+))\b/gi;
 const ROLL_ADD = /\byou can roll (\d+d\d+) and add the number rolled to the (?:ability check|check|roll)\b/gi;
 const TOOL_CHECK = /\s*,?\s*or an ability check using ([^,]+?)(?=,|$)/i;
 const UPGRADE = /\bbenefit of your (.+?) feat, you can roll (\d+d\d+) instead of (\d+d\d+)/i;
@@ -349,7 +349,7 @@ export function proseClauses(entries) {
     FLOOR.lastIndex = 0;
     while ((m = FLOOR.exec(sentence))) {
       const lt = leadTarget(sentence.slice(0, m.index));
-      if (lt) push({ d20Min: Number(m[2]) }, { groups: lt.groups, lead: lt.tail || null, tail: clauseTail(sentence.slice(m.index + m[0].length)) });
+      if (lt) push({ d20Min: Number(m[2] ?? m[4]) }, { groups: lt.groups, lead: lt.tail || null, tail: clauseTail(sentence.slice(m.index + m[0].length)) });
     }
   }
   return out;

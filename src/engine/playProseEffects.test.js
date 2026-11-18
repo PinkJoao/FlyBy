@@ -152,9 +152,11 @@ describe('G3: bônus, reroll do 1, piso', () => {
     expect(effectsFor([courtier], { kind: 'check', ability: 'cha', skill: 'dec' })).toEqual([]);
   });
 
-  it('"Add your Wisdom modifier to the damage you deal with any Cleric cantrip": parte no dano, com a nota', () => {
+  it('"Add your Wisdom modifier to the damage you deal with any Cleric cantrip": ligada só no cantrip do clérigo (DDL-0249)', () => {
     const potent = feature('Potent Spellcasting', 'Add your Wisdom modifier to the damage you deal with any Cleric cantrip.');
-    expect(effectsFor([potent], { kind: 'damage', spell: true })[0]).toMatchObject({ part: { formula: '@abilities.wis.mod' }, note: 'With any Cleric cantrip' });
+    expect(effectsFor([potent], { kind: 'damage', spell: true, cantrip: true, spellClass: 'cleric' })[0]).toMatchObject({ part: { formula: '@abilities.wis.mod' }, defaultOn: true });
+    expect(effectsFor([potent], { kind: 'damage', spell: true, cantrip: false, spellClass: 'cleric' })).toEqual([]);
+    expect(effectsFor([potent], { kind: 'damage', spell: true, cantrip: true, spellClass: 'wizard' })).toEqual([]);
   });
 
   it('a concentração confere o Durable Magic; "+1 per magic item" e "as normal" saem', () => {
@@ -241,3 +243,18 @@ describe('a escola e a classe da magia (DDL-0247)', () => {
     expect(proseEffects(catalog, { kind: 'damage', weapon: true })).toEqual([]);
   });
 });
+
+describe('o tipo do dano da magia (DDL-0249)', () => {
+  const soul = { name: 'Radiant Soul', entries: ["You have Resistance to Radiant damage. Once per turn, when a spell you cast deals Radiant or Fire damage, you can add your Charisma modifier to that spell's damage against one of the spell's targets."] };
+
+  it('o Radiant Soul vale ligado na magia radiante ou de fogo e não aparece nas outras', () => {
+    const catalog = { proseEffects: proseRollEffects([soul]), features: [], rollData: {} };
+    const flame = proseEffects(catalog, { kind: 'damage', spell: true, types: ['radiant'] });
+    expect(flame).toHaveLength(1);
+    expect(flame[0]).toMatchObject({ defaultOn: true, part: { formula: '@abilities.cha.mod' }, note: "Once per turn, against one of the spell's targets" });
+    expect(proseEffects(catalog, { kind: 'damage', spell: true, types: ['fire'] })).toHaveLength(1);
+    expect(proseEffects(catalog, { kind: 'damage', spell: true, types: ['force'] })).toEqual([]);
+    expect(proseEffects(catalog, { kind: 'damage', weapon: true, types: ['radiant'] })).toEqual([]);
+  });
+});
+

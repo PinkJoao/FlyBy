@@ -28,6 +28,8 @@
 //     resolvida (`resolveRefs`).
 //   - O estado só muda pelos mesmos eventos da tela (activityEvent, featureLogEvent, castEvent, o
 //     modificador do estado de arma); o roteiro nunca escreve o estado à mão.
+//   - O `use` lê o "Use" do registro curado e, sem ele, a activity da feature (o Psionic Strike, o Hand of
+//     Healing); a iniciativa é a do tile, com os fixos ligados (o Dread Ambusher soma SAB, DDL-0249).
 //   - Um `rider` com `absent` prova que o extra NÃO aparece (o Psychic Blades num bardo que não é de Whispers).
 //   - Um passo que não acha o que procura (o ataque, a magia, o recurso) falha com o motivo: o roteiro é
 //     a lista do que o jogador procura na tela.
@@ -118,7 +120,7 @@ const show = (n) => [n.dice, n.dice && !n.bonus ? '' : String(n.bonus)].filter(B
 function build(db, spec) {
   const built = autoBuild(db, {
     id: spec.id, name: spec.id, classId: spec.classId, classSource: 'XPHB', subclassId: spec.subclassId, subclassSource: spec.subclassSource,
-    speciesId: spec.speciesId, speciesSource: 'XPHB', level: spec.level, seed: hashSeed(spec.id, 1), abilityOrder: spec.abilityOrder,
+    speciesId: spec.speciesId, speciesSource: 'XPHB', lineage: spec.lineage ?? null, level: spec.level, seed: hashSeed(spec.id, 1), abilityOrder: spec.abilityOrder,
     preset: (c) => {
       c.classes[0].spells = (spec.spells ?? []).map((s) => ({ id: s, source: 'XPHB' }));
       for (const [id, picks] of Object.entries(spec.picks ?? {})) {
@@ -199,7 +201,8 @@ function runStep(ctx, step) {
   }
 
   if (step.check === 'stat') {
-    const got = step.stat === 'ac' ? effectiveAc(catalog, ctx.state) : step.stat === 'speed' ? effectiveSpeed(catalog, ctx.state) : catalog.stats?.[step.stat];
+    const got = step.stat === 'ac' ? effectiveAc(catalog, ctx.state) : step.stat === 'speed' ? effectiveSpeed(catalog, ctx.state)
+      : step.stat === 'initiative' ? (catalog.checks?.initiative?.bonus ?? 0) + fixedRollBonus(ctx.state, catalog, { kind: 'initiative', ability: 'dex' }) : catalog.stats?.[step.stat];
     return got == null ? miss(step.stat) : cmp(step.expect, String(got));
   }
   if (step.check === 'resource') {
@@ -256,7 +259,9 @@ function runStep(ctx, step) {
     const feature = (catalog.featureList ?? []).find((f) => lc(f.name) === lc(step.feature));
     if (!feature) return miss(step.feature);
     const use = featureUseOf(feature, catalog);
-    const formula = use?.roll?.formula ?? null;
+    const acts = (catalog.actions ?? []).find((a) => a.key === feature.actionKey)?.activities ?? [];
+    const fromActivity = acts.map((a) => a.heal?.formula ?? a.damage?.[0]?.formula ?? a.roll?.formula).find(Boolean);
+    const formula = use?.roll?.formula ?? fromActivity ?? null;
     return formula ? cmp(step.expect, resolveRefs(String(formula), catalog.rollData)) : miss(`a roll on ${step.feature}`);
   }
   return { ok: false, want: '-', got: 'unknown step' };

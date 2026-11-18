@@ -38,8 +38,11 @@
 //   diceUpgrades(features): o dado que uma feature troca no de outra (o Greater Mark, DDL-0239).
 //   proseRollEffects(features, opts): as entradas do catálogo (`proseEffects`); o resto que só
 //     repete o escopo (`SCOPE_ONLY`, "of that spell" da Empowered Evocation) não vira nota.
-//   spellScope(lead): a condição da frente que só diz de que magia é (escola, classe): vira `spellOf` e
-//     a entrada vale ligada só nessa magia (a Empowered Evocation, DDL-0247).
+//   spellScope(lead): a condição da frente que só diz de que magia é (escola, classe, ou o tipo do dano:
+//     "when a spell you cast deals Radiant or Fire damage"): vira `spellOf` e a entrada vale ligada só
+//     nessa magia (a Empowered Evocation, DDL-0247; o Radiant Soul, DDL-0249).
+//   cantripScope(tail): o resto da oração que só diz o cantrip ("with any Druid cantrip": o Potent
+//     Spellcasting do druida e do clérigo); o mesmo `spellOf`, com `cantrip` (DDL-0249).
 //   proseUses(features, opts): a cura e os PV temporários do "Use" (`proseUses`).
 //   fitsGroup(g, roll), fitsProse(e, roll): um grupo do alvo, e a entrada, valem para esta rolagem?
 //   proseEffects(catalog, roll, ctx): os extras, no formato de rollEffects (`ctx`: as
@@ -122,7 +125,7 @@ const HEAL_FIXED = /\byou(?: and [^.;]{1,60}?)? (?:gain|regain) (\d+) (temporary
 const HEAL_LATER = /\byou gain (temporary hit points|hit points)\b(?! equal)/i;
 const HEAL_THESE = /^these (temporary hit points|hit points) equal\s+/i;
 const CLAUSE_START = /(?:^|[,;:]\s*|\b(?:and|then|also|so|but)\s+)$/i;
-const TOKEN = new RegExp(`\\s*(?:(,)|\\b(and|or|on|any|all|the|your|next|a|an|one|attack's)(?![\\w'])|\\b(${ABILITY_WORDS})(-based)?\\b|\\(([^)]*)\\)|\\b(ability checks?|checks?|saving throws?|saves|attack rolls?|attack(?= and damage rolls?)|initiative rolls?|initiative|d20 tests?|damage rolls?|damage|armor class|ac)\\b|\\b(melee|ranged|weapon|spell)\\b)`, 'iy');
+const TOKEN = new RegExp(`\\s*(?:(,)|\\b(and|or|on|any|all|the|that|your|next|a|an|one|attack's)(?![\\w'])|\\b(${ABILITY_WORDS})(-based)?\\b|\\(([^)]*)\\)|\\b(ability checks?|checks?|saving throws?|saves|attack rolls?|attack(?= and damage rolls?)|initiative rolls?|initiative|d20 tests?|damage rolls?|damage|armor class|ac)\\b|\\b(melee|ranged|weapon|spell(?:'s)?)(?![\\w']))`, 'iy');
 const BACKREF = /^(?:the|that|this|its)\s+(?:ability check|check|roll|saving throw|save|attack roll|d20)\b/i;
 const SUBORDINATE = /^(?:while|when|whenever|if|until|for|as long as|during|after|once|on a (?:failed|successful) save|as part of)\b/i;
 const ACTIVATION = /^as an? (?:action|bonus action|reaction|magic action)$/i;
@@ -176,7 +179,7 @@ export function parseTarget(rest) {
       if (!codes.length || codes.some((c) => !SKILL_ABILITY[c])) break;
       skills.push(...codes);
     } else if (m[7]) {
-      const q = norm(m[7]);
+      const q = norm(m[7]).replace(/'s$/, '');
       if (q === 'melee' || q === 'ranged') quals.melee = q === 'melee';
       else quals[q] = true;
     } else if (m[6]) {
@@ -215,6 +218,8 @@ export function autoCondition(lead) {
 export function leadingCondition(lead) {
   const s = lead.trim().replace(/^starting (?:at|when) [^,]*,\s*/i, '').replace(/^(?:in addition|additionally|also),\s*/i, '').trim();
   if (!s) return null;
+  const once = s.match(/^(once per turn),\s*((?:when|whenever)\b[^,]*)/i);
+  if (once) return `${once[1]}, ${once[2]}`;
   if (SUBORDINATE.test(s)) return s.split(',')[0].trim();
   const inner = s.match(/(?:,\s*|\band\s+)((?:when|whenever|if|while|until)\b[^,]*),?\s*$/i);
   return inner ? inner[1].trim() : null;
@@ -350,10 +355,14 @@ export function proseClauses(entries) {
 const SCHOOLS = { abjuration: 'A', conjuration: 'C', divination: 'D', enchantment: 'E', evocation: 'V', illusion: 'I', necromancy: 'N', transmutation: 'T' };
 const CLASSES = ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'warlock', 'wizard'];
 const SPELL_SCOPE = /^(?:whenever|when) you cast an? (?:(\w+) )?spell from the (\w+) school$|^(?:whenever|when) you cast an? (?:(\w+) )?(\w+) spell$/i;
+const SPELL_TYPES = /^(once per turn, )?(?:whenever|when) a spell you cast deals (\w+)(?:,? or (\w+))? damage$/i;
 
 /** A condição da frente que só diz de que magia é ("Whenever you cast a Wizard spell from the Evocation school"): { school, cls }, ou null. */
 export function spellScope(lead) {
-  const m = String(lead ?? '').trim().replace(/[,\s]+$/, '').match(SPELL_SCOPE);
+  const text = String(lead ?? '').trim().replace(/[,\s]+$/, '');
+  const t = text.match(SPELL_TYPES);
+  if (t) return { types: [t[2], t[3]].filter(Boolean).map(norm), ...(t[1] ? { oncePerTurn: true } : {}) };
+  const m = text.match(SPELL_SCOPE);
   if (!m) return null;
   const a = norm(m[1] ?? m[3]);
   const b = norm(m[2] ?? m[4]);
@@ -363,8 +372,19 @@ export function spellScope(lead) {
   return school || cls ? { school, cls } : null;
 }
 
+const CANTRIP_SCOPE = /^(?:you deal )?with (?:any|a|an|one of your) (?:(\w+) )?cantrips?$/i;
+
+/** O resto da oração que só diz o cantrip ("with any Druid cantrip"): { cantrip: true, cls }, ou null. */
+export function cantripScope(tail) {
+  const m = String(tail ?? '').trim().replace(/[.,\s]+$/, '').match(CANTRIP_SCOPE);
+  if (!m) return null;
+  const cls = m[1] ? norm(m[1]) : null;
+  if (cls && !CLASSES.includes(cls)) return null;
+  return { cantrip: true, cls };
+}
+
 /** O resto que só repete o escopo da rolagem ("one damage roll of that spell"): não vira nota. */
-const SCOPE_ONLY = /^of (?:that|the|this) (?:spell|attack|weapon|roll)$/i;
+const SCOPE_ONLY = /^(?:of (?:that|the|this) (?:spell|attack|weapon|roll)|against one of the spell's targets)$/i;
 
 /**
  * As entradas do catálogo: uma por oração, com quando vale e se começa ligada.
@@ -386,15 +406,17 @@ export function proseRollEffects(features, { activated = () => false, bridged = 
       const concentration = /\bmaintain\b.*\bconcentration\b/i.test(c.tail);
       const incapacitated = /^unless you have the incapacitated condition$/i.test(c.tail);
       const when = c.lead ? autoCondition(c.lead) : null;
-      const scope = spellScope(c.lead);
+      const tailScope = cantripScope(c.tail);
+      const scope = spellScope(c.lead) ?? tailScope;
       const activation = !!c.lead && !scope && ACTIVATION.test(c.lead);
       const active = (!scope && activated(f)) || activation;
-      const tail = SCOPE_ONLY.test(c.tail) ? '' : c.tail;
+      const tail = SCOPE_ONLY.test(c.tail) || tailScope ? '' : c.tail;
       const conditions = [c.lead && !when && !activation && !scope ? c.lead : null, tail && !incapacitated && !concentration ? tail : null].filter(Boolean);
       let note = conditions.map(noteOf).join('; ');
       if (when) note = note ? `${noteOf(c.lead)}; ${note}` : noteOf(c.lead);
       if (!note && active) note = `After you use ${f.name}`;
       if (!note && scope && /\bone damage roll\b/i.test(c.sentence)) note = 'One damage roll each time you cast the spell';
+      if (!note && scope?.types) note = `${scope.oncePerTurn ? 'Once per turn, a' : 'A'}gainst one of the spell's targets`;
       if (incapacitated) note = note ? `${note}; not while Incapacitated` : 'Not while Incapacitated';
       out.push({
         name: f.name,
@@ -506,6 +528,8 @@ function fitsGroup(g, roll) {
 /** A entrada vale para esta rolagem? */
 export function fitsProse(e, roll) {
   if (e.spellOf && (!roll.spell || (e.spellOf.school && roll.school !== e.spellOf.school) || (e.spellOf.cls && roll.spellClass !== e.spellOf.cls))) return false;
+  if (e.spellOf?.types && !(roll.types ?? []).some((x) => e.spellOf.types.includes(norm(x)))) return false;
+  if (e.spellOf?.cantrip && !roll.cantrip) return false;
   return e.groups.some((g) => fitsGroup(g, roll));
 }
 

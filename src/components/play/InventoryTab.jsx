@@ -12,6 +12,8 @@
 //   InventoryTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - O ataque da linha é o da arma pelo `uid`, nunca a variante do Cleave (mesmo uid): o Attack do Greataxe
+//     abria o "Greataxe (Cleave)", sem o modificador (TC-0173, DDL-0249).
 //   - A arma de pacto vinculada (`state.pactWeapon`) aparece com "(pact weapon)" no nome (DDL-0240); a
 //     conjurada já entra no inventário com esse nome.
 //   - Sem loja, sem quantidade, sem equipar, sem guardar em contêiner (definições do
@@ -46,7 +48,7 @@ export default function InventoryTab({ catalog, state, inventory, db, onUse, onC
   const [collapsed, setCollapsed] = useState(() => new Set());
   const items = (inventory ?? []).filter((e) => e && (e.raw || e.isCustom));
   const charges = new Map((catalog.resources ?? []).filter((r) => r.kind === 'charges').map((r) => [r.uid, r]));
-  const attacks = new Map((catalog.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid).map((a) => [a.uid, a]));
+  const attacks = new Map((catalog.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid && !a.cleave).map((a) => [a.uid, a]));
   const presentGroups = GROUP_ORDER.map((g) => ({ key: g, label: items.find((e) => e.group === g)?.groupLabel })).filter((g) => g.label);
   const needle = query.trim().toLowerCase();
   const shown = items

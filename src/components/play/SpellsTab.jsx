@@ -16,6 +16,8 @@
 //   SpellsTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - A magia de área ativa (`activeOf`, engine/playCast.activeZone: Hunger of Hadar, Web, Cordon of
+//     Arrows) troca o Cast por "Use", que pergunta: encerrar, lançar de novo ou o dano de novo (DDL-0249).
 //   - O ritual do grimório que o mago com Ritual Adept não preparou aparece e lança só como ritual
 //     (`ritualOnly` do catálogo, TC-0158).
 //   - Sem preparar, sem trocar, sem quantidade (definição do dono, DDL-0146): isso é
@@ -83,9 +85,9 @@ function PoolChip({ pool, onResource }) {
 
 /**
  * A aba de magias do jogo.
- * @param {{ catalog: object, state: object, derived: object, db: object, onCast: Function }} props
+ * @param {{ catalog: object, state: object, derived: object, db: object, onCast: Function, activeOf?: Function, onUse?: Function }} props
  */
-export default function SpellsTab({ catalog, state, derived, db, onCast, onResource }) {
+export default function SpellsTab({ catalog, state, derived, db, onCast, onResource, activeOf = () => false, onUse = null }) {
   const origins = (catalog.spells ?? []).filter((o) => o.spells.length);
   const [originKey, setOriginKey] = useState(origins[0]?.key ?? null);
   const [query, setQuery] = useState('');
@@ -200,8 +202,9 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
                       arcanum={!!s.arcanum}
                       thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
                       onInfo={() => showDetailPopup({ entity: spellEntity, raw: entry.raw, db })}
-                      onCast={() => onCast(origin, s)}
-                      castDisabled={s.prepared === false && !s.ritualOnly}
+                      onCast={() => (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s))}
+                      castLabel={onUse && activeOf(s) ? 'Use' : 'Cast'}
+                      castDisabled={s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s))}
                       usesLeft={uses ? `${remainingOf(state, uses.key, uses.max)}/${uses.max}` : null}
                       costTags={spellCosts(s, catalog).map((c) => ({
                         key: `${c.cost}|${c.source ?? ''}`,

@@ -45,7 +45,8 @@
 //       extras ligados (Peerless Skill, Eldritch Smite) vai no mesmo evento.
 //     rollTest(test, name, quick), rollAttack(attack, quick, spend),
 //       rollDamage(attack, opts, quick): os três tipos de rolagem da C2.
-//     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque.
+//     damageFromHistory(attackKey, opts): o "Roll damage" do cartão do ataque; a magia de círculo não está
+//       na lista de ataques e é achada nas magias, no círculo gravado (TC-0174, DDL-0249).
 //     rollPieces(group, origin, spell, pay): gasta um ou dois pedaços da magia (os meteoros do Melf's) e
 //       rola o dano de cada um, no lançamento e na instância leve; o último acaba a magia e a concentração
 //       nela (DDL-0247).
@@ -122,6 +123,10 @@
 //       rollSpellHeal(origin, spell, level): lançar e as rolagens da magia. A magia cujo dano só vem
 //       depois (`damage.later`: Hunter's Mark, Hex, Produce Flame, Flaming Sphere) não abre a rolagem
 //       quando outro caminho a rola (o efeito curado no dano, a instância leve; DDL-0247).
+//     rollShots(origin, spell, level, shots): os projéteis da magia (Eldritch Blast, Scorching Ray: um
+//       ataque por raio; Magic Missile: o dano por alvo, quantos dardos em cada; TC-0175, DDL-0249).
+//     useZone(origin, spell): o "Use" da magia de área ativa (encerrar, lançar de novo, o dano de novo;
+//       DDL-0249); o lançamento dela não abre a rolagem.
 //     consumeItem(entry): usar um item do inventário.
 //     startCombat(quick), nextTurn(), endCombat(): o combate.
 //     slotInfo, pickSlot(slot): o que a ação, a bônus e a reação pagam, e o toque nos
@@ -248,7 +253,7 @@ import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fon
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent } from '../engine/playCast';
+import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, projectileCount, timesFormula } from '../engine/playCast';
 import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier,
 } from '../engine/playEffects';
@@ -990,10 +995,15 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       setPicker('form');
       return;
     }
-    if (spell.mechanics?.damage?.later && (summon?.light || spellModifier(spell, catalog))) return;
+    if (spell.mechanics?.damage?.later && (summon?.light || spellModifier(spell, catalog) || isZoneSpell(spell, catalog))) return;
     const pieces = summon?.light ? summonExtra.find((o) => o.add?.light?.count)?.add : null;
     if (pieces) {
       await rollPieces(pieces, origin, spell);
+      return;
+    }
+    const shots = projectileCount(spell, way.level, catalog.stats?.level ?? 1);
+    if (shots && spell.mechanics?.damage?.dice) {
+      await rollShots(origin, spell, way.level, shots);
       return;
     }
     if (spell.mechanics?.attack && spell.mechanics?.damage?.dice) {
@@ -1004,6 +1014,54 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     } else if (spell.mechanics?.attack) rollAttack(spellAttackOf(origin, spell, way.level));
     else if (spell.mechanics?.damage?.dice) rollDamage(spellAttackOf(origin, spell, way.level));
     else if (spell.mechanics?.heal?.dice) rollSpellHeal(origin, spell, way.level);
+  };
+
+  /** Os projéteis da magia: um ataque por raio (o dano sai do card de cada um), ou o dano por alvo, quantos dardos em cada. */
+  const rollShots = async (origin, spell, level, { count, noun }) => {
+    const atk = spellAttackOf(origin, spell, level);
+    if (atk.attack) {
+      for (let i = 0; i < count; i += 1) await rollAttack({ ...atk, name: `${spell.name} (${noun} ${i + 1} of ${count})` });
+      return;
+    }
+    let left = count;
+    while (left > 0) {
+      const r = left === 1 ? { action: true, values: { n: '1' } } : await ask({
+        title: spell.name,
+        message: `${left} ${noun}s left. How many hit this target?`,
+        fields: [{ type: 'select', name: 'n', label: `${noun[0].toUpperCase()}${noun.slice(1)}s`, default: String(left), options: Array.from({ length: left }, (_, i) => ({ label: String(i + 1), value: String(i + 1) })) }],
+        actions: [{ label: 'Cancel', value: false }, { label: 'Roll', value: true, tone: 'primary' }],
+      });
+      const k = Number(r?.values?.n);
+      if (!r?.action || !k) return;
+      await rollDamage({ ...atk, name: `${spell.name} (${k} ${noun}${k > 1 ? 's' : ''})`, damage: { ...atk.damage, dice: timesFormula(atk.damage.dice, k), bonus: (atk.damage.bonus ?? 0) * k } });
+      left -= k;
+    }
+  };
+
+  /** O "Use" da magia de área ativa: encerrar (a concentração ou a magia), lançar de novo ou rolar o dano de novo. */
+  const useZone = async (origin, spell) => {
+    const zone = activeZone(state, spell);
+    if (!zone) return castSpell(origin, spell);
+    const choice = await ask({
+      title: spell.name,
+      message: `${spell.name} is active (level ${zone.level}). What happens now?`,
+      actions: [
+        { label: 'Cancel', value: null },
+        { label: zone.concentration ? 'End concentration' : 'End the spell', value: 'end', tone: 'danger' },
+        { label: 'Cast again', value: 'recast' },
+        { label: 'Damage again', value: 'damage', tone: 'primary' },
+      ],
+    });
+    if (choice === 'end') record(endZoneEvent({ state, spell }));
+    else if (choice === 'recast') castSpell(origin, spell);
+    else if (choice === 'damage') {
+      const atk = { ...spellAttackOf(origin, spell, zone.level), name: `${spell.name} (again)` };
+      if (atk.attack) {
+        const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.attack.bonus + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))), effect: damageText(withFixedDamage(atk, state, catalog)) });
+        if (kind === 'attack') rollAttack(atk);
+        else if (kind === 'effect') rollDamage(atk);
+      } else rollDamage(atk);
+    }
   };
 
   /** Rola a cura de uma magia; o diálogo pergunta se é no próprio personagem. */
@@ -1328,10 +1386,13 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** O "Roll damage" do cartão de um ataque no histórico. */
-  const damageFromHistory = (attackKey, opts) => {
+  const damageFromHistory = (attackKey, { level = null, name = null, ...opts } = {}) => {
     const offhand = String(attackKey).endsWith('#offhand');
     const base = catalog.attacks.find((a) => a.key === (offhand ? String(attackKey).slice(0, -'#offhand'.length) : attackKey));
-    const attack = base && offhand ? offhandAttack(base, catalog) : base;
+    const origin = base ? null : catalog.spells.find((o) => o.spells.some((s) => s.key === attackKey));
+    const spell = origin?.spells.find((s) => s.key === attackKey);
+    const fromSpell = spell ? { ...spellAttackOf(origin, spell, level ?? spell.level), ...(name ? { name } : {}) } : null;
+    const attack = base && offhand ? offhandAttack(base, catalog) : base ?? fromSpell;
     if (!attack) {
       alert({ title: 'Attack not found', message: 'This attack is no longer on the character.' });
       return;
@@ -1494,7 +1555,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         <PlayTiles
           hp={hp}
           hitDice={hitDice}
-          initiative={checks.initiative.bonus}
+          initiative={checks.initiative.bonus + fixedRollBonus(state, catalog, rollOf(catalog, { type: 'initiative' }))}
           combat={state.combat}
           ac={effectiveAc(catalog, state)}
           baseAc={catalog.stats.ac}
@@ -1595,7 +1656,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           )}
 
           {activeTab === 'Spells' && (
-            <SpellsTab catalog={catalog} state={state} derived={derived} db={db} onCast={castSpell} onResource={adjustByHand} />
+            <SpellsTab catalog={catalog} state={state} derived={derived} db={db} onCast={castSpell} onResource={adjustByHand} activeOf={(s) => isZoneSpell(s, catalog) && !!activeZone(state, s)} onUse={useZone} />
           )}
 
           {activeTab === 'Summons' && (

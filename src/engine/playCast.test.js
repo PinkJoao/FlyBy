@@ -15,9 +15,9 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent } from './playCast';
+import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent, isZoneSpell, activeZone, endZoneEvent, projectileCount, timesFormula } from './playCast';
 import { spellCosts } from './playBasicActions';
-import { rollDamageEvent } from './playActions';
+import { rollDamageEvent, rollAttackEvent } from './playActions';
 
 const seq = (...values) => sequenceRng(values, () => {
   throw new Error('rolou um dado a mais');
@@ -181,3 +181,63 @@ describe('o modificador de conjuração no dano da magia (DDL-0245)', () => {
     expect(fb.damage.bonus).toBe(0);
   });
 });
+
+describe('magia de área ativa (DDL-0249)', () => {
+  const hunger = spell({ key: 'spell:w|Hunger of Hadar', name: 'Hunger of Hadar', level: 3, concentration: true, mechanics: { attack: null, save: null, damage: { dice: '2d6', types: ['cold'], later: true }, heal: null, upcast: null } });
+  const cordon = spell({ key: 'spell:w|Cordon of Arrows', name: 'Cordon of Arrows', level: 2, mechanics: { attack: null, save: 'dex', damage: { dice: '2d4', types: ['piercing'], later: true }, heal: null, upcast: null } });
+  const way3 = { id: 'slot:3', key: 'slot:3', level: 3, left: 2 };
+
+  it("é a de dano depois sem efeito curado nem instância leve", () => {
+    expect(isZoneSpell(hunger)).toBe(true);
+    expect(isZoneSpell(spell({ name: "Hunter's Mark", mechanics: { damage: { dice: '1d6', later: true } } }))).toBe(false);
+    expect(isZoneSpell(spell({ name: 'Produce Flame', mechanics: { damage: { dice: '1d8', later: true } } }))).toBe(false);
+    expect(isZoneSpell(spell({ name: 'Fireball', mechanics: { damage: { dice: '8d6' } } }))).toBe(false);
+  });
+
+  it('a de concentração fica ativa pela concentração e acaba com ela', () => {
+    const s = run(st(), castEvent({ state: st(), catalog, origin, spell: hunger, way: way3 }));
+    expect(activeZone(s, hunger)).toEqual({ level: 3, concentration: true });
+    const ended = run(s, endZoneEvent({ state: s, spell: hunger }));
+    expect(activeZone(ended, hunger)).toBeNull();
+    expect(ended.concentration).toBeNull();
+  });
+
+  it('a sem concentração ganha um marcador; lançar de novo troca o marcador, e encerrar o tira', () => {
+    const way2 = { id: 'slot:2', key: 'slot:2', level: 2, left: 2 };
+    let s = run(st(), castEvent({ state: st(), catalog, origin, spell: cordon, way: way2 }));
+    expect(activeZone(s, cordon)).toMatchObject({ level: 2, concentration: false });
+    s = run(s, castEvent({ state: s, catalog, origin, spell: cordon, way: way2 }));
+    expect(s.modifiers.filter((m) => m.zone === cordon.key)).toHaveLength(1);
+    s = run(s, endZoneEvent({ state: s, spell: cordon }));
+    expect(activeZone(s, cordon)).toBeNull();
+  });
+});
+
+describe('projéteis (TC-0175, DDL-0249)', () => {
+  it('Eldritch Blast pelo nível do personagem; Magic Missile e Scorching Ray pelo círculo', () => {
+    expect(projectileCount({ name: 'Eldritch Blast' }, 0, 4).count).toBe(1);
+    expect(projectileCount({ name: 'Eldritch Blast' }, 0, 11)).toEqual({ count: 3, noun: 'beam' });
+    expect(projectileCount({ name: 'Eldritch Blast' }, 0, 17).count).toBe(4);
+    expect(projectileCount({ name: 'Magic Missile' }, 1).count).toBe(3);
+    expect(projectileCount({ name: 'Magic Missile' }, 4).count).toBe(6);
+    expect(projectileCount({ name: 'Scorching Ray' }, 2).count).toBe(3);
+    expect(projectileCount({ name: 'Scorching Ray' }, 3).count).toBe(4);
+    expect(projectileCount({ name: 'Fireball' }, 3)).toBeNull();
+  });
+
+  it('a fórmula de k projéteis iguais', () => {
+    expect(timesFormula('1d4 + 1', 3)).toBe('3d4 + 3');
+    expect(timesFormula('2d6', 2)).toBe('4d6');
+  });
+});
+
+describe('o ataque de magia de círculo guarda o círculo (TC-0174, DDL-0249)', () => {
+  it('o evento do ataque leva o círculo e o nome, para o dano do card', () => {
+    const ray = spell({ key: 'spell:class:cleric|Guiding Bolt', name: 'Guiding Bolt', level: 1, mechanics: { attack: 'R', save: null, damage: { dice: '4d6', types: ['radiant'] }, heal: null, upcast: '1d6' } });
+    const atk = spellAttackOf(origin, ray, 3);
+    expect(atk.level).toBe(3);
+    const e = rollAttackEvent({ catalog, attack: atk, rng: seq(12) });
+    expect(e.payload).toMatchObject({ attackKey: ray.key, level: 3, name: 'Guiding Bolt' });
+  });
+});
+

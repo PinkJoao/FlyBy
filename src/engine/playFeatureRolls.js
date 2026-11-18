@@ -679,7 +679,7 @@ export function featureRiders(state, catalog, roll) {
       if (!e.on.includes(roll.kind)) return;
       if (e.needs === 'Rage' && !raging) return;
       if (!fits(e.when, roll)) return;
-      const label = e.label ?? name.replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
+      const label = e.label ?? name.replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/ (Of|The|And|A|An|To|In|On)(?= )/g, (m) => m.toLowerCase());
       const key = spendKeyOf(catalog, e.spend);
       const max = key ? (catalog.resources ?? []).find((r) => r.key === key)?.max ?? 0 : 0;
       const none = e.spend && (!key || remainingOf(state, key, max) < 1);

@@ -20,6 +20,8 @@
 //   deriveSaveBonusFromItems(inventory): o bônus plano a todos os saves.
 //
 // DECISÕES E ARMADILHAS
+//   - A armadura pesada não soma a DES, nem a negativa: o teto 0 com `min` deixava passar o -1 (Chain Mail
+//     com DES 8 dava CA 15; TC-0176, DDL-0249). A leve e a média somam a negativa, como o texto.
 //   - UNARMORED_DEFENSE (DDL-0045) é o registro curado das fórmulas de classe e
 //     subclasse, cada uma 10 + soma de mods, valendo SÓ sem armadura de corpo, com
 //     `minLevel` quando a feature chega depois. `allowsShield` espelha o RAW: o
@@ -118,7 +120,7 @@ export function deriveArmorClass(character, inventory = [], mods = {}, naturalAr
 
   if (armor) {
     const cap = DEX_CAP[armor.armorSlot] ?? Infinity;
-    const dexPart = Math.min(dex, cap);
+    const dexPart = armor.armorSlot === 'heavy' ? 0 : Math.min(dex, cap);
     const armorAc = armor.raw.ac + flatBonusAc(armor.raw);
     candidates.push({
       total: armorAc + dexPart,

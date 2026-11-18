@@ -76,7 +76,7 @@ export function conjurableWeapons(db, catalog) {
 
 /** As escolhas do vínculo: as armas MÁGICAS que o personagem carrega (não a conjurada) e as que invoca. */
 export function pactChoices(db, catalog) {
-  const carried = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid && a.magical && !a.pactConjured).map((a) => ({ kind: 'bond', uid: a.uid, name: a.name }));
+  const carried = (catalog?.attacks ?? []).filter((a) => a.kind === 'weapon' && a.uid && a.magical && !a.pactConjured && !a.cleave).map((a) => ({ kind: 'bond', uid: a.uid, name: a.name }));
   const conjure = conjurableWeapons(db, catalog).map((w) => ({ kind: 'conjure', weapon: w, name: w.name }));
   return { carried, conjure };
 }

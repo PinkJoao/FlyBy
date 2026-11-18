@@ -166,3 +166,12 @@ describe('o bônus da armadura mágica soma ao ac dela (DDL-0185)', () => {
     expect(deriveArmorClass({}, inv, { dex: 3 }).total).toBe(17);
   });
 });
+
+describe('a armadura pesada ignora a DES, mesmo negativa (TC-0176, DDL-0249)', () => {
+  it('Chain Mail com DES -1 é 16; a leve e a média somam a negativa', () => {
+    expect(deriveArmorClass(char('fighter'), [armor('Chain Mail', 'heavy', 16)], { dex: -1 }).total).toBe(16);
+    expect(deriveArmorClass(char('fighter'), [armor('Leather Armor', 'light', 11)], { dex: -1 }).total).toBe(10);
+    expect(deriveArmorClass(char('fighter'), [armor('Scale Mail', 'medium', 14)], { dex: -1 }).total).toBe(13);
+  });
+});
+

@@ -155,7 +155,7 @@ export function rollAttackEvent({ catalog, attack, options = {}, rng, now = new 
   });
   return makeEvent('attack', {
     label: attack.name,
-    payload: { attackKey: attack.key, mode: result.mode, critical: result.isCritical, effects: options.applied?.labels ?? [] },
+    payload: { attackKey: attack.key, mode: result.mode, critical: result.isCritical, effects: options.applied?.labels ?? [], ...(attack.kind === 'spell' && attack.level != null ? { level: attack.level, name: attack.name } : {}) },
     rolls: result,
   }, now);
 }

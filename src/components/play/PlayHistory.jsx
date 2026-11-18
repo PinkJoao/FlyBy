@@ -376,7 +376,7 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
         </ul>
       )}
       {event.kind === 'attack' && !undone && onDamage && (
-        <Button size="sm" variant="primary" className={styles.action} onClick={() => onDamage(event.payload?.attackKey, { critical: !!critical })}>
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onDamage(event.payload?.attackKey, { critical: !!critical, level: event.payload?.level ?? null, name: event.payload?.name ?? null })}>
           Roll damage{critical ? ' (critical)' : ''}
         </Button>
       )}

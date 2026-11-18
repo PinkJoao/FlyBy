@@ -12,6 +12,16 @@
 //   castWays(catalog, state, spell): as formas de lançar, com o que sobra de cada.
 //   slotPoolsFor(catalog, state, level): os espaços que o cabeçalho de um círculo
 //     mostra (o do círculo e o pacto, se ele cabe), com o que sobra.
+//   projectileCount(spell, level, characterLevel), timesFormula(formula, k): quantos projéteis a magia
+//     dispara (`PROJECTILES`: o Eldritch Blast pelo nível do personagem, "two beams at level 5, three
+//     beams at level 11, and four beams at level 17"; o Magic Missile, "three glowing darts" e "one more
+//     dart for each spell slot level above 1"; o Scorching Ray, três raios e um por círculo acima do 2º;
+//     o Jim's Magic Missile, três mísseis com ataque) e a fórmula de k iguais; o lançamento rola um ataque
+//     por projétil, ou o dano por alvo (TC-0175, DDL-0249).
+//   isZoneSpell(spell, catalog): a magia de área cujo dano vem depois sem outro caminho para rolar (o
+//     `damage.later` sem efeito curado nem instância leve: Hunger of Hadar, Web, Cordon of Arrows).
+//   activeZone(state, spell), endZoneEvent(args): ela está ativa (a concentração nela, ou o marcador `zone`
+//     da que não pede concentração, que o castEvent põe), e o evento de encerrar (DDL-0249).
 //   castEvent(args): o evento de conjurar.
 //   spellAttackOf(origin, spell, level): a magia como "ataque" do playActions
 //     (acerto da origem, dano com o upcast), para rolar acerto e dano.
@@ -73,7 +83,8 @@ import { rollParts, cryptoRng } from './dice';
 import { makeEvent, remainingOf } from './playState';
 import { healOutcome } from './playHealth';
 import { bonusParts, rngFor, withDiceMax } from './playActions';
-import { endConcentrationOps, spellModifier, healDiceMaxed } from './playEffects';
+import { endConcentrationOps, spellModifier, healDiceMaxed, makeModifier } from './playEffects';
+import { isLightSummon } from './playSummons';
 import { withRounds } from './playCombat';
 
 /** O resto de um recurso do catálogo, com o máximo dele. */
@@ -169,6 +180,51 @@ export function spellRecallEvent({ trigger, rng = cryptoRng, now = new Date() })
   }, now);
 }
 
+/** As magias de vários projéteis, pelo texto ("three glowing darts", "one more dart for each spell slot level above 1"). */
+export const PROJECTILES = {
+  'eldritch blast': { noun: 'beam', byCharacter: [[17, 4], [11, 3], [5, 2], [1, 1]] },
+  'magic missile': { noun: 'dart', base: 3, from: 1, per: 1 },
+  'scorching ray': { noun: 'ray', base: 3, from: 2, per: 1 },
+  "jim's magic missile": { noun: 'missile', base: 3, from: 1, per: 1 },
+};
+
+/** Quantos projéteis a magia dispara no círculo lançado (e no nível do personagem, para o cantrip); null se não é dessas. */
+export function projectileCount(spell, level, characterLevel = 1) {
+  const p = PROJECTILES[String(spell?.name ?? '').toLowerCase()];
+  if (!p) return null;
+  const n = p.byCharacter ? p.byCharacter.find(([lv]) => characterLevel >= lv)?.[1] ?? 1 : p.base + Math.max(0, (level ?? p.from) - p.from) * p.per;
+  return { count: n, noun: p.noun };
+}
+
+/** A fórmula de `k` projéteis iguais: cada dado e cada número vezes `k` ("1d4 + 1" com 3 dardos: "3d4 + 3"). */
+export function timesFormula(formula, k) {
+  return String(formula).split(/\s*\+\s*/).map((t) => {
+    const d = t.match(/^(\d*)d(\d+)$/);
+    if (d) return `${(Number(d[1] || 1)) * k}d${d[2]}`;
+    return /^\d+$/.test(t) ? String(Number(t) * k) : `${k} * (${t})`;
+  }).join(' + ');
+}
+
+/** A magia de área cujo dano vem depois e não tem outro caminho para rolar (Hunger of Hadar, Web, Cordon of Arrows): fica ativa e o Cast vira "Use". */
+export function isZoneSpell(spell, catalog = null) {
+  return !!spell?.mechanics?.damage?.later && !spellModifier(spell, catalog) && !isLightSummon(spell);
+}
+
+/** A magia de área ativa: pela concentração nela, ou pelo marcador da que não pede concentração. Null se não está ativa. */
+export function activeZone(state, spell) {
+  if (!spell?.key) return null;
+  if (spell.concentration) return state?.concentration?.spellKey === spell.key ? { level: state.concentration.level ?? spell.level, concentration: true } : null;
+  const m = (state?.modifiers ?? []).find((x) => x.zone === spell.key);
+  return m ? { level: m.level ?? spell.level, concentration: false, modifierId: m.id } : null;
+}
+
+/** O evento de encerrar a magia de área: a concentração (com o que depende dela) ou o marcador. */
+export function endZoneEvent({ state, spell, now = new Date() }) {
+  const zone = activeZone(state, spell);
+  const ops = !zone ? [] : zone.concentration ? endConcentrationOps(state) : [{ op: 'modifier', remove: zone.modifierId }];
+  return makeEvent('use', { label: spell.name, ops, payload: { logged: true, spellKey: spell.key, option: 'End', lines: [zone?.concentration ? 'Concentration ends' : 'The spell ends'] } }, now);
+}
+
 /**
  * O evento de conjurar: gasta o que a forma pede e liga a concentração.
  * @param {{ catalog?: object, state: object, origin: object, spell: object, way: object, now?: Date }} args
@@ -183,6 +239,10 @@ export function castEvent({ state, catalog = null, origin, spell, way, onSelf = 
   const effect = spellModifier(spell, catalog);
   const applied = effect && (effect.self || onSelf);
   if (applied) ops.push({ op: 'modifier', add: withRounds(effect.modifier, state, spell.durationRounds) });
+  if (!spell.concentration && isZoneSpell(spell, catalog)) {
+    for (const m of (state.modifiers ?? []).filter((x) => x.zone === spell.key)) ops.push({ op: 'modifier', remove: m.id });
+    ops.push({ op: 'modifier', add: withRounds(makeModifier({ label: spell.name, source: 'spell', zone: spell.key, level: way.level, duration: 'manual' }), state, spell.durationRounds) });
+  }
   return makeEvent('cast', {
     label: spell.name,
     ops,
@@ -197,7 +257,7 @@ export function castEvent({ state, catalog = null, origin, spell, way, onSelf = 
       ended,
       attack: spell.mechanics?.attack ? origin.attackBonus : null,
       save: spell.mechanics?.save ? { ability: spell.mechanics.save, dc: origin.saveDc } : null,
-      damage: !!spell.mechanics?.damage?.dice,
+      damage: !!spell.mechanics?.damage?.dice && !spell.mechanics.damage.later,
       heal: !!spell.mechanics?.heal?.dice,
       school: spell.school ?? null,
       slotted: /^(slot|pact)/.test(way.key ?? ''),
@@ -223,6 +283,7 @@ export function spellAttackOf(origin, spell, level = spell.level) {
     key: spell.key,
     kind: 'spell',
     name: spell.name,
+    level,
     cantrip: spell.level === 0,
     school: spell.school ?? null,
     spellClass: origin.classId ?? null,

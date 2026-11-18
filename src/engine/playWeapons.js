@@ -149,7 +149,7 @@ export function weaponRuleOf(name) {
 
 /** Os ataques de arma que a regra aceita. */
 export function eligibleWeapons(rule, catalog) {
-  return (catalog?.attacks ?? []).filter((a) => a.uid && (rule.eligible ? rule.eligible(a) : isWeapon(a)));
+  return (catalog?.attacks ?? []).filter((a) => a.uid && !a.cleave && (rule.eligible ? rule.eligible(a) : isWeapon(a)));
 }
 
 /** O efeito ativo que marca a arma (ou cria uma), para o evento do lançamento ou do uso. */

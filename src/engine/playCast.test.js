@@ -171,3 +171,13 @@ describe('gastos para lançar (SPELL_COSTS)', () => {
   });
 });
 
+
+describe('o modificador de conjuração no dano da magia (DDL-0245)', () => {
+  it('Spiritual Weapon soma o modificador; Fireball não', () => {
+    const origin = { attackBonus: 7, saveDc: 15, abilityMod: 4 };
+    const sw = spellAttackOf(origin, { key: 'k', name: 'Spiritual Weapon', level: 2, mechanics: { attack: 'M', damage: { dice: '1d8', types: ['force'], addMod: true }, upcast: '1d8' } }, 2);
+    expect(sw.damage).toMatchObject({ dice: '1d8', bonus: 4 });
+    const fb = spellAttackOf(origin, { key: 'f', name: 'Fireball', level: 3, mechanics: { save: 'dex', damage: { dice: '8d6', types: ['fire'] }, upcast: '1d6' } }, 3);
+    expect(fb.damage.bonus).toBe(0);
+  });
+});

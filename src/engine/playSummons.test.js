@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyEvent, makeEvent } from './playState';
-import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, familiarSpecialForms } from './playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, familiarSpecialForms, repeatDice, LIGHT_REPEATS } from './playSummons';
 import { objectSummons, creatureStats } from './creature';
 import { endConcentrationOps } from './playEffects';
 import { nextTurnEvent } from './playCombat';
@@ -120,11 +120,11 @@ describe('summons no play mode (DDL-0192)', () => {
     expect(isLightSummon({ name: 'Spiritual Weapon' })).toBe(true);
     expect(isLightSummon({ name: 'Spirit Guardians' })).toBe(false);
     expect(lightRulesOf(['As a {@variantrule Bonus Action|XPHB} on your later turns, you can move the force up to 20 feet and repeat the attack against a creature within 5 feet of it.']))
-      .toEqual({ command: 'bonus', ac: null, hp: null, replaces: false });
+      .toEqual({ command: 'bonus', ac: null, hp: null, replaces: false, moves: true });
     expect(lightRulesOf(['The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again.', 'As a {@action Magic|XPHB} action on your later turns, you can control the hand thus again.']))
-      .toEqual({ command: 'action', ac: null, hp: null, replaces: true });
+      .toEqual({ command: 'action', ac: null, hp: null, replaces: true, moves: true });
     const bigby = lightRulesOf(['The hand is an object that has AC 20 and {@variantrule Hit Points|XPHB} equal to your {@variantrule Hit Points|XPHB} maximum.', 'When you cast the spell and as a Bonus Action on your later turns, you can move the hand up to 60 feet']);
-    expect(bigby).toEqual({ command: 'bonus', ac: 20, hp: 'casterMax', replaces: false });
+    expect(bigby).toEqual({ command: 'bonus', ac: 20, hp: 'casterMax', replaces: false, moves: true });
     expect(lightRulesOf(['when you move on your turn, you can also move the pack up to 30 feet']).command).toBe('free');
   });
   it('a instância leve entra sem bloco, com os PV do invocador, e o Mage Hand troca o anterior', () => {
@@ -213,5 +213,23 @@ describe('Witch Bolt (DDL-0243)', () => {
     expect(isLightSummon({ name: 'Witch Bolt' })).toBe(true);
     const r = lightRulesOf(['On each of your subsequent turns, you can take a {@variantrule Bonus Action|XPHB} to deal {@damage 1d12} Lightning damage to the target automatically, even if the first attack missed.']);
     expect(r).toMatchObject({ command: 'bonus', repeat: { dice: '1d12', type: 'lightning' } });
+  });
+});
+
+describe('as magias que se repetem (TC-0171, DDL-0245)', () => {
+  it('entram como instância leve, com o custo pelos verbos da prosa', () => {
+    for (const name of ['Heat Metal', 'Produce Flame', 'Sunbeam', 'Eyebite', 'Holy Star of Mystra', "Fizban's Platinum Shield"]) expect(isLightSummon({ name })).toBe(true);
+    expect(lightRulesOf(['Until the spell ends, you can take a {@variantrule Bonus Action|XPHB} on each of your later turns to deal this damage again if the object is within range.'])).toMatchObject({ command: 'bonus', moves: false });
+    expect(lightRulesOf(['The spell ends if you cast it again.', 'Until the spell ends, you can take a {@action Magic|XPHB} action to hurl fire at a creature or an object within 60 feet of you.'])).toMatchObject({ command: 'action', replaces: true });
+    expect(lightRulesOf(['On each of your turns until the spell ends, you can take a {@action Magic|XPHB} action to target another creature']).command).toBe('action');
+    expect(lightRulesOf(['When you cast this spell and as a {@variantrule Bonus Action|XPHB} on later turns, you can unleash a shining bolt from the mote']).command).toBe('bonus');
+  });
+
+  it('o "again" do Storm Sphere é um ataque de 4d6, mais 1d6 por círculo acima do 4', () => {
+    expect(repeatDice(LIGHT_REPEATS['storm sphere'], 4)).toBe('4d6');
+    expect(repeatDice(LIGHT_REPEATS['storm sphere'], 6)).toBe('6d6');
+    const sphere = { name: 'Storm Sphere', source: 'XGE', key: 'spell:x|Storm Sphere', concentration: true };
+    const ops = lightOps({ state: emptyPlayState(), spell: sphere, level: 5, origin, catalog, rules: { command: 'bonus', ac: null, hp: null, replaces: false } });
+    expect(ops[0].add.light.repeat).toEqual({ dice: '5d6', type: 'lightning', attack: true });
   });
 });

@@ -61,7 +61,8 @@
 //       (o Find Familiar, as feras de ND 0); a feature de companheiro tem "Summon"; a
 //       regra de turno vem da prosa e aparece na linha dos summons do combate (DDL-0193).
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
-//     readFromHistory(event) (no PlayInner): a descrição da magia ou da feature de um card do histórico (DDL-0243).
+//     historySource(event), canReadHistory(event), readFromHistory(event) (no PlayInner): o que um card do
+//     histórico abre, se abre, e a descrição da magia ou da feature (DDL-0243, DDL-0245).
 //     attackNotes(attack, catalog): as notas do ataque (a da arma e a da Weapon Mastery, DDL-0242).
 //     withFixedDamage(attack, state, catalog): o ataque com os extras fixos ligados no dano (o rótulo
 //       mostra o mesmo número que o diálogo rola: o +4 do Agonizing Blast, DDL-0239).
@@ -134,6 +135,10 @@
 //     com activity (Sacred Weapon) faz o mesmo no `applyFeature`; a sem activity (Blessing of the
 //     Forge, Hex Warrior) pelo "Use" da linha (`useWeaponFeature`). Os diálogos de ataque e de dano
 //     mostram a nota da arma e a da Weapon Mastery (`attackNotes`).
+//   - DDL-0245 (TC-0171): a instância leve tem "Use" quando a prosa dá um custo e não há o que rolar
+//     (Eyebite) ou ela se move (`light.moves`: mover a Spiritual Weapon sem atacar); o "again" pode ser um ataque (`light.repeat.attack`: Storm Sphere, Wall of
+//     Light); o dano do Transfix e do Songal's cai sem gasto (FREE_LIGHT_ROLLS). `historySource` diz o que o
+//     card do histórico abre (a magia também pelo `attackKey`), e `canReadHistory` só acende o que abre.
 //   - DDL-0243: o Blessing of the Forge pergunta arma ou armadura (`armorOption`; a armadura é um efeito
 //     de +1 de CA, `armorBlessing`); o Two-Weapon Fighting com arma Nick não gasta a ação bônus; o Cleave
 //     é uma variante do ataque (`withMasteryAttacks`); o Magic Stone cria a pedra com o ataque de magia
@@ -298,6 +303,9 @@ const WIDE_QUERY = '(min-width: 1140px)';
 const SLOT_LABEL = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction' };
 
 const TOAST_MS = 4000;
+
+// ATENÇÃO: o dano destas cai no turno do alvo, sem gasto seu; mudar de alvo é o "Use" (TC-0171).
+const FREE_LIGHT_ROLLS = new Set(['transfix', "songal's elemental suffusion"]);
 
 /** O número do aviso de um evento: o total rolado, o dano, a cura ou o temporário. */
 const toastNumber = (e) => e.rolls?.total ?? e.payload?.taken ?? e.payload?.healed ?? e.payload?.to ?? e.payload?.round ?? e.payload?.left ?? null;
@@ -674,14 +682,23 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** A descrição da fonte de um evento do histórico: a magia lançada ou a feature usada. */
-  const readFromHistory = (event) => {
+  const historySource = (event) => {
     const p = event.payload ?? {};
-    const spell = p.spellKey ? catalog.spells.flatMap((o) => o.spells).find((s) => s.key === p.spellKey) : null;
+    const key = p.spellKey ?? String(p.attackKey ?? '').replace(/#.*$/, '');
+    const spell = key ? catalog.spells.flatMap((o) => o.spells).find((s) => s.key === key) : null;
     const raw = spell ? resolveSpellObj(db, spell.name, spell.source) : null;
-    if (raw) return showDetailPopup({ entity: spellEntity, raw, db });
+    if (raw) return { raw };
     const name = p.feature ?? catalog.actions.find((a) => a.key === p.actionKey)?.name ?? null;
     const feature = name ? (catalog.featureList ?? []).find((f) => f.name === name) : null;
-    if (feature) return showFeatureText(feature);
+    return feature ? { feature } : null;
+  };
+
+  const canReadHistory = (event) => event.kind === 'cast' || !!historySource(event);
+
+  const readFromHistory = (event) => {
+    const src = historySource(event);
+    if (src?.raw) return showDetailPopup({ entity: spellEntity, raw: src.raw, db });
+    if (src?.feature) return showFeatureText(src.feature);
     return alert({ title: event.label, message: 'This is no longer on the character.' });
   };
 
@@ -861,11 +878,15 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         return [...old, { op: 'modifier', add: makeModifier(armorBlessing(rule.name)) }];
       }
     }
-    if (rule.kind !== 'create') {
+    if (rule.kind !== 'create' && !rule.all) {
       attack = await pickWeapon(rule.name, eligibleWeapons(rule, catalog));
       if (!attack) return null;
     }
     let type = null;
+    if (rule.choice) {
+      type = await ask({ title: rule.name, message: rule.choice.message, actions: [...rule.choice.options, { label: 'Cancel', value: null }] });
+      if (!type) return null;
+    }
     if (rule.types) {
       type = await ask({ title: rule.name, message: 'Which damage type?', actions: [...rule.types.map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), value: t })), { label: 'Cancel', value: null }] });
       if (!type) return null;
@@ -989,21 +1010,30 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
     const cost = costOfActivation(group.turn?.command);
     const pay = cost ? [economyOp(state, cost)].filter(Boolean) : [];
+    if (kind === 'use') {
+      const ev = withOps(featureLogEvent({ catalog, state, feature: { name: spell.name }, option: 'Again' }), pay);
+      record({ ...ev, payload: { ...ev.payload, spellKey: spell.key } });
+      return;
+    }
+    const rollPay = FREE_LIGHT_ROLLS.has(spell.name.toLowerCase()) ? [] : pay;
     const repeat = group.light?.repeat;
     const atk = repeat
-      ? { key: `${spell.key}#again`, kind: 'spell', name: `${spell.name} (again)`, attack: null, damage: { dice: repeat.dice, bonus: 0, types: [repeat.type] }, versatile: null }
+      ? { key: `${spell.key}#again`, kind: 'spell', name: `${spell.name} (again)`, attack: repeat.attack ? { bonus: origin.attackBonus ?? 0 } : null, damage: { dice: repeat.dice, bonus: 0, types: [repeat.type] }, versatile: null }
       : spellAttackOf(origin, spell, group.ctx?.spellLevel ?? spell.level);
-    if (kind === 'attack') rollAttack(atk, false, false, null, pay);
-    else if (kind === 'damage') rollDamage(atk, {}, false, false, null, pay);
+    if (kind === 'attack') rollAttack(atk, false, false, null, rollPay);
+    else if (kind === 'damage') rollDamage(atk, {}, false, false, null, rollPay);
     else rollSpellHeal(origin, spell, group.ctx?.spellLevel ?? spell.level);
   };
 
   /** O que a instância leve rola: ataque, dano ou cura da magia. */
   const lightKinds = (group) => {
-    if (group.light?.repeat) return ['damage'];
+    const paid = group.turn?.command === 'bonus' || group.turn?.command === 'action';
+    const repeat = group.light?.repeat;
     const spell = catalog.spells.flatMap((o) => o.spells).find((s) => s.key === group.spell?.key);
     const m = spell?.mechanics ?? {};
-    return [m.attack && 'attack', m.damage?.dice && 'damage', m.heal?.dice && 'heal'].filter(Boolean);
+    const rolls = repeat ? [repeat.attack && 'attack', 'damage'] : [m.attack && 'attack', m.damage?.dice && 'damage', m.heal?.dice && 'heal'];
+    const out = rolls.filter(Boolean);
+    return paid && (group.light?.moves || !out.length) ? [...out, 'use'] : out;
   };
 
   /** O descanso longo: mostra o que vai voltar e grava. */
@@ -1503,7 +1533,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'History' && (
             <>
               {historyHead}
-              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} onRead={readFromHistory} live={historyLive} />
+              <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} onRead={readFromHistory} canRead={canReadHistory} live={historyLive} />
             </>
           )}
 
@@ -1551,7 +1581,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
             <HistoryHead onUndo={undo} onRedo={redo} onClear={clearHistory} canUndo={play.canUndo} canRedo={play.canRedo} canClear={!!play.doc?.events.length} lastLabel={lastApplied?.label} nextLabel={nextUndone?.label} round={state.combat ? state.combat.round : null} />
           </div>
           <div className={styles.sideScroll}>
-            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} onRead={readFromHistory} live={historyLive} />
+            <PlayHistory doc={play.doc} onDamage={damageFromHistory} onConcentration={(dc) => rollConcentration(dc)} concentrating={!!state.concentration} onSpell={spellRoll} onFeatureEffect={featureEffectFromHistory} onReroll={rerollFromHistory} onRead={readFromHistory} canRead={canReadHistory} live={historyLive} />
             {state.combat && <CombatDock available={slotAvailable} onPick={pickSlot} onNextTurn={nextTurn} onEndCombat={endCombat} dataTour={TUT.PLAY_COMBAT} summons={summonLine} />}
           </div>
         </div>,

@@ -19,7 +19,8 @@
 //   WEAPON_SPELLS, WEAPON_FEATURES: os registros, um por frase do texto (a forma, a arma elegível, o efeito).
 //   weaponRuleOf(name): a regra de uma magia ou feature de arma, ou null.
 //   eligibleWeapons(rule, catalog): os ataques de arma que a regra aceita.
-//   weaponModifier({ rule, attack, catalog, slot, type, abilityKey }): o efeito ativo que marca a arma.
+//   weaponModifier({ rule, attack, catalog, slot, type, abilityKey }): o efeito ativo que marca a arma (e o que
+//     a regra soma ao efeito, `modifier`: a CA e as imunidades do Tasha's Otherworldly Guise).
 //   applyWeaponState(attack, w, catalog): o ataque com o estado aplicado.
 //   withWeaponStates(catalog, modifiers): o catálogo com os ataques mudados e os criados.
 //   strikeAttack(attack, rule, catalog, abilityKey): o ataque do lançamento de um STRIKE.
@@ -45,6 +46,10 @@
 //     diálogo: dependem do que o alvo faz ou de outra criatura.
 //   - O Shillelagh do XPHB não torna a arma mágica (o texto não diz; o de 2014 dizia): ela segue elegível
 //     para o Magic Weapon e o Elemental Weapon.
+//   - O Tasha's Otherworldly Guise (TC-0171, DDL-0245) vale para TODA arma (`all`, sem pergunta): o
+//     atributo de conjuração se maior ("you can use"), mágica, dois ataques na ação Attack (`attacksMin`,
+//     que não soma ao Extra Attack: "You ignore this benefit if you already have" um), +2 de CA e as
+//     imunidades do plano escolhido (`choice`, `modifier`: o efeito ativo ganha `ac`, `immune` e a nota).
 //   - O Nick dispensa a ação bônus do ataque extra da propriedade Light quando a arma dele tem Nick (o
 //     Two-Weapon Fighting do Play.jsx); o Cleave é uma variante do ataque na lista (DDL-0243).
 //   - A mastery é nota (o app não sabe se acertou nem quem está ao lado); os números vêm calculados.
@@ -101,6 +106,16 @@ export const WEAPON_SPELLS = {
     make: ({ level }) => (level >= 5 ? { extra: { label: 'Booming Blade', formula: byCharLevel(level, [[17, '3d8'], [11, '2d8'], [5, '1d8']]), type: 'thunder' } } : {}),
     note: ({ level }) => `If the target willingly moves 5 feet or more before your next turn, it takes ${byCharLevel(level, [[17, '4d8'], [11, '3d8'], [5, '2d8'], [0, '1d8']])} Thunder`,
   },
+  "tasha's otherworldly guise": {
+    kind: 'imbue', all: true, rounds: 10,
+    choice: { message: 'Which planes?', options: [{ label: 'Lower Planes', value: 'lower' }, { label: 'Upper Planes', value: 'upper' }] },
+    make: () => ({ ability: 'spell', magical: true, attacksMin: 2 }),
+    modifier: ({ type }) => ({
+      ac: 2,
+      immune: type === 'upper' ? ['radiant', 'necrotic'] : ['fire', 'poison'],
+      notes: [`Immune to the ${type === 'upper' ? 'Charmed' : 'Poisoned'} condition; Fly Speed 40 feet`],
+    }),
+  },
   'green-flame blade': {
     kind: 'strike', eligible: (a) => isWeapon(a) && isMelee(a),
     make: ({ level }) => (level >= 5 ? { extra: { label: 'Green-Flame Blade', formula: byCharLevel(level, [[17, '3d8'], [11, '2d8'], [5, '1d8']]), type: 'fire' } } : {}),
@@ -141,14 +156,16 @@ export function eligibleWeapons(rule, catalog) {
 export function weaponModifier({ rule, attack = null, catalog, slot = 0, type = null, abilityKey = null, origin = null }) {
   const level = catalog?.stats?.level ?? catalog?.rollData?.details?.level ?? 1;
   const w = rule.make({ level, slot, type, catalog, origin });
+  const extra = rule.modifier ? rule.modifier({ type, level, slot }) : {};
   return {
     label: rule.name,
     source: rule.source === 'spell' ? 'spell' : 'feature',
     duration: rule.lasts ?? 'manual',
     ...(rule.rounds ? { maxRounds: rule.rounds } : {}),
-    notes: [attack ? `${rule.name}: ${attack.name}` : rule.name],
+    ...extra,
+    notes: [attack ? `${rule.name}: ${attack.name}` : rule.name, ...(extra.notes ?? [])],
     effects: [],
-    weapon: { ...w, uid: attack?.uid ?? null, ...(w.ability === 'spell' ? { abilityKey } : {}), ...(rule.note ? { note: typeof rule.note === 'function' ? rule.note({ level, mod: 0 }) : rule.note } : {}) },
+    weapon: { ...w, uid: attack?.uid ?? null, ...(rule.all ? { all: true } : {}), ...(w.ability === 'spell' ? { abilityKey } : {}), ...(rule.note ? { note: typeof rule.note === 'function' ? rule.note({ level, mod: 0 }) : rule.note } : {}) },
   };
 }
 
@@ -201,9 +218,14 @@ export function withWeaponStates(catalog, modifiers) {
       }, ...attacks];
       continue;
     }
+    if (w.all) {
+      attacks = attacks.map((a) => (isWeapon(a) ? applyWeaponState(a, w, catalog, m.label) : a));
+      continue;
+    }
     attacks = attacks.map((a) => (a.uid && a.uid === w.uid ? { ...applyWeaponState(a, w, catalog, m.label), name: a.name.includes(`(${m.label})`) ? a.name : `${a.name} (${m.label})` } : a));
   }
-  return { ...catalog, attacks };
+  const attacksMin = Math.max(0, ...states.map((m) => m.weapon.attacksMin ?? 0));
+  return { ...catalog, attacks, ...(attacksMin ? { attacksMin } : {}) };
 }
 
 /** O ataque do lançamento de um STRIKE (True Strike, Booming Blade, Green-Flame Blade). */

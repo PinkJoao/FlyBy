@@ -25,7 +25,8 @@
 //       limiar de crítico, falha automática e gastos do que ficou ligado.
 //     matches(targets, roll): um efeito de modificador vale para esta rolagem?
 //   Ficha
-//     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins.
+//     effectiveDefenses(catalog, state): defesas com Rage, Petrified e afins (resistência e imunidade de um
+//       modificador: o Tasha's Otherworldly Guise, DDL-0245).
 //     attackRollContext(attack, kind): o contexto de rolagem de um ataque (acerto ou dano).
 //     fixedRollBonus(state, catalog, roll): os efeitos ligados que são número fixo; a lista
 //       de ataques soma (o arco do ranger com Archery dizia +7, e o diálogo rolava +9,
@@ -337,11 +338,13 @@ export function applyEffects(effects, enabledIds = null) {
 export function effectiveDefenses(catalog, state) {
   const base = catalog.defenses ?? { resist: [], immune: [], vulnerable: [] };
   const resist = new Set(base.resist);
+  const immune = new Set(base.immune ?? []);
   for (const m of state.modifiers ?? []) for (const r of m.resist ?? []) resist.add(r);
+  for (const m of state.modifiers ?? []) for (const r of m.immune ?? []) immune.add(r);
   const { ids } = conditionList(state);
   const all = ids.some((id) => CONDITIONS[id]?.resistAll);
   if (all) for (const t of DAMAGE_TYPES) resist.add(t);
-  return { ...base, resist: [...resist] };
+  return { ...base, resist: [...resist], immune: [...immune] };
 }
 
 /** A CA com os modificadores (Shield of Faith, o +1 do mestre). */

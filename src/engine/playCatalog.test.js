@@ -374,3 +374,16 @@ describe('tipo de dano à escolha nas magias (DDL-0240)', () => {
     expect(spellTypeOptions({ damageInflict: ['bludgeoning', 'cold'], entries: ['2d10 Bludgeoning damage and 4d6 Cold damage.'] })).toBeNull();
   });
 });
+
+describe('o modificador e o tipo do dano pela frase (DDL-0245)', () => {
+  it('soma o modificador só no dado da frase que diz', () => {
+    const sw = spellMechanics({ level: 2, damageInflict: ['force'], spellAttack: ['M'], entries: ['On a hit, the target takes Force damage equal to {@damage 1d8} plus your spellcasting ability modifier.'] }, 3);
+    expect(sw.damage).toMatchObject({ dice: '1d8', addMod: true });
+    const bigby = spellMechanics({ level: 5, damageInflict: ['bludgeoning', 'force'], entries: ['Clenched Fist. The target takes {@damage 5d8} Force damage.', 'Grasping Hand. You deal {@damage 2d6} plus your spellcasting ability modifier Bludgeoning damage.'] }, 9);
+    expect(bigby.damage.addMod).toBeUndefined();
+  });
+  it('sem damageInflict, os tipos vêm do par do texto (Holy Star of Mystra)', () => {
+    const star = spellMechanics({ level: 8, spellAttack: ['R'], entries: ['On a hit, the target takes Force or Radiant damage (your choice) equal to {@damage 4d10} plus your spellcasting ability modifier.'] }, 15);
+    expect(star.damage).toMatchObject({ dice: '4d10', types: ['force', 'radiant'], typeOptions: ['force', 'radiant'], addMod: true });
+  });
+});

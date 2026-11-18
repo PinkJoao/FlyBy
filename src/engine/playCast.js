@@ -66,7 +66,7 @@
 //     payload diz qual terminou).
 //   - Upcast: o dado do `{@scaledamage}`/`{@scaledice}` por círculo acima do base,
 //     somado como uma parte a mais ("Upcast"); a cura soma o modificador da origem
-//     quando a prosa manda (`heal.addMod`).
+//     quando a prosa manda (`heal.addMod`); o dano soma o modificador com `damage.addMod` (DDL-0245).
 // -----------------------------------------------------------------------------
 
 import { rollParts, cryptoRng } from './dice';
@@ -226,7 +226,7 @@ export function spellAttackOf(origin, spell, level = spell.level) {
     cantrip: spell.level === 0,
     attack: spell.mechanics?.attack ? { bonus: origin.attackBonus ?? 0 } : null,
     save: spell.mechanics?.save ? { ability: spell.mechanics.save, dc: origin.saveDc } : null,
-    damage: d?.dice ? { dice: diceWithUpcast(d.dice, spell, level), bonus: 0, types: d.types ?? [], ...(d.typeOptions ? { typeOptions: d.typeOptions } : {}) } : null,
+    damage: d?.dice ? { dice: diceWithUpcast(d.dice, spell, level), bonus: d.addMod ? origin.abilityMod ?? 0 : 0, types: d.types ?? [], ...(d.typeOptions ? { typeOptions: d.typeOptions } : {}) } : null,
     versatile: null,
   };
 }

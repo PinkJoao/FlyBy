@@ -20,6 +20,8 @@
 //     ("special forms: Imp, Pseudodragon, ...": o Pact of the Chain, DDL-0238).
 //   isLightSummon(spell), lightRulesOf(entries), lightOps(opts): a instância leve
 //     (S4, DDL-0194): a magia sem bloco que fica em campo (LIGHT_SUMMONS).
+//   LIGHT_REPEATS, repeatDice(repeat, level): o "again" que rola outra coisa que o lançamento (Storm
+//     Sphere, Wall of Light: um ataque de magia), com o dado do círculo gravado (DDL-0245).
 //   lcText(entries): a prosa em minúsculas, sem as marcas do 5etools.
 //   summonContext(catalog, origin, opts): o contexto do invocador, congelado.
 //   durableTemp(catalog, spell, level): os temporários do Durable Summons (2 x nível de mago, magia
@@ -73,6 +75,14 @@
 //     da magia no círculo gravado, sem gastar espaço. O Witch Bolt (DDL-0243) guarda em
 //     `light.repeat` o dano automático da Ação Bônus ("deal 1d12 Lightning damage to the target
 //     automatically"): o "again" do grupo rola só esse dano, sem ataque.
+//   - TC-0171 (DDL-0245): a instância leve também é a magia que se REPETE sem espaço nos turnos
+//     seguintes, mesmo sem nada em campo (Heat Metal, Produce Flame, Sunbeam, Eye Beam, Enervation,
+//     Holy Star of Mystra, Draconic Transformation, Songal's Elemental Suffusion). O custo vem dos verbos
+//     da prosa (hurl, create, target, unleash, exhale, expend, command, launch); a que repete sem rolar
+//     nada (Eyebite, Fizban's Platinum Shield) tem só o "Use", que grava o gasto do turno; a que se
+//     move ou é controlada (`moves`: Spiritual Weapon, Mage Hand, Rain of Fire) também tem o "Use", para
+//     mover sem rolar. A que só repete a rolagem (Heat Metal, Witch Bolt) não: a Ação Bônus É a rolagem. A que rola
+//     outra coisa no "again" fica em LIGHT_REPEATS; a frase do Witch Bolt já cobre o Enervation.
 // -----------------------------------------------------------------------------
 
 import { makeEvent } from './playState';
@@ -153,8 +163,9 @@ export function summonTurnOf(entries) {
 export function turnText(turn) {
   if (!turn) return '';
   const order = { after: 'Acts right after you', shared: 'Shares your initiative', own: 'Rolls its own initiative' }[turn.order] ?? '';
-  const command = { free: 'commands are free', bonus: 'Bonus Action to command', action: 'an action to command' }[turn.command] ?? '';
-  return [order, command].filter(Boolean).join(' · ');
+  const command = { free: 'commands are free', bonus: 'Bonus Action to command', action: 'Magic action to command' }[turn.command] ?? '';
+  const text = [order, command].filter(Boolean).join(' · ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 // ATENÇÃO: só com a feature que INVOCA o companheiro (a prosa da subclasse); o bloco vem do bestiário pelo nome.
@@ -208,12 +219,29 @@ export function familiarSpecialForms(options = []) {
   return out;
 }
 
-// ATENÇÃO: só magia cuja prosa cria uma coisa que fica e que o jogador move ou repete; emanação em si mesmo não entra.
+// ATENÇÃO: só magia cuja prosa a deixa em campo ou a repete sem espaço nos turnos seguintes; uma emanação que só dura não entra.
 const LIGHT_SUMMONS = new Set([
   'mage hand', 'dancing lights', 'spiritual weapon', 'flaming sphere', 'cloud of daggers', 'moonbeam',
   'call lightning', 'arcane eye', "bigby's hand", 'witch bolt', "mordenkainen's sword", "mordenkainen's faithful hound",
   'grasping vine', 'conjure fey', 'conjure animals', 'conjure celestial', 'conjure elemental', 'healing spirit',
+  'heat metal', 'produce flame', 'sunbeam', 'eyebite', "melf's minute meteors", 'storm sphere', 'wall of light',
+  'enervation', 'transfix', 'eye beam', 'rain of fire', 'holy star of mystra', "songal's elemental suffusion",
+  'draconic transformation', "fizban's platinum shield", 'conjure constructs',
 ]);
+
+export const LIGHT_REPEATS = {
+  'storm sphere': { dice: '4d6', type: 'lightning', attack: true, upcast: { from: 4, dice: '1d6' } },
+  'wall of light': { dice: '4d8', type: 'radiant', attack: true, upcast: { from: 5, dice: '1d8' } },
+};
+
+/** O dado do "again" no círculo gravado: "4d6" mais "1d6" por círculo acima do 4 dá "5d6" no 5. */
+export function repeatDice(repeat, level) {
+  const up = repeat?.upcast;
+  if (!up || !(level > up.from)) return repeat?.dice ?? null;
+  const [n, d] = repeat.dice.split('d').map(Number);
+  const [un, ud] = up.dice.split('d').map(Number);
+  return ud === d ? `${n + un * (level - up.from)}d${d}` : `${repeat.dice} + ${un * (level - up.from)}d${ud}`;
+}
 
 /** A magia vira instância leve (LIGHT_SUMMONS)? */
 export function isLightSummon(spell) {
@@ -226,8 +254,8 @@ export function isLightSummon(spell) {
  */
 export function lightRulesOf(entries) {
   const t = lcText(entries);
-  const command = /(?:as a|take a) bonus action[^.]*(?:move|teleport|repeat|cause|deal)/.test(t) ? 'bonus'
-    : /magic action[^.]*(?:move|teleport|control|call)/.test(t) ? 'action'
+  const command = /(?:as a|take a|use a) bonus action[^.]*(?:move|teleport|repeat|cause|deal|unleash|exhale|expend)/.test(t) ? 'bonus'
+    : /(?:magic action|(?:use|take) an action)[^.]*(?:move|teleport|control|call|hurl|create|target|unleash|command|launch)/.test(t) ? 'action'
       : /when you move on your turn, you can also move/.test(t) ? 'free' : null;
   const ac = t.match(/\bhas ac ([0-9]+)/)?.[1];
   const repeat = t.match(/take a bonus action to deal ([0-9]+d[0-9]+) ([a-z]+) damage to the target automatically/);
@@ -235,7 +263,8 @@ export function lightRulesOf(entries) {
     command,
     ac: ac ? Number(ac) : null,
     hp: /hit points equal to your hit points maximum/.test(t) ? 'casterMax' : null,
-    replaces: /if you cast this spell again/.test(t),
+    replaces: /if you cast (?:this spell|it) again/.test(t),
+    moves: /(?:bonus action|magic action|an action)[^.]*(?:move|teleport|control)/.test(t),
     ...(repeat ? { repeat: { dice: repeat[1], type: repeat[2] } } : {}),
   };
 }
@@ -245,7 +274,9 @@ export function lightOps({ state, spell, level, origin, catalog, rules, casterHp
   const old = rules.replaces ? (state?.summons ?? []).filter((g) => g.light && g.spell?.name === spell.name).map((g) => ({ op: 'summon', remove: g.id })) : [];
   const [add] = summonOps({ state, creature: { name: spell.name, source: spell.source }, spell, level, origin, catalog, turn: { order: null, command: rules.command } });
   add.add.ref = null;
-  add.add.light = { ac: rules.ac, hp: rules.hp === 'casterMax' ? casterHpMax : null, ...(rules.repeat ? { repeat: rules.repeat } : {}) };
+  const curated = LIGHT_REPEATS[lc(spell.name)];
+  const repeat = rules.repeat ?? (curated ? { dice: repeatDice(curated, level), type: curated.type, attack: !!curated.attack } : null);
+  add.add.light = { ac: rules.ac, hp: rules.hp === 'casterMax' ? casterHpMax : null, ...(rules.moves ? { moves: true } : {}), ...(repeat ? { repeat } : {}) };
   if (add.add.light.hp == null) add.add.members = [];
   return [...old, add];
 }

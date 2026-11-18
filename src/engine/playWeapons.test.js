@@ -87,3 +87,16 @@ describe('DDL-0243: Cleave, a armadura abençoada e o Magic Stone', () => {
     expect(stone).toMatchObject({ kind: 'created', name: 'Magic Stone', range: 'ranged', toHit: { total: 7 }, damage: { dice: '1d6', bonus: 4, types: ['bludgeoning'] } });
   });
 });
+
+describe("Tasha's Otherworldly Guise (TC-0171, DDL-0245)", () => {
+  it('toda arma usa o atributo de conjuração se maior, e a ação Attack dá dois ataques', () => {
+    const rule = weaponRuleOf("Tasha's Otherworldly Guise");
+    expect(rule).toMatchObject({ all: true, kind: 'imbue' });
+    const mod = weaponModifier({ rule, catalog: catalog(), slot: 6, type: 'upper', abilityKey: 'cha' });
+    expect(mod).toMatchObject({ ac: 2, immune: ['radiant', 'necrotic'] });
+    const out = withWeaponStates(catalog(), [mod]);
+    expect(out.attacksMin).toBe(2);
+    expect(out.attacks.find((a) => a.uid === 's2')).toMatchObject({ ability: 'cha', magical: true, damage: { bonus: 4 } });
+    expect(weaponModifier({ rule, catalog: catalog(), type: 'lower', abilityKey: 'cha' }).immune).toEqual(['fire', 'poison']);
+  });
+});

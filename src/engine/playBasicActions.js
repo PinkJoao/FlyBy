@@ -40,7 +40,8 @@
 //   slotChoices(slot, list, catalog, state): o que a ação, a bônus ou a reação paga
 //     (as ações básicas com esse custo e as activities de feature), para os botões
 //     de combate.
-//   attacksPerAction(catalog): quantos ataques a ação Attack dá.
+//   attacksPerAction(catalog): quantos ataques a ação Attack dá (o `attacksMin` de um estado de arma, o
+//     Tasha's Otherworldly Guise, é um piso, não soma).
 //   attackProgress(catalog, state): os ataques feitos na ação Attack em curso.
 //   attackStepOp(catalog, state): a operação de mais um ataque (o primeiro gasta a
 //     ação, os do Extra Attack só contam).
@@ -215,10 +216,8 @@ export function altCostsFor(catalog) {
 /** Quantos ataques a ação Attack dá (Extra Attack, Two e Three Extra Attacks, Thirsting Blade). */
 export function attacksPerAction(catalog) {
   const f = new Set((catalog?.features ?? []).map(lower));
-  if (f.has('three extra attacks')) return 4;
-  if (f.has('two extra attacks')) return 3;
-  if (f.has('devouring blade')) return 3;
-  return f.has('extra attack') || f.has('thirsting blade') ? 2 : 1;
+  const own = f.has('three extra attacks') ? 4 : f.has('two extra attacks') || f.has('devouring blade') ? 3 : f.has('extra attack') || f.has('thirsting blade') ? 2 : 1;
+  return Math.max(own, catalog?.attacksMin ?? 1);
 }
 
 /** Os ataques feitos na ação Attack em curso, e o máximo; null fora de combate. */

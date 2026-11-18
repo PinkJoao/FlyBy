@@ -41,7 +41,11 @@
 //       o desarmado e as armas de monge (o dado da tabela e a DES); o dado da Versatile
 //       nas duas mãos também (a lança do monge 11 dizia "Two hands (1d8)", DDL-0221).
 //     scaledDice(raw, level), textDice(raw), textHealDice(raw), upcastDice(raw),
-//       spellMechanics(raw, level): a mecânica de uma magia pelo dado.
+//       spellMechanics(raw, level): a mecânica de uma magia pelo dado. O dano ganha `addMod` quando a frase
+//       do primeiro dado de dano soma o modificador ("1d8 plus your spellcasting ability modifier": Spiritual
+//       Weapon, Flame Blade, Bigby's Hand, Mordenkainen's Sword, Conjure Fey; DDL-0245), e os tipos vêm do
+//       par do texto quando o dado não traz `damageInflict` (Holy Star of Mystra: Force or Radiant).
+//     damageAddsMod(raw, dice): a frase do dado soma o modificador de conjuração?
 //     cantripAttacks(spellcasting, level): os cantrips que atacam ou pedem save.
 //   Ator em memória
 //     safeActor(character, db): o ator montado, ou null se a montagem falhar.
@@ -600,16 +604,24 @@ export function spellTypeOptions(raw) {
   return TYPE_CHOICE.test(text) ? types : null;
 }
 
+/** A frase do primeiro dado de dano soma o modificador de conjuração ("1d8 plus your spellcasting ability modifier")? */
+export function damageAddsMod(raw, dice) {
+  const m = JSON.stringify(raw?.entries ?? []).match(/\{@damage ([^}|]+)[^}]*\}([^.]*?)(?:plus|\+) your spellcasting ability modifier/i);
+  return !!m && m[1] === dice && !/\{@damage/.test(m[2]);
+}
+
 /** A mecânica de uma magia pelo dado do 5etools. */
 export function spellMechanics(raw, level) {
-  const types = raw?.damageInflict ?? [];
+  const text = JSON.stringify(raw?.entries ?? []).replace(/[{]@\w+ ([^|}]*)[^}]*[}]/g, '$1');
+  const pair = !raw?.damageInflict?.length ? text.match(TYPE_PAIR) : null;
+  const types = raw?.damageInflict ?? (pair ? [pair[1], pair[2]].map((t) => t.toLowerCase()) : []);
   const dice = raw?.level === 0 ? scaledDice(raw, level) ?? textDice(raw) : textDice(raw);
   const healing = (raw?.miscTags ?? []).includes('HL') ? textHealDice(raw) : null;
   const addMod = /spellcasting ability modifier/i.test(JSON.stringify(raw?.entries ?? []));
   return {
     attack: raw?.spellAttack?.[0] ?? null,
     save: raw?.savingThrow?.[0] ? raw.savingThrow[0].slice(0, 3) : null,
-    damage: types.length ? { dice, types, ...(spellTypeOptions(raw) ? { typeOptions: spellTypeOptions(raw) } : {}) } : null,
+    damage: types.length ? { dice, types, ...(pair ? { typeOptions: types } : spellTypeOptions(raw) ? { typeOptions: spellTypeOptions(raw) } : {}), ...(damageAddsMod(raw, dice) ? { addMod: true } : {}) } : null,
     heal: healing ? { dice: healing, addMod } : null,
     upcast: raw?.level > 0 ? upcastDice(raw) : null,
   };

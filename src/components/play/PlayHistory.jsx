@@ -25,6 +25,9 @@
 //     descrição (`onRead`: a magia, ou a feature de `payload.feature` ou da activity), e a opção usada
 //     (`payload.option`: Bond, Conjure, a activity escolhida, a opção do "Use", a arma da magia de arma) vem
 //     em destaque, na primeira etiqueta.
+//   - DDL-0245: `canRead` (da tela) diz se o card tem o que abrir; assim a rolagem de uma magia (pelo
+//     `attackKey`, também o "again" da instância leve) abre a magia, e a de arma não promete nada.
+//     O "Use" de uma instância leve (um `use` com `spellKey`) leva a etiqueta Spell.
 //   - A feature levada ao histórico à mão (`logged`, DDL-0203) mostra o custo do turno
 //     na Tag do tom do gasto e diz que nada foi rolado. O gasto de um extra ligado na
 //     rolagem (`spent`, DDL-0205) vira uma linha em qualquer tipo de card.
@@ -314,8 +317,8 @@ function DiceList({ group }) {
 }
 
 /** O cartão de um evento. */
-function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, onReroll, onRead, live }) {
-  const readable = !!onRead && (event.kind === 'cast' || !!event.payload?.feature || !!event.payload?.actionKey);
+function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, onReroll, onRead, canRead, live }) {
+  const readable = !!onRead && (canRead ? canRead(event) : event.kind === 'cast' || !!event.payload?.feature || !!event.payload?.actionKey);
   const rolls = event.rolls ?? {};
   const critical = event.kind === 'damageRoll' ? event.payload?.critical : rolls.isCritical;
   const save = event.kind === 'damageRoll' ? event.payload?.save : null;
@@ -326,7 +329,7 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
   return (
     <li className={undone ? `${styles.card} ${styles.undone}` : styles.card}>
       <div className={styles.head}>
-        <span className={styles.kind}>{KIND_LABEL[event.kind] ?? event.kind}</span>
+        <span className={styles.kind}>{event.kind === 'use' && event.payload?.spellKey ? 'Spell' : KIND_LABEL[event.kind] ?? event.kind}</span>
         {readable ? (
           <button type="button" className={`${styles.title} ${styles.titleButton}`} onClick={() => onRead(event)} title={`What ${event.label} does`}>
             {event.label}
@@ -431,7 +434,7 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
  * O histórico: do mais novo para o mais velho, separado por dia.
  * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function, onReroll?: Function, live?: object }} props
  */
-export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, onReroll, onRead, live }) {
+export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, onReroll, onRead, canRead, live }) {
   const events = doc?.events ?? [];
   if (!events.length) {
     return <p className={styles.empty}>Nothing rolled yet. Your rolls and actions show up here, and you can undo them.</p>;
@@ -457,6 +460,7 @@ export default function PlayHistory({ doc, onDamage, onConcentration, concentrat
         onFeatureEffect={onFeatureEffect}
         onReroll={onReroll}
         onRead={onRead}
+        canRead={canRead}
         live={live}
       />,
     );

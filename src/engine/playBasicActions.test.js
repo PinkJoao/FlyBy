@@ -180,3 +180,10 @@ describe('o que cada gasto do turno paga', () => {
   });
 });
 
+describe('o piso de ataques de um estado de arma (DDL-0245)', () => {
+  it('o attacksMin do catálogo é piso, não soma ao Extra Attack', () => {
+    expect(attacksPerAction({ features: [], attacksMin: 2 })).toBe(2);
+    expect(attacksPerAction({ features: ['Extra Attack'], attacksMin: 2 })).toBe(2);
+    expect(attacksPerAction({ features: ['Two Extra Attacks'], attacksMin: 2 })).toBe(3);
+  });
+});

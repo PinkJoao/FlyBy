@@ -9,6 +9,7 @@
 //   mode) ou a salvaguarda com a CD. O texto da ação abre no toque, como uma feature.
 //   A instância leve (S4, DDL-0194: Spiritual Weapon, Bigby's Hand) mostra a CA e os PV
 //   quando a prosa dá, a regra de comando e a linha que repete a magia sem espaço.
+//   O "Use" (DDL-0245) grava só o gasto do turno: mover, mudar de alvo, comandar sem rolar.
 //
 // FUNÇÕES
 //   speedLine(speed, variant): o deslocamento em uma linha, só o da forma.
@@ -37,7 +38,7 @@ import EntryContent from '../common/EntryContent';
 import useDialogStore from '../../store/dialogStore';
 import styles from '../builder/SpellbookTab.module.css';
 
-const LIGHT_LABEL = { attack: 'Attack', damage: 'Damage', heal: 'Heal' };
+const LIGHT_LABEL = { attack: 'Attack', damage: 'Damage', heal: 'Heal', use: 'Use' };
 
 /** O deslocamento em uma linha ("30 ft., fly 60 ft."), só o da forma escolhida. */
 function speedLine(speed, variant) {

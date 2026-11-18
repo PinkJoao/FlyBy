@@ -171,3 +171,10 @@ describe('status, doenças e efeitos de outros', () => {
     expect(sourceModifier('Fireball')).toBeNull();
   });
 });
+
+describe('imunidade de um modificador (DDL-0245)', () => {
+  it('soma às imunidades da ficha', () => {
+    const d = effectiveDefenses({ defenses: { resist: [], immune: ['poison'], vulnerable: [] } }, st({ modifiers: [{ id: 'm1', immune: ['fire'] }] }));
+    expect(d.immune).toEqual(['poison', 'fire']);
+  });
+});

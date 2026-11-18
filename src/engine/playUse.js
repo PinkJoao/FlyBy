@@ -20,9 +20,15 @@
 //   apotheosisApplies(catalog, { action, spendKey }): o Arcane Apotheosis pode tirar este gasto
 //     (Metamagic ou Sorcery Points); o jogo pergunta, porque não guarda se o Innate Sorcery está
 //     ativo nem quantos Metamagic já foram no turno (TC-0158). `options.noCost` tira o gasto.
+//   featureModifierOps(state, modifier): a op que liga o efeito da feature só se ele ainda não está ativo: a
+//     Unnerving Aura e o Hungering Might do Wrath of the Wild somavam outro +2 de CA (TC-0180, DDL-0252).
+//   activityRollData(catalog, state, activity, scaling): os dados das fórmulas da activity (o `@mod` dela), para o
+//     evento e para o rótulo do que rolar (DDL-0251).
 //   activityEvent(args): o evento de usar uma activity; o que ela DEVOLVE para no que foi
 //     gasto (o Magical Cunning com os 3 espaços cheios dizia "2 regained", DDL-0221).
-//     Rola também o `roll` da activity (o dado do Cutting Words).
+//     Rola também o `roll` da activity (o dado do Cutting Words). Um dano de vários tipos sai no tipo
+//     escolhido no UsePanel (`options.damageType`, DDL-0251). A cura do tipo `temphp` (Form of Dread, Dark One's
+//     Blessing, Tireless, Fiendish Vigor) dá PV temporários, ligada por padrão, e nunca cura (TC-0179, DDL-0252).
 //   saveDcNow(activity, action, state, data): a CD da activity no uso; a que cresce com os
 //     usos (`dcFormula` com `@item.uses.spent`, a Relentless Rage) lê o gasto do estado.
 //   activityLabel(action, activity): o nome do uso; a activity que já contém o nome da
@@ -166,6 +172,20 @@ export function activityLabel(action, activity) {
   return `${a}: ${b}`;
 }
 
+/** Liga o efeito de uma feature só se ele ainda não está ativo (a activity de começo de turno não empilha nem renova). */
+export function featureModifierOps(state, modifier) {
+  if (!modifier) return [];
+  if ((state?.modifiers ?? []).some((m) => m.source === modifier.source && m.label === modifier.label)) return [];
+  return [{ op: 'modifier', add: state ? withRounds(modifier, state, modifier.maxRounds) : modifier }];
+}
+
+/** Os dados das fórmulas de uma activity: o rollData vivo, a escala e o `@mod` do atributo dela. */
+export function activityRollData(catalog, state, activity, scaling = 1) {
+  const mods = catalog.rollData?.abilities ?? {};
+  const ability = activity.attack?.ability ?? null;
+  return { ...liveRollData(catalog, state), scaling, ...(ability ? { mod: mods[ability]?.mod ?? 0 } : activity.mod != null ? { mod: activity.mod } : {}) };
+}
+
 /**
  * O evento de usar uma activity: gasta, rola e, quando é em si mesmo, cura.
  * @param {{ catalog: object, state: object, action: object, activity: object, options?: object, rng?: Function, now?: Date }} args
@@ -190,16 +210,14 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
   const short = costs.filter((c) => c.amount > 0 && left(catalog, state, c.key) < c.amount).map((c) => nameOf(catalog, c.key));
 
   const scaling = Math.max(1, Math.floor(Number(options.scaling) || 1));
-  const mods = catalog.rollData?.abilities ?? {};
-  const ability = activity.attack?.ability ?? null;
-  const data = { ...liveRollData(catalog, state), scaling, ...(ability ? { mod: mods[ability]?.mod ?? 0 } : activity.mod != null ? { mod: activity.mod } : {}) };
+  const data = activityRollData(catalog, state, activity, scaling);
   const r = rngFor(options, rng);
   const parts = [];
   let attack = null;
   if (activity.attack && only !== 'effect') {
     attack = d20Test({
       parts: [
-        { label: 'Modifier', formula: ability ? mods[ability]?.mod ?? 0 : 0 },
+        { label: 'Modifier', formula: activity.attack?.ability ? catalog.rollData?.abilities?.[activity.attack.ability]?.mod ?? 0 : 0 },
         { label: 'Proficiency', formula: catalog.rollData?.prof ?? 0 },
         ...(options.applied?.parts ?? []),
         ...bonusParts(options),
@@ -209,25 +227,29 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
       rng: r,
     });
   }
-  const healLabel = activity.heal?.label ?? 'Healing';
-  const giftMax = activity.heal && (options.applyHeal ?? activity.selfTarget) && healDiceMaxed(state);
+  const temp = (activity.heal?.types ?? []).includes('temphp');
+  const healLabel = activity.heal?.label ?? (temp ? 'Temporary Hit Points' : 'Healing');
+  const giftMax = activity.heal && !temp && (options.applyHeal ?? activity.selfTarget) && healDiceMaxed(state);
   if (activity.heal && only !== 'attack') parts.push({ label: healLabel, formula: giftMax ? withDiceMax(activity.heal.formula, data) : activity.heal.formula });
   if (activity.roll && only !== 'attack') parts.push({ label: activity.roll.label, formula: activity.roll.formula });
-  for (const p of only === 'attack' ? [] : activity.damage ?? []) parts.push({ label: (p.types ?? []).join('/') || 'Damage', formula: p.formula });
+  const chosen = (p) => (options.damageType && (p.types ?? []).includes(options.damageType) ? [options.damageType] : p.types ?? []);
+  for (const p of only === 'attack' ? [] : activity.damage ?? []) parts.push({ label: chosen(p).join('/') || 'Damage', formula: p.formula });
   const rolls = parts.length
     ? rollParts([...parts, ...(attack ? [] : bonusParts(options))], { data, rng: r, critical: !!activity.attack && !!(options.critical || attack?.isCritical) })
     : null;
 
   const effect = free ? null : featureModifier(action, catalog);
-  if (effect) ops.push({ op: 'modifier', add: withRounds(effect, state, effect.maxRounds) });
+  ops.push(...featureModifierOps(state, effect));
 
-  const healSelf = activity.heal && (options.applyHeal ?? activity.selfTarget);
+  const healSelf = activity.heal && (options.applyHeal ?? (activity.selfTarget || temp));
   let healed = null;
+  let tempGained = null;
   if (healSelf && rolls) {
     const amount = rolls.parts.find((p) => p.label === healLabel)?.total ?? 0;
-    const heal = healOutcome(state, catalog, amount);
+    const heal = temp ? tempHpOutcome(state, amount, { catalog }) : healOutcome(state, catalog, amount);
     ops.push(...heal.ops);
-    healed = heal.summary;
+    if (temp) tempGained = heal.summary;
+    else healed = heal.summary;
   }
 
   return makeEvent('use', {
@@ -241,8 +263,9 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
       costs: costs.map((c) => ({ name: nameOf(catalog, c.key), amount: c.amount })),
       short,
       save: activity.save ? { abilities: activity.save.abilities, dc: saveDcNow(activity, action, state, data) } : null,
-      types: (activity.damage ?? []).flatMap((p) => p.types ?? []),
+      types: (activity.damage ?? []).flatMap(chosen),
       healed,
+      ...(tempGained ? { temp: tempGained } : {}),
       attack: attack ? { total: attack.total, natural: attack.natural, critical: attack.isCritical } : null,
       effect: effect?.label ?? null,
       only,
@@ -383,7 +406,7 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
   const maxed = apply === 'heal' && healDiceMaxed(state) && /d\d/.test(String(roll?.formula ?? ''));
   const rolls = roll ? rollParts([{ label: maxed ? `${roll.label} (Gift of the Ever-Living Ones)` : roll.label, formula: maxed ? withDiceMax(roll.formula, catalog.rollData) : roll.formula }], { data: catalog.rollData, rng }) : null;
   const ops = spend && amount > 0 ? [{ op: 'spend', key: spend, amount }] : [];
-  if (modifier) ops.push({ op: 'modifier', add: state ? withRounds(modifier, state, modifier.maxRounds) : modifier });
+  ops.push(...featureModifierOps(state, modifier));
   let healed = null;
   let temp = null;
   if (apply && rolls && state) {

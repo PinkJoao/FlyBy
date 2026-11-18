@@ -16,7 +16,7 @@ import { emptyPlayState, applyOp } from './playState';
 import {
   conditionList, rollEffects, applyEffects, effectiveDefenses, effectiveAc, effectiveSpeed, makeModifier,
   featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier,
-  defaultGrip, attackRollContext,
+  defaultGrip, attackRollContext, effectiveSpeeds,
 } from './playEffects';
 
 const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
@@ -209,5 +209,32 @@ describe('a empunhadura (DDL-0247)', () => {
     expect(gwf).toMatchObject({ grip: 'two', defaultOn: false });
     const onLance = rollEffects(emptyPlayState(), cat, attackRollContext(lance, 'damage', {})).find((e) => /Great Weapon Fighting/.test(e.label));
     expect(onLance.defaultOn).toBe(true);
+  });
+});
+
+describe('as formas que dão defesa e deslocamento (TC-0177, DDL-0251)', () => {
+  const cat = { stats: { ac: 15, speeds: { walk: { feet: 30 } } }, defenses: { resist: [], immune: [], vulnerable: [] }, rollData: { classes: { ranger: { levels: 11 } } }, features: [] };
+
+  it('Rage of the Gods: voo igual ao deslocamento e as três resistências', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:rage-of-the-gods' }, cat)] });
+    expect(effectiveSpeeds(cat, s).fly.feet).toBe(30);
+    expect(effectiveDefenses(cat, s).resist).toEqual(['necrotic', 'psychic', 'radiant']);
+  });
+
+  it("Ghost Walk voa 10 pés; Djinni's Escape resiste a BPS; Wrath of the Wild dá +2 de CA no 11", () => {
+    expect(effectiveSpeeds(cat, st({ modifiers: [featureModifier({ key: 'action:ghost-walk' }, cat)] })).fly.feet).toBe(10);
+    expect(effectiveDefenses(cat, st({ modifiers: [featureModifier({ key: 'action:djinnis-escape' }, cat)] })).resist).toEqual(['bludgeoning', 'piercing', 'slashing']);
+    expect(effectiveAc(cat, st({ modifiers: [featureModifier({ key: 'action:wrath-of-the-wild' }, cat)] }))).toBe(17);
+    expect(effectiveAc(cat, st({ modifiers: [featureModifier({ key: 'action:wrath-of-the-wild' }, { ...cat, rollData: { classes: { ranger: { levels: 5 } } } })] }))).toBe(16);
+  });
+
+  it('Shadowform: o 1d6 do Void Empowerment desligado, só na magia com espaço psíquica ou necrótica', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:shadowform' }, cat)] });
+    const spell = rollEffects(s, cat, { kind: 'damage', spell: true, types: ['necrotic'] }).filter((e) => e.source === 'Shadowform');
+    expect(spell).toHaveLength(1);
+    expect(spell[0]).toMatchObject({ defaultOn: false, part: { formula: '1d6' } });
+    expect(rollEffects(s, cat, { kind: 'damage', spell: true, cantrip: true, types: ['necrotic'] }).filter((e) => e.source === 'Shadowform')).toEqual([]);
+    expect(rollEffects(s, cat, { kind: 'damage', spell: true, types: ['radiant'] }).filter((e) => e.source === 'Shadowform')).toEqual([]);
+    expect(rollEffects(s, cat, { kind: 'damage', weapon: true }).filter((e) => e.source === 'Shadowform')).toEqual([]);
   });
 });

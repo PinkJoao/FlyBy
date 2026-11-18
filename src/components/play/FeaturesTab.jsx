@@ -17,7 +17,8 @@
 //   Pips(props): o contador em bolinhas ou gemas (até 12) ou em número.
 //   showFeatureText(feature, onLog): o texto da feature num diálogo, com "Log to
 //     history".
-//   FeatureRow(props): uma linha.
+//   FeatureRow(props): uma linha; os botões dela (`buttons`) também vão no rodapé da prévia (`preview`), para
+//     usar sem fechar o texto (DDL-0251).
 //   FeaturesTab(props): a aba; `poolsOf(f)` são os pools da linha.
 //
 // DECISÕES E ARMADILHAS
@@ -138,9 +139,20 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
   const loneLeft = lone ? remainingOf(state, lone.key, lone.max) : 0;
   const textOnly = !activities.length && !pools.length && (turn.length > 0 || !!feature.trigger || (!!feature.roll && feature.roll !== 'passive')) && !special;
   const rider = feature.roll === 'rider' ? featureRollOf(feature.name) : null;
+  const buttons = [
+    ...((activities.length > 0 || pactUse || weaponUse) ? [{ key: 'use', label: special ? 'Choose' : 'Use', run: use, title: `Use ${feature.name}` }] : []),
+    ...(onTransform && transformRuleOf(feature.name)?.kind === 'wildShape' ? [{ key: 'transform', label: 'Transform', run: () => onTransform(feature), title: 'Assume one of your known forms' }] : []),
+    ...(onSummon && isSummonFeature(feature.name) ? [{ key: 'summon', label: 'Summon', run: () => onSummon(feature), title: `Summon with ${feature.name}` }] : []),
+    ...(lone && !weaponUse ? [{ key: 'lone', label: 'Use', run: () => onLog?.(feature, lone.key), disabled: loneLeft <= 0 || !onLog, title: `Spend one ${lone.name}` }] : []),
+    ...(textOnly && onLog ? [{ key: 'log', label: 'Use', run: () => onLog(feature), title: `Log ${feature.name} to the history`, logs: true }] : []),
+  ];
+  const preview = () => {
+    const live = buttons.filter((b) => !b.disabled);
+    showFeatureText(feature, live.some((b) => b.logs) ? null : onLog, live.map((b) => ({ label: b.label, run: b.run })));
+  };
   return (
     <li className={styles.row}>
-      <button type="button" className={styles.rowHit} onClick={() => showFeatureText(feature, onLog)} title={`About ${feature.name}`}>
+      <button type="button" className={styles.rowHit} onClick={preview} title={`About ${feature.name}`}>
         <span className={styles.rowText}>
           <span className={styles.rowName}>{feature.name}</span>
           <span className={styles.rowSub}>
@@ -160,31 +172,11 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
             <Pips left={remainingOf(state, p.key, p.max)} max={p.max} />
           </button>
         ))}
-        {(activities.length > 0 || pactUse || weaponUse) && (
-          <Button size="sm" variant="primary" onClick={use} title={`Use ${feature.name}`}>
-            {special ? 'Choose' : 'Use'}
+        {buttons.map((b) => (
+          <Button key={b.key} size="sm" variant="primary" onClick={b.run} disabled={b.disabled} title={b.title}>
+            {b.label}
           </Button>
-        )}
-        {onTransform && transformRuleOf(feature.name)?.kind === 'wildShape' && (
-          <Button size="sm" variant="primary" onClick={() => onTransform(feature)} title="Assume one of your known forms">
-            Transform
-          </Button>
-        )}
-        {onSummon && isSummonFeature(feature.name) && (
-          <Button size="sm" variant="primary" onClick={() => onSummon(feature)} title={`Summon with ${feature.name}`}>
-            Summon
-          </Button>
-        )}
-        {lone && !weaponUse && (
-          <Button size="sm" variant="primary" onClick={() => onLog?.(feature, lone.key)} disabled={loneLeft <= 0 || !onLog} title={`Spend one ${lone.name}`}>
-            Use
-          </Button>
-        )}
-        {textOnly && onLog && (
-          <Button size="sm" variant="primary" onClick={() => onLog(feature)} title={`Log ${feature.name} to the history`}>
-            Use
-          </Button>
-        )}
+        ))}
       </div>
     </li>
   );

@@ -25,6 +25,9 @@
 //     descrição (`onRead`: a magia, ou a feature de `payload.feature` ou da activity), e a opção usada
 //     (`payload.option`: Bond, Conjure, a activity escolhida, a opção do "Use", a arma da magia de arma) vem
 //     em destaque, na primeira etiqueta.
+//   - DDL-0251: todo card abre algo (a tela decide o quê, `onRead`); o card SEM botão próprio (nem "Roll damage",
+//     nem "Reroll", nem "Dismiss"...) é clicável inteiro (`whole`, com teclado), o que tem botão mantém o título
+//     como o botão de abrir, para um toque no "Roll damage" nunca abrir a prévia.
 //   - DDL-0245: `canRead` (da tela) diz se o card tem o que abrir; assim a rolagem de uma magia (pelo
 //     `attackKey`, também o "again" da instância leve) abre a magia, e a de arma não promete nada.
 //     O "Use" de uma instância leve (um `use` com `spellKey`) leva a etiqueta Spell.
@@ -326,11 +329,32 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
   const dc = event.kind === 'damage' ? event.payload?.concentrationDc : null;
   const groups = undone || !live?.onDismiss ? [] : (event.ops ?? []).filter((o) => o.op === 'summon' && o.add && live.summons?.has(o.add.id)).map((o) => o.add);
   const formLive = !undone && live?.form && live.formEventId === event.id && live.onRevert;
+  const castTriggers = event.kind === 'cast' && !undone && onSpell ? (live?.castTriggersOf?.(event) ?? []) : [];
+  const hasButtons = !undone && (
+    (event.kind === 'attack' && !!onDamage)
+    || ((event.kind === 'damageRoll' || event.kind === 'healRoll') && !!live?.canRerollDice?.(event))
+    || ((event.kind === 'attack' || event.kind === 'check') && !!event.rolls && !!onReroll)
+    || (event.kind === 'use' && event.payload?.only === 'attack' && !!onFeatureEffect)
+    || (event.kind === 'cast' && !!onSpell && (event.payload?.attack != null || !!event.payload?.damage || !!event.payload?.heal || castTriggers.length > 0))
+    || groups.length > 0 || !!formLive
+    || (!!dc && concentrating && !!onConcentration)
+  );
+  const whole = readable && !hasButtons;
+  const open = () => onRead(event);
+  const cardProps = whole
+    ? { role: 'button', tabIndex: 0, onClick: open, onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }, title: `What ${event.label} is` }
+    : {};
+  const cls = [styles.card, undone ? styles.undone : '', whole ? styles.cardClickable : ''].filter(Boolean).join(' ');
   return (
-    <li className={undone ? `${styles.card} ${styles.undone}` : styles.card}>
+    <li className={cls} {...cardProps}>
       <div className={styles.head}>
         <span className={styles.kind}>{event.kind === 'use' && event.payload?.spellKey ? 'Spell' : KIND_LABEL[event.kind] ?? event.kind}</span>
-        {readable ? (
+        {whole ? (
+          <span className={`${styles.title} ${styles.titleButton}`}>
+            {event.label}
+            <Icon name="info" className={styles.readIcon} />
+          </span>
+        ) : readable ? (
           <button type="button" className={`${styles.title} ${styles.titleButton}`} onClick={() => onRead(event)} title={`What ${event.label} does`}>
             {event.label}
             <Icon name="info" className={styles.readIcon} />
@@ -406,7 +430,7 @@ function RollCard({ event, undone, onDamage, onConcentration, concentrating, onS
           {event.payload?.heal && (
             <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'heal')}>Healing</Button>
           )}
-          {(live?.castTriggersOf?.(event) ?? []).map((t) => (
+          {castTriggers.map((t) => (
             <Button key={t.name} size="sm" className={styles.action} onClick={() => live.onCastTrigger(t)}>{t.label}</Button>
           ))}
         </span>

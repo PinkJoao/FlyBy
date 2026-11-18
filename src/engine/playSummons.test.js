@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyEvent, makeEvent } from './playState';
-import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, familiarSpecialForms, repeatDice, LIGHT_REPEATS, lightCount } from './playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, isSummonFeature, familiarForms, isLightSummon, lightRulesOf, lightOps, familiarBoons, summonRiders, summonDamageTypes, familiarSpecialForms, repeatDice, LIGHT_REPEATS, lightCount } from './playSummons';
 import { objectSummons, creatureStats } from './creature';
 import { endConcentrationOps } from './playEffects';
 import { nextTurnEvent } from './playCombat';
@@ -249,5 +249,16 @@ describe('os meteoros do Melf\'s Minute Meteors (DDL-0247)', () => {
     const id = state.summons[0].id;
     state = applyEvent(state, makeEvent('roll', { label: 'Meteor', ops: [{ op: 'summon', id, count: -2 }] }));
     expect(state.summons[0].light.count.left).toBe(4);
+  });
+});
+
+describe('Exceptional Training no acerto do Primal Companion (DDL-0251)', () => {
+  const view = { group: { feature: 'Primal Companion' } };
+  const rend = { name: 'Rend', attack: { bonus: 7 }, damage: [{ formula: '1d8 + 2', type: 'slashing' }] };
+  it('Force ou o tipo normal, só com a feature, no ataque e no companheiro', () => {
+    expect(summonDamageTypes(view, { features: ['exceptional training'] }, rend)).toEqual(['slashing', 'force']);
+    expect(summonDamageTypes(view, { features: [] }, rend)).toBeNull();
+    expect(summonDamageTypes({ group: { feature: 'Find Familiar' } }, { features: ['exceptional training'] }, rend)).toBeNull();
+    expect(summonDamageTypes(view, { features: ['exceptional training'] }, { ...rend, attack: null })).toBeNull();
   });
 });

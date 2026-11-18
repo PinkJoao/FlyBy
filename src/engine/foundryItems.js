@@ -1676,7 +1676,7 @@ export function resolveSubclassFeatures(subclass, classId, db, { min = 1, max } 
     const key = `${n}|${lvl}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ name: f.name, level: lvl, source: f.source ?? subclass.source, entries: f.entries ?? [] });
+    out.push({ name: f.name, level: lvl, source: f.source ?? subclass.source, entries: f.entries ?? [], ...(f.consumes ? { consumes: f.consumes } : {}) });
   }
   return out;
 }

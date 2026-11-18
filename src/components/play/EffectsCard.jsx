@@ -19,6 +19,9 @@
 //     nele, engine/playCombat); fora dele vale a duração escrita.
 //   - O que o próprio personagem lança ou usa (Bless, Rage) entra SOZINHO ao
 //     lançar ou usar; o Add effect é para o que vem de fora.
+//   - As linhas dizem também a condição do efeito (`when`, a opção na rolagem), as resistências, as imunidades
+//     e os deslocamentos novos (`speeds`) do modificador: o Shadowform dizia "+1d6 on damage rolls" e o Rage
+//     of the Gods não mostrava as resistências (DDL-0252).
 //   - O efeito ligado por concentração diz que acaba com ela: tirar a concentração
 //     o tira junto (engine/playEffects).
 // -----------------------------------------------------------------------------
@@ -33,6 +36,7 @@ import styles from './PlayCards.module.css';
 
 const TARGET = { attack: 'attack rolls', save: 'saving throws', check: 'ability checks', damage: 'damage rolls', initiative: 'Initiative' };
 const MODE = { adv: 'Advantage', dis: 'Disadvantage', advantage: 'Advantage', disadvantage: 'Disadvantage' };
+const WHEN = { strAttack: 'Strength attacks', weaponAttack: 'weapon attacks', spell: 'spells', slotSpell: 'spells cast with a slot' };
 const DURATION = { shortRest: 'Until a Short or Long Rest', longRest: 'Until a Long Rest' };
 
 /** O nome de um alvo ("attack rolls", "Stealth"). */
@@ -43,10 +47,17 @@ function effectLines(m, combat) {
   const lines = [];
   for (const e of m.effects ?? []) {
     const what = e.formula ? (/^[+-]/.test(String(e.formula)) ? e.formula : `+${e.formula}`) : MODE[e.mode] ?? e.mode;
-    if (what && (e.targets ?? []).length) lines.push(`${what} on ${e.targets.map(targetName).join(', ')}`);
+    if (!what || !(e.targets ?? []).length) continue;
+    const scope = [WHEN[e.when], e.types?.length ? `${e.types.join(' or ')} damage` : null].filter(Boolean).join(', ');
+    lines.push(e.optional && e.label
+      ? `${what} ${e.label}${scope ? `: ${scope}` : ''}, an option in the roll`
+      : `${what} on ${e.targets.map(targetName).join(', ')}${scope ? ` (${scope})` : ''}${e.optional ? ', an option in the roll' : ''}`);
   }
   if (Number(m.ac)) lines.push(`${m.ac > 0 ? '+' : ''}${m.ac} AC`);
   if (Number(m.speed)) lines.push(`${m.speed > 0 ? '+' : ''}${m.speed} ft speed`);
+  if ((m.resist ?? []).length) lines.push(`Resistance to ${m.resist.join(', ')}`);
+  if ((m.immune ?? []).length) lines.push(`Immunity to ${m.immune.join(', ')}`);
+  for (const [mode, v] of Object.entries(m.speeds ?? {})) lines.push(`${mode[0].toUpperCase()}${mode.slice(1)} Speed ${v === 'walk' ? 'equal to your Speed' : `${v} feet`}`);
   if (combat && m.rounds && m.startRound != null) {
     const left = m.startRound + m.rounds - combat.round;
     lines.push(`${left} round${left === 1 ? '' : 's'} left`);

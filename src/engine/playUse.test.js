@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
-  left, slotKey, resolveCosts, activityEvent, apotheosisApplies, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
+  left, slotKey, resolveCosts, activityEvent, featureModifierOps, apotheosisApplies, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
 } from './playUse';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -274,5 +274,49 @@ describe('Arcane Apotheosis (TC-0158)', () => {
     expect(apotheosisApplies(cat, { spendKey: 'pool:font-of-magic' })).toBe(true);
     expect(apotheosisApplies(cat, { spendKey: 'pool:rage' })).toBe(false);
     expect(apotheosisApplies({ ...cat, features: [] }, { action: { subtype: 'metamagic' } })).toBe(false);
+  });
+});
+
+describe('o tipo escolhido no dano de vários tipos (DDL-0251)', () => {
+  const strike = {
+    key: 'action:elemental-attunement', name: 'Elemental Attunement',
+    activities: [{ id: 'e', type: 'attack', name: 'Elemental Strike', consumes: [], damage: [{ formula: '1d8', types: ['acid', 'cold', 'fire'] }] }],
+  };
+  it('o evento leva só o tipo escolhido; sem escolha, todos', () => {
+    const e = activityEvent({ catalog, state: st(), action: strike, activity: strike.activities[0], options: { only: 'damage', damageType: 'cold' }, rng: seq(5) });
+    expect(e.payload.types).toEqual(['cold']);
+    expect(e.rolls.parts[0].label).toBe('cold');
+    const all = activityEvent({ catalog, state: st(), action: strike, activity: strike.activities[0], options: { only: 'damage' }, rng: seq(5) });
+    expect(all.payload.types).toEqual(['acid', 'cold', 'fire']);
+  });
+});
+
+describe('a cura de PV temporários de uma activity (TC-0179, DDL-0252)', () => {
+  const dread = {
+    key: 'action:form-of-dread', name: 'Form of Dread',
+    activities: [{ id: 'f', type: 'heal', name: 'Assume Avatar', consumes: [], heal: { formula: '1d10 + 5', types: ['temphp'] }, damage: [], selfTarget: false }],
+  };
+  it('dá temporários por padrão e não cura', () => {
+    const s = st({ damage: 10 });
+    const e = activityEvent({ catalog, state: s, action: dread, activity: dread.activities[0], rng: seq(6) });
+    const after = run(s, e);
+    expect(after.tempHp).toBe(11);
+    expect(after.damage).toBe(10);
+    expect(e.payload.temp).toMatchObject({ to: 11 });
+    expect(e.payload.healed).toBeNull();
+  });
+  it('desligado no diálogo, nada muda', () => {
+    const s = st();
+    const after = run(s, activityEvent({ catalog, state: s, action: dread, activity: dread.activities[0], options: { applyHeal: false }, rng: seq(6) }));
+    expect(after.tempHp).toBe(0);
+  });
+});
+
+describe('o efeito de uma feature não empilha (TC-0180, DDL-0252)', () => {
+  it('ligado uma vez; outra activity da mesma feature não soma outro', () => {
+    const m = { id: 'm1', label: 'Wrath of the Wild', source: 'feature', ac: 2, effects: [] };
+    expect(featureModifierOps(st(), m)).toHaveLength(1);
+    expect(featureModifierOps(st({ modifiers: [m] }), { ...m, id: 'm2' })).toEqual([]);
+    expect(featureModifierOps(st(), null)).toEqual([]);
   });
 });

@@ -16,6 +16,10 @@
 //   - Os custos mostrados saem de resolveCosts, a MESMA conta do evento: o que o
 //     painel promete é o que se grava.
 //   - O círculo do slot começa no menor que ainda tem slot livre.
+//   - A cura de PV temporários (`heal.types` com `temphp`) diz "Gain the Temporary Hit Points" e vem ligada (TC-0179).
+//   - Um dano de vários tipos (Elemental Strike, Empowered Strikes) é uma escolha (`damageType`), como no diálogo
+//     do dano (§6.4, DDL-0251); o primeiro tipo vem marcado. Com `only` (a rolagem escolhida antes), o modo do
+//     ataque some quando só o dano rola, e o tipo some quando só o ataque rola.
 // -----------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
@@ -25,12 +29,13 @@ import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
 import Button from '../common/Button';
 import Toggle from '../common/Toggle';
+import DamageTypePicker from './DamageTypePicker';
 
 /**
  * O conteúdo do diálogo de usar uma feature.
  * @param {{ catalog: object, state: object, action: object, activity: object }} props
  */
-export default function UsePanel({ catalog, state, activity }) {
+export default function UsePanel({ catalog, state, activity, only = null }) {
   const close = useDialogClose();
   const slotCost = (activity.consumes ?? []).find((c) => c.spellSlot != null);
   const minSlot = slotCost ? Number.parseInt(slotCost.spellSlot, 10) || 1 : null;
@@ -38,9 +43,12 @@ export default function UsePanel({ catalog, state, activity }) {
   const firstFree = slotLevels.find((r) => left(catalog, state, r.key) > 0) ?? slotLevels[0];
   const [scaling, setScaling] = useState(1);
   const [slotLevel, setSlotLevel] = useState(firstFree?.level ?? minSlot);
-  const [applyHeal, setApplyHeal] = useState(!!activity.selfTarget);
+  const tempHeal = (activity.heal?.types ?? []).includes('temphp');
+  const [applyHeal, setApplyHeal] = useState(!!activity.selfTarget || tempHeal);
   const [mode, setMode] = useState('normal');
   const [bonus, setBonus] = useState('');
+  const typeChoice = (activity.damage ?? []).find((p) => (p.types ?? []).length > 1)?.types ?? null;
+  const [damageType, setDamageType] = useState(typeChoice?.[0] ?? null);
   const btnRef = useRef(null);
 
   useEffect(() => {
@@ -48,7 +56,7 @@ export default function UsePanel({ catalog, state, activity }) {
     return () => clearTimeout(t);
   }, []);
 
-  const options = { scaling, slotLevel, applyHeal, mode, bonus };
+  const options = { scaling, slotLevel, applyHeal, mode, bonus, ...(typeChoice ? { damageType } : {}) };
   const costs = resolveCosts(catalog, state, activity, options);
   const nameOf = (key) => (catalog.resources ?? []).find((r) => r.key === key)?.name ?? key;
 
@@ -91,9 +99,9 @@ export default function UsePanel({ catalog, state, activity }) {
         </label>
       )}
       {activity.heal && (
-        <Toggle checked={applyHeal} onChange={setApplyHeal} label="Heal myself with it" />
+        <Toggle checked={applyHeal} onChange={setApplyHeal} label={tempHeal ? 'Gain the Temporary Hit Points' : 'Heal myself with it'} />
       )}
-      {activity.attack && (
+      {activity.attack && only !== 'effect' && (
         <SegmentedControl
           block
           value={mode}
@@ -104,6 +112,7 @@ export default function UsePanel({ catalog, state, activity }) {
           onChange={setMode}
         />
       )}
+      {typeChoice && only !== 'attack' && <DamageTypePicker types={typeChoice} value={damageType} onChange={setDamageType} />}
       {(activity.attack || activity.heal || (activity.damage ?? []).length > 0) && (
         <label className={styles.field}>
           <span className={styles.label}>Situational bonus</span>

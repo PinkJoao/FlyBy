@@ -12,6 +12,7 @@
 //   InventoryTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
+//   - A prévia do item (o "i") traz o mesmo Use ou Attack da linha no rodapé (DDL-0251).
 //   - O ataque da linha é o da arma pelo `uid`, nunca a variante do Cleave (mesmo uid): o Attack do Greataxe
 //     abria o "Greataxe (Cleave)", sem o modificador (TC-0173, DDL-0249).
 //   - A arma de pacto vinculada (`state.pactWeapon`) aparece com "(pact weapon)" no nome (DDL-0240); a
@@ -69,15 +70,17 @@ export default function InventoryTab({ catalog, state, inventory, db, onUse, onC
     const entry = pact ? { ...raw, customName: nameOf(raw) + ' (pact weapon)' } : raw;
     const charge = charges.get(entry.uid);
     const attack = attacks.get(entry.uid);
+    const use = isUsable(entry.raw) ? () => onUse(entry) : charge ? () => onCharge(charge) : attack ? () => onAttack(attack) : undefined;
+    const useLabel = !isUsable(entry.raw) && !charge && attack ? 'Attack' : 'Use';
     return (
       <ItemRow
         key={entry.uid ?? nameOf(entry)}
         entry={entry}
         thumb={thumbOf(entry, db)}
         readOnly
-        onInfo={() => entry.raw && showDetailPopup({ entity: itemEntity, raw: entry.raw, db })}
-        onUse={isUsable(entry.raw) ? () => onUse(entry) : charge ? () => onCharge(charge) : attack ? () => onAttack(attack) : undefined}
-        useLabel={!isUsable(entry.raw) && !charge && attack ? 'Attack' : 'Use'}
+        onInfo={() => entry.raw && showDetailPopup({ entity: itemEntity, raw: entry.raw, db, actions: use ? [{ label: useLabel, value: 'use', tone: 'primary' }] : [] }).then((v) => v === 'use' && use())}
+        onUse={use}
+        useLabel={useLabel}
         usesLeft={charge ? `${remainingOf(state, charge.key, charge.max)}/${charge.max}` : null}
         onUsesLeft={charge && onResource ? () => onResource(charge) : undefined}
       />

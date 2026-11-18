@@ -16,7 +16,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { creatureStats, templateValue, crPb, damageFormula } from './creature';
+import { creatureStats, templateValue, crPb, damageFormula, parseAction } from './creature';
 import { resolveCopies } from '../selector/copy';
 
 const DIR = join(import.meta.dirname, '..', '..', 'DnD Source Material', '5etools Source Code', 'data', 'bestiary');
@@ -84,5 +84,19 @@ describe.skipIf(!all.length)('creatureStats com blocos reais (DDL-0191)', () => 
     const s = creatureStats(get('Hound of Ill Omen', 'XGE'));
     expect(s.ac.value).toBeGreaterThan(10);
     expect(s.hp.value).toBeGreaterThan(10);
+  });
+});
+
+describe('o dano condicional e o tipo à escolha (TC-0181, DDL-0252)', () => {
+  const strike = { name: "Beast's Strike", entries: ['{@atkr m} {@hitYourSpellAttack Bonus equals your spell attack modifier}, reach 5 ft. {@h}{@damage 1d8 + 2} plus your Wisdom modifier Bludgeoning, Piercing, or Slashing damage (your choice when you summon the beast). If the beast moved at least 20 feet straight toward the target before the hit, the target takes an extra {@damage 1d6} damage of the same type, and the target has the {@condition Prone|XPHB} condition if it is a Large or smaller creature.'] };
+  it('o primeiro dano escolhe o tipo; o extra do Charge é condicional', () => {
+    const a = parseAction(strike, { spellAttack: 7 });
+    expect(a.damage[0].typeOptions).toEqual(['bludgeoning', 'piercing', 'slashing']);
+    expect(a.damage[0].condition).toBeUndefined();
+    expect(a.damage[1].condition).toMatch(/^If the beast moved at least 20 feet straight toward the target before the hit$/);
+  });
+  it('um segundo dano sem "If" não é condicional', () => {
+    const bite = { name: 'Bite', entries: ['{@atk mw} {@hit 5} to hit. {@h}7 ({@damage 1d10 + 2}) piercing damage plus 3 ({@damage 1d6}) fire damage.'] };
+    expect(parseAction(bite).damage.every((d) => !d.condition)).toBe(true);
   });
 });

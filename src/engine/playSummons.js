@@ -36,6 +36,11 @@
 //   familiarBoons(group, features): o que as invocações mudam no familiar (TC-0166): a CD do
 //     invocador (Investment of the Chain Master), o ataque dele (Call of the Void) e as notas.
 //   withBoons(stats, boons): as ações do bloco com esse ataque e essa CD.
+//   summonDamageTypes(view, catalog, action): os tipos à escolha num acerto do summon: os do texto ("Bludgeoning,
+//     Piercing, or Slashing damage (your choice", TC-0181) e a Force do Exceptional Training do Primal Companion
+//     (DDL-0251), ou null.
+//   summonConditionalEffects(action, stats): o dano que o texto condiciona ("If the beast moved at least 20 feet
+//     straight") vira um extra desligado com a condição na nota, fora dos dados de sempre (TC-0181, DDL-0252).
 //   summonRiders(view, catalog, state, action): os extras do invocador no dano do summon (Master
 //     Demonologist: o 1d6 do Hex num diabo que você comanda, ligado se você concentra no Hex; o
 //     Magic Fang do Bond of Fang and Scale: 1d6 na mordida do drake, DDL-0239).
@@ -413,16 +418,40 @@ export function dismissEvent(group, now = new Date()) {
 
 /** Uma ação do summon no formato de ataque do play mode (rollAttackEvent, rollDamageEvent). */
 export function summonAttack(group, action, stats) {
-  const dice = action.damage.map((d) => d.formula).filter(Boolean);
+  const always = action.damage.filter((d) => !d.condition);
+  const dice = always.map((d) => d.formula).filter(Boolean);
+  const typeOptions = always.find((d) => d.typeOptions)?.typeOptions ?? null;
   return {
     key: `summon:${group.id}:${action.name}`,
     kind: 'summon',
     name: `${stats?.name ?? group.label}: ${action.name}`,
     attack: action.attack ? { bonus: action.attack.bonus ?? 0 } : null,
     save: action.save ?? null,
-    damage: dice.length ? { dice: dice.join(' + '), bonus: 0, types: [...new Set(action.damage.map((d) => d.type).filter(Boolean))] } : null,
+    damage: dice.length ? { dice: dice.join(' + '), bonus: 0, types: [...new Set(always.map((d) => d.type).filter(Boolean))], ...(typeOptions ? { typeOptions } : {}) } : null,
     versatile: null,
   };
+}
+
+/** Os danos de uma ação de summon que o texto condiciona ("If the beast moved at least 20 feet..."): extras desligados na rolagem. */
+export function summonConditionalEffects(action, stats = null) {
+  return (action?.damage ?? []).filter((d) => d.condition && d.formula).map((d, i) => ({
+    id: `summon-cond:${i}`,
+    label: `Extra ${d.formula}`,
+    source: stats?.name ?? action.name,
+    part: { label: `${action.name}: extra`, formula: d.formula },
+    note: d.condition,
+    defaultOn: false,
+  }));
+}
+
+/** Os tipos de dano que o invocador deixa escolher num acerto do summon (Exceptional Training: Force ou o tipo normal), ou null. */
+export function summonDamageTypes(view, catalog, action = null) {
+  const always = (action?.damage ?? []).filter((d) => !d.condition);
+  const own = [...new Set(always.flatMap((d) => d.typeOptions ?? [d.type]).map(lc).filter(Boolean))];
+  const features = catalog?.features ?? [];
+  const force = features.includes('exceptional training') && lc(view?.group?.feature) === 'primal companion' && !!action?.attack && own.length && !own.includes('force');
+  const out = force ? [...own, 'force'] : own;
+  return out.length > 1 ? out : null;
 }
 
 /** Os extras do invocador no dano de um summon (Master Demonologist: o Hex num diabo que você comanda). */

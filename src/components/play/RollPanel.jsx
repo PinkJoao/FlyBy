@@ -60,6 +60,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { validateFormula, resolveMode, resolveRefs } from '../../engine/dice';
+import DamageTypePicker from './DamageTypePicker';
 import { forgoDice, withDiceMin } from '../../engine/playActions';
 import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
@@ -217,14 +218,7 @@ export default function RollPanel({ kind, parts, rollData, defaultMode = 'normal
         />
       )}
       {kind === 'damage' && !healOption && damageTypes?.length > 1 && (
-        <SegmentedControl
-          block
-          role="radiogroup"
-          ariaLabel="Damage type"
-          value={damageType}
-          options={damageTypes.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))}
-          onChange={setDamageType}
-        />
+        <DamageTypePicker types={damageTypes} value={damageType} onChange={setDamageType} />
       )}
       {kind === 'damage' && !healOption && gripHands && (
         <SegmentedControl

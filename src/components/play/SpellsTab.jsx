@@ -25,6 +25,7 @@
 //   - A magia vem do catálogo de jogo (o que lança e o que gasta) e a parte "de
 //     livro" (arte, escola, tempo, alcance) da origem derivada, pelo nome: a linha é
 //     a SpellRow da ficha, que lê o `raw`.
+//   - A prévia da magia (o "i") traz o mesmo Cast ou Use da linha no rodapé (DDL-0251).
 //   - Cada magia leva as etiquetas dos gastos com que pode ser lançada, na cor do
 //     gasto (spellCosts, a Tag no tom do gasto, DDL-0165, DDL-0199): o tempo dela e os das features
 //     (Quickened Spell, Mantle of Majesty...). A mesma magia pode ter duas.
@@ -201,7 +202,12 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
                       entry={entry}
                       arcanum={!!s.arcanum}
                       thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
-                      onInfo={() => showDetailPopup({ entity: spellEntity, raw: entry.raw, db })}
+                      onInfo={() => {
+                        const label = onUse && activeOf(s) ? 'Use' : 'Cast';
+                        const off = s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s));
+                        showDetailPopup({ entity: spellEntity, raw: entry.raw, db, actions: off ? [] : [{ label, value: 'cast', tone: 'primary' }] })
+                          .then((v) => v === 'cast' && (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s)));
+                      }}
                       onCast={() => (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s))}
                       castLabel={onUse && activeOf(s) ? 'Use' : 'Cast'}
                       castDisabled={s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s))}

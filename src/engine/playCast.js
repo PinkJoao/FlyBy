@@ -22,6 +22,8 @@
 //     `damage.later` sem efeito curado nem instância leve: Hunger of Hadar, Web, Cordon of Arrows).
 //   activeZone(state, spell), endZoneEvent(args): ela está ativa (a concentração nela, ou o marcador `zone`
 //     da que não pede concentração, que o castEvent põe), e o evento de encerrar (DDL-0249).
+//   zoneUsedOps(state, spell, ids): guarda na magia de área ativa (a concentração ou o marcador) os extras de
+//     "one damage roll of that spell" já usados, para o "Damage again" vir com eles desligados (DDL-0251).
 //   castEvent(args): o evento de conjurar.
 //   spellAttackOf(origin, spell, level): a magia como "ataque" do playActions
 //     (acerto da origem, dano com o upcast), para rolar acerto e dano.
@@ -213,9 +215,19 @@ export function isZoneSpell(spell, catalog = null) {
 /** A magia de área ativa: pela concentração nela, ou pelo marcador da que não pede concentração. Null se não está ativa. */
 export function activeZone(state, spell) {
   if (!spell?.key) return null;
-  if (spell.concentration) return state?.concentration?.spellKey === spell.key ? { level: state.concentration.level ?? spell.level, concentration: true } : null;
+  if (spell.concentration) return state?.concentration?.spellKey === spell.key ? { level: state.concentration.level ?? spell.level, concentration: true, castUsed: state.concentration.castUsed ?? [] } : null;
   const m = (state?.modifiers ?? []).find((x) => x.zone === spell.key);
-  return m ? { level: m.level ?? spell.level, concentration: false, modifierId: m.id } : null;
+  return m ? { level: m.level ?? spell.level, concentration: false, modifierId: m.id, castUsed: m.castUsed ?? [] } : null;
+}
+
+/** As ops que guardam na magia de área ativa os extras de "one damage roll of that spell" já usados no lançamento. */
+export function zoneUsedOps(state, spell, ids = []) {
+  const zone = activeZone(state, spell);
+  const fresh = (ids ?? []).filter((id) => !(zone?.castUsed ?? []).includes(id));
+  if (!zone || !fresh.length) return [];
+  if (zone.concentration) return [{ op: 'concentration', value: { ...state.concentration, castUsed: [...zone.castUsed, ...fresh] } }];
+  const m = state.modifiers.find((x) => x.id === zone.modifierId);
+  return [{ op: 'modifier', add: { ...m, castUsed: [...zone.castUsed, ...fresh] } }];
 }
 
 /** O evento de encerrar a magia de área: a concentração (com o que depende dela) ou o marcador. */

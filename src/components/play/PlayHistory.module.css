@@ -4,6 +4,7 @@
  * CLASSES
  *   .list, .day, .empty: a lista, o separador de dia e o vazio.
  *   .card, .undone: o cartão de um evento; o desfeito fica esmaecido.
+ *   .cardClickable: o cartão sem botão próprio, clicável inteiro para abrir a prévia (DDL-0251).
  *   .head, .kind, .title, .time: o cabeçalho do cartão.
  *   .body, .total, .tags: o total e a fila das marcas (cada uma é a Tag comum, o
  *     acerto em success e a falha em danger, DDL-0199).
@@ -48,6 +49,25 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.cardClickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.cardClickable:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg-soft));
+}
+
+.cardClickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cardClickable:hover .titleButton {
+  color: var(--accent);
 }
 
 .undone {

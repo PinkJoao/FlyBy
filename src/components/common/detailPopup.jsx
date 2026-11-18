@@ -9,16 +9,18 @@
 //
 // FUNÇÕES
 //   showDetailPopup(opts): abre o detalhe; o nome vai no título do diálogo, por
-//     isso o DetailView vem com `hideHeader`.
+//     isso o DetailView vem com `hideHeader`. Com `actions` ({ label, value, tone }),
+//     os botões de uso no rodapé (o play mode: Cast, Attack, Use; DDL-0251); a
+//     promessa resolve o `value` escolhido, ou nada.
 // -----------------------------------------------------------------------------
 
 import useDialogStore from '../../store/dialogStore';
 import DetailView from './DetailView';
 
-/** Abre o detalhe de `raw` com a config de `entity`. */
-export function showDetailPopup({ entity, raw, db }) {
-  if (!raw) return;
-  useDialogStore.getState().open({
+/** Abre o detalhe de `raw` com a config de `entity`; resolve a ação escolhida no rodapé, se houver. */
+export function showDetailPopup({ entity, raw, db, actions = [] }) {
+  if (!raw) return Promise.resolve(null);
+  return useDialogStore.getState().open({
     variant: 'alert',
     title: raw.name,
     message: (
@@ -28,7 +30,7 @@ export function showDetailPopup({ entity, raw, db }) {
     ),
     dismissable: true,
     showClose: true,
-    actions: [],
+    actions,
     maxWidth: 560,
   });
 }

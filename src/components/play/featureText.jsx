@@ -6,13 +6,15 @@
 //   mesmo (DDL-0243: ler no card do histórico o que a feature faz).
 //
 // FUNÇÕES
-//   showFeatureText(feature, onLog): o diálogo; com `onLog`, o botão "Log to history".
+//   showFeatureText(feature, onLog, actions): o diálogo; com `onLog`, o botão "Log to history"; com `actions`
+//     ({ label, value, tone, run }), os botões de uso da linha da aba (Use, Summon, Bond...; DDL-0251), cada um
+//     roda o seu `run` ao fechar.
 // -----------------------------------------------------------------------------
 import useDialogStore from '../../store/dialogStore';
 import EntryContent from '../common/EntryContent';
 
-/** O diálogo com o texto da feature; com `onLog`, o "Log to history". */
-export function showFeatureText(feature, onLog = null) {
+/** O diálogo com o texto da feature; com `onLog`, o "Log to history"; com `actions`, os botões de uso. */
+export function showFeatureText(feature, onLog = null, actions = []) {
   return useDialogStore.getState().open({
     variant: 'alert',
     title: feature.name,
@@ -23,9 +25,13 @@ export function showFeatureText(feature, onLog = null) {
     ),
     dismissable: true,
     showClose: true,
-    actions: onLog ? [{ label: 'Log to history', value: 'log', tone: 'primary' }] : [],
+    actions: [
+      ...(onLog ? [{ label: 'Log to history', value: 'log', tone: actions.length ? undefined : 'primary' }] : []),
+      ...actions.map((a, i) => ({ label: a.label, value: `act:${i}`, tone: a.tone ?? (i === actions.length - 1 ? 'primary' : undefined) })),
+    ],
     maxWidth: 560,
   }).then((v) => {
     if (v === 'log') onLog(feature);
+    else if (typeof v === 'string' && v.startsWith('act:')) actions[Number(v.slice(4))]?.run?.();
   });
 }

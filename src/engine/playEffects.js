@@ -99,6 +99,11 @@
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
+//   - FEATURE_EFFECTS das formas (TC-0177, DDL-0251): Rage of the Gods, Ghost Walk, Djinni's Escape, Shadowform,
+//     Form of Dread e Wrath of the Wild ligam no Use (a activity, ou o "Use" do registro e do Channel Divinity) as
+//     resistências, a CA, o voo (`speeds` do modificador: um número ou 'walk', o maior vence em
+//     effectiveSpeeds) e as notas; o 1d6 do Void Empowerment é efeito opcional só no dano de magia com espaço
+//     psíquico ou necrótico (`when: 'slotSpell'`, `types`, DDL-0252).
 //   - FEATURE_EFFECTS das runas do Rune Knight (TC-0167, DDL-0238): o Use do Frost Rune liga +2 nos
 //     testes e salvaguardas de FOR e CON por 10 minutos, o do Hill Rune a resistência a contundente,
 //     perfurante e cortante por 1 minuto, o do Storm Rune o estado profético como nota. No ator esses
@@ -196,6 +201,62 @@ const FEATURE_EFFECTS = {
     ],
   }),
 
+  'action:rage-of-the-gods': () => ({
+    label: 'Rage of the Gods',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 10,
+    resist: ['necrotic', 'psychic', 'radiant'],
+    speeds: { fly: 'walk' },
+    notes: ['Can hover; ends at 0 Hit Points', 'Revivification: a Reaction and a Rage use set a creature within 30 feet that would drop to 0 Hit Points to your Barbarian level in Hit Points'],
+    effects: [],
+  }),
+  'action:ghost-walk': () => ({
+    label: 'Ghost Walk',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 100,
+    speeds: { fly: 10 },
+    notes: ['Can hover', 'Attack rolls have Disadvantage against you', 'Move through creatures and objects as Difficult Terrain; 1d10 Force damage if you end your turn inside one'],
+    effects: [],
+  }),
+  'action:djinnis-escape': () => ({
+    label: "Djinni's Escape",
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 2,
+    resist: ['bludgeoning', 'piercing', 'slashing'],
+    notes: ['Teleport up to 30 feet first', 'Immune to the Grappled, Prone and Restrained conditions', 'Lasts until the end of your next turn'],
+    effects: [],
+  }),
+  'action:shadowform': () => ({
+    label: 'Shadowform',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 10,
+    endsOnIncapacitated: true,
+    notes: ['Shadow Stealth: the Hide action as a Bonus Action in Dim Light or Darkness', 'Ends if you deal Radiant damage with a spell'],
+    effects: [{ targets: ['damage'], formula: '1d6', optional: true, when: 'slotSpell', types: ['psychic', 'necrotic'], label: 'Void Empowerment (one damage roll of the spell)' }],
+  }),
+  'action:form-of-dread': () => ({
+    label: 'Form of Dread',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 10,
+    endsOnIncapacitated: true,
+    notes: ['Immune to the Frightened condition (it ends if you had it)', 'Once per turn on a hit: the target makes a Wisdom save against your spell save DC or is Frightened until the end of your next turn'],
+    effects: [],
+  }),
+  'action:wrath-of-the-wild': (catalog) => ({
+    label: 'Wrath of the Wild',
+    source: 'feature',
+    duration: 'manual',
+    maxRounds: 10,
+    endsOnIncapacitated: true,
+    ac: (catalog?.rollData?.classes?.ranger?.levels ?? 0) >= 11 ? 2 : 1,
+    notes: ['Prowling Retribution: an Opportunity Attack against a creature within 5 feet that damages you or an ally', 'Unnerving Aura: at the start of each of your turns, creatures of your choice within 10 feet make a Wisdom save or are Frightened'],
+    effects: [],
+  }),
   'action:dodge': () => ({
     label: 'Dodge',
     source: 'feature',
@@ -288,6 +349,9 @@ export function rollEffects(state, catalog, roll) {
       if (!matches(e.targets, { ...roll, ability: roll.kind === 'concentration' ? 'con' : roll.ability, kind: roll.kind === 'concentration' || roll.kind === 'deathSave' ? 'save' : roll.kind })) return;
       if (e.when === 'strAttack' && roll.attackAbility !== 'str') return;
       if (e.when === 'weaponAttack' && !roll.weapon) return;
+      if (e.when === 'spell' && !roll.spell) return;
+      if (e.when === 'slotSpell' && (!roll.spell || roll.cantrip)) return;
+      if (e.types && !(roll.types ?? []).some((t) => e.types.includes(String(t).toLowerCase()))) return;
       const entry = { id: `mod:${m.id}:${i}`, label: e.label ?? m.label, source: m.label, defaultOn: !e.optional };
       if (e.mode === 'advantage') entry.adv = 1;
       else if (e.mode === 'disadvantage') entry.dis = 1;
@@ -384,8 +448,17 @@ export function effectiveSpeeds(catalog, state) {
   const zero = ids.some((id) => CONDITIONS[id]?.speedZero);
   const bonus = (state.modifiers ?? []).reduce((s, m) => s + (Number(m.speed) || 0), 0);
   const out = {};
-  for (const [mode, s] of Object.entries(speeds)) {
-    const feet = zero ? 0 : Math.max(0, s.feet + (mode === 'walk' ? bonus : 0) - 5 * exhaustion);
+  const extra = {};
+  for (const m of state.modifiers ?? []) {
+    for (const [mode, v] of Object.entries(m.speeds ?? {})) {
+      const feet = v === 'walk' ? (speeds.walk?.feet ?? 0) + bonus : Number(v) || 0;
+      if (feet > (extra[mode]?.feet ?? 0)) extra[mode] = { feet, note: m.label };
+    }
+  }
+  for (const [mode, s] of Object.entries({ ...extra, ...speeds })) {
+    const own = s.feet + (mode === 'walk' ? bonus : 0);
+    const raw = Math.max(own, extra[mode]?.feet ?? 0);
+    const feet = zero ? 0 : Math.max(0, raw - 5 * exhaustion);
     out[mode] = { ...s, feet, base: s.feet };
   }
   return out;

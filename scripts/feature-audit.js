@@ -29,6 +29,9 @@
 //   builderOf(f, level, character, entries, owners): as escolhas que guardam a feature.
 //   playOf(f, catalog, bridged): o que o modo de jogo faz.
 //   exportOf(name, level, actor): o item do ator.
+//   shapesOf(text): as famílias de FORMA que o texto declara (forma, objeto, alvo, até trocar, tipo; DDL-0241).
+//   shapeFacet(text, ctx): a faceta "forma" com os quatro lugares (decisão no builder, o módulo do jogo que cita
+//     a feature, o export), só quando o texto declara uma família (DDL-0251).
 //   facetsOf(...): todas as facetas de uma feature, e a assinatura delas.
 //   stateOf(row): o estado do veredito (sem veredito, ok, lacuna, explicada, ou "mudou").
 //   bookOf(): o texto do livro.
@@ -52,6 +55,10 @@
 //     contra a cópia dele só com os pré-requisitos e sem o `sub` dela (a ficha, os ataques e as magias do jogo,
 //     os ataques por ação). A pista `jogo:ataque` é o texto que fala de ataque ou dano sem nenhuma
 //     mudança nos ataques e sem registro: o furo que deixou o Pact of the Blade passar (DDL-0236).
+//   - A faceta "forma" (DDL-0251) só entra na linha cuja prosa declara uma família de FORMA (`SHAPES`, por prosa e
+//     estreita: "transform into", "assume the ... form", "imbue ... weapon", "one of your known ... cantrips", "your
+//     choice of ... damage"), para a assinatura das outras não mudar. Ela não é pista: uma forma sem estado no jogo
+//     pode estar certa (só texto), e quem decide é o revisor, olhando os quatro lugares.
 //   - Nada de texto de livro no registro: só nomes e o que o app faz (`testing/` é privado).
 // -----------------------------------------------------------------------------
 import fs from 'node:fs';
@@ -242,6 +249,28 @@ function exportOf(name, level, actor) {
   return parts.join(', ');
 }
 
+const SHAPES = [
+  ['forma', /\b(?:(?:transform|shape-?shift)s? (?:yourself )?into|(?:assume|take on) (?:the|a|an) (?:[\w-]+ ){0,3}(?:form|shape)\b|(?:beast|spectral|shadow|dread|lunar|starry|ghostly) form\b)/i],
+  ['objeto', /\b(?:create|conjure|forge|bond with|imbue|manifest|summon)s?\b[^.]{0,50}\b(?:weapons?|armor|shield|blades?)\b|becomes? (?:a )?magic(?:al)? (?:weapon|armor|shield)/i],
+  ['alvo', /\b(?:choose|chosen|pick)\b[^.]{0,20}\b(?:one|a|an) of (?:your|the) (?:[\w-]+ ){0,3}(?:cantrips?|weapons?)\b|\b(?:choose|chosen|pick)\b[^.]{0,30}\b(?:one|a|an) (?:simple or martial )?weapons? (?:you(?:'re| are) holding|you are proficient|with which you)/i],
+  ['ate-trocar', /\b(?:you can (?:change|replace) (?:this|that|your|the) (?:choice|type|damage type|option)|until you (?:choose|change|replace)\b[^.]{0,40}\b(?:again|different|another))/i],
+  ['tipo', /\b(?:damage type of your choice|choose (?:one|a) (?:of the following )?damage types?|your choice of [^.]{0,40}\bdamage\b|(?:acid|cold|fire|lightning|thunder|necrotic|radiant|poison|psychic|force)[^.]{0,60}\((?:your )?choice\))/i],
+];
+const SHAPE_MODULES = ['playForms', 'playPact', 'playWeapons', 'playSummons', 'optionTargets', 'playFeatureRolls', 'playEffects', 'playCatalog', 'playCast', 'playProseEffects', 'featureOptions', 'choices', 'grantedSpellUses'];
+
+/** As famílias de FORMA que o texto declara (DDL-0241): forma, objeto, alvo, até trocar, tipo. */
+function shapesOf(text) {
+  return SHAPES.filter(([, re]) => re.test(text)).map(([k]) => k);
+}
+
+/** A faceta "forma": as famílias e os quatro lugares (decisão no builder, estado e vista no jogo, export), ou null. */
+function shapeFacet(text, { builder, play, exp, files }) {
+  const families = shapesOf(text);
+  if (!families.length) return null;
+  const game = [...new Set([...files.filter((m) => SHAPE_MODULES.includes(m)), ...play.parts.filter((x) => /^(?:forma|summon|registro|activities)/.test(x))])];
+  return `${families.join(',')}: decisão ${builder === '-' ? '-' : 'sim'}; jogo ${game.join(',') || '-'}; export ${exp === '-' ? '-' : 'item'}`;
+}
+
 /** Todas as facetas de uma feature, e a assinatura delas. */
 function facetsOf({ feature, f, level, character, entries, owners, catalog, bridged, derived, actor, levelDiff, classId, short }) {
   const text = plainText(f?.entries ?? feature.entries ?? []);
@@ -249,13 +278,16 @@ function facetsOf({ feature, f, level, character, entries, owners, catalog, brid
   const choice = f ? pendingChoice(f, character, entries, text) : null;
   const grants = GRANT_EXPLAINED[norm(feature.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
   const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+  const files = mentions(feature.name, classId, short);
   const facets = {
     builder: builderOf(feature, level, character, entries, owners).join('; ') || '-',
-    ficha: [...(levelDiff ?? []), ...mentions(feature.name, classId, short).map((m) => `reg:${m}`)].join('; ') || '-',
+    ficha: [...(levelDiff ?? []), ...files.map((m) => `reg:${m}`)].join('; ') || '-',
     jogo: [play.cat, ...play.parts].join('; '),
     export: exportOf(feature.name, level, actor),
     pistas: [...playCues.map((c) => `jogo:${c}`), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
   };
+  const shape = shapeFacet(text, { builder: facets.builder, play, exp: facets.export, files });
+  if (shape) facets.forma = shape;
   const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
   return { facets, sig };
 }
@@ -415,6 +447,8 @@ if (TIER === 'options') {
       export: exportOf(o.name, null, actor),
       pistas: [...playCues.map((c) => `jogo:${c}`), ...(attackCue ? ['jogo:ataque'] : []), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
     };
+    const shape = shapeFacet(text, { builder: facets.builder === 'não chega ao jogo' ? '-' : facets.builder, play, exp: facets.export, files: regs });
+    if (shape) facets.forma = shape;
     const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
     const level = (o.prerequisite ?? []).map((pre) => pre.level?.level ?? 0).reduce((m, n) => Math.max(m, n), 0);
     rows.push({ id: `options|${o.type}|${o.name}|${o.source}`, book: o.source, className: host.label, sub: `(${host.row.id})`, level, name: o.name, facets, sig, text });

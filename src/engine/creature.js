@@ -16,7 +16,9 @@
 //     se sobrou trecho que o leitor não entende.
 //   damageFormula(expr, tail, ctx): a fórmula do dano, com `summonSpellLevel`, `PB`
 //     e o "plus your Intelligence modifier" resolvidos.
-//   parseAction(entry, ctx): uma ação com o ataque, os danos e a salvaguarda.
+//   parseAction(entry, ctx): uma ação com o ataque, os danos e a salvaguarda. Um dano na frase que começa por
+//     "If"/"When" (e não é o primeiro) leva `condition`; "A, B, or C damage (your choice" leva `typeOptions`
+//     (TC-0181, DDL-0252).
 //   objectSummons(objects): os objetos que uma feature cria (Eldritch Cannon) como bloco.
 //   creatureStats(m, ctx): a criatura inteira, pronta para o jogo.
 //   abilityMod(score), crPb(cr): o modificador e o bônus de proficiência pelo ND.
@@ -164,7 +166,7 @@ export function parseAction(entry, ctx = {}) {
   const variants = [];
   let lastType = null;
   let lastEnd = 0;
-  for (const m of text.matchAll(/[{]@damage ([^}]+)[}]([^{"]{0,80})/g)) {
+  for (const m of text.matchAll(/[{]@damage ([^}]+)[}]([^{"]{0,120})/g)) {
     let type = m[2].match(DAMAGE_TYPE)?.[1]?.toLowerCase() ?? null;
     const byForm = [...(m[2].match(/^ of ([^.]*?) damage/)?.[1] ?? '').matchAll(/([A-Za-z]+) [(]([A-Za-z]+)[)]/g)];
     if (!type && byForm.length) {
@@ -174,7 +176,11 @@ export function parseAction(entry, ctx = {}) {
     }
     if (!type) type = text.slice(Math.max(0, m.index - 40), m.index).match(/([A-Za-z]+) damage equal to $/)?.[1]?.toLowerCase() ?? null;
     if (!type && lastType && (!text.slice(lastEnd, m.index).includes('.') || /^ damage of the same type/i.test(m[2]))) type = lastType;
-    damage.push({ formula: damageFormula(m[1], m[2], ctx), type });
+    const choice = m[2].match(/^[^.]*?([A-Z][a-z]+), ([A-Z][a-z]+),? or ([A-Z][a-z]+) damage \((?:your|of your) choice/);
+    const options = choice ? choice.slice(1, 4).map((t) => t.toLowerCase()).filter((t) => DAMAGE_TYPE.test(` ${t} damage`)) : null;
+    const lead = text.slice(Math.max(text.lastIndexOf('. ', m.index), text.lastIndexOf('"', m.index)) + 1, m.index).trim();
+    const condition = damage.length && /^(?:if|when|whenever)\s/i.test(lead) ? lead.replace(/,?\s*the target takes an extra\s*$/i, '').replace(/[{]@\w+ ([^|}]+)[^}]*[}]/g, '$1') : null;
+    damage.push({ formula: damageFormula(m[1], m[2], ctx), type, ...(options?.length > 1 ? { typeOptions: options } : {}), ...(condition ? { condition } : {}) });
     lastType = type ?? lastType;
     lastEnd = m.index + m[0].length;
   }

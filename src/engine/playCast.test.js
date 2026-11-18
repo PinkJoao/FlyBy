@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent, isZoneSpell, activeZone, endZoneEvent, projectileCount, timesFormula } from './playCast';
+import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, projectileCount, timesFormula } from './playCast';
 import { spellCosts } from './playBasicActions';
 import { rollDamageEvent, rollAttackEvent } from './playActions';
 
@@ -196,7 +196,7 @@ describe('magia de área ativa (DDL-0249)', () => {
 
   it('a de concentração fica ativa pela concentração e acaba com ela', () => {
     const s = run(st(), castEvent({ state: st(), catalog, origin, spell: hunger, way: way3 }));
-    expect(activeZone(s, hunger)).toEqual({ level: 3, concentration: true });
+    expect(activeZone(s, hunger)).toEqual({ level: 3, concentration: true, castUsed: [] });
     const ended = run(s, endZoneEvent({ state: s, spell: hunger }));
     expect(activeZone(ended, hunger)).toBeNull();
     expect(ended.concentration).toBeNull();
@@ -210,6 +210,21 @@ describe('magia de área ativa (DDL-0249)', () => {
     expect(s.modifiers.filter((m) => m.zone === cordon.key)).toHaveLength(1);
     s = run(s, endZoneEvent({ state: s, spell: cordon }));
     expect(activeZone(s, cordon)).toBeNull();
+  });
+
+  it('o extra de uma rolagem por lançamento fica na zona e volta a valer ao lançar de novo (DDL-0251)', () => {
+    const id = 'prose:empowered-evocation:0';
+    let s = run(st(), castEvent({ state: st(), catalog, origin, spell: hunger, way: way3 }));
+    s = run(s, { ops: zoneUsedOps(s, hunger, [id]) });
+    expect(activeZone(s, hunger).castUsed).toEqual([id]);
+    expect(zoneUsedOps(s, hunger, [id])).toEqual([]);
+    s = run(s, castEvent({ state: s, catalog, origin, spell: hunger, way: way3 }));
+    expect(activeZone(s, hunger).castUsed).toEqual([]);
+    const way2 = { id: 'slot:2', key: 'slot:2', level: 2, left: 2 };
+    let c = run(st(), castEvent({ state: st(), catalog, origin, spell: cordon, way: way2 }));
+    c = run(c, { ops: zoneUsedOps(c, cordon, [id]) });
+    expect(activeZone(c, cordon).castUsed).toEqual([id]);
+    expect(c.modifiers.filter((m) => m.zone === cordon.key)).toHaveLength(1);
   });
 });
 

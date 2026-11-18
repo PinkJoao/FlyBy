@@ -68,6 +68,10 @@
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
 //     historySource(event), canReadHistory(event), readFromHistory(event) (no PlayInner): o que um card do
 //     histórico abre, se abre, e a descrição da magia ou da feature (DDL-0243, DDL-0245).
+//     ruleNamed(...names), historyPreview(event): desde o DDL-0251 TODO card abre algo: a magia ou a feature, o
+//       item (pelo `uid` ou pela arma do ataque), a condição, a criatura da forma, a magia de um efeito e, fora
+//       da ficha, a regra do glossário do que aconteceu (Short Rest, Long Rest, Hit Point Dice, a perícia do
+//       teste...); sem regra, uma descrição do que foi gravado.
 //     attackNotes(attack, catalog): as notas do ataque (a da arma e a da Weapon Mastery, DDL-0242).
 //     shieldNote(attack, catalog): o aviso da arma Two-Handed com o escudo na mão (DDL-0247).
 //     shownTestExtra(state, catalog): o que a rolagem de cada salvaguarda e perícia soma, ligado e
@@ -129,6 +133,8 @@
 //       extra de uma rolagem por lançamento só vem ligado na primeira em que entrou (DDL-0250).
 //     useZone(origin, spell): o "Use" da magia de área ativa (encerrar, lançar de novo, o dano de novo;
 //       DDL-0249); o lançamento dela não abre a rolagem.
+//     zoneDamage(atk, spell, opts): o dano de novo dela (também pelo "Roll damage" do histórico): o extra de
+//       uma rolagem por lançamento já usado fica na zona (`zoneUsedOps`) e vem desligado (DDL-0251).
 //     consumeItem(entry): usar um item do inventário.
 //     startCombat(quick), nextTurn(), endCombat(): o combate.
 //     slotInfo, pickSlot(slot): o que a ação, a bônus e a reação pagam, e o toque nos
@@ -251,11 +257,12 @@ import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playSt
 import { pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
 import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing } from '../engine/playWeapons';
 import { screenCatalog } from '../engine/playView';
-import { activityEvent, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { resolveRefs } from '../engine/dice';
+import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, projectileCount, timesFormula } from '../engine/playCast';
+import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, projectileCount, timesFormula } from '../engine/playCast';
 import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, castOnceEffects,
 } from '../engine/playEffects';
@@ -274,7 +281,7 @@ import SpellsTab from '../components/play/SpellsTab';
 import InventoryTab from '../components/play/InventoryTab';
 import SummonsTab from '../components/play/SummonsTab';
 import useBestiary from '../hooks/useBestiary';
-import { summonCreaturesFor, summonOps, summonGroupView, summonRiders, summonVitalsEvent, dismissEvent, summonAttack, summonTurnOf, turnText, featureSummons, familiarForms, familiarSpecialForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
+import { summonCreaturesFor, summonOps, summonGroupView, summonRiders, summonVitalsEvent, dismissEvent, summonAttack, summonDamageTypes, summonConditionalEffects, summonTurnOf, turnText, featureSummons, familiarForms, familiarSpecialForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
 import { resolveClassObj, resolveSubclassObj, resolveOptionalFeature } from '../engine/resolve';
 import { resolveSpellObj } from '../engine/spells';
 import RollButton from '../components/play/RollButton';
@@ -295,6 +302,9 @@ import EffectsCard from '../components/play/EffectsCard';
 import { SKILL_LABEL } from '../components/builder/labels';
 import SelectorPanel from '../selector/SelectorPanel';
 import conditionEntity from '../selector/entities/condition';
+import itemEntity from '../selector/entities/item';
+import { glossaryIndexFor } from '../components/common/glossaryIndex';
+import { showRulePopup } from '../components/common/RulePopup';
 import weaponEntity from '../selector/entities/weapon';
 import spellEntity from '../selector/entities/spell';
 import { showFeatureText } from '../components/play/featureText';
@@ -722,14 +732,63 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     return feature ? { feature } : null;
   };
 
-  const canReadHistory = (event) => event.kind === 'cast' || !!historySource(event);
-
-  const readFromHistory = (event) => {
-    const src = historySource(event);
-    if (src?.raw) return showDetailPopup({ entity: spellEntity, raw: src.raw, db });
-    if (src?.feature) return showFeatureText(src.feature);
-    return alert({ title: event.label, message: 'This is no longer on the character.' });
+  /** Uma regra do glossário pelo nome (a do XPHB primeiro), ou null. */
+  const ruleNamed = (...names) => {
+    const entries = glossaryIndexFor(db).entries;
+    for (const name of names) {
+      const hits = entries.filter((e) => e.name.toLowerCase() === String(name).toLowerCase());
+      const hit = hits.find((e) => e.source === 'XPHB') ?? hits[0];
+      if (hit) return hit;
+    }
+    return null;
   };
+
+  /** O que o card de um evento abre: a coisa da ficha, ou a regra do que aconteceu (DDL-0251). */
+  const historyPreview = (event) => {
+    const src = historySource(event);
+    if (src?.raw) return () => showDetailPopup({ entity: spellEntity, raw: src.raw, db });
+    if (src?.feature) return () => showFeatureText(src.feature);
+    const p = event.payload ?? {};
+    const inventory = derived.inventory ?? [];
+    const attack = p.attackKey ? catalog.attacks.find((a) => a.key === String(p.attackKey).replace(/#.*$/, '')) : null;
+    const itemUid = p.uid ?? attack?.uid ?? (event.ops ?? []).find((o) => o.op === 'inventory')?.uid ?? null;
+    const item = itemUid ? inventory.find((e) => e.uid === itemUid) : null;
+    if (item?.raw) return () => showDetailPopup({ entity: itemEntity, raw: item.raw, db });
+    if (event.kind === 'condition' && p.id) {
+      const raw = conditionEntity.list(db).find((c) => conditionId(c.name) === p.id);
+      if (raw) return () => showDetailPopup({ entity: conditionEntity, raw, db });
+    }
+    if (p.form) {
+      return async () => {
+        const creature = (await bestiary.load()).find((c) => c.name === p.form);
+        if (creature) showDetailPopup({ entity: creatureEntity, raw: creature, db });
+        else alert({ title: event.label, message: 'The creature of this form is not in the configured source.' });
+      };
+    }
+    const added = event.kind === 'modifier' ? (event.ops ?? []).find((o) => o.op === 'modifier' && o.add)?.add : null;
+    const fromSpell = added ? catalog.spells.flatMap((o) => o.spells).find((x) => x.name === added.label) : null;
+    const spellRaw = fromSpell ? resolveSpellObj(db, fromSpell.name, fromSpell.source) : null;
+    if (spellRaw) return () => showDetailPopup({ entity: spellEntity, raw: spellRaw, db });
+    const test = p.test ?? {};
+    const names = {
+      shortRest: ['Short Rest'], longRest: ['Long Rest'], hitDice: ['Hit Point Dice', 'Hit Dice'], deathSave: ['Death Saving Throw', 'Death Saving Throws'],
+      damage: ['Damage', 'Hit Points'], heal: ['Healing', 'Hit Points'], tempHp: ['Temporary Hit Points'], maxHp: ['Hit Point Maximum', 'Hit Points'],
+      concentration: ['Concentration'], concentrationCheck: ['Concentration'], currency: ['Coins', 'Currency'],
+      damageRoll: ['Damage Rolls', 'Damage Roll'], healRoll: ['Healing'],
+      check: test.type === 'save' ? ['Saving Throw'] : test.type === 'initiative' ? ['Initiative'] : test.type === 'skill' ? [SKILL_LABEL[test.id], 'Ability Check'] : ['Ability Check'],
+      combat: p.dash ? ['Dash'] : p.readied != null ? ['Ready'] : p.moved != null || p.left != null ? ['Speed', 'Movement'] : ['Combat', 'Initiative'],
+      attack: attack?.kind === 'unarmed' ? ['Unarmed Strike', 'Attack Roll'] : ['Attack Roll', 'Attack'],
+    }[event.kind] ?? [];
+    const rule = ruleNamed(...names.filter(Boolean));
+    if (rule?.kind === 'rule' && rule.ruleEntry) return () => showRulePopup(rule.ruleEntry);
+    if (rule?.entity && rule.raw) return () => showDetailPopup({ entity: rule.entity, raw: rule.raw, db });
+    const lines = [...(added?.notes ?? []), ...(p.lines ?? []), 'Nothing on the character sheet goes with this entry; undo or redo it from the top of the history.'];
+    return () => alert({ title: event.label, message: <div style={{ textAlign: 'left' }}>{lines.map((l) => <p key={l}>{l}</p>)}</div> });
+  };
+
+  const canReadHistory = () => true;
+
+  const readFromHistory = (event) => historyPreview(event)();
 
   /** O Arcane Apotheosis: pagar o Metamagic ou usá-lo de graça; null cancela. */
   const askApotheosis = (title) => ask({
@@ -745,14 +804,21 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     if (!weaponOps) return;
     let only = extra.only ?? null;
     if (!only && activity.attack && (activity.heal || (activity.damage ?? []).length)) {
-      only = await askRollKind({ title: action.name, effect: (activity.damage ?? []).map((p) => p.formula).join(' + ') || activity.heal?.formula, effectLabel: activity.heal ? 'Healing' : 'Damage' });
+      const raw = (activity.damage ?? []).map((p) => p.formula).join(' + ') || activity.heal?.formula;
+      let effect = raw;
+      try {
+        effect = resolveRefs(raw, activityRollData(catalog, state, activity)).replace(/[()]/g, '');
+      } catch {
+        // ATENÇÃO: referência sem valor fica crua no rótulo; o evento resolve com os mesmos dados.
+      }
+      only = await askRollKind({ title: action.name, effect, effectLabel: activity.heal ? 'Healing' : 'Damage' });
       if (!only) return;
     }
     const needs = activity.scalable || activity.heal || activity.attack || (activity.damage ?? []).length > 0
       || (activity.consumes ?? []).some((c) => c.spellSlot != null);
     let options = {};
     if (needs) {
-      options = await askUse({ title: activityLabel(action, activity), catalog, state, action, activity });
+      options = await askUse({ title: activityLabel(action, activity), catalog, state, action, activity, only });
       if (!options) return;
     }
     let noCost = false;
@@ -869,7 +935,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       if (!r?.action) return;
       use = featureUseOf(feature, catalog, Math.floor(Number(r.values?.n) || 0));
     }
-    const modifier = use?.modifier ? makeModifier(use.modifier) : null;
+    const curated = use?.modifier ? null : featureModifier({ key: feature.actionKey }, catalog);
+    const modifier = use?.modifier ? makeModifier(use.modifier) : curated;
     const pay = spend ?? use?.spend ?? null;
     const amount = spend ? 1 : use?.spent ?? 1;
     if (pay && amount > 0 && leftOf(catalog, state, pay) < amount && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
@@ -1064,10 +1131,14 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       if (atk.attack) {
         const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.attack.bonus + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))), effect: damageText(withFixedDamage(atk, state, catalog)) });
         if (kind === 'attack') rollAttack(atk);
-        else if (kind === 'effect') rollDamage(atk);
-      } else rollDamage(atk);
+        else if (kind === 'effect') zoneDamage(atk, spell);
+      } else zoneDamage(atk, spell);
     }
   };
+
+  /** O dano de novo da magia de área ativa: o extra de uma rolagem por lançamento já usado vem desligado. */
+  const zoneDamage = (atk, spell, opts = {}) =>
+    rollDamage(atk, { ...opts, castUsed: activeZone(state, spell)?.castUsed ?? [] }, false, false, null, (options) => zoneUsedOps(state, spell, options.applied?.oncePerCast));
 
   /** Rola a cura de uma magia; o diálogo pergunta se é no próprio personagem. */
   const rollSpellHeal = (origin, spell, level, quick = false) =>
@@ -1209,11 +1280,13 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
   /** O ataque e o dano de uma ação de summon, sem os efeitos do jogador. */
   const summonRoll = (view, action, kind) => {
-    const atk = summonAttack(view.group, action, view.stats);
+    const base = summonAttack(view.group, action, view.stats);
+    const typeOptions = summonDamageTypes(view, catalog, action);
+    const atk = typeOptions && base.damage ? { ...base, damage: { ...base.damage, typeOptions } } : base;
     if (kind === 'attack') {
       roll((options) => rollAttackEvent({ catalog, attack: atk, options }), { title: `${atk.name}: attack`, kind: 'd20', parts: [{ label: 'Attack', formula: atk.attack?.bonus ?? 0 }], rollData: catalog.rollData }, false, []);
     } else {
-      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData, canCrit: canCrit(atk) }, false, summonRiders(view, catalog, state, action));
+      roll((options) => rollDamageEvent({ catalog, attack: atk, options }), { title: `${atk.name}: damage`, kind: 'damage', parts: damageParts(atk), rollData: catalog.rollData, canCrit: canCrit(atk), damageTypes: typeOptions }, false, [...summonConditionalEffects(action, view.stats), ...summonRiders(view, catalog, state, action)]);
     }
   };
 
@@ -1408,7 +1481,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       alert({ title: 'Attack not found', message: 'This attack is no longer on the character.' });
       return;
     }
-    rollDamage(attack, opts);
+    if (spell && activeZone(state, spell)) zoneDamage(attack, spell, opts);
+    else rollDamage(attack, opts);
   };
 
   /** Usa um consumível; a poção de cura pergunta se é bebida ou dada. */
@@ -1470,7 +1544,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const activity = owner?.activities.find((x) => x.id === r.cost.via.activity) ?? null;
     const viaEvent = owner && activity ? activityEvent({ catalog, state, action: owner, activity }) : null;
     const effect = viaEvent ? featureModifier(item.action, catalog) : null;
-    const extra = [...(viaEvent?.ops ?? []), ...(effect ? [{ op: 'modifier', add: withRounds(effect, state, effect.maxRounds) }] : [])];
+    const extra = [...(viaEvent?.ops ?? []), ...featureModifierOps(state, effect)];
     const cost = ECONOMY.includes(r.cost.cost) ? r.cost.cost : null;
     const step = r.kind === 'attack' && item.name === 'Attack' && !r.cost.via ? attackStepOp(catalog, state) : null;
     if (r.kind === 'attack' && step) attackOrDamage(r.attack, null, [...extra, step]);

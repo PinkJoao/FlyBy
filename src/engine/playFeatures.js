@@ -9,7 +9,7 @@
 //   (docs/PLAY-MODE-V2-PLAN.md §6 e a resposta P3, DDL-0151).
 //
 // FUNÇÕES
-//   featureList(actor, character, db): as features, na ordem da aba.
+//   featureList(actor, character, db): as features, na ordem da aba (com o `consumes` do dado, DDL-0251).
 //   htmlToEntries(html): o texto de reserva, do HTML que o export guarda no item.
 //   namedEntries(entries, out): os blocos com nome de umas entries, achatados.
 //   featureIdent(item): a identidade do item, a mesma das chaves do catálogo.
@@ -182,14 +182,14 @@ export function featureList(actor, character, db) {
     if (!classObj) continue;
     classNames.push(classObj.name);
     for (const f of resolveClassFeatures(db, cls.classId, classObj, cls.level || 1)) {
-      const place = { kind: 'class', section: classObj.name, entries: f.entries };
+      const place = { kind: 'class', section: classObj.name, entries: f.entries, consumes: f.consumes?.name ?? null };
       known.set(`${norm(f.name)}|${f.level}`, place);
       known.set(`${norm(f.name)}|${f.level}|${norm(f.source)}`, place);
     }
     const subObj = cls.subclassId ? resolveSubclassObj(db, cls.classId, cls.subclassId, cls.subclassSource) : null;
     if (!subObj) continue;
     for (const f of resolveSubclassFeatures(subObj, cls.classId, db, { max: cls.level || 1 })) {
-      const place = { kind: 'subclass', section: subObj.name, entries: f.entries };
+      const place = { kind: 'subclass', section: subObj.name, entries: f.entries, consumes: f.consumes?.name ?? null };
       subclassNames.set(norm(f.name), place);
       known.set(`${norm(f.name)}|${f.level}`, place);
       known.set(`${norm(f.name)}|${f.level}|${norm(f.source)}`, place);
@@ -237,6 +237,7 @@ export function featureList(actor, character, db) {
       actionKey: `action:${ident}`,
       source: item.system?.source?.book ?? null,
       entries: place.entries?.length ? place.entries : htmlToEntries(item.system?.description?.value),
+      ...(place.consumes ? { consumes: place.consumes } : {}),
     });
     const last = out[out.length - 1];
     last.costs = turnCostsOf(last.entries);

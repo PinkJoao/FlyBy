@@ -100,7 +100,8 @@
 //     checkList(derived, character): os testes.
 //     spellResources(spellcasting), spellOrigins(spellcasting, level, opts): magias; com o
 //       Ritual Adept, o ritual do grimório do mago sem preparar vem com `ritualOnly` (TC-0158).
-//     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity?
+//     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity? Também o `consumes` do
+//       dado (Djinni's Escape, TC-0178, DDL-0251).
 //     withFeatureSpeeds(speeds, features): escalada e natação de feature (FEATURE_SPEEDS:
 //       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156).
 //     EXTRA_RECOVERY: a recuperação que uma feature soma ao pool de outra (o Cutthroat do Dread
@@ -869,7 +870,8 @@ const CHANNEL_CUE = /\b(?:use|uses|using|(?:expend|expends|expending) (?:one|a) 
 /** O texto da feature gasta um uso do Channel Divinity? */
 export function spendsChannelDivinity(feature) {
   const name = feature?.name ?? '';
-  return /^channel divinity:/i.test(name) || (!/^channel divinity$/i.test(name) && CHANNEL_CUE.test(plainText(feature?.entries ?? [])));
+  if (/^channel divinity$/i.test(name)) return false;
+  return /^channel divinity:/i.test(name) || /^channel divinity$/i.test(feature?.consumes ?? '') || CHANNEL_CUE.test(plainText(feature?.entries ?? []));
 }
 
 const ACTIVITY_ROLLS = {

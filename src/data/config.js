@@ -31,10 +31,12 @@
 //     MIT, não Plutonium (DDL-0009). foundry-backgrounds.json não existe no mirror
 //     (404) e foundry-psionics.json é vazio: ficam fora. foundry-items.json entra
 //     na T3 (Q3, DDL-0175): as activities de 357 itens, depois do SRD.
-//   - Magias: um arquivo por livro (17, de spells/index.json, todos 200 em
-//     2026-07-09), concatenados e deduplicados por latestOnly em engine/spells.js.
-//     O mapa magia para classe vem de spells/sources.json, não da magia. Só 9
-//     livros têm fluff de magia.
+//   - Magias: um arquivo por livro (19, de spells/index.json, todos 200 em
+//     2026-07-09; AU e WoW entraram em 2026-11-19, DDL-0265, o espelho os trouxe em
+//     2026-11-14 e as subclasses do WoW apontavam magias que o app não baixava),
+//     concatenados e deduplicados por latestOnly em engine/spells.js.
+//     O mapa magia para classe vem de spells/sources.json, não da magia. Só 10
+//     livros têm fluff de magia (o WoW não tem: 404).
 //   - gendata: as regras extraídas dos livros (as do XDMG vêm daqui) e todas as
 //     tabelas (~2300, 2.8 MB); só as 49 marcadas `srd52` entram no glossário
 //     (engine/glossary.js), o resto só fica cacheado.
@@ -85,12 +87,12 @@ export const CLASS_NAMES = [
 ];
 
 export const SPELL_SOURCES = [
-  'aag', 'ai', 'aitfr-avt', 'bmt', 'efa', 'egw', 'ftd', 'frhof', 'ggr',
-  'idrotf', 'llk', 'phb', 'sato', 'scc', 'tce', 'xge', 'xphb',
+  'aag', 'ai', 'aitfr-avt', 'au', 'bmt', 'efa', 'egw', 'ftd', 'frhof', 'ggr',
+  'idrotf', 'llk', 'phb', 'sato', 'scc', 'tce', 'wow', 'xge', 'xphb',
 ];
 
 export const SPELL_FLUFF_SOURCES = [
-  'aag', 'egw', 'ftd', 'frhof', 'ggr', 'phb', 'tce', 'xge', 'xphb',
+  'aag', 'au', 'egw', 'ftd', 'frhof', 'ggr', 'phb', 'tce', 'xge', 'xphb',
 ];
 
 export const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;

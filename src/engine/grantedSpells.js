@@ -330,7 +330,7 @@ export function castTypeLabel(entry) {
     case 'ritual':
       return 'Ritual';
     case 'resource':
-      return n ? `${n} Charges` : 'Resource';
+      return n ? `${n} Charge${n === 1 ? '' : 's'}` : 'Resource';
     case 'innate':
       return 'No Spell Slot';
     default:

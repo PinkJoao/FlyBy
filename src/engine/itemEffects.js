@@ -21,6 +21,12 @@
 //   itemCheckBonus(entries): o bônus plano nos testes de atributo `{ bonus, sources }`.
 //   speedActivated(raw): o deslocamento do item só vale ao ativar (cargas, consumível, multiplicar)?
 //   itemSpeeds(entries, walk): os deslocamentos sempre ligados `{ mode: { feet, note } }`.
+//   weaponExtraDamage(raw): o dano extra que o texto da arma dá ("the target takes an extra 1d6 Cold damage"):
+//     `{ formula, type, condition, charge }`, a condição sendo a frase quando ela tem uma (DDL-0258).
+//   boundSpellRule(raw): o item "Enspelled" ("Bound into this staff is a level 2 spell"): `{ level, schools }`, ou null.
+//   storeRuleOf(raw): o item que guarda magias lançadas nele (Ring of Spell Storing, Spell Bottle, Spell Gem):
+//     `{ cap, one, maxLevel }` (`cap` em círculos somados; `one` = uma magia por vez), ou null.
+//   storedLevels(entry): os círculos que o item já guarda.
 //
 // DECISÕES E ARMADILHAS
 //   - "Fixa em N" (Amulet of Health, os Belts of Giant Strength) é um PISO: o texto diz que não faz nada
@@ -32,6 +38,21 @@
 //     the Pact Keeper) vale só na origem daquela classe; sem classe no texto, em toda origem.
 //   - Deslocamento de ativação (Boots of Speed multiplica ao bater os calcanhares, Winged Boots gasta cargas,
 //     a poção é consumível) NÃO entra na ficha: é estado de jogo, e o item já tem o seu Use ou as cargas.
+//   - O dano extra da arma (weaponExtraDamage, DDL-0258): cada "extra NdM [tipo] damage" do texto vira um extra
+//     do diálogo de dano. Sem condição na frase ("When you hit with an attack using it, the target takes an extra
+//     2d10 Cold damage"; "on a hit") vem LIGADO; com uma (o tipo de criatura, "while ablaze", "if", o ataque à
+//     distância, o crítico, "can", a carga) vem desligado com a frase como nota. "Expend 1 charge" e "for each
+//     charge you expend" gastam UMA carga por extra ligado (o "up to 3" se repete à mão). A frase com "or an
+//     extra" (Dwarven Thrower) dá os dois desligados: só a mesa sabe qual vale. O dano que o alvo toma ao falhar
+//     uma salvaguarda no acerto ("must succeed on a 15 Constitution saving throw or take 2d10 Poison damage", Dagger
+//     of Venom depois de untada) também é extra desligado, com a CD na nota.
+//   - Enspelled (DDL-0258): o texto diz o círculo ("a level 2 spell", "a cantrip") e a tag do filtro diz as escolas
+//     (`{@filter ...|school=A;I|level=1}`, lida no JSON CRU, antes de tirar as tags); sem a tag, qualquer escola. A
+//     magia escolhida mora na entrada do inventário (`boundSpell: 'Name|Source'`).
+//   - Guardar magia (DDL-0258): "store up to 5 levels worth of spells" soma círculos (o anel, a Ioun Stone Reserve);
+//     "store one spell of up to 5th level" e "contain one spell" guardam uma (a garrafa, as Spell Gems). O teto do
+//     círculo vem de "1st through 5th level" ou "up to 8th level". O guardado mora na entrada (`stored`), com o
+//     círculo, a CD e o ataque de quem lançou (o anel usa os de quem lançou; a gema tem os seus no texto).
 //   - O export escreve o atributo SEM os itens (`baseScores` no resolve): o item no Foundry leva o próprio
 //     efeito, e somar os dois duplicaria o "+2".
 // -----------------------------------------------------------------------------
@@ -129,4 +150,63 @@ export function itemSpeeds(entries = [], walk = 0) {
     if (ms.bonus) for (const [mode, v] of Object.entries(ms.bonus)) put(mode === '*' ? 'walk' : mode, walk + (Number(v) || 0), e.raw.name);
   }
   return out;
+}
+
+const DAMAGE_WORDS = 'acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder';
+const EXTRA_DAMAGE = new RegExp(`\\bextra (\\d+d\\d+(?: \\+ \\d+)?)(?: (${DAMAGE_WORDS}))? damage`, 'gi');
+const CONDITION = /\b(if|while|unless|against|instead|can|may|expend|charges?|critical|roll(?:s|ed)? a 20|ranged attack|thrown|aberrations?|beasts?|celestials?|constructs?|dragons?|elementals?|fey|fiends?|giants?|monstrosit(?:y|ies)|oozes?|plants?|undead|good|evil|aligned|attuned|soul|illithid|transformed|ablaze|glowing|bloodied|first time)\b/i;
+const SAVE_DAMAGE = new RegExp(`succeed on a (?:DC )?(\\d+) (strength|dexterity|constitution|intelligence|wisdom|charisma) saving throw or take (\\d+d\\d+(?: \\+ \\d+)?) (${DAMAGE_WORDS}) damage`, 'gi');
+const CHARGE = /\bexpend (?:1|one|up to \w+) (?:of its )?charges?\b|\bfor each charge you expend\b/i;
+
+/** O dano extra que o texto da arma dá: `[{ formula, type, condition, charge }]` (condition null = sempre). */
+export function weaponExtraDamage(raw) {
+  if (!raw) return [];
+  const text = plainItemText(raw).replace(/\\"/g, '"');
+  const out = [];
+  for (const sentence of text.split(/(?<=[.!?])\s+|","|"\]|\["/)) {
+    const hits = [...sentence.matchAll(EXTRA_DAMAGE)];
+    if (!hits.length && !SAVE_DAMAGE.test(sentence)) continue;
+    SAVE_DAMAGE.lastIndex = 0;
+    const clean = sentence.replace(/^["[\s]+|["\]\s]+$/g, '').trim();
+    const conditional = CONDITION.test(clean) || /\bor an extra\b/i.test(clean);
+    const charge = CHARGE.test(clean) && Number(raw.charges) > 0;
+    for (const m of hits) {
+      out.push({ formula: m[1], type: m[2] ? m[2].toLowerCase() : null, condition: conditional ? clean : null, charge });
+    }
+    for (const m of sentence.matchAll(SAVE_DAMAGE)) {
+      out.push({ formula: m[3], type: m[4].toLowerCase(), condition: `DC ${m[1]} ${m[2][0].toUpperCase()}${m[2].slice(1)} save, on a failure: ${clean}`, charge });
+    }
+  }
+  return out;
+}
+
+const ORDINAL = '(\\d)(?:st|nd|rd|th)?';
+
+/** O item "Enspelled": o círculo e as escolas (códigos do 5etools) da magia que ele guarda, ou null. */
+export function boundSpellRule(raw) {
+  if (!raw) return null;
+  const text = plainItemText(raw);
+  const m = text.match(/\bBound into this \w+ is (?:a level (\d) spell|a cantrip)/i);
+  if (!m) return null;
+  const tag = JSON.stringify(raw.entries ?? []).match(/school=([A-Z;]+)/);
+  return { level: m[1] ? Number(m[1]) : 0, schools: tag ? tag[1].split(';') : null };
+}
+
+/** O item que guarda magias lançadas nele: `{ cap, one, maxLevel }`, ou null. */
+export function storeRuleOf(raw) {
+  if (!raw) return null;
+  const text = plainItemText(raw);
+  const levels = text.match(/\bstore up to (\d+) levels? worth of spells/i);
+  const through = text.match(new RegExp(`spell of 1st through ${ORDINAL} level`, 'i'));
+  if (levels) return { cap: Number(levels[1]), one: false, maxLevel: through ? Number(through[1]) : Number(levels[1]) };
+  const one = text.match(new RegExp(`\\bstore one spell of up to ${ORDINAL} level`, 'i'));
+  if (one) return { cap: null, one: true, maxLevel: Number(one[1]) };
+  const gem = /\bcan contain one spell\b/i.test(text) && text.match(new RegExp(`\\bstore up to ${ORDINAL} level spells`, 'i'));
+  if (gem) return { cap: null, one: true, maxLevel: Number(gem[1]) };
+  return null;
+}
+
+/** Os círculos que o item já guarda. */
+export function storedLevels(entry) {
+  return (entry?.stored ?? []).reduce((s, x) => s + (Number(x.level) || 0), 0);
 }

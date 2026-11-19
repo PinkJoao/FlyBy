@@ -23,7 +23,7 @@ import { describe, it, expect } from 'vitest';
 import {
   evalUses, scaleValues, scaleRollData, actorResources, weaponAttacks, unarmedStrike, cantripAttacks,
   spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity, naturalAttacks, spellTypeOptions,
-  itemSpellOrigins,
+  itemSpellOrigins, spellStores,
 } from './playCatalog';
 
 const feat = (name, system = {}, extra = {}) => ({ type: 'feat', name, system: { identifier: '', uses: { max: '' }, ...system }, ...extra });
@@ -425,5 +425,26 @@ describe('itemSpellOrigins: as magias dos itens (DDL-0257)', () => {
     expect(origins[0].saveDc).toBe(13);
     expect(resources).toEqual([expect.objectContaining({ key: 'granted:item:c1|misty step', max: 1, recovery: [{ period: 'day', type: 'recoverAll' }] })]);
     expect(itemSpellOrigins([cloak], db, 5).origins).toEqual([]);
+  });
+});
+
+describe('a magia escolhida e a guardada (DDL-0258)', () => {
+  const sp = (name, level) => ({ name, source: 'XPHB', level, school: 'C', time: [{ number: 1, unit: 'action' }], duration: [{ type: 'instant' }], entries: [] });
+  const db = { 'spells-xphb': { spell: [sp('Misty Step', 2), sp('Shield', 1)] } };
+  const staff = { uid: 's1', attuned: true, boundSpell: 'Misty Step|XPHB', raw: { name: 'Enspelled Staff (Level 2)', reqAttune: true, charges: 6, entries: ['Bound into this staff is a level 2 spell.', 'The spell\'s saving throw DC is 13, and its attack bonus is 5.'] } };
+  const ring = { uid: 'r1', attuned: true, stored: [{ name: 'Shield', source: 'XPHB', level: 1, dc: 15, attack: 7, mod: 3 }], raw: { name: 'Ring of Spell Storing', reqAttune: true, entries: ['The ring can store up to 5 levels worth of spells at a time.', 'Any creature can cast a spell of 1st through 5th level into the ring.'] } };
+
+  it('o Enspelled lança a escolhida pela carga, com a CD e o ataque do texto', () => {
+    const [o] = itemSpellOrigins([staff], db, 9).origins;
+    expect(o).toMatchObject({ saveDc: 13, attackBonus: 5 });
+    expect(o.spells[0]).toMatchObject({ name: 'Misty Step', chargeKey: 'charges:s1', chargeCost: 1, bound: true });
+    expect(itemSpellOrigins([{ ...staff, boundSpell: null }], db, 9).origins).toEqual([]);
+  });
+
+  it('a guardada vem com o círculo e os números de quem lançou; o lugar que sobra', () => {
+    const [o] = itemSpellOrigins([ring], db, 9, { spellDc: 17 }).origins;
+    expect(o.spells[0]).toMatchObject({ name: 'Shield', key: 'spell:item:r1|Shield#0', stored: { uid: 'r1', index: 0, level: 1, dc: 15, attack: 7, mod: 3 } });
+    expect(spellStores([ring])).toEqual([{ uid: 'r1', name: 'Ring of Spell Storing', one: false, maxLevel: 5, room: 4 }]);
+    expect(spellStores([{ ...ring, attuned: false }])).toEqual([]);
   });
 });

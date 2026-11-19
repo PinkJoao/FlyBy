@@ -11,7 +11,7 @@
 //   catalog(level): um catálogo com um cajado e uma espada +1, no nível dado.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { weaponRuleOf, eligibleWeapons, weaponModifier, withWeaponStates, strikeAttack, masteryNote, withMasteryAttacks, armorBlessing } from './playWeapons';
+import { weaponRuleOf, eligibleWeapons, weaponModifier, withWeaponStates, strikeAttack, masteryNote, withMasteryAttacks, armorBlessing, itemExtraEffects } from './playWeapons';
 import { damageParts } from './playActions';
 
 const staff = { key: 'w:staff', kind: 'weapon', name: 'Quarterstaff', uid: 's1', range: 'melee', ability: 'str', proficient: true, toHit: { total: 3, parts: [{ label: 'Strength', formula: 0 }, { label: 'Proficiency', formula: 3 }] }, damage: { dice: '1d6', bonus: 0, types: ['bludgeoning'] }, versatile: '1d8', properties: ['V'], mastery: 'Topple' };
@@ -98,5 +98,19 @@ describe("Tasha's Otherworldly Guise (TC-0171, DDL-0245)", () => {
     expect(out.attacksMin).toBe(2);
     expect(out.attacks.find((a) => a.uid === 's2')).toMatchObject({ ability: 'cha', magical: true, damage: { bonus: 4 } });
     expect(weaponModifier({ rule, catalog: catalog(), type: 'lower', abilityKey: 'cha' }).immune).toEqual(['fire', 'poison']);
+  });
+});
+
+describe('itemExtraEffects: o dano extra da arma no diálogo (DDL-0258)', () => {
+  it('ligado sem condição, desligado com a nota, a carga no gasto', () => {
+    const attack = { key: 'weapon:s1', uid: 's1', name: 'Staff of Striking', itemExtras: [
+      { formula: '1d6', type: 'cold', condition: null, charge: null },
+      { formula: '1d6', type: 'force', condition: 'For each charge you expend', charge: 'charges:s1' },
+    ] };
+    const [a, b] = itemExtraEffects(attack);
+    expect(a).toMatchObject({ defaultOn: true, part: { formula: '1d6' } });
+    expect(a.note).toBeUndefined();
+    expect(b).toMatchObject({ defaultOn: false, note: 'For each charge you expend', spend: { key: 'charges:s1', amount: 1 } });
+    expect(itemExtraEffects({ name: 'Club' })).toEqual([]);
   });
 });

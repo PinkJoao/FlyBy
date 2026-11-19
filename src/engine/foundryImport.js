@@ -126,6 +126,8 @@
 //     do documento de origem ("Elven Chain"). Encantamento de MAGIA (o Shillelagh
 //     no cajado, origem num ator) não muda a identidade. Ler só o item base
 //     perdia o +2 do escudo, a CA da armadura e o anel inteiro (T2d).
+//   - `flags.builder5e.boundSpell` e `stored` voltam à entrada do inventário (a magia do Enspelled, o que o anel
+//     guarda; DDL-0258).
 //   - `flags.builder5e.item` (a variante que o NOSSO export guardou como item base +
 //     encantamento) vence a leitura pelo encantamento, como toda flag nossa.
 //   - O snapshot de item fora do catálogo guarda a MECÂNICA como carga (dano,
@@ -1295,6 +1297,9 @@ export function foundryToCharacter(rawActor, db, out = null) {
       equipped: !!it.system?.equipped,
       attuned: !!it.system?.attuned,
     };
+    const own5e = it.flags?.builder5e ?? {};
+    if (own5e.boundSpell) entry.boundSpell = own5e.boundSpell;
+    if (Array.isArray(own5e.stored) && own5e.stored.length) entry.stored = own5e.stored;
     const customImg = webImage(it.img);
     if (customImg) entry.customImg = customImg;
     if (!source) entry.custom = customSnapshot(it);

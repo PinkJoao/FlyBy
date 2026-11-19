@@ -29,6 +29,8 @@
 //     reequipa sozinho. Guardar e tirar vários de uma vez, com wouldCycle barrando
 //     o contêiner dentro de si. A loja aberta ali compra para dentro dele.
 //   - Remover um contêiner NÃO apaga o conteúdo: ele volta a ser solto.
+//   - O item que leva magia (Enspelled, Ring of Spell Storing) mostra a seção `ItemSpells` no detalhe: a
+//     magia escolhida e o que ele guarda moram na entrada (DDL-0258).
 //   - O colapso das seções tem chave por aba e agrupamento.
 //   - O menos com quantidade 1 remove o item (a principal via de exclusão).
 //   - A imagem do item é escolhida no diálogo padrão (showImageSource, o mesmo do
@@ -49,6 +51,7 @@ import itemEntity from '../../selector/entities/item';
 import { TUT } from '../../tutorial/anchors';
 import CurrencyCard from './CurrencyCard';
 import EquipmentShop from './EquipmentShop';
+import ItemSpells from './ItemSpells';
 import ItemPickerModal from './ItemPickerModal';
 import {
   RARITY_COLOR, GROUP_ICONS, cap, rarityRank, nameOf, metaParts, thumbOf,
@@ -417,6 +420,10 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
                 <p className={styles.infoUnresolved}>
                   “{nameOf(infoEntry)}” could not be resolved against the loaded item data.
                 </p>
+              )}
+
+              {infoEntry.raw && (
+                <ItemSpells entry={infoEntry} db={db} derived={derived} onUpdate={(patch) => updateEntry(infoEntry.uid, patch)} />
               )}
 
               {infoEntry.isContainer && (

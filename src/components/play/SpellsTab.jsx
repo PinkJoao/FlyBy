@@ -38,7 +38,8 @@
 //     o arcanum não é espaço e não aparece no cabeçalho.
 //   - A origem de um ITEM (Wand of Web, Ring of Jumping, DDL-0257) não está na derivação: a magia crua vem do
 //     db (`resolveSpellObj`), o cabeçalho do círculo não mostra os espaços do personagem (o item não os gasta) e a
-//     linha mostra as cargas ou os usos por dia que sobram.
+//     linha mostra as cargas ou os usos por dia que sobram; a etiqueta é o custo ("1 Charge", "At Will", "1/Day"),
+//     nunca "Always Prepared" (DDL-0258).
 //   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
 // -----------------------------------------------------------------------------
 
@@ -100,7 +101,10 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
   const [collapsed, setCollapsed] = useState(() => new Set());
   const origin = origins.find((o) => o.key === originKey) ?? origins[0];
   const raws = rawIndex((derived?.spellcasting?.origins ?? []).find((o) => o.key === origin?.key));
-  const entryOf = (s) => raws.get(s.name) ?? (origin?.kind === 'item' ? { raw: resolveSpellObj(db, s.name, s.source), granted: true } : null);
+  const entryOf = (s) => raws.get(s.name)
+    ?? (origin?.kind === 'item'
+      ? { raw: resolveSpellObj(db, s.name, s.source), castType: s.stored ? `Stored, level ${s.stored.level}` : s.chargeKey ? 'resource' : s.castType, uses: s.chargeKey ? s.chargeCost : s.castType === 'daily' ? 1 : null }
+      : null);
 
   if (!origin) return <p className={styles.empty}>This character has no spells.</p>;
 

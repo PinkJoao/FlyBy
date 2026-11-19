@@ -115,7 +115,8 @@ export function decisionSummary(c) {
       return (c.inventory ?? [])
         .map((i) => {
           const parent = i.container ? nameByUid.get(i.container) : null;
-          return `${String(i.itemId).toLowerCase()} x${i.quantity}${i.equipped ? ' [eq]' : ''}${parent ? ` in ${parent}` : ''}`;
+          const spells = `${i.boundSpell ? ` spell:${String(i.boundSpell).toLowerCase()}` : ''}${(i.stored ?? []).length ? ` stored:${i.stored.map((s) => `${String(s.name).toLowerCase()}@${s.level}`).join(',')}` : ''}`;
+          return `${String(i.itemId).toLowerCase()} x${i.quantity}${i.equipped ? ' [eq]' : ''}${parent ? ` in ${parent}` : ''}${spells}`;
         })
         .sort();
     })(),

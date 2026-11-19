@@ -18,6 +18,9 @@
 //     arma-base, o degrau pelo nível do personagem, se é arma e se é corpo a corpo).
 //   WEAPON_SPELLS, WEAPON_FEATURES: os registros, um por frase do texto (a forma, a arma elegível, o efeito).
 //   weaponRuleOf(name): a regra de uma magia ou feature de arma, ou null.
+//   itemExtraEffects(attack): o dano extra do texto da arma mágica (`itemExtras` do catálogo) como efeitos do
+//     diálogo de dano: ligado quando a frase não tem condição, desligado com a frase como nota, a carga no `spend`
+//     (DDL-0258).
 //   eligibleWeapons(rule, catalog): os ataques de arma que a regra aceita.
 //   weaponModifier({ rule, attack, catalog, slot, type, abilityKey }): o efeito ativo que marca a arma (e o que
 //     a regra soma ao efeito, `modifier`: a CA e as imunidades do Tasha's Otherworldly Guise).
@@ -137,6 +140,19 @@ export const WEAPON_FEATURES = {
     make: () => ({ ability: 'cha' }),
   },
 };
+
+/** Os extras de dano do texto da arma mágica como efeitos do diálogo (ligado sem condição; a carga gasta junto). */
+export function itemExtraEffects(attack) {
+  return (attack?.itemExtras ?? []).map((x, i) => ({
+    id: `item-extra:${attack.uid ?? attack.key}:${i}`,
+    label: `${attack.name}: +${x.formula}${x.type ? ` ${x.type}` : ''}${x.charge ? ' (1 charge)' : ''}`,
+    source: attack.name,
+    part: { label: `${attack.name}${x.type ? ` (${x.type})` : ''}`, formula: x.formula },
+    defaultOn: !x.condition,
+    ...(x.condition ? { note: x.condition } : {}),
+    ...(x.charge ? { spend: { key: x.charge, amount: 1 } } : {}),
+  }));
+}
 
 /** A regra de uma magia ou feature de arma, ou null. */
 export function weaponRuleOf(name) {

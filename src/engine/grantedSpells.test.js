@@ -237,6 +237,7 @@ describe('castTypeLabel', () => {
     expect(castTypeLabel({ castType: 'will' })).toBe('At Will');
     expect(castTypeLabel({ castType: 'ritual' })).toBe('Ritual');
     expect(castTypeLabel({ castType: 'resource', uses: 3 })).toBe('3 Charges');
+    expect(castTypeLabel({ castType: 'resource', uses: 1 })).toBe('1 Charge');
   });
 
   it('sem tipo (conjurada com slots) não tem rótulo', () => {

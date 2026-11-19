@@ -23,6 +23,9 @@
 //   currencyEvent(args): gastar ou ganhar moedas.
 //   replicateEvent(args): o Replicate Magic Item no jogo: os itens dos planos entram equipados (atunados se há
 //     lugar), marcados `replicated` com a hora; o mais antigo some além do máximo (DDL-0257).
+//   storeSpellOp(character, uid, spell), takeStoredOp(character, uid, index): guardar uma magia no item e tirá-la
+//     ao lançar (operações `inventory` com o antes e o depois; o desfazer devolve, DDL-0258).
+//   storeSpellEvent(args): o lançamento GUARDADO no item: só o gasto do espaço e a magia na entrada (DDL-0258).
 //   chargeResources(derivedInventory): as cargas dos itens, como recursos (com o
 //     nome do item em `item`, para listar o item e não "X charges").
 //
@@ -187,6 +190,34 @@ export function replicateEvent({ character, picks, max, attuneRoom = 0, db = nul
     label: 'Replicate Magic Item',
     ops,
     payload: { logged: true, feature: 'Replicate Magic Item', option: made.map((e) => e.itemId).join(', '), costs: [], short: [], lines },
+  }, now);
+}
+
+/** A operação que guarda uma magia no item (Ring of Spell Storing): `{ name, source, level, dc, attack, mod }` no fim de `stored`. */
+export function storeSpellOp(character, uid, spell) {
+  const inventory = character?.inventory ?? [];
+  const before = inventory.find((e) => e.uid === uid);
+  if (!before) return null;
+  return { op: 'inventory', uid, before, after: { ...before, stored: [...(before.stored ?? []), spell] } };
+}
+
+/** A operação que tira do item a magia guardada no índice (lançada dele). */
+export function takeStoredOp(character, uid, index) {
+  const before = (character?.inventory ?? []).find((e) => e.uid === uid);
+  if (!before || !(before.stored ?? [])[index]) return null;
+  return { op: 'inventory', uid, before, after: { ...before, stored: before.stored.filter((_, i) => i !== index) } };
+}
+
+/**
+ * Guardar uma magia lançada num item (Ring of Spell Storing): o gasto do espaço e a magia no item, com o círculo, a CD,
+ * o ataque e o modificador de quem lançou; a magia não tem outro efeito (o texto).
+ */
+export function storeSpellEvent({ character, store, spell, origin, way, spendOps = [], now = new Date() }) {
+  const op = storeSpellOp(character, store.uid, { name: spell.name, source: spell.source ?? null, level: way.level, dc: origin.saveDc ?? null, attack: origin.attackBonus ?? null, mod: origin.abilityMod ?? null });
+  return makeEvent('use', {
+    label: `${spell.name} stored`,
+    ops: [...spendOps, ...(op ? [op] : [])],
+    payload: { logged: true, feature: store.name, option: spell.name, costs: [], short: [], lines: [`${spell.name} (level ${way.level}, ${way.label}) stored in ${store.name}`] },
   }, now);
 }
 

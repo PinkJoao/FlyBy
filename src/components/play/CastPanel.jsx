@@ -43,7 +43,7 @@ import { creatureStats } from '../../engine/creature';
  * O conteúdo do diálogo de lançar.
  * @param {{ catalog: object, state: object, origin: object, spell: object, creatures?: object[] }} props
  */
-export default function CastPanel({ catalog, state, origin, spell, creatures = [], light = false, transform = null }) {
+export default function CastPanel({ catalog, state, origin, spell, creatures = [], light = false, transform = null, stores = [] }) {
   const close = useDialogClose();
   const ways = castWays(catalog, state, spell);
   const first = ways.find((w) => w.left == null || w.left > 0) ?? ways[0];
@@ -58,6 +58,12 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
   const [variant, setVariant] = useState(null);
   const chosenVariant = variants.includes(variant) ? variant : variants[0] ?? null;
   const [count, setCount] = useState('1');
+  const [storeOn, setStoreOn] = useState(false);
+  const [storeUid, setStoreUid] = useState(stores[0]?.uid ?? null);
+  const picked = ways.find((w) => w.id === pick);
+  const slotWay = !!picked?.key && (picked.key === 'pact' || picked.key.startsWith('slot:'));
+  const fits = slotWay ? stores.filter((s) => s.room >= picked.level && s.maxLevel >= picked.level) : [];
+  const store = fits.find((s) => s.uid === storeUid) ?? fits[0] ?? null;
   const btnRef = useRef(null);
 
   useEffect(() => {
@@ -73,7 +79,7 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
     const summon = summonOn && many ? { pick: true, count: Math.max(1, Number(count) || 1) }
       : summonOn && creature ? { creature, variant: chosenVariant, count: Math.max(1, Number(count) || 1) }
         : summonOn && light ? { light: true } : null;
-    if (way) close({ way, onSelf, summon, transform: !!transform && selfOn });
+    if (way) close({ way, onSelf, summon, transform: !!transform && selfOn, store: storeOn && store ? store : null });
   };
 
   return (
@@ -121,9 +127,17 @@ export default function CastPanel({ catalog, state, origin, spell, creatures = [
           <Toggle checked={summonOn} onChange={setSummonOn} label="Track it in Summons" hint="A card to move it, repeat it and see when it ends" />
         </div>
       )}
+      {fits.length > 0 && (
+        <div className={styles.summon}>
+          <Toggle checked={storeOn} onChange={setStoreOn} label={`Store it in ${store?.name ?? 'an item'}`} hint="The slot is spent; the spell has no other effect and waits in the item" />
+          {storeOn && fits.length > 1 && (
+            <SegmentedControl block size="sm" ariaLabel="Item" value={store?.uid} onChange={setStoreUid} options={fits.map((s) => [s.uid, s.name])} />
+          )}
+        </div>
+      )}
       <div className={styles.actions}>
         <Button onClick={() => close(null)}>Cancel</Button>
-        <Button ref={btnRef} type="submit" variant="primary" disabled={!pick}>Cast</Button>
+        <Button ref={btnRef} type="submit" variant="primary" disabled={!pick}>{storeOn && store ? 'Store' : 'Cast'}</Button>
       </div>
     </form>
   );

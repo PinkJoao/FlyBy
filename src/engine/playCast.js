@@ -9,7 +9,8 @@
 //
 // FUNÇÕES
 //   leftOf(catalog, state, key): o que sobra de um recurso, com o máximo.
-//   castWays(catalog, state, spell): as formas de lançar, com o que sobra de cada.
+//   castWays(catalog, state, spell): as formas de lançar, com o que sobra de cada (a magia guardada num item: só
+//     "Stored", no círculo guardado; a do Enspelled: a carga, também na cantrip, DDL-0258).
 //   slotPoolsFor(catalog, state, level): os espaços que o cabeçalho de um círculo
 //     mostra (o do círculo e o pacto, se ele cabe), com o que sobra.
 //   projectileCount(spell, level, characterLevel), timesFormula(formula, k): quantos projéteis a magia
@@ -106,7 +107,8 @@ const leftOf = (catalog, state, key) => {
 export function castWays(catalog, state, spell) {
   const ways = [];
   if (spell.ritualOnly) return [{ id: 'ritual', label: 'As a ritual from your spellbook (Ritual Adept)', level: spell.level, key: null, left: null }];
-  if (spell.level === 0 || spell.castType === 'will' || (spell.castType === 'innate' && !spell.uses)) {
+  if (spell.stored) return [{ id: 'stored', label: `Stored (level ${spell.stored.level})`, level: spell.stored.level, key: null, left: null, stored: spell.stored }];
+  if (!spell.chargeKey && (spell.level === 0 || spell.castType === 'will' || (spell.castType === 'innate' && !spell.uses))) {
     ways.push({ id: 'free', label: spell.level === 0 ? 'Cantrip' : spell.castType === 'will' ? 'At will' : 'Innate', level: spell.level, key: null, left: null });
     if (spell.level === 0) return ways;
   }

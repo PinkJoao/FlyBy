@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView, applyCharacterOps, characterOps } from './playState';
 import {
-  typeCode, isUsable, healOf, quantityOp, ammoEntry, itemUseEvent, quantityEvent, ammoOps, currencyEvent, chargeResources, replicateEvent,
+  typeCode, isUsable, healOf, quantityOp, ammoEntry, itemUseEvent, quantityEvent, ammoOps, currencyEvent, chargeResources, replicateEvent, storeSpellEvent, takeStoredOp,
 } from './playInventory';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -126,5 +126,26 @@ describe('Replicate Magic Item (DDL-0257)', () => {
     expect(after.inventory.map((e) => e.uid)).toEqual(['b', 'c', ev.ops[0].uid]);
     const back = applyCharacterOps(after, characterOps(ev), 'backward').character;
     expect(back.inventory.map((e) => e.uid)).toEqual(['b', 'c', 'a']);
+  });
+});
+
+describe('guardar e lançar a magia guardada (DDL-0258)', () => {
+  const ring = { uid: 'r1', itemId: 'Ring of Spell Storing', source: 'XDMG', quantity: 1, equipped: true, attuned: true, stored: [{ name: 'Shield', source: 'XPHB', level: 1, dc: 15, attack: 7 }] };
+  const start = { inventory: [ring] };
+
+  it('guardar gasta o espaço e põe a magia com os números de quem lançou; o desfazer tira', () => {
+    const ev = storeSpellEvent({
+      character: start, store: { uid: 'r1', name: 'Ring of Spell Storing' }, spell: { name: 'Fireball', source: 'XPHB' },
+      origin: { saveDc: 16, attackBonus: 8, abilityMod: 4 }, way: { level: 3, label: 'Level 3 slot' }, spendOps: [{ op: 'spend', key: 'slot:3', amount: 1 }],
+    });
+    expect(ev.ops[0]).toEqual({ op: 'spend', key: 'slot:3', amount: 1 });
+    const after = onChar(start, ev);
+    expect(after.inventory[0].stored.at(-1)).toEqual({ name: 'Fireball', source: 'XPHB', level: 3, dc: 16, attack: 8, mod: 4 });
+    expect(applyCharacterOps(after, characterOps(ev), 'backward').character.inventory[0].stored).toHaveLength(1);
+  });
+
+  it('lançar tira a guardada pelo índice', () => {
+    expect(takeStoredOp(start, 'r1', 0).after.stored).toEqual([]);
+    expect(takeStoredOp(start, 'r1', 3)).toBeNull();
   });
 });

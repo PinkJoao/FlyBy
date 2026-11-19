@@ -172,6 +172,10 @@
 //     opcional, planos diferentes), o máximo da coluna Magic Items; o atunamento só com lugar livre.
 //   - A magia de item (Wand of Web, Ring of Jumping) lança pelas cargas ou pelos usos do item, nunca pelos
 //     espaços (`castWays`); a CD e o ataque vêm da origem `item` do catálogo.
+//   - Guardar magia (DDL-0258): com um item que guarda (Ring of Spell Storing) e lugar para o círculo, o
+//     diálogo de lançar abre e oferece "Store it in"; guardar grava só o gasto e a magia no item
+//     (`storeSpellEvent`). A guardada lança no círculo dela com a CD, o ataque e o modificador de quem a
+//     guardou (a origem trocada antes do `castEvent`) e sai do item na mesma ação (`takeStoredOp`).
 //   - O histórico é uma COLUNA ao lado da página a partir de 1140px (WIDE_QUERY,
 //     o mesmo número do Play.module.css) e, mais estreito, a PRIMEIRA aba
 //     (DDL-0115); não há botão nem gaveta. Saindo do estreito para o largo com a
@@ -259,7 +263,7 @@ import {
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
 import { pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
-import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing } from '../engine/playWeapons';
+import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing, itemExtraEffects } from '../engine/playWeapons';
 import { screenCatalog } from '../engine/playView';
 import { resolveRefs } from '../engine/dice';
 import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
@@ -271,7 +275,7 @@ import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, castOnceEffects,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit, withDiceMax } from '../engine/playActions';
-import { itemUseEvent, ammoOps, itemCostOf, healOf, replicateEvent } from '../engine/playInventory';
+import { itemUseEvent, ammoOps, itemCostOf, healOf, replicateEvent, storeSpellEvent, takeStoredOp } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
   movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
@@ -1042,14 +1046,21 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const creatures = !summoning ? [] : /^find familiar$/i.test(spell.name) ? familiarForms(beasts, familiarSpecialForms(chosenOptions(character, db))) : summonCreaturesFor(beasts, spell);
     const light = !creatures.length && isLightSummon(spell);
     let transformSelf = false;
-    if (!way || creatures.length || light || transformRule) {
-      const r = await askCast({ catalog, state, origin, spell, creatures, light, transform: transformRule });
+    const stores = spell.level > 0 && !spell.itemUid && !cost.noSlot ? (catalog.spellStores ?? []).filter((s) => s.room >= spell.level && s.maxLevel >= spell.level) : [];
+    if (!way || creatures.length || light || transformRule || stores.length) {
+      const r = await askCast({ catalog, state, origin, spell, creatures, light, transform: transformRule, stores });
       if (!r) return;
       way = way ?? r.way;
       onSelf = !!r.onSelf;
       summon = r.summon;
       transformSelf = !!r.transform;
+      if (r.store) {
+        const spendOps = castEvent({ catalog, state, origin, spell, way }).ops.filter((o) => o.op === 'spend');
+        record(storeSpellEvent({ character, store: r.store, spell, origin, way, spendOps: [...spendOps, ...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : [])] }), costOfActivation(cost.cost));
+        return;
+      }
     }
+    if (way.stored) origin = { ...origin, saveDc: way.stored.dc ?? origin.saveDc, attackBonus: way.stored.attack ?? origin.attackBonus, abilityMod: way.stored.mod ?? origin.abilityMod };
     const classLevel = character.classes?.find((c) => `class:${c.classId}` === origin.key)?.level ?? null;
     const turn = summon ? summonTurnOf([...(rawSpell?.entries ?? []), ...(rawSpell?.entriesHigherLevel ?? [])]) : null;
     const summonExtra = summon?.light
@@ -1071,7 +1082,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       weaponOps = await weaponStateOps(weaponRule, { slot: way.level, abilityKey: origin.ability, concentration: spell.concentration ? spell.key : null, origin });
       if (!weaponOps) return;
     }
-    const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]);
+    const takeOp = way.stored ? takeStoredOp(character, way.stored.uid, way.stored.index) : null;
+    const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra, ...(takeOp ? [takeOp] : [])]);
     const weaponPick = strikeWith?.name ?? (weaponOps.find((o) => o.add)?.add?.notes?.[0] ?? '').replace(`${spell.name}: `, '');
     record({ ...castEv, ops: [...castEv.ops, ...weaponOps], payload: { ...castEv.payload, ...(weaponPick && weaponPick !== spell.name ? { option: weaponPick } : {}) } }, costOfActivation(cost.cost));
     const tempFormula = spellTempFormula(spell, way.level);
@@ -1481,7 +1493,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
         note: [attack.save ? `The target makes a DC ${attack.save.dc} ${ABILITY_FULL[attack.save.ability] ?? ''} saving throw` : '', attackNotes(attack, catalog)].filter(Boolean).join('. '),
       },
       quick,
-      castOnceEffects(rollEffects(state, catalog, attackRollContext(attack, 'damage', catalog)), castUsed),
+      [...castOnceEffects(rollEffects(state, catalog, attackRollContext(attack, 'damage', catalog)), castUsed), ...itemExtraEffects(attack)],
       spend ? cost : null,
     );
 

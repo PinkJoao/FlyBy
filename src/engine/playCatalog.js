@@ -98,9 +98,12 @@
 //       que cada talento aumentou, Conjuration Adept).
 //     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
 //     checkList(derived, character): os testes; o bônus de teste dos itens vira uma parte `item` (DDL-0256).
+//     firstNum(match): o primeiro grupo preenchido de um regex com alternativas (a CD e o ataque do texto do item).
 //     itemSpellOrigins(inventory, db, level, ctx): as magias que os itens ativos lançam (`attachedSpells` will,
 //       daily e charges; a forma em lista e as raras ficam fora, o texto não diz o custo), como origens `item`,
 //       com a CD e o ataque do texto do item ou os do personagem; o upcast por carga só com a frase (DDL-0257).
+//     spellStores(inventory): os itens que guardam magias e o que cabe neles (o diálogo de lançar oferece guardar;
+//       a magia guardada sai do item ao ser lançada, com o círculo, a CD e o ataque de quem a guardou, DDL-0258).
 //     replicateInfo(character, db): os planos do Replicate Magic Item e o máximo de itens (coluna Magic Items).
 //     spellResources(spellcasting), spellOrigins(spellcasting, level, opts): magias; com o
 //       Ritual Adept, o ritual do grimório do mago sem preparar vem com `ritualOnly` (TC-0158).
@@ -254,7 +257,7 @@ import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList, plainText } from './playFeatures';
 import { consumptionTargetItem, CONSUMES_BY_NAME } from './foundryConsumption';
-import { itemSpeeds, isActiveItem, plainItemText } from './itemEffects';
+import { itemSpeeds, isActiveItem, plainItemText, weaponExtraDamage, boundSpellRule, storeRuleOf, storedLevels } from './itemEffects';
 import { tableColumnAt } from './grantedSpellUses';
 import { REROLL_FEATURES } from './playRerolls';
 import { actorRollEffects } from './playActorEffects';
@@ -404,6 +407,10 @@ export function weaponAttacks(character, derived) {
       ammunition: props.includes('A') || props.includes('AF'),
       ammoType: raw.ammoType ?? null,
       distance: raw.range ?? null,
+      ...(() => {
+        const extras = weaponExtraDamage(raw);
+        return extras.length ? { itemExtras: extras.map((x) => ({ ...x, charge: x.charge && e.uid ? `charges:${e.uid}` : null })) } : {};
+      })(),
     };
   });
 }
@@ -1242,31 +1249,36 @@ function spellResources(spellcasting) {
 
 const ITEM_UPCAST = /increase the spell's (?:slot )?level by (?:1|one) for each additional charge/i;
 const ITEM_CAP = /no more than (\d+) charges/i;
-const ITEM_DC = /\(save (?:DC )?(\d+)\)|spell save DC (?:is |of )?(\d+)/i;
-const ITEM_ATTACK = /\(\+(\d+) to hit\)|spell attack (?:bonus|modifier) (?:is |of )?\+(\d+)/i;
+const ITEM_DC = /\(save (?:DC )?(\d+)\)|spell save DC (?:is |of )?(\d+)|saving throw DC is (\d+)|save DC of (\d+)/i;
+const ITEM_ATTACK = /\(\+(\d+) to hit\)|spell attack (?:bonus|modifier) (?:is |of )?\+(\d+)|attack bonus (?:is|of) \+?(\d+)/i;
+const firstNum = (m) => (m ? Number(m.slice(1).find((x) => x != null)) : null);
 
 /**
- * As magias que os itens ativos lançam (`attachedSpells` à vontade, por dia ou por cargas), como origens do
- * catálogo, e os usos por dia como recursos. A CD e o ataque do texto do item, ou os do personagem.
+ * As magias dos itens ativos (attachedSpells, a escolhida do Enspelled, as guardadas) como origens, e os usos por
+ * dia como recursos; a CD e o ataque do texto do item, os do personagem ou os de quem guardou.
  */
 export function itemSpellOrigins(inventory, db, level, { spellDc = null, spellAttack = null } = {}) {
   const origins = [];
   const resources = [];
   for (const e of inventory ?? []) {
-    const att = e?.raw?.attachedSpells;
-    if (!att || Array.isArray(att) || !e.uid || !isActiveItem(e)) continue;
-    const text = plainItemText(e.raw);
-    const dc = text.match(ITEM_DC);
-    const atk = text.match(ITEM_ATTACK);
+    const raw = e?.raw;
+    if (!raw || !e.uid || !isActiveItem(e)) continue;
+    const att = raw.attachedSpells && !Array.isArray(raw.attachedSpells) ? raw.attachedSpells : {};
+    const bound = e.boundSpell ? boundSpellRule(raw) : null;
+    const store = storeRuleOf(raw);
+    if (!Object.keys(att).length && !bound && !(store && e.stored?.length)) continue;
+    const text = plainItemText(raw);
+    const dc = firstNum(text.match(ITEM_DC));
+    const atk = firstNum(text.match(ITEM_ATTACK));
     const key = `item:${e.uid}`;
     const spells = [];
-    const add = (ref, extra) => {
+    const add = (ref, extra, suffix = '') => {
       const [name, source] = String(ref).split('|');
-      const raw = resolveSpellObj(db, name, source?.toUpperCase());
-      if (!raw) return;
+      const sp = resolveSpellObj(db, name, source?.toUpperCase());
+      if (!sp) return;
       spells.push({
-        key: `spell:${key}|${raw.name}`, name: raw.name, source: raw.source ?? null, level: raw.level, ritual: isRitual(raw), school: raw.school ?? null,
-        concentration: isConcentration(raw), time: raw.time?.[0]?.unit ?? null, durationRounds: roundsOf(raw.duration), mechanics: spellMechanics(raw, level),
+        key: `spell:${key}|${sp.name}${suffix}`, name: sp.name, source: sp.source ?? null, level: sp.level, ritual: isRitual(sp), school: sp.school ?? null,
+        concentration: isConcentration(sp), time: sp.time?.[0]?.unit ?? null, durationRounds: roundsOf(sp.duration), mechanics: spellMechanics(sp, level),
         prepared: true, granted: true, itemUid: e.uid, castLevel: null, ...extra,
       });
     };
@@ -1276,23 +1288,42 @@ export function itemSpellOrigins(inventory, db, level, { spellDc = null, spellAt
       for (const ref of refs) {
         const usesKey = `granted:${key}|${String(ref).split('|')[0]}`;
         add(ref, { castType: 'daily', uses: usesKey });
-        resources.push({ key: usesKey, kind: 'granted', name: `${e.raw.name}: ${String(ref).split('|')[0]}`, origin: key, max: count, recovery: [{ period: 'day', type: 'recoverAll' }] });
+        resources.push({ key: usesKey, kind: 'granted', name: `${raw.name}: ${String(ref).split('|')[0]}`, origin: key, max: count, recovery: [{ period: 'day', type: 'recoverAll' }] });
       }
     }
-    if (Number(e.raw.charges) > 0) {
+    if (Number(raw.charges) > 0) {
       const cap = Number(text.match(ITEM_CAP)?.[1]) || null;
       for (const [n, refs] of Object.entries(att.charges ?? {})) {
         for (const ref of refs) add(ref, { castType: null, uses: null, chargeKey: `charges:${e.uid}`, chargeCost: parseInt(n, 10) || 1, chargeUpcast: ITEM_UPCAST.test(text), chargeCap: cap });
       }
+      if (bound) add(e.boundSpell, { castType: null, uses: null, chargeKey: `charges:${e.uid}`, chargeCost: 1, chargeUpcast: false, bound: true });
+    }
+    if (store) {
+      (e.stored ?? []).forEach((st, i) => add(`${st.name}|${st.source ?? ''}`, {
+        castType: null, uses: null, castLevel: st.level, stored: { uid: e.uid, index: i, level: st.level, dc: dc ?? st.dc ?? null, attack: atk ?? st.attack ?? null, mod: st.mod ?? null },
+      }, `#${i}`));
     }
     if (!spells.length) continue;
     origins.push({
-      key, kind: 'item', label: e.raw.name, ability: null, abilityMod: null, itemUid: e.uid,
-      saveDc: dc ? Number(dc[1] ?? dc[2]) : spellDc, attackBonus: atk ? Number(atk[1] ?? atk[2]) : spellAttack,
+      key, kind: 'item', label: raw.name, ability: null, abilityMod: null, itemUid: e.uid,
+      saveDc: dc ?? spellDc, attackBonus: atk ?? spellAttack,
       isPact: false, classId: null, spells,
     });
   }
   return { origins, resources };
+}
+
+/** Os itens ativos que guardam magias, com o que cabe: `[{ uid, name, one, maxLevel, room }]` (room em círculos; null = vazio ou cheio). */
+export function spellStores(inventory) {
+  const out = [];
+  for (const e of inventory ?? []) {
+    const rule = e?.uid && isActiveItem(e) ? storeRuleOf(e.raw) : null;
+    if (!rule) continue;
+    const used = storedLevels(e);
+    const room = rule.one ? ((e.stored ?? []).length ? 0 : rule.maxLevel) : Math.max(0, rule.cap - used);
+    out.push({ uid: e.uid, name: e.raw.name, one: rule.one, maxLevel: rule.maxLevel, room });
+  }
+  return out;
 }
 
 /** O Replicate Magic Item: os planos conhecidos e quantos itens o artífice pode ter (a coluna Magic Items), ou null. */
@@ -1481,6 +1512,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     resources,
     spells: [...spellOrigins(d.spellcasting, level, { ritualAdept: features.includes('ritual adept') }), ...itemSpells.origins],
     replicate: replicateInfo(character, db),
+    spellStores: spellStores(d.inventory),
     problems,
   };
 }

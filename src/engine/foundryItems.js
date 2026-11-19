@@ -348,6 +348,8 @@
 //   - Variante gerada com modelo no SRD sai como o item BASE mais o encantamento
 //     do modelo (srdVariantEnchantment), o formato dos premades; o resto do item
 //     (equipado, sintonizado, a marca de procedência) é o da variante, e
+//     `flags.builder5e.boundSpell` e `flags.builder5e.stored` levam a magia escolhida do Enspelled e o que o anel
+//     guarda (DDL-0258): o dnd5e não tem campo para isso, e a importação devolve à entrada.
 //     `flags.builder5e.item` guarda a variante EXATA: o nome que o modelo gera nem
 //     sempre é o nosso ("Oathbow" e "Oath Longbow", o primeiro dos 14 perfis do
 //     "Ammunition of Slaying"), e o import a lê antes de tudo (T3, TC-0115).
@@ -2505,6 +2507,9 @@ export function buildInventoryItems(character, db) {
     if (baseRaw) {
       item.effects = [...item.effects, enchant.effect];
       item.flags = { ...item.flags, builder5e: { ...(item.flags?.builder5e ?? {}), item: { id: variantRaw.name, source: variantRaw.source } } };
+    }
+    if (entry.boundSpell || entry.stored?.length) {
+      item.flags = { ...item.flags, builder5e: { ...(item.flags?.builder5e ?? {}), ...(entry.boundSpell ? { boundSpell: entry.boundSpell } : {}), ...(entry.stored?.length ? { stored: entry.stored } : {}) } };
     }
     const srdMech = raw && !entry.customName ? srdItemMechanics(raw.name) : null;
     if (srdMech) {

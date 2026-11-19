@@ -259,7 +259,7 @@ describe('o ataque de magia de círculo guarda o círculo (TC-0174, DDL-0249)', 
 
 describe('as invocações de 2014 que gastam espaço e o temporário ao lançar (DDL-0257)', () => {
   const cat = { resources: [{ key: 'pact', kind: 'pact', name: 'Pact slots', level: 5, max: 3 }, { key: 'granted:w|Slow', kind: 'granted', name: 'Slow', max: 1 }] };
-  const slow = { key: 'spell:w|Slow', name: 'Slow', level: 3, castType: 'daily', uses: 'granted:w|Slow', slot: true, mechanics: {} };
+  const slow = { key: 'spell:w|Slow', name: 'Slow', level: 3, castType: 'restLong', uses: 'granted:w|Slow', slot: true, mechanics: {} };
   it('Mire the Mind: só o espaço de pacto, gastando também o uso por descanso', () => {
     const ways = castWays(cat, st(), slow);
     expect(ways.map((w) => w.id)).toEqual(['pact']);
@@ -297,5 +297,18 @@ describe('magia de item: pelas cargas, nunca pelos espaços (DDL-0257)', () => {
   it('a magia por dia do item usa só o uso', () => {
     const daily = spell({ name: 'Misty Step', level: 2, itemUid: 'c1', castType: 'daily', uses: 'granted:race|Misty Step' });
     expect(castWays(cat, st(), daily).map((w) => w.id)).toEqual(['uses']);
+  });
+});
+
+describe('a magia guardada e a do Enspelled (DDL-0258)', () => {
+  it('a guardada só tem a forma "Stored", no círculo dela', () => {
+    const stored = spell({ name: 'Shield', level: 1, itemUid: 'r1', stored: { uid: 'r1', index: 0, level: 3, dc: 15, attack: 7 } });
+    expect(castWays(catalog, st(), stored)).toEqual([expect.objectContaining({ id: 'stored', level: 3, key: null })]);
+  });
+
+  it('a cantrip do Enspelled gasta a carga, não sai de graça', () => {
+    const cat = { ...catalog, resources: [...catalog.resources, { key: 'charges:s1', kind: 'charges', max: 6 }] };
+    const bound = spell({ name: 'Fire Bolt', level: 0, itemUid: 's1', chargeKey: 'charges:s1', chargeCost: 1, chargeUpcast: false, bound: true });
+    expect(castWays(cat, st(), bound).map((w) => w.id)).toEqual(['charges:1']);
   });
 });

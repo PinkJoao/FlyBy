@@ -15,7 +15,7 @@
 //   norm(s), fullSlug(n): normalização e o slug completo e reversível.
 //   toolId(raw), languageCode(raw): os ids de ferramenta e idioma (exportados para
 //     o foundryItems e o import).
-//   buildAbilities(derived), buildSkills(derived), buildTools(derived),
+//   buildAbilities(derived) (o atributo SEM os itens, `baseScores`, DDL-0256), buildSkills(derived), buildTools(derived),
 //     weaponMasteries(character), damageTraitBlock(list), buildTraits(derived,
 //     character, size): os blocos de proficiências e traços.
 //   textToHtml(text): texto simples em parágrafos HTML.
@@ -147,7 +147,7 @@ function buildAbilities(derived) {
   const profSaves = new Set(derived.proficientSaves ?? []);
   for (const a of ABILITIES) {
     out[a] = {
-      value: derived.scores[a] ?? 10,
+      value: (derived.baseScores ?? derived.scores)[a] ?? 10,
       proficient: profSaves.has(a) ? 1 : 0,
       max: null,
       bonuses: { check: '', save: '' },

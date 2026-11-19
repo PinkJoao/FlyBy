@@ -32,7 +32,7 @@
 //     recoveryText(recovery): "Long Rest, 1 on Short Rest".
 //     evalUses(formula, ctx): o número de um `uses.max`, ou null.
 //   Ficha
-//     initiativeBonus(character, derived): DES, mais o PB com o Alert.
+//     initiativeBonus(character, derived): DES, mais o PB com o Alert e o bônus de teste dos itens (DDL-0256).
 //     hitDiceByFace(derived): os dados de vida agregados por face.
 //     weaponProficient(entry, weaponProfs, weaponNames), weaponAttacks(character,
 //       derived): as armas do inventário, equipadas primeiro.
@@ -97,7 +97,7 @@
 //       `attunement.value` (os itens atunados, Soul of Artifice) e `featAbility` (o atributo
 //       que cada talento aumentou, Conjuration Adept).
 //     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
-//     checkList(derived, character): os testes.
+//     checkList(derived, character): os testes; o bônus de teste dos itens vira uma parte `item` (DDL-0256).
 //     spellResources(spellcasting), spellOrigins(spellcasting, level, opts): magias; com o
 //       Ritual Adept, o ritual do grimório do mago sem preparar vem com `ritualOnly` (TC-0158).
 //     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity? Também o `consumes` do
@@ -106,6 +106,8 @@
 //       rerrolagem, que gastam ao rerrolar (Empowered Healing), e a que tem pool próprio (Crown of Spellfire: os
 //       pontos só restauram o uso; DDL-0253). A que tem pool próprio também não gasta o Channel Divinity: nela o
 //       Channel Divinity só restaura o uso (Dispelling Recovery, DDL-0254).
+//     withItemSpeeds(speeds, inventory): os deslocamentos sempre ligados dos itens ativos (Slippers of Spider
+//       Climbing, Ring of Swimming, Boots of Striding and Springing; engine/itemEffects.js, DDL-0256).
 //     withFeatureSpeeds(speeds, features): escalada e natação de feature (FEATURE_SPEEDS:
 //       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156); uma entrada
 //       `{ mode, feet, note }` dá um número fixo ou uma nota (Gift of the Sea nada 40, Stormborn voa ao ar livre, DDL-0253).
@@ -248,6 +250,7 @@ import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList, plainText } from './playFeatures';
 import { consumptionTargetItem, CONSUMES_BY_NAME } from './foundryConsumption';
+import { itemSpeeds } from './itemEffects';
 import { REROLL_FEATURES } from './playRerolls';
 import { actorRollEffects } from './playActorEffects';
 import { proseRollEffects, proseUses } from './playProseEffects';
@@ -311,7 +314,7 @@ export function evalUses(formula, { scales = {}, mods = {}, prof = 0, classLevel
 export function initiativeBonus(character, derived) {
   const hasAlert = norm(character.origin?.originFeat?.id).startsWith('alert')
     || (character.classes ?? []).some((c) => Object.values(c.choices ?? {}).some((e) => e?.kind === 'feat' && (e.picks ?? []).some((p) => norm(p).startsWith('alert|'))));
-  return (derived.modifiers?.dex ?? 0) + (hasAlert ? derived.proficiencyBonus ?? 0 : 0);
+  return (derived.modifiers?.dex ?? 0) + (hasAlert ? derived.proficiencyBonus ?? 0 : 0) + (derived.itemCheckBonus?.bonus ?? 0);
 }
 
 /** Os dados de vida por face, da maior para a menor ([{ faces: 10, count: 3 }]). */
@@ -1054,6 +1057,15 @@ const FEATURE_SPEEDS = {
   'gift of the sea': [{ mode: 'swim', feet: 40 }],
 };
 
+/** Os deslocamentos com os dos itens ativos sempre ligados (itemSpeeds); o maior vence. */
+function withItemSpeeds(speeds, inventory) {
+  const out = { ...speeds };
+  for (const [mode, s] of Object.entries(itemSpeeds(inventory, speeds.walk?.feet ?? 0))) {
+    if (!(out[mode]?.feet >= s.feet)) out[mode] = { feet: s.feet, note: s.note };
+  }
+  return out;
+}
+
 /** Os deslocamentos com os das features (FEATURE_SPEEDS), iguais ao a pé final; o maior vence. */
 function withFeatureSpeeds(speeds, features) {
   const walk = speeds.walk?.feet;
@@ -1162,13 +1174,14 @@ function checkList(derived, character) {
       const mod = derived.modifiers?.[ability] ?? 0;
       const saveProf = (derived.proficientSaves ?? []).includes(ability);
       const items = (derived.itemSaveBonus?.sources ?? []).map((s) => ({ kind: 'item', label: s.name, value: s.value }));
+      const checkItems = (derived.itemCheckBonus?.sources ?? []).map((s) => ({ kind: 'item', label: s.name, value: s.value }));
       return {
         ability,
         score: derived.scores?.[ability] ?? 10,
         mod,
         save: derived.saves?.[ability] ?? 0,
         saveProf,
-        checkParts: [{ kind: 'ability', ability, value: mod }],
+        checkParts: [{ kind: 'ability', ability, value: mod }, ...checkItems],
         saveParts: [
           { kind: 'ability', ability, value: mod },
           ...(saveProf ? [{ kind: 'proficiency', level: 1, value: derived.proficiencyBonus ?? 0 }] : []),
@@ -1180,12 +1193,18 @@ function checkList(derived, character) {
       const mod = derived.modifiers?.[ability] ?? 0;
       const bonus = derived.skills?.[skill]?.bonus ?? 0;
       const prof = derived.skills?.[skill]?.proficiency ?? 0;
+      const itemBonus = derived.itemCheckBonus?.bonus ?? 0;
+      const profPart = bonus - mod - itemBonus;
       return {
         skill,
         ability,
         bonus,
         prof,
-        parts: [{ kind: 'ability', ability, value: mod }, ...(prof ? [{ kind: 'proficiency', level: prof, value: bonus - mod }] : bonus - mod > 0 ? [{ kind: 'proficiency', level: 0.5, value: bonus - mod }] : [])],
+        parts: [
+          { kind: 'ability', ability, value: mod },
+          ...(prof ? [{ kind: 'proficiency', level: prof, value: profPart }] : profPart > 0 ? [{ kind: 'proficiency', level: 0.5, value: profPart }] : []),
+          ...(derived.itemCheckBonus?.sources ?? []).map((s) => ({ kind: 'item', label: s.name, value: s.value })),
+        ],
       };
     }),
     initiative: { bonus: initiativeBonus(character, derived) },
@@ -1364,7 +1383,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
       level: d.level ?? 0,
       initiative: initiativeBonus(character, d),
       speed: speedOf(character, db) == null ? null : speedOf(character, db) + speedBonus,
-      speeds: withFeatureSpeeds(speedBonus && speeds.walk ? { ...speeds, walk: { ...speeds.walk, feet: speeds.walk.feet + speedBonus } } : speeds, features),
+      speeds: withItemSpeeds(withFeatureSpeeds(speedBonus && speeds.walk ? { ...speeds, walk: { ...speeds.walk, feet: speeds.walk.feet + speedBonus } } : speeds, features), d.inventory),
     },
     checks: checkList(d, character),
     defenses: defensesOf(d),

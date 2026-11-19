@@ -45,7 +45,10 @@
 //     subclasse ou level-down.
 //
 //   Entradas
-//   deriveFromDb(character, db): o estado computado com o compêndio ao vivo.
+//   deriveFromDb(character, db): o estado computado com o compêndio ao vivo. Os itens mágicos ativos entram
+//     pelo engine/itemEffects (DDL-0256): atributo (antes da derivação, então modificador, PV, perícias e CD
+//     seguem), ataque e CD de magia por origem (`itemBonuses`), bônus de teste nas perícias; `baseScores` é o
+//     atributo SEM os itens, o que o export escreve (o item no Foundry leva o próprio efeito).
 //   ownedFromDb(character, db): tudo que a ficha já possui, para o dedup.
 //
 // DECISÕES E ARMADILHAS
@@ -157,6 +160,8 @@ import { collectChoicePicks } from './choices';
 import { deriveInventory, carryingCapacity } from './items';
 import { attunementMaxFor } from './attunement';
 import { deriveArmorClass, deriveSaveBonusFromItems } from './armorClass';
+import { finalScores } from './abilities';
+import { itemAbilityEffects, itemCheckBonus, itemSpellBonuses } from './itemEffects';
 import { naturalArmorFor } from './naturalArmor';
 import { deriveDamageTraits } from './damageTraits';
 import { deriveHpBonus } from './hpBonuses';
@@ -827,15 +832,19 @@ export function deriveFromDb(character, db) {
 
   const hpBonusExtra = deriveHpBonus(character, db);
 
+  const inv = deriveInventory(character, db);
+  const itemAbilities = itemAbilityEffects(inv.entries);
+  const itemChecks = itemCheckBonus(inv.entries);
+
   const derived = deriveCharacter(character, {
     ...ctx,
     grantedLanguages,
     ...granted,
-    extraAbilityBoosts,
+    extraAbilityBoosts: [...extraAbilityBoosts, ...itemAbilities],
     extraMaxHp: hpBonusExtra.total,
   });
-
-  const inv = deriveInventory(character, db);
+  const baseScores = itemAbilities.length ? finalScores(character, extraAbilityBoosts) : derived.scores;
+  if (itemChecks.bonus) for (const s of Object.values(derived.skills ?? {})) s.bonus += itemChecks.bonus;
   const capacity = carryingCapacity(derived.scores.str);
 
   const armorClass = deriveArmorClass(character, inv.entries, derived.modifiers, naturalArmorFor(raceObj));
@@ -858,9 +867,21 @@ export function deriveFromDb(character, db) {
     modifiers: derived.modifiers,
     level: derived.level,
   });
+  const spellItems = itemSpellBonuses(inv.entries);
+  for (const o of spellcasting?.origins ?? []) {
+    for (const b of spellItems) {
+      if (b.cls && o.classId !== b.cls) continue;
+      if (o.attackBonus != null && b.attack) o.attackBonus += b.attack;
+      if (o.saveDc != null && b.dc) o.saveDc += b.dc;
+      if (b.attack || b.dc) (o.itemBonuses ??= []).push(b);
+    }
+  }
 
   return {
     ...derived,
+    baseScores,
+    itemAbilities,
+    itemCheckBonus: itemChecks,
     saves,
     inventory: inv.entries,
     attunedCount: inv.attunedCount,

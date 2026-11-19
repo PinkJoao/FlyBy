@@ -11,7 +11,8 @@
 // FUNÇÕES
 //   collectAbilityBoosts(character, extra): todos os boosts (origem, espécie,
 //     choice-bags recursivos e os derivados).
-//   finalScores(character, extra): base + boosts, respeitando o teto de cada um.
+//   finalScores(character, extra): base + boosts, respeitando o teto de cada um; um extra com `set` é um piso
+//     aplicado depois dos aumentos (o Amulet of Health "fixa em 19", DDL-0256).
 //   abilityModifiers(character, extra): os modificadores finais.
 //
 // DECISÕES E ARMADILHAS
@@ -67,8 +68,13 @@ export function finalScores(character, extra = []) {
   const out = { ...character.scores };
   /** @type {Record<string, {amount:number, max?:number}[]>} */
   const byAbility = {};
+  const sets = [];
   for (const boost of collectAbilityBoosts(character, extra)) {
     if (!(boost.ability in out)) continue;
+    if (boost.set != null) {
+      sets.push(boost);
+      continue;
+    }
     (byAbility[boost.ability] ??= []).push(boost);
   }
   for (const [ability, boosts] of Object.entries(byAbility)) {
@@ -79,6 +85,7 @@ export function finalScores(character, extra = []) {
       out[ability] = Math.min(out[ability] + amount, cap);
     }
   }
+  for (const { ability, set } of sets) out[ability] = Math.max(out[ability], set);
   return out;
 }
 

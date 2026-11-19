@@ -55,6 +55,9 @@
 //   - `spec.allow(raw)` (DDL-0218) restringe o que a passada SORTEIA (talento, opção de
 //     classe, magia): os personagens modelo do SRD passam "só o que tem a marca srd52 ou
 //     srd". O que o preset põe à mão não passa por ele.
+//   - Opção de classe: prefere a de pré-requisito cumprido; sem nenhuma, a sem pré-requisito, e só por último a que
+//     reprova. Um guerreiro com Eldritch Adept pegava o Eldritch Smite (bruxo 5) e o Foundry não avaliava a fórmula
+//     do espaço de pacto (DDL-0264).
 //   - `spec.preset(character)` (T3, TESTING-PLAN §5b) roda ANTES do laço: põe a
 //     unidade sob teste no lugar real (o talento no `feat@4`, a magia no grimório, o
 //     item no inventário) e o laço preenche o resto e as sub-escolhas dela.
@@ -213,7 +216,8 @@ function fillChoice(ch, entry, bag, ctx) {
     while (picks.length < (ch.count ?? 1)) {
       const cands = entity.list(ctx.db).filter((f) => ctx.allow(f) && !picks.includes(`${f.name}|${f.source}`));
       const ok = cands.filter((f) => prereqStatus(f, pctx) === 'ok');
-      const f = pickOne(ctx.rng, ok.length ? ok : cands);
+      const fine = ok.length ? ok : cands.filter((f) => prereqStatus(f, pctx) !== 'bad');
+      const f = pickOne(ctx.rng, fine.length ? fine : cands);
       if (!f) {
         ctx.problems.push(`${ctx.where}: optional-feature choice "${ch.label}" (${ch.id}) has no candidates`);
         break;

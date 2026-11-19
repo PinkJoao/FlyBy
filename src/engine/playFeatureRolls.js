@@ -709,7 +709,7 @@ function fits(when, roll) {
   if (when === 'stealth') return roll.kind === 'initiative' || roll.skill === 'ste';
   if (when === 'social') return ['dec', 'itm', 'per'].includes(roll.skill);
   if (Array.isArray(when)) return when.includes(roll.skill);
-  if (when === 'cantrip') return !!roll.spell && !!roll.cantrip;
+  if (when === 'cantrip') return (!!roll.spell && !!roll.cantrip) || !!roll.cantripRoll;
   if (when === 'spell') return !!roll.spell;
   if (when === 'attackRoll') return !!roll.attackRoll;
   if (when === 'strRoll') return roll.attackAbility === 'str' || roll.ability === 'str';

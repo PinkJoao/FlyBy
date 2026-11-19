@@ -11,7 +11,9 @@
 //   catalog(level): um catálogo com um cajado e uma espada +1, no nível dado.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { weaponRuleOf, eligibleWeapons, weaponModifier, withWeaponStates, strikeAttack, masteryNote, withMasteryAttacks, armorBlessing, itemExtraEffects } from './playWeapons';
+import { weaponRuleOf, eligibleWeapons, weaponModifier, withWeaponStates, strikeAttack, masteryNote, withMasteryAttacks, armorBlessing, itemExtraEffects, strikeSecondary, strikeFromKey } from './playWeapons';
+import { attackRollContext, rollEffects } from './playEffects';
+import { emptyPlayState } from './playState';
 import { damageParts } from './playActions';
 
 const staff = { key: 'w:staff', kind: 'weapon', name: 'Quarterstaff', uid: 's1', range: 'melee', ability: 'str', proficient: true, toHit: { total: 3, parts: [{ label: 'Strength', formula: 0 }, { label: 'Proficiency', formula: 3 }] }, damage: { dice: '1d6', bonus: 0, types: ['bludgeoning'] }, versatile: '1d8', properties: ['V'], mastery: 'Topple' };
@@ -112,5 +114,45 @@ describe('itemExtraEffects: o dano extra da arma no diálogo (DDL-0258)', () => 
     expect(a.note).toBeUndefined();
     expect(b).toMatchObject({ defaultOn: false, note: 'For each charge you expend', spend: { key: 'charges:s1', amount: 1 } });
     expect(itemExtraEffects({ name: 'Club' })).toEqual([]);
+  });
+});
+
+describe('Agonizing Blast nas cantrips de arma (DDL-0259)', () => {
+  const sword = { key: 'weapon:w1', kind: 'weapon', name: 'Longsword', uid: 'w1', range: 'melee', ability: 'str', toHit: { total: 4, parts: [] }, damage: { dice: '1d8', bonus: 1, types: ['slashing'] }, properties: ['V'], versatile: '1d10', hands: 'versatile' };
+  const cat = (level, target) => ({
+    features: ['agonizing blast'], optionTargets: { 'agonizing blast': [target] }, stats: { level }, attacks: [sword], resources: [],
+    rollData: { abilities: { cha: { mod: 4 }, str: { mod: 1 } }, details: { level } },
+    spells: [{ key: 'class:warlock', ability: 'cha', spells: [{ name: target }] }],
+  });
+  const agonizing = (attack, catalog) => rollEffects(emptyPlayState(), catalog, attackRollContext(attack, 'damage', catalog)).find((e) => e.id === 'rider:agonizing-blast');
+
+  it('o acerto do Booming Blade só leva o CAR com o dado da magia (nível 5+); o dano à parte sempre', () => {
+    const rule = weaponRuleOf('Booming Blade');
+    const low = cat(3, 'Booming Blade');
+    expect(agonizing(strikeAttack(sword, rule, low, 'cha'), low)).toBeUndefined();
+    const moving = strikeSecondary(strikeAttack(sword, rule, low, 'cha'), rule, low, 'cha');
+    expect(moving).toMatchObject({ name: 'Booming Blade', label: 'If it moves', damage: { dice: '1d8', bonus: 0, types: ['thunder'] } });
+    expect(agonizing(moving, low)).toMatchObject({ defaultOn: true, part: { formula: '@abilities.cha.mod' } });
+    const high = cat(11, 'Booming Blade');
+    expect(agonizing(strikeAttack(sword, rule, high, 'cha'), high)).toBeDefined();
+  });
+
+  it('Green-Flame Blade: o fogo no segundo com o modificador; True Strike leva sempre; outra cantrip escolhida, não', () => {
+    const gfb = weaponRuleOf('Green-Flame Blade');
+    const c = cat(11, 'Green-Flame Blade');
+    expect(strikeSecondary(strikeAttack(sword, gfb, c, 'cha'), gfb, c, 'cha').damage).toEqual({ dice: '2d8', bonus: 4, types: ['fire'] });
+    const ts = weaponRuleOf('True Strike');
+    const c3 = cat(3, 'True Strike');
+    expect(agonizing(strikeAttack(sword, ts, c3, 'cha'), c3)).toBeDefined();
+    const other = cat(11, 'Eldritch Blast');
+    expect(agonizing(strikeAttack(sword, gfb, other, 'cha'), other)).toBeUndefined();
+  });
+
+  it('strikeFromKey refaz o ataque e o dano à parte pela chave do histórico', () => {
+    const c = cat(11, 'Booming Blade');
+    const strike = strikeAttack(sword, weaponRuleOf('Booming Blade'), c, 'cha');
+    expect(strikeFromKey(strike.key, c)).toMatchObject({ key: 'weapon:w1#booming-blade', cantripRoll: 'Booming Blade' });
+    expect(strikeFromKey(`${strike.key}#second`, c)).toMatchObject({ label: 'If it moves', damage: { dice: '3d8' } });
+    expect(strikeFromKey('weapon:w1', c)).toBeNull();
   });
 });

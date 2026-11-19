@@ -18,6 +18,10 @@
 //     arma-base, o degrau pelo nível do personagem, se é arma e se é corpo a corpo).
 //   WEAPON_SPELLS, WEAPON_FEATURES: os registros, um por frase do texto (a forma, a arma elegível, o efeito).
 //   weaponRuleOf(name): a regra de uma magia ou feature de arma, ou null.
+//   strikeSecondary(strike, rule, catalog, abilityKey): o dano à parte da STRIKE (o trovão do Booming Blade quando
+//     o alvo se move, o fogo do Green-Flame Blade no segundo) como um ataque da própria cantrip, com o Agonizing
+//     Blast e os extras de cantrip pelo caminho normal (DDL-0259).
+//   strikeFromKey(key, catalog): o ataque STRIKE (ou o dano à parte) pela chave do card do histórico (DDL-0259).
 //   itemExtraEffects(attack): o dano extra do texto da arma mágica (`itemExtras` do catálogo) como efeitos do
 //     diálogo de dano: ligado quando a frase não tem condição, desligado com a frase como nota, a carga no `spend`
 //     (DDL-0258).
@@ -97,17 +101,18 @@ export const WEAPON_SPELLS = {
   },
   'magic stone': {
     kind: 'create', rounds: 10,
-    make: ({ origin }) => ({ create: { name: 'Magic Stone', dice: '1d6', type: 'bludgeoning', distance: '60', ranged: true, spell: { toHit: origin?.attackBonus ?? 0, bonus: origin?.abilityMod ?? 0 } } }),
+    make: ({ origin }) => ({ create: { name: 'Magic Stone', spellName: 'Magic Stone', dice: '1d6', type: 'bludgeoning', distance: '60', ranged: true, spell: { toHit: origin?.attackBonus ?? 0, bonus: origin?.abilityMod ?? 0 } } }),
     note: 'Up to three pebbles; anyone can throw one, with your spell attack bonus',
   },
   'true strike': {
-    kind: 'strike', eligible: isWeapon,
+    kind: 'strike', eligible: isWeapon, spellDamage: 'always',
     make: ({ level }) => ({ ability: 'spell', always: true, typeOptions: ['radiant'], ...(level >= 5 ? { extra: { label: 'True Strike', formula: byCharLevel(level, [[17, '3d6'], [11, '2d6'], [5, '1d6']]), type: 'radiant' } } : {}) }),
   },
   'booming blade': {
     kind: 'strike', eligible: (a) => isWeapon(a) && isMelee(a),
     make: ({ level }) => (level >= 5 ? { extra: { label: 'Booming Blade', formula: byCharLevel(level, [[17, '3d8'], [11, '2d8'], [5, '1d8']]), type: 'thunder' } } : {}),
     note: ({ level }) => `If the target willingly moves 5 feet or more before your next turn, it takes ${byCharLevel(level, [[17, '4d8'], [11, '3d8'], [5, '2d8'], [0, '1d8']])} Thunder`,
+    secondary: ({ level }) => ({ label: 'If it moves', note: 'The target willingly moved 5 feet or more before your next turn; the spell ends', dice: byCharLevel(level, [[17, '4d8'], [11, '3d8'], [5, '2d8'], [0, '1d8']]), bonus: 0, type: 'thunder' }),
   },
   "tasha's otherworldly guise": {
     kind: 'imbue', all: true, rounds: 10,
@@ -123,6 +128,7 @@ export const WEAPON_SPELLS = {
     kind: 'strike', eligible: (a) => isWeapon(a) && isMelee(a),
     make: ({ level }) => (level >= 5 ? { extra: { label: 'Green-Flame Blade', formula: byCharLevel(level, [[17, '3d8'], [11, '2d8'], [5, '1d8']]), type: 'fire' } } : {}),
     note: ({ level, mod }) => `A second creature within 5 feet of the target takes ${level >= 5 ? `${byCharLevel(level, [[17, '3d8'], [11, '2d8'], [5, '1d8']])} + ` : ''}${mod} Fire`,
+    secondary: ({ level, mod }) => ({ label: 'Second creature', note: 'One creature you can see within 5 feet of the target', dice: level >= 5 ? byCharLevel(level, [[17, '3d8'], [11, '2d8'], [5, '1d8']]) : '', bonus: mod, type: 'fire' }),
   },
 };
 
@@ -230,7 +236,7 @@ export function withWeaponStates(catalog, modifiers) {
         toHit: sp ? { total: sp.toHit, parts: [{ label: 'Spell attack', formula: sp.toHit }] } : { total: mod + prof, parts: [{ label: ABILITY_LABEL[ability], formula: mod }, { label: 'Proficiency', formula: prof }] },
         damage: { dice: w.create.dice, bonus: sp ? sp.bonus : mod, types: [w.create.type] },
         versatile: null, properties: w.create.properties ?? [], mastery: null, thrown: (w.create.properties ?? []).includes('T'), ammunition: false, ammoType: null,
-        distance: w.create.distance ?? null, magical: true, ...(w.note ? { note: w.note } : {}),
+        distance: w.create.distance ?? null, magical: true, ...(w.note ? { note: w.note } : {}), ...(sp && w.create.spellName ? { cantripRoll: w.create.spellName } : {}),
       }, ...attacks];
       continue;
     }
@@ -251,7 +257,34 @@ export function strikeAttack(attack, rule, catalog, abilityKey = null) {
   const mod = abilityKey ? catalog?.rollData?.abilities?.[abilityKey]?.mod ?? 0 : 0;
   const note = typeof rule.note === 'function' ? rule.note({ level, mod }) : rule.note ?? null;
   const out = applyWeaponState(attack, { ...w, ...(w.ability === 'spell' ? { abilityKey } : {}), ...(note ? { note } : {}) }, catalog, rule.name);
-  return { ...out, key: `${attack.key}#${norm(rule.name).replace(/[^a-z0-9]+/g, '-')}`, name: `${rule.name}: ${attack.name}`, strike: rule.name };
+  const spellRoll = rule.spellDamage === 'always' || !!w.extra;
+  return { ...out, key: `${attack.key}#${norm(rule.name).replace(/[^a-z0-9]+/g, '-')}`, name: `${rule.name}: ${attack.name}`, strike: rule.name, ...(spellRoll ? { cantripRoll: rule.name } : {}) };
+}
+
+/** O dano à parte de uma magia STRIKE (Booming Blade quando o alvo se move, o fogo do Green-Flame Blade no segundo): um ataque da cantrip, ou null. */
+export function strikeSecondary(strike, rule, catalog, abilityKey = null) {
+  if (!rule?.secondary || !strike) return null;
+  const level = catalog?.stats?.level ?? catalog?.rollData?.details?.level ?? 1;
+  const mod = abilityKey ? catalog?.rollData?.abilities?.[abilityKey]?.mod ?? 0 : 0;
+  const s = rule.secondary({ level, mod });
+  return {
+    key: `${strike.key}#second`, kind: 'spell', cantrip: true, name: rule.name, label: s.label, school: rule.school ?? null,
+    attack: null, save: null, damage: { dice: s.dice, bonus: s.bonus, types: [s.type] }, versatile: null, note: s.note,
+  };
+}
+
+/** O ataque de uma magia STRIKE pela chave do histórico (`weapon:...#booming-blade`, com `#second` no dano à parte), ou null. */
+export function strikeFromKey(key, catalog) {
+  const [baseKey, slugPart, second] = String(key ?? '').split('#');
+  if (!slugPart) return null;
+  const name = Object.keys(WEAPON_SPELLS).find((n) => n.replace(/[^a-z0-9]+/g, '-') === slugPart);
+  const origin = name ? (catalog?.spells ?? []).find((o) => o.spells.some((s) => norm(s.name) === name)) : null;
+  const proper = origin?.spells.find((s) => norm(s.name) === name)?.name ?? name;
+  const rule = proper ? weaponRuleOf(proper) : null;
+  const base = (catalog?.attacks ?? []).find((a) => a.key === baseKey);
+  if (rule?.kind !== 'strike' || !base) return null;
+  const strike = strikeAttack(base, rule, catalog, origin?.ability ?? null);
+  return second === 'second' ? strikeSecondary(strike, rule, catalog, origin?.ability ?? null) : strike;
 }
 
 /** O efeito do Blessing of the Forge na armadura: +1 de CA até o descanso longo. */

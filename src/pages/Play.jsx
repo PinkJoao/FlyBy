@@ -168,6 +168,10 @@
 //   - O "Bond" do Pact of the Blade (DDL-0239): um botão por arma carregada, "Conjure a weapon" abre o
 //     painel seletor de armas (só as que o pacto deixa invocar, `pactChoices`) e "End the bond"; a lista
 //     nativa de 34 armas saiu (UI-PATTERNS: escolher é pelo painel).
+//   - A STRIKE (Booming Blade, Green-Flame Blade, True Strike) pergunta também pelo dano à parte ("If it moves",
+//     "Second creature": `strikeSecondary`), e o "Roll damage" do card dela reconstrói o ataque pela chave
+//     (`strikeFromKey`) e pergunta qual dano (o acerto ou o à parte); a rolagem que é dano da cantrip leva
+//     `cantripRoll`, e o Agonizing Blast a reconhece (DDL-0259).
 //   - O "Create" do Replicate Magic Item (`replicateItems`, DDL-0257): dois campos de plano (o segundo
 //     opcional, planos diferentes), o máximo da coluna Magic Items; o atunamento só com lugar livre.
 //   - A magia de item (Wand of Web, Ring of Jumping) lança pelas cargas ou pelos usos do item, nunca pelos
@@ -263,7 +267,7 @@ import {
 import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
 import { pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
-import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, masteryNote, armorBlessing, itemExtraEffects } from '../engine/playWeapons';
+import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, strikeSecondary, strikeFromKey, masteryNote, armorBlessing, itemExtraEffects } from '../engine/playWeapons';
 import { screenCatalog } from '../engine/playView';
 import { resolveRefs } from '../engine/dice';
 import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
@@ -348,12 +352,13 @@ const toastNumber = (e) => e.rolls?.total ?? e.payload?.taken ?? e.payload?.heal
  * O que rolar, quando a coisa tem o d20 e outros dados (dano, cura): resolve
  * 'attack', 'effect' ou null (cancelou).
  */
-const askRollKind = ({ title, attack, effect, effectLabel = 'Damage' }) =>
+const askRollKind = ({ title, attack, effect, effectLabel = 'Damage', more = [] }) =>
   ask({
     title,
     message: 'Roll the attack (d20) or the other dice?',
     actions: [
       { label: 'Cancel', value: null },
+      ...more,
       { label: `${effectLabel}${effect ? ` (${effect})` : ''}`, value: 'effect' },
       { label: `Attack${attack ? ` (${attack})` : ''}`, value: 'attack', tone: 'primary' },
     ],
@@ -1093,9 +1098,16 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     }
     if (strikeWith) {
       const atk = strikeAttack(strikeWith, weaponRule, catalog, origin.ability);
-      const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))), effect: damageText(withFixedDamage(atk, state, catalog)) });
+      const second = strikeSecondary(atk, weaponRule, catalog, origin.ability);
+      const kind = await askRollKind({
+        title: atk.name,
+        attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))),
+        effect: damageText(withFixedDamage(atk, state, catalog)),
+        more: second ? [{ label: `${second.label} (${damageText(withFixedDamage(second, state, catalog))})`, value: 'second' }] : [],
+      });
       if (kind === 'attack') rollAttack(atk);
       else if (kind === 'effect') rollDamage(atk);
+      else if (kind === 'second') rollDamage(second);
       return;
     }
     if (weaponRule) return;
@@ -1516,19 +1528,33 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** O "Roll damage" do cartão de um ataque no histórico. */
-  const damageFromHistory = (attackKey, { level = null, name = null, ...opts } = {}) => {
+  const damageFromHistory = async (attackKey, { level = null, name = null, ...opts } = {}) => {
     const offhand = String(attackKey).endsWith('#offhand');
     const base = catalog.attacks.find((a) => a.key === (offhand ? String(attackKey).slice(0, -'#offhand'.length) : attackKey));
     const origin = base ? null : catalog.spells.find((o) => o.spells.some((s) => s.key === attackKey));
     const spell = origin?.spells.find((s) => s.key === attackKey);
     const fromSpell = spell ? { ...spellAttackOf(origin, spell, level ?? spell.level), ...(name ? { name } : {}) } : null;
-    const attack = base && offhand ? offhandAttack(base, catalog) : base ?? fromSpell;
+    const attack = base && offhand ? offhandAttack(base, catalog) : base ?? fromSpell ?? strikeFromKey(attackKey, catalog);
     if (!attack) {
       alert({ title: 'Attack not found', message: 'This attack is no longer on the character.' });
       return;
     }
-    if (spell && activeZone(state, spell)) zoneDamage(attack, spell, opts);
-    else rollDamage(attack, opts);
+    if (spell && activeZone(state, spell)) return zoneDamage(attack, spell, opts);
+    const second = attack.strike ? strikeFromKey(`${attackKey}#second`, catalog) : null;
+    if (second) {
+      const kind = await ask({
+        title: attack.name,
+        message: 'Which damage?',
+        actions: [
+          { label: 'Cancel', value: null },
+          { label: `${second.label} (${damageText(withFixedDamage(second, state, catalog))})`, value: 'second' },
+          { label: `Hit (${damageText(withFixedDamage(attack, state, catalog))})`, value: 'hit', tone: 'primary' },
+        ],
+      });
+      if (kind === 'second') return rollDamage(second, opts);
+      if (kind !== 'hit') return;
+    }
+    rollDamage(attack, opts);
   };
 
   /** Usa um consumível; a poção de cura pergunta se é bebida ou dada. */

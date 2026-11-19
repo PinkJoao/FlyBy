@@ -99,6 +99,8 @@
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
+//   - DDL-0254: Dispersion (resistência a todo dano e voo 40 até o fim do próximo turno) e Holy Deliverance (a cura
+//     de CAR + PB do aliado Bloodied na aura, como nota com o número) ligam no Use.
 //   - PROSE_OWNED: a feature cuja prosa um efeito curado já carrega; o piso do Dragon ("a roll of 9 or lower on
 //     the d20") passou a ser lido pela prosa no DDL-0253 e repetiria o da Starry Form.
 //   - FEATURE_EFFECTS das formas (TC-0177, DDL-0251): Rage of the Gods, Ghost Walk, Djinni's Escape, Shadowform,
@@ -262,6 +264,11 @@ const FEATURE_EFFECTS = {
     notes: ['Prowling Retribution: an Opportunity Attack against a creature within 5 feet that damages you or an ally', 'Unnerving Aura: at the start of each of your turns, creatures of your choice within 10 feet make a Wisdom save or are Frightened'],
     effects: [],
   }),
+  'action:holy-deliverance': (catalog) => {
+    const heal = (catalog?.rollData?.abilities?.cha?.mod ?? 0) + (catalog?.rollData?.prof ?? 0);
+    return { label: 'Holy Deliverance', source: 'feature', duration: 'manual', maxRounds: 100, notes: [`An ally that starts its turn Bloodied in your Aura of Protection regains ${heal} Hit Points (CHA + PB)`, 'The aura is filled with sunlight'], effects: [] };
+  },
+  'action:dispersion': () => ({ label: 'Dispersion', source: 'feature', duration: 'manual', maxRounds: 2, resist: [...DAMAGE_TYPES], speeds: { fly: 40 }, notes: ["No action, Bonus Action or Reaction until it ends (the end of your next turn)", 'When it ends, spend up to half your Hit Point Dice as on a Short Rest (the HP card)'], effects: [] }),
   'action:otherworldly-wings': () => ({ label: 'Otherworldly Wings', source: 'feature', duration: 'manual', speeds: { fly: 30 }, notes: ['Until you dismiss them (a Bonus Action), are Incapacitated or die'], effects: [] }),
   'action:steps-of-night': () => ({ label: 'Steps of Night', source: 'feature', duration: 'manual', maxRounds: 10, speeds: { fly: 'walk' }, notes: ['Used in Dim Light or Darkness'], effects: [] }),
   'action:wings-unfurled': () => ({ label: 'Wings Unfurled', source: 'feature', duration: 'manual', maxRounds: 1, speeds: { fly: 'walk' }, notes: ['The wings vanish at the end of your turn'], effects: [] }),

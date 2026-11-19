@@ -104,7 +104,8 @@
 //       dado (Djinni's Escape, TC-0178, DDL-0251). Qualquer outro `consumes` que o CONSUMES_BY_NAME liga a um
 //       pool (Sorcery Point: Waxing and Waning) dá o "Use" que gasta, fora as features dos registros de
 //       rerrolagem, que gastam ao rerrolar (Empowered Healing), e a que tem pool próprio (Crown of Spellfire: os
-//       pontos só restauram o uso; DDL-0253).
+//       pontos só restauram o uso; DDL-0253). A que tem pool próprio também não gasta o Channel Divinity: nela o
+//       Channel Divinity só restaura o uso (Dispelling Recovery, DDL-0254).
 //     withFeatureSpeeds(speeds, features): escalada e natação de feature (FEATURE_SPEEDS:
 //       Second-Story Work, Roving, Aquatic Affinity), iguais ao deslocamento a pé (TC-0156); uma entrada
 //       `{ mode, feet, note }` dá um número fixo ou uma nota (Gift of the Sea nada 40, Stormborn voa ao ar livre, DDL-0253).
@@ -1339,7 +1340,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
   }
   const channelKey = resources.find((r) => r.kind === 'pool' && String(r.item ?? '').toLowerCase() === 'channel divinity')?.key ?? null;
   for (const f of featuresOfActor) {
-    if (!channelKey || !spendsChannelDivinity(f)) continue;
+    if (!channelKey || !spendsChannelDivinity(f) || resources.some((r) => r.kind === 'pool' && r.item === f.name)) continue;
     const act = actions.find((x) => x.key === f.actionKey);
     if (act?.activities?.length && act.activities.every((x) => !x.consumes.length)) for (const x of act.activities) x.consumes.push({ key: channelKey, amount: 1 });
     if (f.roll || withActivities.has(f.actionKey)) continue;

@@ -238,3 +238,13 @@ describe('as formas que dão defesa e deslocamento (TC-0177, DDL-0251)', () => {
     expect(rollEffects(s, cat, { kind: 'damage', weapon: true }).filter((e) => e.source === 'Shadowform')).toEqual([]);
   });
 });
+
+describe('Dispersion e Holy Deliverance (DDL-0254)', () => {
+  const cat = { stats: { ac: 15, speeds: { walk: { feet: 30 } } }, defenses: { resist: [], immune: [], vulnerable: [] }, rollData: { prof: 6, abilities: { cha: { mod: 4 } } }, features: [] };
+  it('Dispersion resiste a todo dano e voa 40; Holy Deliverance diz a cura de CAR + PB', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:dispersion' }, cat)] });
+    expect(effectiveDefenses(cat, s).resist).toHaveLength(13);
+    expect(effectiveSpeeds(cat, s).fly.feet).toBe(40);
+    expect(featureModifier({ key: 'action:holy-deliverance' }, cat).notes[0]).toMatch(/regains 10 Hit Points/);
+  });
+});

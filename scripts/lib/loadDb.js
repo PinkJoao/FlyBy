@@ -9,7 +9,7 @@
 //
 // FUNÇÕES
 //   dataDir(): a pasta `data` do snapshot, ou null.
-//   loadDb(): o compêndio inteiro no formato do db do app (chave -> JSON).
+//   loadDb(): o compêndio inteiro no formato do db do app (chave -> JSON), pelo mesmo prepareDb do app (DDL-0267).
 //
 // DECISÕES E ARMADILHAS
 //   - Arquivo ausente do snapshot é tolerado: a chave fica de fora e o engine
@@ -19,6 +19,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildManifest } from '../../src/data/config';
+import { prepareDb } from '../../src/engine/prepareDb';
 
 /** Raiz do projeto (scripts/lib/ fica dois níveis abaixo). */
 const ROOT = join(import.meta.dirname, '..', '..');
@@ -41,5 +42,5 @@ export function loadDb() {
       /* arquivo fora do snapshot local: o engine tolera a chave ausente */
     }
   }
-  return db;
+  return prepareDb(db);
 }

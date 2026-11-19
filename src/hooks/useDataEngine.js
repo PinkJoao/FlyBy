@@ -36,6 +36,8 @@
 //     dismissLink(): recusa o link de configuração e segue com a fonte atual.
 //
 // DECISÕES E ARMADILHAS
+//   - O db entregue passa pelo prepareDb (engine/prepareDb: a herança `_copy` dos itens, DDL-0267); o cache guarda o
+//     dado cru.
 //   - O link é consumido UMA vez por carga da página (linkRef): resolvido ou
 //     recusado, um boot seguinte (troca de fonte) não pergunta de novo.
 //   - Cache sem fonte gravada é de antes da Fase 2. Sem endereço no código (Fase
@@ -51,9 +53,10 @@
 //     o IndexedDB, e os PERSONAGENS moram lá. É um pedido; o navegador decide.
 // -----------------------------------------------------------------------------
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { readCache, writeCache, clearCache, isFresh, isComplete } from '../data/cache';
 import { syncCompendium } from '../data/fetcher';
+import { prepareDb } from '../engine/prepareDb';
 import { readSource, writeSource, sameSource } from '../data/dataSource';
 import { takeSetupLink, decideBoot } from '../data/setupLink';
 
@@ -212,9 +215,11 @@ export default function useDataEngine() {
     boot();
   }, [boot]);
 
+  const prepared = useMemo(() => prepareDb(db), [db]);
+
   return {
     status,
-    db,
+    db: prepared,
     progress,
     stale,
     error,

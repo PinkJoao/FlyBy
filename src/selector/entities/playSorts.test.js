@@ -39,7 +39,7 @@ describe('conditionEntity.naturalSort', () => {
 
 describe('effectSourceEntity sorts', () => {
   const list = [
-    { name: 'Aid', categoryLabel: 'Spell', raw: { level: 2 } },
+    { name: 'Augury', categoryLabel: 'Spell', raw: { level: 2 } },
     { name: 'Rage', categoryLabel: 'Class Feature' },
     { name: 'Bless', categoryLabel: 'Spell', raw: { level: 1 } },
     { name: 'Alert', categoryLabel: 'Feat' },
@@ -49,13 +49,13 @@ describe('effectSourceEntity sorts', () => {
 
   it('the curated effects come first, then the rest by type and name', () => {
     const sorted = sortList(list, { option: effectSourceEntity.naturalSort, dir: 'asc' });
-    expect(names(sorted)).toEqual(['Bless', 'Hex', 'Aid', 'Rage', 'Alert']);
+    expect(names(sorted)).toEqual(['Bless', 'Hex', 'Augury', 'Rage', 'Alert']);
     expect(isAutomatic(list[2])).toBe(true);
     expect(isAutomatic(list[1])).toBe(false);
   });
 
   it('Type puts spells first; Spell level leaves the rest at the end', () => {
-    expect(names(sortList(list, { option: byValue('type'), dir: 'asc' })).slice(0, 3)).toEqual(['Aid', 'Bless', 'Hex']);
-    expect(names(sortList(list, { option: byValue('level'), dir: 'asc' }))).toEqual(['Bless', 'Hex', 'Aid', 'Alert', 'Rage']);
+    expect(names(sortList(list, { option: byValue('type'), dir: 'asc' })).slice(0, 3)).toEqual(['Augury', 'Bless', 'Hex']);
+    expect(names(sortList(list, { option: byValue('level'), dir: 'asc' }))).toEqual(['Bless', 'Hex', 'Augury', 'Alert', 'Rage']);
   });
 });

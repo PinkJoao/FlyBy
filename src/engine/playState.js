@@ -182,7 +182,11 @@ export function applyOp(state, op) {
       return { ...state, pactWeapon: op.value ?? null };
     case 'modifier':
       if (op.add) return { ...state, modifiers: [...state.modifiers.filter((m) => m.id !== op.add.id), op.add] };
-      if (op.remove) return { ...state, modifiers: state.modifiers.filter((m) => m.id !== op.remove) };
+      if (op.remove) {
+        const gone = state.modifiers.find((m) => m.id === op.remove);
+        const damage = gone?.hpMax ? Math.max(0, state.damage - num(gone.hpMax)) : state.damage;
+        return { ...state, damage, modifiers: state.modifiers.filter((m) => m.id !== op.remove) };
+      }
       return state;
     default:
       return state;
@@ -218,7 +222,8 @@ export function applyEvent(state, event) {
 
 /** HP máximo, atual (o máximo menos o dano, preso no intervalo) e temporário. */
 export function hpView(state, maxHp) {
-  const max = Math.max(0, num(maxHp) + num(state.maxHpDelta));
+  const aid = (state.modifiers ?? []).reduce((s, m) => s + num(m.hpMax), 0);
+  const max = Math.max(0, num(maxHp) + num(state.maxHpDelta) + aid);
   return { max, current: clamp(max - state.damage, 0, max), temp: state.tempHp };
 }
 

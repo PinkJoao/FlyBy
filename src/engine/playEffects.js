@@ -45,6 +45,10 @@
 //       mesmas regras; o bônus de modificador vale só a pé.
 //   Modificadores
 //     makeModifier(fields): um modificador com id.
+//     spellEffectChoice(spell, catalog), spellEffectReplacesRoll(spell): a escolha do lançamento e se o
+//       efeito curado toma o lugar da rolagem da magia (DDL-0260); speedTimes(state): o multiplicador do Haste.
+//     typeOptions(types), labelOf(options, value), named(name, picked): as opções da escolha de tipo de dano, o
+//       rótulo de uma escolha e o nome do efeito com ela (sem escolha ainda, só o nome da magia).
 //     featureModifier(action, catalog), spellModifier(spell, catalog): o efeito
 //       curado de uma feature usada ou de uma magia lançada, ou null.
 //     sourceModifier(name): o efeito curado de uma magia lançada por OUTRO (o Add
@@ -99,6 +103,12 @@
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
+//   - DDL-0260: os autobuffs de magia em SPELL_EFFECTS, uma linha por frase do texto: `make(catalog, ctx)` recebe o
+//     círculo, a origem e a escolha do lançamento (`choice`: a perícia do Guidance, o atributo do Enhance Ability, o tipo
+//     do Protection from Energy, Enlarge ou Reduce); campos novos do modificador: `acMin` (Barkskin: a CA não fica abaixo
+//     de 17), `speedTimes` (Haste dobra todo deslocamento) e `hpMax` (Aid: o máximo e o atual sobem; ao sair, o dano
+//     baixa o mesmo tanto, então o atual só cai se passar do máximo novo, playState). `rolls` marca a magia que continua
+//     com a rolagem dela (Fire Shield, as Investitures, Tenser's Transformation): o efeito entra e o dano não some.
 //   - DDL-0257: o checkup das invocações. Cloak of Flies liga vantagem no Intimidation e desvantagem nas outras
 //     perícias de CAR, com o dano da aura na nota; Mage Armor (SPELL_EFFECTS, a Armor of Shadows) põe `acBase` 13:
 //     effectiveAc troca a base sem armadura (a do acBreakdown) por 13 + DES se for maior, e nada com armadura.
@@ -138,6 +148,7 @@ import { revertOps } from './playForms';
 import { featureRiders } from './playFeatureRolls';
 import { bridgedEffects } from './playActorEffects';
 import { proseEffects } from './playProseEffects';
+import { SKILL_NAME_TO_CODE } from './classData';
 
 /** Os 13 tipos de dano do XPHB, em ordem alfabética. */
 export const DAMAGE_TYPES = ['acid', 'bludgeoning', 'cold', 'fire', 'force', 'lightning', 'necrotic', 'piercing', 'poison', 'psychic', 'radiant', 'slashing', 'thunder'];
@@ -305,7 +316,113 @@ const SPELL_EFFECTS = {
   'divine favor': { self: true, make: () => ({ label: 'Divine Favor', effects: [{ targets: ['damage'], formula: '1d4', when: 'weaponAttack', label: 'Divine Favor (radiant)' }] }) },
   "hunter's mark": { self: true, make: (c) => ({ label: "Hunter's Mark", effects: [{ targets: ['damage'], formula: (c?.features ?? []).includes('foe slayer') ? '1d10' : '1d6', optional: true, label: "Hunter's Mark (force, marked target)" }] }) },
   hex: { self: true, make: () => ({ label: 'Hex', effects: [{ targets: ['damage'], formula: '1d6', optional: true, label: 'Hex (necrotic, cursed target)' }] }) },
+  // ATENÇÃO: os autobuffs do DDL-0260, um por frase do texto do XPHB (ou do livro da magia).
+  'blade ward': { self: true, make: () => ({ label: 'Blade Ward', notes: ['Attackers subtract 1d4 from attack rolls against you'], effects: [] }) },
+  guidance: {
+    self: false,
+    choice: { message: 'Which skill?', options: () => SKILL_OPTIONS },
+    make: (c, x) => ({ label: named('Guidance', labelOf(SKILL_OPTIONS, x.choice)), effects: [{ targets: [`skill:${x.choice ?? 'ath'}`], formula: '1d4', label: 'Guidance' }] }),
+  },
+  resistance: {
+    self: false,
+    choice: { message: 'Which damage type?', options: () => typeOptions(['acid', 'bludgeoning', 'cold', 'fire', 'lightning', 'necrotic', 'piercing', 'poison', 'radiant', 'slashing', 'thunder']) },
+    make: (c, x) => ({ label: named('Resistance', x.choice), notes: [`When you take ${x.choice ?? 'acid'} damage, reduce the total by 1d4 (once per turn)`], effects: [] }),
+  },
+  shield: { self: true, make: () => ({ label: 'Shield', ac: 5, notes: ['+5 AC until the start of your next turn, against the triggering attack too; no damage from Magic Missile'], effects: [] }) },
+  longstrider: { self: false, make: () => ({ label: 'Longstrider', speed: 10, effects: [] }) },
+  heroism: { self: false, make: (c, x) => ({ label: 'Heroism', notes: [`Immune to Frightened; ${Math.max(0, x.origin?.abilityMod ?? 0)} Temporary Hit Points at the start of each of your turns`], effects: [] }) },
+  'expeditious retreat': { self: true, make: () => ({ label: 'Expeditious Retreat', notes: ['You can take the Dash action as a Bonus Action'], effects: [] }) },
+  jump: { self: false, make: () => ({ label: 'Jump', notes: ['Once on each of your turns, jump up to 30 feet by spending 10 feet of movement'], effects: [] }) },
+  'protection from evil and good': {
+    self: false,
+    make: () => ({ label: 'Protection from Evil and Good', notes: ["Aberrations, Celestials, Elementals, Fey, Fiends and Undead have Disadvantage on attacks against you and can't possess, Charm or Frighten you"], effects: [{ targets: ['save'], mode: 'advantage', optional: true, label: 'New save against possession, Charmed or Frightened by them' }] }),
+  },
+  sanctuary: { self: false, make: () => ({ label: 'Sanctuary', notes: ['A creature that targets you with an attack or a damaging spell makes a Wisdom save or picks another target; ends if you attack, cast or deal damage'], effects: [] }) },
+  'absorb elements': {
+    self: true,
+    choice: { message: 'Which damage type triggered it?', options: () => typeOptions(['acid', 'cold', 'fire', 'lightning', 'thunder']) },
+    make: (c, x) => ({ label: named('Absorb Elements', x.choice), resist: [x.choice ?? 'acid'], notes: ['Resistance until the start of your next turn'], effects: [{ targets: ['damage'], formula: `${Math.max(1, x.level ?? 1)}d6`, optional: true, label: `Absorb Elements (${x.choice ?? 'acid'}, first melee hit next turn)` }] }),
+  },
+  barkskin: { self: false, make: () => ({ label: 'Barkskin', acMin: 17, effects: [] }) },
+  'enhance ability': {
+    self: false,
+    choice: { message: 'Which ability?', options: () => ['str', 'dex', 'int', 'wis', 'cha'].map((a) => ({ label: ABILITY_LABEL[a], value: a })) },
+    make: (c, x) => ({ label: named('Enhance Ability', ABILITY_LABEL[x.choice]), effects: [{ targets: [`check:${x.choice ?? 'str'}`], mode: 'advantage', label: 'Enhance Ability' }] }),
+  },
+  'enlarge/reduce': {
+    self: false,
+    choice: { message: 'Enlarge or Reduce?', options: () => [{ label: 'Enlarge', value: 'enlarge' }, { label: 'Reduce', value: 'reduce' }] },
+    make: (c, x) => (x.choice === 'reduce'
+      ? { label: 'Reduce', notes: ['Size one category smaller; weapon damage -1d4 (minimum 1)'], effects: [{ targets: ['check:str', 'save:str'], mode: 'disadvantage', label: 'Reduce' }, { targets: ['damage'], formula: '-1d4', when: 'weaponAttack', label: 'Reduce (weapon, minimum 1)' }] }
+      : { label: x.choice ? 'Enlarge' : 'Enlarge/Reduce', notes: ['Size one category larger'], effects: [{ targets: ['check:str', 'save:str'], mode: 'advantage', label: 'Enlarge' }, { targets: ['damage'], formula: '1d4', when: 'weaponAttack', label: 'Enlarge (enlarged weapon)' }] }),
+  },
+  'spider climb': { self: false, make: () => ({ label: 'Spider Climb', speeds: { climb: 'walk' }, notes: ['Move on walls and ceilings with your hands free'], effects: [] }) },
+  'pass without trace': { self: true, make: () => ({ label: 'Pass without Trace', notes: ['You leave no tracks'], effects: [{ targets: ['skill:ste'], formula: '10', label: 'Pass without Trace' }] }) },
+  blur: { self: true, make: () => ({ label: 'Blur', notes: ['Attackers have Disadvantage (not with Blindsight or Truesight)'], effects: [] }) },
+  'mirror image': { self: true, make: () => ({ label: 'Mirror Image', notes: ['When hit, roll a d6 per duplicate (3 at first): a 3 or higher hits a duplicate instead, and it is destroyed'], effects: [] }) },
+  invisibility: { self: false, make: () => ({ label: 'Invisibility', notes: ['Invisible: attacks against you have Disadvantage; ends after you attack, deal damage or cast a spell'], effects: [{ targets: ['attack'], mode: 'advantage', label: 'Invisible' }] }) },
+  'protection from poison': { self: false, make: () => ({ label: 'Protection from Poison', resist: ['poison'], effects: [{ targets: ['save'], mode: 'advantage', optional: true, label: 'To avoid or end Poisoned' }] }) },
+  aid: { self: false, make: (c, x) => ({ label: 'Aid', hpMax: 5 * Math.max(1, (x.level ?? 2) - 1), notes: [`Hit Point maximum and current Hit Points +${5 * Math.max(1, (x.level ?? 2) - 1)}`], effects: [] }) },
+  haste: {
+    self: false,
+    make: () => ({ label: 'Haste', ac: 2, speedTimes: 2, notes: ['One more action each turn: Attack (one attack), Dash, Disengage, Hide or Utilize', 'When it ends: Incapacitated and Speed 0 until the end of your next turn'], effects: [{ targets: ['save:dex'], mode: 'advantage', label: 'Haste' }] }),
+  },
+  fly: { self: false, make: () => ({ label: 'Fly', speeds: { fly: 60 }, notes: ['You can hover; you fall when the spell ends'], effects: [] }) },
+  'gaseous form': {
+    self: false,
+    make: () => ({ label: 'Gaseous Form', resist: ['bludgeoning', 'piercing', 'slashing'], speeds: { fly: 10 }, notes: ['Your only movement is Fly 10 (hover); Immune to Prone; you pass through narrow openings'], effects: [{ targets: ['save:str', 'save:dex', 'save:con'], mode: 'advantage', label: 'Gaseous Form' }] }),
+  },
+  'protection from energy': {
+    self: false,
+    choice: { message: 'Which damage type?', options: () => typeOptions(['acid', 'cold', 'fire', 'lightning', 'thunder']) },
+    make: (c, x) => ({ label: named('Protection from Energy', x.choice), resist: [x.choice ?? 'acid'], effects: [] }),
+  },
+  'beacon of hope': { self: false, make: () => ({ label: 'Beacon of Hope', healMax: true, effects: [{ targets: ['save:wis', 'deathSave'], mode: 'advantage', label: 'Beacon of Hope' }] }) },
+  'warding bond': { self: false, make: () => ({ label: 'Warding Bond', ac: 1, resist: [...DAMAGE_TYPES], notes: ['Within 60 feet of the caster; each time you take damage, the caster takes the same'], effects: [{ targets: ['save'], formula: '1', label: 'Warding Bond' }] }) },
+  'intellect fortress': { self: false, make: () => ({ label: 'Intellect Fortress', resist: ['psychic'], effects: [{ targets: ['save:int', 'save:wis', 'save:cha'], mode: 'advantage', label: 'Intellect Fortress' }] }) },
+  stoneskin: { self: false, make: () => ({ label: 'Stoneskin', resist: ['bludgeoning', 'piercing', 'slashing'], effects: [] }) },
+  'death ward': { self: false, make: () => ({ label: 'Death Ward', notes: ['The first time you would drop to 0 Hit Points, you drop to 1 instead; it also negates one instant-death effect'], effects: [] }) },
+  'freedom of movement': { self: false, make: () => ({ label: 'Freedom of Movement', speeds: { swim: 'walk' }, notes: ["Difficult Terrain doesn't slow you; magic can't reduce your Speed or Paralyze or Restrain you; 5 feet of movement escapes a Grapple or nonmagical restraints"], effects: [] }) },
+  'greater invisibility': { self: false, make: () => ({ label: 'Greater Invisibility', notes: ['Invisible: attacks against you have Disadvantage'], effects: [{ targets: ['attack'], mode: 'advantage', label: 'Invisible' }] }) },
+  'fire shield': {
+    self: true,
+    rolls: true,
+    choice: { message: 'Warm or chill shield?', options: () => [{ label: 'Warm (resist Cold)', value: 'warm' }, { label: 'Chill (resist Fire)', value: 'chill' }] },
+    make: (c, x) => ({ label: named('Fire Shield', x.choice), resist: [x.choice === 'chill' ? 'fire' : 'cold'], notes: [`A creature within 5 feet that hits you with a melee attack takes 2d8 ${x.choice === 'chill' ? 'Cold' : 'Fire'}`], effects: [] }),
+  },
+  'aura of life': { self: true, make: () => ({ label: 'Aura of Life', resist: ['necrotic'], notes: ["Your Hit Point maximum can't be reduced; an ally at 0 Hit Points that starts its turn in the aura regains 1"], effects: [] }) },
+  'aura of purity': { self: true, make: () => ({ label: 'Aura of Purity', resist: ['poison'], effects: [{ targets: ['save'], mode: 'advantage', optional: true, label: 'Against Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned or Stunned' }] }) },
+  'shadow of moil': { self: true, rolls: true, make: () => ({ label: 'Shadow of Moil', resist: ['radiant'], notes: ['Heavily Obscured; a creature within 10 feet that hits you takes 2d8 Necrotic'], effects: [] }) },
+  'circle of power': { self: true, make: () => ({ label: 'Circle of Power', notes: ['A success on a save for half damage against a spell or magical effect: no damage'], effects: [{ targets: ['save'], mode: 'advantage', optional: true, label: 'Against spells and other magical effects' }] }) },
+  'investiture of flame': { self: true, rolls: true, make: () => ({ label: 'Investiture of Flame', immune: ['fire'], resist: ['cold'], effects: [] }) },
+  'investiture of ice': { self: true, rolls: true, make: () => ({ label: 'Investiture of Ice', immune: ['cold'], resist: ['fire'], effects: [] }) },
+  'investiture of stone': { self: true, rolls: true, make: () => ({ label: 'Investiture of Stone', resist: ['bludgeoning', 'piercing', 'slashing'], notes: ['Resistance only against nonmagical attacks'], effects: [] }) },
+  'investiture of wind': { self: true, rolls: true, make: () => ({ label: 'Investiture of Wind', speeds: { fly: 60 }, notes: ['Ranged weapon attacks against you have Disadvantage'], effects: [] }) },
+  'primordial ward': { self: true, make: () => ({ label: 'Primordial Ward', resist: ['acid', 'cold', 'fire', 'lightning', 'thunder'], notes: ['Reaction when you take one of those types: Immunity to it until the end of your next turn, and the spell ends'], effects: [] }) },
+  'kinetic jaunt': { self: true, rolls: true, make: () => ({ label: 'Kinetic Jaunt', speed: 10, notes: ["You don't provoke Opportunity Attacks and can move through other creatures' spaces"], effects: [] }) },
+  'guardian of nature': {
+    self: true,
+    rolls: true,
+    choice: { message: 'Which form?', options: () => [{ label: 'Primal Beast', value: 'beast' }, { label: 'Great Tree', value: 'tree' }] },
+    make: (c, x) => (x.choice === 'tree'
+      ? { label: 'Guardian of Nature (Great Tree)', notes: ['10 Temporary Hit Points when you cast it; Advantage on Dexterity- and Wisdom-based attack rolls; the ground within 15 feet is Difficult Terrain for your enemies'], effects: [{ targets: ['save:con'], mode: 'advantage', label: 'Great Tree' }, { targets: ['attack'], mode: 'advantage', optional: true, label: 'Great Tree (DEX or WIS attack)' }] }
+      : { label: x.choice ? 'Guardian of Nature (Primal Beast)' : 'Guardian of Nature', speed: 10, notes: ['Darkvision 120 feet'], effects: [{ targets: ['attack'], mode: 'advantage', when: 'strAttack', label: 'Primal Beast' }, { targets: ['damage'], formula: '1d6', when: 'weaponAttack', label: 'Primal Beast (force, melee)' }] }),
+  },
+  "tenser's transformation": {
+    self: true,
+    rolls: true,
+    make: (c) => ({ label: "Tenser's Transformation", notes: ["You can't cast spells; proficiency with all armor, shields and weapons; you attack twice with the Attack action", 'When it ends: a DC 15 Constitution save or 1 level of Exhaustion'], effects: [{ targets: ['attack'], mode: 'advantage', when: 'weaponAttack', label: "Tenser's Transformation" }, { targets: ['damage'], formula: '2d12', when: 'weaponAttack', label: "Tenser's Transformation (force)" }, { targets: ['save:str', 'save:con'], formula: String(c?.stats?.profBonus ?? 2), label: "Tenser's Transformation (proficiency)" }] }),
+  },
+  'mind blank': { self: false, make: () => ({ label: 'Mind Blank', immune: ['psychic'], notes: ["Immune to Charmed; nothing reads your thoughts, senses your emotions or detects your location"], effects: [] }) },
+  'holy aura': { self: true, make: () => ({ label: 'Holy Aura', notes: ['Attackers have Disadvantage; a Fiend or Undead that hits you in melee makes a Constitution save or is Blinded'], effects: [{ targets: ['save'], mode: 'advantage', label: 'Holy Aura' }] }) },
+  foresight: { self: false, make: () => ({ label: 'Foresight', notes: ['Other creatures have Disadvantage on attack rolls against you'], effects: [{ targets: ['attack', 'check', 'save', 'initiative'], mode: 'advantage', label: 'Foresight' }] }) },
 };
+
+const SKILL_OPTIONS = Object.entries(SKILL_NAME_TO_CODE).map(([name, code]) => ({ label: name.replace(/(^|\s)\S/g, (m) => m.toUpperCase()).replace(/ Of /g, ' of '), value: code }));
+const named = (name, picked) => (picked ? `${name} (${picked})` : name);
+const ABILITY_LABEL = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
+const typeOptions = (types) => types.map((t) => ({ label: t[0].toUpperCase() + t.slice(1), value: t }));
+const labelOf = (options, value) => options.find((o) => o.value === value)?.label ?? value ?? '';
 
 const PASSIVES = {
   'improved critical': { critThreshold: 19 },
@@ -462,10 +579,13 @@ export function effectiveAc(catalog, state) {
   if (base == null) return null;
   const flat = (state.modifiers ?? []).reduce((s, m) => s + (Number(m.ac) || 0), 0);
   const acBase = Math.max(0, ...(state.modifiers ?? []).map((m) => Number(m.acBase) || 0));
-  if (!acBase || catalog.stats?.hasArmor) return base + flat;
-  const own = (catalog.stats?.acBreakdown ?? []).find((b) => b.note === 'base')?.value ?? base;
-  const raised = acBase + (catalog.rollData?.abilities?.dex?.mod ?? 0);
-  return base + flat + Math.max(0, raised - own);
+  const floor = Math.max(0, ...(state.modifiers ?? []).map((m) => Number(m.acMin) || 0));
+  let ac = base + flat;
+  if (acBase && !catalog.stats?.hasArmor) {
+    const own = (catalog.stats?.acBreakdown ?? []).find((b) => b.note === 'base')?.value ?? base;
+    ac += Math.max(0, acBase + (catalog.rollData?.abilities?.dex?.mod ?? 0) - own);
+  }
+  return Math.max(ac, floor);
 }
 
 /** O deslocamento com as condições (zero, exaustão) e os modificadores. */
@@ -475,7 +595,12 @@ export function effectiveSpeed(catalog, state) {
   const { ids, exhaustion } = conditionList(state);
   if (ids.some((id) => CONDITIONS[id]?.speedZero)) return 0;
   const bonus = (state.modifiers ?? []).reduce((s, m) => s + (Number(m.speed) || 0), 0);
-  return Math.max(0, base + bonus - 5 * exhaustion);
+  return Math.max(0, base + bonus - 5 * exhaustion) * speedTimes(state);
+}
+
+/** Quantas vezes o deslocamento se multiplica (Haste dobra). */
+function speedTimes(state) {
+  return (state.modifiers ?? []).reduce((k, m) => k * (Number(m.speedTimes) || 1), 1);
 }
 
 /** Cada deslocamento com condições e exaustão; o bônus de modificador só a pé. */
@@ -495,7 +620,7 @@ export function effectiveSpeeds(catalog, state) {
   for (const [mode, s] of Object.entries({ ...extra, ...speeds })) {
     const own = s.feet + (mode === 'walk' ? bonus : 0);
     const raw = Math.max(own, extra[mode]?.feet ?? 0);
-    const feet = zero ? 0 : Math.max(0, raw - 5 * exhaustion);
+    const feet = zero ? 0 : Math.max(0, raw - 5 * exhaustion) * speedTimes(state);
     out[mode] = { ...s, feet, base: s.feet };
   }
   return out;
@@ -513,19 +638,31 @@ export function featureModifier(action, catalog) {
 }
 
 /** O efeito curado de uma magia lançada, com `self` (só em si mesmo), ou null. */
-export function spellModifier(spell, catalog = null) {
+export function spellModifier(spell, catalog = null, ctx = {}) {
   const entry = SPELL_EFFECTS[String(spell?.name ?? '').toLowerCase()];
   if (!entry) return null;
   return {
     self: entry.self,
-    modifier: makeModifier({ ...entry.make(catalog), source: 'spell', ...(spell.concentration ? { concentration: spell.key } : {}) }),
+    modifier: makeModifier({ ...entry.make(catalog, ctx), source: 'spell', ...(spell.concentration ? { concentration: spell.key } : {}) }),
   };
 }
 
+/** A escolha que o efeito curado da magia pede no lançamento (a perícia do Guidance, o tipo do Protection from Energy), ou null. */
+export function spellEffectChoice(spell, catalog = null) {
+  const c = SPELL_EFFECTS[String(spell?.name ?? '').toLowerCase()]?.choice;
+  return c ? { message: c.message, options: c.options(catalog) } : null;
+}
+
+/** O efeito curado substitui a rolagem da magia (Bless, Hex) ou a magia continua com a rolagem dela (`rolls`: Fire Shield)? */
+export function spellEffectReplacesRoll(spell) {
+  const entry = SPELL_EFFECTS[String(spell?.name ?? '').toLowerCase()];
+  return !!entry && !entry.rolls;
+}
+
 /** O efeito curado de uma magia lançada por outro, pelo nome, ou null. */
-export function sourceModifier(name) {
+export function sourceModifier(name, ctx = {}) {
   const entry = SPELL_EFFECTS[String(name ?? '').toLowerCase()];
-  return entry ? makeModifier({ ...entry.make(), source: 'spell' }) : null;
+  return entry ? makeModifier({ ...entry.make(null, ctx), source: 'spell' }) : null;
 }
 
 /** Termina a concentração e tira os modificadores que dependiam dela. */

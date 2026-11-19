@@ -16,8 +16,9 @@ import { emptyPlayState, applyOp } from './playState';
 import {
   conditionList, rollEffects, applyEffects, effectiveDefenses, effectiveAc, effectiveSpeed, makeModifier,
   featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier,
-  defaultGrip, attackRollContext, effectiveSpeeds,
+  defaultGrip, attackRollContext, effectiveSpeeds, spellEffectChoice, spellEffectReplacesRoll,
 } from './playEffects';
+import { hpView } from './playState';
 
 const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
 const run = (state, event) => event.ops.reduce(applyOp, state);
@@ -256,5 +257,52 @@ describe('Mage Armor (Armor of Shadows, DDL-0257)', () => {
     expect(effectiveAc(cat(false), st({ modifiers: [mage] }))).toBe(15);
     expect(effectiveAc(cat(true), st({ modifiers: [mage] }))).toBe(12);
     expect(effectiveAc(cat(false), st({ modifiers: [mage, { id: 's', label: 'Shield of Faith', ac: 2, effects: [] }] }))).toBe(17);
+  });
+});
+
+describe('autobuffs de magia (DDL-0260)', () => {
+  const cat = { stats: { ac: 12, speed: 30, speeds: { walk: { feet: 30 } }, acBreakdown: [{ note: 'base', value: 12 }], profBonus: 4 }, rollData: { abilities: { dex: { mod: 2 } } }, defenses: { resist: [], immune: [] }, features: [] };
+  const on = (name, ctx = {}) => st({ modifiers: [spellModifier({ name, key: `spell:x|${name}` }, cat, ctx).modifier] });
+
+  it('Shield +5, Barkskin põe o piso de 17 (sem baixar a CA maior), Haste +2 e o dobro do deslocamento', () => {
+    expect(effectiveAc(cat, on('Shield'))).toBe(17);
+    expect(effectiveAc(cat, on('Barkskin'))).toBe(17);
+    expect(effectiveAc({ ...cat, stats: { ...cat.stats, ac: 19 } }, on('Barkskin'))).toBe(19);
+    const haste = on('Haste');
+    expect(effectiveAc(cat, haste)).toBe(14);
+    expect(effectiveSpeed(cat, haste)).toBe(60);
+    expect(effectiveSpeeds(cat, haste).walk.feet).toBe(60);
+    expect(rollEffects(haste, cat, { kind: 'save', ability: 'dex' }).some((e) => e.adv)).toBe(true);
+  });
+
+  it('deslocamentos: Longstrider +10, Fly 60, Spider Climb igual ao andar', () => {
+    expect(effectiveSpeed(cat, on('Longstrider'))).toBe(40);
+    expect(effectiveSpeeds(cat, on('Fly')).fly.feet).toBe(60);
+    expect(effectiveSpeeds(cat, on('Spider Climb')).climb.feet).toBe(30);
+  });
+
+  it('a escolha do lançamento: a perícia do Guidance, o tipo do Protection from Energy, Enlarge ou Reduce', () => {
+    expect(spellEffectChoice({ name: 'Guidance' }).options).toContainEqual({ label: 'Stealth', value: 'ste' });
+    expect(rollEffects(on('Guidance', { choice: 'ste' }), cat, { kind: 'check', ability: 'dex', skill: 'ste' })[0]).toMatchObject({ part: { formula: '1d4' } });
+    expect(rollEffects(on('Guidance', { choice: 'ste' }), cat, { kind: 'check', ability: 'str', skill: 'ath' })).toEqual([]);
+    expect(effectiveDefenses(cat, on('Protection from Energy', { choice: 'fire' })).resist).toEqual(['fire']);
+    expect(rollEffects(on('Enlarge/Reduce', { choice: 'reduce' }), cat, { kind: 'save', ability: 'str' })[0].dis).toBe(1);
+    expect(spellEffectChoice({ name: 'Shield' })).toBeNull();
+  });
+
+  it('Aid sobe o máximo e o atual pelo círculo; ao sair, o atual só cai se passar do máximo novo', () => {
+    const aid = spellModifier({ name: 'Aid', key: 'a' }, cat, { level: 3 }).modifier;
+    expect(aid.hpMax).toBe(10);
+    const hurt = { ...st({ modifiers: [aid] }), damage: 15 };
+    expect(hpView(hurt, 40)).toMatchObject({ max: 50, current: 35 });
+    expect(hpView(applyOp(hurt, { op: 'modifier', remove: aid.id }), 40)).toMatchObject({ max: 40, current: 35 });
+    const fresh = st({ modifiers: [aid] });
+    expect(hpView(applyOp(fresh, { op: 'modifier', remove: aid.id }), 40)).toMatchObject({ max: 40, current: 40 });
+  });
+
+  it('a magia que rola o próprio dano mantém a rolagem (Fire Shield); Bless e Haste não', () => {
+    expect(spellEffectReplacesRoll({ name: 'Fire Shield' })).toBe(false);
+    expect(spellEffectReplacesRoll({ name: 'Bless' })).toBe(true);
+    expect(spellEffectReplacesRoll({ name: 'Magic Missile' })).toBe(false);
   });
 });

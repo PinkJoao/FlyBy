@@ -78,6 +78,8 @@
 //       fixo, além do número da ficha (a Aura of Protection, DDL-0247).
 //     withFixedDamage(attack, state, catalog): o ataque com os extras fixos ligados no dano (o rótulo
 //       mostra o mesmo número que o diálogo rola: o +4 do Agonizing Blast, DDL-0239).
+//     askEffectChoice(title, choice, confirmLabel): a escolha do efeito curado da magia (botões até cinco, lista
+//       acima), no lançamento e no efeito que outro pôs (DDL-0260).
 //     askRollKind(opts), damageText(attack): a pergunta "d20 ou os outros dados" e o
 //       texto do dano (DDL-0156).
 //     attackOrDamage(attack, cost, extraOps), withAmmo(event, attack): o ataque da
@@ -176,6 +178,11 @@
 //     opcional, planos diferentes), o máximo da coluna Magic Items; o atunamento só com lugar livre.
 //   - A magia de item (Wand of Web, Ring of Jumping) lança pelas cargas ou pelos usos do item, nunca pelos
 //     espaços (`castWays`); a CD e o ataque vêm da origem `item` do catálogo.
+//   - O autobuff que pede uma escolha (Guidance, Enhance Ability, Protection from Energy, Enlarge/Reduce, Fire
+//     Shield) pergunta depois do diálogo de lançar, só quando o efeito vale para o personagem (`spellEffectChoice`;
+//     até cinco opções em botões, mais numa lista); a escolha vai ao `castEvent` (DDL-0260).
+//     A magia de efeito em outro (Guidance, Barkskin) sempre abre o diálogo de lançar, mesmo a cantrip de forma
+//     única: é nele o "It includes me".
 //   - Guardar magia (DDL-0258): com um item que guarda (Ring of Spell Storing) e lugar para o círculo, o
 //     diálogo de lançar abre e oferece "Store it in"; guardar grava só o gasto e a magia no item
 //     (`storeSpellEvent`). A guardada lança no círculo dela com a CD, o ataque e o modificador de quem a
@@ -276,7 +283,7 @@ import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, spellTempFormula, projectileCount, timesFormula } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, castOnceEffects,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, spellEffectChoice, spellEffectReplacesRoll, castOnceEffects,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit, withDiceMax } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf, replicateEvent, storeSpellEvent, takeStoredOp } from '../engine/playInventory';
@@ -363,6 +370,18 @@ const askRollKind = ({ title, attack, effect, effectLabel = 'Damage', more = [] 
       { label: `Attack${attack ? ` (${attack})` : ''}`, value: 'attack', tone: 'primary' },
     ],
   });
+
+/** A escolha que o efeito curado de uma magia pede (botões até cinco opções, uma lista acima disso); resolve o valor ou null. */
+const askEffectChoice = async (title, ch, confirmLabel = 'Cast') => {
+  if (ch.options.length <= 5) return ask({ title, message: ch.message, actions: [{ label: 'Cancel', value: null }, ...ch.options] });
+  const r = await ask({
+    title,
+    message: ch.message,
+    fields: [{ type: 'select', name: 'pick', label: ch.message.replace(/[?]$/, ''), default: ch.options[0]?.value, options: ch.options }],
+    actions: [{ label: 'Cancel', value: null }, { label: confirmLabel, value: 'ok', tone: 'primary' }],
+  });
+  return r?.action === 'ok' ? r.values.pick : null;
+};
 
 /** O texto curto do dano de um ataque ("1d8 + 4"). */
 const damageText = (attack) => {
@@ -672,10 +691,13 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   };
 
   /** O causador escolhido no Add effect: o efeito curado entra sozinho, o resto vai ao efeito próprio. */
-  const pickEffectSource = (source) => {
+  const pickEffectSource = async (source) => {
     setPicker(null);
     const rounds = source.kind === 'entity' ? roundsOf(source.raw?.duration) : null;
-    const curated = source.categoryLabel === 'Spell' ? sourceModifier(source.name) : null;
+    const ch = source.categoryLabel === 'Spell' ? spellEffectChoice({ name: source.name }) : null;
+    const choice = ch ? await askEffectChoice(source.name, ch, 'Add') : null;
+    if (ch && !choice) return;
+    const curated = source.categoryLabel === 'Spell' ? sourceModifier(source.name, { choice }) : null;
     if (curated) record(modifierEvent({ modifier: withRounds(curated, state, rounds) }));
     else addCustomEffect({ initialLabel: source.name, initialRounds: rounds });
   };
@@ -1052,7 +1074,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const light = !creatures.length && isLightSummon(spell);
     let transformSelf = false;
     const stores = spell.level > 0 && !spell.itemUid && !cost.noSlot ? (catalog.spellStores ?? []).filter((s) => s.room >= spell.level && s.maxLevel >= spell.level) : [];
-    if (!way || creatures.length || light || transformRule || stores.length) {
+    const targeted = spellModifier(spell, catalog)?.self === false;
+    if (!way || creatures.length || light || transformRule || stores.length || targeted) {
       const r = await askCast({ catalog, state, origin, spell, creatures, light, transform: transformRule, stores });
       if (!r) return;
       way = way ?? r.way;
@@ -1066,6 +1089,12 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       }
     }
     if (way.stored) origin = { ...origin, saveDc: way.stored.dc ?? origin.saveDc, attackBonus: way.stored.attack ?? origin.attackBonus, abilityMod: way.stored.mod ?? origin.abilityMod };
+    const effectChoice = spellEffectChoice(spell, catalog);
+    let choice = null;
+    if (effectChoice && (spellModifier(spell, catalog)?.self || onSelf)) {
+      choice = await askEffectChoice(spell.name, effectChoice);
+      if (!choice) return;
+    }
     const classLevel = character.classes?.find((c) => `class:${c.classId}` === origin.key)?.level ?? null;
     const turn = summon ? summonTurnOf([...(rawSpell?.entries ?? []), ...(rawSpell?.entriesHigherLevel ?? [])]) : null;
     const summonExtra = summon?.light
@@ -1088,7 +1117,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       if (!weaponOps) return;
     }
     const takeOp = way.stored ? takeStoredOp(character, way.stored.uid, way.stored.index) : null;
-    const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra, ...(takeOp ? [takeOp] : [])]);
+    const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf, choice }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra, ...(takeOp ? [takeOp] : [])]);
     const weaponPick = strikeWith?.name ?? (weaponOps.find((o) => o.add)?.add?.notes?.[0] ?? '').replace(`${spell.name}: `, '');
     record({ ...castEv, ops: [...castEv.ops, ...weaponOps], payload: { ...castEv.payload, ...(weaponPick && weaponPick !== spell.name ? { option: weaponPick } : {}) } }, costOfActivation(cost.cost));
     const tempFormula = spellTempFormula(spell, way.level);
@@ -1123,7 +1152,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       setPicker('form');
       return;
     }
-    if (spell.mechanics?.damage?.later && (summon?.light || spellModifier(spell, catalog) || isZoneSpell(spell, catalog))) return;
+    if (spell.mechanics?.damage?.later && (summon?.light || spellEffectReplacesRoll(spell, catalog) || isZoneSpell(spell, catalog))) return;
     const pieces = summon?.light ? summonExtra.find((o) => o.add?.light?.count)?.add : null;
     if (pieces) {
       await rollPieces(pieces, origin, spell);

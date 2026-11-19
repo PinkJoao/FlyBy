@@ -22,6 +22,9 @@
 //   - As linhas dizem também a condição do efeito (`when`, a opção na rolagem), as resistências, as imunidades
 //     e os deslocamentos novos (`speeds`) do modificador: o Shadowform dizia "+1d6 on damage rolls" e o Rage
 //     of the Gods não mostrava as resistências (DDL-0252).
+//   - Os alvos por atributo dizem o nome ("Dexterity saving throws", não "save:dex"), e os campos dos autobuffs têm
+//     linha própria: o piso da CA (Barkskin), o dobro do deslocamento (Haste), o máximo de PV (Aid) e a cura no
+//     máximo (Beacon of Hope) (DDL-0260).
 //   - O efeito ligado por concentração diz que acaba com ela: tirar a concentração
 //     o tira junto (engine/playEffects).
 // -----------------------------------------------------------------------------
@@ -34,13 +37,20 @@ import Chip from '../common/Chip';
 import card from '../builder/ProficienciesCard.module.css';
 import styles from './PlayCards.module.css';
 
-const TARGET = { attack: 'attack rolls', save: 'saving throws', check: 'ability checks', damage: 'damage rolls', initiative: 'Initiative' };
+const TARGET = { attack: 'attack rolls', save: 'saving throws', check: 'ability checks', damage: 'damage rolls', initiative: 'Initiative', deathSave: 'Death Saving Throws' };
+const ABILITY = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
+const KIND_OF = { save: 'saving throws', check: 'checks' };
 const MODE = { adv: 'Advantage', dis: 'Disadvantage', advantage: 'Advantage', disadvantage: 'Disadvantage' };
 const WHEN = { strAttack: 'Strength attacks', weaponAttack: 'weapon attacks', spell: 'spells', slotSpell: 'spells cast with a slot' };
 const DURATION = { shortRest: 'Until a Short or Long Rest', longRest: 'Until a Long Rest' };
 
 /** O nome de um alvo ("attack rolls", "Stealth"). */
-const targetName = (t) => (String(t).startsWith('skill:') ? SKILL_LABEL[t.slice(6)] ?? t.slice(6) : TARGET[t] ?? t);
+const targetName = (t) => {
+  const [kind, ab] = String(t).split(':');
+  if (kind === 'skill') return SKILL_LABEL[ab] ?? ab;
+  if (ab && ABILITY[ab] && KIND_OF[kind]) return `${ABILITY[ab]} ${KIND_OF[kind]}`;
+  return TARGET[t] ?? t;
+};
 
 /** As linhas do que um efeito muda e da duração. */
 function effectLines(m, combat) {
@@ -54,6 +64,10 @@ function effectLines(m, combat) {
       : `${what} on ${e.targets.map(targetName).join(', ')}${scope ? ` (${scope})` : ''}${e.optional ? ', an option in the roll' : ''}`);
   }
   if (Number(m.ac)) lines.push(`${m.ac > 0 ? '+' : ''}${m.ac} AC`);
+  if (Number(m.acMin)) lines.push(`AC at least ${m.acMin}`);
+  if (Number(m.speedTimes) > 1) lines.push(m.speedTimes === 2 ? 'Speed doubled' : `Speed x${m.speedTimes}`);
+  if (Number(m.hpMax)) lines.push(`+${m.hpMax} Hit Point maximum`);
+  if (m.healMax) lines.push('Healing you receive is the maximum');
   if (Number(m.speed)) lines.push(`${m.speed > 0 ? '+' : ''}${m.speed} ft speed`);
   if ((m.resist ?? []).length) lines.push(`Resistance to ${m.resist.join(', ')}`);
   if ((m.immune ?? []).length) lines.push(`Immunity to ${m.immune.join(', ')}`);

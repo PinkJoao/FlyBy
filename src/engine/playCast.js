@@ -25,8 +25,9 @@
 //     da que não pede concentração, que o castEvent põe), e o evento de encerrar (DDL-0249).
 //   zoneUsedOps(state, spell, ids): guarda na magia de área ativa (a concentração ou o marcador) os extras de
 //     "one damage roll of that spell" já usados, para o "Damage again" vir com eles desligados (DDL-0251).
-//   castEvent(args): o evento de conjurar (gasta `way.amount`, as cargas do item); com `way.also`, gasta também o uso por descanso (o espaço que a invocação
-//     de 2014 ainda pede, DDL-0257).
+//   castEvent(args): o evento de conjurar: gasta `way.amount` (as cargas do item); com `way.also`, também o uso por
+//     descanso (o espaço que a invocação de 2014 ainda pede, DDL-0257); a magia de área sem concentração com efeito
+//     curado (o Fire Shield) põe a marca `zone` no próprio efeito, uma linha só no card (DDL-0260).
 //   SPELL_TEMP, spellTempFormula(spell, level): os PV temporários que a magia dá ao lançar (False Life, Armor of Agathys;
 //     o Fiendish Vigor lança o False Life com os dados no máximo, DDL-0257).
 //   spellAttackOf(origin, spell, level): a magia como "ataque" do playActions
@@ -89,7 +90,7 @@ import { rollParts, cryptoRng } from './dice';
 import { makeEvent, remainingOf } from './playState';
 import { healOutcome } from './playHealth';
 import { bonusParts, rngFor, withDiceMax } from './playActions';
-import { endConcentrationOps, spellModifier, healDiceMaxed, makeModifier } from './playEffects';
+import { endConcentrationOps, spellModifier, spellEffectReplacesRoll, healDiceMaxed, makeModifier } from './playEffects';
 import { isLightSummon } from './playSummons';
 import { withRounds } from './playCombat';
 
@@ -224,7 +225,7 @@ export function timesFormula(formula, k) {
 
 /** A magia de área cujo dano vem depois e não tem outro caminho para rolar (Hunger of Hadar, Web, Cordon of Arrows): fica ativa e o Cast vira "Use". */
 export function isZoneSpell(spell, catalog = null) {
-  return !!spell?.mechanics?.damage?.later && !spellModifier(spell, catalog) && !isLightSummon(spell);
+  return !!spell?.mechanics?.damage?.later && !spellEffectReplacesRoll(spell, catalog) && !isLightSummon(spell);
 }
 
 /** A magia de área ativa: pela concentração nela, ou pelo marcador da que não pede concentração. Null se não está ativa. */
@@ -254,6 +255,7 @@ export function endZoneEvent({ state, spell, now = new Date() }) {
 
 /** As magias que dão PV temporários ao lançar, pelo círculo (False Life: 2d4 + 4, +5 por círculo acima do 1º; Armor of Agathys: 5 por círculo). */
 export const SPELL_TEMP = {
+  "tenser's transformation": () => '50',
   'false life': (level) => `2d4 + ${4 + 5 * Math.max(0, level - 1)}`,
   'armor of agathys': (level) => `${5 * Math.max(1, level)}`,
 };
@@ -268,7 +270,7 @@ export function spellTempFormula(spell, level) {
  * O evento de conjurar: gasta o que a forma pede e liga a concentração.
  * @param {{ catalog?: object, state: object, origin: object, spell: object, way: object, now?: Date }} args
  */
-export function castEvent({ state, catalog = null, origin, spell, way, onSelf = false, now = new Date() }) {
+export function castEvent({ state, catalog = null, origin, spell, way, onSelf = false, choice = null, now = new Date() }) {
   const ops = [];
   if (way.key) ops.push({ op: 'spend', key: way.key, amount: way.amount ?? 1 });
   if (way.also) ops.push({ op: 'spend', key: way.also, amount: 1 });
@@ -276,13 +278,12 @@ export function castEvent({ state, catalog = null, origin, spell, way, onSelf = 
   if (spell.concentration) ops.push(...endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon' || o.op === 'form' || (o.op === 'hp' && o.temp < 0)));
   const expiresRound = state.combat && spell.durationRounds ? state.combat.round + spell.durationRounds : null;
   if (spell.concentration) ops.push({ op: 'concentration', value: { name: spell.name, spellKey: spell.key, level: way.level, ...(expiresRound ? { expiresRound } : {}), ...(spell.durationRounds ? { rounds: spell.durationRounds } : {}) } });
-  const effect = spellModifier(spell, catalog);
+  const effect = spellModifier(spell, catalog, { choice, level: way.level, origin });
   const applied = effect && (effect.self || onSelf);
-  if (applied) ops.push({ op: 'modifier', add: withRounds(effect.modifier, state, spell.durationRounds) });
-  if (!spell.concentration && isZoneSpell(spell, catalog)) {
-    for (const m of (state.modifiers ?? []).filter((x) => x.zone === spell.key)) ops.push({ op: 'modifier', remove: m.id });
-    ops.push({ op: 'modifier', add: withRounds(makeModifier({ label: spell.name, source: 'spell', zone: spell.key, level: way.level, duration: 'manual' }), state, spell.durationRounds) });
-  }
+  const zone = !spell.concentration && isZoneSpell(spell, catalog);
+  if (zone) for (const m of (state.modifiers ?? []).filter((x) => x.zone === spell.key)) ops.push({ op: 'modifier', remove: m.id });
+  if (applied) ops.push({ op: 'modifier', add: withRounds(zone ? { ...effect.modifier, zone: spell.key, level: way.level } : effect.modifier, state, spell.durationRounds) });
+  else if (zone) ops.push({ op: 'modifier', add: withRounds(makeModifier({ label: spell.name, source: 'spell', zone: spell.key, level: way.level, duration: 'manual' }), state, spell.durationRounds) });
   return makeEvent('cast', {
     label: spell.name,
     ops,

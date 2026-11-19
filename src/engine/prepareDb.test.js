@@ -29,6 +29,16 @@ describe('prepareDb', () => {
     expect(db.items.item[1]._copy).toBeDefined();
   });
 
+  it('o Flaming Sphere do XPHB segue o SRD: Conjuração (DDL-0268); o resto fica igual', () => {
+    const sphere = { name: 'Flaming Sphere', source: 'XPHB', school: 'V' };
+    const other = { name: 'Fireball', source: 'XPHB', school: 'V' };
+    const db = { 'spells-xphb': { spell: [sphere, other] }, 'spells-phb': { spell: [{ name: 'Flaming Sphere', source: 'PHB', school: 'C' }] } };
+    const out = prepareDb(db);
+    expect(out['spells-xphb'].spell.map((s) => s.school)).toEqual(['C', 'V']);
+    expect(out['spells-phb']).toBe(db['spells-phb']);
+    expect(sphere.school).toBe('V');
+  });
+
   it('sem cópia, devolve o próprio db', () => {
     const db = { items: { item: [blade] } };
     expect(prepareDb(db)).toBe(db);

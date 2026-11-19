@@ -48,6 +48,9 @@
 //   - Nada é apagado no mundo: o gravado fica na pasta para o dono limpar. Por isso
 //     o ator já importado se procura DENTRO da pasta da rodada: `getName` acha o
 //     de uma rodada velha (aconteceu, e o lado a lado mediu o export de antes).
+//   - A ficha de LOTE de itens da T3 (`t3_items_*`, 40 unidades) equipa tudo o que se equipa, para o efeito de
+//     cada armadura mágica valer; o Foundry avisa "more than one suit of armor / shield equipped". Esse aviso é
+//     do lote, não de uma unidade, e não conta nessas fichas (DDL-0266).
 // -----------------------------------------------------------------------------
 
 const { game, Actor, Folder, Roll, foundry } = globalThis;
@@ -118,7 +121,10 @@ function check(actor) {
       if (u) add('effect-formula', `${e.parent?.name ?? ''} > ${e.name} ${c.key}`, u);
     }
   }
-  for (const w of actor._preparationWarnings ?? []) add('preparation-warning', actor.name, w.message);
+  for (const w of actor._preparationWarnings ?? []) {
+    if (/^t3_items_/.test(actor.name) && /^More than one (?:suit of armor|shield) equipped/.test(w.message)) continue;
+    add('preparation-warning', actor.name, w.message);
+  }
   return issues;
 }
 

@@ -448,3 +448,41 @@ describe('a magia escolhida e a guardada (DDL-0258)', () => {
     expect(spellStores([{ ...ring, attuned: false }])).toEqual([]);
   });
 });
+
+describe('itemSpellOrigins: as formas do DDL-0262', () => {
+  const sp = (name, level) => ({ name, source: 'XPHB', level, school: 'V', time: [{ number: 1, unit: 'action' }], duration: [{ type: 'instant' }], entries: [] });
+  const db = { 'spells-xphb': { spell: [sp('Fabricate', 4), sp('Move Earth', 6), sp('Web', 2), sp('Fog Cloud', 1), sp('Bane', 1), sp('Flesh to Stone', 6), sp('Detect Magic', 1), sp('Knock', 2), sp('Thunderwave', 1), sp('Wish', 9), sp('Haste', 3)] } };
+  const it1 = (raw) => itemSpellOrigins([{ uid: 'i1', attuned: true, raw: { reqAttune: true, entries: [], ...raw } }], db, 11, {});
+
+  it('daily sem "e" é um pool só; a prosa "that spell again" separa', () => {
+    const adze = it1({ name: 'Adze', attachedSpells: { daily: { 1: ['fabricate|xphb', 'move earth|xphb'] } } });
+    expect(adze.resources).toEqual([expect.objectContaining({ key: 'granted:item:i1|daily:1', max: 1, name: 'Adze: fabricate or move earth' })]);
+    expect(adze.origins[0].spells.map((s) => s.uses)).toEqual(['granted:item:i1|daily:1', 'granted:item:i1|daily:1']);
+    const horn = it1({ name: 'Horn', attachedSpells: { daily: { 1: ['web|xphb', 'fog cloud|xphb'] } }, entries: ["Once the horn has been used to cast a spell, it can't be used to cast that spell again until the next dawn."] });
+    expect(horn.resources.map((r) => r.key)).toEqual(['granted:item:i1|web', 'granted:item:i1|fog cloud']);
+  });
+
+  it('rest volta no curto, limited não volta, ritual só como ritual', () => {
+    expect(it1({ name: 'Shield', attachedSpells: { rest: { '1e': ['bane|xphb'] } } }).resources[0].recovery).toEqual([{ period: 'sr', type: 'recoverAll' }]);
+    const bracelet = it1({ name: 'Bracelet', attachedSpells: { limited: { 3: ['flesh to stone|xphb'] } } });
+    expect(bracelet.resources[0]).toMatchObject({ max: 3, recovery: [] });
+    expect(bracelet.origins[0].spells[0]).toMatchObject({ castType: 'limited', count: 3 });
+    expect(it1({ name: 'Scale', attachedSpells: { ritual: ['detect magic|xphb'] } }).origins[0].spells[0]).toMatchObject({ castType: 'ritual', ritualOnly: true });
+  });
+
+  it('a lista solta: carga pelo texto, uma vez por dia pela frase, senão pelo texto do item', () => {
+    const charm = it1({ name: 'Charm', charges: 3, attachedSpells: ['knock|xphb'], entries: ['This charm has 3 charges. You can expend 1 charge as an action to cast the knock spell.'] });
+    expect(charm.origins[0].spells[0]).toMatchObject({ chargeKey: 'charges:i1', chargeCost: 1 });
+    const axe = it1({ name: 'Axe', attachedSpells: { other: ['knock|xphb'] }, entries: ['You can cast Knock from the axe. You can\'t use this property again until the next dawn.'] });
+    expect(axe.origins[0].spells[0]).toMatchObject({ castType: 'daily', count: 1 });
+    expect(it1({ name: 'Chime', attachedSpells: ['knock|xphb'], entries: ['As a Magic action, you can strike the chime to cast Knock.'] }).origins[0].spells[0].castType).toBe('item');
+    expect(it1({ name: 'Book', charges: 3, attachedSpells: ['knock|xphb'], entries: ['It functions as a spellbook for you.'] }).origins).toEqual([]);
+    expect(it1({ name: 'Potion of Speed', type: 'P', attachedSpells: ['haste|xphb'] }).origins).toEqual([]);
+  });
+
+  it('cargas sem número no campo e o círculo fixo de "magia#4"', () => {
+    const ring = it1({ name: 'Ring of Three Wishes', attachedSpells: { charges: { 1: ['wish|xphb'] } }, entries: ['While wearing this ring, you can expend 1 of its 3 charges to cast Wish from it.'] });
+    expect(ring.origins[0].spells[0]).toMatchObject({ name: 'Wish', chargeKey: 'charges:i1' });
+    expect(it1({ name: 'Scepter', attachedSpells: { will: ['thunderwave#4'] } }).origins[0].spells[0]).toMatchObject({ name: 'Thunderwave', level: 1, castLevel: 4 });
+  });
+});

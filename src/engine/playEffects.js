@@ -121,6 +121,8 @@
 //     resistências, a CA, o voo (`speeds` do modificador: um número ou 'walk', o maior vence em
 //     effectiveSpeeds) e as notas; o 1d6 do Void Empowerment é efeito opcional só no dano de magia com espaço
 //     psíquico ou necrótico (`when: 'slotSpell'`, `types`, DDL-0252).
+//   - FEATURE_EFFECTS 'action:defensive-duelist' (DDL-0261): a reação do talento liga +PB na CA por uma rodada;
+//     o export já levava o efeito, e o jogo só registrava o uso.
 //   - FEATURE_EFFECTS das runas do Rune Knight (TC-0167, DDL-0238): o Use do Frost Rune liga +2 nos
 //     testes e salvaguardas de FOR e CON por 10 minutos, o do Hill Rune a resistência a contundente,
 //     perfurante e cortante por 1 minuto, o do Storm Rune o estado profético como nota. No ator esses
@@ -299,6 +301,7 @@ const FEATURE_EFFECTS = {
   'action:wings-unfurled': () => ({ label: 'Wings Unfurled', source: 'feature', duration: 'manual', maxRounds: 1, speeds: { fly: 'walk' }, notes: ['The wings vanish at the end of your turn'], effects: [] }),
   'action:writhing-tide': () => ({ label: 'Writhing Tide', source: 'feature', duration: 'manual', maxRounds: 10, endsOnIncapacitated: true, speeds: { fly: 10 }, notes: ['Can hover'], effects: [] }),
   'action:elemental-gift': () => ({ label: 'Elemental Gift', source: 'feature', duration: 'manual', maxRounds: 100, speeds: { fly: 30 }, notes: ['Can hover'], effects: [] }),
+  'action:defensive-duelist': (catalog) => ({ label: 'Defensive Duelist', source: 'feature', duration: 'manual', maxRounds: 1, ac: catalog?.rollData?.prof ?? 2, notes: ['Holding a Finesse weapon; until the start of your next turn, against the triggering attack too'], effects: [] }),
   'action:dodge': () => ({
     label: 'Dodge',
     source: 'feature',
@@ -703,6 +706,7 @@ export function attackRollContext(attack, kind = 'attack', catalog = null) {
     school: attack.school ?? null,
     spellClass: attack.spellClass ?? null,
     types: attack.damage?.types ?? null,
+    heavy: (attack.properties ?? []).includes('H'),
     ...(kind === 'damage' ? { hands, grip: defaultGrip(attack, catalog), twoHanded: hands === 'two', versatile: hands === 'versatile' || hands === 'mounted' } : {}),
   };
 }

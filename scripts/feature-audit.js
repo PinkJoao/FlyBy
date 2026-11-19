@@ -2,7 +2,7 @@
 // feature-audit: o registro de cada feature de classe e subclasse no app
 // =============================================================================
 // O QUE FAZ
-//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy|options] [--review] [--only=<classId ou tipo>]
+//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy|options|feats] [--review] [--only=<classId, tipo ou nome>]
 //   O registro do DDL-0228: cada feature de classe e de subclasse que o seletor oferece, numa
 //   camada (srd: as 12 classes do XPHB e as 12 subclasses do SRD 5.2; xphb: as outras do XPHB;
 //   post: os livros depois de 2024; legacy: as antigas sem reprint), com o que o app faz
@@ -41,6 +41,8 @@
 //   optionPrereqs(o): as opções que ela pede (o pacto do XGE vira a invocação do XPHB).
 //   attackView(catalog), attackDiff(a, b): os ataques e as magias do jogo, e o que mudou.
 //   screenCatalog(character): o catálogo da tela, com uma arma de pacto invocada se houver o pacto.
+//   featBag(character, host): as sub-escolhas guardadas do talento (tipo e quantas).
+//   statView(catalog): os números do jogo que um talento pode mudar (PV, CA, iniciativa, deslocamentos, testes).
 //
 // DECISÕES E ARMADILHAS
 //   - O universo é o da lista de features da classe e da subclasse (resolveClassFeatures,
@@ -59,6 +61,10 @@
 //     estreita: "transform into", "assume the ... form", "imbue ... weapon", "one of your known ... cantrips", "your
 //     choice of ... damage"), para a assinatura das outras não mudar. Ela não é pista: uma forma sem estado no jogo
 //     pode estar certa (só texto), e quem decide é o revisor, olhando os quatro lugares.
+//   - A camada `feats` mede cada talento do seletor (featMatrix) pela DIFERENÇA, como as opções: o
+//     hospedeiro da T3 (lib/featHost.js: o espaço da categoria, a classe e a espécie do pré-requisito)
+//     subido ao nível 20, contra a cópia dele com o espaço vazio. O livro agrupa por fonte > categoria.
+//     A pista `pré:bad` é o pré-requisito que o hospedeiro não cumpre (o instrumento, não o talento).
 //   - Nada de texto de livro no registro: só nomes e o que o app faz (`testing/` é privado).
 // -----------------------------------------------------------------------------
 import fs from 'node:fs';
@@ -84,13 +90,18 @@ import { optionalFeatureChoices } from '../src/engine/classFeatureChoices.js';
 import { collectFeatIds } from '../src/engine/proficiency.js';
 import { attacksPerAction } from '../src/engine/playBasicActions.js';
 import { withPactWeapon } from '../src/engine/playPact.js';
+import { featMatrix } from './lib/matrix.js';
+import { featHost, buildFeatHost, withoutFeat } from './lib/featHost.js';
+import { resolveFeat } from '../src/engine/resolve.js';
+import { prereqContext, prereqStatus } from '../src/engine/prereq.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
   return m ? [m[1], m[2] ?? true] : [a, true];
 }));
 const TIER = args.tier ?? 'srd';
-const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint', options: 'Opções de classe' };
+const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint', options: 'Opções de classe', feats: 'Talentos' };
+const FEAT_CATS = { O: 'Origin', G: 'General', FS: 'Fighting Style', 'FS:P': 'Fighting Style (Paladin)', 'FS:R': 'Fighting Style (Ranger)', EB: 'Epic Boon', D: 'Dragonmark', DG: 'Dark Gift' };
 const OPTION_TYPES = { EI: 'Eldritch Invocations', 'MV:B': 'Maneuvers', MM: 'Metamagic', AS: 'Arcane Shots', RN: 'Runes' };
 const OUT_DIR = 'testing/feature-audit';
 const VERDICTS = path.join(OUT_DIR, 'verdicts.json');
@@ -298,7 +309,7 @@ const verdicts = fs.existsSync(VERDICTS) ? JSON.parse(fs.readFileSync(VERDICTS, 
 const rows = [];
 const doneClasses = new Set();
 
-for (const row of TIER === 'options' ? [] : classMatrix(db)) {
+for (const row of TIER === 'options' || TIER === 'feats' ? [] : classMatrix(db)) {
   if (args.only && row.classId !== args.only) continue;
   const classObj = resolveClassObj(db, row.classId, row.classSource);
   const sub = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
@@ -452,6 +463,83 @@ if (TIER === 'options') {
     const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
     const level = (o.prerequisite ?? []).map((pre) => pre.level?.level ?? 0).reduce((m, n) => Math.max(m, n), 0);
     rows.push({ id: `options|${o.type}|${o.name}|${o.source}`, book: o.source, className: host.label, sub: `(${host.row.id})`, level, name: o.name, facets, sig, text });
+  }
+}
+
+/** Os números do jogo que um talento pode mudar (só a camada `feats`: nas outras mudaria a assinatura). */
+function statView(catalog) {
+  const s = catalog.stats ?? {};
+  const out = new Map([['PV', String(s.hpMax)], ['CA jogo', String(s.ac)], ['iniciativa', String(catalog.checks?.initiative?.bonus ?? s.initiative)]]);
+  for (const [k, v] of Object.entries(s.speeds ?? {})) out.set(`desloc ${k}`, String(v?.feet ?? v));
+  for (const a of catalog.checks?.abilities ?? []) out.set(`salv ${a.ability}`, String(a.save));
+  for (const k of catalog.checks?.skills ?? []) out.set(`teste ${k.skill}`, String(k.bonus));
+  return out;
+}
+
+/** As sub-escolhas guardadas do talento: tipo e quantas. */
+function featBag(character, host) {
+  const bag = host.slot === 'origin' ? character.origin?.originFeat?.choices : character.classes[0].choices[host.slot]?.sub;
+  const out = [];
+  const walk = (o) => {
+    for (const v of Object.values(o ?? {})) {
+      if (v && typeof v === 'object' && v.kind) {
+        out.push(`${v.kind} ${(v.picks ?? []).length}`);
+        walk(v.sub);
+      } else if (v && typeof v === 'object') walk(v);
+    }
+  };
+  walk(bag);
+  return out;
+}
+
+if (TIER === 'feats') {
+  for (const row of featMatrix(db)) {
+    if (args.only && !norm(row.name).includes(norm(args.only))) continue;
+    const id = `feats|${row.name}|${row.source}`;
+    const cat = FEAT_CATS[row.category] ?? row.category;
+    const raw = resolveFeat(db, `${row.name}|${row.source}`);
+    const host = raw ? featHost(db, row, raw, species) : { skip: 'o talento não resolve' };
+    if (host.skip) {
+      rows.push({ id, book: row.source, className: cat, sub: '(talento)', level: 0, name: row.name, facets: { builder: 'não se aplica', ficha: host.skip, jogo: '-', export: '-', pistas: '-' }, sig: 'skip', text: '' });
+      continue;
+    }
+    let character; let base; let derived; let catalog; let baseCatalog; let actor;
+    try {
+      character = buildFeatHost(db, row, host, { level: 20 }).character;
+      base = withoutFeat(character, row, host);
+      derived = deriveFromDb(character, db);
+      catalog = screenCatalog(character);
+      baseCatalog = screenCatalog(base);
+      actor = safeActor(character, db);
+    } catch (e) {
+      rows.push({ id, book: row.source, className: cat, sub: '(talento)', level: 0, name: row.name, facets: { builder: 'ERRO', ficha: String(e.message).slice(0, 80), jogo: '-', export: '-', pistas: 'erro' }, sig: 'erro', text: '' });
+      continue;
+    }
+    const entries = bagEntries(character);
+    const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+    const f = (catalog.featureList ?? []).find((x) => x.kind === 'feat' && norm(x.name) === norm(row.name));
+    const text = plainText(raw.entries ?? []);
+    const play = playOf(f, catalog, bridged);
+    const sheet = diff(snapshot(deriveFromDb(base, db)), snapshot(derived));
+    sheet.push(...attackDiff(statView(baseCatalog), statView(catalog)));
+    const attacks = attackDiff(attackView(baseCatalog), attackView(catalog));
+    const regs = mentions(row.name, host.classId, null);
+    const choice = f ? pendingChoice(f, character, entries, text) : null;
+    const grants = GRANT_EXPLAINED[norm(row.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+    const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+    const attackCue = ATTACK_CUE.test(text.toLowerCase()) && !attacks.length && !regs.length && !featureRollOf(row.name) && !bridged.has(f?.name);
+    const pre = prereqStatus(raw, prereqContext(character, { db, grantedFeatures: row.category.startsWith('FS') ? ['Fighting Style'] : [] }));
+    const facets = {
+      builder: `${host.classId} ${host.slot}${featBag(character, host).length ? `: ${featBag(character, host).join(', ')}` : ''}`,
+      ficha: [...sheet, ...regs.map((m) => `reg:${m}`)].join('; ') || '-',
+      jogo: [play.cat, ...play.parts, ...attacks].join('; '),
+      export: row.name === 'Ability Score Improvement' ? 'aumento no item da classe' : exportOf(row.name, null, actor),
+      pistas: [...playCues.map((c) => `jogo:${c}`), ...(attackCue ? ['jogo:ataque'] : []), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`), ...(pre === 'bad' ? ['pré:bad'] : [])].join('; ') || '-',
+    };
+    const shape = shapeFacet(text, { builder: facets.builder, play, exp: facets.export, files: regs });
+    if (shape) facets.forma = shape;
+    const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+    rows.push({ id, book: row.source, className: cat, sub: '(talento)', level: host.level, name: row.name, facets, sig, text });
   }
 }
 

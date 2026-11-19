@@ -86,6 +86,7 @@
 //     Boon of Truesight sem a visão verdadeira (T3, talentos).
 //   buildFeatItem(featData, opts): o item de um talento.
 //   buildClassChosenFeats(classEntry, db): talentos da classe e o valor dos ASIs.
+//   nestedFeatPicks(bag, level, depth): os talentos no `sub` de outra escolha (DDL-0261).
 //   buildItemChoiceAdvancements(classEntry, classObj, subObj, db, optionItems,
 //     opts): a escada de ItemChoice das escolhas de feature.
 //   progressionOf(classObj, subObj, types): a progressão de optional features.
@@ -251,7 +252,9 @@
 //   - buildClassChosenFeats: só os slots 'feat@<nível>' entram no ASI da classe.
 //     Grant de subclasse ('sub:feat@') e estilo de optionalfeatureProgression
 //     ('feat@fs@') viram item solto mais flag, senão o import os re-mapearia para
-//     chaves que o builder não tem (TC-0006).
+//     chaves que o builder não tem (TC-0006). O talento que mora no `sub` de outra escolha (o estilo do
+//     Fighting Initiate, o talento do Lessons of the First Ones) também sai como item solto, marcado
+//     `flags.builder5e.nested`: o import o reconhece pela marca e não o põe num espaço (DDL-0261).
 //   - buildItemChoiceAdvancements tem três casos. (1) Opção de feature ("Divine
 //     Order: Protector"), um nível e uma escolha. (2) Optional features, cuja
 //     contagem cresce: o passo grava o delta do nível, e um descritor é da
@@ -400,6 +403,7 @@ import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
 import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
 import { collectChoicePicks, collectAbilityPicks, fixedAbilityBoosts, parseChoices } from './choices';
+import { optionEntries } from './optionTargets';
 import { resolveItemObj, itemTypeInfo, attunementInfo } from './items';
 import { containerProps } from './containers';
 import { itemValue } from './magicItemPrice';
@@ -1297,7 +1301,27 @@ export function buildClassChosenFeats(classEntry, db) {
       }
     }
   }
+  for (const { pick, sub, level } of nestedFeatPicks(classEntry.choices)) {
+    const featData = findFeat(db, pick);
+    if (!featData || norm(featData.name) === ASI_FEAT_NAME) continue;
+    const item = buildFeatItem(featData, { level: level ?? (classEntry.level || 1), choices: sub, db });
+    item.flags.builder5e = { ...(item.flags.builder5e ?? {}), nested: true };
+    items.push(item);
+  }
   return { items, asiByLevel, fightingStyles };
+}
+
+/** Os talentos que moram no `sub` de outra escolha (o estilo do Fighting Initiate, o talento do Lessons of the First Ones). */
+function nestedFeatPicks(bag, level = null, depth = 0) {
+  const out = [];
+  for (const [id, entry] of Object.entries(bag ?? {})) {
+    if (!entry || typeof entry !== 'object') continue;
+    const at = id.lastIndexOf('@');
+    const lvl = level ?? (at >= 0 && Number.isFinite(Number(id.slice(at + 1))) ? Number(id.slice(at + 1)) : null);
+    if (depth > 0 && entry.kind === 'feat') for (const pick of entry.picks ?? []) out.push({ pick, sub: entry.sub?.[pick] ?? null, level: lvl });
+    for (const sub of Object.values(entry.sub ?? {})) out.push(...nestedFeatPicks(sub, lvl, depth + 1));
+  }
+  return out;
 }
 
 /**
@@ -1480,8 +1504,7 @@ const OPTFEAT_SUBTYPE = {
 export function buildOptionalFeatureItems(classEntry, db) {
   const list = db?.optionalfeatures?.optionalfeature ?? [];
   const out = [];
-  for (const [choiceId, entry] of Object.entries(classEntry.choices ?? {})) {
-    if (entry?.kind !== 'optionalfeature') continue;
+  for (const { choiceId, entry } of optionEntries(classEntry.choices)) {
     for (const pick of entry.picks ?? []) {
       const [name, source] = String(pick).split('|');
       const raw = list.find((f) => f.name === name && f.source === source) ??

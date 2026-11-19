@@ -27,6 +27,10 @@
 //   storeRuleOf(raw): o item que guarda magias lançadas nele (Ring of Spell Storing, Spell Bottle, Spell Gem):
 //     `{ cap, one, maxLevel }` (`cap` em círculos somados; `one` = uma magia por vez), ou null.
 //   storedLevels(entry): os círculos que o item já guarda.
+//   itemChargeMax(raw): as cargas do item: o campo numérico, o máximo do dado ("{@dice 1d3}") ou o número do texto
+//     ("1 of its 3 charges", "begins existence with 1d4 + 1 charges"), ou 0 (DDL-0262).
+//   numOf(word): o número de "3" ou "three".
+//   chargeCostOf(text): quantas cargas o texto diz que o lançamento gasta (`{ cost, any }`), ou null.
 //
 // DECISÕES E ARMADILHAS
 //   - "Fixa em N" (Amulet of Health, os Belts of Giant Strength) é um PISO: o texto diz que não faz nada
@@ -53,6 +57,8 @@
 //     "store one spell of up to 5th level" e "contain one spell" guardam uma (a garrafa, as Spell Gems). O teto do
 //     círculo vem de "1st through 5th level" ou "up to 8th level". O guardado mora na entrada (`stored`), com o
 //     círculo, a CD e o ataque de quem lançou (o anel usa os de quem lançou; a gema tem os seus no texto).
+//   - Cargas sem número no campo (DDL-0262): o Ring of Three Wishes e as Luck Weapons só dão as cargas no texto ou
+//     num dado; o máximo do dado é o teto (o contador do jogo ajusta o máximo à mão, DDL-0209).
 //   - O export escreve o atributo SEM os itens (`baseScores` no resolve): o item no Foundry leva o próprio
 //     efeito, e somar os dois duplicaria o "+2".
 // -----------------------------------------------------------------------------
@@ -209,4 +215,28 @@ export function storeRuleOf(raw) {
 /** Os círculos que o item já guarda. */
 export function storedLevels(entry) {
   return (entry?.stored ?? []).reduce((s, x) => s + (Number(x.level) || 0), 0);
+}
+
+const WORD_NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const numOf = (w) => WORD_NUM[String(w).toLowerCase()] ?? Number(w);
+const DICE_MAX = /(\d+)d(\d+)(?:\s*\+\s*(\d+))?/;
+
+/** As cargas do item: o campo, o máximo do dado do campo, ou o número do texto; 0 sem cargas. */
+export function itemChargeMax(raw) {
+  const n = Number(raw?.charges);
+  if (n > 0) return n;
+  const dice = String(raw?.charges ?? '').match(DICE_MAX);
+  if (dice) return Number(dice[1]) * Number(dice[2]) + Number(dice[3] ?? 0);
+  const text = plainItemText(raw);
+  const rolled = text.match(/(?:has|with) (\d+d\d+(?:\s*\+\s*\d+)?) charges/i)?.[1]?.match(DICE_MAX);
+  if (rolled) return Number(rolled[1]) * Number(rolled[2]) + Number(rolled[3] ?? 0);
+  const m = text.match(/\b(?:has|of its|with) (\d+|one|two|three|four|five|six|seven|eight|nine|ten) charges\b/i);
+  return m ? numOf(m[1]) : 0;
+}
+
+/** As cargas que o texto diz que o lançamento gasta: `{ cost, any }` ("expend 1 charge", "any number of charges"), ou null. */
+export function chargeCostOf(text) {
+  const m = String(text ?? '').match(/\b(?:expend|spend|use)s? (\d+|one|two|three|four|five|any number) (?:of )?(?:(?:its|the [\w' ]+?) )?charges?\b/i);
+  if (!m) return null;
+  return /any/i.test(m[1]) ? { cost: 1, any: true } : { cost: numOf(m[1]) || 1, any: false };
 }

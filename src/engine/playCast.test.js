@@ -312,3 +312,12 @@ describe('a magia guardada e a do Enspelled (DDL-0258)', () => {
     expect(castWays(cat, st(), bound).map((w) => w.id)).toEqual(['charges:1']);
   });
 });
+
+describe('castWays das magias de item (DDL-0262)', () => {
+  const base = { name: 'Knock', level: 2, itemUid: 'i1', prepared: true };
+  it('"From the item" sem gasto; o ritual do item; o círculo fixo', () => {
+    expect(castWays({ resources: [] }, emptyPlayState(), { ...base, castType: 'item' })).toEqual([expect.objectContaining({ id: 'free', label: 'From the item (its text says how often)', level: 2 })]);
+    expect(castWays({ resources: [] }, emptyPlayState(), { ...base, castType: 'ritual', ritualOnly: true })[0].label).toBe('As a ritual, from the item');
+    expect(castWays({ resources: [] }, emptyPlayState(), { ...base, level: 1, castType: 'will', castLevel: 4 })[0].level).toBe(4);
+  });
+});

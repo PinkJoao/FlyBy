@@ -46,7 +46,9 @@
 //     Psi-Bolstered Knack, Psychic Whispers). Elas gastam o pool do Psionic Power;
 //     um pool próprio daria N contadores onde o livro tem um. Os usos grátis delas
 //     (uma vez por descanso) moram na ACTIVITY e ficam.
-//   - FEAT_USES: Ritual Caster (o Quick Ritual, 1 por descanso longo) e Boon of
+//   - FEAT_USES: Martial Adept (1 Superiority Die, descanso curto) e Metamagic Adept (2 Sorcery Points,
+//     descanso longo), os recursos que o talento dá e as opções gastam (STAND_INS, DDL-0261); Ritual Caster
+//     (o Quick Ritual, 1 por descanso longo) e Boon of
 //     Recovery (o Recover Vitality, dez d10 por descanso longo; o Last Stand tem o
 //     pool na activity). O talento não passava pelo registro curado.
 //   - Precedência (TC-0068): este registro, depois a tabela GERADA do SRD
@@ -128,6 +130,8 @@ const SHARED_POOL_MEMBERS = new Set([
 const FEAT_USES = {
   'ritual caster': { max: '1', recovery: LR_FULL },
   'boon of recovery': { max: '10', recovery: LR_FULL },
+  'martial adept': { max: '1', recovery: SR_FULL },
+  'metamagic adept': { max: '2', recovery: LR_FULL },
 };
 
 // ATENÇÃO: reserva de precedência MAIS BAIXA; regenere a lista com o survey, não por memória do livro.

@@ -45,8 +45,12 @@
 //     Shield conta aliados). Somado sempre, o Perrin L17 chegava ao Foundry com CA
 //     26 e não 21 (T3, medido; varredura dos 84 itens com `bonusAc` do items.json). Vale para a
 //     ficha do app e para o export (foundryItems).
-//   - O teto de Destreza por armadura: leve cheio, média +2, pesada 0.
+//   - O teto de Destreza por armadura: leve cheio, média +2, pesada 0. O Medium Armor Master sobe o da média
+//     para +3 (o texto do XPHB e do PHB: "Dexterity modifier ... is 3 or higher"); o export não muda, porque o
+//     ator do dnd5e não tem o campo (o teto mora na armadura) (DDL-0261).
 // -----------------------------------------------------------------------------
+
+import { collectFeatIds } from './proficiency';
 
 // ATENÇÃO: só com a PROVA na prosa do próprio item (o bônus vale numa reação, contra um tipo de ataque, por aliado).
 const CONDITIONAL_BONUS_AC = new Set([
@@ -119,7 +123,8 @@ export function deriveArmorClass(character, inventory = [], mods = {}, naturalAr
   const candidates = [];
 
   if (armor) {
-    const cap = DEX_CAP[armor.armorSlot] ?? Infinity;
+    const mam = armor.armorSlot === 'medium' && collectFeatIds(character ?? {}).some((id) => /^medium armor master\|/i.test(id));
+    const cap = mam ? 3 : DEX_CAP[armor.armorSlot] ?? Infinity;
     const dexPart = armor.armorSlot === 'heavy' ? 0 : Math.min(dex, cap);
     const armorAc = armor.raw.ac + flatBonusAc(armor.raw);
     candidates.push({

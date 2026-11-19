@@ -54,6 +54,7 @@ import { healDiceMaxed } from './playEffects';
 import { withDiceMax } from './playActions';
 import { resolveItemObj } from './items';
 import { createInventoryItem } from '../schema/character';
+import { itemChargeMax } from './itemEffects';
 
 const USABLE = new Set(['P', 'SC', 'FD']);
 
@@ -225,7 +226,7 @@ export function storeSpellEvent({ character, store, spell, origin, way, spendOps
 export function chargeResources(derivedInventory) {
   const out = [];
   for (const e of derivedInventory ?? []) {
-    const max = Number(e.raw?.charges) || 0;
+    const max = itemChargeMax(e.raw);
     if (!max || !e.uid) continue;
     const amount = String(e.raw.rechargeAmount ?? '').match(/\{@dice ([^}|]+)/)?.[1]?.trim() ?? (e.raw.rechargeAmount != null ? String(e.raw.rechargeAmount) : null);
     const period = e.raw.recharge === 'dawn' ? 'dawn' : e.raw.recharge === 'dusk' ? 'dusk' : e.raw.recharge ? 'lr' : null;

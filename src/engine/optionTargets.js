@@ -18,6 +18,8 @@
 //   knownCantrips(character, db, className): as cantrips da classe que o personagem conhece.
 //   withTargetOptions(choices, ctx): as sub-escolhas com as opções do personagem (e sem as já tomadas
 //     pelas outras ocorrências da mesma opção).
+//   optionEntries(bag, prefix): as entradas de opção de classe de um bag, também as do `sub` de um talento
+//     (Eldritch Adept e os outros três, DDL-0261), com o id da escolha.
 //   optionTargets(character): { "agonizing blast": ["Eldritch Blast", ...] }, as cantrips escolhidas.
 //
 // DECISÕES E ARMADILHAS
@@ -100,8 +102,7 @@ export function withTargetOptions(choices, { character, db, taken = [] }) {
 export function optionTargets(character) {
   const out = {};
   for (const cls of character?.classes ?? []) {
-    for (const entry of Object.values(cls.choices ?? {})) {
-      if (entry?.kind !== 'optionalfeature') continue;
+    for (const { entry } of optionEntries(cls.choices)) {
       const picks = entry.picks ?? [];
       picks.forEach((pick, i) => {
         const chosen = entry.sub?.[subKeyOf(picks, i)]?.cantripTarget?.picks ?? [];
@@ -110,6 +111,17 @@ export function optionTargets(character) {
         out[key] = [...(out[key] ?? []), ...chosen];
       });
     }
+  }
+  return out;
+}
+
+/** As entradas de opção de classe de um bag, com as que um talento guarda no `sub`; `{ choiceId, entry }`. */
+export function optionEntries(bag, prefix = '') {
+  const out = [];
+  for (const [id, entry] of Object.entries(bag ?? {})) {
+    if (!entry || typeof entry !== 'object') continue;
+    if (entry.kind === 'optionalfeature') out.push({ choiceId: `${prefix}${id}`, entry });
+    else if (entry.kind === 'feat') for (const [featId, sub] of Object.entries(entry.sub ?? {})) out.push(...optionEntries(sub, `${prefix}${id}/${featId}/`));
   }
   return out;
 }

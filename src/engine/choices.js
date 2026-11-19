@@ -25,6 +25,8 @@
 //   parseOptionFeatProgression(field, level, push): o talento do `featProgression` de uma opção
 //     de classe (só com `featureType`: as classes têm caminho próprio; DDL-0237, Lessons of the
 //     First Ones); o talento fica no `sub` da opção e o collectChoicePicks o acha.
+//   parseFeatOptionProgression(entity, level, push): as opções de classe de um TALENTO (o
+//     `optionalfeatureProgression` do Eldritch Adept, Metamagic Adept, Martial Adept e Fighting Initiate).
 //   (a sub-escolha `cantripTarget` de uma opção que pede "one of your known Warlock cantrips" vem de
 //     cantripTargetChoice, engine/optionTargets; as opções saem do personagem, DDL-0240.)
 //   parseChoices(entity, opts): todos os descritores de uma entidade.
@@ -72,6 +74,13 @@
 //     Os ids são estáveis por tipo (skill-0, tool-0, feat-0); os de magia já vêm
 //     com id, que o grantedSpells consome.
 //   - Picks são strings (pool de um tipo) ou { kind, value } (pool MISTO).
+//   - parseFeatOptionProgression (DDL-0261): o `optionalfeatureProgression` do talento nunca era lido, e os
+//     quatro talentos que dão uma opção de classe não davam nada. A forma é a da classe
+//     (classFeatureChoices.optionalFeatureChoices): o estilo de luta vira talento de estilo (`fsTypes`), o resto
+//     vira `optionalfeature` com id `optfeat@<tipos>`. Só em quem não é classe nem subclasse (`classFeatures`,
+//     `subclassFeatures`, `shortName`): elas têm caminho próprio. A escolha mora no `sub` do talento, e quem lê
+//     as opções escolhidas (magias, proficiências, itens do export, alvos, o jogo) passa por optionEntries
+//     (engine/optionTargets).
 // -----------------------------------------------------------------------------
 
 import { skillCode } from './classData';
@@ -384,6 +393,23 @@ function parseOptionFeatProgression(field, level, push) {
   }
 }
 
+/** As opções de classe que um talento dá (`optionalfeatureProgression`): estilo de luta vira talento de estilo. */
+function parseFeatOptionProgression(entity, level, push) {
+  if (entity?.classFeatures || entity?.subclassFeatures || entity?.shortName) return;
+  for (const ofp of entity?.optionalfeatureProgression ?? []) {
+    const types = ofp.featureType ?? [];
+    const count = Object.entries(ofp.progression ?? {})
+      .filter(([k]) => k === '*' || Number(k) <= level)
+      .reduce((n, [, v]) => Math.max(n, Number(v) || 0), 0);
+    if (!types.length || !count) continue;
+    if (types.every((ty) => ty.startsWith('FS'))) {
+      push({ kind: 'feat', count, label: ofp.name ?? 'Options', pool: { type: 'feat', category: ['FS'], fsTypes: types } });
+      continue;
+    }
+    push({ id: `optfeat@${types.join(',')}`, kind: 'optionalfeature', count, label: ofp.name ?? 'Options', pool: { type: 'optionalfeature', featureType: types } });
+  }
+}
+
 /**
  * Os descritores de escolha de uma entidade 5etools.
  * @param {object} entity
@@ -408,6 +434,7 @@ export function parseChoices(entity, { level = Infinity, bag = null } = {}) {
   parseFeatField(entity?.feats, push);
   if (entity?.featureType) parseOptionFeatProgression(entity.featProgression, level, push);
   if (entity?.featureType && cantripTargetChoice(entity)) push(cantripTargetChoice(entity));
+  parseFeatOptionProgression(entity, level, push);
   parseSpellAbilityField(entity?.additionalSpells, push);
   for (const c of additionalSpellChoices(entity?.additionalSpells, level, bag)) push(c);
 

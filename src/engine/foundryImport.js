@@ -87,6 +87,9 @@
 //     2`) que TAMBÉM é escolha da classe; a ref da marca volta para a classe, e a
 //     concessão segue sendo derivada. Vale só para o nosso export; ator sem flag
 //     não tem como dizer isso.
+//   - A opção de classe que um TALENTO deu (Eldritch Adept, Metamagic Adept) sai com `choiceId` com barra
+//     (`feat@4/<talento>/optfeat@EI`) e não entra na escolha da classe pelo nome; ela volta no `sub` do talento
+//     (DDL-0261). O talento aninhado (`flags.builder5e.nested`) também volta pelo `sub`.
 //   - `flags.builder5e.free` (TC-0133): a magia do grimório de graça (o Savant do mago)
 //     só volta como ref da classe quando havia uma (`ref`); sem ela, a derivação já a
 //     põe no grimório pela escolha da subclasse. Ator sem a marca: cada magia do
@@ -1008,7 +1011,7 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
     for (const b of collectAbilityPicks(classFlag)) boostAcc[b.ability] += b.amount;
   }
 
-  const featNames = new Set(featItems.map((i) => norm(i.name)));
+  const featNames = new Set(featItems.filter((i) => !String(i.flags?.builder5e?.choiceId ?? '').includes('/')).map((i) => norm(i.name)));
   for (const ch of optionalFeatureChoices(classObj, subclassObj, level)) {
     if (choices[ch.id] || ch.kind !== 'optionalfeature') continue;
     const picks = latestOnly(db?.optionalfeatures?.optionalfeature ?? [])

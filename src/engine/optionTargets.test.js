@@ -4,13 +4,13 @@
 // O QUE FAZ
 //   Prova a leitura do texto (Agonizing Blast, Eldritch Spear, Repelling Blast), o filtro das
 //   cantrips, a repetição (a chave do `sub` de cada ocorrência, a cantrip que não repete) e as
-//   escolhas lidas do personagem para o jogo (DDL-0240).
+//   escolhas lidas do personagem para o jogo (DDL-0240); as opções que moram no `sub` de um talento (DDL-0261).
 //
 // FUNÇÕES
 //   (só testes)
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { cantripTargetChoice, cantripPasses, isRepeatableOption, subKeyOf, withTargetOptions, optionTargets } from './optionTargets';
+import { cantripTargetChoice, cantripPasses, isRepeatableOption, subKeyOf, withTargetOptions, optionTargets, optionEntries } from './optionTargets';
 
 const agonizing = { name: 'Agonizing Blast', source: 'XPHB', entries: ['Choose one of your known Warlock cantrips that deals damage. You can add your Charisma modifier to that spell\'s damage rolls.', { type: 'entries', name: 'Repeatable', entries: ['You can gain this invocation more than once. Each time you do so, choose a different eligible cantrip.'] }] };
 const spear = { name: 'Eldritch Spear', source: 'XPHB', entries: ['Choose one of your known Warlock cantrips that deals damage and has a range of 10+ feet.'] };
@@ -53,5 +53,19 @@ describe('a opção repetível', () => {
     const picks = ['Agonizing Blast|XPHB', 'Agonizing Blast|XPHB'];
     const character = { classes: [{ choices: { 'optfeat@EI': { kind: 'optionalfeature', picks, sub: { 'Agonizing Blast|XPHB': { cantripTarget: { picks: ['Eldritch Blast'] } }, 'Agonizing Blast|XPHB#2': { cantripTarget: { picks: ['Thunderclap'] } } } } } }] };
     expect(optionTargets(character)).toEqual({ 'agonizing blast': ['Eldritch Blast', 'Thunderclap'] });
+  });
+});
+
+describe('optionEntries (DDL-0261)', () => {
+  it('acha a opção da classe e a que o talento guarda no sub, com o id da escolha', () => {
+    const bag = {
+      'optfeat@EI': { kind: 'optionalfeature', picks: ['Agonizing Blast|XPHB'] },
+      'feat@4': { kind: 'feat', picks: ['Eldritch Adept|TCE'], sub: { 'Eldritch Adept|TCE': { 'optfeat@EI': { kind: 'optionalfeature', picks: ['Mask of Many Faces|XPHB'] } } } },
+      'skill-0': { kind: 'skill', picks: ['ath'] },
+    };
+    expect(optionEntries(bag).map((o) => [o.choiceId, o.entry.picks[0]])).toEqual([
+      ['optfeat@EI', 'Agonizing Blast|XPHB'],
+      ['feat@4/Eldritch Adept|TCE/optfeat@EI', 'Mask of Many Faces|XPHB'],
+    ]);
   });
 });

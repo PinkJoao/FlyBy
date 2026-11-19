@@ -10,7 +10,7 @@
 //   active(raw, extra): a entrada de inventário equipada e atunada.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { itemAbilityEffects, itemSpellBonuses, itemCheckBonus, itemSpeeds, spellClassOf, isActiveItem, weaponExtraDamage, boundSpellRule, storeRuleOf, storedLevels } from './itemEffects';
+import { itemAbilityEffects, itemSpellBonuses, itemCheckBonus, itemSpeeds, spellClassOf, isActiveItem, weaponExtraDamage, boundSpellRule, storeRuleOf, storedLevels, itemChargeMax, chargeCostOf } from './itemEffects';
 import { finalScores } from './abilities';
 
 const active = (raw, extra = {}) => ({ raw, equipped: true, attuned: true, ...extra });
@@ -100,5 +100,23 @@ describe('Enspelled e guardar magia (DDL-0258)', () => {
     expect(storeRuleOf({ entries: ['A ruby spell gem can contain one spell from any class\'s spell list.', 'A ruby spell gem can store up to 8th level spells.'] }))
       .toEqual({ cap: null, one: true, maxLevel: 8 });
     expect(storedLevels({ stored: [{ level: 1 }, { level: 3 }] })).toBe(4);
+  });
+});
+
+describe('cargas pelo texto (DDL-0262)', () => {
+  it('o campo, o máximo do dado e o número do texto', () => {
+    expect(itemChargeMax({ charges: 7 })).toBe(7);
+    expect(itemChargeMax({ charges: '{@dice 1d3}' })).toBe(3);
+    expect(itemChargeMax({ entries: ['While wearing this ring, you can expend 1 of its 3 charges to cast Wish from it.'] })).toBe(3);
+    expect(itemChargeMax({ entries: ['A planar key begins existence with 1d4 + 1 charges and cannot regain charges.'] })).toBe(5);
+    expect(itemChargeMax({ entries: ['The staff has 2d4 + 1 charges.'] })).toBe(9);
+    expect(itemChargeMax({ entries: ['No charges here.'] })).toBe(0);
+  });
+
+  it('o custo do lançamento', () => {
+    expect(chargeCostOf('you can expend 1 charge as an action to cast the speak with plants spell')).toEqual({ cost: 1, any: false });
+    expect(chargeCostOf('You can expend any number of charges to cast Cure Wounds from the bauble')).toEqual({ cost: 1, any: true });
+    expect(chargeCostOf('expend two of its charges to cast')).toEqual({ cost: 2, any: false });
+    expect(chargeCostOf('You can cast Knock.')).toBeNull();
   });
 });

@@ -94,6 +94,7 @@
 //     uma lista vale para essas magias. O recurso (`spend.pool`) é achado pelo nome
 //     do pool ou do item que o dá (Font of Magic), e `spend.label` é o nome que o
 //     jogador lê ("Sorcery Points"); sem o pool, o custo sai sem o gasto.
+//     Sem o pool da classe, o do talento que o dá (STAND_INS: os 2 pontos do Metamagic Adept, DDL-0261).
 //   - Magic ganha os custos das magias que o personagem lança (Bonus Action do Misty
 //     Step, Reaction do Shield, e os de SPELL_COSTS: com o Quickened Spell, Magic
 //     vale pela bônus): no livro de 2024 elas não são a ação Magic, mas é
@@ -117,6 +118,7 @@
 // -----------------------------------------------------------------------------
 
 import { ECONOMY } from './playCombat';
+import { STAND_INS } from './foundryConsumption';
 
 export const MAIN_ACTIONS = ['Attack', 'Dash', 'Disengage', 'Dodge', 'Help', 'Hide', 'Influence', 'Magic', 'Ready', 'Search', 'Study', 'Utilize'];
 /** As perícias de cada ação que pede um teste (o texto do XPHB; Hide é Stealth com CD 15). */
@@ -369,7 +371,8 @@ export function spellCosts(spell, catalog) {
     if (!features.has(r.feature) || r.cost === spell.time) continue;
     const fits = r.spells === 'action' ? spell.time === 'action' : r.spells.includes(lower(spell.name));
     if (!fits || out.some((c) => c.cost === r.cost && c.source === featureTitle(r.feature))) continue;
-    const pool = r.spend ? (catalog.resources ?? []).find((x) => x.kind === 'pool' && (lower(x.name) === r.spend.pool || lower(x.item) === r.spend.pool)) : null;
+    const names = r.spend ? [r.spend.pool, ...(STAND_INS[r.spend.pool] ?? []).map(lower)] : [];
+    const pool = names.map((n) => (catalog.resources ?? []).find((x) => x.kind === 'pool' && (lower(x.name) === n || lower(x.item) === n))).find(Boolean) ?? null;
     out.push({
       cost: r.cost,
       label: costLabel(r.cost),

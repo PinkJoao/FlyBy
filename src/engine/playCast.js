@@ -107,10 +107,11 @@ const leftOf = (catalog, state, key) => {
  */
 export function castWays(catalog, state, spell) {
   const ways = [];
-  if (spell.ritualOnly) return [{ id: 'ritual', label: 'As a ritual from your spellbook (Ritual Adept)', level: spell.level, key: null, left: null }];
+  if (spell.ritualOnly) return [{ id: 'ritual', label: spell.itemUid ? 'As a ritual, from the item' : 'As a ritual from your spellbook (Ritual Adept)', level: spell.level, key: null, left: null }];
+  if (spell.castType === 'item') return [{ id: 'free', label: 'From the item (its text says how often)', level: spell.castLevel ?? spell.level, key: null, left: null }];
   if (spell.stored) return [{ id: 'stored', label: `Stored (level ${spell.stored.level})`, level: spell.stored.level, key: null, left: null, stored: spell.stored }];
   if (!spell.chargeKey && (spell.level === 0 || spell.castType === 'will' || (spell.castType === 'innate' && !spell.uses))) {
-    ways.push({ id: 'free', label: spell.level === 0 ? 'Cantrip' : spell.castType === 'will' ? 'At will' : 'Innate', level: spell.level, key: null, left: null });
+    ways.push({ id: 'free', label: spell.level === 0 ? 'Cantrip' : spell.castType === 'will' ? 'At will' : 'Innate', level: spell.castLevel ?? spell.level, key: null, left: null });
     if (spell.level === 0) return ways;
   }
   const once = spell.slot && spell.uses ? leftOf(catalog, state, spell.uses) : null;
@@ -122,7 +123,7 @@ export function castWays(catalog, state, spell) {
     const l = leftOf(catalog, state, spell.chargeKey);
     const top = spell.chargeUpcast ? Math.min(spell.chargeCap ?? 9, Math.max(spell.chargeCost, l?.max ?? spell.chargeCost)) : spell.chargeCost;
     for (let n = spell.chargeCost; n <= top; n++) {
-      const level = spell.level + (n - spell.chargeCost);
+      const level = (spell.castLevel ?? spell.level) + (n - spell.chargeCost);
       ways.push({ id: `charges:${n}`, label: n === spell.chargeCost ? `${n} charge${n > 1 ? 's' : ''}` : `${n} charges (level ${level})`, level, key: spell.chargeKey, amount: n, left: l?.left ?? 0, max: l?.max ?? 0 });
     }
   }

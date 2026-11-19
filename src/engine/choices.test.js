@@ -5,7 +5,8 @@
 //   Usa formas reais (confirmadas no compêndio): o Human que escolhe Athletics e o
 //   talento Skilled que dá Stealth (picks aninhados), e o filtro de Weapon Mastery
 //   do Ladino (simples sempre passam; marciais só com Finesse ou Light), e o talento do
-//   featProgression de uma opção de classe (Lessons of the First Ones, DDL-0237).
+//   featProgression de uma opção de classe (Lessons of the First Ones, DDL-0237), e as opções de classe
+//   que um talento dá pelo optionalfeatureProgression (Eldritch Adept, Fighting Initiate, DDL-0261).
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
@@ -253,5 +254,20 @@ describe('escolhas da prosa (DDL-0243)', () => {
     const t = ea.find((c) => c.id === 'damageType');
     expect(t.kind).toBe('damageType');
     expect(t.pool.options.map((o) => String(o.value ?? o).toLowerCase())).toEqual(['acid', 'cold', 'fire', 'lightning', 'thunder']);
+  });
+});
+
+describe('optionalfeatureProgression de talento (DDL-0261)', () => {
+  it('a opção vira escolha de optionalfeature, e o estilo vira talento de estilo', () => {
+    const ea = parseChoices({ name: 'Eldritch Adept', source: 'TCE', optionalfeatureProgression: [{ name: 'Eldritch Invocations', featureType: ['EI'], progression: { '*': 1 } }] });
+    expect(ea).toEqual([{ id: 'optfeat@EI', kind: 'optionalfeature', count: 1, label: 'Eldritch Invocations', pool: { type: 'optionalfeature', featureType: ['EI'] } }]);
+    const fi = parseChoices({ name: 'Fighting Initiate', source: 'TCE', optionalfeatureProgression: [{ name: 'Fighting Style', featureType: ['FS:F'], progression: { '*': 1 } }] });
+    expect(fi).toEqual([{ id: 'feat-0', kind: 'feat', count: 1, label: 'Fighting Style', pool: { type: 'feat', category: ['FS'], fsTypes: ['FS:F'] } }]);
+  });
+
+  it('classe e subclasse não passam por aqui (têm caminho próprio)', () => {
+    const ofp = [{ name: 'Metamagic', featureType: ['MM'], progression: { 2: 2 } }];
+    expect(parseChoices({ name: 'Sorcerer', classFeatures: [], optionalfeatureProgression: ofp })).toEqual([]);
+    expect(parseChoices({ name: 'X', shortName: 'X', optionalfeatureProgression: ofp })).toEqual([]);
   });
 });

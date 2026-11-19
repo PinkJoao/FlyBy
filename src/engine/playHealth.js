@@ -10,6 +10,7 @@
 // FUNÇÕES
 //   vitals(state, catalog): HP máximo, atual, temporário e o estado da morte.
 //   traitFor(catalog, type): a defesa do personagem contra um tipo de dano.
+//   reductionFor(catalog, type): a redução fixa do tipo (`defenses.reduce`, Heavy Armor Master).
 //   adjustDamage(amount, trait): o dano depois de resistência, imunidade ou
 //     vulnerabilidade.
 //   saveDamage(amount, save, evasion): o dano depois da salvaguarda de "metade no sucesso"; o
@@ -32,6 +33,9 @@
 //   concentrationCheckEvent(args): o save de CON para manter a concentração.
 //
 // DECISÕES E ARMADILHAS
+//   - A redução fixa (`defenses.reduce`: o Heavy Armor Master tira o PB do contundente, perfurante e
+//     cortante com armadura pesada) vem ANTES da resistência, como as regras do XPHB ("resistance ...
+//     is applied after all other modifiers"); o card mostra a linha. Sem o tipo no Hurt, nada sai (DDL-0261).
 //   - Modificadores de toda cura (DDL-0215), pelo nome no catálogo: Boon of Fortitude soma o
 //     CON a cada cura em healOutcome ("whenever you regain Hit Points, you can regain
 //     additional Hit Points equal to your Constitution modifier"; "once per turn" fica com
@@ -100,6 +104,15 @@ export function traitFor(catalog, type) {
   return resist ? 'resist' : vulnerable ? 'vulnerable' : null;
 }
 
+/** A redução fixa que vale para o tipo (Heavy Armor Master), somada, ou null. */
+export function reductionFor(catalog, type) {
+  const t = String(type ?? '').toLowerCase();
+  if (!t) return null;
+  const hits = (catalog?.defenses?.reduce ?? []).filter((r) => r.types.includes(t));
+  if (!hits.length) return null;
+  return { amount: hits.reduce((s, r) => s + r.amount, 0), label: hits.map((r) => r.label).join(', ') };
+}
+
 /** O dano depois da defesa: imunidade zera, resistência divide, vulnerabilidade dobra. */
 export function adjustDamage(amount, trait) {
   const n = Math.max(0, Math.floor(Number(amount) || 0));
@@ -130,12 +143,14 @@ export function saveDamage(amount, save = null, evasion = false) {
 export function damageOutcome(state, catalog, { amount, type = '', critical = false }) {
   const v = vitals(state, catalog);
   const trait = traitFor({ ...catalog, defenses: effectiveDefenses(catalog, state) }, type);
-  const taken = adjustDamage(amount, trait);
+  const cut = reductionFor(catalog, type);
+  const taken = adjustDamage(Math.max(0, Math.floor(Number(amount) || 0) - (cut?.amount ?? 0)), trait);
   const toTemp = Math.min(v.temp, taken);
   const rest = taken - toTemp;
   const ops = [];
   const notes = [];
   let toHp = 0;
+  if (cut && Number(amount) > 0) notes.push(`${cut.label}: -${cut.amount}`);
 
   if (v.current === 0 && rest > 0) {
     const failures = critical ? 2 : 1;

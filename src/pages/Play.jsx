@@ -302,6 +302,7 @@ import SummonsTab from '../components/play/SummonsTab';
 import useBestiary from '../hooks/useBestiary';
 import { summonCreaturesFor, summonOps, summonGroupView, summonRiders, summonVitalsEvent, dismissEvent, summonAttack, summonDamageTypes, summonConditionalEffects, summonTurnOf, turnText, featureSummons, familiarForms, familiarSpecialForms, isLightSummon, lightRulesOf, lightOps } from '../engine/playSummons';
 import { resolveClassObj, resolveSubclassObj, resolveOptionalFeature } from '../engine/resolve';
+import { optionEntries } from '../engine/optionTargets';
 import { resolveSpellObj } from '../engine/spells';
 import RollButton from '../components/play/RollButton';
 import { CombatDock, CombatFloat, RoundBadge } from '../components/play/CombatControls';
@@ -416,8 +417,7 @@ const withOps = (event, ops = []) => (ops.length ? { ...event, ops: [...ops, ...
 /** O título do histórico com desfazer e refazer (na coluna e na aba). */
 /** As opções de classe escolhidas pelo personagem (invocações, manobras), resolvidas no compêndio. */
 function chosenOptions(character, db) {
-  return (character?.classes ?? []).flatMap((c) => Object.values(c.choices ?? {}))
-    .filter((e) => e?.kind === 'optionalfeature')
+  return (character?.classes ?? []).flatMap((c) => optionEntries(c.choices).map((o) => o.entry))
     .flatMap((e) => (e.picks ?? []).map((p) => resolveOptionalFeature(db, p)))
     .filter(Boolean);
 }

@@ -4,7 +4,7 @@
 // O QUE FAZ
 //   A disputa entre as fórmulas de CA (Defesa sem Armadura de Bárbaro e Monge, a
 //   armadura natural de Tortle, Autognome e Warforged, a armadura vestida), o
-//   escudo que exclui o Monge, e os bônus de acessórios ativos.
+//   escudo que exclui o Monge, os bônus de acessórios ativos e o teto +3 do Medium Armor Master (DDL-0261).
 //
 // FUNÇÕES
 //   armor(name, slot, ac, extra), shield(extra), accessory(name, bonuses, state):
@@ -175,3 +175,12 @@ describe('a armadura pesada ignora a DES, mesmo negativa (TC-0176, DDL-0249)', (
   });
 });
 
+
+describe('Medium Armor Master (DDL-0261)', () => {
+  it('a armadura média aceita DES até +3; a pesada não muda', () => {
+    const mam = { origin: {}, classes: [{ classId: 'fighter', level: 4, choices: { 'feat@4': { kind: 'feat', picks: ['Medium Armor Master|XPHB'] } } }] };
+    expect(deriveArmorClass(mam, [armor('Half Plate', 'medium', 15)], { dex: 4 }).total).toBe(18);
+    expect(deriveArmorClass(char('fighter'), [armor('Half Plate', 'medium', 15)], { dex: 4 }).total).toBe(17);
+    expect(deriveArmorClass(mam, [armor('Plate', 'heavy', 18)], { dex: 4 }).total).toBe(18);
+  });
+});

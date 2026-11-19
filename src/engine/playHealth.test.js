@@ -19,7 +19,7 @@ import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
   vitals, traitFor, adjustDamage, concentrationDc, damageOutcome, healOutcome, tempHpOutcome, deathSaveOutcome,
-  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent, maxHpOutcome, hurtOutcome, hurtEvent, saveDamage,
+  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent, maxHpOutcome, hurtOutcome, hurtEvent, saveDamage, reductionFor,
 } from './playHealth';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -254,5 +254,22 @@ describe('concentração que o dano não quebra (DDL-0234)', () => {
     const other = { ...emptyPlayState(), concentration: { name: 'Haste', spellKey: 'spell:class:wizard|Haste' } };
     expect(hurtOutcome(conj, base, { amount: 10 }).summary.concentrationDc).toBeNull();
     expect(hurtOutcome(other, base, { amount: 10 }).summary.concentrationDc).toBe(10);
+  });
+});
+
+describe('redução fixa (Heavy Armor Master, DDL-0261)', () => {
+  const ham = (extra = {}) => catalog(40, { reduce: [{ types: ['bludgeoning', 'piercing', 'slashing'], amount: 3, label: 'Heavy Armor Master' }], ...extra });
+  it('tira o número antes da resistência, só nos tipos dela', () => {
+    expect(reductionFor(ham(), 'Slashing')).toEqual({ amount: 3, label: 'Heavy Armor Master' });
+    expect(reductionFor(ham(), 'fire')).toBeNull();
+    expect(damageOutcome(st(), ham(), { amount: 10, type: 'slashing' }).summary.taken).toBe(7);
+    expect(damageOutcome(st(), ham({ resist: ['slashing'] }), { amount: 10, type: 'slashing' }).summary.taken).toBe(3);
+    expect(damageOutcome(st(), ham(), { amount: 2, type: 'piercing' }).summary.taken).toBe(0);
+    expect(damageOutcome(st(), ham(), { amount: 10, type: 'fire' }).summary.taken).toBe(10);
+    expect(damageOutcome(st(), ham(), { amount: 10 }).summary.taken).toBe(10);
+  });
+
+  it('o card mostra a linha', () => {
+    expect(damageOutcome(st(), ham(), { amount: 10, type: 'bludgeoning' }).summary.notes).toContain('Heavy Armor Master: -3');
   });
 });

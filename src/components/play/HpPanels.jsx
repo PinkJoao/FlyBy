@@ -27,7 +27,8 @@
 //     número): tocar um tipo aplica a defesa do personagem (`defenses`, já com a Rage
 //     e as condições), e a nota diz quanto fica ("Resistant (halved): 10 becomes 5").
 //     As defesas do personagem aparecem numa linha abaixo do título (`defenseLine`), não
-//     no tom do Chip: o tom "info" ficava igual ao chip escolhido. Sem `defenses` (o
+//     no tom do Chip: o tom "info" ficava igual ao chip escolhido. A redução fixa (`defenses.reduce`, o
+//     Heavy Armor Master) entra na linha e na conta, antes da resistência, como o evento (DDL-0261). Sem `defenses` (o
 //     membro de um summon), não há tipo (TC-0134, DDL-0220).
 //   - Temporário não soma (XPHB): o padrão fica com o maior, "replace" força o novo.
 //   - Heal e Hurt servem também ao membro de um summon (DDL-0201): a mesma regra, o
@@ -45,7 +46,7 @@ import styles from './HpPanels.module.css';
 import Button from '../common/Button';
 import Toggle from '../common/Toggle';
 import Chip from '../common/Chip';
-import { traitFor, adjustDamage, saveDamage } from '../../engine/playHealth';
+import { traitFor, adjustDamage, saveDamage, reductionFor } from '../../engine/playHealth';
 import { DAMAGE_TYPES } from '../../engine/playEffects';
 
 const HEAL_KINDS = [
@@ -63,6 +64,7 @@ function defenseLine(defenses) {
   const parts = [['Immune', defenses?.immune], ['Resistant', defenses?.resist], ['Vulnerable', defenses?.vulnerable]]
     .filter(([, list]) => list?.length)
     .map(([word, list]) => `${word}: ${list.join(', ')}`);
+  for (const r of defenses?.reduce ?? []) parts.push(`${r.label}: -${r.amount} ${r.types.join(', ')}`);
   return parts.join(' · ');
 }
 
@@ -129,7 +131,8 @@ export function HurtPanel({ vitals, defenses = null, evasion = false }) {
   const [save, setSave] = useState('none');
   const typed = Math.max(0, Math.floor(Number(amount) || 0));
   const trait = defenses ? traitFor({ defenses }, type) : null;
-  const n = adjustDamage(saveDamage(typed, save, evasion), trait);
+  const cut = defenses ? reductionFor({ defenses }, type) : null;
+  const n = adjustDamage(Math.max(0, saveDamage(typed, save, evasion) - (cut?.amount ?? 0)), trait);
   const toTemp = Math.min(vitals.temp, n);
   const toHp = Math.min(n - toTemp, vitals.current);
   const max = affectMax ? Math.max(0, vitals.max - (n - toTemp)) : vitals.max;
@@ -166,7 +169,7 @@ export function HurtPanel({ vitals, defenses = null, evasion = false }) {
         </div>
       )}
       <Toggle checked={affectMax} onChange={setAffectMax} label="Also lowers the hit point maximum" />
-      {(trait || save !== 'none') && typed > 0 && <p className={panel.note}>{trait ? TRAIT_NOTE[trait] : 'After the save'}: {typed} becomes {n}</p>}
+      {(trait || cut || save !== 'none') && typed > 0 && <p className={panel.note}>{trait ? TRAIT_NOTE[trait] : cut ? `${cut.label} (-${cut.amount})` : 'After the save'}: {typed} becomes {n}</p>}
       {typed > 0 && (
         <p className={styles.preview}>
           {toTemp ? `${toTemp} from temporary, ` : ''}{vitals.current} to {current} hit points{affectMax ? `, maximum ${vitals.max} to ${max}` : ''}

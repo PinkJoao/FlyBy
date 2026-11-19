@@ -157,6 +157,7 @@ import { deriveFeatureGrants, cantripLimitBonus, acFeatureBonuses } from './feat
 import { deriveSubclassGrants } from './subclassGrants';
 import { deriveClassFeatureGrants } from './classFeatureGrants';
 import { collectChoicePicks } from './choices';
+import { optionEntries } from './optionTargets';
 import { deriveInventory, carryingCapacity } from './items';
 import { attunementMaxFor } from './attunement';
 import { deriveArmorClass, deriveSaveBonusFromItems } from './armorClass';
@@ -427,8 +428,7 @@ export function resolveOptionalFeature(db, pick) {
 /** As magias concedidas pelas optional features escolhidas na classe (TC-0092). */
 function optionalFeatureGrants(cls, db, ctx) {
   const out = [];
-  for (const entry of Object.values(cls.choices ?? {})) {
-    if (entry?.kind !== 'optionalfeature') continue;
+  for (const { entry } of optionEntries(cls.choices)) {
     for (const pick of entry.picks ?? []) {
       const of = resolveOptionalFeature(db, pick);
       if (!of?.additionalSpells) continue;

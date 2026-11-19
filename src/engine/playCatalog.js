@@ -37,6 +37,8 @@
 //     weaponProficient(entry, weaponProfs, weaponNames), weaponAttacks(character,
 //       derived): as armas do inventário, equipadas primeiro.
 //     unarmedStrike(derived): o ataque desarmado.
+//     withFeatTypes(attacks, features): o tipo de dano que um talento deixa escolher nos ataques com arma e
+//       desarmado (FEAT_DAMAGE_TYPES: o Blazing Strike do Boon of Blazing Dawn, radiante, DDL-0261).
 //     diceAverage(dice), withMartialArts(attacks, ctx): o Martial Arts do monge sobre
 //       o desarmado e as armas de monge (o dado da tabela e a DES); o dado da Versatile
 //       nas duas mãos também (a lança do monge 11 dizia "Two hands (1d8)", DDL-0221).
@@ -85,7 +87,7 @@
 //       o Elemental Affinity do SRD de 2014 somam "@mod"): o modificador da conjuração da
 //       classe, o maior quando há mais de uma (DDL-0222).
 //   Catálogo
-//     defensesOf(derived): as defesas a dano, com as de item.
+//     defensesOf(derived, character): as defesas a dano, com as de item e a redução do Heavy Armor Master.
 //     speedOf(character, db): o deslocamento a pé da espécie.
 //     speedsOf(character, db): todos os deslocamentos da espécie, em pés.
 //     featureSpeedBonus(actor, armorClass, rollData): o que as features somam ao deslocamento
@@ -99,9 +101,14 @@
 //     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
 //     checkList(derived, character): os testes; o bônus de teste dos itens vira uma parte `item` (DDL-0256).
 //     firstNum(match): o primeiro grupo preenchido de um regex com alternativas (a CD e o ataque do texto do item).
-//     itemSpellOrigins(inventory, db, level, ctx): as magias que os itens ativos lançam (`attachedSpells` will,
-//       daily e charges; a forma em lista e as raras ficam fora, o texto não diz o custo), como origens `item`,
-//       com a CD e o ataque do texto do item ou os do personagem; o upcast por carga só com a frase (DDL-0257).
+//     itemSpellOrigins(inventory, db, level, ctx): as magias que os itens ativos lançam (`attachedSpells`), como
+//       origens `item`, com a CD e o ataque do texto do item ou os do personagem; o upcast por carga só com a frase
+//       (DDL-0257). As formas do DDL-0262: `daily`/`rest`/`limited` com "e" é por magia, sem "e" é um pool só
+//       (a prosa "cast that spell again" faz cada uma valer à parte: Iggwilv's Horn); `rest` volta no curto,
+//       `limited` não volta; `ritual` só como ritual; a lista solta e `other` gastam carga quando o texto diz
+//       quanto, valem uma vez por dia quando a frase do lançamento diz "until the next dawn", e senão são
+//       "From the item" (o texto manda); o item que "functions as a spellbook" fica fora (as magias são do grimório),
+//       e a poção também (beber é o Use do item). A forma `magia#4` lança no círculo 4 (`castLevel`).
 //     spellStores(inventory): os itens que guardam magias e o que cabe neles (o diálogo de lançar oferece guardar;
 //       a magia guardada sai do item ao ser lançada, com o círculo, a CD e o ataque de quem a guardou, DDL-0258).
 //     replicateInfo(character, db): os planos do Replicate Magic Item e o máximo de itens (coluna Magic Items).
@@ -249,7 +256,7 @@ import { parseSpecies, SPECIES_OPTION_FEATURES } from './speciesData';
 import { assembleFoundryActor } from './foundryActor';
 import { isBasicActionItem } from './foundryBasicActions';
 import { rangeLabel, isRitual, isConcentration, resolveSpellObj } from './spells';
-import { SKILL_ABILITY } from './proficiency';
+import { SKILL_ABILITY, collectFeatIds } from './proficiency';
 import { collectAbilityPicks, collectChoicePicks, dcAbilityPick } from './choices';
 import { optionTargets } from './optionTargets';
 import { validateFormula, rollFormula } from './dice';
@@ -257,7 +264,7 @@ import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList, plainText } from './playFeatures';
 import { consumptionTargetItem, CONSUMES_BY_NAME } from './foundryConsumption';
-import { itemSpeeds, isActiveItem, plainItemText, weaponExtraDamage, boundSpellRule, storeRuleOf, storedLevels } from './itemEffects';
+import { itemSpeeds, isActiveItem, plainItemText, weaponExtraDamage, boundSpellRule, storeRuleOf, storedLevels, itemChargeMax, chargeCostOf } from './itemEffects';
 import { tableColumnAt } from './grantedSpellUses';
 import { REROLL_FEATURES } from './playRerolls';
 import { actorRollEffects } from './playActorEffects';
@@ -560,6 +567,15 @@ function diceAverage(dice) {
  * Martial Arts (XPHB): sem armadura nem escudo, o desarmado e as armas de monge usam
  * DES se for maior e rolam o dado da tabela (ou o da arma, se maior).
  */
+const FEAT_DAMAGE_TYPES = { 'boon of blazing dawn': ['radiant'] };
+
+/** O tipo de dano que um talento deixa escolher nos ataques com arma e desarmado ("the damage can be Radiant"). */
+function withFeatTypes(attacks, features) {
+  const extra = [...new Set((features ?? []).flatMap((f) => FEAT_DAMAGE_TYPES[f] ?? []))];
+  if (!extra.length) return attacks;
+  return attacks.map((a) => (a.damage ? { ...a, damage: { ...a.damage, typeOptions: [...new Set([...(a.damage.typeOptions ?? a.damage.types ?? []).map((x) => String(x).toLowerCase()), ...extra])] } } : a));
+}
+
 export function withMartialArts(attacks, { derived, rollData, features, monkWeapons = new Set() }) {
   const die = rollData?.['scale.monk.die'];
   if (!die || !(features ?? []).includes('martial arts')) return attacks;
@@ -1028,11 +1044,14 @@ function featureActions(actor, ctx) {
   return out;
 }
 
-/** Resistências, imunidades e vulnerabilidades a dano, juntando as de item. */
-function defensesOf(derived) {
+/** Resistências, imunidades e vulnerabilidades a dano, juntando as de item; `reduce` tira um número antes delas. */
+function defensesOf(derived, character) {
   const dt = derived.damageTraits ?? {};
   const join = (kind) => [...new Set([...(dt[kind] ?? []), ...(dt.fromItems?.[kind] ?? [])].map((v) => String(v).toLowerCase()))];
-  return { resist: join('resist'), immune: join('immune'), vulnerable: join('vulnerable') };
+  const reduce = [];
+  const ham = collectFeatIds(character ?? {}).some((id) => /^heavy armor master\|/i.test(id));
+  if (ham && derived.armorClass?.armorSlot === 'heavy') reduce.push({ types: ['bludgeoning', 'piercing', 'slashing'], amount: derived.proficiencyBonus ?? 2, label: 'Heavy Armor Master' });
+  return { resist: join('resist'), immune: join('immune'), vulnerable: join('vulnerable'), reduce };
 }
 
 /** Todos os deslocamentos da espécie: { walk: { feet }, fly: { feet, note } }. */
@@ -1067,6 +1086,7 @@ const FEATURE_SPEEDS = {
   'aquatic affinity': ['swim'],
   stormborn: [{ mode: 'fly', note: 'not underground or indoors' }],
   'gift of the sea': [{ mode: 'swim', feet: 40 }],
+  athlete: ['climb'],
 };
 
 /** Os deslocamentos com os dos itens ativos sempre ligados (itemSpeeds); o maior vence. */
@@ -1249,6 +1269,9 @@ function spellResources(spellcasting) {
 
 const ITEM_UPCAST = /increase the spell's (?:slot )?level by (?:1|one) for each additional charge/i;
 const ITEM_CAP = /no more than (\d+) charges/i;
+const EACH_SPELL = /can['’]?t be used to cast that spell again|cast (?:that|the same) spell again/i;
+const SPELLBOOK_ITEM = /functions as a spellbook/i;
+const DAWN_CAST = /\bcast\b[^.]{0,200}\.(?:[^.]{0,200}\.)?[^.]{0,120}\buntil the next dawn/i;
 const ITEM_DC = /\(save (?:DC )?(\d+)\)|spell save DC (?:is |of )?(\d+)|saving throw DC is (\d+)|save DC of (\d+)/i;
 const ITEM_ATTACK = /\(\+(\d+) to hit\)|spell attack (?:bonus|modifier) (?:is |of )?\+(\d+)|attack bonus (?:is|of) \+?(\d+)/i;
 const firstNum = (m) => (m ? Number(m.slice(1).find((x) => x != null)) : null);
@@ -1264,34 +1287,58 @@ export function itemSpellOrigins(inventory, db, level, { spellDc = null, spellAt
     const raw = e?.raw;
     if (!raw || !e.uid || !isActiveItem(e)) continue;
     const att = raw.attachedSpells && !Array.isArray(raw.attachedSpells) ? raw.attachedSpells : {};
+    const loose = Array.isArray(raw.attachedSpells) ? raw.attachedSpells : (att.other ?? []);
     const bound = e.boundSpell ? boundSpellRule(raw) : null;
     const store = storeRuleOf(raw);
-    if (!Object.keys(att).length && !bound && !(store && e.stored?.length)) continue;
+    if (!Object.keys(att).length && !loose.length && !bound && !(store && e.stored?.length)) continue;
     const text = plainItemText(raw);
     const dc = firstNum(text.match(ITEM_DC));
     const atk = firstNum(text.match(ITEM_ATTACK));
     const key = `item:${e.uid}`;
     const spells = [];
     const add = (ref, extra, suffix = '') => {
-      const [name, source] = String(ref).split('|');
+      const [base, at] = String(ref).split('#');
+      const [name, source] = base.split('|');
       const sp = resolveSpellObj(db, name, source?.toUpperCase());
       if (!sp) return;
       spells.push({
         key: `spell:${key}|${sp.name}${suffix}`, name: sp.name, source: sp.source ?? null, level: sp.level, ritual: isRitual(sp), school: sp.school ?? null,
         concentration: isConcentration(sp), time: sp.time?.[0]?.unit ?? null, durationRounds: roundsOf(sp.duration), mechanics: spellMechanics(sp, level),
-        prepared: true, granted: true, itemUid: e.uid, castLevel: null, ...extra,
+        prepared: true, granted: true, itemUid: e.uid, castLevel: Number(at) > sp.level ? Number(at) : null, ...extra,
       });
     };
+    const spellName = (ref) => String(ref).split('|')[0];
+    const pooled = (field, castType, recovery, eachByProse = false) => {
+      for (const [n, refs] of Object.entries(field ?? {})) {
+        const count = parseInt(n, 10) || 1;
+        const each = /e$/.test(n) || eachByProse || refs.length === 1;
+        const groups = each ? refs.map((r) => [r]) : [refs];
+        for (const group of groups) {
+          const usesKey = each ? `granted:${key}|${spellName(group[0])}` : `granted:${key}|${castType}:${n}`;
+          for (const ref of group) add(ref, { castType, uses: usesKey, count });
+          resources.push({ key: usesKey, kind: 'granted', name: `${raw.name}: ${group.map(spellName).join(' or ')}`, origin: key, max: count, recovery });
+        }
+      }
+    };
     for (const ref of att.will ?? []) add(ref, { castType: 'will', uses: null });
-    for (const [n, refs] of Object.entries(att.daily ?? {})) {
-      const count = parseInt(n, 10) || 1;
-      for (const ref of refs) {
-        const usesKey = `granted:${key}|${String(ref).split('|')[0]}`;
-        add(ref, { castType: 'daily', uses: usesKey });
-        resources.push({ key: usesKey, kind: 'granted', name: `${raw.name}: ${String(ref).split('|')[0]}`, origin: key, max: count, recovery: [{ period: 'day', type: 'recoverAll' }] });
+    pooled(att.daily, 'daily', [{ period: 'day', type: 'recoverAll' }], EACH_SPELL.test(text));
+    pooled(att.rest, 'rest', [{ period: 'sr', type: 'recoverAll' }]);
+    pooled(att.limited, 'limited', []);
+    for (const ref of att.ritual ?? []) add(ref, { castType: 'ritual', uses: null, ritualOnly: true });
+    const chargeMax = itemChargeMax(raw);
+    if (loose.length && !SPELLBOOK_ITEM.test(text) && !String(raw.type ?? '').startsWith('P')) {
+      const cost = chargeMax > 0 ? chargeCostOf(text) : null;
+      const daily = !cost && DAWN_CAST.test(text);
+      for (const ref of loose) {
+        if (cost) add(ref, { castType: null, uses: null, chargeKey: `charges:${e.uid}`, chargeCost: cost.cost, chargeUpcast: cost.any || ITEM_UPCAST.test(text), chargeCap: Number(text.match(ITEM_CAP)?.[1]) || null });
+        else if (daily) {
+          const usesKey = `granted:${key}|${spellName(ref)}`;
+          add(ref, { castType: 'daily', uses: usesKey, count: 1 });
+          resources.push({ key: usesKey, kind: 'granted', name: `${raw.name}: ${spellName(ref)}`, origin: key, max: 1, recovery: [{ period: 'day', type: 'recoverAll' }] });
+        } else add(ref, { castType: 'item', uses: null });
       }
     }
-    if (Number(raw.charges) > 0) {
+    if (chargeMax > 0) {
       const cap = Number(text.match(ITEM_CAP)?.[1]) || null;
       for (const [n, refs] of Object.entries(att.charges ?? {})) {
         for (const ref of refs) add(ref, { castType: null, uses: null, chargeKey: `charges:${e.uid}`, chargeCost: parseInt(n, 10) || 1, chargeUpcast: ITEM_UPCAST.test(text), chargeCap: cap });
@@ -1430,7 +1477,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     else if (pool && !(pool.recovery ?? []).some((r) => r.period === extra.recovery.period)) pool.recovery = [...(pool.recovery ?? []), extra.recovery];
   }
   const attacks = [
-    ...withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features, monkWeapons: kenseiWeapons(character) }),
+    ...withFeatTypes(withMartialArts([...weaponAttacks(character, d), unarmedStrike(d)], { derived: d, rollData, features, monkWeapons: kenseiWeapons(character) }), features),
     ...featureAttacks(features, d, character),
     ...cantripAttacks(d.spellcasting, level),
   ];
@@ -1497,7 +1544,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
       speeds: withItemSpeeds(withFeatureSpeeds(speedBonus && speeds.walk ? { ...speeds, walk: { ...speeds.walk, feet: speeds.walk.feet + speedBonus } } : speeds, features), d.inventory),
     },
     checks: checkList(d, character),
-    defenses: defensesOf(d),
+    defenses: defensesOf(d, character),
     shield: shieldInHand(d.inventory),
     features,
     featureList: featuresOfActor,

@@ -20,7 +20,8 @@
 //   featureRiders(state, catalog, roll): os extras que valem para uma rolagem, no
 //     formato de rollEffects (engine/playEffects).
 //   spendKeyOf(catalog, spend): a chave do recurso que a entrada gasta (o pool pelo
-//     nome do item, o espaço do pacto, ou um Dado de Vida com `hitDie`: o Health Funnel).
+//     nome do item, o espaço do pacto, ou um Dado de Vida com `hitDie`: o Health Funnel); sem o pool, o
+//     do talento que dá o recurso (STAND_INS de engine/foundryConsumption, DDL-0261).
 //   riderSpendOps(applied, catalog): as operações do gasto dos extras ligados.
 //   amountOf(entry, rollData): quanto a entrada gasta (número, ou { min, max } a escolher).
 //   featureUseOf(feature, catalog, chosen, option): o que o "Use" de uma feature `toggle` ou `use`
@@ -233,6 +234,12 @@
 //     dado)` (damageParts em engine/playActions), com o grupo perdedor riscado no card.
 //     `when: 'armed'`: arma, não o desarmado (que não é arma em 2024). O feat de 2014
 //     tem o mesmo nome e vale só corpo a corpo: fica na nota.
+//   - Os talentos de dano (DDL-0261): Great Weapon Master do XPHB soma o PB na arma Heavy (`when: 'heavy'`,
+//     LIGADO: "as part of the Attack action" fica na nota; o de 2014 é reeditado, `xphbOnly`), e o Overwhelming
+//     Strike do Boon of Irresistible Offense soma o VALOR do atributo que o talento aumentou, desligado ("when
+//     you roll a 20"). Exploit Opening do Zhentarim Ruffian (`twice`, só no Ataque de Oportunidade), o Frostbite do
+//     Fingers of Frost (PB d4, alvo Restrained) e o Force Adept do Clearcasting (`types`: o tipo da rolagem tem de
+//     estar na lista; `diceMin: 2`).
 //   - A feature fora do registro com cura ou PV temporários na prosa (`catalog.proseUses`,
 //     engine/playProseEffects, DDL-0214) ganha o mesmo "Use" de `apply` por featureUseOf.
 //   - `apply` ('heal' ou 'temp') faz o "Use" curar ou dar PV temporários com o total
@@ -259,6 +266,7 @@
 
 import { rollFormula } from './dice';
 import { remainingOf } from './playState';
+import { STAND_INS } from './foundryConsumption';
 
 const maneuverDc = (rd) => 8 + (rd.prof ?? 0) + Math.max(rd.abilities?.str?.mod ?? 0, rd.abilities?.dex?.mod ?? 0);
 const SUPERIORITY = (rd) => `1${rd['scale.battle-master.superiority.die'] ?? 'd6'}`;
@@ -653,6 +661,11 @@ export const FEATURE_ROLLS = {
   'fists of fury': { kind: 'rider', on: ['damage'], when: 'weapon', diceMin: 2, label: 'Clean Hits (a 1 counts as 2)', note: 'an Unarmed Strike or a Light weapon; Combo Strikes: +1 per earlier melee hit on that creature this turn, in the Situational bonus' },
   'soul of artifice': { kind: 'rider', on: ['save', 'deathSave', 'concentration'], has: (c) => (c.featureList ?? []).some((f) => f.name === 'Soul of Artifice' && f.source === 'TCE'), defaultOn: true, formula: '@attunement.value', label: 'Soul of Artifice (+1 per attuned item)', note: 'one per magic item you are attuned to' },
   'conjuration adept': { kind: 'rider', on: ['concentration'], formula: (rd) => `@abilities.${rd.featAbility?.['conjuration adept'] ?? 'int'}.mod`, label: 'Persistent Conjuration', note: 'only on a Conjuration spell' },
+  'great weapon master': { kind: 'rider', on: ['damage'], when: 'heavy', has: xphbOnly('Great Weapon Master'), defaultOn: true, formula: '@prof', label: 'Heavy Weapon Mastery', note: 'a Heavy weapon, as part of the Attack action on your turn' },
+  'boon of irresistible offense': { kind: 'rider', on: ['damage'], when: 'weapon', formula: (rd) => `@abilities.${rd.featAbility?.['boon of irresistible offense'] ?? 'str'}.value`, label: 'Overwhelming Strike', note: 'only when the d20 of the attack rolled a 20; the type of the attack' },
+  'zhentarim ruffian': { kind: 'rider', on: ['damage'], when: 'weapon', twice: true, label: 'Exploit Opening (best of two)', note: 'only on an Opportunity Attack' },
+  'fingers of frost': { kind: 'rider', on: ['damage'], formula: (rd) => `${rd.prof ?? 2}d4`, label: 'Frostbite (cold)', note: 'Cold damage to a creature with the Restrained condition' },
+  clearcasting: { kind: 'rider', on: ['damage'], when: 'spell', types: ['force'], diceMin: 2, label: 'Force Adept (a 1 counts as 2)', note: 'a spell that deals Force damage' },
   'savage attacker': { kind: 'rider', on: ['damage'], when: 'armed', twice: true, label: 'Savage Attacker (best of two)', note: "once per turn; the weapon's damage dice rolled twice (the 2014 feat: melee only)" },
   'vigilant rebuke': { kind: 'use', roll: { label: 'Force to the creature that forced the save', formula: '2d8 + @abilities.cha.mod' } },
   'great weapon fighting': {
@@ -695,7 +708,7 @@ export function spendKeyOf(catalog, spend) {
   if (spend.pact) return resources.some((r) => r.key === 'pact') ? 'pact' : null;
   if (spend.hitDie) return (resources.find((r) => r.kind === 'hitDice' && r.faces === spend.hitDie) ?? resources.find((r) => r.kind === 'hitDice'))?.key ?? null;
   const byItem = (name) => resources.find((r) => r.kind === 'pool' && norm(r.item) === norm(name))?.key ?? null;
-  return [spend.item, ...(spend.alt ?? [])].map(byItem).find(Boolean) ?? null;
+  return [spend.item, ...(spend.alt ?? []), ...(STAND_INS[norm(spend.item)] ?? [])].map(byItem).find(Boolean) ?? null;
 }
 
 /** Os extras de uma entrada: ela mesma, se for `rider`, e os `also`. */
@@ -720,6 +733,7 @@ function fits(when, roll) {
   if (when === 'str') return roll.attackAbility === 'str';
   if (when === 'melee') return roll.melee !== false;
   if (when === 'ranged') return roll.melee === false;
+  if (when === 'heavy') return !!roll.heavy;
   if (when === 'twoHandedMelee') return roll.melee !== false && !!roll.twoHanded;
   if (when === 'versatileMelee') return roll.melee !== false && !roll.twoHanded && !!roll.versatile;
   return true;
@@ -735,6 +749,7 @@ export function featureRiders(state, catalog, roll) {
     if (!(entry.has ? entry.has(catalog) : features.has(name))) continue;
     const wantTypes = entry.typesFrom ? catalog[entry.typesFrom] ?? [] : [];
     if (wantTypes.length && roll.types && !roll.types.some((t) => wantTypes.includes(String(t).toLowerCase()))) continue;
+    if (entry.types && !(roll.types ?? []).some((t) => entry.types.includes(String(t).toLowerCase()))) continue;
     const targets = entry.targets ? catalog.optionTargets?.[name] ?? [] : [];
     if (targets.length && roll.spellName && !targets.includes(roll.spellName)) continue;
     ridersOf(entry).forEach((e, i) => {

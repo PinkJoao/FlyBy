@@ -40,6 +40,7 @@
 
 import { resolveClassObj, resolveRaceObj, resolveFeat, resolveOptionalFeature } from './resolve';
 import { collectFeatIds } from './proficiency';
+import { optionEntries } from './optionTargets';
 import { skillCode } from './classData';
 
 const ARMOR_LABEL = { light: 'Light Armor', medium: 'Medium Armor', heavy: 'Heavy Armor', shield: 'Shields' };
@@ -155,9 +156,7 @@ export function deriveGrantedProficiencies(character, db) {
   addFixed(race, { ...sink, tool: (k) => addTo(tools, cap(k)), language: null });
   for (const id of collectFeatIds(character ?? {})) addFixed(resolveFeat(db, id), sink);
   for (const cls of character?.classes ?? []) {
-    for (const entry of Object.values(cls.choices ?? {})) {
-      if (entry?.kind === 'optionalfeature') for (const pick of entry.picks ?? []) addFixed(resolveOptionalFeature(db, pick), sink);
-    }
+    for (const { entry } of optionEntries(cls.choices)) for (const pick of entry.picks ?? []) addFixed(resolveOptionalFeature(db, pick), sink);
   }
 
   return {

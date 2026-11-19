@@ -15,6 +15,8 @@
 //     casamento por prefixo do identifier, o item COM usos vence (só ele pode ser gasto): o
 //     "feat:channel-divinity" do SRD de 2014 caía no "channel-divinity-preserve-life", mais
 //     longo, em vez do pool "channel-divinity-cleric" (DDL-0222).
+//   standInItem(name, items): o talento que dá o recurso a quem não tem a feature da classe (STAND_INS).
+//   directTarget(target, item, list): o alvo pelo id, pelo uuid, por `tipo:identifier` ou pelo objeto do overlay.
 //   linkConsumptionTargets(items): reescreve os alvos de todas as activities do
 //     ator (troca o `system` de cada item por uma cópia) e devolve quantos não
 //     resolveram.
@@ -43,6 +45,10 @@
 //     registro, que os atores seguintes herdavam (alvo para item inexistente,
 //     visto no Foundry). Cada activity alterada é uma cópia, e o `system` do item
 //     também.
+//   - STAND_INS (DDL-0261): o talento que dá um recurso de classe a quem não tem a classe. O Metamagic Adept
+//     dá 2 Sorcery Points ("can be used only to fuel Metamagic") e o Martial Adept um Superiority Die; a
+//     metamagia e a manobra apontam o Font of Magic e o Combat Superiority. Sem eles no ator, o alvo cai no
+//     talento (com os usos do FEAT_USES); com eles, a classe vence.
 //   - Alvo que não resolve fica como veio (carga, nunca perda silenciosa); a
 //     contagem devolvida é a rede dos testes.
 // -----------------------------------------------------------------------------
@@ -52,6 +58,11 @@ export const CONSUMES_BY_NAME = {
   'sorcery point': 'Font of Magic',
   'superiority die': 'Combat Superiority',
   'soul trinket': 'Tokens of the Departed',
+};
+
+export const STAND_INS = {
+  'font of magic': ['Metamagic Adept'],
+  'combat superiority': ['Martial Adept', 'Superior Technique'],
 };
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
@@ -67,7 +78,24 @@ const identOf = (i) => i?.system?.identifier || slug(i?.name);
  */
 export function consumptionTargetItem(target, item, items) {
   if (!target) return item ?? null;
-  const list = items ?? [];
+  const found = directTarget(target, item, items ?? []);
+  if (found) return found;
+  const name = typeof target === 'object'
+    ? (target.uid ? String(target.uid).split('|')[0] : CONSUMES_BY_NAME[norm(target.consumes?.name)] ?? target.consumes?.name)
+    : String(target).replace(/^feat:/, '').replace(/-/g, ' ');
+  return standInItem(name, items ?? []);
+}
+
+/** O talento que dá o recurso a quem não tem a feature da classe (Metamagic Adept, Martial Adept), ou null. */
+export function standInItem(name, items) {
+  for (const alt of STAND_INS[norm(name)] ?? []) {
+    const hit = (items ?? []).find((i) => i.type === 'feat' && norm(i.name) === norm(alt) && i.system?.uses?.max);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function directTarget(target, item, list) {
   if (typeof target === 'object') {
     const name = target.uid
       ? String(target.uid).split('|')[0]

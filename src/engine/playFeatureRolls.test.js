@@ -310,3 +310,20 @@ describe("Genie's Wrath em qualquer acerto de rolagem de ataque (DDL-0253)", () 
     expect(on({ spell: true, attackRoll: false })).toEqual([]);
   });
 });
+
+describe('talentos de dano (DDL-0261)', () => {
+  it('Great Weapon Master: o PB, ligado, só na arma Heavy e só no do XPHB', () => {
+    const c = cat(['great weapon master'], { featureList: [{ name: 'Great Weapon Master', source: 'XPHB' }] });
+    const heavy = featureRiders(st(), c, { kind: 'damage', weapon: true, melee: true, heavy: true });
+    expect(heavy.map((r) => [r.id, r.part.formula, r.defaultOn])).toEqual([['rider:great-weapon-master', '@prof', true]]);
+    expect(ids(featureRiders(st(), c, { kind: 'damage', weapon: true, melee: true, heavy: false }))).toEqual([]);
+    const old = cat(['great weapon master'], { featureList: [{ name: 'Great Weapon Master', source: 'PHB' }] });
+    expect(ids(featureRiders(st(), old, { kind: 'damage', weapon: true, heavy: true }))).toEqual([]);
+  });
+
+  it('Overwhelming Strike: o valor do atributo do talento, desligado', () => {
+    const c = cat(['boon of irresistible offense'], { rollData: { ...cat([]).rollData, featAbility: { 'boon of irresistible offense': 'dex' } } });
+    const [r] = featureRiders(st(), c, { kind: 'damage', weapon: true });
+    expect([r.part.formula, r.defaultOn]).toEqual(['@abilities.dex.value', false]);
+  });
+});

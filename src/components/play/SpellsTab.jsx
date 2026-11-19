@@ -103,7 +103,7 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
   const raws = rawIndex((derived?.spellcasting?.origins ?? []).find((o) => o.key === origin?.key));
   const entryOf = (s) => raws.get(s.name)
     ?? (origin?.kind === 'item'
-      ? { raw: resolveSpellObj(db, s.name, s.source), castType: s.stored ? `Stored, level ${s.stored.level}` : s.chargeKey ? 'resource' : s.castType, uses: s.chargeKey ? s.chargeCost : s.castType === 'daily' ? 1 : null }
+      ? { raw: resolveSpellObj(db, s.name, s.source), castType: s.stored ? `Stored, level ${s.stored.level}` : s.chargeKey ? 'resource' : s.castType, uses: s.chargeKey ? s.chargeCost : s.count ?? (s.castType === 'daily' ? 1 : null) }
       : null);
 
   if (!origin) return <p className={styles.empty}>This character has no spells.</p>;

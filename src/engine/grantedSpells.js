@@ -329,6 +329,10 @@ export function castTypeLabel(entry) {
       return 'At Will';
     case 'ritual':
       return 'Ritual';
+    case 'limited':
+      return n ? `${n} Total` : 'Limited';
+    case 'item':
+      return 'From the Item';
     case 'resource':
       return n ? `${n} Charge${n === 1 ? '' : 's'}` : 'Resource';
     case 'innate':

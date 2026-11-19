@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView, applyCharacterOps, characterOps } from './playState';
 import {
-  typeCode, isUsable, healOf, quantityOp, ammoEntry, itemUseEvent, quantityEvent, ammoOps, currencyEvent, chargeResources,
+  typeCode, isUsable, healOf, quantityOp, ammoEntry, itemUseEvent, quantityEvent, ammoOps, currencyEvent, chargeResources, replicateEvent,
 } from './playInventory';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -98,5 +98,33 @@ describe('dinheiro e cargas', () => {
       key: 'charges:w', kind: 'charges', name: 'Wand of Magic Missiles charges', item: 'Wand of Magic Missiles', uid: 'w', max: 7,
       recovery: [{ period: 'dawn', type: 'formula', formula: '1d6 + 1' }],
     }]);
+  });
+});
+
+describe('Replicate Magic Item (DDL-0257)', () => {
+  const db = { items: { item: [
+    { name: 'Wand of Web', source: 'XDMG', reqAttune: 'by a spellcaster' },
+    { name: 'Bag of Holding', source: 'XDMG' },
+    { name: 'Ring of Jumping', source: 'XDMG', reqAttune: true },
+  ] } };
+  const now = new Date('2026-11-18T10:00:00Z');
+
+  it('cria os itens dos planos, equipados, atunando só com lugar', () => {
+    const ev = replicateEvent({ character: { inventory: [] }, picks: ['Wand of Web|XDMG', 'Ring of Jumping|XDMG'], max: 4, attuneRoom: 1, db, now });
+    const after = onChar({ inventory: [] }, ev);
+    expect(after.inventory.map((e) => [e.itemId, e.equipped, e.attuned, !!e.replicated])).toEqual([['Wand of Web', true, true, true], ['Ring of Jumping', true, false, true]]);
+    expect(ev.payload.lines).toEqual(['Wand of Web created, attuned', 'Ring of Jumping created, not attuned (no free slot)']);
+  });
+
+  it('além do máximo, o mais antigo dos criados some (e o desfazer devolve)', () => {
+    const old = { uid: 'a', itemId: 'Bag of Holding', source: 'XDMG', quantity: 1, equipped: true, attuned: false, replicated: '2026-11-10T00:00:00.000Z#0' };
+    const newer = { ...old, uid: 'b', replicated: '2026-11-12T00:00:00.000Z#0' };
+    const mine = { uid: 'c', itemId: 'Rope', source: 'XPHB', quantity: 1, equipped: false, attuned: false };
+    const start = { inventory: [newer, mine, old] };
+    const ev = replicateEvent({ character: start, picks: ['Bag of Holding|XDMG'], max: 2, db, now });
+    const after = onChar(start, ev);
+    expect(after.inventory.map((e) => e.uid)).toEqual(['b', 'c', ev.ops[0].uid]);
+    const back = applyCharacterOps(after, characterOps(ev), 'backward').character;
+    expect(back.inventory.map((e) => e.uid)).toEqual(['b', 'c', 'a']);
   });
 });

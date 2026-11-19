@@ -28,7 +28,8 @@
  *   .card*, .badges: os cards; .cardBox é o card COM ações (loja), um <div> com o
  *     botão de info e o stepper na base. A raridade (cor do dado), os pré-requisitos
  *     (success, danger, warning pelo status contra o personagem) e os badges do
- *     cartão são a Tag comum (DDL-0199).
+ *     cartão são a Tag comum (DDL-0199), com `wrap`: o texto vem do dado e um
+ *     pré-requisito longo quebra linha dentro do cartão em vez de vazar a borda.
  *   Preview
  *   .preview, .previewScroll, .previewFoot, .selectBtn, .muted.
  *

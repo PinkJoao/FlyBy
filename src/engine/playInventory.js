@@ -21,6 +21,8 @@
 //   quantityEvent(args): mudar a quantidade à mão.
 //   ammoOps(args): o gasto de 1 munição num ataque, com o aviso se não há.
 //   currencyEvent(args): gastar ou ganhar moedas.
+//   replicateEvent(args): o Replicate Magic Item no jogo: os itens dos planos entram equipados (atunados se há
+//     lugar), marcados `replicated` com a hora; o mais antigo some além do máximo (DDL-0257).
 //   chargeResources(derivedInventory): as cargas dos itens, como recursos (com o
 //     nome do item em `item`, para listar o item e não "X charges").
 //
@@ -47,6 +49,8 @@ import { makeEvent } from './playState';
 import { healOutcome } from './playHealth';
 import { healDiceMaxed } from './playEffects';
 import { withDiceMax } from './playActions';
+import { resolveItemObj } from './items';
+import { createInventoryItem } from '../schema/character';
 
 const USABLE = new Set(['P', 'SC', 'FD']);
 
@@ -149,6 +153,40 @@ export function currencyEvent({ delta, label = '', now = new Date() }) {
     label: label || (spent ? 'Money spent' : 'Money gained'),
     ops: Object.keys(clean).length ? [{ op: 'currency', delta: clean }] : [],
     payload: { delta: clean },
+  }, now);
+}
+
+/**
+ * O Replicate Magic Item: cria os itens dos planos escolhidos (equipados; atunados quando pedem e há lugar), e o
+ * mais antigo dos criados some quando passa do máximo (o texto). Operações `inventory` com o antes e o depois.
+ */
+export function replicateEvent({ character, picks, max, attuneRoom = 0, db = null, now = new Date() }) {
+  const ops = [];
+  const lines = [];
+  const made = [];
+  let room = attuneRoom;
+  const stamp = now.toISOString();
+  picks.forEach((pick, i) => {
+    const [itemId, source] = String(pick).split('|');
+    const raw = db ? resolveItemObj(db, itemId, source) : null;
+    const needs = !!raw?.reqAttune;
+    const attune = needs && room > 0;
+    if (attune) room -= 1;
+    const entry = { ...createInventoryItem(raw?.name ?? itemId, raw?.source ?? source), equipped: true, attuned: attune, replicated: `${stamp}#${i}` };
+    made.push(entry);
+    ops.push({ op: 'inventory', uid: entry.uid, before: null, after: entry });
+    lines.push(`${entry.itemId} created${needs ? (attune ? ', attuned' : ', not attuned (no free slot)') : ''}`);
+  });
+  const existing = (character.inventory ?? []).filter((e) => e.replicated).sort((a, b) => String(a.replicated).localeCompare(String(b.replicated)));
+  const over = existing.length + made.length - max;
+  for (const old of existing.slice(0, Math.max(0, over))) {
+    ops.push({ op: 'inventory', uid: old.uid, before: old, after: null, index: (character.inventory ?? []).findIndex((e) => e.uid === old.uid) });
+    lines.push(`${old.itemId} vanishes (the oldest; at most ${max})`);
+  }
+  return makeEvent('use', {
+    label: 'Replicate Magic Item',
+    ops,
+    payload: { logged: true, feature: 'Replicate Magic Item', option: made.map((e) => e.itemId).join(', '), costs: [], short: [], lines },
   }, now);
 }
 

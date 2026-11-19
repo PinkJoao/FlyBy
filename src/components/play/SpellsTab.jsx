@@ -36,6 +36,9 @@
 //     `aria-expanded`): um botão dentro de outro não vale. A gema para a propagação.
 //   - Mystic Arcanum e magia concedida com usos mostram os usos que sobram na linha;
 //     o arcanum não é espaço e não aparece no cabeçalho.
+//   - A origem de um ITEM (Wand of Web, Ring of Jumping, DDL-0257) não está na derivação: a magia crua vem do
+//     db (`resolveSpellObj`), o cabeçalho do círculo não mostra os espaços do personagem (o item não os gasta) e a
+//     linha mostra as cargas ou os usos por dia que sobram.
 //   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
 // -----------------------------------------------------------------------------
 
@@ -43,7 +46,7 @@ import { useState } from 'react';
 import { slotPoolsFor } from '../../engine/playCast';
 import { spellCosts } from '../../engine/playBasicActions';
 import { remainingOf } from '../../engine/playState';
-import { spellLevelLabel } from '../../engine/spells';
+import { spellLevelLabel, resolveSpellObj } from '../../engine/spells';
 import spellEntity from '../../selector/entities/spell';
 import { imgUrl } from '../common/media';
 import { showDetailPopup } from '../common/detailPopup';
@@ -97,12 +100,13 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
   const [collapsed, setCollapsed] = useState(() => new Set());
   const origin = origins.find((o) => o.key === originKey) ?? origins[0];
   const raws = rawIndex((derived?.spellcasting?.origins ?? []).find((o) => o.key === origin?.key));
+  const entryOf = (s) => raws.get(s.name) ?? (origin?.kind === 'item' ? { raw: resolveSpellObj(db, s.name, s.source), granted: true } : null);
 
   if (!origin) return <p className={styles.empty}>This character has no spells.</p>;
 
   const needle = query.trim().toLowerCase();
   const visible = origin.spells
-    .filter((s) => (showAll || s.prepared !== false || s.ritualOnly) && raws.has(s.name))
+    .filter((s) => (showAll || s.prepared !== false || s.ritualOnly) && entryOf(s)?.raw)
     .filter((s) => !needle || s.name.toLowerCase().includes(needle))
     .filter((s) => category === 'all' || s.level === category)
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
@@ -171,7 +175,7 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
       {sections.length === 0 && <p className={styles.empty}>{needle ? 'No spells match your search.' : 'No prepared spells here.'}</p>}
 
       {sections.map(([lv, list]) => {
-        const pools = slotPoolsFor(catalog, state, lv);
+        const pools = origin.kind === 'item' ? [] : slotPoolsFor(catalog, state, lv);
         const isCollapsed = collapsed.has(lv);
         return (
           <section key={lv} className={styles.panel}>
@@ -194,8 +198,9 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
             <Collapse open={!isCollapsed}>
               <ul className={styles.list}>
                 {list.map((s) => {
-                  const entry = { ...raws.get(s.name), prepared: s.prepared };
-                  const uses = s.uses ? (catalog.resources ?? []).find((r) => r.key === s.uses) : null;
+                  const entry = { ...entryOf(s), prepared: s.prepared };
+                  const usesKey = s.uses ?? s.chargeKey ?? null;
+                  const uses = usesKey ? (catalog.resources ?? []).find((r) => r.key === usesKey) : null;
                   return (
                     <SpellRow
                       key={s.key}

@@ -99,6 +99,9 @@
 //   - FEATURE_EFFECTS 'action:starry-form' (TC-0160): o Use da Starry Form liga o modificador da
 //     forma: a resistência do Full of Stars, o piso 10 do Dragon como opção na rolagem (um
 //     efeito de modificador aceita `d20Min`), o voo do Twinkling Constellations e o resto como nota.
+//   - DDL-0257: o checkup das invocações. Cloak of Flies liga vantagem no Intimidation e desvantagem nas outras
+//     perícias de CAR, com o dano da aura na nota; Mage Armor (SPELL_EFFECTS, a Armor of Shadows) põe `acBase` 13:
+//     effectiveAc troca a base sem armadura (a do acBreakdown) por 13 + DES se for maior, e nada com armadura.
 //   - DDL-0254: Dispersion (resistência a todo dano e voo 40 até o fim do próximo turno) e Holy Deliverance (a cura
 //     de CAR + PB do aliado Bloodied na aura, como nota com o número) ligam no Use.
 //   - PROSE_OWNED: a feature cuja prosa um efeito curado já carrega; o piso do Dragon ("a roll of 9 or lower on
@@ -268,6 +271,17 @@ const FEATURE_EFFECTS = {
     const heal = (catalog?.rollData?.abilities?.cha?.mod ?? 0) + (catalog?.rollData?.prof ?? 0);
     return { label: 'Holy Deliverance', source: 'feature', duration: 'manual', maxRounds: 100, notes: [`An ally that starts its turn Bloodied in your Aura of Protection regains ${heal} Hit Points (CHA + PB)`, 'The aura is filled with sunlight'], effects: [] };
   },
+  'action:cloak-of-flies': (catalog) => ({
+    label: 'Cloak of Flies',
+    source: 'feature',
+    duration: 'manual',
+    endsOnIncapacitated: true,
+    notes: [`Another creature that starts its turn in the 5-foot aura takes ${Math.max(0, catalog?.rollData?.abilities?.cha?.mod ?? 0)} Poison damage (CHA)`, 'Disadvantage on the other Charisma checks (an option in the roll)'],
+    effects: [
+      { targets: ['skill:itm'], mode: 'advantage', label: 'Cloak of Flies' },
+      { targets: ['skill:dec', 'skill:per', 'skill:prf'], mode: 'disadvantage', label: 'Cloak of Flies' },
+    ],
+  }),
   'action:dispersion': () => ({ label: 'Dispersion', source: 'feature', duration: 'manual', maxRounds: 2, resist: [...DAMAGE_TYPES], speeds: { fly: 40 }, notes: ["No action, Bonus Action or Reaction until it ends (the end of your next turn)", 'When it ends, spend up to half your Hit Point Dice as on a Short Rest (the HP card)'], effects: [] }),
   'action:otherworldly-wings': () => ({ label: 'Otherworldly Wings', source: 'feature', duration: 'manual', speeds: { fly: 30 }, notes: ['Until you dismiss them (a Bonus Action), are Incapacitated or die'], effects: [] }),
   'action:steps-of-night': () => ({ label: 'Steps of Night', source: 'feature', duration: 'manual', maxRounds: 10, speeds: { fly: 'walk' }, notes: ['Used in Dim Light or Darkness'], effects: [] }),
@@ -287,6 +301,7 @@ const FEATURE_EFFECTS = {
 const SPELL_EFFECTS = {
   bless: { self: false, make: () => ({ label: 'Bless', effects: [{ targets: ['attack', 'save'], formula: '1d4', label: 'Bless' }] }) },
   'shield of faith': { self: false, make: () => ({ label: 'Shield of Faith', ac: 2, effects: [] }) },
+  'mage armor': { self: false, make: () => ({ label: 'Mage Armor', acBase: 13, notes: ['Base AC 13 + DEX while you wear no armor; ends if you put armor on'], effects: [] }) },
   'divine favor': { self: true, make: () => ({ label: 'Divine Favor', effects: [{ targets: ['damage'], formula: '1d4', when: 'weaponAttack', label: 'Divine Favor (radiant)' }] }) },
   "hunter's mark": { self: true, make: (c) => ({ label: "Hunter's Mark", effects: [{ targets: ['damage'], formula: (c?.features ?? []).includes('foe slayer') ? '1d10' : '1d6', optional: true, label: "Hunter's Mark (force, marked target)" }] }) },
   hex: { self: true, make: () => ({ label: 'Hex', effects: [{ targets: ['damage'], formula: '1d6', optional: true, label: 'Hex (necrotic, cursed target)' }] }) },
@@ -445,7 +460,12 @@ export function effectiveDefenses(catalog, state) {
 export function effectiveAc(catalog, state) {
   const base = catalog.stats?.ac;
   if (base == null) return null;
-  return base + (state.modifiers ?? []).reduce((s, m) => s + (Number(m.ac) || 0), 0);
+  const flat = (state.modifiers ?? []).reduce((s, m) => s + (Number(m.ac) || 0), 0);
+  const acBase = Math.max(0, ...(state.modifiers ?? []).map((m) => Number(m.acBase) || 0));
+  if (!acBase || catalog.stats?.hasArmor) return base + flat;
+  const own = (catalog.stats?.acBreakdown ?? []).find((b) => b.note === 'base')?.value ?? base;
+  const raised = acBase + (catalog.rollData?.abilities?.dex?.mod ?? 0);
+  return base + flat + Math.max(0, raised - own);
 }
 
 /** O deslocamento com as condições (zero, exaustão) e os modificadores. */

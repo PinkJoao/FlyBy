@@ -168,6 +168,10 @@
 //   - O "Bond" do Pact of the Blade (DDL-0239): um botão por arma carregada, "Conjure a weapon" abre o
 //     painel seletor de armas (só as que o pacto deixa invocar, `pactChoices`) e "End the bond"; a lista
 //     nativa de 34 armas saiu (UI-PATTERNS: escolher é pelo painel).
+//   - O "Create" do Replicate Magic Item (`replicateItems`, DDL-0257): dois campos de plano (o segundo
+//     opcional, planos diferentes), o máximo da coluna Magic Items; o atunamento só com lugar livre.
+//   - A magia de item (Wand of Web, Ring of Jumping) lança pelas cargas ou pelos usos do item, nunca pelos
+//     espaços (`castWays`); a CD e o ataque vêm da origem `item` do catálogo.
 //   - O histórico é uma COLUNA ao lado da página a partir de 1140px (WIDE_QUERY,
 //     o mesmo número do Play.module.css) e, mais estreito, a PRIMEIRA aba
 //     (DDL-0115); não há botão nem gaveta. Saindo do estreito para o largo com a
@@ -262,12 +266,12 @@ import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies,
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
-import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, projectileCount, timesFormula } from '../engine/playCast';
+import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, spellTempFormula, projectileCount, timesFormula } from '../engine/playCast';
 import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, castOnceEffects,
 } from '../engine/playEffects';
-import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit } from '../engine/playActions';
-import { itemUseEvent, ammoOps, itemCostOf, healOf } from '../engine/playInventory';
+import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit, withDiceMax } from '../engine/playActions';
+import { itemUseEvent, ammoOps, itemCostOf, healOf, replicateEvent } from '../engine/playInventory';
 import {
   ECONOMY, startCombatEvent, nextTurnEvent, endCombatEvent, economyEvent, economyOp, costOfActivation, withRounds, roundsOf,
   movementLeft, moveEvent, dashEvent, readyEvent, readiedReactionEvent,
@@ -702,6 +706,31 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     record(pactEvent({ choice, state, character }), v === 'end' ? null : 'bonus');
   };
 
+  /** Replicate Magic Item: um ou dois itens de planos diferentes, no inventário; o mais antigo some além do máximo. */
+  const replicateItems = async () => {
+    const info = catalog.replicate;
+    if (!info) return;
+    const options = info.plans.map((p) => ({ label: p.split('|')[0], value: p }));
+    const made = (character.inventory ?? []).filter((e) => e.replicated).map((e) => e.customName ?? e.itemId);
+    const r = await ask({
+      title: 'Replicate Magic Item',
+      message: `At the end of a Long Rest, create one or two magic items from different plans you know. You can have up to ${info.max} at once; over that, the oldest vanishes.${made.length ? ` Now: ${made.join(', ')}.` : ''}`,
+      fields: [
+        { type: 'select', name: 'a', label: 'First item', default: options[0]?.value, options },
+        { type: 'select', name: 'b', label: 'Second item', default: '', options: [{ label: 'None', value: '' }, ...options] },
+      ],
+      actions: [{ label: 'Cancel', value: null }, { label: 'Create', value: 'ok', tone: 'primary' }],
+    });
+    if (r?.action !== 'ok') return;
+    const picks = [r.values.a, r.values.b].filter(Boolean);
+    if (picks.length === 2 && picks[0] === picks[1]) {
+      await alert({ title: 'Replicate Magic Item', message: 'The two items must come from different plans.' });
+      return;
+    }
+    const attuned = (character.inventory ?? []).filter((e) => e.attuned).length;
+    record(replicateEvent({ character, picks, max: info.max, attuneRoom: Math.max(0, (derived.attunementMax ?? 3) - attuned), db }));
+  };
+
   /** A arma escolhida no painel para invocar como arma de pacto. */
   const conjurePactWeapon = (raw) => {
     setPicker(null);
@@ -1045,6 +1074,11 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const castEv = withOps(castEvent({ catalog, state, origin, spell, way, onSelf }), [...(cost.spend ? [{ op: 'spend', key: cost.spend.key, amount: cost.spend.amount }] : []), ...summonExtra]);
     const weaponPick = strikeWith?.name ?? (weaponOps.find((o) => o.add)?.add?.notes?.[0] ?? '').replace(`${spell.name}: `, '');
     record({ ...castEv, ops: [...castEv.ops, ...weaponOps], payload: { ...castEv.payload, ...(weaponPick && weaponPick !== spell.name ? { option: weaponPick } : {}) } }, costOfActivation(cost.cost));
+    const tempFormula = spellTempFormula(spell, way.level);
+    if (tempFormula) {
+      const vigor = way.id === 'free' && spell.castType === 'will' && (catalog.features ?? []).includes('fiendish vigor') && /^false life$/i.test(spell.name);
+      record(featureLogEvent({ catalog, state, feature: { name: spell.name }, roll: { label: vigor ? 'Temporary Hit Points (Fiendish Vigor: the highest number)' : 'Temporary Hit Points', formula: vigor ? withDiceMax(tempFormula, catalog.rollData) : tempFormula }, apply: 'temp' }));
+    }
     if (strikeWith) {
       const atk = strikeAttack(strikeWith, weaponRule, catalog, origin.ability);
       const kind = await askRollKind({ title: atk.name, attack: formatBonus(atk.toHit.total + fixedRollBonus(state, catalog, attackRollContext(atk, 'attack', catalog))), effect: damageText(withFixedDamage(atk, state, catalog)) });
@@ -1737,7 +1771,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           {activeTab === 'Actions' && <ActionsTab list={basicActions} state={state} onAct={takeAction} dataTour={TUT.PLAY_ROLLS} />}
 
           {activeTab === 'Features' && (
-            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} onPact={hasPactOfTheBlade(catalog) ? bondPactWeapon : null} onWeapon={useWeaponFeature} />
+            <FeaturesTab catalog={catalog} state={state} onUse={applyFeature} onSpecial={special} onLog={logFeature} onSummon={summonFromFeature} onTransform={transformWildShape} onResource={adjustByHand} onPact={hasPactOfTheBlade(catalog) ? bondPactWeapon : null} onWeapon={useWeaponFeature} onReplicate={catalog.replicate ? replicateItems : null} />
           )}
 
           {activeTab === 'Spells' && (

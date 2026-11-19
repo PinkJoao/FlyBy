@@ -248,3 +248,13 @@ describe('Dispersion e Holy Deliverance (DDL-0254)', () => {
     expect(featureModifier({ key: 'action:holy-deliverance' }, cat).notes[0]).toMatch(/regains 10 Hit Points/);
   });
 });
+
+describe('Mage Armor (Armor of Shadows, DDL-0257)', () => {
+  const cat = (hasArmor) => ({ stats: { ac: 12, hasArmor, acBreakdown: [{ label: 'Unarmored', value: 12, note: 'base' }] }, rollData: { abilities: { dex: { mod: 2 } } }, features: [] });
+  const mage = { id: 'm', label: 'Mage Armor', acBase: 13, effects: [] };
+  it('sem armadura a base vira 13 + DES; com armadura nada', () => {
+    expect(effectiveAc(cat(false), st({ modifiers: [mage] }))).toBe(15);
+    expect(effectiveAc(cat(true), st({ modifiers: [mage] }))).toBe(12);
+    expect(effectiveAc(cat(false), st({ modifiers: [mage, { id: 's', label: 'Shield of Faith', ac: 2, effects: [] }] }))).toBe(17);
+  });
+});

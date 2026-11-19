@@ -7,9 +7,14 @@
  *   .action, .bonus, .reaction: os gastos do turno (--econ-*).
  *   .custom: a cor que vem do dado (raridade), pela variável --tag.
  *   .dim: esmaecida (já gasto, desligado).
+ *   .wrap: o texto longo quebra linha dentro do pai (altura mínima de 16px, cresce).
  *   .text: o texto, cortado na altura da maiúscula onde há suporte.
  *
  * DECISÕES E ARMADILHAS
+ *   - .wrap: `max-width: 100%` prende a etiqueta ao pai e `white-space: normal` deixa
+ *     quebrar; a altura fixa vira mínima, com a entrelinha de 1.3 entre as linhas.
+ *     `break-word`, não `anywhere`: o `anywhere` encolhe o min-content e a etiqueta
+ *     espremeria numa linha flex. Uma linha só fica com os mesmos 16px e o mesmo centro.
  *   - Medida da etiqueta de linha que a ficha já usava em mais lugares (grimório,
  *     inventário, loja); 9px basta em maiúsculas (DDL-0200).
  *   - Centro vertical: a caixa da linha guarda lugar para as descendentes, que a
@@ -97,9 +102,23 @@
   opacity: 0.45;
 }
 
+.wrap {
+  height: auto;
+  min-height: 16px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.3;
+  padding: 2px 5px 1px;
+}
+
 @supports (text-box: trim-both cap alphabetic) {
   .tag {
     padding: 0 5px;
+  }
+
+  .wrap {
+    padding: 3px 5px;
   }
 
   /* ATENÇÃO: o corte vale no .text (item do flex, logo um bloco), não no .tag inline-flex. */

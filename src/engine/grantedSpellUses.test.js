@@ -122,7 +122,7 @@ describe('applyUsesOverlay - contagem que escala com o nível (TC-0090)', () => 
 
 describe('INNATE_USES - sanidade da tabela', () => {
   it('toda chave é "Nome|FONTE" e todo valor é um castType conhecido', () => {
-    const allowed = new Set(['restLong', 'rest', 'will', null]);
+    const allowed = new Set(['restLong', 'rest', 'will', 'daily', null]);
     for (const [key, table] of Object.entries(INNATE_USES)) {
       expect(key).toMatch(/^.+\|[A-Za-z0-9]+$/);
       for (const [spell, override] of Object.entries(table)) {

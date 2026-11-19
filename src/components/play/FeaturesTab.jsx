@@ -30,6 +30,8 @@
 //   - O pool vai para a linha pelo NOME do item; quando duas features têm o mesmo nome (a
 //     "Channel Divinity" do paladino e a guarda-chuva da subclasse antiga), só a do
 //     identificador do pool o mostra (DDL-0226).
+//   - O Replicate Magic Item ganha "Create" (`onReplicate`, só com planos conhecidos): escolhe os itens dos planos e
+//     os põe no inventário (engine/playInventory.replicateEvent, DDL-0257).
 //   - A feature que invoca um companheiro (Steel Defender, Primal Companion, Summon
 //     Wildfire Spirit; CLASS_SUMMONS em engine/playSummons.js) ganha "Summon" (DDL-0193).
 //   - O Wild Shape ganha "Transform": as formas conhecidas da ficha (DDL-0195).
@@ -109,7 +111,7 @@ export function Pips({ left, max, shape }) {
 
 
 /** Uma feature: nome, nível e custos; o pool e o botão de usar ao lado. */
-function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon }) {
+function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon, onReplicate }) {
   const activities = action?.activities ?? [];
   const special = action ? specialRecovery(action, catalog) : null;
   const turn = featureCosts(feature, action);
@@ -143,6 +145,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
     ...((activities.length > 0 || pactUse || weaponUse) ? [{ key: 'use', label: special ? 'Choose' : 'Use', run: use, title: `Use ${feature.name}` }] : []),
     ...(onTransform && transformRuleOf(feature.name)?.kind === 'wildShape' ? [{ key: 'transform', label: 'Transform', run: () => onTransform(feature), title: 'Assume one of your known forms' }] : []),
     ...(onSummon && isSummonFeature(feature.name) ? [{ key: 'summon', label: 'Summon', run: () => onSummon(feature), title: `Summon with ${feature.name}` }] : []),
+    ...(onReplicate && /^replicate magic item$/i.test(feature.name) ? [{ key: 'replicate', label: 'Create', run: onReplicate, title: 'Create magic items from your plans (Long Rest)' }] : []),
     ...(lone && !weaponUse ? [{ key: 'lone', label: 'Use', run: () => onLog?.(feature, lone.key), disabled: loneLeft <= 0 || !onLog, title: `Spend one ${lone.name}` }] : []),
     ...(textOnly && onLog ? [{ key: 'log', label: 'Use', run: () => onLog(feature), title: `Log ${feature.name} to the history`, logs: true }] : []),
   ];
@@ -186,7 +189,7 @@ function FeatureRow({ feature, action, pools, catalog, state, onUse, onSpecial, 
  * A aba de features do jogo.
  * @param {{ catalog: object, state: object, onUse: Function, onSpecial: Function, onLog?: Function, onResource?: Function }} props
  */
-export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon }) {
+export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon, onReplicate }) {
   const [kind, setKind] = useState('all');
   const [mode, setMode] = useState('active');
   const [query, setQuery] = useState('');
@@ -205,7 +208,8 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, o
   const kinds = FEATURE_KINDS.filter((k) => features.some((f) => f.kind === k.id));
   const needle = query.trim().toLowerCase();
   const activeOf = (f) =>
-    isActiveFeature(f, actions.get(f.actionKey), poolsOf(f)) || isSummonFeature(f.name) || transformRuleOf(f.name)?.kind === 'wildShape';
+    isActiveFeature(f, actions.get(f.actionKey), poolsOf(f)) || isSummonFeature(f.name) || transformRuleOf(f.name)?.kind === 'wildShape'
+    || (!!onReplicate && /^replicate magic item$/i.test(f.name));
   const matches = features.filter((f) => (kind === 'all' || f.kind === kind) && (!needle || f.name.toLowerCase().includes(needle)));
   const shown = matches.filter((f) => activeOf(f) === (mode === 'active'));
   const other = matches.length - shown.length;
@@ -218,7 +222,7 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, o
       else next.add(label);
       return next;
     });
-  const rowProps = { catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon };
+  const rowProps = { catalog, state, onUse, onSpecial, onLog, onSummon, onTransform, onResource, onPact, onWeapon, onReplicate };
 
   if (!features.length && !orphans.length) return <p className={styles.empty}>This character has no features.</p>;
 

@@ -38,6 +38,8 @@
 //     (DDL-0086): o dado diz `prepared` e só o texto dá o uso de 1 por descanso
 //     longo; sem a linha, o jogador perdia o recurso no export. O Eldritch Hex é o
 //     oposto: bucket `innate` mas sem conjuração grátis (castType null).
+//   - `slot` (DDL-0257): o uso por descanso que AINDA gasta um espaço ("cast X once using a warlock spell slot",
+//     as invocações de 2014): o lançamento só oferece espaços, cada um gastando também o uso.
 //   - `overrides` (DDL-0238): a única entrada que troca um castType que o dado DECLARA: o Find Familiar
 //     do Pact of the Chain do XPHB vem como ritual, e a prosa diz "as a Magic action without expending
 //     a spell slot" (o Pact of the Legion do WoW, mesmo texto, já vem certo).
@@ -163,6 +165,16 @@ export const INNATE_USES = {
   'Master of Myriad Forms|XPHB': { 'alter self': { castType: 'will' } },
   'Misty Visions|XPHB': { 'silent image': { castType: 'will' } },
   'One with Shadows|XPHB': { invisibility: { castType: 'will' } },
+  // ATENÇÃO: o dado diz 1/dia; a prosa diz 'at will' (num celestial, ínfero ou elemental; o mesmo alvo só depois de um descanso longo).
+  'Chains of Carceri|PHB': { 'hold monster': { castType: 'will', overrides: 'daily' } },
+  // ATENÇÃO: 'You can cast X once using a warlock spell slot': o uso por descanso longo E o espaço de pacto (DDL-0257).
+  'Mire the Mind|PHB': { slow: { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
+  'Bewitching Whispers|PHB': { compulsion: { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
+  'Dreadful Word|PHB': { confusion: { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
+  'Sign of Ill Omen|PHB': { 'bestow curse': { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
+  'Thief of Five Fates|PHB': { bane: { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
+  'Sculptor of Flesh|PHB': { polymorph: { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
+  'Minions of Chaos|PHB': { 'conjure elemental': { castType: 'daily', overrides: 'daily', count: 1, slot: true } },
   'Otherworldly Leap|XPHB': { jump: { castType: 'will' } },
   'Visions of Distant Realms|XPHB': { 'arcane eye': { castType: 'will' } },
   'Whispers of the Grave|XPHB': { 'speak with dead': { castType: 'will' } },
@@ -356,6 +368,7 @@ export function applyUsesOverlay(spells, entity, level = 1) {
       count,
       scale: null,
       ...(override.poolOnFeature ? { poolOnFeature: override.poolOnFeature } : {}),
+      ...(override.slot ? { slot: true } : {}),
     };
   });
 }

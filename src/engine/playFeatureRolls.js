@@ -588,6 +588,8 @@ export const FEATURE_ROLLS = {
     ],
   },
   "genie's wrath": { kind: 'rider', on: ['damage'], when: 'attackRoll', formula: '@prof', note: 'once on each of your turns, on a hit with an attack roll; Bludgeoning (dao), Thunder (djinni), Fire (efreeti) or Cold (marid)' },
+  'maddening hex': { kind: 'use', roll: { label: 'Psychic to the cursed target and creatures of your choice within 5 feet of it', formula: 'max(1, @abilities.cha.mod)' } },
+  'rebuke of the talisman': { kind: 'use', roll: { label: 'Psychic to the attacker (pushed up to 10 feet)', formula: '@prof' } },
   'call the hunt': {
     kind: 'use',
     apply: 'temp',

@@ -532,13 +532,13 @@ export default function SelectorPanel({
                     {card.meta && <span className={styles.cardMeta}>{card.meta}</span>}
                     {card.rarity && (
                       <span className={styles.badges}>
-                        <Tag color={card.rarity.color}>{card.rarity.label}</Tag>
+                        <Tag wrap color={card.rarity.color}>{card.rarity.label}</Tag>
                       </span>
                     )}
                     {card.prereqs?.length > 0 && (
                       <span className={styles.badges}>
                         {card.prereqs.map((p, pi) => (
-                          <Tag key={pi} tone={PREREQ_TONE[p.status] ?? 'neutral'}>{p.text}</Tag>
+                          <Tag key={pi} wrap tone={PREREQ_TONE[p.status] ?? 'neutral'}>{p.text}</Tag>
                         ))}
                       </span>
                     )}
@@ -546,7 +546,7 @@ export default function SelectorPanel({
                       <span className={styles.badges}>
                         {card.badges.map((b, bi) => {
                           const text = typeof b === 'string' ? b : b.text;
-                          return <Tag key={bi} tone={typeof b === 'object' ? BADGE_TONE[b.tone] ?? 'accent' : 'accent'}>{text}</Tag>;
+                          return <Tag key={bi} wrap tone={typeof b === 'object' ? BADGE_TONE[b.tone] ?? 'accent' : 'accent'}>{text}</Tag>;
                         })}
                       </span>
                     )}

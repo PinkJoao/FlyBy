@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, projectileCount, timesFormula } from './playCast';
+import { castWays, castEvent, slotPoolsFor, spellAttackOf, healParts, spellHealEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, spellTempFormula, projectileCount, timesFormula } from './playCast';
 import { spellCosts } from './playBasicActions';
 import { rollDamageEvent, rollAttackEvent } from './playActions';
 
@@ -256,3 +256,46 @@ describe('o ataque de magia de círculo guarda o círculo (TC-0174, DDL-0249)', 
   });
 });
 
+
+describe('as invocações de 2014 que gastam espaço e o temporário ao lançar (DDL-0257)', () => {
+  const cat = { resources: [{ key: 'pact', kind: 'pact', name: 'Pact slots', level: 5, max: 3 }, { key: 'granted:w|Slow', kind: 'granted', name: 'Slow', max: 1 }] };
+  const slow = { key: 'spell:w|Slow', name: 'Slow', level: 3, castType: 'daily', uses: 'granted:w|Slow', slot: true, mechanics: {} };
+  it('Mire the Mind: só o espaço de pacto, gastando também o uso por descanso', () => {
+    const ways = castWays(cat, st(), slow);
+    expect(ways.map((w) => w.id)).toEqual(['pact']);
+    expect(ways[0]).toMatchObject({ key: 'pact', also: 'granted:w|Slow' });
+    const s = run(st(), castEvent({ state: st(), catalog: cat, origin: { key: 'w', label: 'Warlock' }, spell: slow, way: ways[0] }));
+    expect(s.spent).toMatchObject({ pact: 1, 'granted:w|Slow': 1 });
+  });
+  it('sem o `slot`, o uso por descanso continua de graça', () => {
+    expect(castWays(cat, st(), { ...slow, slot: false }).map((w) => w.id)).toEqual(['uses', 'pact']);
+  });
+  it('False Life e Armor of Agathys pelo círculo', () => {
+    expect(spellTempFormula({ name: 'False Life', level: 1 }, 1)).toBe('2d4 + 4');
+    expect(spellTempFormula({ name: 'False Life', level: 1 }, 3)).toBe('2d4 + 14');
+    expect(spellTempFormula({ name: 'Armor of Agathys', level: 1 }, 2)).toBe('10');
+    expect(spellTempFormula({ name: 'Shield', level: 1 }, 1)).toBeNull();
+  });
+});
+
+describe('magia de item: pelas cargas, nunca pelos espaços (DDL-0257)', () => {
+  const cat = { ...catalog, resources: [...catalog.resources, { key: 'charges:w1', kind: 'charges', max: 7 }] };
+  const fireball = spell({ name: 'Fireball', level: 3, itemUid: 'w1', chargeKey: 'charges:w1', chargeCost: 1, chargeUpcast: true, chargeCap: 3 });
+
+  it('uma forma por carga até o teto do texto, o círculo subindo', () => {
+    const ways = castWays(cat, st({ spent: { 'charges:w1': 2 } }), fireball);
+    expect(ways.map((w) => [w.id, w.level, w.amount, w.left])).toEqual([['charges:1', 3, 1, 5], ['charges:2', 4, 2, 5], ['charges:3', 5, 3, 5]]);
+  });
+
+  it('sem upcast: só o custo; o lançamento gasta as cargas da forma', () => {
+    const web = spell({ name: 'Web', level: 2, itemUid: 'w1', chargeKey: 'charges:w1', chargeCost: 1, chargeUpcast: false });
+    expect(castWays(cat, st(), web).map((w) => w.id)).toEqual(['charges:1']);
+    const ev = castEvent({ catalog: cat, state: st(), origin, spell: fireball, way: castWays(cat, st(), fireball)[2] });
+    expect(run(st(), ev).spent['charges:w1']).toBe(3);
+  });
+
+  it('a magia por dia do item usa só o uso', () => {
+    const daily = spell({ name: 'Misty Step', level: 2, itemUid: 'c1', castType: 'daily', uses: 'granted:race|Misty Step' });
+    expect(castWays(cat, st(), daily).map((w) => w.id)).toEqual(['uses']);
+  });
+});

@@ -24,7 +24,10 @@
 //     da que não pede concentração, que o castEvent põe), e o evento de encerrar (DDL-0249).
 //   zoneUsedOps(state, spell, ids): guarda na magia de área ativa (a concentração ou o marcador) os extras de
 //     "one damage roll of that spell" já usados, para o "Damage again" vir com eles desligados (DDL-0251).
-//   castEvent(args): o evento de conjurar.
+//   castEvent(args): o evento de conjurar (gasta `way.amount`, as cargas do item); com `way.also`, gasta também o uso por descanso (o espaço que a invocação
+//     de 2014 ainda pede, DDL-0257).
+//   SPELL_TEMP, spellTempFormula(spell, level): os PV temporários que a magia dá ao lançar (False Life, Armor of Agathys;
+//     o Fiendish Vigor lança o False Life com os dados no máximo, DDL-0257).
 //   spellAttackOf(origin, spell, level): a magia como "ataque" do playActions
 //     (acerto da origem, dano com o upcast), para rolar acerto e dano.
 //   diceWithUpcast(baseDice, spell, level): o dado base mais o upcast do círculo.
@@ -96,7 +99,8 @@ const leftOf = (catalog, state, key) => {
 };
 
 /**
- * As formas de lançar uma magia agora.
+ * As formas de lançar uma magia agora (a magia de item: as cargas, uma forma por carga quando o texto deixa subir o
+ * círculo; nunca os espaços do personagem, DDL-0257).
  * @returns {{ id: string, label: string, level: number, key: string|null, left: number|null }[]}
  */
 export function castWays(catalog, state, spell) {
@@ -106,17 +110,26 @@ export function castWays(catalog, state, spell) {
     ways.push({ id: 'free', label: spell.level === 0 ? 'Cantrip' : spell.castType === 'will' ? 'At will' : 'Innate', level: spell.level, key: null, left: null });
     if (spell.level === 0) return ways;
   }
-  if (spell.uses) {
+  const once = spell.slot && spell.uses ? leftOf(catalog, state, spell.uses) : null;
+  if (spell.uses && !spell.slot) {
     const l = leftOf(catalog, state, spell.uses);
     ways.push({ id: 'uses', label: spell.arcanum ? 'Mystic Arcanum' : 'Free use', level: spell.castLevel ?? spell.level, key: spell.uses, left: l?.left ?? 0, max: l?.max ?? 0 });
   }
-  if (!spell.arcanum && spell.level > 0) {
+  if (spell.chargeKey) {
+    const l = leftOf(catalog, state, spell.chargeKey);
+    const top = spell.chargeUpcast ? Math.min(spell.chargeCap ?? 9, Math.max(spell.chargeCost, l?.max ?? spell.chargeCost)) : spell.chargeCost;
+    for (let n = spell.chargeCost; n <= top; n++) {
+      const level = spell.level + (n - spell.chargeCost);
+      ways.push({ id: `charges:${n}`, label: n === spell.chargeCost ? `${n} charge${n > 1 ? 's' : ''}` : `${n} charges (level ${level})`, level, key: spell.chargeKey, amount: n, left: l?.left ?? 0, max: l?.max ?? 0 });
+    }
+  }
+  if (!spell.arcanum && !spell.itemUid && spell.level > 0) {
     for (const r of catalog.resources ?? []) {
       if (r.kind === 'slot' && r.level >= spell.level) {
-        ways.push({ id: r.key, label: `Level ${r.level} slot`, level: r.level, key: r.key, left: remainingOf(state, r.key, r.max), max: r.max });
+        ways.push({ id: r.key, label: `Level ${r.level} slot`, level: r.level, key: r.key, left: remainingOf(state, r.key, r.max), max: r.max, ...(once ? { also: spell.uses, label: `Level ${r.level} slot (once per rest: ${once.left} left)` } : {}) });
       }
       if (r.kind === 'pact' && r.level >= spell.level) {
-        ways.push({ id: 'pact', label: `Pact slot (level ${r.level})`, level: r.level, key: 'pact', left: remainingOf(state, 'pact', r.max), max: r.max });
+        ways.push({ id: 'pact', label: once ? `Pact slot (level ${r.level}, once per rest: ${once.left} left)` : `Pact slot (level ${r.level})`, level: r.level, key: 'pact', left: remainingOf(state, 'pact', r.max), max: r.max, ...(once ? { also: spell.uses } : {}) });
       }
     }
   }
@@ -237,13 +250,26 @@ export function endZoneEvent({ state, spell, now = new Date() }) {
   return makeEvent('use', { label: spell.name, ops, payload: { logged: true, spellKey: spell.key, option: 'End', lines: [zone?.concentration ? 'Concentration ends' : 'The spell ends'] } }, now);
 }
 
+/** As magias que dão PV temporários ao lançar, pelo círculo (False Life: 2d4 + 4, +5 por círculo acima do 1º; Armor of Agathys: 5 por círculo). */
+export const SPELL_TEMP = {
+  'false life': (level) => `2d4 + ${4 + 5 * Math.max(0, level - 1)}`,
+  'armor of agathys': (level) => `${5 * Math.max(1, level)}`,
+};
+
+/** A fórmula dos PV temporários de uma magia lançada nesse círculo, ou null. */
+export function spellTempFormula(spell, level) {
+  const make = SPELL_TEMP[String(spell?.name ?? '').toLowerCase()];
+  return make ? make(level ?? spell.level ?? 1) : null;
+}
+
 /**
  * O evento de conjurar: gasta o que a forma pede e liga a concentração.
  * @param {{ catalog?: object, state: object, origin: object, spell: object, way: object, now?: Date }} args
  */
 export function castEvent({ state, catalog = null, origin, spell, way, onSelf = false, now = new Date() }) {
   const ops = [];
-  if (way.key) ops.push({ op: 'spend', key: way.key, amount: 1 });
+  if (way.key) ops.push({ op: 'spend', key: way.key, amount: way.amount ?? 1 });
+  if (way.also) ops.push({ op: 'spend', key: way.also, amount: 1 });
   const ended = spell.concentration && state.concentration ? state.concentration.name : null;
   if (spell.concentration) ops.push(...endConcentrationOps(state).filter((o) => o.op === 'modifier' || o.op === 'summon' || o.op === 'form' || (o.op === 'hp' && o.temp < 0)));
   const expiresRound = state.combat && spell.durationRounds ? state.combat.round + spell.durationRounds : null;

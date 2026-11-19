@@ -272,6 +272,9 @@ const PROSE_USES_BY_CLASS = {
 };
 
 const PROSE_USES_FLAT = {
+  "cloak of flies": ['1', 'sr'],
+  "ghostly gaze": ['1', 'sr'],
+  "tomb of levistus": ['1', 'sr'],
   "arcane artist": ['1', 'lr'],
   "arcane overload": ['1', 'lr'],
   "arcane safeguard": ['@prof', 'lr'],

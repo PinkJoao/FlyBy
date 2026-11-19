@@ -23,6 +23,7 @@ import { describe, it, expect } from 'vitest';
 import {
   evalUses, scaleValues, scaleRollData, actorResources, weaponAttacks, unarmedStrike, cantripAttacks,
   spellMechanics, hitDiceByFace, initiativeBonus, derivePlayCatalog, withMartialArts, spendsChannelDivinity, naturalAttacks, spellTypeOptions,
+  itemSpellOrigins,
 } from './playCatalog';
 
 const feat = (name, system = {}, extra = {}) => ({ type: 'feat', name, system: { identifier: '', uses: { max: '' }, ...system }, ...extra });
@@ -286,7 +287,7 @@ describe('derivePlayCatalog', () => {
     expect(catalog.checks.skills.find((s) => s.skill === 'prc')).toMatchObject({
       bonus: 7, prof: 1, parts: [{ kind: 'ability', ability: 'wis', value: 4 }, { kind: 'proficiency', level: 1, value: 3 }],
     });
-    expect(catalog.stats).toEqual({ ac: 16, acBreakdown: [], hpMax: 38, profBonus: 3, level: 5, initiative: 2, speed: null, speeds: {} });
+    expect(catalog.stats).toEqual({ ac: 16, hasArmor: false, acBreakdown: [], hpMax: 38, profBonus: 3, level: 5, initiative: 2, speed: null, speeds: {} });
     expect(catalog.attacks.map((a) => a.key)).toEqual(['unarmed']);
   });
 
@@ -398,5 +399,31 @@ describe('o dano que só vem depois do lançamento (DDL-0247)', () => {
     expect(spellMechanics(flame, 5).damage.later).toBe(true);
     expect(spellMechanics(fireball, 5).damage.later).toBeUndefined();
     expect(spellMechanics(bolt, 5).damage.later).toBeUndefined();
+  });
+});
+
+describe('itemSpellOrigins: as magias dos itens (DDL-0257)', () => {
+  const sp = (name, level) => ({ name, source: 'XPHB', level, school: 'V', time: [{ number: 1, unit: 'action' }], duration: [{ type: 'instant' }], entries: [] });
+  const db = { 'spells-xphb': { spell: [sp('Fireball', 3), sp('Jump', 1), sp('Misty Step', 2)] } };
+  const wand = {
+    uid: 'w1', attuned: true,
+    raw: { name: 'Wand of Fireballs', reqAttune: 'by a spellcaster', charges: 7, attachedSpells: { charges: { 1: ['fireball|xphb'] } }, entries: ['While holding it, you can expend no more than 3 charges to cast {@spell Fireball|XPHB} (save 15) from it. You can increase the spell\'s level by 1 for each additional charge you expend.'] },
+  };
+  const ring = { uid: 'r1', attuned: true, raw: { name: 'Ring of Jumping', reqAttune: true, attachedSpells: { will: ['jump|xphb'] }, entries: ['You can cast Jump from the ring.'] } };
+  const cloak = { uid: 'c1', attuned: false, raw: { name: 'Cloak', reqAttune: true, attachedSpells: { daily: { '1e': ['misty step|xphb'] } }, entries: [] } };
+
+  it('cargas: a chave, o custo, o upcast e o teto do texto; a CD do texto', () => {
+    const { origins } = itemSpellOrigins([wand], db, 10, { spellDc: 14, spellAttack: 6 });
+    expect(origins).toHaveLength(1);
+    expect(origins[0]).toMatchObject({ key: 'item:w1', kind: 'item', label: 'Wand of Fireballs', saveDc: 15, attackBonus: 6 });
+    expect(origins[0].spells[0]).toMatchObject({ name: 'Fireball', level: 3, itemUid: 'w1', chargeKey: 'charges:w1', chargeCost: 1, chargeUpcast: true, chargeCap: 3 });
+  });
+
+  it('à vontade e por dia (o uso vira recurso); o item não atunado não lança', () => {
+    const { origins, resources } = itemSpellOrigins([ring, { ...cloak, attuned: true }, cloak], db, 5, { spellDc: 13 });
+    expect(origins.map((o) => o.spells[0].castType)).toEqual(['will', 'daily']);
+    expect(origins[0].saveDc).toBe(13);
+    expect(resources).toEqual([expect.objectContaining({ key: 'granted:item:c1|misty step', max: 1, recovery: [{ period: 'day', type: 'recoverAll' }] })]);
+    expect(itemSpellOrigins([cloak], db, 5).origins).toEqual([]);
   });
 });

@@ -98,6 +98,10 @@
 //       que cada talento aumentou, Conjuration Adept).
 //     featAbilities(character): o atributo de cada talento escolhido, pelo nome.
 //     checkList(derived, character): os testes; o bônus de teste dos itens vira uma parte `item` (DDL-0256).
+//     itemSpellOrigins(inventory, db, level, ctx): as magias que os itens ativos lançam (`attachedSpells` will,
+//       daily e charges; a forma em lista e as raras ficam fora, o texto não diz o custo), como origens `item`,
+//       com a CD e o ataque do texto do item ou os do personagem; o upcast por carga só com a frase (DDL-0257).
+//     replicateInfo(character, db): os planos do Replicate Magic Item e o máximo de itens (coluna Magic Items).
 //     spellResources(spellcasting), spellOrigins(spellcasting, level, opts): magias; com o
 //       Ritual Adept, o ritual do grimório do mago sem preparar vem com `ritualOnly` (TC-0158).
 //     spendsChannelDivinity(feature): o texto da feature gasta um uso do Channel Divinity? Também o `consumes` do
@@ -237,11 +241,11 @@
 // -----------------------------------------------------------------------------
 
 import { ABILITIES } from '../schema/character';
-import { deriveFromDb, resolveRaceObj } from './resolve';
+import { deriveFromDb, resolveRaceObj, resolveClassObj } from './resolve';
 import { parseSpecies, SPECIES_OPTION_FEATURES } from './speciesData';
 import { assembleFoundryActor } from './foundryActor';
 import { isBasicActionItem } from './foundryBasicActions';
-import { rangeLabel, isRitual, isConcentration } from './spells';
+import { rangeLabel, isRitual, isConcentration, resolveSpellObj } from './spells';
 import { SKILL_ABILITY } from './proficiency';
 import { collectAbilityPicks, collectChoicePicks, dcAbilityPick } from './choices';
 import { optionTargets } from './optionTargets';
@@ -250,7 +254,8 @@ import { roundsOf } from './playCombat';
 import { chargeResources } from './playInventory';
 import { featureList, plainText } from './playFeatures';
 import { consumptionTargetItem, CONSUMES_BY_NAME } from './foundryConsumption';
-import { itemSpeeds } from './itemEffects';
+import { itemSpeeds, isActiveItem, plainItemText } from './itemEffects';
+import { tableColumnAt } from './grantedSpellUses';
 import { REROLL_FEATURES } from './playRerolls';
 import { actorRollEffects } from './playActorEffects';
 import { proseRollEffects, proseUses } from './playProseEffects';
@@ -1235,6 +1240,73 @@ function spellResources(spellcasting) {
   return out;
 }
 
+const ITEM_UPCAST = /increase the spell's (?:slot )?level by (?:1|one) for each additional charge/i;
+const ITEM_CAP = /no more than (\d+) charges/i;
+const ITEM_DC = /\(save (?:DC )?(\d+)\)|spell save DC (?:is |of )?(\d+)/i;
+const ITEM_ATTACK = /\(\+(\d+) to hit\)|spell attack (?:bonus|modifier) (?:is |of )?\+(\d+)/i;
+
+/**
+ * As magias que os itens ativos lançam (`attachedSpells` à vontade, por dia ou por cargas), como origens do
+ * catálogo, e os usos por dia como recursos. A CD e o ataque do texto do item, ou os do personagem.
+ */
+export function itemSpellOrigins(inventory, db, level, { spellDc = null, spellAttack = null } = {}) {
+  const origins = [];
+  const resources = [];
+  for (const e of inventory ?? []) {
+    const att = e?.raw?.attachedSpells;
+    if (!att || Array.isArray(att) || !e.uid || !isActiveItem(e)) continue;
+    const text = plainItemText(e.raw);
+    const dc = text.match(ITEM_DC);
+    const atk = text.match(ITEM_ATTACK);
+    const key = `item:${e.uid}`;
+    const spells = [];
+    const add = (ref, extra) => {
+      const [name, source] = String(ref).split('|');
+      const raw = resolveSpellObj(db, name, source?.toUpperCase());
+      if (!raw) return;
+      spells.push({
+        key: `spell:${key}|${raw.name}`, name: raw.name, source: raw.source ?? null, level: raw.level, ritual: isRitual(raw), school: raw.school ?? null,
+        concentration: isConcentration(raw), time: raw.time?.[0]?.unit ?? null, durationRounds: roundsOf(raw.duration), mechanics: spellMechanics(raw, level),
+        prepared: true, granted: true, itemUid: e.uid, castLevel: null, ...extra,
+      });
+    };
+    for (const ref of att.will ?? []) add(ref, { castType: 'will', uses: null });
+    for (const [n, refs] of Object.entries(att.daily ?? {})) {
+      const count = parseInt(n, 10) || 1;
+      for (const ref of refs) {
+        const usesKey = `granted:${key}|${String(ref).split('|')[0]}`;
+        add(ref, { castType: 'daily', uses: usesKey });
+        resources.push({ key: usesKey, kind: 'granted', name: `${e.raw.name}: ${String(ref).split('|')[0]}`, origin: key, max: count, recovery: [{ period: 'day', type: 'recoverAll' }] });
+      }
+    }
+    if (Number(e.raw.charges) > 0) {
+      const cap = Number(text.match(ITEM_CAP)?.[1]) || null;
+      for (const [n, refs] of Object.entries(att.charges ?? {})) {
+        for (const ref of refs) add(ref, { castType: null, uses: null, chargeKey: `charges:${e.uid}`, chargeCost: parseInt(n, 10) || 1, chargeUpcast: ITEM_UPCAST.test(text), chargeCap: cap });
+      }
+    }
+    if (!spells.length) continue;
+    origins.push({
+      key, kind: 'item', label: e.raw.name, ability: null, abilityMod: null, itemUid: e.uid,
+      saveDc: dc ? Number(dc[1] ?? dc[2]) : spellDc, attackBonus: atk ? Number(atk[1] ?? atk[2]) : spellAttack,
+      isPact: false, classId: null, spells,
+    });
+  }
+  return { origins, resources };
+}
+
+/** O Replicate Magic Item: os planos conhecidos e quantos itens o artífice pode ter (a coluna Magic Items), ou null. */
+export function replicateInfo(character, db) {
+  for (const cls of character?.classes ?? []) {
+    if (cls.classId !== 'artificer') continue;
+    const obj = resolveClassObj(db, cls.classId, cls.source);
+    const plans = Object.values(cls.choices ?? {}).filter((e) => e?.kind === 'plan').flatMap((e) => e.picks ?? []);
+    const max = tableColumnAt(obj, 'Magic Items', cls.level ?? 1);
+    if (plans.length && max) return { plans, max };
+  }
+  return null;
+}
+
 /** As magias por origem, com a mecânica de cada uma. */
 function spellOrigins(spellcasting, level, { ritualAdept = false } = {}) {
   return (spellcasting?.origins ?? []).map((o) => {
@@ -1261,6 +1333,7 @@ function spellOrigins(spellcasting, level, { ritualAdept = false } = {}) {
         castType: s.castType ?? null,
         castLevel: s.castLevel ?? null,
         uses: GRANTED_RECOVERY[s.castType] && s.uses > 0 ? `granted:${o.key}|${s.raw.name}` : null,
+        ...(s.slot ? { slot: true } : {}),
       })),
       ...(o.arcanumSpells ?? []).filter((s) => s.raw).map((s) => entry(s, { prepared: true, arcanum: true, castType: null, uses: `granted:${o.key}|${s.raw.name}` })),
     ];
@@ -1302,6 +1375,12 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     ...pools,
     ...chargeResources(d.inventory),
   ];
+  const classOrigins = (d.spellcasting?.origins ?? []).filter((o) => o.kind === 'class');
+  const itemSpells = itemSpellOrigins(d.inventory, db, level, {
+    spellDc: classOrigins.length ? Math.max(...classOrigins.map((o) => o.saveDc ?? 0)) : null,
+    spellAttack: classOrigins.length ? Math.max(...classOrigins.map((o) => o.attackBonus ?? 0)) : null,
+  });
+  resources.push(...itemSpells.resources);
   const ctx = {
     actor: a,
     derived: d,
@@ -1377,6 +1456,7 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     rollData,
     stats: {
       ac: d.armorClass?.total ?? null,
+      hasArmor: !!d.armorClass?.hasArmor,
       acBreakdown: d.armorClass?.breakdown ?? [],
       hpMax: d.maxHp ?? 0,
       profBonus: d.proficiencyBonus ?? 0,
@@ -1399,7 +1479,8 @@ export function derivePlayCatalog(character, db, { derived = null, actor } = {})
     attacks,
     actions,
     resources,
-    spells: spellOrigins(d.spellcasting, level, { ritualAdept: features.includes('ritual adept') }),
+    spells: [...spellOrigins(d.spellcasting, level, { ritualAdept: features.includes('ritual adept') }), ...itemSpells.origins],
+    replicate: replicateInfo(character, db),
     problems,
   };
 }

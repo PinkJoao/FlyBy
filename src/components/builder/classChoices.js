@@ -9,7 +9,8 @@
 //   DDL-0013): sem fork de regras.
 //
 // FUNÇÕES
-//   startingSkillChoice(parsed, isOriginal): as perícias iniciais (só na original).
+//   startingSkillChoice(parsed, isOriginal, classObj): as perícias iniciais (na classe secundária, as
+//     do multiclasse).
 //   choiceRuleEntry(db, classId, feature): a regra da feature que concede.
 //   buildClassChoices(db, cls, character): os descritores, ordenados por nível.
 //   isProficiencyChoice(ch), isFeatureChoice(ch): a partição dos passos 4 e 8 do
@@ -17,6 +18,14 @@
 //     feature).
 //
 // DECISÕES E ARMADILHAS
+//   - Classe secundária (XPHB p. 44): a escolha `skill` e as ferramentas são as do
+//     `multiclassing.proficienciesGained` (uma perícia do Bard, do Ranger, do Rogue e do Artificer, o
+//     instrumento do Bard), com o MESMO id da classe inicial, que o export e o import já levam. Antes
+//     a secundária não tinha nenhuma (a régua do multiclasse, TC-0218).
+//   - Expertise com menos perícias livres que a contagem (o Scholar de um mago secundário sem
+//     perícia de INT; o Bard cujas perícias já viraram Expertise pelo Rogue): a contagem cai para
+//     o que dá, com `note`, depois que as perícias da classe foram escolhidas. Antes a escolha
+//     ficava pendente para sempre, sem opção na tela (a régua do multiclasse, TC-0219).
 //   - O pool de Expertise são as perícias JÁ proficientes, inclusive as
 //     automáticas; `newProf` (Blessings of Knowledge) usa a lista fixa do grant.
 //   - O fighting style de subclasse é restrito aos nomes do featureType no db.
@@ -26,7 +35,7 @@
 //   - Escolhas de magia moram no MESMO bag, com ids 'class:' e 'sub:' (TC-0011).
 // -----------------------------------------------------------------------------
 
-import { parseClass } from '../../engine/classData';
+import { parseClass, isOriginalEntry, multiclassSkillChoice } from '../../engine/classData';
 import { resolveClassObj, resolveSubclassObj, ownedFromDb } from '../../engine/resolve';
 import {
   classLevelChoices,
@@ -44,10 +53,10 @@ import { featureOptionChoices, subclassFeatureOptionChoices } from '../../engine
 import { lookupEntityLink } from '../common/entityLinks';
 import { SKILL_LABEL } from './labels';
 
-/** As perícias iniciais da classe (só a original, nível 1). */
-function startingSkillChoice(parsed, isOriginal) {
-  const sc = parsed?.skillChoice;
-  if (!isOriginal || !(sc?.count > 0)) return [];
+/** As perícias iniciais da classe (nível 1; na secundária, as do multiclasse). */
+function startingSkillChoice(parsed, isOriginal, classObj) {
+  const sc = isOriginal ? parsed?.skillChoice : multiclassSkillChoice(classObj);
+  if (!(sc?.count > 0)) return [];
   return [
     {
       id: 'skill',
@@ -92,6 +101,8 @@ export function buildClassChoices(db, cls, character) {
     value: code,
     label: SKILL_LABEL[code] ?? code,
   }));
+  const ownedExpertise = ownedFromDb(character, db).expertise ?? new Set();
+  const skillsChosen = (cls.choices?.skill?.picks?.length ?? 0) >= (isOriginalEntry(character, cls) ? parsed?.skillChoice?.count ?? 0 : multiclassSkillChoice(classObj).count);
   const resolvePool = (ch) => {
     if (ch.kind === 'expertise') {
       const options = ch.newProf
@@ -99,6 +110,12 @@ export function buildClassChoices(db, cls, character) {
         : ch.from
           ? profSkillOptions.filter((o) => ch.from.includes(o.value))
           : profSkillOptions;
+      const mine = new Set(cls.choices?.[ch.id]?.picks ?? []);
+      const free = options.filter((o) => mine.has(o.value) || !ownedExpertise.has(o.value)).length;
+      if (!ch.newProf && skillsChosen && free < (ch.count ?? 1)) {
+        const note = free ? `Only ${free} of your skill proficiencies can still take Expertise.` : 'None of your skill proficiencies can take Expertise here.';
+        return { ...ch, count: free, note, pool: { type: 'list', options } };
+      }
       return { ...ch, pool: { type: 'list', options } };
     }
     if (ch.kind === 'skill' && ch.from) {
@@ -117,7 +134,8 @@ export function buildClassChoices(db, cls, character) {
   };
 
   const levelChoices = classLevelChoices(parsed, classObj, cls.level).map(resolvePool);
-  const toolChoices = cls.isOriginalClass ? classToolChoices(classObj) : [];
+  const original = isOriginalEntry(character, cls);
+  const toolChoices = classToolChoices(classObj, original);
   const optChoices = optionalFeatureChoices(classObj, subObj, cls.level).map(resolveFsOnly);
   const featOptChoices = [
     ...featureOptionChoices(db, cls.classId, classObj, cls.level),
@@ -135,7 +153,7 @@ export function buildClassChoices(db, cls, character) {
   ];
 
   return [
-    ...startingSkillChoice(parsed, cls.isOriginalClass),
+    ...startingSkillChoice(parsed, original, classObj),
     ...toolChoices,
     ...levelChoices,
     ...subFeatChoices,

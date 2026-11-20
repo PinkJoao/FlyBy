@@ -39,6 +39,8 @@
 //     "qualquer item comum" pede um item diferente a cada plano.
 //   - DEDUP: `owned` (tudo que a ficha tem) impede escolher duas vezes; talentos
 //     `repeatable` escapam. Expertise exclui as que já têm expertise.
+//   - `choice.note` (o descritor diz por que a contagem é menor, como a Expertise sem perícia
+//     bastante, TC-0219) aparece abaixo do título, no `.hint`.
 //   - Tocar num chip abre a descrição do escolhido (DDL-0021).
 //   - Escolha de mais de um (perícias, idiomas, optional features, magias, o
 //     misto) abre o seletor em modo MÚLTIPLO (`multi`): ele segue aberto até a
@@ -215,6 +217,7 @@ function ChoiceRow({ choice, entry, onChange, db, owned, character, guided, sibl
         )}
         {counter && <span className={styles.counter}>{counter}</span>}
       </div>
+      {choice.note && <div className={styles.hint}>{choice.note}</div>}
       {choice.pool.type === 'feat' ? (
         <FeatChoice choice={choice} entry={entry} picks={picks} onChange={onChange} db={db} owned={owned} character={character} guided={guided} spellsOwned={spellsOwned} />
       ) : choice.pool.type === 'optionalfeature' ? (

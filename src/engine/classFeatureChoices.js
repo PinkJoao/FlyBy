@@ -17,7 +17,8 @@
 //   grantChoices(grants, opts): grants curados como Choices.
 //   weaponMasteryCount(classObj, level): quantas armas o Weapon Mastery cobre.
 //   classLevelChoices(parsed, classObj, level): as escolhas por nível da classe.
-//   classToolChoices(classObj): as ferramentas das proficiências iniciais.
+//   classToolChoices(classObj, isOriginal): as ferramentas das proficiências iniciais (na classe
+//     secundária, as do multiclasse: o instrumento do Bard).
 //   planFilter(text), planNames(db, name, source), planAllows(pool, raw),
 //     planChoices(db, classId, classObj, level): os planos do Replicate Magic Item
 //     (Artificer do EFA) como escolha `plan` de itens concretos.
@@ -98,6 +99,8 @@
 //     College of Swords abaixo do nível da subclasse, e a Metamagic do Sorcerer
 //     no nível 1; nenhuma escolha oferecida é tocada.
 // -----------------------------------------------------------------------------
+
+import { classProficiencies } from './classData';
 
 const FS_EXTRA = { paladin: 'FS:P', ranger: 'FS:R' };
 
@@ -365,9 +368,9 @@ export function classLevelChoices(parsed, classObj, level) {
  * @param {object} classObj
  * @returns {import('./choices').Choice[]}
  */
-export function classToolChoices(classObj) {
+export function classToolChoices(classObj, isOriginal = true) {
   const perEntry = [];
-  for (const entry of classObj?.startingProficiencies?.toolProficiencies ?? []) {
+  for (const entry of classProficiencies(classObj, isOriginal)?.toolProficiencies ?? []) {
     if (!entry || typeof entry !== 'object') continue;
     const tokens = [];
     for (const [k, v] of Object.entries(entry)) {

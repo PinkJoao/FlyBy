@@ -54,7 +54,8 @@
 //     `reprintedAs` do 5etools), ou null. A ficha importada com o Fiend do PHB passa a ter o
 //     Fiend do XPHB, com um aviso: o app só usa a versão mais nova (DDL-0224, E2).
 //   choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId,
-//     level): os Traits de escolha de volta no bag.
+//     level, isOriginal): os Traits de escolha de volta no bag (na classe secundária, as
+//     ferramentas do multiclasse).
 //   addedItemIds(adv), grantedItems(adv, byId): o `value.added` nas duas formas.
 //   weaponKeyToPick(key, db): a chave de maestria como pick.
 //   featureOptionChoiceBag(...), subclassFeatChoiceBag(...): as escolhas de
@@ -754,14 +755,14 @@ function featFixedBoosts(featItem) {
  * Os Traits de escolha da classe e da subclasse de volta no bag.
  * @returns {object}
  */
-function choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level) {
+function choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level, isOriginal = true) {
   const traits = [...advList(classItem), ...advList(subclassItem)]
     .filter((a) => a.type === 'Trait' && (a.value?.chosen ?? []).length);
   if (!traits.length || !classObj) return {};
   const parsed = parseClass(classObj);
   const descriptors = [
     ...classLevelChoices(parsed, classObj, level),
-    ...classToolChoices(classObj),
+    ...classToolChoices(classObj, isOriginal),
     ...subclassFeatureChoices(db, classId, subclassObj, level, parsed?.skillChoice?.from ?? []),
     ...classGrantChoices(classId, level),
   ].filter((d) => TRAIT_CHOICE_KINDS.has(d.kind));
@@ -986,7 +987,8 @@ function parseClassEntry(classItem, subclassItem, actor, byId, db, boostAcc, fix
   Object.assign(choices, featureOptionChoiceBag(db, classId, classObj, subclassObj, level, featItems));
   Object.assign(choices, subclassFeatChoiceBag(subclassItem, db, classId, classObj, subclassObj, level, byId));
 
-  Object.assign(choices, choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level));
+  const original = actor.system?.details?.originalClass;
+  Object.assign(choices, choiceTraitBag(classItem, subclassItem, classObj, subclassObj, db, classId, level, !original || original === classItem._id));
 
   const classFlag = classItem.flags?.builder5e?.choices;
   if (!classFlag) {

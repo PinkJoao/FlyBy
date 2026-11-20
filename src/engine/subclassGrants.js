@@ -69,6 +69,7 @@ import { resolveSubclassObj, resolveClassObj, resolveRaceObj } from './resolve';
 import { collectChoicePicks } from './choices';
 import { collectSkillProficiencies, collectToolProficiencies } from './proficiency';
 import { deriveFeatureGrants } from './featureEffects';
+import { classProficiencies, isOriginalEntry } from './classData';
 
 const HEAVY = 'Heavy Armor';
 const MEDIUM = 'Medium Armor';
@@ -263,7 +264,7 @@ const ALL_ABILITIES = Object.keys(ABILITY_LABEL);
 function baselineTools(character, db) {
   const out = new Set(collectToolProficiencies(character).map((t) => t.toLowerCase()));
   for (const cls of character?.classes ?? []) {
-    const sp = resolveClassObj(db, cls.classId, cls.source)?.startingProficiencies;
+    const sp = classProficiencies(resolveClassObj(db, cls.classId, cls.source), isOriginalEntry(character, cls));
     for (const entry of sp?.toolProficiencies ?? []) {
       if (!entry || typeof entry !== 'object') continue;
       for (const [k, v] of Object.entries(entry)) if (v === true) out.add(k.toLowerCase());

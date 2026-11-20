@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { parseClass, parseFeatureRef, skillCode, featuresUpToLevel } from './classData';
+import { parseClass, parseFeatureRef, skillCode, featuresUpToLevel, isOriginalEntry, classProficiencies, multiclassSkillChoice } from './classData';
 import { fighterClassData, warlockClassData, rogueClassData } from './fixtures/classData';
 
 describe('skillCode', () => {
@@ -84,5 +84,32 @@ describe('featuresUpToLevel', () => {
     expect(names).toContain('Fighting Style');
     expect(names).toContain('Extra Attack');
     expect(names).not.toContain('Indomitable');
+  });
+});
+
+describe('multiclasse (XPHB p. 44, TC-0217, TC-0218)', () => {
+  const bard = {
+    name: 'Bard',
+    startingProficiencies: { armor: ['light'], skills: [{ any: 3 }] },
+    multiclassing: { proficienciesGained: { armor: ['light'], skills: [{ choose: { from: ['stealth', 'arcana'], count: 1 } }] } },
+  };
+  it('isOriginalEntry: a marca, ou a primeira quando nenhuma está marcada', () => {
+    const a = { classId: 'a', isOriginalClass: false };
+    const b = { classId: 'b', isOriginalClass: true };
+    expect(isOriginalEntry({ classes: [a, b] }, b)).toBe(true);
+    expect(isOriginalEntry({ classes: [a, b] }, a)).toBe(false);
+    const c = { classId: 'c' };
+    const d = { classId: 'd' };
+    expect(isOriginalEntry({ classes: [c, d] }, c)).toBe(true);
+    expect(isOriginalEntry({ classes: [c, d] }, d)).toBe(false);
+  });
+  it('classProficiencies: a inicial dá tudo, a secundária o proficienciesGained, e sem ele nada', () => {
+    expect(classProficiencies(bard, true).skills).toEqual([{ any: 3 }]);
+    expect(classProficiencies(bard, false).skills[0].choose.count).toBe(1);
+    expect(classProficiencies({ startingProficiencies: { armor: ['light'] } }, false)).toEqual({});
+  });
+  it('multiclassSkillChoice: a perícia do multiclasse em códigos', () => {
+    expect(multiclassSkillChoice(bard)).toEqual({ from: ['ste', 'arc'], count: 1, any: false });
+    expect(multiclassSkillChoice({}).count).toBe(0);
   });
 });

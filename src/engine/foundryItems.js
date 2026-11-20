@@ -1119,9 +1119,7 @@ export function buildClassChoiceTraits(classEntry, classObj, db) {
   const parsed = parseClass(classObj);
   if (!parsed) return [];
   const descriptors = classLevelChoices(parsed, classObj, MAX_LEVEL);
-  if (classEntry.isOriginalClass !== false) {
-    descriptors.push(...classToolChoices(classObj).map((d) => ({ ...d, foundryTitle: 'Tool Proficiencies' })));
-  }
+  descriptors.push(...classToolChoices(classObj, classEntry.isOriginalClass !== false).map((d) => ({ ...d, foundryTitle: 'Tool Proficiencies' })));
   descriptors.push(...classGrantChoices(classEntry.classId, MAX_LEVEL).map((d) => ({
     ...d,
     fixedGrants: grantedLanguagesFor(classEntry.classId, d.level),

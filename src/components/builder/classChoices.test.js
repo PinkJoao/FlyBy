@@ -67,3 +67,37 @@ describe('buildClassChoices - ruleEntry (título do seletor vira link do glossá
     expect(skill?.ruleEntry).toBeUndefined();
   });
 });
+
+describe('buildClassChoices - classe secundária (multiclasse, TC-0218)', () => {
+  const mdb = {
+    ...db,
+    'class-bard': {
+      class: [{
+        name: 'Bard',
+        source: 'XPHB',
+        classFeatures: [],
+        classTableGroups: [],
+        startingProficiencies: { skills: [{ any: 3 }], toolProficiencies: [{ anyMusicalInstrument: 3 }] },
+        multiclassing: { proficienciesGained: { skills: [{ choose: { from: ['stealth', 'arcana'], count: 1 } }], toolProficiencies: [{ anyMusicalInstrument: 1 }] } },
+      }],
+    },
+  };
+  const fighter = { uid: 'f', classId: 'fighter', source: 'XPHB', level: 3, isOriginalClass: true, choices: {} };
+  const bard = { uid: 'b', classId: 'bard', source: 'XPHB', level: 1, isOriginalClass: false, choices: {} };
+  const multi = { classes: [fighter, bard] };
+
+  it('a secundária oferece a perícia e o instrumento do multiclasse, com o id da inicial', () => {
+    const choices = buildClassChoices(mdb, bard, multi);
+    const skill = choices.find((c) => c.id === 'skill');
+    expect(skill.count).toBe(1);
+    expect(skill.pool.options.map((o) => o.value)).toEqual(['ste', 'arc']);
+    expect(choices.filter((c) => c.kind === 'tool').map((c) => c.count)).toEqual([1]);
+  });
+
+  it('a mesma classe como inicial oferece as três perícias e os três instrumentos', () => {
+    const solo = { ...bard, isOriginalClass: true };
+    const choices = buildClassChoices(mdb, solo, { classes: [solo] });
+    expect(choices.find((c) => c.id === 'skill').count).toBe(3);
+    expect(choices.filter((c) => c.kind === 'tool').map((c) => c.count)).toEqual([3]);
+  });
+});

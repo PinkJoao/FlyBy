@@ -4,7 +4,8 @@
 // O QUE FAZ
 //   Grants fixos de classe e espécie, a escolha de ferramenta que NÃO vira grant
 //   (nem vaza a prosa "of your choice"), e a regra condicional de arma enumerada a
-//   partir do dado (TC-0078); a perícia fixa de uma opção de classe (DDL-0237).
+//   partir do dado (TC-0078); a perícia fixa de uma opção de classe (DDL-0237); a classe
+//   secundária dá só o `proficienciesGained` do multiclasse (TC-0217).
 //
 // FUNÇÕES
 //   charWith(opts): um personagem mínimo com classe e espécie.
@@ -21,6 +22,7 @@ const db = {
         name: 'Fighter',
         source: 'XPHB',
         startingProficiencies: { armor: ['light', 'medium', 'heavy', 'shield'], weapons: ['simple', 'martial'] },
+        multiclassing: { proficienciesGained: { armor: ['light', 'medium', 'shield'], weapons: ['martial'] } },
       },
     ],
   },
@@ -33,7 +35,9 @@ const db = {
           armor: ['light'],
           weapons: ['simple', "Martial weapons that have the {@filter Finesse or Light|items|...} property"],
           tools: ["{@item Thieves' Tools|XPHB}"],
+          weaponProficiencies: [{ simple: true, all: { fromFilter: 'type=martial weapon|property=light;finesse' } }],
         },
+        multiclassing: { proficienciesGained: { armor: ['light'], tools: ["{@item Thieves' Tools|XPHB}"], toolProficiencies: [{ "thieves' tools": true }] } },
       },
     ],
   },
@@ -95,6 +99,29 @@ describe('deriveGrantedProficiencies', () => {
     c.classes[0].choices = { 'optfeat@EI': { kind: 'optionalfeature', picks: ['Beguiling Influence|PHB'] } };
     const withOpt = { ...db, optionalfeatures: { optionalfeature: [{ name: 'Beguiling Influence', source: 'PHB', featureType: ['EI'], skillProficiencies: [{ deception: true, persuasion: true }] }] } };
     expect(deriveGrantedProficiencies(c, withOpt).grantedSkills).toEqual(['dec', 'per']);
+  });
+
+  it('classe secundária dá só o proficienciesGained: quem entra no guerreiro não ganha armadura pesada (TC-0217)', () => {
+    const c = createCharacter({ name: 'T' });
+    c.classes = [
+      { classId: 'rogue', source: 'XPHB', level: 3, isOriginalClass: true, hitPoints: {}, choices: {} },
+      { classId: 'fighter', source: 'XPHB', level: 1, isOriginalClass: false, hitPoints: {}, choices: {} },
+    ];
+    const out = deriveGrantedProficiencies(c, db);
+    expect(out.armor).toEqual(['Light Armor', 'Medium Armor', 'Shields']);
+    expect(out.weapons).toContain('Martial Weapons');
+  });
+
+  it('o Ladino secundário não dá a regra condicional de arma, só a ferramenta (TC-0217)', () => {
+    const c = createCharacter({ name: 'T' });
+    c.classes = [
+      { classId: 'fighter', source: 'XPHB', level: 3, isOriginalClass: true, hitPoints: {}, choices: {} },
+      { classId: 'rogue', source: 'XPHB', level: 1, isOriginalClass: false, hitPoints: {}, choices: {} },
+    ];
+    const withWeapons = { ...db, 'items-base': { baseitem: [{ name: 'Rapier', weaponCategory: 'martial', property: [{ uid: 'F|XPHB' }] }] } };
+    const out = deriveGrantedProficiencies(c, withWeapons);
+    expect(out.weaponNames).toEqual([]);
+    expect(out.grantedTools).toEqual(["Thieves' Tools"]);
   });
 
   it('sem classe/espécie → tudo vazio', () => {

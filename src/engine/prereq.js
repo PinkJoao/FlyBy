@@ -62,6 +62,7 @@ import { titleCase } from './choices';
 import { collectFeatIds, collectOptionalFeatureIds } from './proficiency';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj, resolveFeat } from './resolve';
 import { allSpells } from './spells';
+import { classProficiencies, isOriginalEntry } from './classData';
 import { resolveClassFeatures, resolveSubclassFeatures } from './foundryItems';
 
 const ABILITY_ABBR = { str: 'Str', dex: 'Dex', con: 'Con', int: 'Int', wis: 'Wis', cha: 'Cha' };
@@ -103,12 +104,12 @@ function classProfsOf(character, db) {
   const armor = new Set();
   const weapons = new Set();
   for (const c of character?.classes ?? []) {
-    const cls = resolveClassObj(db, c.classId, c.source);
-    for (const a of cls?.startingProficiencies?.armor ?? []) {
+    const sp = classProficiencies(resolveClassObj(db, c.classId, c.source), isOriginalEntry(character, c));
+    for (const a of sp?.armor ?? []) {
       const s = String(a).toLowerCase();
       for (const t of ARMOR_TOKENS) if (s.includes(t)) armor.add(t);
     }
-    for (const w of cls?.startingProficiencies?.weapons ?? []) {
+    for (const w of sp?.weapons ?? []) {
       const s = String(w).toLowerCase();
       if (s === 'simple' || s === 'martial') weapons.add(s);
     }

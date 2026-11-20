@@ -12,11 +12,20 @@
 //   parseFeatureRef(ref): uma ref de feature, string ou objeto.
 //   parseClass(classObj): a classe normalizada.
 //   featuresUpToLevel(classObj, level): as features até um nível.
+//   isOriginalEntry(character, cls): a entrada é a classe inicial?
+//   classProficiencies(classObj, isOriginal): as proficiências que a entrada de classe dá.
+//   multiclassSkillChoice(classObj): a perícia que a classe dá a quem entra nela por multiclasse.
 //
 // DECISÕES E ARMADILHAS
 //   - Perícias iniciais: `{choose:{from,count}}` na maioria, `{any:N}` no Bardo
 //     (qualquer perícia; `any: true` sinaliza pool aberto).
 //   - Fonte vazia numa ref herda a da classe.
+//   - Multiclasse (XPHB p. 44, "you gain only some of the new class's starting proficiencies"):
+//     a classe inicial dá o `startingProficiencies` inteiro; as outras, só o
+//     `multiclassing.proficienciesGained` (Monk, Sorcerer e Wizard não dão nada). Todo leitor
+//     de proficiência de classe passa por classProficiencies: a ficha dava a armadura pesada do
+//     guerreiro a um mago que entrou nele (a régua do multiclasse, TC-0217).
+//   - isOriginalEntry: a marca `isOriginalClass`; sem nenhuma marcada (ficha antiga), a primeira.
 // -----------------------------------------------------------------------------
 
 export const SKILL_NAME_TO_CODE = {
@@ -65,6 +74,27 @@ export function parseFeatureRef(ref) {
     level: Number(level) || 0,
     gainsSubclass,
   };
+}
+
+/** A entrada é a classe inicial? (sem nenhuma marcada, a primeira) */
+export function isOriginalEntry(character, cls) {
+  const list = character?.classes ?? [];
+  if (list.some((c) => c.isOriginalClass)) return cls?.isOriginalClass === true;
+  return list.length === 0 || list[0] === cls;
+}
+
+/** As proficiências que a entrada de classe dá, no formato do `startingProficiencies`. */
+export function classProficiencies(classObj, isOriginal = true) {
+  if (isOriginal) return classObj?.startingProficiencies ?? {};
+  return classObj?.multiclassing?.proficienciesGained ?? {};
+}
+
+/** A perícia que a classe dá a quem entra nela por multiclasse ({ from, count, any }). */
+export function multiclassSkillChoice(classObj) {
+  const s = classObj?.multiclassing?.proficienciesGained?.skills?.[0];
+  if (s?.choose) return { from: (s.choose.from ?? []).map(skillCode), count: s.choose.count ?? 0, any: false };
+  if (Number(s?.any) > 0) return { from: [], count: Number(s.any), any: true };
+  return { from: [], count: 0, any: false };
 }
 
 /**

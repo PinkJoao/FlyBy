@@ -10,7 +10,7 @@
 //
 // FUNÇÕES
 //   stripTag(s), cap(s), capWords(s), labelFrom(map, raw): limpeza e rótulos.
-//   conditionalWeaponNames(classObj, db): as armas individuais de uma regra
+//   conditionalWeaponNames(classObj, db, sp): as armas individuais de uma regra
 //     condicional de proficiência.
 //   addFixed(fields, sink): os `{ nome: true }` de um conjunto de campos de proficiência.
 //   deriveGrantedProficiencies(character, db): { armor, weapons, weaponNames,
@@ -24,6 +24,8 @@
 //     `weaponProficiencies[].all.fromFilter` (o insumo do weaponFilterAllows,
 //     DDL-0033), com as propriedades como ALTERNATIVAS. FILTER_PROPERTY traduz o
 //     nome da propriedade (que o filtro guarda) no código (que o dado guarda).
+//   - Classe secundária (multiclasse): só o que classProficiencies dá (o `proficienciesGained`),
+//     inclusive a regra condicional de arma, que o Ladino e o Monge não dão a quem entra neles.
 //   - Ferramentas da classe: prefere o campo ESTRUTURADO; tokens `any*` são
 //     escolhas e viram seletores. Sem ele, a prosa `tools`, pulando "...of your
 //     choice".
@@ -41,7 +43,7 @@
 import { resolveClassObj, resolveRaceObj, resolveFeat, resolveOptionalFeature } from './resolve';
 import { collectFeatIds } from './proficiency';
 import { optionEntries } from './optionTargets';
-import { skillCode } from './classData';
+import { skillCode, classProficiencies, isOriginalEntry } from './classData';
 
 const ARMOR_LABEL = { light: 'Light Armor', medium: 'Medium Armor', heavy: 'Heavy Armor', shield: 'Shields' };
 const WEAPON_LABEL = { simple: 'Simple Weapons', martial: 'Martial Weapons' };
@@ -76,9 +78,9 @@ const FILTER_PROPERTY = { light: 'L', finesse: 'F', heavy: 'H', thrown: 'T', ver
  * @param {object} db
  * @returns {string[]}
  */
-export function conditionalWeaponNames(classObj, db) {
+export function conditionalWeaponNames(classObj, db, sp = classObj?.startingProficiencies) {
   const out = [];
-  for (const entry of classObj?.startingProficiencies?.weaponProficiencies ?? []) {
+  for (const entry of sp?.weaponProficiencies ?? []) {
     const filter = entry?.all?.fromFilter;
     if (typeof filter !== 'string' || !filter) continue;
     const parts = Object.fromEntries(
@@ -121,11 +123,11 @@ export function deriveGrantedProficiencies(character, db) {
   for (const cls of character?.classes ?? []) {
     if (!cls.classId) continue;
     const obj = resolveClassObj(db, cls.classId, cls.source);
-    const sp = obj?.startingProficiencies;
+    const sp = obj ? classProficiencies(obj, isOriginalEntry(character, cls)) : null;
     if (!sp) continue;
     for (const a of sp.armor ?? []) addTo(armor, labelFrom(ARMOR_LABEL, a));
     for (const w of sp.weapons ?? []) addTo(weapons, labelFrom(WEAPON_LABEL, w));
-    for (const n of conditionalWeaponNames(obj, db)) addTo(weaponNames, n);
+    for (const n of conditionalWeaponNames(obj, db, sp)) addTo(weaponNames, n);
     const tp = sp.toolProficiencies;
     if (Array.isArray(tp) && tp.length) {
       for (const entry of tp) {

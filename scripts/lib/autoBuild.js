@@ -31,6 +31,8 @@
 //   fillSpells(db, character, derived, rng, problems, allow): cantrips, preparadas
 //     (círculos até maxPrepareLevel) e um Mystic Arcanum por círculo destravado,
 //     até o limite de cada origem de classe.
+//   multiclassOrder(db, classIds): os atributos que os requisitos de multiclasse pedem, na ordem.
+//   boostsFor(db, scores, order, classIds): os aumentos da origem que fazem todo requisito passar.
 //   autoBuild(db, spec): o personagem completo de uma linha da matriz.
 //
 // DECISÕES E ARMADILHAS
@@ -71,9 +73,14 @@
 //     1 idioma), escolhas de classe (o mesmo builder da ClassTab) e magias (limites
 //     do derived DESTA iteração; a próxima revalida). Sem nada preenchível e com
 //     pendências, travou.
+//   - Multiclasse (`spec.classes`, a régua do multiclasse): a primeira é a classe inicial, as
+//     outras entram com `isOriginalClass: false` como o "+" da ClassTab. O nível das escolhas
+//     é o TOTAL, como o guia (`totalLevel` no createGuideContext). Os atributos põem primeiro
+//     os que os requisitos de 13 pedem (o primeiro de cada `or`), e os aumentos da origem vão
+//     onde fazem todo requisito passar (com quatro atributos exigidos, o +1 vai no quarto).
 // -----------------------------------------------------------------------------
 
-import { createCharacter } from '../../src/schema/character';
+import { createCharacter, createClassEntry } from '../../src/schema/character';
 import {
   deriveFromDb,
   ownedFromDb,
@@ -100,6 +107,7 @@ import itemEntity from '../../src/selector/entities/item';
 import { planAllows } from '../../src/engine/classFeatureChoices';
 import { mulberry32, pickOne, shuffled } from './rng';
 import { subKeyOf, withTargetOptions } from '../../src/engine/optionTargets';
+import { multiclassRequirements, meetsRequirement } from '../../src/engine/multiclass';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
@@ -426,6 +434,32 @@ function fillSpells(db, character, derived, rng, problems, allow = () => true) {
   return changed;
 }
 
+/** Os atributos que os requisitos de multiclasse pedem, na ordem das classes. */
+export function multiclassOrder(db, classIds) {
+  const out = [];
+  for (const id of classIds) {
+    const req = multiclassRequirements(db, id) ?? {};
+    for (const [k, v] of Object.entries(req)) {
+      const keys = k === 'or' ? [Object.keys(v?.[0] ?? {})[0]] : [k];
+      for (const a of keys) if (a && !out.includes(a)) out.push(a);
+    }
+  }
+  return out;
+}
+
+/** Os aumentos da origem (+2 e +1) que fazem todo requisito de multiclasse passar, ou null. */
+export function boostsFor(db, scores, order, classIds) {
+  const reqs = classIds.map((id) => multiclassRequirements(db, id));
+  for (const a of order) {
+    for (const b of order) {
+      if (a === b) continue;
+      const s = { ...scores, [a]: scores[a] + 2, [b]: scores[b] + 1 };
+      if (reqs.every((r) => meetsRequirement(r, s))) return [a, b];
+    }
+  }
+  return null;
+}
+
 /**
  * O personagem completo de uma linha da matriz.
  * @param {object} db
@@ -438,14 +472,19 @@ export function autoBuild(db, spec) {
   const rng = mulberry32(spec.seed ?? 1);
   const c = createCharacter({ name: spec.name ?? 'Sweep Build', scoreMethod: 'standard-array' });
 
+  const classSpecs = spec.classes?.length
+    ? spec.classes
+    : [{ classId: spec.classId, classSource: spec.classSource, subclassId: spec.subclassId, subclassSource: spec.subclassSource, level: spec.level }];
+  const multi = classSpecs.length > 1;
   const seeded = shuffled(rng, ABILITIES);
-  const first = (spec.abilityOrder ?? []).filter((a) => ABILITIES.includes(a));
+  const required = multi ? multiclassOrder(db, classSpecs.map((x) => x.classId)) : [];
+  const first = [...required, ...(spec.abilityOrder ?? []).filter((a) => ABILITIES.includes(a) && !required.includes(a))];
   const order = [...first, ...seeded.filter((a) => !first.includes(a))];
   order.forEach((a, i) => {
     c.scores[a] = STANDARD_ARRAY[i];
   });
   const boostSeeded = shuffled(rng, ABILITIES);
-  const boostOrder = first.length ? order : boostSeeded;
+  const boostOrder = (multi && boostsFor(db, c.scores, order, classSpecs.map((x) => x.classId))) || (first.length ? order : boostSeeded);
   c.origin.abilityBoosts = [
     { ability: boostOrder[0], amount: 2 },
     { ability: boostOrder[1], amount: 1 },
@@ -453,14 +492,18 @@ export function autoBuild(db, spec) {
   const of = spec.originFeat ?? { id: 'Alert', source: 'XPHB' };
   c.origin.originFeat = { id: of.id, source: of.source, subtype: 'origin', choices: {} };
 
-  const cls = c.classes[0];
-  cls.classId = spec.classId;
-  cls.source = spec.classSource ?? 'XPHB';
-  cls.level = spec.level ?? 1;
-  if (spec.subclassId && cls.level >= (c.rulesConfig.subclassLevel ?? 3)) {
-    cls.subclassId = spec.subclassId;
-    cls.subclassSource = spec.subclassSource ?? null;
-  }
+  classSpecs.forEach((cs, i) => {
+    if (i > 0) c.classes.push(createClassEntry(false));
+    const cls = c.classes[i];
+    cls.classId = cs.classId;
+    cls.source = cs.classSource ?? 'XPHB';
+    cls.level = cs.level ?? 1;
+    if (cs.subclassId && cls.level >= (c.rulesConfig.subclassLevel ?? 3)) {
+      cls.subclassId = cs.subclassId;
+      cls.subclassSource = cs.subclassSource ?? null;
+    }
+  });
+  const total = c.classes.reduce((n, x) => n + (x.level ?? 0), 0);
   c.species = {
     id: spec.speciesId,
     source: spec.speciesSource,
@@ -480,7 +523,7 @@ export function autoBuild(db, spec) {
     if (pend.total === 0) break;
 
     const owned = ownedFromDb(c, db);
-    const ctx = { db, character: c, rng, owned, problems, level: cls.level, where: spec.id ?? 'row', allow: spec.allow ?? (() => true) };
+    const ctx = { db, character: c, rng, owned, problems, level: total, where: spec.id ?? 'row', allow: spec.allow ?? (() => true) };
     let changed = false;
 
     const raceObj = resolveRaceObj(db, c.species.id, c.species.source, c.species.lineage);
@@ -491,7 +534,7 @@ export function autoBuild(db, spec) {
         baseRace,
         raceObj,
         lineage: c.species.lineage,
-        level: cls.level,
+        level: total,
         bag: c.species.choices,
       });
       const r = fillBag(spChoices, c.species.choices, { ...ctx, where: `${ctx.where} species` });
@@ -503,7 +546,7 @@ export function autoBuild(db, spec) {
 
     const featData = resolveFeat(db, `${c.origin.originFeat.id}|${c.origin.originFeat.source}`);
     if (featData) {
-      const r = fillBag(featSubChoices(featData, cls.level, c.origin.originFeat.choices), c.origin.originFeat.choices, { ...ctx, where: `${ctx.where} origin-feat` });
+      const r = fillBag(featSubChoices(featData, total, c.origin.originFeat.choices), c.origin.originFeat.choices, { ...ctx, where: `${ctx.where} origin-feat` });
       if (r.changed) {
         c.origin = { ...c.origin, originFeat: { ...c.origin.originFeat, choices: r.bag } };
         changed = true;
@@ -518,8 +561,8 @@ export function autoBuild(db, spec) {
       }
     }
 
-    {
-      const r = fillBag(buildClassChoices(db, cls, c), cls.choices, { ...ctx, where: `${ctx.where} class` });
+    for (const cls of c.classes) {
+      const r = fillBag(buildClassChoices(db, cls, c), cls.choices, { ...ctx, where: `${ctx.where} class${multi ? ` ${cls.classId}` : ''}` });
       if (r.changed) {
         cls.choices = r.bag;
         changed = true;

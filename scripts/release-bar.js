@@ -2,7 +2,7 @@
 // release-bar: a régua do lançamento do play mode, numa porcentagem só
 // =============================================================================
 // O QUE FAZ
-//   Uso: npx vite-node scripts/release-bar.js [--sample=<n>] [--no-write] [--list]
+//   Uso: npx vite-node scripts/release-bar.js [--sample=<n>] [--mc-sample=<n>] [--multiclass-only] [--no-write] [--list]
 //   A pergunta do dono (DDL-0249, DDL-0250): que parte dos personagens possíveis é buildável
 //   E jogável? O universo é o produto classe x subclasse x espécie (com a linhagem) que os
 //   seletores oferecem (scripts/lib/matrix.js), cada combinação com o mesmo peso. Uma
@@ -16,8 +16,13 @@
 //   Depois sorteia `--sample` combinações de verdade (classe, subclasse, espécie e nível
 //   ao acaso) e confere que o build termina e o catálogo do jogo deriva: o produto só vale
 //   se a mistura não quebra o que as metades provam sozinhas.
+//   O MULTICLASSE é um universo à parte: todo par ordenado de classes (a primeira é a inicial)
+//   nas divisões MC_SPLITS, com as subclasses em rodízio (toda linha da matriz aparece como
+//   multiclasse), mais `--mc-sample` trios ao acaso. Cada ficha passa pelo oráculo do texto
+//   (scripts/lib/multiclassOracle.js): espaços, pacto, preparadas por classe, dados de vida,
+//   proficiências da classe nova, saves, Extra Attack.
 //   Escreve testing/RELEASE-BAR.md (privado): as porcentagens no SRD e no 5e.tools, por
-//   camada, e cada linha que não passa com o motivo.
+//   camada, o multiclasse, e cada linha que não passa com o motivo.
 //
 // FUNÇÕES
 //   tierOfSubclass(sub), tierOfClass(classObj): a camada do registro (a mesma do feature-audit).
@@ -26,6 +31,8 @@
 //   speciesRow(row): o estado de uma linha de espécie.
 //   cueReasons(catalog, kinds): as features do catálogo com pista sem conta.
 //   pct(n, d): a porcentagem com uma casa.
+//   mcBuild(classes, sp, id): uma ficha multiclasse montada e conferida pelo oráculo.
+//   multiclassRows(): o estado de cada par ordenado de classes.
 //
 // DECISÕES E ARMADILHAS
 //   - Três estados por linha: `playable`, `gap` (pendência no builder, veredito `gap`, pista
@@ -41,6 +48,10 @@
 //   - O SRD é a combinação da camada `srd` (classe do XPHB com subclasse do SRD 5.2) com a
 //     espécie de flag `srd52` ou `srd`.
 //   - Nada de texto de livro no relatório: só nomes e motivos.
+//   - O par do multiclasse passa quando toda divisão monta sem pendência, o catálogo do jogo
+//     deriva, o oráculo não acha nada e a ficha volta igual pelo Foundry (export e import, as
+//     decisões pelo decisionSummary, como o sweep). As features de cada classe já têm veredito
+//     pelas linhas de classe; o que o par prova é a MISTURA, que só a regra de multiclasse governa.
 // -----------------------------------------------------------------------------
 import fs from 'node:fs';
 import process from 'node:process';
@@ -53,6 +64,15 @@ import { derivePlayCatalog } from '../src/engine/playCatalog.js';
 import { plainText } from '../src/engine/playFeatures.js';
 import { resolveClassObj, resolveSubclassObj } from '../src/engine/resolve.js';
 import { resolveClassFeatures, resolveSubclassFeatures } from '../src/engine/foundryItems.js';
+import { multiclassProblems } from './lib/multiclassOracle.js';
+import { deriveGrantedProficiencies } from '../src/engine/autoProficiencies.js';
+import { buildClassChoices } from '../src/components/builder/classChoices.js';
+import { attacksPerAction } from '../src/engine/playBasicActions.js';
+import { deriveFromDb } from '../src/engine/resolve.js';
+import { assembleFoundryActor } from '../src/engine/foundryActor.js';
+import { foundryToCharacter } from '../src/engine/foundryImport.js';
+import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData.js';
+import { decisionSummary, diffSummaries, classifyDiffs } from './lib/roundtrip.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
@@ -60,8 +80,11 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
 }));
 const LEVELS = [1, 3, 5, 11, 20];
 const SAMPLE = Number(args.sample ?? 300);
+const MC_SAMPLE = Number(args['mc-sample'] ?? 200);
+const MC_SPLITS = [[1, 1], [3, 3], [5, 5], [12, 8]];
 const OUT = 'testing/RELEASE-BAR.md';
 const db = loadDb();
+await loadFoundryMechanics();
 const species = defaultSpecies(db);
 const verdicts = JSON.parse(fs.readFileSync('testing/feature-audit/verdicts.json', 'utf8'));
 const HOST = classMatrix(db).find((r) => r.classId === 'fighter' && r.classSource === 'XPHB' && r.subclassSource === 'XPHB' && /champion/i.test(r.subclassId ?? ''));
@@ -154,6 +177,91 @@ function speciesRow(row) {
 /** A porcentagem com uma casa. */
 const pct = (n, d) => (d ? `${((100 * n) / d).toFixed(1)}%` : 'n/a');
 
+/** Uma ficha multiclasse montada e conferida: a lista de problemas (vazia passa). */
+function mcBuild(classes, sp, id) {
+  try {
+    const built = autoBuild(db, { id, ...sp, seed: hashSeed(id, 1), classes });
+    const problems = [];
+    if (!built.ok) problems.push(`builder com pendência (${built.pendencies.total})`);
+    const catalog = derivePlayCatalog(built.character, db);
+    problems.push(...multiclassProblems(db, built, { deriveGranted: deriveGrantedProficiencies, buildClassChoices, catalog, attacksPerAction, derive: deriveFromDb }));
+    const back = foundryToCharacter(assembleFoundryActor(built.character, db), db);
+    const { real } = classifyDiffs(diffSummaries(decisionSummary(built.character), decisionSummary(back)), { known: [] });
+    for (const x of real.slice(0, 3)) problems.push(`volta pelo Foundry: ${x.path ?? JSON.stringify(x).slice(0, 120)}`);
+    return problems;
+  } catch (e) {
+    return [`erro: ${String(e?.message ?? e).slice(0, 160)}`];
+  }
+}
+
+/** O estado de cada par ordenado de classes, nas divisões MC_SPLITS, com as subclasses em rodízio. */
+function multiclassRows() {
+  const byClass = new Map();
+  for (const r of classMatrix(db)) {
+    const k = `${r.classId}|${r.classSource}`;
+    if (!byClass.has(k)) byClass.set(k, []);
+    byClass.get(k).push(r);
+  }
+  const keys = [...byClass.keys()];
+  const turn = new Map(keys.map((k) => [k, 0]));
+  const next = (k) => {
+    const list = byClass.get(k);
+    const r = list[turn.get(k) % list.length];
+    turn.set(k, turn.get(k) + 1);
+    return r;
+  };
+  const rows = [];
+  for (const a of keys) {
+    for (const b of keys) {
+      if (a === b) continue;
+      const reasons = [];
+      for (const [la, lb] of MC_SPLITS) {
+        const ra = next(a);
+        const rb = next(b);
+        const id = `${ra.id} ${la} / ${rb.id} ${lb}`;
+        const spec = [ra, rb].map((r, i) => ({ classId: r.classId, classSource: r.classSource, subclassId: r.subclassId, subclassSource: r.subclassSource, level: i ? lb : la }));
+        for (const p of mcBuild(spec, species, id)) reasons.push(`${id}: ${p}`);
+      }
+      const [ca, cb] = [a, b].map((k) => resolveClassObj(db, ...k.split('|')).name);
+      rows.push({ id: `${a} > ${b}`, label: `${ca} > ${cb}`, status: reasons.length ? 'gap' : 'playable', reasons });
+    }
+  }
+  return { rows, keys, byClass };
+}
+
+const mc = multiclassRows();
+const mcRng = mulberry32(20261119);
+const mcSampleFails = [];
+const speciesAll = speciesMatrix(db);
+for (let i = 0; i < MC_SAMPLE; i++) {
+  const picks = [];
+  const pool = [...mc.keys];
+  while (picks.length < 3) picks.push(pool.splice(Math.floor(mcRng() * pool.length), 1)[0]);
+  const levels = [1 + Math.floor(mcRng() * 10), 1 + Math.floor(mcRng() * 6), 1 + Math.floor(mcRng() * 4)];
+  const spec = picks.map((k, j) => {
+    const list = mc.byClass.get(k);
+    const r = list[Math.floor(mcRng() * list.length)];
+    return { classId: r.classId, classSource: r.classSource, subclassId: r.subclassId, subclassSource: r.subclassSource, level: levels[j] };
+  });
+  const s = speciesAll[Math.floor(mcRng() * speciesAll.length)];
+  const id = `${spec.map((x) => `${x.classId}${x.subclassId ? `(${x.subclassId})` : ''} ${x.level}`).join(' / ')} + ${s.id}`;
+  for (const p of mcBuild(spec, { speciesId: s.speciesId, speciesSource: s.speciesSource, lineage: s.lineage }, id)) mcSampleFails.push(`${id}: ${p}`);
+}
+const mcOk = mc.rows.filter((r) => r.status === 'playable').length;
+const mcTrioOk = MC_SAMPLE - new Set(mcSampleFails.map((x) => x.split(': ')[0])).size;
+console.log(`multiclasse: ${mcOk} de ${mc.rows.length} pares (${pct(mcOk, mc.rows.length)}); trios: ${mcTrioOk} de ${MC_SAMPLE} sem problema`);
+if (args['multiclass-only']) {
+  const all = [...mc.rows.flatMap((x) => x.reasons), ...mcSampleFails];
+  const fam = new Map();
+  for (const r of all) {
+    const k = r.split(': ').slice(1).join(': ').replace(/[0-9]+/g, 'N').slice(0, 100);
+    fam.set(k, (fam.get(k) ?? 0) + 1);
+  }
+  for (const [k, n] of [...fam].sort((x, y) => y[1] - x[1])) console.log(String(n).padStart(5), k);
+  if (args.list) for (const r of all) console.log(r);
+  process.exit(0);
+}
+
 const classes = classMatrix(db).map(classRow);
 const speciesRows = speciesMatrix(db).map(speciesRow);
 
@@ -204,6 +312,17 @@ const lines = [
   `Amostra de ${SAMPLE} combinações reais (classe, subclasse, espécie e nível ao acaso): ${SAMPLE - sampleFails.length} sem problema.`,
   ...sampleFails.map((x) => `- ${x}`),
   '',
+  '## Multiclasse',
+  '',
+  `Todo par ordenado de classes (a primeira é a inicial), nas divisões ${MC_SPLITS.map((x) => x.join('/')).join(', ')}, com as subclasses em rodízio, conferido pela regra de multiclasse do XPHB: espaços, pacto, preparadas por classe, dados de vida, proficiências da classe nova, saves e Extra Attack (scripts/lib/multiclassOracle.js).`,
+  '',
+  '| Recorte | Pares | Certificado |',
+  '|---|---|---|',
+  `| Pares de classes | ${mc.rows.length} | ${pct(mcOk, mc.rows.length)} |`,
+  '',
+  `Amostra de ${MC_SAMPLE} trios ao acaso (classes, subclasses, espécie e níveis): ${mcTrioOk} sem problema.`,
+  ...mcSampleFails.map((x) => `- ${x}`),
+  '',
   '## Por classe',
   '',
   '| Classe | Linhas | Certificadas | Sem veredito | Com lacuna |',
@@ -215,7 +334,7 @@ const lines = [
   '',
   '## Linhas que não passam',
   '',
-  ...[...classes, ...speciesRows].filter((r) => r.status !== 'playable').map((r) => `- **${r.label}** (${r.status}): ${r.reasons.join('; ')}`),
+  ...[...classes, ...speciesRows, ...mc.rows].filter((r) => r.status !== 'playable').map((r) => `- **${r.label}** (${r.status}): ${r.reasons.join('; ')}`),
   '',
 ];
 if (!args['no-write']) fs.writeFileSync(OUT, lines.join('\n'), 'utf8');

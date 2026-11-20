@@ -486,3 +486,13 @@ describe('itemSpellOrigins: as formas do DDL-0262', () => {
     expect(it1({ name: 'Scepter', attachedSpells: { will: ['thunderwave#4'] } }).origins[0].spells[0]).toMatchObject({ name: 'Thunderwave', level: 1, castLevel: 4 });
   });
 });
+
+describe('spellMechanics: cura de número fixo (DDL-0271)', () => {
+  it('o Heal cura o número da frase, e o dado continua vindo primeiro', () => {
+    const heal = { name: 'Heal', level: 6, miscTags: ['HL'], entries: ['Positive energy washes through the target, restoring 70 {@variantrule Hit Points|XPHB}.'] };
+    expect(spellMechanics(heal, 6).heal.dice).toBe('70');
+    const cure = { name: 'Cure Wounds', level: 1, miscTags: ['HL'], entries: ['A creature regains a number of Hit Points equal to {@dice 2d8} plus your modifier.'] };
+    expect(spellMechanics(cure, 1).heal.dice).toBe('2d8');
+    expect(spellMechanics({ name: 'X', level: 1, entries: ['restoring 70 Hit Points'] }, 1).heal).toBe(null);
+  });
+});

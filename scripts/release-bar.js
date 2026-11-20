@@ -41,6 +41,8 @@
 //     diferença é o trabalho de revisão que falta, nunca é chute.
 //   - A espécie tem registro de vereditos desde o DDL-0270 (`feature-audit.js --tier=species`, um por
 //     traço): a linha de espécie só passa com todo traço `ok` ou `explained`, como a de classe.
+//   - As MAGIAS (DDL-0271) entram como recorte à parte pelo caminho no jogo (scripts/lib/spellPaths.js), e os
+//     ITENS mágicos pelo oráculo dos campos do dado (scripts/lib/itemOracle.js).
 //   - Os TALENTOS (o registro `--tier=feats`) entram como um recorte à parte: a parte dos talentos do
 //     seletor com veredito `ok` ou `explained`. Um talento não multiplica as combinações (é escolha de nível).
 //   - O veredito é lido pela chave, sem conferir a assinatura das facetas: "mudou" é trabalho
@@ -67,6 +69,8 @@ import { plainText } from '../src/engine/playFeatures.js';
 import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from '../src/engine/resolve.js';
 import { resolveClassFeatures, resolveSubclassFeatures } from '../src/engine/foundryItems.js';
 import { multiclassProblems } from './lib/multiclassOracle.js';
+import { spellRows } from './lib/spellPaths.js';
+import { itemRows } from './lib/itemOracle.js';
 import { deriveGrantedProficiencies } from '../src/engine/autoProficiencies.js';
 import { buildClassChoices } from '../src/components/builder/classChoices.js';
 import { attacksPerAction } from '../src/engine/playBasicActions.js';
@@ -308,6 +312,11 @@ const srd = bar(classes.filter((r) => r.srd), speciesRows.filter((r) => r.srd));
 const tiers = ['srd', 'xphb', 'post', 'legacy'].map((t) => [t, bar(classes.filter((r) => r.tier === t), speciesRows)]);
 const featRows = featMatrix(db).map((r) => ({ ...r, state: featureVerdict(`feats|${r.name}|${r.source}`) }));
 const featOk = featRows.filter((r) => r.state === 'ok').length;
+const spells = spellRows(db);
+const spellOk = spells.filter((r) => r.state !== 'gap').length;
+const items = itemRows(db);
+const itemsChecked = items.filter((r) => !r.skip);
+const itemOk = itemsChecked.filter((r) => !r.problems.length).length;
 
 const lines = [
   '# A régua do lançamento do play mode',
@@ -330,6 +339,16 @@ const lines = [
   '',
   `Os ${featRows.length} talentos do seletor no registro (\`feature-audit.js --tier=feats\`): ${featOk} com veredito \`ok\` ou \`explained\` (${pct(featOk, featRows.length)}), ${featRows.filter((r) => r.state === 'gap').length} com lacuna, ${featRows.filter((r) => r.state === 'unreviewed').length} sem veredito.`,
   ...featRows.filter((r) => r.state !== 'ok').map((r) => `- ${r.name} (${r.source}): ${r.state}`),
+  '',
+  '## Magias',
+  '',
+  `As ${spells.length} magias do seletor pelo caminho no jogo (\`scripts/lib/spellPaths.js\`): ${spells.filter((r) => r.state === 'ok').length} rolam ou têm caminho (efeito, zona, instância leve, arma, forma, temporários), ${spells.filter((r) => r.state === 'log-ok').length} sem dado no texto (o lançamento registra), ${spells.filter((r) => r.state === 'explained').length} com dado de outra criatura ou de mesa (explicadas), ${spells.filter((r) => r.state === 'gap').length} com lacuna: ${pct(spellOk, spells.length)}.`,
+  ...spells.filter((r) => r.state === 'gap').map((r) => `- ${r.name} (${r.source}): dado no texto e nenhum caminho no jogo`),
+  '',
+  '## Itens mágicos',
+  '',
+  `Os ${items.length} itens mágicos do seletor (genéricos e uma amostra por modelo de variante) no mago do XPHB de nível 9, equipados e sintonizados, conferidos campo por campo do dado (CA, salvaguarda, atributo, ataque e CD de magia, cargas, magias do item, resistência, imunidade, deslocamento, ataque da arma; \`scripts/lib/itemOracle.js\`): ${itemOk} de ${itemsChecked.length} sem problema (${pct(itemOk, itemsChecked.length)}); ${items.length - itemsChecked.length} pedem sintonia de outra classe e ficam fora do hospedeiro.`,
+  ...itemsChecked.filter((r) => r.problems.length).map((r) => `- ${r.name} (${r.source}): ${r.problems.join('; ')}`),
   '',
   '## Multiclasse',
   '',

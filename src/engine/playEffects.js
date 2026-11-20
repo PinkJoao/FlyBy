@@ -109,6 +109,10 @@
 //     de 17), `speedTimes` (Haste dobra todo deslocamento) e `hpMax` (Aid: o máximo e o atual sobem; ao sair, o dano
 //     baixa o mesmo tanto, então o atual só cai se passar do máximo novo, playState). `rolls` marca a magia que continua
 //     com a rolagem dela (Fire Shield, as Investitures, Tenser's Transformation): o efeito entra e o dano não some.
+//   - DDL-0271: as magias com dado na prosa e nenhum caminho no jogo. Gift of Alacrity ("add 1d8 to its initiative
+//     rolls") e Zone of Amicability ("treat a d20 roll of 9 or lower as a 10" ao influenciar uma criatura na área: as
+//     perícias de influência, opcional) viram efeito; o resto é efeito em outra criatura ou rolagem que o texto não
+//     soma ao personagem.
 //   - DDL-0257: o checkup das invocações. Cloak of Flies liga vantagem no Intimidation e desvantagem nas outras
 //     perícias de CAR, com o dano da aura na nota; Mage Armor (SPELL_EFFECTS, a Armor of Shadows) põe `acBase` 13:
 //     effectiveAc troca a base sem armadura (a do acBreakdown) por 13 + DES se for maior, e nada com armadura.
@@ -331,6 +335,8 @@ const SPELL_EFFECTS = {
     choice: { message: 'Which damage type?', options: () => typeOptions(['acid', 'bludgeoning', 'cold', 'fire', 'lightning', 'necrotic', 'piercing', 'poison', 'radiant', 'slashing', 'thunder']) },
     make: (c, x) => ({ label: named('Resistance', x.choice), notes: [`When you take ${x.choice ?? 'acid'} damage, reduce the total by 1d4 (once per turn)`], effects: [] }),
   },
+  'gift of alacrity': { self: false, make: () => ({ label: 'Gift of Alacrity', effects: [{ targets: ['initiative'], formula: '1d8', label: 'Gift of Alacrity' }] }) },
+  'zone of amicability': { self: true, make: () => ({ label: 'Zone of Amicability', effects: [{ targets: ['skill:dec', 'skill:itm', 'skill:prf', 'skill:per'], d20Min: 10, optional: true, label: 'Zone of Amicability (influence a creature in the area)' }] }) },
   shield: { self: true, make: () => ({ label: 'Shield', ac: 5, notes: ['+5 AC until the start of your next turn, against the triggering attack too; no damage from Magic Missile'], effects: [] }) },
   longstrider: { self: false, make: () => ({ label: 'Longstrider', speed: 10, effects: [] }) },
   heroism: { self: false, make: (c, x) => ({ label: 'Heroism', notes: [`Immune to Frightened; ${Math.max(0, x.origin?.abilityMod ?? 0)} Temporary Hit Points at the start of each of your turns`], effects: [] }) },

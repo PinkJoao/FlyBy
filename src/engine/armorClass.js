@@ -15,6 +15,8 @@
 //   flatBonusAc(raw): o bônus plano de CA de um item, ou 0 quando é condicional.
 //   itemActive(e): o item está em uso?
 //   unarmoredFormulas(character): as Defesas sem Armadura ativas.
+//   itemBaseAc(inventory): a CA base sem armadura que um item em uso dá pelo texto ("your base Armor Class is
+//     15 plus your Dexterity modifier": Robe of the Archmagi, Pride Silk Outfit; o oráculo de itens, DDL-0271).
 //   deriveArmorClass(character, inventory, mods, naturalArmor): a CA e o
 //     breakdown.
 //   deriveSaveBonusFromItems(inventory): o bônus plano a todos os saves.
@@ -104,6 +106,19 @@ function unarmoredFormulas(character) {
   );
 }
 
+const ITEM_BASE_AC = /aren't wearing armor, your base (?:\{@variantrule )?Armor Class(?:\|[^}]*\})? is (\d+) (?:\+|plus) your Dexterity modifier/i;
+
+/** A CA base sem armadura que um item em uso dá pelo texto (Robe of the Archmagi: 15 + DES). */
+export function itemBaseAc(inventory = []) {
+  const out = [];
+  for (const e of inventory) {
+    if (!itemActive(e)) continue;
+    const m = JSON.stringify(e.raw?.entries ?? []).match(ITEM_BASE_AC);
+    if (m) out.push({ base: Number(m[1]), label: e.raw.name });
+  }
+  return out;
+}
+
 /**
  * A Classe de Armadura e o breakdown dela.
  * @param {import('../schema/character').Character} character
@@ -140,6 +155,9 @@ export function deriveArmorClass(character, inventory = [], mods = {}, naturalAr
     for (const f of unarmoredFormulas(character)) {
       const total = 10 + f.abilities.reduce((s, a) => s + (mods[a] ?? 0), 0);
       candidates.push({ total, allowsShield: f.allowsShield, parts: [{ label: f.label, value: total, note: 'base' }] });
+    }
+    for (const b of itemBaseAc(inventory)) {
+      candidates.push({ total: b.base + dex, allowsShield: true, parts: [{ label: b.label, value: b.base + dex, note: 'item' }] });
     }
     if (naturalArmor?.type === 'unarmored') {
       const mod = mods[naturalArmor.ability] ?? 0;

@@ -35,7 +35,9 @@
 //     initiativeBonus(character, derived): DES, mais o PB com o Alert e o bônus de teste dos itens (DDL-0256).
 //     hitDiceByFace(derived): os dados de vida agregados por face.
 //     weaponProficient(entry, weaponProfs, weaponNames), weaponAttacks(character,
-//       derived): as armas do inventário, equipadas primeiro.
+//       derived): as armas do inventário, equipadas primeiro; também o item com dano e categoria de arma no dado
+//       e sem `type` de arma (os cajados mágicos de livros antigos, a Rod of Seven Parts, o Wand of Orcus: o
+//       oráculo de itens achou seis sem ataque no jogo, DDL-0271).
 //     unarmedStrike(derived): o ataque desarmado.
 //     withFeatTypes(attacks, features): o tipo de dano que um talento deixa escolher nos ataques com arma e
 //       desarmado (FEAT_DAMAGE_TYPES: o Blazing Strike do Boon of Blazing Dawn, radiante, DDL-0261).
@@ -46,7 +48,9 @@
 //       spellMechanics(raw, level): a mecânica de uma magia pelo dado. O dano ganha `addMod` quando a frase
 //       do primeiro dado de dano soma o modificador ("1d8 plus your spellcasting ability modifier": Spiritual
 //       Weapon, Flame Blade, Bigby's Hand, Mordenkainen's Sword, Conjure Fey; DDL-0245), e os tipos vêm do
-//       par do texto quando o dado não traz `damageInflict` (Holy Star of Mystra: Force or Radiant).
+//       par do texto quando o dado não traz `damageInflict` (Holy Star of Mystra: Force or Radiant). A cura sem
+//       `{@dice}` lê o número fixo da frase (FIXED_HEAL: o Heal do SRD, "restoring 70 Hit Points", que não curava;
+//       DDL-0271), sem as tags (o "Hit Points" vem marcado como regra).
 //     damageAddsMod(raw, dice): a frase do dado soma o modificador de conjuração?
 //     damageLater(raw): o dano só vem DEPOIS do lançamento? O parágrafo até o primeiro dado tem um gatilho
 //       posterior ("whenever you hit", "Until the spell ends, you can take a Magic action", "starts its
@@ -365,7 +369,7 @@ export function shieldInHand(inventory) {
 
 /** As armas do inventário como ataques estruturados, equipadas primeiro. */
 export function weaponAttacks(character, derived) {
-  const weapons = (derived.inventory ?? []).filter((e) => e.group === 'weapon' && e.raw);
+  const weapons = (derived.inventory ?? []).filter((e) => e.raw && (e.group === 'weapon' || (e.raw.weaponCategory && e.raw.dmg1)));
   weapons.sort((a, b) => (b.equipped === true) - (a.equipped === true));
 
   const masteryPicks = new Set();
@@ -647,10 +651,14 @@ function textDice(raw) {
   return JSON.stringify(raw?.entries ?? []).match(/\{@damage ([^}|]+)/)?.[1] ?? null;
 }
 
-/** O primeiro dado de cura citado no texto ({@dice 2d8}). */
+/** O primeiro dado de cura citado no texto ({@dice 2d8}), ou o número fixo da frase (Heal: 70). */
 function textHealDice(raw) {
-  return JSON.stringify(raw?.entries ?? []).match(/\{@dice ([^}|]+)/)?.[1] ?? null;
+  const text = JSON.stringify(raw?.entries ?? []);
+  const plain = text.replace(/[{]@\w+ ([^|}]*)[^}]*[}]/g, '$1');
+  return text.match(/\{@dice ([^}|]+)/)?.[1] ?? plain.match(FIXED_HEAL)?.[1] ?? null;
 }
+
+const FIXED_HEAL = /\b(?:restor(?:es|ing)|regains?) (\d+) Hit Points\b/i;
 
 /** O dado somado por círculo acima do base ({@scaledamage 8d6|3-9|1d6} dá "1d6"). */
 function upcastDice(raw) {

@@ -306,3 +306,13 @@ describe('autobuffs de magia (DDL-0260)', () => {
     expect(spellEffectReplacesRoll({ name: 'Magic Missile' })).toBe(false);
   });
 });
+
+describe('magias com dado sem caminho no jogo (DDL-0271)', () => {
+  it('Gift of Alacrity soma 1d8 na iniciativa; Zone of Amicability dá o piso 10 nas perícias de influência', () => {
+    const g = sourceModifier('Gift of Alacrity');
+    expect(g.effects[0]).toMatchObject({ targets: ['initiative'], formula: '1d8' });
+    const z = sourceModifier('Zone of Amicability');
+    expect(z.effects[0].d20Min).toBe(10);
+    expect(z.effects[0].targets).toContain('skill:prf');
+  });
+});

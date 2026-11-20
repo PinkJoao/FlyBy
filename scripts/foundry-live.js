@@ -14,6 +14,9 @@
 //     roundtrip  a ficha que o Foundry guardou, lida pelo NOSSO import, contra a
 //                original: as decisões do jogador têm de bater.
 //     report     resume o `_results.json` e o `_premades.json` da volta.
+//     numbers    o oráculo diferencial (DDL-0274): o ator que o Foundry guardou, lido pelo nosso import e
+//                derivado pelo nosso motor, contra os números que o Foundry calculou para ele (CA, PV,
+//                proficiência, iniciativa, CD de magia, salvaguardas, perícias, espaços, acerto das armas).
 //   No mundo, carregue o harness pelo console:
 //     eval(await (await fetch('http://127.0.0.1:8787/s/foundryLivePage.js',
 //       { targetAddressSpace: 'loopback' })).text())
@@ -26,6 +29,8 @@
 //   roundtrip(): a volta pelo nosso import.
 //   report(): o resumo dos achados e do lado a lado.
 //   diffInto(agg, a, b, path, row): acumula as diferenças de dois snapshots.
+//   ourNumbers(character, db): os mesmos números do `snapshot` da página, pelo nosso motor e pelo catálogo do jogo.
+//   numbers(): o oráculo diferencial, por família de diferença.
 //
 // DECISÕES E ARMADILHAS
 //   - O lote é o do `npm run sweep -- --strict --emit-actors` (286 atores,
@@ -36,6 +41,10 @@
 //   - O servidor só escuta em 127.0.0.1 e só escreve dentro da pasta da volta.
 //   - Medido na primeira rodada (2026-11-08, Foundry 13.351, dnd5e 5.3.3): cerca
 //     de 2 s por ator, 286 atores em 10 minutos.
+//   - `numbers` compara o MESMO ator dos dois lados (o que o Foundry guardou, pelo nosso import), então mede a
+//     derivação, não o export. A CD do Foundry é a da habilidade de conjuração do ator: basta estar entre as CDs das
+//     nossas origens. O acerto da arma vem do rótulo ("+7"). Os dois intérpretes são independentes: uma diferença é
+//     defeito de um dos dois, e o relatório não decide qual.
 // -----------------------------------------------------------------------------
 
 import http from 'node:http';
@@ -51,6 +60,8 @@ import { buildFeatItem } from '../src/engine/foundryItems';
 import { linkConsumptionTargets } from '../src/engine/foundryConsumption';
 import { modernizeEffectKeys } from '../src/engine/foundryCompat';
 import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData';
+import { deriveFromDb } from '../src/engine/resolve';
+import { derivePlayCatalog } from '../src/engine/playCatalog';
 
 const ROOT = join(import.meta.dirname, '..');
 const ACTORS = join(ROOT, 'testing', 'actors');
@@ -178,10 +189,64 @@ function report() {
   }
 }
 
+/** Os números do `snapshot` da página, pelo nosso motor e pelo catálogo do jogo. */
+function ourNumbers(character, db) {
+  const d = deriveFromDb(character, db);
+  const cat = derivePlayCatalog(character, db);
+  const slots = {};
+  for (const [k, n] of Object.entries(d.spellcasting?.slots ?? {})) if (n) slots[`spell${k}`] = n;
+  if (d.spellcasting?.pactSlots?.slots) slots.pact = d.spellcasting.pactSlots.slots;
+  return {
+    ac: d.armorClass?.total, hpMax: d.maxHp, prof: d.proficiencyBonus, init: cat.checks?.initiative?.bonus,
+    spellDcs: (d.spellcasting?.origins ?? []).filter((o) => o.kind === 'class').map((o) => o.saveDc),
+    saves: d.saves, skills: Object.fromEntries(Object.entries(d.skills ?? {}).map(([k, v]) => [k, v.bonus])), slots,
+    weapons: Object.fromEntries((cat.attacks ?? []).map((a) => [a.name, a.toHit?.total])),
+  };
+}
+
+/** O oráculo diferencial: o mesmo ator pelo Foundry e pelo nosso motor, por família de diferença. */
+async function numbers() {
+  const db = loadDb();
+  await loadFoundryMechanics();
+  const results = JSON.parse(readFileSync(join(BACK, '_results.json'), 'utf8'));
+  const fam = {};
+  let checked = 0;
+  const add = (k, ex) => { (fam[k] ??= []).push(ex); };
+  for (const r of results) {
+    if (!r.snapshot || !existsSync(join(BACK, r.file))) continue;
+    let ours;
+    try {
+      ours = ourNumbers(foundryToCharacter(JSON.parse(readFileSync(join(BACK, r.file), 'utf8')), db), db);
+    } catch (e) {
+      add('erro no nosso lado', `${r.file}: ${String(e?.message ?? e).slice(0, 80)}`);
+      continue;
+    }
+    checked++;
+    const f = r.snapshot;
+    const id = r.file.replace(/[.]json$/, '');
+    for (const k of ['ac', 'hpMax', 'prof', 'init']) if (f[k] != null && ours[k] != null && f[k] !== ours[k]) add(k, `${id}: Foundry ${f[k]}, nós ${ours[k]}`);
+    if (f.spellDc && ours.spellDcs.length && !ours.spellDcs.includes(f.spellDc)) add('spellDc', `${id}: Foundry ${f.spellDc}, nós ${ours.spellDcs.join('/')}`);
+    for (const [k, v] of Object.entries(f.saves ?? {})) if (ours.saves?.[k] != null && v !== ours.saves[k]) add(`save`, `${id} ${k}: Foundry ${v}, nós ${ours.saves[k]}`);
+    for (const [k, v] of Object.entries(f.skills ?? {})) if (ours.skills?.[k] != null && v !== ours.skills[k]) add(`skill`, `${id} ${k}: Foundry ${v}, nós ${ours.skills[k]}`);
+    for (const [k, v] of Object.entries(f.slots ?? {})) if ((ours.slots[k] ?? 0) !== v) add('slots', `${id} ${k}: Foundry ${v}, nós ${ours.slots[k] ?? 0}`);
+    for (const [k, v] of Object.entries(ours.slots)) if (f.slots?.[k] == null) add('slots', `${id} ${k}: Foundry 0, nós ${v}`);
+    for (const [name, w] of Object.entries(f.weapons ?? {})) {
+      const hit = Number(String(w?.toHit ?? '').replace(/[^0-9-]/g, ''));
+      if (w?.toHit && ours.weapons[name] != null && hit !== ours.weapons[name]) add('weapon toHit', `${id} ${name}: Foundry ${w.toHit}, nós ${ours.weapons[name]}`);
+    }
+  }
+  console.log(`numbers: ${checked} atores comparados (Foundry x nosso motor)`);
+  for (const [k, list] of Object.entries(fam).sort((x, y) => y[1].length - x[1].length)) {
+    console.log(`  ${String(list.length).padStart(5)}  ${k}   ex.: ${list.slice(0, 3).join(' ; ').slice(0, 260)}`);
+  }
+  if (process.argv.includes('--list')) for (const [k, list] of Object.entries(fam)) for (const x of list) console.log(`${k}: ${x}`);
+}
+
 const cmd = process.argv[2];
 if (cmd === 'premades') await emitPremades();
 else if (cmd === 'feats') await emitFeats();
 else if (cmd === 'serve') serve();
 else if (cmd === 'roundtrip') roundtrip();
 else if (cmd === 'report') report();
-else console.log('uso: npx vite-node scripts/foundry-live.js premades|feats|serve|roundtrip|report');
+else if (cmd === 'numbers') await numbers();
+else console.log('uso: npx vite-node scripts/foundry-live.js premades|feats|serve|roundtrip|report|numbers');

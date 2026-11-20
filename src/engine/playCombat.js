@@ -29,6 +29,9 @@
 //     gatilho em `used.readied`) e o gatilho acontecendo (gasta a reação).
 //
 // DECISÕES E ARMADILHAS
+//   - "The first time you take damage after you roll Initiative, you reduce the damage you take by your level" (Nose
+//     for Trouble, Vulpera; lido do texto, TC-0223, DDL-0275): rolar a iniciativa põe um modificador `reduceNext`, que o
+//     primeiro dano consome (playHealth); o fim do combate o tira se não foi usado.
 //   - Começo do turno (DDL-0272): cada "Next turn" é o começo do turno do personagem. O modificador com `turnTemp`
 //     (Heroism: o modificador de conjuração em PV temporários) dá os temporários ali; não somam, fica o maior
 //     ("you keep whichever"), e o cartão da rodada mostra quanto entrou (`tempHp`).
@@ -53,6 +56,7 @@ import { d20Test } from './dice';
 import { makeEvent } from './playState';
 import { bonusParts, rngFor, d20Options, testParts } from './playActions';
 import { endConcentrationOps } from './playEffects';
+import { plainText } from './playFeatures';
 
 export const ECONOMY = ['action', 'bonus', 'reaction'];
 
@@ -79,9 +83,14 @@ export function startCombatEvent({ catalog, options = {}, rng, now = new Date() 
     data: catalog.rollData,
     rng: rngFor(options, rng),
   });
+  const nose = (catalog.featureList ?? []).find((f) => FIRST_DAMAGE.test(plainText(f.entries ?? [])));
+  const level = Number(catalog.rollData?.details?.level) || 0;
   return makeEvent('combat', {
     label: 'Combat started',
-    ops: [{ op: 'combat', value: { round: 1, initiative: rolls.total, used: {} } }],
+    ops: [
+      { op: 'combat', value: { round: 1, initiative: rolls.total, used: {} } },
+      ...(nose && level ? [{ op: 'modifier', add: { id: `first-damage:${now.getTime?.() ?? Date.now()}`, label: nose.name, source: 'feature', duration: 'manual', reduceNext: level, notes: [`The first damage you take this combat is reduced by ${level}`], effects: [] } }] : []),
+    ],
     payload: { started: true, effects: options.applied?.labels ?? [] },
     rolls,
   }, now);
@@ -122,8 +131,11 @@ export function nextTurnEvent({ state, now = new Date() }) {
 
 /** Fecha o combate. */
 export function endCombatEvent({ state, now = new Date() }) {
-  return makeEvent('combat', { label: 'Combat ended', ops: [{ op: 'combat', value: null }], payload: { rounds: state.combat?.round ?? 0 } }, now);
+  const unused = (state.modifiers ?? []).filter((m) => m.reduceNext).map((m) => ({ op: 'modifier', remove: m.id }));
+  return makeEvent('combat', { label: 'Combat ended', ops: [{ op: 'combat', value: null }, ...unused], payload: { rounds: state.combat?.round ?? 0 } }, now);
 }
+
+const FIRST_DAMAGE = /first time you take damage after you roll initiative, you reduce the damage you take by your level/i;
 
 /** Marca (ou desmarca) um custo do turno; fora de combate, nada. */
 export function economyOp(state, cost, used = true) {

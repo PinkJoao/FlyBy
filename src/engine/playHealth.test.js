@@ -285,3 +285,12 @@ describe('Death Ward (DDL-0272)', () => {
     expect(hpView(after(st(), damageOutcome(st(), catalog(12), { amount: 5 })), 12).current).toBe(7);
   });
 });
+
+describe('redução do primeiro dano (DDL-0275)', () => {
+  it('o primeiro dano perde o valor e o modificador sai', () => {
+    const s = st({ modifiers: [{ id: 'n', label: 'Nose for Trouble', reduceNext: 4 }] });
+    const next = after(s, damageOutcome(s, catalog(12), { amount: 7 }));
+    expect(hpView(next, 12).current).toBe(9);
+    expect(next.modifiers).toEqual([]);
+  });
+});

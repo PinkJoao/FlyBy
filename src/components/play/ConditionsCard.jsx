@@ -7,7 +7,9 @@
 //   (lido do registro CONDITIONS, engine/playEffects), o nível da exaustão com os
 //   botões de menos e mais, o botão de tirar, e "Add condition" (que abre o painel
 //   seletor, na tela). Status e doenças também entram aqui, e a CONCENTRAÇÃO
-//   (DDL-0121), com o save e o fim dela; tocar no nome abre a regra.
+//   (DDL-0121), com o save e o fim dela; tocar no nome abre a regra. A Heroic Inspiration (DDL-0275) é um
+//   interruptor no topo do card: o mestre a dá, o descanso longo do Resourceful liga, e o "Reroll" do card do
+//   histórico a gasta.
 //
 // FUNÇÕES
 //   ConditionsCard(props): o card.
@@ -27,6 +29,7 @@ import { CONDITIONS, conditionName } from '../../engine/playEffects';
 import Icon from '../common/Icon';
 import Collapse from '../common/Collapse';
 import Chip from '../common/Chip';
+import Toggle from '../common/Toggle';
 import card from '../builder/ProficienciesCard.module.css';
 import styles from './PlayCards.module.css';
 
@@ -53,11 +56,12 @@ function effectLines(c, level) {
  * @param {{ conditions: object, concentration: object|null, combat: object|null, onAdd: Function, onSet: Function,
  *   onInfo: Function, onConcentrationSave: Function, onConcentrationEnd: Function }} props
  */
-export default function ConditionsCard({ conditions, concentration, combat, onAdd, onSet, onInfo, onConcentrationSave, onConcentrationEnd }) {
+export default function ConditionsCard({ conditions, concentration, combat, inspiration = false, onInspiration = null, onAdd, onSet, onInfo, onConcentrationSave, onConcentrationEnd }) {
   const [open, setOpen] = useState(false);
   const active = Object.entries(conditions ?? {}).filter(([, level]) => level > 0);
-  const count = active.length + (concentration ? 1 : 0);
+  const count = active.length + (concentration ? 1 : 0) + (inspiration ? 1 : 0);
   const names = [
+    ...(inspiration ? ['Heroic Inspiration'] : []),
     ...(concentration ? [`Concentration (${concentration.name})`] : []),
     ...active.map(([id, level]) => `${conditionName(id)}${CONDITIONS[id]?.levels ? ` ${level}` : ''}`),
   ];
@@ -80,6 +84,7 @@ export default function ConditionsCard({ conditions, concentration, combat, onAd
 
       <Collapse open={open}>
         <div className={card.body}>
+          {onInspiration && <Toggle size="sm" checked={inspiration} onChange={onInspiration} label="Heroic Inspiration" hint="Spend it from Reroll on a roll in the history" />}
           {count === 0 && <p className={card.empty}>No conditions.</p>}
           <ul className={styles.list}>
             {concentration && (

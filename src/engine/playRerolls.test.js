@@ -14,7 +14,7 @@
 //   - O rng fixo (sequenceRng) faz o d20 cair onde o teste quer.
 // -----------------------------------------------------------------------------
 import { describe, it, expect } from 'vitest';
-import { rerollOptions, rerollEvent } from './playRerolls';
+import { rerollOptions, rerollEvent, inspirationSpendOps, inspirationEvent } from './playRerolls';
 import { emptyPlayState } from './playState';
 import { sequenceRng } from './dice';
 
@@ -59,5 +59,22 @@ describe('a nova rolagem', () => {
     expect(focus.ops).toEqual([{ op: 'spend', key: 'pool:focus', amount: 1 }]);
     expect(focus.payload.spent).toEqual([{ name: 'Focus Points', amount: 1 }]);
     expect(focus.rolls.isCritical).toBe(true);
+  });
+});
+
+describe('Heroic Inspiration (DDL-0275)', () => {
+  const troll = { ...catalog([]), featureList: [{ name: 'Troll Lineage (Amani Troll)', entries: ['Whenever you spend Heroic Inspiration, you regain 1 expended Hit Point Dice.'] }], resources: [{ key: 'hd:d6', kind: 'hitDice', faces: 6, max: 2 }, { key: 'hd:d10', kind: 'hitDice', faces: 10, max: 3 }] };
+  it('com a inspiração, o Reroll a oferece e o evento a gasta', () => {
+    const s = { ...emptyPlayState('x'), inspiration: true };
+    const opt = rerollOptions(check('save', 'wis'), catalog([]), s).find((o) => o.id === 'heroic-inspiration');
+    expect(opt.ops).toEqual([{ op: 'inspiration', value: false }]);
+    expect(rerollEvent({ event: check('save', 'wis'), catalog: catalog([]), option: opt, rng: sequenceRng([10]) }).ops).toEqual([{ op: 'inspiration', value: false }]);
+    expect(rerollOptions(check('save', 'wis'), catalog([]), emptyPlayState('x')).map((o) => o.id)).not.toContain('heroic-inspiration');
+  });
+  it('gastar devolve o dado de vida de face maior que estiver gasto, quando o texto manda', () => {
+    const s = { ...emptyPlayState('x'), inspiration: true, spent: { 'hd:d6': 1, 'hd:d10': 2 } };
+    expect(inspirationSpendOps(s, troll)).toEqual([{ op: 'inspiration', value: false }, { op: 'restore', key: 'hd:d10', amount: 1 }]);
+    expect(inspirationSpendOps(s, catalog([]))).toEqual([{ op: 'inspiration', value: false }]);
+    expect(inspirationEvent({ state: s, catalog: troll, value: true }).ops).toEqual([{ op: 'inspiration', value: true }]);
   });
 });

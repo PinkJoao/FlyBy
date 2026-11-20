@@ -402,7 +402,7 @@ export function withResourceMax(catalog, state) {
  * O "Log to history" de uma feature: o nome e o custo do turno, sem rolar. `spend` é a
  * chave do que o uso gasta (um); `modifier`, `save` e `roll` vêm do registro (playFeatureRolls).
  */
-export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, restoreUpTo = null, option = null, rng = cryptoRng, now = new Date() }) {
+export function featureLogEvent({ catalog, state = null, feature, cost = null, spend = null, amount = 1, modifier = null, save = null, roll = null, apply = null, restore = null, restoreUpTo = null, option = null, lockout = null, rng = cryptoRng, now = new Date() }) {
   const maxed = apply === 'heal' && healDiceMaxed(state) && /d\d/.test(String(roll?.formula ?? ''));
   const rolls = roll ? rollParts([{ label: maxed ? `${roll.label} (Gift of the Ever-Living Ones)` : roll.label, formula: maxed ? withDiceMax(roll.formula, catalog.rollData) : roll.formula }], { data: catalog.rollData, rng }) : null;
   const ops = spend && amount > 0 ? [{ op: 'spend', key: spend, amount }] : [];
@@ -419,6 +419,8 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
   const spentNow = Math.min(state?.spent?.[restore] ?? 0, poolMax);
   const restoredBack = restore && state ? (restoreUpTo == null ? spentNow : Math.max(0, Math.min(spentNow, restoreUpTo - (poolMax - spentNow)))) : 0;
   if (restoredBack > 0) ops.push({ op: 'restore', key: restore, amount: restoredBack });
+  const lock = lockout?.key && lockout.formula ? rollFormula(String(lockout.formula), { data: catalog.rollData, rng }).total : 0;
+  if (lock > 0) ops.push({ op: 'lockout', key: lockout.key, rests: lock });
   return makeEvent('use', {
     label: feature.name,
     ops,
@@ -435,7 +437,10 @@ export function featureLogEvent({ catalog, state = null, feature, cost = null, s
       rolled: !!rolls,
       healed,
       temp,
-      lines: restoredBack > 0 ? [`${nameOf(catalog, restore)}: ${restoredBack} regained`] : [],
+      lines: [
+        ...(restoredBack > 0 ? [`${nameOf(catalog, restore)}: ${restoredBack} regained`] : []),
+        ...(lock > 0 ? [`${nameOf(catalog, lockout.key)}: recharges after ${lock} long rest${lock > 1 ? 's' : ''} (${lockout.formula})`] : []),
+      ],
     },
     rolls,
   }, now);

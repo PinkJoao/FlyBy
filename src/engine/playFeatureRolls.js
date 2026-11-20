@@ -12,6 +12,13 @@
 //     de FOR até o seu próximo turno);
 //   - `use`: usar gasta, rola (`roll`) e mostra a salvaguarda do alvo (Stunning
 //     Strike, Commander's Strike, Inspiring Smite);
+//   - `lockout` (DDL-0275): o "Use" gasta o pool e rola em quantos descansos longos ele volta ("can't use it again
+//     until you finish 1d4 long rests": Lethargy Resilience, Necrotic Husk, Limited Wish; o Greater Divine
+//     Intervention trava o Divine Intervention por 2d4). O descanso longo desconta (playRest). One with the Word fica
+//     de fora: o 1d6 trava as magias perdidas, não a feature.
+//   - Aether Lore (Vedalken, PSK; TC-0223): "add twice your proficiency bonus, instead of any proficiency bonus you
+//     normally apply" num teste de History sobre item mágico ou tecnologia de éter: um extra opcional cuja fórmula
+//     depende da proficiência (`formulaFor(catalog)`: +PB se já é proficiente, +2 x PB se não).
 //   - Feline Agility (Tabaxi, MPMM; o registro de espécies, TC-0222): "double your speed until the end of the
 //     turn ... can't use it again until you move 0 feet on one of your turns" é um `toggle` de `speedTimes: 2` por
 //     uma rodada; a volta (mover 0 pés) fica na nota.
@@ -332,6 +339,7 @@ export const FEATURE_ROLLS = {
   "hunter's prey: colossus slayer": { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d8', label: 'Colossus Slayer', note: 'if the target is missing Hit Points; once per turn' },
   'eldritch smite': { kind: 'rider', on: ['damage'], when: 'pact', spend: { pact: true }, formula: (rd) => `${1 + (rd.spells?.pact?.level ?? 1)}d8`, note: 'pact weapon, once per turn; Force; a Huge or smaller target can be knocked Prone' },
   'peerless skill': { kind: 'rider', on: ['check', 'attack'], spend: { item: 'Bardic Inspiration' }, formula: (rd) => (rd['scale.bard.inspiration'] ? '@scale.bard.inspiration' : '1d6'), note: 'after you fail; not spent if it still fails' },
+  'aether lore': { kind: 'rider', on: ['check'], when: ['his'], formulaFor: (cat) => ((cat.checks?.skills ?? []).find((x) => x.skill === 'his')?.prof ? '@prof' : '2 * @prof'), label: 'Aether Lore', note: 'magic items or aether-powered devices: twice your proficiency bonus instead of it' },
   'tactical mind': { kind: 'rider', on: ['check'], spend: { item: 'Second Wind' }, formula: '1d10', note: 'after you fail the check; not spent if it still fails' },
   'reckless attack': {
     kind: 'toggle',
@@ -456,7 +464,10 @@ export const FEATURE_ROLLS = {
   },
   'superior dread': { kind: 'toggle', modifier: () => ({ label: 'Superior Dread', source: 'feature', duration: 'manual', maxRounds: 10, resist: ['bludgeoning', 'piercing', 'slashing'], notes: ['while in your Form of Dread: Fly Speed equal to your Speed, hover; 1d10 Force if you end your turn inside a creature or object'], effects: [] }) },
   'form of dread': { kind: 'use', apply: 'temp', roll: { label: 'Temporary Hit Points', formula: '1d10 + @classes.warlock.levels' } },
-  'necrotic husk': { kind: 'use', roll: { label: 'Necrotic around you (Constitution save, half on success)', formula: '2d10 + @abilities.cha.mod' } },
+  'necrotic husk': { kind: 'use', spend: { item: 'Necrotic Husk' }, lockout: { roll: '1d4' }, roll: { label: 'Necrotic around you (Constitution save, half on success)', formula: '2d10 + @abilities.cha.mod' } },
+  'lethargy resilience': { kind: 'use', spend: { item: 'Lethargy Resilience' }, lockout: { roll: '1d4' } },
+  'greater divine intervention': { kind: 'use', spend: { item: 'Divine Intervention' }, lockout: { roll: '2d4' } },
+  'limited wish': { kind: 'use', spend: { item: 'Limited Wish' }, lockout: { roll: '1d4' } },
   'beguiling arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: ARROW, note: 'Psychic; Wisdom save or Charmed by an ally' },
   'grasping arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: ARROW, note: 'Poison; Speed -10 and the same in Slashing when it moves' },
   'shadow arrow': { kind: 'rider', on: ['damage'], when: 'ranged', spend: SHOT, formula: ARROW, note: 'Psychic; Wisdom save or sees only 5 feet' },
@@ -768,7 +779,7 @@ export function featureRiders(state, catalog, roll) {
         id: `rider:${slug(name)}${entry.kind === 'rider' ? (i ? `-${i}` : '') : `-${i + 1}`}`,
         label: none ? `${label} (none left)` : label,
         source: label,
-        ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgoableMin ? { forgoableMin: e.forgoableMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
+        ...(e.twice ? { twice: true } : e.diceMin ? { diceMin: e.diceMin } : e.forgoableMin ? { forgoableMin: e.forgoableMin } : e.forgo ? { forgo: e.forgo } : { part: { label, formula: e.formulaFor ? e.formulaFor(catalog) : formulaOf(e, rd), ...(e.forgoable ? { forgoable: true } : {}) } }),
         note: noteOf(e, rd, catalog),
         defaultOn: !!e.defaultOn,
         ...(e.grip ? { grip: e.grip } : {}),
@@ -817,6 +828,7 @@ export function featureUseOf(feature, catalog, chosen = null, option = null) {
   const roll = src.roll && formula && formula !== '0' ? { label: src.roll.label, formula } : null;
   return {
     modifier: src.modifier ? src.modifier(rd) : e.modifier ? e.modifier(rd) : null, spend: spendKeyOf(catalog, e.spend), amount, spent: n, save, roll, apply: e.apply ?? null, restore: spendKeyOf(catalog, e.restore), restoreUpTo: e.restoreUpTo ?? null,
+    ...(e.lockout ? { lockout: { key: spendKeyOf(catalog, e.lockout.pool ?? e.spend), formula: e.lockout.roll } } : {}),
     ...(e.options ? { options: e.options.map((o) => o.label) } : {}),
   };
 }

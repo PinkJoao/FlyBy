@@ -18,7 +18,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent, hitDiceEvent, hitDieRules, restInspiration } from './playRest';
+import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent, hitDiceEvent, hitDieRules, restInspiration, restProficiencies, restProficiencyModifier } from './playRest';
 
 const seq = (...values) => sequenceRng(values, () => {
   throw new Error('rolou um dado a mais');
@@ -211,5 +211,33 @@ describe('recuperação sem tipo (DDL-0273)', () => {
     const c = { ...catalog, resources: [{ key: 'pool:x', kind: 'pool', name: 'X', max: 1, recovery: [{ period: 'lr' }] }] };
     expect(recoveryFor(c, st({ spent: { 'pool:x': 1 } }), 'lr').ops).toEqual([{ op: 'restore', key: 'pool:x' }]);
     expect(recoveryFor(c, st({ spent: { 'pool:x': 1 } }), 'sr').ops).toEqual([]);
+  });
+});
+
+describe('recarga em vários descansos e proficiência de descanso (DDL-0275)', () => {
+  const pool = { key: 'pool:x', kind: 'pool', name: 'X', max: 1, recovery: [{ period: 'lr', type: 'recoverAll' }] };
+  const c = { ...catalog, resources: [pool] };
+  it('a trava segura o pool até o N-ésimo descanso longo, e desconta em cada um', () => {
+    let s = applyOp(st({ spent: { 'pool:x': 1 } }), { op: 'lockout', key: 'pool:x', rests: 2 });
+    s = run(s, longRestEvent({ state: s, catalog: c }));
+    expect(s.spent['pool:x']).toBe(1);
+    expect(s.lockouts['pool:x']).toBe(1);
+    s = run(s, longRestEvent({ state: s, catalog: c }));
+    expect(s.spent['pool:x']).toBeUndefined();
+    expect(s.lockouts['pool:x']).toBeUndefined();
+  });
+  it('lê a regra do texto: o Trance do MPMM, o Astral Knowledge, o Severed from Dreams e o Versatile Merc; o Trance do XPHB não', () => {
+    const fl = (name, text) => ({ ...catalog, featureList: [{ name, entries: [text] }] });
+    expect(restProficiencies(fl('Trance', "Whenever you finish this trance, you can gain two proficiencies that you don't have, each one with a weapon or a tool of your choice"))[0]).toMatchObject({ tools: 2, skills: 0 });
+    expect(restProficiencies(fl('Astral Knowledge', 'Whenever you finish a long rest, you gain proficiency in one skill of your choice and with one weapon or tool of your choice'))[0]).toMatchObject({ skills: 1, tools: 1 });
+    expect(restProficiencies(fl('Severed from Dreams', 'In addition, when you finish a Long Rest, you gain proficiency in one skill of your choice.'))[0]).toMatchObject({ skills: 1, tools: 0 });
+    expect(restProficiencies(fl('Zhentarim Tactics', 'When you finish a Long Rest, choose a skill in which you have proficiency. You have Expertise in that skill until you finish your next Long Rest.'))[0]).toMatchObject({ expertise: 1 });
+    expect(restProficiencies(fl('Trance', "You don't need to sleep. You can finish a Long Rest in 4 hours."))).toEqual([]);
+  });
+  it('o efeito soma o PB na perícia e dura até o próximo descanso longo', () => {
+    const m = restProficiencyModifier({ feature: 'Astral Knowledge', skills: ['arc'], tools: ['Longsword'] });
+    expect(m.duration).toBe('longRest');
+    expect(m.effects[0]).toMatchObject({ targets: ['skill:arc'], formula: '@prof' });
+    expect(m.effects[1]).toMatchObject({ optional: true });
   });
 });

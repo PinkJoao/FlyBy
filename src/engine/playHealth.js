@@ -33,6 +33,8 @@
 //   concentrationCheckEvent(args): o save de CON para manter a concentração.
 //
 // DECISÕES E ARMADILHAS
+//   - `reduceNext` (Nose for Trouble, DDL-0275): o primeiro dano depois da iniciativa perde o nível do personagem,
+//     antes da resistência como a redução fixa, e o modificador sai.
 //   - Death Ward (DDL-0272): o modificador com `deathWard` faz o dano que levaria a 0 deixar em 1 e sai ("drops to
 //     1 Hit Point instead, and the spell ends"), antes da conta do dano massivo, que também é dano.
 //   - A redução fixa (`defenses.reduce`: o Heavy Armor Master tira o PB do contundente, perfurante e
@@ -146,13 +148,15 @@ export function damageOutcome(state, catalog, { amount, type = '', critical = fa
   const v = vitals(state, catalog);
   const trait = traitFor({ ...catalog, defenses: effectiveDefenses(catalog, state) }, type);
   const cut = reductionFor(catalog, type);
-  const taken = adjustDamage(Math.max(0, Math.floor(Number(amount) || 0) - (cut?.amount ?? 0)), trait);
+  const first = Number(amount) > 0 ? (state.modifiers ?? []).find((m) => m.reduceNext) : null;
+  const taken = adjustDamage(Math.max(0, Math.floor(Number(amount) || 0) - (cut?.amount ?? 0) - (first?.reduceNext ?? 0)), trait);
   const toTemp = Math.min(v.temp, taken);
   const rest = taken - toTemp;
-  const ops = [];
+  const ops = first ? [{ op: 'modifier', remove: first.id }] : [];
   const notes = [];
   let toHp = 0;
   if (cut && Number(amount) > 0) notes.push(`${cut.label}: -${cut.amount}`);
+  if (first) notes.push(`${first.label}: -${first.reduceNext}`);
 
   if (v.current === 0 && rest > 0) {
     const failures = critical ? 2 : 1;

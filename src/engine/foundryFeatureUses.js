@@ -26,6 +26,9 @@
 //     NO_POOL antes de qualquer máximo encerra a busca no vazio.
 //
 // DECISÕES E ARMADILHAS
+//   - Recarga em vários descansos (DDL-0275): o pool da feature que diz "until you finish 1d4 long rests" é de um uso
+//     por descanso longo (Lethargy Resilience, Limited Wish; o Necrotic Husk estava como curto, errado), e a trava de
+//     N descansos fica no jogo (`lockout` do registro FEATURE_ROLLS, playRest).
 //   - DDL-0253: 18 pools da prosa dos livros novos (AU, WoW) e o Power Surge; o Spell Subterfuge usa o maior entre
 //     INT, SAB e CAR (a fórmula do Foundry não sabe qual atributo o talento aumentou): aproximação.
 //   - SCOPED_USES (TC-0093, TC-0094): pools com nome que colide entre classes ou
@@ -224,7 +227,8 @@ const PROSE_USES_BY_CLASS = {
   "rogue|master duelist": ['1', 'sr'],
   "wizard|momentary stasis": ['max(1, @abilities.int.mod)', 'lr'],
   "paladin|mortal bulwark": ['1', 'lr'],
-  "warlock|necrotic husk": ['1', 'sr'],
+  "warlock|necrotic husk": ['1', 'lr'],
+  "warlock|limited wish": ['1', 'lr'],
   "paladin|noble scion": ['1', 'lr'],
   "wizard|one with the word": ['1', 'lr'],
   "artificer|perfected armor": ['max(1, @abilities.int.mod)', 'lr'],
@@ -276,6 +280,7 @@ const PROSE_USES_BY_CLASS = {
 };
 
 const PROSE_USES_FLAT = {
+  "lethargy resilience": ['1', 'lr'],
   "cloak of flies": ['1', 'sr'],
   "ghostly gaze": ['1', 'sr'],
   "tomb of levistus": ['1', 'sr'],

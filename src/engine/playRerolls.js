@@ -16,12 +16,19 @@
 //   rerollOptions(event, catalog, state): as regras que deixam rolar de novo esse evento,
 //     com o gasto e o bônus, e a regra genérica ("Another rule") no fim.
 //   rerollEvent(args): o evento da nova rolagem.
+//   inspirationSpendOps(state, catalog): gastar a Heroic Inspiration (e o dado de vida do Troll Amani).
+//   inspirationEvent(args): ligar (o mestre dá) ou gastar a Heroic Inspiration pelo interruptor.
 //   rerollableDice(event): os dados de um dano ou de uma cura que se podem rolar de novo.
 //   rerollDiceOptions(event, catalog, state): as regras que deixam rolar de novo ALGUNS
 //     dados (Piercer, Empowered Spell, Empowered Healing, Flames of Phlegethos).
 //   rerollDiceEvent(args): o evento novo com os dados escolhidos rolados de novo.
 //
 // DECISÕES E ARMADILHAS
+//   - Heroic Inspiration (DDL-0275): "expend it to reroll any die immediately after rolling it, and you must use the
+//     new roll". Com `state.inspiration`, o "Reroll" do card oferece "Heroic Inspiration", que a gasta. Desligar o
+//     interruptor à mão também é gastar (o jogador a usou na mesa). Gastar devolve um dado de vida quando uma feature
+//     diz "whenever you spend Heroic Inspiration, you regain 1 expended Hit Point Die" (Troll Lineage, Amani; lido
+//     do texto, TC-0223): o de face maior que estiver gasto.
 //   - DICE_REROLLS (DDL-0215): rolar de novo ALGUNS dados do dano ou da cura, no card do
 //     histórico ("Reroll dice"). Piercer, "reroll one of the attack's damage dice" (1 dado,
 //     dano perfurante); Empowered Spell, "reroll a number of the damage dice up to your
@@ -58,6 +65,7 @@
 import { rollParts, cryptoRng } from './dice';
 import { makeEvent, remainingOf } from './playState';
 import { spendKeyOf } from './playFeatureRolls';
+import { plainText } from './playFeatures';
 
 const DICE_REROLLS = {
   piercer: { on: ['damageRoll'], type: 'piercing', max: () => 1, note: 'once per turn, an attack that deals Piercing damage; you must use the new roll' },
@@ -188,8 +196,28 @@ export function rerollOptions(event, catalog, state) {
     const label = r.label ?? name.replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
     out.push({ id: name, label, note: r.note, spendKey, left, bonus: r.bonus ?? null, ...(r.keep ? { keep: true } : {}), ...(r.spend && !spendKey ? { missing: true } : {}) });
   }
+  if (state?.inspiration) out.push({ id: 'heroic-inspiration', label: 'Heroic Inspiration', note: 'you must use the new roll', spendKey: null, left: null, bonus: null, ops: inspirationSpendOps(state, catalog) });
   out.push({ id: 'rule', label: 'Another rule', note: 'the DM, an ally, or a rule the app does not know; nothing is spent', spendKey: null, left: null, bonus: null });
   return out;
+}
+
+const INSPIRATION_HIT_DIE = /whenever you spend heroic inspiration, you regain 1 expended hit (?:point )?di/i;
+
+/** Gastar a Heroic Inspiration: a operação e o dado de vida que uma feature devolve junto. */
+export function inspirationSpendOps(state, catalog) {
+  const ops = [{ op: 'inspiration', value: false }];
+  const gives = (catalog?.featureList ?? []).some((f) => INSPIRATION_HIT_DIE.test(plainText(f.entries ?? [])));
+  if (!gives) return ops;
+  const die = (catalog.resources ?? []).filter((r) => r.kind === 'hitDice' && (state?.spent?.[r.key] ?? 0) > 0).sort((a, b) => (b.faces ?? 0) - (a.faces ?? 0))[0];
+  if (die) ops.push({ op: 'restore', key: die.key, amount: 1 });
+  return ops;
+}
+
+/** Liga (o mestre dá) ou gasta a Heroic Inspiration pelo interruptor. */
+export function inspirationEvent({ state, catalog, value, now = new Date() }) {
+  const ops = value ? [{ op: 'inspiration', value: true }] : inspirationSpendOps(state, catalog);
+  const back = ops.some((o) => o.op === 'restore');
+  return makeEvent('modifier', { label: value ? 'Heroic Inspiration gained' : 'Heroic Inspiration spent', ops, payload: { lines: back ? ['1 Hit Point Die regained'] : [] } }, now);
 }
 
 /**
@@ -209,7 +237,7 @@ export function rerollEvent({ event, catalog, option, rng = cryptoRng, now = new
     const natural = kept ? kept.raw ?? kept.value : null;
     rolls = { mode: event.rolls?.mode ?? 'normal', natural, isCritical: natural === 20, isFumble: natural === 1, total: rolled.total, parts: rolled.parts };
   }
-  const ops = option?.spendKey ? [{ op: 'spend', key: option.spendKey, amount: 1 }] : [];
+  const ops = [...(option?.spendKey ? [{ op: 'spend', key: option.spendKey, amount: 1 }] : []), ...(option?.ops ?? [])];
   const payload = { ...event.payload, reroll: { of: event.id, source: option?.label ?? 'Another rule', ...(option?.keep ? { keep: true } : {}) }, ...(event.kind === 'attack' ? { critical: rolls.isCritical } : {}) };
   delete payload.spent;
   const spent = option?.spendKey ? [{ name: (catalog.resources ?? []).find((r) => r.key === option.spendKey)?.name ?? option.spendKey, amount: 1 }] : [];

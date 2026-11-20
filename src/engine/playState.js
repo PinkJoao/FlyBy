@@ -64,7 +64,9 @@
 //     failure, set, reset }: `set` troca campos ({ success, failure, stable, dead })
 //     e então soma, preso entre 0 e 3; `reset` zera tudo. `condition` { id, level }: 0
 //     tira. `inspiration` { value }, `concentration` { value }, `combat` { value }:
-//     definem. `modifier` { add } ou { remove: id }.
+//     definem. `modifier` { add } ou { remove: id }. `lockout` { key, rests } trava a recarga de um
+//     recurso por N descansos longos, { key, tick: -1 } desconta um (o "until you finish 2d4 long rests"
+//     do Greater Divine Intervention; DDL-0275); o estado antigo, sem `lockouts`, vale vazio.
 //   - Operação desconhecida é IGNORADA e o evento fica no log: um evento gravado
 //     por uma versão mais nova não derruba a mais velha (carga, §6.3).
 //   - `inventory` { uid, before, after, index? } e `currency` { delta } tocam o
@@ -170,6 +172,14 @@ export function applyOp(state, op) {
     }
     case 'inspiration':
       return { ...state, inspiration: op.value === true };
+    case 'lockout': {
+      if (!op.key) return state;
+      const lockouts = { ...(state.lockouts ?? {}) };
+      const n = op.rests != null ? num(op.rests) : num(lockouts[op.key]) + num(op.tick);
+      if (n > 0) lockouts[op.key] = n;
+      else delete lockouts[op.key];
+      return { ...state, lockouts };
+    }
     case 'concentration':
       return { ...state, concentration: op.value ?? null };
     case 'combat':

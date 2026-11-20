@@ -271,7 +271,7 @@ import creatureEntity, { beastFormEntity } from '../selector/entities/creature';
 import {
   vitals as vitalsOf, healEvent, tempHpEvent, maxHpEvent, hurtEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent,
 } from '../engine/playHealth';
-import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent } from '../engine/playRest';
+import { shortRestEvent, longRestEvent, hitDiceLeft, hitDiceEvent, restProficiencies, restProficiencyModifier } from '../engine/playRest';
 import { emptyPlayState, makeEvent, hpView, remainingOf } from '../engine/playState';
 import { pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
 import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, strikeSecondary, strikeFromKey, masteryNote, armorBlessing, itemExtraEffects } from '../engine/playWeapons';
@@ -280,7 +280,7 @@ import { resolveRefs } from '../engine/dice';
 import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
-import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
+import { inspirationEvent, rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, spellTempFormula, projectileCount, timesFormula } from '../engine/playCast';
 import {
   rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, effectiveSenses, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, spellEffectChoice, spellEffectReplacesRoll, castOnceEffects,
@@ -1000,7 +1000,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
     const pay = spend ?? use?.spend ?? null;
     const amount = spend ? 1 : use?.spent ?? 1;
     if (pay && amount > 0 && leftOf(catalog, state, pay) < amount && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
-    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null, restoreUpTo: use?.restoreUpTo ?? null, option: optionLabel }), cost);
+    record(featureLogEvent({ catalog, state, feature, cost, spend: pay, amount, modifier, save: use?.save ?? null, roll: use?.roll ?? null, apply: use?.apply ?? null, restore: use?.restore ?? null, restoreUpTo: use?.restoreUpTo ?? null, option: optionLabel, lockout: use?.lockout ?? null }), cost);
   };
 
   /** O ajuste à mão de um recurso (o mestre tira, dá ou muda o máximo): o painel e o evento. */
@@ -1317,7 +1317,22 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
       message: lines.length ? lines.map((l) => `${l.name}: ${l.detail}`).join('\n') : 'You are fully rested; nothing to recover.',
       confirmLabel: 'Finish long rest',
     });
-    if (ok) record(event);
+    if (!ok) return;
+    record(event);
+    for (const rule of restProficiencies(catalog)) {
+      const skills = Object.keys(SKILL_LABEL);
+      const pool = (want) => skills.filter((k) => (derived.skills?.[k]?.proficiency ?? 0) >= 1 === want).map((k) => ({ label: SKILL_LABEL[k], value: k }));
+      const fields = [
+        ...Array.from({ length: rule.skills }, (_, i) => ({ type: 'select', name: `s${i}`, label: 'Skill', options: pool(false) })),
+        ...Array.from({ length: rule.expertise }, (_, i) => ({ type: 'select', name: `e${i}`, label: 'Expertise in', options: pool(true) })),
+        ...Array.from({ length: rule.tools }, (_, i) => ({ type: 'text', name: `t${i}`, label: 'Weapon or tool', default: '' })),
+      ];
+      const r = await ask({ title: rule.feature, message: 'Choose what you gain until your next long rest.', fields, actions: [{ label: 'Skip', value: false }, { label: 'Gain', value: true, tone: 'primary' }] });
+      if (!r?.action) continue;
+      const pick = (prefix, n) => Array.from({ length: n }, (_, i) => String(r.values?.[`${prefix}${i}`] ?? '').trim()).filter(Boolean);
+      const modifier = makeModifier(restProficiencyModifier({ feature: rule.feature, skills: pick('s', rule.skills), expertise: pick('e', rule.expertise), tools: pick('t', rule.tools), skillLabel: (k) => SKILL_LABEL[k] ?? k }));
+      record(modifierEvent({ modifier }));
+    }
   };
 
 
@@ -1777,6 +1792,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
           conditions={state.conditions}
           concentration={state.concentration}
           combat={state.combat}
+          inspiration={!!state.inspiration}
+          onInspiration={(v) => record(inspirationEvent({ state, catalog, value: v }))}
           onAdd={addCondition}
           onSet={setCondition}
           onInfo={conditionInfo}

@@ -18,6 +18,8 @@
 //     um número negativo, devolver os gastos.
 //   longRestEvent(args): o descanso longo.
 //   restInspiration(catalog): a feature que dá a Heroic Inspiration no fim do descanso longo, ou null.
+//   restProficiencies(catalog): as features que dão proficiência ou Expertise até o próximo descanso longo.
+//   restProficiencyModifier(args): o efeito que guarda essas escolhas (o PB na perícia, a arma ou ferramenta).
 //
 // DECISÕES E ARMADILHAS
 //   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo: rollHitDie recebe `maxed` e o dado vai ao máximo, como a regra `max` das features.
@@ -53,6 +55,14 @@
 //     food as part of a short rest"; comer fica com o jogador). Gastar UM dado fora do
 //     descanso (Dwarven Fortitude, Healing Machine, Emergency Fail-Safe) é o Hit dice do
 //     card de HP (`hitDiceEvent`), que vale a qualquer hora.
+//   - Proficiência trocada a cada descanso longo (DDL-0275, TC-0223): lida do TEXTO, nunca pelo nome (o Trance do
+//     XPHB não dá proficiência; o do MPMM dá duas de arma ou ferramenta). REST_PROFS cobre o Trance do MPMM, o Astral
+//     Trance e o Astral Knowledge (uma perícia e uma arma ou ferramenta), o Severed from Dreams (uma perícia) e o
+//     Versatile Merc do Zhentarim Tactics (Expertise numa perícia que já tem). Vira um modificador de duração
+//     `longRest`: o descanso seguinte o tira, e o PB entra na rolagem da perícia; a arma ou ferramenta fica como extra
+//     opcional, porque o jogo não sabe com qual arma a rolagem é.
+//   - Recarga em vários descansos (DDL-0275): o recurso com `state.lockouts[key] = N` não volta no descanso longo
+//     até o N-ésimo; cada longo desconta 1 e diz quantos faltam. O curto não mexe na trava.
 //   - Recuperação sem `type` (o overlay do Refined Reanimation traz só `{ period: 'lr' }`) vale `recoverAll`, o
 //     padrão do dnd5e (`initial: "recoverAll"` no uses-field); o fuzz de personagens achou o pool que nunca voltava
 //     (DDL-0273).
@@ -101,7 +111,15 @@ export function recoveryFor(catalog, state, period, { rng = cryptoRng } = {}) {
   const ops = [];
   const lines = [];
   const groups = [];
+  if (period === 'lr') {
+    for (const [key, n] of Object.entries(state.lockouts ?? {})) {
+      ops.push({ op: 'lockout', key, tick: -1 });
+      const name = (catalog.resources ?? []).find((r) => r.key === key)?.name ?? key;
+      lines.push({ name, detail: n > 1 ? `recharges after ${n - 1} more long rest${n - 1 > 1 ? 's' : ''}` : 'can be used again' });
+    }
+  }
   for (const r of catalog.resources ?? []) {
+    if (period === 'lr' && (state.lockouts?.[r.key] ?? 0) > 1) continue;
     const spent = Math.min(state.spent?.[r.key] ?? 0, r.max);
     const list = (r.recovery ?? []).map((x) => (x?.type ? x : { ...x, type: 'recoverAll' }));
     const reset = list.find((x) => x.type === 'resetTo' && periods.includes(x.period));
@@ -300,4 +318,41 @@ const REST_INSPIRATION = /\bgain heroic inspiration (?:whenever|when|each time) 
 export function restInspiration(catalog) {
   const f = (catalog?.featureList ?? []).find((x) => REST_INSPIRATION.test(plainText(x.entries ?? [])));
   return f?.name ?? null;
+}
+
+const REST_PROFS = [
+  { re: /gain two proficiencies that you don't have, each one with a weapon or (?:a )?tool/i, rule: { skills: 0, tools: 2, expertise: 0 } },
+  { re: /proficiency in one skill of your choice and (?:with )?one weapon or tool/i, rule: { skills: 1, tools: 1, expertise: 0 } },
+  { re: /finish a long rest, you gain proficiency in one skill of your choice/i, rule: { skills: 1, tools: 0, expertise: 0 } },
+  { re: /choose a skill in which you have proficiency\. you have expertise in that skill until you finish your next long rest/i, rule: { skills: 0, tools: 0, expertise: 1 } },
+];
+
+/** As features que dão proficiência (ou Expertise) até o próximo descanso longo: [{ feature, skills, tools, expertise }]. */
+export function restProficiencies(catalog) {
+  const out = [];
+  for (const f of catalog?.featureList ?? []) {
+    const text = plainText(f.entries ?? []);
+    const hit = REST_PROFS.find((x) => x.re.test(text));
+    if (hit) out.push({ feature: f.name, ...hit.rule });
+  }
+  return out;
+}
+
+/** O efeito que guarda as escolhas até o próximo descanso longo: o PB na perícia, a Expertise, a arma ou ferramenta. */
+export function restProficiencyModifier({ feature, skills = [], expertise = [], tools = [], skillLabel = (s) => s }) {
+  const named = [...skills, ...expertise].map(skillLabel);
+  return {
+    label: `${feature}: ${[...named, ...tools].join(', ') || 'no choice'}`,
+    source: 'feature',
+    duration: 'longRest',
+    notes: [
+      ...(skills.length ? [`Proficiency until your next long rest: ${skills.map(skillLabel).join(', ')}`] : []),
+      ...(expertise.length ? [`Expertise until your next long rest: ${expertise.map(skillLabel).join(', ')}`] : []),
+      ...(tools.length ? [`Proficiency with ${tools.join(', ')} until your next long rest`] : []),
+    ],
+    effects: [
+      ...[...skills, ...expertise].map((s) => ({ targets: [`skill:${s}`], formula: '@prof', label: feature })),
+      ...(tools.length ? [{ targets: ['attack', 'check'], formula: '@prof', optional: true, label: `${feature} (${tools.join(', ')} only)` }] : []),
+    ],
+  };
 }

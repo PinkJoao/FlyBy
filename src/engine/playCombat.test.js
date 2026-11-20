@@ -161,3 +161,14 @@ describe('começo do turno: Heroism (DDL-0272)', () => {
     expect(run(partial, nextTurnEvent({ state: partial })).tempHp).toBe(4);
   });
 });
+
+describe('Nose for Trouble (DDL-0275)', () => {
+  const nose = { ...catalog, rollData: { details: { level: 6 } }, featureList: [{ name: 'Nose for Trouble', entries: ['The first time you take damage after you roll Initiative, you reduce the damage you take by your level (to a minimum of 0 damage).'] }] };
+  it('rolar a iniciativa põe a redução pelo nível; o fim do combate a tira se não foi usada', () => {
+    const e = startCombatEvent({ catalog: nose, rng: seq(10) });
+    const s = run(st(), e);
+    expect(s.modifiers[0].reduceNext).toBe(6);
+    expect(run(s, endCombatEvent({ state: s })).modifiers).toEqual([]);
+    expect(run(st(), startCombatEvent({ catalog, rng: seq(10) })).modifiers).toEqual([]);
+  });
+});

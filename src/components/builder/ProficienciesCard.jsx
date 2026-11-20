@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   O cabeçalho mostra o bônus de proficiência; expandido, lista Saving Throws,
-//   Skills, Expertise, Tools, Languages e os traços de dano. Tudo vem do derived.
+//   Skills, Expertise, Tools, Languages, os sentidos (Senses: visão no escuro e os outros, DDL-0270) e os
+//   traços de dano. Tudo vem do derived.
 //   Os traços de dano do personagem e dos itens aparecem juntos (o export os
 //   separa; TC-0014).
 //
@@ -51,6 +52,7 @@ export default function ProficienciesCard({ derived, onSave, onSkill, onTool, ex
   const weapons = (derived.weapons ?? []).map((w) => ({ name: w }));
   const tools = (derived.tools ?? []).map((t) => ({ name: t, onRoll: onTool ? () => onTool(t) : null }));
   const languages = (derived.languages ?? []).map((l) => ({ name: l }));
+  const senses = Object.entries(derived.senses ?? {}).map(([k, ft]) => ({ name: `${k.charAt(0).toUpperCase()}${k.slice(1)} ${ft} ft.` }));
 
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const dt = derived.damageTraits ?? {};
@@ -68,6 +70,7 @@ export default function ProficienciesCard({ derived, onSave, onSkill, onTool, ex
     !weapons.length &&
     !tools.length &&
     !languages.length &&
+    !senses.length &&
     !resistances.length &&
     !immunities.length &&
     !vulnerabilities.length;
@@ -99,6 +102,7 @@ export default function ProficienciesCard({ derived, onSave, onSkill, onTool, ex
               <Section title="Weapons" items={weapons} />
               <Section title="Tools" items={tools} />
               <Section title="Languages" items={languages} />
+              <Section title="Senses" items={senses} />
               <Section title="Damage Resistances" items={resistances} />
               <Section title="Damage Immunities" items={immunities} />
               <Section title="Damage Vulnerabilities" items={vulnerabilities} />

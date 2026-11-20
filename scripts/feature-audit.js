@@ -2,7 +2,7 @@
 // feature-audit: o registro de cada feature de classe e subclasse no app
 // =============================================================================
 // O QUE FAZ
-//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy|options|feats] [--review] [--only=<classId, tipo ou nome>]
+//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy|options|feats|species] [--review] [--only=<classId, tipo ou nome>]
 //   O registro do DDL-0228: cada feature de classe e de subclasse que o seletor oferece, numa
 //   camada (srd: as 12 classes do XPHB e as 12 subclasses do SRD 5.2; xphb: as outras do XPHB;
 //   post: os livros depois de 2024; legacy: as antigas sem reprint), com o que o app faz
@@ -43,6 +43,8 @@
 //   screenCatalog(character): o catálogo da tela, com uma arma de pacto invocada se houver o pacto.
 //   featBag(character, host): as sub-escolhas guardadas do talento (tipo e quantas).
 //   statView(catalog): os números do jogo que um talento pode mudar (PV, CA, iniciativa, deslocamentos, testes).
+//   traitKey(name): o nome-base de um traço ("Elven Lineage (Drow)" e "Elven Lineage, Drow" casam).
+//   speciesChoicesOf(row, character): as escolhas da espécie, com o traço que cada uma cita.
 //
 // DECISÕES E ARMADILHAS
 //   - O universo é o da lista de features da classe e da subclasse (resolveClassFeatures,
@@ -65,6 +67,10 @@
 //     hospedeiro da T3 (lib/featHost.js: o espaço da categoria, a classe e a espécie do pré-requisito)
 //     subido ao nível 20, contra a cópia dele com o espaço vazio. O livro agrupa por fonte > categoria.
 //     A pista `pré:bad` é o pré-requisito que o hospedeiro não cumpre (o instrumento, não o talento).
+//   - A camada `species` (DDL-0270) mede cada TRAÇO de cada linha da matriz de espécie (a linhagem já resolvida)
+//     num hospedeiro fixo, o guerreiro Champion do XPHB no nível 20 (o mesmo da régua): o traço vem do `entries`
+//     da raça, o jogo pelo nome-base no catálogo, a ficha pela diferença da mesma ficha sem espécie (da espécie
+//     inteira, como o diff de nível da classe: o revisor atribui) e pelos registros que citam o traço.
 //   - Nada de texto de livro no registro: só nomes e o que o app faz (`testing/` é privado).
 // -----------------------------------------------------------------------------
 import fs from 'node:fs';
@@ -90,7 +96,9 @@ import { optionalFeatureChoices } from '../src/engine/classFeatureChoices.js';
 import { collectFeatIds } from '../src/engine/proficiency.js';
 import { attacksPerAction } from '../src/engine/playBasicActions.js';
 import { withPactWeapon } from '../src/engine/playPact.js';
-import { featMatrix } from './lib/matrix.js';
+import { featMatrix, speciesMatrix } from './lib/matrix.js';
+import { speciesChoices } from '../src/engine/speciesData.js';
+import { resolveRaceObj } from '../src/engine/resolve.js';
 import { featHost, buildFeatHost, withoutFeat } from './lib/featHost.js';
 import { resolveFeat } from '../src/engine/resolve.js';
 import { prereqContext, prereqStatus } from '../src/engine/prereq.js';
@@ -100,7 +108,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return m ? [m[1], m[2] ?? true] : [a, true];
 }));
 const TIER = args.tier ?? 'srd';
-const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint', options: 'Opções de classe', feats: 'Talentos' };
+const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint', options: 'Opções de classe', feats: 'Talentos', species: 'Espécies' };
 const FEAT_CATS = { O: 'Origin', G: 'General', FS: 'Fighting Style', 'FS:P': 'Fighting Style (Paladin)', 'FS:R': 'Fighting Style (Ranger)', EB: 'Epic Boon', D: 'Dragonmark', DG: 'Dark Gift' };
 const OPTION_TYPES = { EI: 'Eldritch Invocations', 'MV:B': 'Maneuvers', MM: 'Metamagic', AS: 'Arcane Shots', RN: 'Runes' };
 const OUT_DIR = 'testing/feature-audit';
@@ -309,7 +317,7 @@ const verdicts = fs.existsSync(VERDICTS) ? JSON.parse(fs.readFileSync(VERDICTS, 
 const rows = [];
 const doneClasses = new Set();
 
-for (const row of TIER === 'options' || TIER === 'feats' ? [] : classMatrix(db)) {
+for (const row of TIER === 'options' || TIER === 'feats' || TIER === 'species' ? [] : classMatrix(db)) {
   if (args.only && row.classId !== args.only) continue;
   const classObj = resolveClassObj(db, row.classId, row.classSource);
   const sub = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
@@ -543,6 +551,68 @@ if (TIER === 'feats') {
   }
 }
 
+/** O nome-base de um traço: "Elven Lineage (Drow)" e "Elven Lineage, Drow" casam. */
+function traitKey(name) {
+  return norm(name).replace(/\s*[(,].*$/, '');
+}
+
+/** As escolhas da espécie, com o traço que cada uma cita (pela id, pelo rótulo ou pela feature). */
+function speciesChoicesOf(row, character) {
+  const base = resolveRaceObj(db, row.speciesId, row.speciesSource);
+  const race = resolveRaceObj(db, row.speciesId, row.speciesSource, row.lineage);
+  try {
+    return speciesChoices({ db, baseRace: base, raceObj: race, lineage: row.lineage, level: 20, bag: character.species?.choices ?? {} })
+      .map((ch) => ({ id: ch.id, kind: ch.kind, cite: norm(`${ch.id} ${ch.label ?? ''} ${ch.feature?.name ?? ''} ${ch.trait ?? ''}`), done: (character.species?.choices?.[ch.id]?.picks ?? []).length }));
+  } catch {
+    return [];
+  }
+}
+
+if (TIER === 'species') {
+  const HOST = classMatrix(db).find((r) => r.classId === 'fighter' && r.classSource === 'XPHB' && r.subclassSource === 'XPHB' && /champion/i.test(r.subclassId ?? ''));
+  for (const row of speciesMatrix(db)) {
+    if (args.only && !norm(row.id).includes(norm(args.only))) continue;
+    const race = resolveRaceObj(db, row.speciesId, row.speciesSource, row.lineage);
+    let character; let derived; let catalog; let actor; let speciesDiff;
+    try {
+      character = autoBuild(db, { ...HOST, level: 20, speciesId: row.speciesId, speciesSource: row.speciesSource, lineage: row.lineage, seed: hashSeed(row.id, 20) }).character;
+      derived = deriveFromDb(character, db);
+      catalog = screenCatalog(character);
+      actor = safeActor(character, db);
+      const bare = { ...character, species: null };
+      speciesDiff = [...diff(snapshot(deriveFromDb(bare, db)), snapshot(derived)), ...attackDiff(statView(screenCatalog(bare)), statView(catalog)), ...attackDiff(attackView(screenCatalog(bare)), attackView(catalog))];
+    } catch (e) {
+      rows.push({ id: `species|${row.id}|-`, book: row.speciesSource, className: row.speciesName, sub: row.lineage ?? '(espécie)', level: 0, name: '-', facets: { builder: 'ERRO', ficha: String(e.message).slice(0, 80), jogo: '-', export: '-', pistas: 'erro' }, sig: 'erro', text: '' });
+      continue;
+    }
+    const entries = bagEntries(character);
+    const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+    const choices = speciesChoicesOf(row, character);
+    const listed = (catalog.featureList ?? []).filter((x) => x.kind === 'species');
+    for (const trait of (race?.entries ?? []).filter((e) => e?.name)) {
+      const key = traitKey(trait.name);
+      const f = listed.find((x) => norm(x.name) === norm(trait.name)) ?? listed.find((x) => traitKey(x.name) === key);
+      const text = plainText(trait.entries ?? []);
+      const play = playOf(f, catalog, bridged);
+      const regs = mentions(trait.name, row.speciesId, null);
+      const mine = choices.filter((ch) => ch.cite.includes(key));
+      const choice = f ? pendingChoice(f, character, entries, text) : null;
+      const grants = GRANT_EXPLAINED[norm(trait.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+      const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+      const facets = {
+        builder: mine.map((ch) => `${ch.id} ${ch.done ? 'ok' : 'vazio'}`).join('; ') || '-',
+        ficha: [...speciesDiff, ...regs.map((m) => `reg:${m}`)].join('; ') || '-',
+        jogo: [play.cat, ...play.parts].join('; '),
+        export: exportOf(trait.name, null, actor),
+        pistas: [...playCues.map((c) => `jogo:${c}`), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
+      };
+      const shape = shapeFacet(text, { builder: facets.builder, play, exp: facets.export, files: regs });
+      if (shape) facets.forma = shape;
+      const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+      rows.push({ id: `species|${row.id}|${trait.name}`, book: row.speciesSource, className: row.speciesName, sub: row.lineage ?? '(espécie)', level: 0, name: trait.name, facets, sig, text });
+    }
+  }
+}
 
 /** O estado do veredito de uma linha. */
 function stateOf(r) {

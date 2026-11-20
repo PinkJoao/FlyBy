@@ -12,6 +12,9 @@
 //     de FOR até o seu próximo turno);
 //   - `use`: usar gasta, rola (`roll`) e mostra a salvaguarda do alvo (Stunning
 //     Strike, Commander's Strike, Inspiring Smite);
+//   - Feline Agility (Tabaxi, MPMM; o registro de espécies, TC-0222): "double your speed until the end of the
+//     turn ... can't use it again until you move 0 feet on one of your turns" é um `toggle` de `speedTimes: 2` por
+//     uma rodada; a volta (mover 0 pés) fica na nota.
 //   - `passive`: a feature só melhora outra entrada (Improved Blessed Strikes) ou é de
 //     outra criatura (Combat Inspiration): fica PASSIVA mesmo com gatilho no texto.
 //
@@ -356,6 +359,7 @@ export const FEATURE_ROLLS = {
   "storm's thunder": { kind: 'use', spend: { item: "Storm's Thunder" }, roll: { label: 'Thunder damage to the creature that damaged you', formula: '1d8' } },
   "stone's endurance": { kind: 'use', spend: { item: "Stone's Endurance" }, roll: { label: 'Damage reduced', formula: '1d12 + @abilities.con.mod' } },
   'colossus slayer': { kind: 'rider', on: ['damage'], when: 'weapon', formula: '1d8', note: 'if the target is missing Hit Points; once per turn' },
+  'feline agility': { kind: 'toggle', modifier: () => ({ label: 'Feline Agility', source: 'feature', duration: 'manual', maxRounds: 1, speedTimes: 2, notes: ['until the end of the turn; again only after a turn in which you move 0 feet'], effects: [] }) },
   'multiattack defense': { kind: 'toggle', modifier: () => ({ label: 'Multiattack Defense', source: 'feature', duration: 'manual', maxRounds: 1, ac: 4, notes: ['only against the creature that hit you, for the rest of the turn'], effects: [] }) },
   'defensive tactics: multiattack defense': { kind: 'toggle', modifier: () => ({ label: 'Multiattack Defense', source: 'feature', duration: 'manual', maxRounds: 1, ac: 4, notes: ['only against the creature that hit you, for the rest of the turn'], effects: [] }) },
   "frost's chill": { kind: 'rider', on: ['damage'], spend: { item: "Frost's Chill" }, formula: '1d6', note: 'Cold; the target loses 10 feet of Speed until your next turn' },

@@ -17,6 +17,8 @@
 //   collectOwned(character, grantedLanguages): tudo que a ficha já possui, para o
 //     ChoiceList não oferecer de novo.
 //   hasJackOfAllTrades(character): bardo no nível 2 ou mais.
+//   halfProficiencyFor(character, ability): o traço de espécie que soma metade do PB nos testes sem
+//     proficiência daquele atributo (HALF_PROFICIENCY).
 //   skillBonus(character, skill, profBonus, skillProfs, scores), saveBonus(
 //     character, ability, profBonus, proficientSaves, scores): os bônus.
 //
@@ -25,6 +27,10 @@
 //     proficiência ("an ability check ... that uses a skill proficiency you lack"); o texto de
 //     2024 não vale para o teste de atributo puro nem para a Iniciativa. O bardo do PHB foi
 //     reeditado, então a regra é por classe e nível.
+//   - HALF_PROFICIENCY: o mesmo meio PB por traço de espécie, num atributo só. O Kefnet's Blessing do Aven
+//     de cabeça de íbis (PSA) diz "half your proficiency bonus ... to any Intelligence check you make that
+//     doesn't already include your proficiency bonus"; a ficha não somava (TC-0221). Só nas perícias, como o
+//     Jack of All Trades: o teste de atributo puro não tem a soma de perícia aqui.
 //   - Todo personagem sabe Common (as raças 2024 deixaram de conceder; foi para o
 //     background). Tokens que não são línguas ("other", "anyStandard") saem, e o
 //     caixa é normalizado.
@@ -188,8 +194,19 @@ export function skillBonus(character, skill, profBonus, skillProfs, scores) {
   const ability = SKILL_ABILITY[skill];
   const mod = abilityModifier((scores ?? finalScores(character))[ability]);
   const level = profs[skill] ?? 0;
-  const jack = !level && hasJackOfAllTrades(character) ? Math.floor(profBonus / 2) : 0;
+  const jack = !level && (hasJackOfAllTrades(character) || halfProficiencyFor(character, ability)) ? Math.floor(profBonus / 2) : 0;
   return profValueBonus(mod, profBonus, level) + jack;
+}
+
+const HALF_PROFICIENCY = [
+  { species: 'aven', lineage: /ibis/i, abilities: ['int'], name: "Kefnet's Blessing" },
+];
+
+/** O traço de espécie que soma metade do PB no teste sem proficiência deste atributo, ou null. */
+export function halfProficiencyFor(character, ability) {
+  const sp = character?.species;
+  const hit = HALF_PROFICIENCY.find((h) => h.species === String(sp?.id ?? '').toLowerCase() && h.lineage.test(sp?.lineage ?? '') && h.abilities.includes(ability));
+  return hit?.name ?? null;
 }
 
 /** O personagem tem o Jack of All Trades (bardo no nível 2 ou mais)? */

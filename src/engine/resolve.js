@@ -45,6 +45,8 @@
 //     subclasse ou level-down.
 //
 //   Entradas
+//   deriveSenses(character, db, raceObj): os sentidos (visão no escuro, percepção às cegas, sentido sísmico,
+//     visão verdadeira) da espécie com a linhagem e dos talentos, o maior de cada (DDL-0270).
 //   deriveFromDb(character, db): o estado computado com o compêndio ao vivo. Os itens mágicos ativos entram
 //     pelo engine/itemEffects (DDL-0256): atributo (antes da derivação, então modificador, PV, perícias e CD
 //     seguem), ataque e CD de magia por origem (`itemBonuses`), bônus de teste nas perícias; `baseScores` é o
@@ -879,6 +881,7 @@ export function deriveFromDb(character, db) {
 
   return {
     ...derived,
+    senses: deriveSenses(character, db, raceObj),
     baseScores,
     itemAbilities,
     itemCheckBonus: itemChecks,
@@ -896,6 +899,25 @@ export function deriveFromDb(character, db) {
     damageTraits,
     spellcasting,
   };
+}
+
+const SENSES = ['darkvision', 'blindsight', 'tremorsense', 'truesight'];
+
+/** Os sentidos da espécie (com a linhagem) e dos talentos: o maior alcance de cada um, em pés. */
+export function deriveSenses(character, db, raceObj) {
+  const out = {};
+  const take = (block) => {
+    for (const k of SENSES) {
+      const n = Number(block?.[k]);
+      if (n > 0 && n > (out[k] ?? 0)) out[k] = n;
+    }
+  };
+  take(raceObj);
+  for (const id of collectFeatIds(character ?? {})) {
+    const feat = resolveFeat(db, id);
+    for (const block of [...(feat?.senses ?? []), ...(feat?.bonusSenses ?? [])]) take(block);
+  }
+  return out;
 }
 
 /**

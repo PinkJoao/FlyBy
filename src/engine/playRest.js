@@ -17,6 +17,7 @@
 //   hitDiceEvent(args): gastar dados de vida fora do descanso (cura) ou, com
 //     um número negativo, devolver os gastos.
 //   longRestEvent(args): o descanso longo.
+//   restInspiration(catalog): a feature que dá a Heroic Inspiration no fim do descanso longo, ou null.
 //
 // DECISÕES E ARMADILHAS
 //   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo: rollHitDie recebe `maxed` e o dado vai ao máximo, como a regra `max` das features.
@@ -29,6 +30,9 @@
 //     estado, `rounds`) acaba nele (`concentrationLapses`); a de 8 horas fica, e a
 //     gravada sem a duração também (o passe ao vivo achou o Flaming Sphere de 1 minuto
 //     vivo depois do descanso, DDL-0219).
+//   - "You gain Heroic Inspiration whenever you finish a Long Rest" (Resourceful do Human, XPHB e WoW): lido
+//     do texto da feature (restInspiration), não por nome; o descanso longo liga a inspiração. O registro de
+//     espécies (DDL-0270) achou o do SRD sem conta (TC-0220).
 //   - Longo: todo o HP, TODOS os dados de vida gastos (2024), o temporário some,
 //     a exaustão baixa 1 nível, a contagem da morte zera, e a concentração
 //     termina (dormir dá a condição Inconsciente) com o que dependia dela; os
@@ -43,7 +47,8 @@
 //     HIT_DIE_RULES dá o valor máximo (Boon of Bountiful Health, "use the highest number
 //     possible", em qualquer gasto; Troll Healing, "the maximum roll of the dice", só no
 //     descanso curto), +1 por dado (Inner Peace, no curto) e rolar de novo 1 e 2 (Black
-//     Blood Healing, `ro2`, no curto). REST_HIT_DICE_BONUS soma uma vez por descanso curto
+//     Blood Healing, `ro2`, no curto; Quiet Contemplation do Earthen, "1 additional Hit Points per Hit Point Dice
+//     you spend" no curto, TC-0222). REST_HIT_DICE_BONUS soma uma vez por descanso curto
 //     com dado gasto (Iron Stomach do Vigor of the Hill Giant: CON + PB, "whenever you eat
 //     food as part of a short rest"; comer fica com o jogador). Gastar UM dado fora do
 //     descanso (Dwarven Fortitude, Healing Machine, Emergency Fail-Safe) é o Hit dice do
@@ -59,6 +64,7 @@ import { rollFormula, cryptoRng } from './dice';
 import { makeEvent, hpView } from './playState';
 import { healOutcome } from './playHealth';
 import { endConcentrationOps, restModifierOps, healDiceMaxed } from './playEffects';
+import { plainText } from './playFeatures';
 
 /** Uma hora em rodadas: o descanso curto do XPHB. */
 const SHORT_REST_ROUNDS = 600;
@@ -69,6 +75,7 @@ const HIT_DIE_RULES = {
   'boon of bountiful health': { max: true, label: 'Superior Recuperation' },
   'troll healing': { max: true, rest: true, label: 'Troll Healing' },
   'inner peace': { plus: 1, rest: true, label: 'Inner Peace' },
+  'quiet contemplation': { plus: 1, rest: true, label: 'Quiet Contemplation' },
   'black blood healing': { reroll: 2, rest: true, label: 'Black Blood Healing' },
 };
 const REST_HIT_DICE_BONUS = {
@@ -276,5 +283,18 @@ export function longRestEvent({ state, catalog, rng, now = new Date() }) {
     ops.push(...endConcentrationOps(state));
     lines.push({ name: 'Concentration', detail: `${state.concentration.name ?? 'spell'} ended` });
   }
+  const insp = restInspiration(catalog);
+  if (insp && !state.inspiration) {
+    ops.push({ op: 'inspiration', value: true });
+    lines.push({ name: 'Heroic Inspiration', detail: insp });
+  }
   return makeEvent('longRest', { label: 'Long rest', ops, payload: { lines } }, now);
+}
+
+const REST_INSPIRATION = /\bgain heroic inspiration (?:whenever|when|each time) you finish a long rest\b/i;
+
+/** A feature que dá a Heroic Inspiration no fim do descanso longo, ou null. */
+export function restInspiration(catalog) {
+  const f = (catalog?.featureList ?? []).find((x) => REST_INSPIRATION.test(plainText(x.entries ?? [])));
+  return f?.name ?? null;
 }

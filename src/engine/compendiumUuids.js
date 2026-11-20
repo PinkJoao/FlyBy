@@ -52,6 +52,11 @@
 //     casa); a base nua só quando o documento guarda a linhagem dentro de si
 //     (SPECIES_SELF_LINEAGE: o Dragonborn). srdOriginName faz o mesmo com traços;
 //     sem casamento numa espécie publicada, o traço não é documento lá.
+//   - srdSpeciesName só casa a espécie da edição do SRD 5.2 (fonte XPHB; a marca `srd52` não basta, o `_copy`
+//     do WoW a herda do XPHB). O Elf do WoW com a
+//     linhagem "High Elf" virava o High Elf do SRD: perdia o próprio traço de linhagem (só o traço com nome do
+//     SRD sobrevive numa espécie "publicada") e saía com a UUID do compêndio, que o Foundry trocaria pelo
+//     conteúdo do SRD (§6.2). Achado pelo registro de espécies (DDL-0270, TC-0224).
 //   - equipmentFoundryType: o tipo decide equipar ou consumir e NÃO sai do código
 //     do 5etools (o `G` vira loot, equipment ou consumable item a item; TC-0066).
 // -----------------------------------------------------------------------------
@@ -170,7 +175,7 @@ export function originUuid(name) {
  */
 export function srdSpeciesName(raceObj) {
   const name = raceObj?.name;
-  if (!name) return null;
+  if (!name || raceObj.source !== 'XPHB') return null;
   const exact = SPECIES_NAMES.find((n) => norm(n) === norm(name));
   if (exact) return exact;
   const base = raceObj._baseName ?? name;

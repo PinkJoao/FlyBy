@@ -18,7 +18,7 @@
 import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
-import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent, hitDiceEvent } from './playRest';
+import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent, hitDiceEvent, hitDieRules, restInspiration } from './playRest';
 
 const seq = (...values) => sequenceRng(values, () => {
   throw new Error('rolou um dado a mais');
@@ -188,5 +188,20 @@ describe('o pool que volta a um número (Power Surge, DDL-0253)', () => {
     expect(run(empty, recoveryFor(cat, empty, 'sr').ops).spent['pool:power-surge']).toBe(3);
     const two = { ...emptyPlayState(), spent: { 'pool:power-surge': 2 } };
     expect(recoveryFor(cat, two, 'sr').ops).toEqual([]);
+  });
+});
+
+describe('traços de espécie no descanso (TC-0220, TC-0222)', () => {
+  const resourceful = { ...catalog, featureList: [{ name: 'Resourceful', entries: ['You gain Heroic Inspiration whenever you finish a Long Rest.'] }] };
+  it('Resourceful: o descanso longo liga a Heroic Inspiration, só se ela estiver desligada', () => {
+    expect(restInspiration(resourceful)).toBe('Resourceful');
+    expect(run(st(), longRestEvent({ state: st(), catalog: resourceful })).inspiration).toBe(true);
+    expect(longRestEvent({ state: st({ inspiration: true }), catalog: resourceful }).ops).toEqual([]);
+    expect(restInspiration(catalog)).toBe(null);
+  });
+  it('Quiet Contemplation: +1 por dado de vida gasto, só no descanso curto', () => {
+    const c = { ...catalog, features: ['quiet contemplation'] };
+    expect(hitDieRules(c, true).map((r) => r.plus)).toEqual([1]);
+    expect(hitDieRules(c, false)).toEqual([]);
   });
 });

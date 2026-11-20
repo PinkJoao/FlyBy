@@ -39,8 +39,10 @@
 //     sem conta, erro) e `unreviewed` (alguma feature sem veredito: a camada legado). A
 //     porcentagem CERTIFICADA conta só `playable`; o teto conta `unreviewed` também. A
 //     diferença é o trabalho de revisão que falta, nunca é chute.
-//   - A espécie não tem registro de vereditos: a prova dela é o builder e as pistas da prosa
-//     (survey-play-coverage). Fica escrito no relatório.
+//   - A espécie tem registro de vereditos desde o DDL-0270 (`feature-audit.js --tier=species`, um por
+//     traço): a linha de espécie só passa com todo traço `ok` ou `explained`, como a de classe.
+//   - Os TALENTOS (o registro `--tier=feats`) entram como um recorte à parte: a parte dos talentos do
+//     seletor com veredito `ok` ou `explained`. Um talento não multiplica as combinações (é escolha de nível).
 //   - O veredito é lido pela chave, sem conferir a assinatura das facetas: "mudou" é trabalho
 //     do feature-audit, que reconstrói as facetas. Rode o feature-audit antes se o app mudou.
 //   - O peso é uniforme por combinação, como o dono disse ("personagens possíveis"); uma
@@ -56,13 +58,13 @@
 import fs from 'node:fs';
 import process from 'node:process';
 import { loadDb } from './lib/loadDb.js';
-import { classMatrix, speciesMatrix, defaultSpecies } from './lib/matrix.js';
+import { classMatrix, speciesMatrix, defaultSpecies, featMatrix } from './lib/matrix.js';
 import { autoBuild } from './lib/autoBuild.js';
 import { hashSeed, mulberry32 } from './lib/rng.js';
 import { classify, cuesOf, unexplainedCues } from './lib/playCoverage.js';
 import { derivePlayCatalog } from '../src/engine/playCatalog.js';
 import { plainText } from '../src/engine/playFeatures.js';
-import { resolveClassObj, resolveSubclassObj } from '../src/engine/resolve.js';
+import { resolveClassObj, resolveSubclassObj, resolveRaceObj } from '../src/engine/resolve.js';
 import { resolveClassFeatures, resolveSubclassFeatures } from '../src/engine/foundryItems.js';
 import { multiclassProblems } from './lib/multiclassOracle.js';
 import { deriveGrantedProficiencies } from '../src/engine/autoProficiencies.js';
@@ -171,7 +173,16 @@ function speciesRow(row) {
       reasons.push(`erro no nível ${level}: ${String(e?.message ?? e).slice(0, 120)}`);
     }
   }
-  return { id: row.id, label: `${row.speciesName}${row.lineage ? ` (${row.lineage})` : ''} [${row.speciesSource}]`, status: reasons.length ? 'gap' : 'playable', reasons, srd: !!(race?.srd52 || race?.srd) };
+  let unreviewed = 0;
+  const raceObj = resolveRaceObj(db, row.speciesId, row.speciesSource, row.lineage);
+  for (const trait of (raceObj?.entries ?? []).filter((e) => e?.name)) {
+    const state = featureVerdict(`species|${row.id}|${trait.name}`);
+    if (state === 'gap') reasons.push(`${trait.name}: veredito de lacuna (${verdicts[`species|${row.id}|${trait.name}`]?.note?.split(':')[0] ?? ''})`);
+    if (state === 'unreviewed') unreviewed++;
+  }
+  if (unreviewed) reasons.push(`${unreviewed} traço(s) sem veredito no registro`);
+  const status = reasons.some((x) => !/sem veredito/.test(x)) ? 'gap' : unreviewed ? 'unreviewed' : 'playable';
+  return { id: row.id, label: `${row.speciesName}${row.lineage ? ` (${row.lineage})` : ''} [${row.speciesSource}]`, status, reasons, srd: !!(race?.srd52 || race?.srd) };
 }
 
 /** A porcentagem com uma casa. */
@@ -289,11 +300,14 @@ function bar(cs, ss) {
   const okC = cs.filter((r) => r.status === 'playable').length;
   const upC = cs.filter((r) => r.status !== 'gap').length;
   const okS = ss.filter((r) => r.status === 'playable').length;
-  return { total, certified: okC * okS, ceiling: upC * okS, classes: cs.length, okC, upC, species: ss.length, okS };
+  const upS = ss.filter((r) => r.status !== 'gap').length;
+  return { total, certified: okC * okS, ceiling: upC * upS, classes: cs.length, okC, upC, species: ss.length, okS };
 }
 const all = bar(classes, speciesRows);
 const srd = bar(classes.filter((r) => r.srd), speciesRows.filter((r) => r.srd));
 const tiers = ['srd', 'xphb', 'post', 'legacy'].map((t) => [t, bar(classes.filter((r) => r.tier === t), speciesRows)]);
+const featRows = featMatrix(db).map((r) => ({ ...r, state: featureVerdict(`feats|${r.name}|${r.source}`) }));
+const featOk = featRows.filter((r) => r.state === 'ok').length;
 
 const lines = [
   '# A régua do lançamento do play mode',
@@ -302,7 +316,7 @@ const lines = [
   'linhagem) que os seletores oferecem, cada combinação com o mesmo peso. Certificado: as duas metades passam',
   `(o builder termina sem pendência nos níveis ${LEVELS.join(', ')}, toda feature de classe e subclasse com veredito`,
   '`ok` ou `explained` no registro, nenhuma pista sem conta). Teto: conta também as linhas com features ainda sem',
-  'veredito (a revisão que falta). A espécie não tem registro de vereditos: a prova dela é o builder e as pistas.',
+  'veredito (a revisão que falta). A espécie passa com o builder, as pistas e o veredito de cada traço (DDL-0270).',
   '',
   '| Recorte | Combinações | Certificado | Teto (com as sem veredito) | Linhas de classe ok / sem veredito / total | Espécies ok / total |',
   '|---|---|---|---|---|---|',
@@ -311,6 +325,11 @@ const lines = [
   '',
   `Amostra de ${SAMPLE} combinações reais (classe, subclasse, espécie e nível ao acaso): ${SAMPLE - sampleFails.length} sem problema.`,
   ...sampleFails.map((x) => `- ${x}`),
+  '',
+  '## Talentos',
+  '',
+  `Os ${featRows.length} talentos do seletor no registro (\`feature-audit.js --tier=feats\`): ${featOk} com veredito \`ok\` ou \`explained\` (${pct(featOk, featRows.length)}), ${featRows.filter((r) => r.state === 'gap').length} com lacuna, ${featRows.filter((r) => r.state === 'unreviewed').length} sem veredito.`,
+  ...featRows.filter((r) => r.state !== 'ok').map((r) => `- ${r.name} (${r.source}): ${r.state}`),
   '',
   '## Multiclasse',
   '',

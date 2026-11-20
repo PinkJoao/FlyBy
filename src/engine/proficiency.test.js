@@ -131,3 +131,14 @@ describe('Jack of All Trades (TC-0150)', () => {
     expect(skillBonus(bard(9), 'ste', 4, {}, scores)).toBe(4);
   });
 });
+
+describe("Kefnet's Blessing (TC-0221)", () => {
+  const scores = { str: 10, dex: 10, con: 10, int: 14, wis: 10, cha: 10 };
+  const aven = (lineage) => ({ ...createCharacter(), classes: [{ classId: 'fighter', source: 'XPHB', level: 5, choices: {} }], species: { id: 'aven', source: 'PSA', lineage, choices: {} } });
+  it('metade do PB nas perícias de INT sem proficiência, só no Aven de cabeça de íbis', () => {
+    expect(skillBonus(aven('Aven (Ibis-Headed)'), 'arc', 3, {}, scores)).toBe(3);
+    expect(skillBonus(aven('Aven (Ibis-Headed)'), 'arc', 3, { arc: 1 }, scores)).toBe(5);
+    expect(skillBonus(aven('Aven (Ibis-Headed)'), 'ath', 3, {}, scores)).toBe(0);
+    expect(skillBonus(aven('Aven (Hawk-Headed)'), 'arc', 3, {}, scores)).toBe(2);
+  });
+});

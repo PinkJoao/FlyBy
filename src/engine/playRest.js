@@ -53,6 +53,9 @@
 //     food as part of a short rest"; comer fica com o jogador). Gastar UM dado fora do
 //     descanso (Dwarven Fortitude, Healing Machine, Emergency Fail-Safe) é o Hit dice do
 //     card de HP (`hitDiceEvent`), que vale a qualquer hora.
+//   - Recuperação sem `type` (o overlay do Refined Reanimation traz só `{ period: 'lr' }`) vale `recoverAll`, o
+//     padrão do dnd5e (`initial: "recoverAll"` no uses-field); o fuzz de personagens achou o pool que nunca voltava
+//     (DDL-0273).
 //   - Períodos: o curto recupera `sr`; o longo, `lr`, `sr`, `day`, `dawn` e
 //     `dusk` (o "1 por dia" da magia concedida e do item volta no longo).
 //     Recuperação `resetTo` deixa o pool com aquele número (o Power Surge volta a 1); `ifEmpty` devolve só
@@ -100,7 +103,7 @@ export function recoveryFor(catalog, state, period, { rng = cryptoRng } = {}) {
   const groups = [];
   for (const r of catalog.resources ?? []) {
     const spent = Math.min(state.spent?.[r.key] ?? 0, r.max);
-    const list = r.recovery ?? [];
+    const list = (r.recovery ?? []).map((x) => (x?.type ? x : { ...x, type: 'recoverAll' }));
     const reset = list.find((x) => x.type === 'resetTo' && periods.includes(x.period));
     if (reset) {
       const keep = Number(reset.formula) || 0;

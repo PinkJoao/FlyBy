@@ -59,7 +59,7 @@
 // -----------------------------------------------------------------------------
 import fs from 'node:fs';
 import process from 'node:process';
-import { loadDb } from './lib/loadDb.js';
+import { loadDb, checkSnapshot } from './lib/loadDb.js';
 import { classMatrix, speciesMatrix, defaultSpecies, featMatrix } from './lib/matrix.js';
 import { autoBuild } from './lib/autoBuild.js';
 import { hashSeed, mulberry32 } from './lib/rng.js';
@@ -89,6 +89,7 @@ const SAMPLE = Number(args.sample ?? 300);
 const MC_SAMPLE = Number(args['mc-sample'] ?? 200);
 const MC_SPLITS = [[1, 1], [3, 3], [5, 5], [12, 8]];
 const OUT = 'testing/RELEASE-BAR.md';
+const SNAPSHOT = checkSnapshot('testing/RELEASE-BAR.md');
 const db = loadDb();
 await loadFoundryMechanics();
 const species = defaultSpecies(db);
@@ -326,6 +327,8 @@ const lines = [
   `(o builder termina sem pendência nos níveis ${LEVELS.join(', ')}, toda feature de classe e subclasse com veredito`,
   '`ok` ou `explained` no registro, nenhuma pista sem conta). Teto: conta também as linhas com features ainda sem',
   'veredito (a revisão que falta). A espécie passa com o builder, as pistas e o veredito de cada traço (DDL-0270).',
+  '',
+  `Espelho do 5etools: ${SNAPSHOT ?? 'desconhecido'}`,
   '',
   '| Recorte | Combinações | Certificado | Teto (com as sem veredito) | Linhas de classe ok / sem veredito / total | Espécies ok / total |',
   '|---|---|---|---|---|---|',

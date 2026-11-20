@@ -205,3 +205,11 @@ describe('traços de espécie no descanso (TC-0220, TC-0222)', () => {
     expect(hitDieRules(c, false)).toEqual([]);
   });
 });
+
+describe('recuperação sem tipo (DDL-0273)', () => {
+  it('vale recoverAll, o padrão do dnd5e', () => {
+    const c = { ...catalog, resources: [{ key: 'pool:x', kind: 'pool', name: 'X', max: 1, recovery: [{ period: 'lr' }] }] };
+    expect(recoveryFor(c, st({ spent: { 'pool:x': 1 } }), 'lr').ops).toEqual([{ op: 'restore', key: 'pool:x' }]);
+    expect(recoveryFor(c, st({ spent: { 'pool:x': 1 } }), 'sr').ops).toEqual([]);
+  });
+});

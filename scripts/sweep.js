@@ -28,6 +28,8 @@
 //   main(): a CLI, a varredura e as saídas.
 //
 // DECISÕES E ARMADILHAS
+//   - O cabeçalho do COVERAGE.md grava a versão do snapshot do 5etools, e a varredura avisa antes de rodar quando o
+//     relatório veio de um espelho mais novo que o local (checkSnapshot, DDL-0273).
 //   - O id de uma linha de ESPÉCIE contém um pipe (`species:Elf|XPHB/...`), que é o
 //     separador de células do markdown. É ESCAPADO ao escrever e a leitura corta só
 //     nos pipes não-escapados; sem isso as células deslizam e as colunas manuais de
@@ -42,7 +44,7 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { loadDb } from './lib/loadDb';
+import { loadDb, snapshotVersion, checkSnapshot } from './lib/loadDb';
 import { classMatrix, speciesMatrix, defaultSpecies } from './lib/matrix';
 import { autoBuild } from './lib/autoBuild';
 import { scanBadValues, checkDerivedSanity, checkActorShape } from './lib/invariants';
@@ -258,7 +260,7 @@ function writeCoverage(results) {
 > survive regeneration; row key = the Unit cell). Conventions: \`todo\`, \`ok\`,
 > \`issues (TC-xxxx)\`, \`needs-user-eyes\`. See TESTING-PLAN.md.
 
-Last sweep: ${new Date().toISOString()} · base seed ${BASE_SEED} · ${results.length} rows
+Last sweep: ${new Date().toISOString()} · base seed ${BASE_SEED} · ${results.length} rows · Espelho do 5etools: ${snapshotVersion() ?? 'desconhecido'}
 
 ## Classes × subclasses (${classes.length})
 
@@ -273,6 +275,7 @@ ${table(species)}
 
 async function main() {
   console.log(args.srd ? 'Loading the embedded SRD bundle…' : 'Loading local compendium…');
+  if (!args.srd) checkSnapshot('testing/COVERAGE.md');
   const db = args.srd ? JSON.parse(readFileSync(SRD_BUNDLE, 'utf8')) : loadDb();
   await loadFoundryMechanics();
   const reportName = args.srd ? 'report-srd.json' : 'report.json';

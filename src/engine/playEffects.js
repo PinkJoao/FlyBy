@@ -43,6 +43,8 @@
 //       deslocamento com condições e modificadores.
 //     effectiveSpeeds(catalog, state): cada deslocamento (voo, natação...) com as
 //       mesmas regras; o bônus de modificador vale só a pé.
+//     effectiveSenses(senses, state): os sentidos da ficha com os dos efeitos ativos (a magia Darkvision dá 150
+//       pés; o maior de cada sentido fica; DDL-0272).
 //   Modificadores
 //     makeModifier(fields): um modificador com id.
 //     spellEffectChoice(spell, catalog), spellEffectReplacesRoll(spell): a escolha do lançamento e se o
@@ -109,6 +111,7 @@
 //     de 17), `speedTimes` (Haste dobra todo deslocamento) e `hpMax` (Aid: o máximo e o atual sobem; ao sair, o dano
 //     baixa o mesmo tanto, então o atual só cai se passar do máximo novo, playState). `rolls` marca a magia que continua
 //     com a rolagem dela (Fire Shield, as Investitures, Tenser's Transformation): o efeito entra e o dano não some.
+//   - DDL-0272: `turnTemp` (Heroism, lido no nextTurnEvent) e `deathWard` (Death Ward, lido no damageOutcome).
 //   - DDL-0271: as magias com dado na prosa e nenhum caminho no jogo. Gift of Alacrity ("add 1d8 to its initiative
 //     rolls") e Zone of Amicability ("treat a d20 roll of 9 or lower as a 10" ao influenciar uma criatura na área: as
 //     perícias de influência, opcional) viram efeito; o resto é efeito em outra criatura ou rolagem que o texto não
@@ -335,11 +338,13 @@ const SPELL_EFFECTS = {
     choice: { message: 'Which damage type?', options: () => typeOptions(['acid', 'bludgeoning', 'cold', 'fire', 'lightning', 'necrotic', 'piercing', 'poison', 'radiant', 'slashing', 'thunder']) },
     make: (c, x) => ({ label: named('Resistance', x.choice), notes: [`When you take ${x.choice ?? 'acid'} damage, reduce the total by 1d4 (once per turn)`], effects: [] }),
   },
+  darkvision: { self: false, make: () => ({ label: 'Darkvision', senses: { darkvision: 150 }, effects: [] }) },
+  'true seeing': { self: false, make: () => ({ label: 'True Seeing', senses: { truesight: 120 }, effects: [] }) },
   'gift of alacrity': { self: false, make: () => ({ label: 'Gift of Alacrity', effects: [{ targets: ['initiative'], formula: '1d8', label: 'Gift of Alacrity' }] }) },
   'zone of amicability': { self: true, make: () => ({ label: 'Zone of Amicability', effects: [{ targets: ['skill:dec', 'skill:itm', 'skill:prf', 'skill:per'], d20Min: 10, optional: true, label: 'Zone of Amicability (influence a creature in the area)' }] }) },
   shield: { self: true, make: () => ({ label: 'Shield', ac: 5, notes: ['+5 AC until the start of your next turn, against the triggering attack too; no damage from Magic Missile'], effects: [] }) },
   longstrider: { self: false, make: () => ({ label: 'Longstrider', speed: 10, effects: [] }) },
-  heroism: { self: false, make: (c, x) => ({ label: 'Heroism', notes: [`Immune to Frightened; ${Math.max(0, x.origin?.abilityMod ?? 0)} Temporary Hit Points at the start of each of your turns`], effects: [] }) },
+  heroism: { self: false, make: (c, x) => ({ label: 'Heroism', turnTemp: Math.max(0, x.origin?.abilityMod ?? 0), notes: [`Immune to Frightened; ${Math.max(0, x.origin?.abilityMod ?? 0)} Temporary Hit Points at the start of each of your turns`], effects: [] }) },
   'expeditious retreat': { self: true, make: () => ({ label: 'Expeditious Retreat', notes: ['You can take the Dash action as a Bonus Action'], effects: [] }) },
   jump: { self: false, make: () => ({ label: 'Jump', notes: ['Once on each of your turns, jump up to 30 feet by spending 10 feet of movement'], effects: [] }) },
   'protection from evil and good': {
@@ -390,7 +395,7 @@ const SPELL_EFFECTS = {
   'warding bond': { self: false, make: () => ({ label: 'Warding Bond', ac: 1, resist: [...DAMAGE_TYPES], notes: ['Within 60 feet of the caster; each time you take damage, the caster takes the same'], effects: [{ targets: ['save'], formula: '1', label: 'Warding Bond' }] }) },
   'intellect fortress': { self: false, make: () => ({ label: 'Intellect Fortress', resist: ['psychic'], effects: [{ targets: ['save:int', 'save:wis', 'save:cha'], mode: 'advantage', label: 'Intellect Fortress' }] }) },
   stoneskin: { self: false, make: () => ({ label: 'Stoneskin', resist: ['bludgeoning', 'piercing', 'slashing'], effects: [] }) },
-  'death ward': { self: false, make: () => ({ label: 'Death Ward', notes: ['The first time you would drop to 0 Hit Points, you drop to 1 instead; it also negates one instant-death effect'], effects: [] }) },
+  'death ward': { self: false, make: () => ({ label: 'Death Ward', deathWard: true, notes: ['The first time you would drop to 0 Hit Points, you drop to 1 instead; it also negates one instant-death effect'], effects: [] }) },
   'freedom of movement': { self: false, make: () => ({ label: 'Freedom of Movement', speeds: { swim: 'walk' }, notes: ["Difficult Terrain doesn't slow you; magic can't reduce your Speed or Paralyze or Restrain you; 5 feet of movement escapes a Grapple or nonmagical restraints"], effects: [] }) },
   'greater invisibility': { self: false, make: () => ({ label: 'Greater Invisibility', notes: ['Invisible: attacks against you have Disadvantage'], effects: [{ targets: ['attack'], mode: 'advantage', label: 'Invisible' }] }) },
   'fire shield': {
@@ -610,6 +615,15 @@ export function effectiveSpeed(catalog, state) {
 /** Quantas vezes o deslocamento se multiplica (Haste dobra). */
 function speedTimes(state) {
   return (state.modifiers ?? []).reduce((k, m) => k * (Number(m.speedTimes) || 1), 1);
+}
+
+/** Os sentidos da ficha com os dos efeitos ativos: o maior alcance de cada um. */
+export function effectiveSenses(senses = {}, state = {}) {
+  const out = { ...senses };
+  for (const m of state.modifiers ?? []) {
+    for (const [k, ft] of Object.entries(m.senses ?? {})) if (Number(ft) > (out[k] ?? 0)) out[k] = Number(ft);
+  }
+  return out;
 }
 
 /** Cada deslocamento com condições e exaustão; o bônus de modificador só a pé. */

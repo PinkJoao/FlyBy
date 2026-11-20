@@ -29,6 +29,9 @@
 //     gatilho em `used.readied`) e o gatilho acontecendo (gasta a reação).
 //
 // DECISÕES E ARMADILHAS
+//   - Começo do turno (DDL-0272): cada "Next turn" é o começo do turno do personagem. O modificador com `turnTemp`
+//     (Heroism: o modificador de conjuração em PV temporários) dá os temporários ali; não somam, fica o maior
+//     ("you keep whichever"), e o cartão da rodada mostra quanto entrou (`tempHp`).
 //   - O combate é do PERSONAGEM, não da mesa: a rodada avança quando o jogador diz
 //     que o turno dele começa ("Next turn"); a ordem dos outros é do mestre.
 //   - Expira no começo do turno em que a rodada passa do fim: um efeito de 1
@@ -108,9 +111,13 @@ export function nextTurnEvent({ state, now = new Date() }) {
     ops.push(...endConcentrationOps(state));
     ended.push(conc.name);
   }
+  const removed = new Set(ops.filter((o) => o.op === 'modifier' && o.remove).map((o) => o.remove));
+  const turnTemp = Math.max(0, ...(state.modifiers ?? []).filter((m) => !removed.has(m.id)).map((m) => Number(m.turnTemp) || 0));
+  const gained = turnTemp > (state.tempHp ?? 0) ? turnTemp - (state.tempHp ?? 0) : 0;
+  if (gained) ops.push({ op: 'hp', temp: gained });
   const gone = new Set(ops.filter((o) => o.op === 'summon' && o.remove).map((o) => o.remove));
   const after = (state.summons ?? []).filter((g) => !gone.has(g.id) && (g.turn?.order === 'after' || g.turn?.order === 'shared')).map((g) => g.label);
-  return makeEvent('combat', { label: `Round ${round}`, ops, payload: { round, ended, after } }, now);
+  return makeEvent('combat', { label: `Round ${round}`, ops, payload: { round, ended, after, ...(gained ? { tempHp: gained } : {}) } }, now);
 }
 
 /** Fecha o combate. */

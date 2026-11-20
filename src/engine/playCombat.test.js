@@ -147,3 +147,17 @@ describe('Dash com outro custo e Ready', () => {
   });
 });
 
+
+describe('começo do turno: Heroism (DDL-0272)', () => {
+  it('dá os temporários do modificador no começo do turno, ficando com o maior', () => {
+    const combat = { round: 1, used: {} };
+    const s = st({ combat, modifiers: [{ id: 'h', label: 'Heroism', turnTemp: 4 }] });
+    const e = nextTurnEvent({ state: s });
+    expect(run(s, e).tempHp).toBe(4);
+    expect(e.payload.tempHp).toBe(4);
+    const more = st({ combat, tempHp: 6, modifiers: [{ id: 'h', label: 'Heroism', turnTemp: 4 }] });
+    expect(run(more, nextTurnEvent({ state: more })).tempHp).toBe(6);
+    const partial = st({ combat, tempHp: 1, modifiers: [{ id: 'h', label: 'Heroism', turnTemp: 4 }] });
+    expect(run(partial, nextTurnEvent({ state: partial })).tempHp).toBe(4);
+  });
+});

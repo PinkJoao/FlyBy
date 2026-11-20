@@ -283,7 +283,7 @@ import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
 import { castWays, castEvent, spellAttackOf, healParts, spellHealEvent, castTriggers, spellRecallEvent, slotRegainEvent, isZoneSpell, activeZone, endZoneEvent, zoneUsedOps, spellTempFormula, projectileCount, timesFormula } from '../engine/playCast';
 import {
-  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, spellEffectChoice, spellEffectReplacesRoll, castOnceEffects,
+  rollEffects, applyEffects, featureModifier, effectiveAc, effectiveSpeed, effectiveSpeeds, effectiveSenses, conditionEvent, modifierEvent, removeModifierEvent, conditionId, sourceModifier, makeModifier, effectiveDefenses, conditionList, fixedRollBonus, attackRollContext, defaultGrip, spellModifier, spellEffectChoice, spellEffectReplacesRoll, castOnceEffects,
 } from '../engine/playEffects';
 import { testParts, rollTestEvent, rollAttackEvent, damageParts, rollDamageEvent, canCrit, withDiceMax } from '../engine/playActions';
 import { itemUseEvent, ammoOps, itemCostOf, healOf, replicateEvent, storeSpellEvent, takeStoredOp } from '../engine/playInventory';
@@ -1765,7 +1765,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
 
       <div className={sheetPage.stack} data-flip="profs">
         <ProficienciesCard
-          derived={derived}
+          derived={{ ...derived, senses: effectiveSenses(derived.senses, state) }}
           onSave={saveAbility}
           extra={testExtra}
           onSkill={(skill) => rollTest({ type: 'skill', id: skill }, `${SKILL_LABEL[skill] ?? skill} check`)}

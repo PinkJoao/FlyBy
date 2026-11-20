@@ -33,6 +33,8 @@
 //   concentrationCheckEvent(args): o save de CON para manter a concentração.
 //
 // DECISÕES E ARMADILHAS
+//   - Death Ward (DDL-0272): o modificador com `deathWard` faz o dano que levaria a 0 deixar em 1 e sai ("drops to
+//     1 Hit Point instead, and the spell ends"), antes da conta do dano massivo, que também é dano.
 //   - A redução fixa (`defenses.reduce`: o Heavy Armor Master tira o PB do contundente, perfurante e
 //     cortante com armadura pesada) vem ANTES da resistência, como as regras do XPHB ("resistance ...
 //     is applied after all other modifiers"); o card mostra a linha. Sem o tipo no Hurt, nada sai (DDL-0261).
@@ -160,7 +162,12 @@ export function damageOutcome(state, catalog, { amount, type = '', critical = fa
   } else if (rest > 0) {
     toHp = Math.min(rest, v.current);
     const overflow = rest - toHp;
-    if (toHp === v.current) {
+    const ward = (state.modifiers ?? []).find((m) => m.deathWard);
+    if (toHp === v.current && ward) {
+      toHp = v.current - 1;
+      ops.push({ op: 'modifier', remove: ward.id });
+      notes.push(`${ward.label ?? 'Death Ward'}: drops to 1 hit point instead, and ends`);
+    } else if (toHp === v.current) {
       if (overflow >= v.max) {
         ops.push({ op: 'death', set: { dead: true } });
         notes.push('Dies from massive damage');

@@ -273,3 +273,15 @@ describe('redução fixa (Heavy Armor Master, DDL-0261)', () => {
     expect(damageOutcome(st(), ham(), { amount: 10, type: 'bludgeoning' }).summary.notes).toContain('Heavy Armor Master: -3');
   });
 });
+
+describe('Death Ward (DDL-0272)', () => {
+  it('o dano que levaria a 0 deixa em 1 e encerra o efeito; sem ele, cai a 0', () => {
+    const s = st({ modifiers: [{ id: 'dw', label: 'Death Ward', deathWard: true }] });
+    const out = damageOutcome(s, catalog(12), { amount: 30 });
+    const next = after(s, out);
+    expect(hpView(next, 12).current).toBe(1);
+    expect(next.modifiers).toEqual([]);
+    expect(next.death?.dead).toBeFalsy();
+    expect(hpView(after(st(), damageOutcome(st(), catalog(12), { amount: 5 })), 12).current).toBe(7);
+  });
+});

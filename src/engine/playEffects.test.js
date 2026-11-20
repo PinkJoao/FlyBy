@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { emptyPlayState, applyOp } from './playState';
 import {
   conditionList, rollEffects, applyEffects, effectiveDefenses, effectiveAc, effectiveSpeed, makeModifier,
-  featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier,
+  featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier, effectiveSenses,
   defaultGrip, attackRollContext, effectiveSpeeds, spellEffectChoice, spellEffectReplacesRoll,
 } from './playEffects';
 import { hpView } from './playState';
@@ -314,5 +314,15 @@ describe('magias com dado sem caminho no jogo (DDL-0271)', () => {
     const z = sourceModifier('Zone of Amicability');
     expect(z.effects[0].d20Min).toBe(10);
     expect(z.effects[0].targets).toContain('skill:prf');
+  });
+});
+
+describe('sentidos de efeito (DDL-0272)', () => {
+  it('a magia Darkvision dá 150 pés; o maior de cada sentido fica', () => {
+    const m = sourceModifier('Darkvision');
+    expect(m.senses).toEqual({ darkvision: 150 });
+    expect(effectiveSenses({ darkvision: 60 }, { modifiers: [m] })).toEqual({ darkvision: 150 });
+    expect(effectiveSenses({ darkvision: 300 }, { modifiers: [m] })).toEqual({ darkvision: 300 });
+    expect(effectiveSenses({ darkvision: 60 }, {})).toEqual({ darkvision: 60 });
   });
 });

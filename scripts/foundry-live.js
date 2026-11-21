@@ -30,6 +30,7 @@
 //   report(): o resumo dos achados e do lado a lado.
 //   diffInto(agg, a, b, path, row): acumula as diferenças de dois snapshots.
 //   ourNumbers(character, db): os mesmos números do `snapshot` da página, pelo nosso motor e pelo catálogo do jogo.
+//   flatEffects(effects, cat): a soma dos efeitos numéricos ligados de uma rolagem (o acerto da arma).
 //   numbers(): o oráculo diferencial, por família de diferença.
 //
 // DECISÕES E ARMADILHAS
@@ -45,6 +46,13 @@
 //     derivação, não o export. A CD do Foundry é a da habilidade de conjuração do ator: basta estar entre as CDs das
 //     nossas origens. O acerto da arma vem do rótulo ("+7"). Os dois intérpretes são independentes: uma diferença é
 //     defeito de um dos dois, e o relatório não decide qual.
+//   - Salvaguarda, perícia e iniciativa vêm do total do JOGO (`testBreakdown` num estado descansado), não da ficha:
+//     o bônus que o ator carrega como efeito (Aura of Protection, Thaumaturge) o jogo soma na rolagem e a ficha não,
+//     e a primeira leitura contou isso como diferença em toda a família (DDL-0277).
+//   - A CD só se compara com o ator que tem atributo de conjuração: sem ele (Warrior of Shadow, Path of the
+//     Elements) o Foundry mostra 8 + PB e nenhuma magia usa essa CD.
+//   - O Defense dá +1 de CA no Foundry sem armadura: o effect do SRD não tem a condição "while wearing armor" e o
+//     dnd5e não a expressa. Nosso motor segue o texto; a diferença vai para a família "esperado", com o nome.
 // -----------------------------------------------------------------------------
 
 import http from 'node:http';
@@ -62,6 +70,10 @@ import { modernizeEffectKeys } from '../src/engine/foundryCompat';
 import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData';
 import { deriveFromDb } from '../src/engine/resolve';
 import { derivePlayCatalog } from '../src/engine/playCatalog';
+import { testBreakdown } from '../src/engine/playChecks';
+import { emptyPlayState } from '../src/engine/playState';
+import { rollEffects, attackRollContext } from '../src/engine/playEffects';
+import { rollFormula } from '../src/engine/dice';
 
 const ROOT = join(import.meta.dirname, '..');
 const ACTORS = join(ROOT, 'testing', 'actors');
@@ -189,6 +201,18 @@ function report() {
   }
 }
 
+/** A soma dos efeitos numéricos ligados por padrão de uma rolagem (o Archery no ataque à distância). */
+function flatEffects(effects, cat) {
+  let sum = 0;
+  for (const e of effects) {
+    if (e.defaultOn === false || !e.part) continue;
+    const f = String(e.part.formula);
+    if (/d\d/.test(f)) continue;
+    try { sum += rollFormula(f, { data: cat.rollData }).total; } catch { /* fórmula que só fecha na hora */ }
+  }
+  return sum;
+}
+
 /** Os números do `snapshot` da página, pelo nosso motor e pelo catálogo do jogo. */
 function ourNumbers(character, db) {
   const d = deriveFromDb(character, db);
@@ -196,11 +220,15 @@ function ourNumbers(character, db) {
   const slots = {};
   for (const [k, n] of Object.entries(d.spellcasting?.slots ?? {})) if (n) slots[`spell${k}`] = n;
   if (d.spellcasting?.pactSlots?.slots) slots.pact = d.spellcasting.pactSlots.slots;
+  const state = emptyPlayState();
+  const total = (test) => testBreakdown(cat, state, test).total;
   return {
-    ac: d.armorClass?.total, hpMax: d.maxHp, prof: d.proficiencyBonus, init: cat.checks?.initiative?.bonus,
+    ac: d.armorClass?.total, hpMax: d.maxHp, prof: d.proficiencyBonus,
+    init: (cat.checks?.initiative?.bonus ?? 0) + total({ type: 'initiative' }),
     spellDcs: (d.spellcasting?.origins ?? []).filter((o) => o.kind === 'class').map((o) => o.saveDc),
-    saves: d.saves, skills: Object.fromEntries(Object.entries(d.skills ?? {}).map(([k, v]) => [k, v.bonus])), slots,
-    weapons: Object.fromEntries((cat.attacks ?? []).map((a) => [a.name, a.toHit?.total])),
+    saves: Object.fromEntries(Object.keys(d.saves ?? {}).map((k) => [k, total({ type: 'save', id: k })])),
+    skills: Object.fromEntries(Object.keys(d.skills ?? {}).map((k) => [k, total({ type: 'skill', id: k })])), slots,
+    weapons: Object.fromEntries((cat.attacks ?? []).map((a) => [a.name, (a.toHit?.total ?? 0) + flatEffects(rollEffects(state, cat, attackRollContext(a, 'attack', cat)), cat)])),
   };
 }
 
@@ -215,8 +243,14 @@ async function numbers() {
   for (const r of results) {
     if (!r.snapshot || !existsSync(join(BACK, r.file))) continue;
     let ours;
+    let caster;
+    let defenseNoArmor;
     try {
-      ours = ourNumbers(foundryToCharacter(JSON.parse(readFileSync(join(BACK, r.file), 'utf8')), db), db);
+      const actor = JSON.parse(readFileSync(join(BACK, r.file), 'utf8'));
+      caster = !!actor.system?.attributes?.spellcasting;
+      defenseNoArmor = actor.items.some((i) => i.type === 'feat' && i.name === 'Defense')
+        && !actor.items.some((i) => i.type === 'equipment' && i.system?.equipped && ['light', 'medium', 'heavy'].includes(i.system?.type?.value));
+      ours = ourNumbers(foundryToCharacter(actor, db), db);
     } catch (e) {
       add('erro no nosso lado', `${r.file}: ${String(e?.message ?? e).slice(0, 80)}`);
       continue;
@@ -224,8 +258,12 @@ async function numbers() {
     checked++;
     const f = r.snapshot;
     const id = r.file.replace(/[.]json$/, '');
-    for (const k of ['ac', 'hpMax', 'prof', 'init']) if (f[k] != null && ours[k] != null && f[k] !== ours[k]) add(k, `${id}: Foundry ${f[k]}, nós ${ours[k]}`);
-    if (f.spellDc && ours.spellDcs.length && !ours.spellDcs.includes(f.spellDc)) add('spellDc', `${id}: Foundry ${f.spellDc}, nós ${ours.spellDcs.join('/')}`);
+    for (const k of ['ac', 'hpMax', 'prof', 'init']) {
+      if (f[k] == null || ours[k] == null || f[k] === ours[k]) continue;
+      if (k === 'ac' && defenseNoArmor && f.ac - ours.ac === 1) add('esperado: Defense sem armadura', id);
+      else add(k, `${id}: Foundry ${f[k]}, nós ${ours[k]}`);
+    }
+    if (caster && f.spellDc && ours.spellDcs.length && !ours.spellDcs.includes(f.spellDc)) add('spellDc', `${id}: Foundry ${f.spellDc}, nós ${ours.spellDcs.join('/')}`);
     for (const [k, v] of Object.entries(f.saves ?? {})) if (ours.saves?.[k] != null && v !== ours.saves[k]) add(`save`, `${id} ${k}: Foundry ${v}, nós ${ours.saves[k]}`);
     for (const [k, v] of Object.entries(f.skills ?? {})) if (ours.skills?.[k] != null && v !== ours.skills[k]) add(`skill`, `${id} ${k}: Foundry ${v}, nós ${ours.skills[k]}`);
     for (const [k, v] of Object.entries(f.slots ?? {})) if ((ours.slots[k] ?? 0) !== v) add('slots', `${id} ${k}: Foundry ${v}, nós ${ours.slots[k] ?? 0}`);

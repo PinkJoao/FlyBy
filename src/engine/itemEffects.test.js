@@ -51,6 +51,9 @@ describe('itemEffects (DDL-0256)', () => {
 
   it('o teste e o deslocamento sempre ligado; o de ativação fica fora', () => {
     expect(itemCheckBonus([active({ name: 'Stone of Good Luck', reqAttune: true, bonusAbilityCheck: '+1' })]).bonus).toBe(1);
+    const gloves = { name: 'Gloves of Thievery', entries: ['These gloves are imperceptible while worn. While wearing them, you gain a +5 bonus to Dexterity ({@skill Sleight of Hand|XPHB}) checks.'] };
+    const climbing = { name: 'Gloves of Swimming and Climbing', entries: ['you gain a +5 bonus to Strength ({@skill Athletics|XPHB}) checks made to climb or swim.'] };
+    expect(itemCheckBonus([active(gloves), active(climbing)]).skills).toEqual({ slt: [{ name: 'Gloves of Thievery', value: 5 }] });
     const speeds = itemSpeeds([
       active({ name: 'Slippers of Spider Climbing', reqAttune: true, modifySpeed: { equal: { climb: 'walk' } } }),
       active({ name: 'Ring of Swimming', modifySpeed: { static: { swim: 40 } } }),

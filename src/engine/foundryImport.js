@@ -44,8 +44,9 @@
 //   Espécie
 //   toolKeyToName(key, db), languageKeyToName(key, db): as chaves de trait de volta.
 //   findBaseRace(db, baseName, source), resolveLineageName(db, baseName, source,
-//     rawLineagePart), resolveRaceByExactName(db, name), speciesSourceByName(db,
+//     rawLineagePart), resolveRaceByExactName(db, name, preferSource), speciesSourceByName(db,
 //     name), parseSpecies(raceItem, db): a espécie e a linhagem.
+//   effectHpOverall(actor, char): o que os effects dos itens somam em `hp.bonuses.overall`.
 //   entryNames(entries, out), lineageMarks(db, baseRace), inferLineage(db,
 //     baseRace, raceItem, items, byId): a linhagem pelas marcas.
 //   Classes
@@ -64,6 +65,12 @@
 //   foundryToCharacter(rawActor, db, out): o ponto de entrada.
 //
 // DECISÕES E ARMADILHAS
+//   - parseSpecies: no casamento exato de uma LINHAGEM, a fonte é a da raça-mãe que a contém (o personagem guarda
+//     `Dwarf|XPHB` com o Hill Lineage; o item de raça vem com a fonte do livro da linhagem, `PHB`); a fonte do item
+//     só serve quando a raça-mãe não resolve a linhagem. Com a do item, o Hill Dwarf voltava como a raça reeditada
+//     sem a linhagem e perdia o Dwarven Toughness, e 19 linhagens curadas (Tiefling, Lorwyn, Ixalan) mudavam de
+//     fonte na volta (DDL-0277). Entre as raças-mãe atuais com a linhagem, vale a do livro do item (o Elf do WoW e o
+//     do XPHB têm os dois o High Elf); a reeditada só se não houver outra.
 //   Geral
 //   - `out.warnings` é o canal de AVISOS: o que o ator traz e o modelo não guarda.
 //     Não é erro, mas o jogador precisa saber (DDL-0080).
@@ -189,6 +196,9 @@
 //     ambígua); sem flag, final menos boosts.
 //   - hpBonus = `bonuses.overall` menos a parte DERIVÁVEL que o export somou lá;
 //     `bonuses.level` é ignorado pelo mesmo motivo.
+//     O actor de fora pode somar o mesmo aumento por EFFECT (o premade Morthos: Draconic Resilience com
+//     `hp.bonuses.overall` += `@classes.sorcerer.levels`): effectHpOverall o conta antes de subtrair, ou o import
+//     criava um ajuste manual de -5 e a ficha perdia o aumento (oráculo ao vivo, DDL-0277).
 // -----------------------------------------------------------------------------
 
 import { createCharacter, makeId, ABILITIES } from '../schema/character';
@@ -689,7 +699,7 @@ function inferLineage(db, baseRace, raceItem, items, byId) {
 }
 
 /** O nome de um item de raça por casamento exato. */
-function resolveRaceByExactName(db, name) {
+function resolveRaceByExactName(db, name, preferSource = '') {
   const list = speciesCatalog(db).filter((r) => !isFoldedSpecies(r));
   if (!list.length) return null;
   const n = norm(name);
@@ -698,10 +708,10 @@ function resolveRaceByExactName(db, name) {
     const race = bases[bases.length - 1];
     return { id: race.name.toLowerCase(), source: race.source, lineage: null };
   }
-  for (const r of list) {
-    const v = raceLineages(db, r).find((v) => norm(v.name) === n);
-    if (v) return { id: r.name.toLowerCase(), source: r.source, lineage: v.name };
-  }
+  const parents = list.map((r) => ({ r, v: raceLineages(db, r).find((v) => norm(v.name) === n) })).filter((x) => x.v);
+  const current = parents.filter((x) => !x.r.reprintedAs);
+  const best = current.find((x) => x.r.source === preferSource) ?? current.at(-1) ?? parents.at(-1);
+  if (best) return { id: best.r.name.toLowerCase(), source: best.r.source, lineage: best.v.name };
   return null;
 }
 
@@ -709,6 +719,24 @@ function resolveRaceByExactName(db, name) {
 function speciesSourceByName(db, name) {
   const matches = speciesCatalog(db).filter((r) => norm(r.name) === norm(name));
   return matches.length ? matches[matches.length - 1].source : '';
+}
+
+/** O que os effects ligados dos itens somam em `hp.bonuses.overall` (número ou `@classes.<classe>.levels`). */
+function effectHpOverall(actor, char) {
+  let sum = 0;
+  for (const item of actor?.items ?? []) {
+    for (const e of item.effects ?? []) {
+      if (e.disabled || e.transfer === false) continue;
+      for (const c of e.changes ?? []) {
+        if (c.key !== 'system.attributes.hp.bonuses.overall' || Number(c.mode) !== 2) continue;
+        const v = String(c.value ?? '').trim();
+        const m = v.match(/^@classes\.([\w-]+)\.levels$/);
+        if (m) sum += (char.classes ?? []).find((x) => norm(x.classId) === norm(m[1]))?.level ?? 0;
+        else if (Number.isFinite(Number(v))) sum += Number(v);
+      }
+    }
+  }
+  return sum;
 }
 
 /**
@@ -719,9 +747,11 @@ function speciesSourceByName(db, name) {
 function parseSpecies(raceItem, db) {
   if (!raceItem) return null;
   const name = raceItem.name ?? '';
-  const exact = resolveRaceByExactName(db, name);
+  const exact = resolveRaceByExactName(db, name, itemSource(raceItem));
   if (exact) {
-    return { id: exact.id, source: itemSource(raceItem) || exact.source || '', lineage: exact.lineage, choices: {} };
+    const fromItem = itemSource(raceItem);
+    const parent = exact.lineage && exact.source && resolveRaceObj(db, exact.id, exact.source, exact.lineage)?.name === exact.lineage;
+    return { id: exact.id, source: parent ? exact.source : fromItem || exact.source || '', lineage: exact.lineage, choices: {} };
   }
   const m = name.match(/^([^;,(]+)[;,(]/);
   const hasLineage = !!m;
@@ -1269,7 +1299,7 @@ export function foundryToCharacter(rawActor, db, out = null) {
   }
 
   const overall = Number(actor.system?.attributes?.hp?.bonuses?.overall);
-  char.hpBonus = (Number.isFinite(overall) ? overall : 0) - deriveHpBonus(char, db).flat;
+  char.hpBonus = (Number.isFinite(overall) ? overall : 0) + effectHpOverall(actor, char) - deriveHpBonus(char, db).flat;
 
   const classGranted = new Set(
     (char.classes ?? []).flatMap((c) => classWeaponGrants(c.classId).map((g) => norm(g.name))),

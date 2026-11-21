@@ -129,6 +129,12 @@ describe('parseSpecies (via foundryToCharacter): nome de linhagem', () => {
     expect(foundryToCharacter(raceActor('Tiefling, Infernal'), db).species.lineage).toBe('Tiefling; Infernal Legacy');
   });
 
+  it('a linhagem volta com a fonte da raça-mãe, não a do livro do item (DDL-0277)', () => {
+    const actor = raceActor('Elf; Drow Lineage');
+    actor.items[0].system.source.book = 'PHB';
+    expect(foundryToCharacter(actor, db).species).toMatchObject({ id: 'elf', source: 'XPHB', lineage: 'Elf; Drow Lineage' });
+  });
+
   it('forma com parênteses - casa por palavra-chave também', () => {
     expect(foundryToCharacter(raceActor('Elf (Drow)'), db).species.lineage).toBe('Elf; Drow Lineage');
   });

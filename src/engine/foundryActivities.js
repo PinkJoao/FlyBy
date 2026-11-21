@@ -42,7 +42,8 @@
 //     dupla: o Persistent Rage devolve `-@scale.barbarian.rage`, e a classe do
 //     SRD só publica a escala `rages`; no Foundry real (T2d, 2026-11-08) a
 //     activity gastava o uso dela e não devolvia nenhuma Rage, e com `rages`
-//     devolveu todas.
+//     devolveu todas. A Aura of Protection soma `@abilities.cha.mod` e o texto (SRD 5.2 e XPHB) diz "minimum
+//     bonus of +1": com CAR 8 o Foundry dava -1 em toda salvaguarda (oráculo `numbers`, DDL-0277).
 //   - Channel Divinity: CHANNEL_DIVINITY_POOL é `feat:channel-divinity-cleric`,
 //     o identifier do SRD (featureIdentifier, foundryItems); o export liga o
 //     alvo ao `_id` no fim (foundryConsumption).
@@ -335,4 +336,5 @@ export function srdFeatMechanics(featData) {
 // ATENÇÃO: só com prova no PRÓPRIO SRD e no Foundry real; o par é [errado, certo].
 const SRD_FORMULA_FIXES = {
   'persistent rage': [['@scale.barbarian.rage"', '@scale.barbarian.rages"']],
+  'aura of protection': [['"@abilities.cha.mod"', '"max(1, @abilities.cha.mod)"']],
 };

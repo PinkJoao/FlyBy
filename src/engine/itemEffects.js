@@ -18,7 +18,11 @@
 //     `{ ability, set, source }` dos itens ativos.
 //   spellClassOf(raw): a classe a que o texto restringe o bônus de magia ("your warlock spells"), ou null.
 //   itemSpellBonuses(entries): os bônus de ataque e CD de magia `{ source, attack, dc, cls }`.
-//   itemCheckBonus(entries): o bônus plano nos testes de atributo `{ bonus, sources }`.
+//   itemCheckBonus(entries): o bônus plano nos testes de atributo `{ bonus, sources, skills }`; `skills` é o bônus
+//     por perícia que só o texto dá (itemSkillBonuses).
+//   itemSkillBonuses(raw): "you gain a +5 bonus to Dexterity (Sleight of Hand) checks." sem condição depois: Gloves
+//     of Thievery, Eyes of Deceit, Ring of Candor. A frase que segue ("made to climb", "you make to find your way")
+//     fica de fora: o bônus é da situação (oráculo `numbers`, DDL-0277).
 //   speedActivated(raw): o deslocamento do item só vale ao ativar (cargas, consumível, multiplicar)?
 //   itemSpeeds(entries, walk): os deslocamentos sempre ligados `{ mode: { feet, note } }`.
 //   weaponExtraDamage(raw): o dano extra que o texto da arma dá ("the target takes an extra 1d6 Cold damage"):
@@ -128,13 +132,34 @@ export function itemSpellBonuses(entries = []) {
 export function itemCheckBonus(entries = []) {
   let bonus = 0;
   const sources = [];
+  const skills = {};
   for (const e of entries) {
+    if (!isActiveItem(e)) continue;
     const b = bonusOf(e?.raw?.bonusAbilityCheck);
-    if (!b || !isActiveItem(e)) continue;
-    bonus += b;
-    sources.push({ name: e.raw.name, value: b });
+    if (b) {
+      bonus += b;
+      sources.push({ name: e.raw.name, value: b });
+    }
+    for (const s of itemSkillBonuses(e.raw)) (skills[s.skill] ??= []).push({ name: e.raw.name, value: s.value });
   }
-  return { bonus, sources };
+  return { bonus, sources, skills };
+}
+
+const SKILL_IDS = {
+  acrobatics: 'acr', 'animal handling': 'ani', arcana: 'arc', athletics: 'ath', deception: 'dec', history: 'his',
+  insight: 'ins', intimidation: 'itm', investigation: 'inv', medicine: 'med', nature: 'nat', perception: 'prc',
+  performance: 'prf', persuasion: 'per', religion: 'rel', 'sleight of hand': 'slt', stealth: 'ste', survival: 'sur',
+};
+
+/** O bônus fixo do texto numa perícia ("you gain a +5 bonus to Dexterity (Sleight of Hand) checks."), sem condição. */
+export function itemSkillBonuses(raw) {
+  const out = [];
+  const text = plainItemText(raw);
+  for (const m of text.matchAll(/you gain a \+(\d+) bonus to \w+ \(([A-Za-z ]+)\) checks\./g)) {
+    const skill = SKILL_IDS[m[2].trim().toLowerCase()];
+    if (skill) out.push({ skill, value: Number(m[1]) });
+  }
+  return out;
 }
 
 /** O deslocamento do item só vale ao ativar (cargas, consumível, multiplicar)? */

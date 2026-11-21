@@ -11,7 +11,8 @@
 // FUNÇÕES
 //   dropUnarmoredCalc(items): tira o cálculo de CA sem armadura dos effects.
 //   greatWeaponMinimum(items): o dado mínimo 3 nas armas de duas mãos.
-//   actorSpellcasting(items, originalClassId): o `attributes.spellcasting`.
+//   actorSpellcasting(items, originalClassId): o `attributes.spellcasting`; o da classe ou, sem ele, o da
+//     subclasse dela (Eldritch Knight, Arcane Trickster: sem isso o cabeçalho do Foundry mostrava CD 8 + PB, DDL-0277).
 //   assembleFoundryActor(character, db): o ator completo.
 //
 // DECISÕES E ARMADILHAS
@@ -85,6 +86,7 @@ import {
   residualClassChoices,
   classFluffHtml,
   subclassFluffHtml,
+  disableInvokedEffects,
 } from './foundryItems';
 import { buildSpellItems, buildSpellSlots, buildUnassignedSpellItems } from './foundrySpells';
 import { buildBasicActionItems } from './foundryBasicActions';
@@ -115,9 +117,13 @@ export function greatWeaponMinimum(items) {
 
 /** O atributo de conjuração do ator: o da classe original, senão o da primeira que conjura. */
 function actorSpellcasting(items, originalClassId) {
-  const classes = items.filter((i) => i.type === 'class' && i.system?.spellcasting?.ability);
-  const pick = classes.find((i) => i._id === originalClassId) ?? classes[0];
-  return pick?.system.spellcasting.ability ?? '';
+  const classes = items.filter((i) => i.type === 'class');
+  const abilityOf = (cls) => cls.system?.spellcasting?.ability
+    || items.find((i) => i.type === 'subclass' && i.system?.classIdentifier === cls.system?.identifier && i.system?.spellcasting?.ability)?.system.spellcasting.ability
+    || '';
+  const casters = classes.filter((c) => abilityOf(c));
+  const pick = casters.find((i) => i._id === originalClassId) ?? casters[0];
+  return pick ? abilityOf(pick) : '';
 }
 
 /**
@@ -213,6 +219,7 @@ export function assembleFoundryActor(character, db) {
   system.attributes.spellcasting = actorSpellcasting(items, originalClassId);
   linkConsumptionTargets(items);
   modernizeEffectKeys(items);
+  disableInvokedEffects(items);
   if (derived.armorClass?.hasArmor) dropUnarmoredCalc(items);
   if (items.some((i) => i.type === 'feat' && i.name === 'Great Weapon Fighting')) greatWeaponMinimum(items);
 

@@ -18,6 +18,10 @@
 //   - MOVED_EFFECT_KEYS é a tabela `ActiveEffect5e.SHIM_FIELDS` do dnd5e 5.3.3
 //     (`module/documents/active-effect.mjs`): a chave velha avisa desde a 5.3 e o
 //     apoio sai na 6.1. Nova versão do sistema: conferir a tabela dela e somar.
+//   - A tabela leva também duas chaves MORTAS do overlay do 5etools: `init.total` (o sistema recalcula o total
+//     depois dos effects, linha 403 do `attributes.mjs`) e `init.roll.bonus` (o `init.roll` não tem `bonus`).
+//     O Temporal Awareness, o Hare-Trigger e o Rakish Audacity não chegavam à iniciativa do Foundry; todas são
+//     ADD, e a chave viva é `init.bonus`, a do SRD (oráculo `numbers`, DDL-0277).
 //   - O próprio pack do SRD ainda usa a chave velha (o Belt of Dwarvenkind): por
 //     isso o passo é no FIM, sobre tudo.
 //   - Nunca muta o effect recebido: registros gerados são compartilhados (DDL-0166).
@@ -29,6 +33,8 @@ const MOVED_EFFECT_KEYS = {
   'system.attributes.senses.blindsight': 'system.attributes.senses.ranges.blindsight',
   'system.attributes.senses.tremorsense': 'system.attributes.senses.ranges.tremorsense',
   'system.attributes.senses.truesight': 'system.attributes.senses.ranges.truesight',
+  'system.attributes.init.total': 'system.attributes.init.bonus',
+  'system.attributes.init.roll.bonus': 'system.attributes.init.bonus',
 };
 
 /** A chave atual de um change, ou a mesma. */

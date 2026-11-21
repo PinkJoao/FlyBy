@@ -94,7 +94,14 @@
 //     Opção".
 //   buildOptionalFeatureItems(classEntry, db): invocations, metamagic e afins.
 //   INVOKED_EFFECTS: os efeitos que a opção só liga ao ser invocada (o +2 do Frost Rune, a
-//     resistência do Hill Rune; o overlay os dá ligados, DDL-0238): saem desligados.
+//     resistência do Hill Rune; o overlay os dá ligados, DDL-0238): saem desligados. Valem também nas features
+//     de classe e subclasse pelo passe final `disableInvokedEffects(items)` (foundryActor): o Ancient Armor do
+//     Wrath of the Wild (só na forma, 1 minuto) e o Improved Circle Forms (só no Wild Shape), que o Foundry
+//     somava sempre (oráculo `numbers`, DDL-0277).
+//   WORN_EFFECTS: o contrário, para itens: o efeito que o documento do SRD guarda desligado e o texto dá sempre
+//     com o item vestido ("While wearing this belt": o Belt of Dwarvenkind; o premade oficial o liga). Dos 11
+//     efeitos desligados do SRD, os outros são interruptores da mesa (Broom, Cloak, Defender) ou condicionais
+//     (Hammer of Thunderbolts); o dnd5e já suprime o efeito sem sintonia (DDL-0277).
 //
 //   Background
 //   buildOriginFeatItem(character, db): o talento de origem.
@@ -123,7 +130,9 @@
 //     ancestralidade e o pool dele.
 //   traitName(entry), lineageLabel(raceObj), speciesIdentifier(raceObj): nomes.
 //   retargetScaleRefs(value, identifier): conserta as referências `@scale`.
-//   buildSpeciesTraitItems(raceObj, db, level): um item por traço.
+//   buildSpeciesTraitItems(raceObj, db, level): um item por traço; com armadura natural nossa, o traço perde a
+//     CA do overlay como o item de raça (o Taunka saía com +1 nos dois e o Foundry somava +2, DDL-0277).
+//   withoutAcChanges(effects): os effects sem as mudanças de CA.
 //   buildSpeciesFeatItems(character, db): talentos escolhidos pela espécie.
 //   speciesEffects(db, raceObj): os Active Effects do item de raça.
 //   buildSpeciesItem(character, raceObj, db, featItems, traitItems, spellIds): o
@@ -1480,7 +1489,23 @@ export function buildFeatureOptionItems(classEntry, classObj, subObj, db) {
 }
 
 /** Os efeitos que a opção só liga ao ser invocada (as runas do Rune Knight): saem desligados. */
-const INVOKED_EFFECTS = { 'frost rune': ['Sturdy'], 'hill rune': ['Resilience'] };
+const INVOKED_EFFECTS = {
+  'frost rune': ['Sturdy'],
+  'hill rune': ['Resilience'],
+  'wrath of the wild': ['Ancient Armor'],
+  'improved circle forms': ['Improved Circle Forms'],
+};
+
+/** Passe final: os efeitos de INVOKED_EFFECTS desligados em qualquer feature do ator (classe, subclasse, opção). */
+export function disableInvokedEffects(items) {
+  for (const item of items) {
+    const names = item.type === 'feat' ? INVOKED_EFFECTS[norm(item.name)] : null;
+    if (names) for (const e of item.effects ?? []) if (names.includes(e.name)) e.disabled = true;
+  }
+}
+
+/** Os efeitos de item que o SRD guarda desligados mas valem sempre com o item vestido: saem ligados. */
+const WORN_EFFECTS = { 'belt of dwarvenkind': ['Dwarvenkind Benefits'] };
 
 const OPTFEAT_SUBTYPE = {
   EI: 'eldritchInvocation',
@@ -1882,6 +1907,7 @@ function retargetScaleRefs(value, identifier) {
  */
 export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
   const mechanics = new Map(overlayRaceTraits(db, raceObj).map((t) => [norm(t.name), t]));
+  const nat = !!naturalArmorFor(raceObj);
   return speciesTraitEntries(raceObj).filter((e) => traitLevel(e) <= level).map((entry) => {
     const m = mechanics.get(norm(entry.name));
     const name = traitName(entry);
@@ -1909,7 +1935,12 @@ export function buildSpeciesTraitItems(raceObj, db, level = MAX_LEVEL) {
         crewed: false,
         ...overlaySystemExtras(m?.system ?? {}),
       },
-      effects: srd?.activities && srd.effects.length ? srd.effects : (m?.effects ?? []),
+      effects: (() => {
+        let effects = srd?.activities && srd.effects.length ? srd.effects : (m?.effects ?? []);
+        const curated = effects.length ? null : effectChangesFor(name);
+        if (curated) effects = [{ _id: randomFoundryId(), name, changes: curated.map((c) => ({ priority: null, ...c })), disabled: false, transfer: true, img: 'icons/svg/aura.svg', origin: '', duration: {}, description: '', flags: {} }];
+        return nat ? withoutAcChanges(effects) : effects;
+      })(),
       flags: { builder5e: { level: traitLevel(entry), boon: !!entry._boon } },
       _stats: itemStats(originUuid(name)),
     };
@@ -1934,6 +1965,16 @@ export function buildSpeciesFeatItems(character, db) {
   return out;
 }
 
+/** Os effects sem as mudanças de CA (a armadura natural é nossa e não soma com a do overlay); o vazio sai. */
+function withoutAcChanges(effects) {
+  const out = [];
+  for (const eff of effects) {
+    const changes = (eff.changes ?? []).filter((c) => !String(c.key ?? '').startsWith('system.attributes.ac'));
+    if (changes.length || (eff.statuses ?? []).length) out.push({ ...eff, changes });
+  }
+  return out;
+}
+
 /**
  * Active Effects do item de raça (overlay e armadura natural).
  * @param {object} db
@@ -1945,11 +1986,7 @@ function speciesEffects(db, raceObj) {
   const itemized = new Set(speciesTraitEntries(raceObj).map((e) => norm(e.name)));
   const overlay = overlayRaceEffects(db, raceObj, itemized);
   if (!nat) return overlay;
-  const pruned = [];
-  for (const eff of overlay) {
-    const changes = (eff.changes ?? []).filter((c) => !String(c.key ?? '').startsWith('system.attributes.ac'));
-    if (changes.length || (eff.statuses ?? []).length) pruned.push({ ...eff, changes });
-  }
+  const pruned = withoutAcChanges(overlay);
   const natEffect = {
     _id: randomFoundryId(),
     name: nat.label,
@@ -2536,6 +2573,7 @@ export function buildInventoryItems(character, db) {
     if (srdMech) {
       withSrdDocument(item, srdMech);
       if (srdMech.effects.length) item.effects = srdMech.effects;
+      for (const e of item.effects ?? []) if ((WORN_EFFECTS[norm(raw.name)] ?? []).includes(e.name)) e.disabled = false;
       const srdActs = Object.entries(srdMech.activities);
       const magicWeapon = item.type === 'weapon' && (item.system.properties ?? []).includes('mgc');
       if (magicWeapon && srdActs.some(([, a]) => a.type === 'attack')) item.system.activities = {};

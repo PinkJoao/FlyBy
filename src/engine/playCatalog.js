@@ -37,7 +37,8 @@
 //     weaponProficient(entry, weaponProfs, weaponNames), weaponAttacks(character,
 //       derived): as armas do inventário, equipadas primeiro; também o item com dano e categoria de arma no dado
 //       e sem `type` de arma (os cajados mágicos de livros antigos, a Rod of Seven Parts, o Wand of Orcus: o
-//       oráculo de itens achou seis sem ataque no jogo, DDL-0271).
+//       oráculo de itens achou seis sem ataque no jogo, DDL-0271). A proficiência lê a categoria do dado
+//       quando a entrada não a tem: o Staff do XPHB (foco arcano, `weaponCategory: simple`) atacava sem PB (DDL-0277).
 //     unarmedStrike(derived): o ataque desarmado.
 //     withFeatTypes(attacks, features): o tipo de dano que um talento deixa escolher nos ataques com arma e
 //       desarmado (FEAT_DAMAGE_TYPES: o Blazing Strike do Boon of Blazing Dawn, radiante, DDL-0261).
@@ -348,7 +349,8 @@ export function hitDiceByFace(derived) {
 /** O personagem é proficiente com a arma? Também pelas armas que uma regra condicional enumera. */
 function weaponProficient(entry, weaponProfs, weaponNames = []) {
   const profs = [...(weaponProfs ?? []), ...(weaponNames ?? [])].map((w) => String(w).toLowerCase());
-  const cat = entry.category ? `${entry.category} weapons`.toLowerCase() : null;
+  const category = entry.category ?? entry.raw?.weaponCategory;
+  const cat = category ? `${category} weapons`.toLowerCase() : null;
   const name = (entry.raw?.name ?? '').toLowerCase();
   return profs.some((p) => p === cat || p === name || p === `${name}s`);
 }
@@ -1233,7 +1235,8 @@ function checkList(derived, character) {
       const mod = derived.modifiers?.[ability] ?? 0;
       const bonus = derived.skills?.[skill]?.bonus ?? 0;
       const prof = derived.skills?.[skill]?.proficiency ?? 0;
-      const itemBonus = derived.itemCheckBonus?.bonus ?? 0;
+      const skillItems = derived.itemCheckBonus?.skills?.[skill] ?? [];
+      const itemBonus = (derived.itemCheckBonus?.bonus ?? 0) + skillItems.reduce((n, x) => n + x.value, 0);
       const profPart = bonus - mod - itemBonus;
       return {
         skill,
@@ -1244,6 +1247,7 @@ function checkList(derived, character) {
           { kind: 'ability', ability, value: mod },
           ...(prof ? [{ kind: 'proficiency', level: prof, value: profPart }] : profPart > 0 ? [{ kind: 'proficiency', level: 0.5, value: profPart }] : []),
           ...(derived.itemCheckBonus?.sources ?? []).map((s) => ({ kind: 'item', label: s.name, value: s.value })),
+          ...skillItems.map((s) => ({ kind: 'item', label: s.name, value: s.value })),
         ],
       };
     }),

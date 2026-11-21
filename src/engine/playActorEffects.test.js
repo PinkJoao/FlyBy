@@ -47,6 +47,13 @@ describe('a lista fechada', () => {
     ];
     expect(actorRollEffects({ items })).toEqual([]);
   });
+
+  it('a entrada `use` do registro não esconde o effect (Hungering Might); o desligado com `when` é lido (DDL-0277)', () => {
+    const might = actorRollEffects({ items: [item('Hungering Might', [['system.abilities.con.bonuses.save', 'max(1, @abilities.wis.mod)']])] });
+    expect(might.map((e) => `${e.name}|${e.key}`)).toEqual(['Hungering Might|system.abilities.con.bonuses.save']);
+    const forms = actorRollEffects({ items: [item('Improved Circle Forms', [['system.abilities.con.bonuses.save', '@abilities.wis.mod']], { disabled: true })] });
+    expect(forms).toHaveLength(1);
+  });
 });
 
 describe('no diálogo da rolagem', () => {

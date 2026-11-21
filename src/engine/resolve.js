@@ -847,6 +847,7 @@ export function deriveFromDb(character, db) {
   });
   const baseScores = itemAbilities.length ? finalScores(character, extraAbilityBoosts) : derived.scores;
   if (itemChecks.bonus) for (const s of Object.values(derived.skills ?? {})) s.bonus += itemChecks.bonus;
+  for (const [k, list] of Object.entries(itemChecks.skills ?? {})) if (derived.skills?.[k]) derived.skills[k].bonus += list.reduce((n, x) => n + x.value, 0);
   const capacity = carryingCapacity(derived.scores.str);
 
   const armorClass = deriveArmorClass(character, inv.entries, derived.modifiers, naturalArmorFor(raceObj));

@@ -26,13 +26,17 @@
 //   - O efeito DESLIGADO (Rage, Umbral Form, a forma Dragon do Starry Form) é interruptor
 //     de quem usa a feature: segue no FEATURE_EFFECTS e no registro curado, nunca aqui.
 //   - Feature com entrada no FEATURE_ROLLS (Dread Ambusher, Radiant Strikes) fica com o
-//     registro: o efeito do ator dela é ignorado.
+//     registro: o efeito do ator dela é ignorado. Menos a entrada `use` (uma cura, um gasto), que não cobre
+//     rolagem de d20: o efeito do ator vale, salvo no tipo de rolagem que a entrada toca (`on`). O Hungering
+//     Might tem `use` para a cura e o "+SAB na salvaguarda de CON" sumia do jogo (oráculo `numbers`, DDL-0277).
 //   - `CONDITIONAL` nomeia, pelo texto, o que o efeito do ator traz ligado mas o livro
 //     condiciona: Frost Rune (só com a runa invocada), Transmuter's Stone (só o benefício
 //     escolhido para a pedra), Skulker (vantagem em Stealth só ao se esconder), Dueling (uma
 //     arma corpo a corpo numa mão; nunca no Unarmed Strike, que não é arma: DDL-0246). Esses aparecem DESLIGADOS, com a condição na nota
 //     (liberdade com aviso, §6.4). `when: 'form'` liga só na forma do Wild Shape (Improved
-//     Circle Forms); `unless` desliga com a condição presente (Danger Sense e Incapacitated).
+//     Circle Forms); `unless` desliga com a condição presente (Danger Sense e Incapacitated). O efeito de
+//     uma entrada com `when` é lido mesmo DESLIGADO: o export o desliga no Foundry (INVOKED_EFFECTS em
+//     engine/foundryItems, DDL-0277) e o jogo o liga só na condição.
 //   - O valor vem como o Foundry escreve ("+2", "@abilities.cha.mod", "(max(1,@abilities.wis.mod))")
 //     e é resolvido pelo rollData do catálogo na hora da rolagem; o "+" da frente sai, e
 //     `@attributes.prof` (Hare-Trigger) vira o `@prof` do rollData.
@@ -94,12 +98,15 @@ export function actorRollEffects(actor) {
   const out = [];
   const seen = new Set();
   for (const item of actor?.items ?? []) {
-    if (item.type !== 'feat' || featureRollOf(item.name)) continue;
+    if (item.type !== 'feat') continue;
+    const rule = featureRollOf(item.name);
+    const covered = new Set([...(rule?.on ?? []), ...(rule?.also ?? []).flatMap((a) => a.on ?? [])]);
+    if (rule && rule.kind !== 'use') continue;
     for (const effect of item.effects ?? []) {
-      if (effect.disabled || effect.transfer === false || effect.type === 'enchantment') continue;
+      if ((effect.disabled && !CONDITIONAL[norm(item.name)]?.when) || effect.transfer === false || effect.type === 'enchantment') continue;
       for (const change of effect.changes ?? []) {
         const target = targetOf(change.key);
-        if (!target) continue;
+        if (!target || target.kinds.some((k) => covered.has(k))) continue;
         const sig = `${norm(item.name)}|${change.key}`;
         if (seen.has(sig)) continue;
         seen.add(sig);

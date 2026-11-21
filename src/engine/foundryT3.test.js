@@ -152,6 +152,11 @@ describe('export future-proof e interoperável (DDL-0167)', () => {
     expect(now.changes.map((c) => c.key)).toEqual(['system.attributes.senses.ranges.darkvision', 'system.abilities.con.value']);
     expect(old.changes[0].key).toBe('system.attributes.senses.darkvision');
   });
+
+  it('as chaves de iniciativa mortas do overlay viram `init.bonus` (DDL-0277)', () => {
+    const [now] = modernizeEffects([{ name: 'X', changes: [{ key: 'system.attributes.init.total', mode: 2, value: '@abilities.int.mod' }, { key: 'system.attributes.init.roll.bonus', mode: 2, value: '@abilities.cha.mod' }] }]);
+    expect(now.changes.map((c) => c.key)).toEqual(['system.attributes.init.bonus', 'system.attributes.init.bonus']);
+  });
 });
 
 describe('talentos (T3)', () => {

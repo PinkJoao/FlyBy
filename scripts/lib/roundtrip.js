@@ -29,6 +29,9 @@
 //   - Também são decisão, e por isso entram: o estado de PREPARAÇÃO da magia (o
 //     grimório do Mago), o contêiner de cada item (pelo NOME do pai, porque o uid é
 //     regerado no import) e a moeda, que o export zerava sem o oráculo ver (TC-0055).
+//   - A FONTE da espécie também (DDL-0277): o import devolvia o Hill Dwarf como `Dwarf|PHB` (a fonte do item da
+//     linhagem) em vez de `Dwarf|XPHB`, a raça reeditada não resolvia a linhagem e o Dwarven Toughness sumia, com o
+//     id e a linhagem iguais. Só o oráculo `numbers` contra o Foundry viu (146 atores).
 //   - diffSummaries percorre arrays de objetos POR ÍNDICE (senão um único diff em
 //     `classes` engoliria os caminhos internos); arrays de primitivas comparam como
 //     um valor só.
@@ -84,6 +87,7 @@ export function decisionSummary(c) {
     species: c.species
       ? {
           id: c.species.id?.toLowerCase() ?? null,
+          source: c.species.source ?? null,
           lineage: c.species.lineage ?? null,
           choices: normalizeBag(c.species.choices),
         }

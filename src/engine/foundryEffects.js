@@ -18,7 +18,14 @@
 //   - Unarmored Defense define o MODO de cálculo da CA, por classe (`nome|classId`).
 //     A Draconic Resilience XPHB é custom (10 + Dex + Cha); o calc `draconic` do
 //     dnd5e é o 13 + Dex de 2014. O Foundry só aceita UM ac.calc: numa multiclasse
-//     com duas Defesas sem Armadura, a ficha ao vivo escolhe a maior.
+//     com duas Defesas sem Armadura, a ficha ao vivo escolhe a maior. O Dazzling Footwork (College of Dance,
+//     10 + Dex + Cha) usa a mesma forma: o export não o tinha e o Foundry mostrava 10 + Dex (DDL-0277); o
+//     armorClass do app já tinha a fórmula. A armadura vestida tira o calc (dropUnarmoredCalc).
+//   - Tactical Wit (+INT na iniciativa) e Elegant Courtier (+SAB em Persuasion), só em prosa, não chegavam ao
+//     Foundry; o jogo já os lia do texto e não soma duas vezes (DDL-0277). O Kefnet's Blessing (meio PB em
+//     teste de INT sem proficiência, HALF_PROFICIENCY de engine/proficiency) vira proficiência 0,5 nas perícias de
+//     INT por UPGRADE: a proficiente fica 1, a outra soma meio PB para baixo, como o Jack of All Trades do dnd5e.
+//     Vale também no traço de espécie (buildSpeciesTraitItems, quando o traço não tem effect do SRD nem do overlay).
 //   - Unarmored Movement soma a escala da classe (`@scale.monk.unarmored-movement`,
 //     como o premade Perrin): o +10 fixo deixava o monge de nível 11 com 40 de
 //     deslocamento no Foundry, e não 50 (T2d).
@@ -35,12 +42,20 @@ export const FEATURE_ACTIVE_EFFECTS = {
   'unarmored movement|monk': [{ key: 'system.attributes.movement.walk', mode: AE_MODE.ADD, value: '@scale.monk.unarmored-movement' }],
   'remarkable athlete': [{ key: 'flags.dnd5e.initiativeAdv', mode: AE_MODE.OVERRIDE, value: 'true' }],
 
+  "kefnet's blessing": ['arc', 'his', 'inv', 'nat', 'rel'].map((s) => ({ key: `system.skills.${s}.value`, mode: AE_MODE.UPGRADE, value: '0.5' })),
+  'tactical wit': [{ key: 'system.attributes.init.bonus', mode: AE_MODE.ADD, value: '@abilities.int.mod' }],
+  'elegant courtier': [{ key: 'system.skills.per.bonuses.check', mode: AE_MODE.ADD, value: '@abilities.wis.mod' }],
+
   archery: [{ key: 'system.bonuses.rwak.attack', mode: AE_MODE.ADD, value: '2' }],
   defense: [{ key: 'system.attributes.ac.bonus', mode: AE_MODE.ADD, value: '1' }],
 
   'unarmored defense|barbarian': [{ key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'unarmoredBarb' }],
   'unarmored defense|monk': [{ key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'unarmoredMonk' }],
   'draconic resilience': [
+    { key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'custom' },
+    { key: 'system.attributes.ac.formula', mode: AE_MODE.OVERRIDE, value: '10 + @abilities.dex.mod + @abilities.cha.mod' },
+  ],
+  'dazzling footwork': [
     { key: 'system.attributes.ac.calc', mode: AE_MODE.OVERRIDE, value: 'custom' },
     { key: 'system.attributes.ac.formula', mode: AE_MODE.OVERRIDE, value: '10 + @abilities.dex.mod + @abilities.cha.mod' },
   ],

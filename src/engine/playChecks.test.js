@@ -62,6 +62,14 @@ describe('playChecks', () => {
     expect(save.conditional).toEqual([{ label: 'Cloak of Protection', value: 1, on: true }]);
     expect(save.total).toBe(6);
   });
+
+  it('uma fórmula sem dado (o PB do Severed from Dreams) vira número e soma', () => {
+    const c = { ...catalog, rollData: { prof: 2 } };
+    const severed = { id: 's', label: 'Severed from Dreams', effects: [{ targets: ['skill:acr'], formula: '@prof', label: 'Severed from Dreams' }] };
+    const b = testBreakdown(c, st({ modifiers: [severed] }), { type: 'skill', id: 'acr' });
+    expect(b.conditional).toEqual([{ label: 'Severed from Dreams', value: 2, on: true }]);
+    expect(b.total).toBe(5);
+  });
 });
 
 describe('teste de ferramenta', () => {

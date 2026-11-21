@@ -22,6 +22,9 @@
 //   - Valor digitado fora do dado (um 9 num d8) vira a mensagem do erro do
 //     dice.js na própria linha, sem rolar.
 //   - Os dados gastos usam o ÍNDICE como key: dois podem ter o mesmo valor.
+//   - Uma regra que dá o MÁXIMO do dado (Troll Healing, Superior Recuperation) rola uma
+//     constante, sem grupo de dado: o chip mostra a face e a regra ("d10 10 (Troll Healing)"),
+//     não "-" (DDL-0276).
 // -----------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -96,7 +99,7 @@ export default function ShortRestPanel({ catalog, state }) {
       {spends.length > 0 && (
         <div className={styles.rolled}>
           {spends.map((s, i) => (
-            <Chip key={i} size="sm" onCard>d{s.faces} {s.rolls?.groups?.[0]?.total ?? '-'}: +{s.healed} HP</Chip>
+            <Chip key={i} size="sm" onCard>d{s.faces} {s.rolls?.groups?.[0]?.total ?? `${s.faces} (${s.rules?.join(', ') ?? 'max'})`}: +{s.healed} HP</Chip>
           ))}
           <button type="button" className={styles.link} onClick={undoLast}>Undo last</button>
         </div>

@@ -77,4 +77,11 @@ describe('Heroic Inspiration (DDL-0275)', () => {
     expect(inspirationSpendOps(s, catalog([]))).toEqual([{ op: 'inspiration', value: false }]);
     expect(inspirationEvent({ state: s, catalog: troll, value: true }).ops).toEqual([{ op: 'inspiration', value: true }]);
   });
+  it('o evento diz que o dado de vida voltou, no interruptor e no reroll (DDL-0276)', () => {
+    const s = { ...emptyPlayState('x'), inspiration: true, spent: { 'hd:d10': 2 } };
+    expect(inspirationEvent({ state: s, catalog: troll, value: false }).payload.lines).toEqual(['1 Hit Point Die regained']);
+    const opt = rerollOptions(check('save', 'wis'), troll, s).find((o) => o.id === 'heroic-inspiration');
+    expect(rerollEvent({ event: check('save', 'wis'), catalog: troll, option: opt, rng: sequenceRng([10]) }).payload.regained).toBe('1 Hit Point Die regained');
+    expect(rerollEvent({ event: check('save', 'wis'), catalog: catalog([]), option: rerollOptions(check('save', 'wis'), catalog([]), s).find((o) => o.id === 'heroic-inspiration'), rng: sequenceRng([10]) }).payload.regained).toBeUndefined();
+  });
 });

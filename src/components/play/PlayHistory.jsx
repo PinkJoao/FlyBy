@@ -234,11 +234,15 @@ function detailOf(event) {
       } else lines.push(p.delta >= 0 ? 'Spent by hand' : 'Regained by hand');
       if (p.asked != null) lines.push(`Asked for ${Math.abs(p.asked)}, only ${Math.abs(p.delta)} possible`);
       break;
+    case 'modifier':
+      for (const l of p.lines ?? []) if (typeof l === 'string') lines.push(l);
+      break;
     default:
       break;
   }
+  if (p.regained) lines.push(p.regained);
   if (p.reroll) lines.push(`${p.reroll.keep ? 'Raised' : 'Rerolled'} by ${p.reroll.source}`);
-  for (const s of p.spent ?? []) lines.push(`${s.name}: ${s.amount} spent`);
+  for (const s of Array.isArray(p.spent) ? p.spent : []) lines.push(`${s.name}: ${s.amount} spent`);
   return { total, tags, lines };
 }
 

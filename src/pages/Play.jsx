@@ -600,7 +600,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot }) {
   /** O Hurt do card de HP; com concentração, o dano já pede o save de CON. */
   const openHurt = async () => {
     const evasion = (catalog.features ?? []).some((f) => f === 'evasion' || f === 'leading evasion') && !conditionList(state).ids.includes('incapacitated');
-    const r = await askHurt({ vitals: hp, defenses: effectiveDefenses(catalog, state), evasion });
+    const next = (state.modifiers ?? []).find((m) => m.reduceNext);
+    const r = await askHurt({ vitals: hp, defenses: effectiveDefenses(catalog, state), evasion, first: next ? { label: next.label, amount: next.reduceNext } : null });
     if (!r) return;
     const event = hurtEvent({ state, catalog, amount: r.amount, type: r.type, affectMax: r.affectMax, save: r.save, evasion: r.evasion });
     record(event);

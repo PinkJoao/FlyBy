@@ -15,6 +15,7 @@
 //   rollOf(catalog, test): a descrição do teste para o rollEffects.
 //   testBreakdown(catalog, state, test): { fixed, rolled, conditional, total }.
 //   isDice(formula): a fórmula tem um dado?
+//   flatValue(formula, data): o valor de uma fórmula sem dado, ou null.
 //
 // DECISÕES E ARMADILHAS
 //   - ABILITY_NAME e PROF_LABEL ficam aqui (e não nos rótulos da interface) porque
@@ -24,6 +25,9 @@
 //     de estar vestido e sintonizado, como o usuário classificou os itens mágicos.
 //   - O total soma só números: o fixo e o condicional numérico LIGADOS por padrão.
 //     Um dado (rolado) aparece à parte, como "+1d4", e um efeito opcional não soma.
+//   - Uma fórmula SEM dado (`@prof`, `2 * @prof`: Severed from Dreams, Aether Lore) é
+//     resolvida pelo `rollData` do catálogo (flatValue) e soma como número; antes ficava
+//     crua ("+@prof") e fora do total, embora a rolagem a somasse.
 //   - Teste de FERRAMENTA (`{ type: 'tool', id: nome, ability }`): o jogador
 //     escolhe o atributo (a ferramenta não tem um fixo no 2024), e soma a
 //     proficiência inteira, porque só ferramentas proficientes aparecem para rolar.
@@ -32,6 +36,7 @@
 // -----------------------------------------------------------------------------
 
 import { rollEffects } from './playEffects';
+import { rollFormula } from './dice';
 
 export const ABILITY_NAME = {
   str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma',
@@ -79,6 +84,16 @@ export function isDice(formula) {
 
 const MODE_TEXT = { adv: 'advantage', dis: 'disadvantage' };
 
+/** O valor de uma fórmula sem dado (`@prof`, `2 * @prof`), ou null se não fechar. */
+function flatValue(formula, data) {
+  try {
+    const total = rollFormula(String(formula), { data: data ?? {} }).total;
+    return Number.isFinite(total) ? total : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * O bônus de um teste separado em fixo, rolado e condicional.
  * @returns {{ fixed: object[], rolled: object[], conditional: object[], total: number }}
@@ -94,7 +109,10 @@ export function testBreakdown(catalog, state, test) {
       const f = e.part.formula;
       if (isDice(f)) rolled.push({ label: e.label, formula: String(f), on });
       else if (Number.isFinite(Number(f))) conditional.push({ label: e.label, value: Number(f), on });
-      else conditional.push({ label: e.label, formula: String(f), on });
+      else {
+        const value = flatValue(f, catalog.rollData);
+        conditional.push(value === null ? { label: e.label, formula: String(f), on } : { label: e.label, value, on });
+      }
     } else if (e.adv || e.dis) {
       conditional.push({ label: e.label, text: MODE_TEXT[e.adv ? 'adv' : 'dis'], on });
     } else if (e.autoFail) {

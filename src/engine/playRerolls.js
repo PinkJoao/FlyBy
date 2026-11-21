@@ -28,7 +28,8 @@
 //     new roll". Com `state.inspiration`, o "Reroll" do card oferece "Heroic Inspiration", que a gasta. Desligar o
 //     interruptor à mão também é gastar (o jogador a usou na mesa). Gastar devolve um dado de vida quando uma feature
 //     diz "whenever you spend Heroic Inspiration, you regain 1 expended Hit Point Die" (Troll Lineage, Amani; lido
-//     do texto, TC-0223): o de face maior que estiver gasto.
+//     do texto, TC-0223): o de face maior que estiver gasto. O evento diz isso nos dois caminhos: `lines` no do
+//     interruptor e `regained` no reroll (DDL-0276; na tela o dado voltava e o histórico não dizia).
 //   - DICE_REROLLS (DDL-0215): rolar de novo ALGUNS dados do dano ou da cura, no card do
 //     histórico ("Reroll dice"). Piercer, "reroll one of the attack's damage dice" (1 dado,
 //     dano perfurante); Empowered Spell, "reroll a number of the damage dice up to your
@@ -240,6 +241,8 @@ export function rerollEvent({ event, catalog, option, rng = cryptoRng, now = new
   const ops = [...(option?.spendKey ? [{ op: 'spend', key: option.spendKey, amount: 1 }] : []), ...(option?.ops ?? [])];
   const payload = { ...event.payload, reroll: { of: event.id, source: option?.label ?? 'Another rule', ...(option?.keep ? { keep: true } : {}) }, ...(event.kind === 'attack' ? { critical: rolls.isCritical } : {}) };
   delete payload.spent;
+  delete payload.regained;
+  if (ops.some((o) => o.op === 'restore')) payload.regained = '1 Hit Point Die regained';
   const spent = option?.spendKey ? [{ name: (catalog.resources ?? []).find((r) => r.key === option.spendKey)?.name ?? option.spendKey, amount: 1 }] : [];
   return makeEvent(event.kind, { label: `${event.label} (${option?.keep ? 'raised' : 'reroll'})`, payload: { ...payload, ...(spent.length ? { spent } : {}) }, rolls, ops }, now);
 }

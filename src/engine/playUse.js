@@ -43,6 +43,8 @@
 //   featureLogEvent(args): o "Log to history" de uma feature (nome e custo, sem rolar).
 //
 // DECISÕES E ARMADILHAS
+//   - A trava de vários descansos (`lockout` do FEATURE_ROLLS, DDL-0275) vale também no caminho da ACTIVITY: o Greater
+//     Divine Intervention tem activity do Foundry, e o "Use" passava pelo activityEvent sem a trava (visto na tela).
 //   - Gift of the Ever-Living Ones (TC-0166, DDL-0238): com um efeito `healMax` ligado (healDiceMaxed em engine/playEffects), os dados da cura que o personagem recebe vão ao máximo: a activity que cura o próprio personagem e o "Use" com `apply: 'heal'`.
 //   - activityEvent NÃO se chama "use...": o lint do React trata todo nome que
 //     começa com "use" como hook e recusa chamá-lo dentro de um handler.
@@ -99,6 +101,7 @@ import { healOutcome, tempHpOutcome } from './playHealth';
 import { bonusParts, rngFor, d20Options, withDiceMax } from './playActions';
 import { featureModifier, healDiceMaxed } from './playEffects';
 import { withRounds } from './playCombat';
+import { featureRollOf, spendKeyOf } from './playFeatureRolls';
 
 const SPECIAL_RECOVERY = {
   'action:arcane-recovery': { kind: 'slots', classId: 'wizard', maxLevel: 5 },
@@ -251,6 +254,10 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
     if (temp) tempGained = heal.summary;
     else healed = heal.summary;
   }
+  const lockRule = free ? null : featureRollOf(action.name);
+  const lockKey = lockRule?.lockout ? spendKeyOf(catalog, lockRule.lockout.pool ?? lockRule.spend) : null;
+  const lock = lockKey ? rollFormula(String(lockRule.lockout.roll), { data: catalog.rollData, rng: r }).total : 0;
+  if (lock > 0) ops.push({ op: 'lockout', key: lockKey, rests: lock });
 
   return makeEvent('use', {
     label: activityLabel(action, activity),
@@ -270,6 +277,7 @@ export function activityEvent({ catalog, state, action, activity, options = {}, 
       effect: effect?.label ?? null,
       only,
       free,
+      ...(lock > 0 ? { lines: [`${nameOf(catalog, lockKey)}: recharges after ${lock} long rest${lock > 1 ? 's' : ''} (${lockRule.lockout.roll})`] } : {}),
     },
     rolls: attack ? { ...attack, parts: [...attack.parts, ...(rolls?.parts ?? [])], total: attack.total, damage: rolls?.total ?? null } : rolls,
   }, now);

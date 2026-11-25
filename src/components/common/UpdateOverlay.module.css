@@ -1,0 +1,132 @@
+/* =============================================================================
+ * UpdateOverlay.module.css: o aviso de versão nova em tela inteira
+ * =============================================================================
+ * CLASSES
+ *   .overlay, .closing: a tela escurecida (toca-se em qualquer ponto para ignorar) e a
+ *     saída.
+ *   .center: a coluna do centro.
+ *   .emblem, .logo: a logo, que flutua devagar sobre um brilho na cor de destaque.
+ *   .title, .text, .hint: o título com o filete, a frase e a dica de ignorar.
+ *   .refresh: a largura mínima do botão.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - z-index 1300: acima dos diálogos (1000) e do visor de imagem (1200); é um aviso
+ *     de tela inteira, pedido do dono (DDL-0318).
+ *   - Escurece nos TRÊS temas, como o visor de imagem: o fundo é preto translúcido e o
+ *     texto é branco, e não os tokens do tema (no claro, --bg clarearia a tela).
+ *   - "Reduzir movimento" corta o flutuar e as entradas pela regra global.
+ * -------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+  outline: none;
+  animation: update-in var(--dur-slide) var(--ease) backwards;
+}
+
+.closing {
+  animation: update-out var(--dur-exit) var(--ease) forwards;
+  pointer-events: none;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 360px;
+  text-align: center;
+  color: #fff;
+  animation: update-rise var(--dur-slide) var(--ease) backwards;
+}
+
+.emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 168px;
+  height: 168px;
+  margin-bottom: var(--space-3);
+}
+
+.emblem::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 42%, transparent), transparent 68%);
+  animation: update-glow 3.6s ease-in-out infinite alternate;
+}
+
+.logo {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  animation: update-float 3.6s ease-in-out infinite alternate;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.25;
+  color: #fff;
+}
+
+.text {
+  margin: var(--space-4) 0 var(--space-5);
+  font-size: var(--fs-field);
+  line-height: 1.5;
+  text-wrap: balance;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.center .refresh {
+  min-width: 190px;
+}
+
+.hint {
+  margin: var(--space-4) 0 0;
+  font-size: var(--fs-meta);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@keyframes update-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes update-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes update-rise {
+  from {
+    transform: translateY(14px);
+  }
+}
+@keyframes update-float {
+  from {
+    transform: translateY(5px);
+  }
+  to {
+    transform: translateY(-5px);
+  }
+}
+@keyframes update-glow {
+  from {
+    opacity: 0.6;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}

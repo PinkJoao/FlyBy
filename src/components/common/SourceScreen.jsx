@@ -88,11 +88,11 @@ function FirstVisit({ onChoose }) {
         </label>
         {problem ? <p className={styles.error}>{describeProblem(problem)}</p> : null}
         <div className={styles.row}>
-          <Button onClick={() => setStep('pick')}>Back</Button>
+          <Button onPage onClick={() => setStep('pick')}>Back</Button>
           {problem?.base ? (
-            <Button onClick={() => onChoose({ kind: 'url', base: problem.base })}>Use anyway</Button>
+            <Button onPage onClick={() => onChoose({ kind: 'url', base: problem.base })}>Use anyway</Button>
           ) : null}
-          <Button type="submit" variant="primary" disabled={checking}>
+          <Button type="submit" variant="primary" onPage disabled={checking}>
             {checking ? 'Checking...' : 'Continue'}
           </Button>
         </div>

@@ -8,7 +8,7 @@
 //   Liga a roda do mouse nas faixas que rolam de lado (src/wheelScroll.js) e o atalho
 //   "/" que foca a busca da tela (src/searchShortcut.js).
 //   Registra o service worker e o aviso de versão nova (src/appUpdate.js, o
-//   UpdateToast montado ao lado do App, DDL-0208).
+//   UpdateOverlay montado ao lado do App, DDL-0208).
 //
 // DECISÕES E ARMADILHAS
 //   - As fontes do tema papel (Cinzel e Alegreya, OFL-1.1, via @fontsource) são
@@ -28,7 +28,7 @@ import './motion.css'
 import './decor.css'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.jsx'
-import UpdateToast from './components/common/UpdateToast'
+import UpdateOverlay from './components/common/UpdateOverlay'
 import useSettingsStore from './store/settingsStore'
 import { applyTheme, watchSystemTheme } from './theme'
 import { installWheelToHorizontal } from './wheelScroll'
@@ -46,6 +46,6 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <App />
     </BrowserRouter>
-    <UpdateToast />
+    <UpdateOverlay />
   </StrictMode>,
 )

@@ -26,8 +26,8 @@ export default function ErrorScreen({ onRetry, source, onUseSrd }) {
             : "Couldn't load the game data. Try again."}
         </p>
         <div className={styles.actions}>
-          {fromUrl && onUseSrd ? <Button onClick={onUseSrd}>Use the built-in SRD 5.2</Button> : null}
-          <Button variant="primary" onClick={onRetry}>Try again</Button>
+          {fromUrl && onUseSrd ? <Button onPage onClick={onUseSrd}>Use the built-in SRD 5.2</Button> : null}
+          <Button variant="primary" onPage onClick={onRetry}>Try again</Button>
         </div>
       </div>
     </div>

@@ -58,6 +58,7 @@ const ICONS = {
   idea: 'lucide:lightbulb',
   undo: 'lucide:undo-2',
   redo: 'lucide:redo-2',
+  refresh: 'lucide:refresh-cw',
   trash: 'lucide:trash',
   econAction: 'lucide:circle',
   econBonus: 'lucide:triangle',

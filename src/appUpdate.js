@@ -3,8 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   Registra o service worker da PWA pelo `virtual:pwa-register` e guarda um
-//   estado mínimo (`ready`, `dismissed`) que o UpdateToast mostra: quando a
-//   versão nova termina de baixar e assume, o aviso oferece Reload. Procura
+//   estado mínimo (`ready`, `dismissed`) que o UpdateOverlay mostra: quando a
+//   versão nova termina de baixar e assume, o aviso oferece Refresh. Procura
 //   versão nova ao voltar ao app e a cada 30 minutos, e recarrega UMA vez quando
 //   um pedaço carregado sob demanda sumiu no deploy.
 //
@@ -12,7 +12,7 @@
 //   installAppUpdates(registerSW, win?): liga o registro, as checagens e a
 //     recuperação de pedaço perdido; chamada uma vez pelo main.
 //   subscribeUpdate(fn) / getUpdateState(): a loja do aviso, para o
-//     `useSyncExternalStore` do UpdateToast.
+//     `useSyncExternalStore` do UpdateOverlay.
 //   applyUpdate(win?): recarrega a página, já servida pela versão nova.
 //   dismissUpdate(): esconde o aviso até a próxima versão.
 //   shouldCheck(last, now): a checagem respeita um intervalo mínimo.

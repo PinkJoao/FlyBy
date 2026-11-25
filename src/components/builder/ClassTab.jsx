@@ -146,11 +146,36 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
       />
 
       <div className={styles.classCard} data-tour={TUT.TAB_CLASS_CARD}>
-        <div className={styles.classTop}>
-          <Tag>{c.isOriginalClass ? 'Original' : 'Multiclass'}</Tag>
+        <div className={styles.classRow}>
+          <div className={styles.classPick}>
+            <span className={styles.rowHead}>
+              <Tag>{c.isOriginalClass ? 'Original' : 'Multiclass'}</Tag>
+            </span>
+            <PickerField
+              // ATENÇÃO: a key por slot dá a cada classe o PRÓPRIO PickerField; sem ela o autoOpen trava.
+              key={c.uid}
+              entity={classEntity}
+              db={db}
+              current={
+                c.classId ? { label: capitalize(c.classId), source: c.source, id: `${capitalize(c.classId)}|${c.source}` } : null
+              }
+              placeholder="Choose class…"
+              showInfo={false}
+              autoOpen={!c.classId && c.uid === autoOpenUid}
+              onSelect={(raw) => pickClass(idx, raw)}
+              onClear={() => (idx > 0 ? removeClass(idx) : clearClass(idx))}
+              onClose={() => {
+                if (!c.classId && idx > 0) removeClass(idx);
+              }}
+              exclude={(raw) => {
+                const id = raw.name.toLowerCase();
+                return id !== c.classId && takenClassIds.has(id);
+              }}
+            />
+          </div>
           {c.classId && (
-            <div className={styles.levelControl}>
-              <span className={styles.levelLabel}>Level</span>
+            <div>
+              <span className={styles.rowHead}>Level</span>
               <Stepper
                 value={c.level}
                 min={1}
@@ -163,28 +188,6 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
             </div>
           )}
         </div>
-
-        <PickerField
-          // ATENÇÃO: a key por slot dá a cada classe o PRÓPRIO PickerField; sem ela o autoOpen trava.
-          key={c.uid}
-          entity={classEntity}
-          db={db}
-          current={
-            c.classId ? { label: capitalize(c.classId), source: c.source, id: `${capitalize(c.classId)}|${c.source}` } : null
-          }
-          placeholder="Choose class…"
-          showInfo={false}
-          autoOpen={!c.classId && c.uid === autoOpenUid}
-          onSelect={(raw) => pickClass(idx, raw)}
-          onClear={() => (idx > 0 ? removeClass(idx) : clearClass(idx))}
-          onClose={() => {
-            if (!c.classId && idx > 0) removeClass(idx);
-          }}
-          exclude={(raw) => {
-            const id = raw.name.toLowerCase();
-            return id !== c.classId && takenClassIds.has(id);
-          }}
-        />
 
         {c.classId && c.level >= subclassLevel && (
           <div>

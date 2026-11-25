@@ -224,9 +224,10 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   justify-content: center;
+  margin: 0 auto;
 }
 
 .credit {

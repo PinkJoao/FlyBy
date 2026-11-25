@@ -10,14 +10,17 @@
 // FUNÇÕES
 //   spellNumbers(origin, profBonus): a CD e o ataque `{ key, value, parts }`.
 //   spellLimits(origin): os contadores `{ key, have, max, over, missing }`.
-//   slotSummary(origin): `{ levels, total, pact, arcana }`.
-//   slotsAt(origin, level): os espaços que aparecem no grupo de um círculo.
+//   slotSummary(origin, all): `{ levels, total, pact, arcana }`; com `all` (a conjuração
+//     derivada), os espaços do personagem inteiro para uma classe conjuradora.
+//   slotsAt(origin, level, all): os espaços que aparecem no grupo de um círculo.
 //   spellTimes(origin): as magias concedidas que têm uso próprio, sem gastar espaço.
 //
 // DECISÕES E ARMADILHAS
 //   - As parcelas SOMAM o valor mostrado: o que a base, a proficiência e o atributo não
 //     explicam é dos itens (itemSpellBonuses), com o nome deles quando a origem o diz.
 //   - O "grimório" é um PISO (o mago pode copiar mais): `over` nunca acende nele.
+//   - Multiclasse (DDL-0322): o espaço do pacto lança a magia da outra classe e vice-versa, então
+//     a classe conjuradora mostra os dois (`all`); a espécie e o talento seguem sem gemas.
 //   - O pacto aparece nos grupos até o círculo dele (a magia de 1o círculo do bruxo
 //     também o gasta), como no modo de jogo (playCast.slotPoolsFor).
 // -----------------------------------------------------------------------------
@@ -58,20 +61,21 @@ export function spellLimits(origin) {
   return out;
 }
 
-/** Os espaços de uma origem: por círculo, o total, o pacto e o arcanum. */
-export function slotSummary(origin) {
-  const levels = Object.entries(origin?.slots ?? {})
+/** Os espaços de uma origem: por círculo, o total, o pacto e o arcanum; com `all`, os do personagem. */
+export function slotSummary(origin, all = null) {
+  const shared = all && origin?.kind === 'class' && origin.casterCode ? all : origin;
+  const levels = Object.entries(shared?.slots ?? {})
     .map(([level, count]) => ({ level: Number(level), count }))
     .filter((l) => l.count > 0)
     .sort((a, b) => a.level - b.level);
-  const pact = origin?.pactSlots?.slots ? { level: origin.pactSlots.level, count: origin.pactSlots.slots } : null;
+  const pact = shared?.pactSlots?.slots ? { level: shared.pactSlots.level, count: shared.pactSlots.slots } : null;
   return { levels, total: levels.reduce((n, l) => n + l.count, 0), pact, arcana: origin?.arcana ?? [] };
 }
 
 /** Os espaços do grupo de um círculo: os do círculo, o pacto e o arcanum. */
-export function slotsAt(origin, level) {
+export function slotsAt(origin, level, all = null) {
   if (!level) return [];
-  const { levels, pact, arcana } = slotSummary(origin);
+  const { levels, pact, arcana } = slotSummary(origin, all);
   const out = [];
   const own = levels.find((l) => l.level === level);
   if (own) out.push({ kind: 'slot', level, count: own.count });

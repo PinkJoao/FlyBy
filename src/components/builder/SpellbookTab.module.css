@@ -37,15 +37,19 @@
 
 .slots {
   display: flex;
+  flex: 1 1 0;
   flex-wrap: wrap;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 4px 6px;
 }
 
 .slot {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 5px;
-  padding: 3px 8px;
+  min-height: 26px;
+  box-sizing: border-box;
+  padding: 2px 8px;
   border-radius: var(--radius-control);
   border: 1px solid var(--border);
   background: var(--bg);
@@ -91,7 +95,7 @@
 }
 
 .groupSlots ~ .groupSlots {
-  margin-left: var(--space-1);
+  margin-left: 0;
 }
 
 .groupSlots ~ .panelChevron {
@@ -155,6 +159,7 @@
 }
 
 .panelTitle {
+  white-space: nowrap;
   font-size: var(--fs-meta);
   font-weight: 700;
   text-transform: uppercase;

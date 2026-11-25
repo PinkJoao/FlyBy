@@ -33,7 +33,8 @@
 //     startReplace(entry), closePicker(), removeSpell(entry): o fluxo de troca.
 //     openPrepare(), undoSessionPick(name): o "Prepare spell" em modo múltiplo.
 //     inClassList(raw), excludeFromPicker(raw): os recortes do seletor.
-//   GroupSlots(props): os espaços de um círculo, em gemas, no cabeçalho do grupo.
+//   GroupSlots(props): os espaços de um círculo, em gemas, no cabeçalho do grupo; com as
+//     duas espécies de espaço, o rótulo do pacto é curto (`short`).
 //   PreparedToggle(props): o radio de preparação (o mesmo átomo do EquipToggle).
 //   SpellThumb(props): arte do fluff, senão o glyph da escola.
 //   SpellRow(props): uma linha da lista. Exportada para a aba Spells do play mode
@@ -406,7 +407,9 @@ export default function SpellbookTab({
   const freeArcanumForPick = replIsArcanum ? new Set([...freeArcanumLevels, replRaw.level]) : freeArcanumLevels;
 
   const about = (stat) => () => showSpellStat({ stat, origin, character, db });
-  const slots = slotSummary(origin);
+  const casting = derived.spellcasting;
+  const slots = slotSummary(origin, casting);
+  const bothSlots = slots.total > 0 && !!slots.pact;
   const cells = isCargo ? [] : spellNumbers(origin, derived.proficiencyBonus).map((n) => ({
     key: n.key,
     value: n.key === 'atk' ? signed(n.value) : n.value,
@@ -418,10 +421,10 @@ export default function SpellbookTab({
     cells.push({
       key: 'slots',
       icon: <span className={styles.slotGem} aria-hidden="true" />,
-      value: slots.pact ? slots.pact.count : slots.total,
-      label: slots.pact ? `Pact, ${ORDINAL_SHORT[slots.pact.level]}` : 'Slots',
+      value: bothSlots ? `${slots.total} + ${slots.pact.count}` : slots.pact ? slots.pact.count : slots.total,
+      label: bothSlots ? 'Slots + pact' : slots.pact ? `Pact, ${ORDINAL_SHORT[slots.pact.level]}` : 'Slots',
       title: 'Your spell slots',
-      onClick: () => showSpellSlots({ origin, character, db }),
+      onClick: () => showSpellSlots({ origin, all: casting, character, db }),
     });
   }
   const bars = isCargo ? [] : spellLimits(origin).map((l) => ({
@@ -687,7 +690,7 @@ export default function SpellbookTab({
                 >
                   <span className={styles.panelTitle}>{label}</span>
                   <span className={styles.panelCount}>{list.length}</span>
-                  {level != null && slotsAt(origin, level).map((p) => <GroupSlots key={p.kind} pool={p} />)}
+                  {level != null && slotsAt(origin, level, casting).map((p) => <GroupSlots key={p.kind} pool={p} short={bothSlots} />)}
                   <span
                     className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
                     aria-hidden="true"
@@ -701,7 +704,9 @@ export default function SpellbookTab({
                   <p className={styles.emptyGroup}>
                     {slotsAt(origin, level).some((p) => p.kind === 'arcanum')
                       ? 'Your Mystic Arcanum of this level has no spell yet.'
-                      : 'No spell of this level yet. These slots can also cast a lower one, often stronger.'}
+                      : level > origin.maxPrepareLevel
+                        ? 'You cannot prepare spells of this level here. These slots cast lower ones, often stronger.'
+                        : 'No spell of this level yet. These slots can also cast a lower one, often stronger.'}
                   </p>
                 )}
                 <ul className={styles.list}>
@@ -823,10 +828,10 @@ function PreparedToggle({ prepared, onClick, name }) {
 }
 
 /** Os espaços de um círculo no cabeçalho do grupo, em gemas. */
-function GroupSlots({ pool }) {
+function GroupSlots({ pool, short }) {
   return (
-    <span className={styles.groupSlots}>
-      {pool.kind === 'pact' && <span className={styles.groupSlotsLabel}>Pact {ORDINAL_SHORT[pool.level]}</span>}
+    <span className={styles.groupSlots} title={pool.kind === 'pact' ? `Pact slots, cast at level ${pool.level}` : undefined}>
+      {pool.kind === 'pact' && <span className={styles.groupSlotsLabel}>{short ? 'Pact' : `Pact ${ORDINAL_SHORT[pool.level]}`}</span>}
       {pool.kind === 'arcanum' && <span className={styles.groupSlotsLabel}>Arcanum</span>}
       <Pips left={pool.count} max={pool.count} shape="gem" label={`${pool.count} ${pool.kind === 'pact' ? 'pact slots' : pool.kind === 'arcanum' ? 'use per Long Rest' : 'slots'}`} />
     </span>

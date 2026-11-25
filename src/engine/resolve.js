@@ -37,6 +37,7 @@
 //   resolveOptionalFeature(db, pick): a optional feature de um pick "Nome|Fonte".
 //   optionalFeatureGrants(cls, db, ctx): as magias das invocações e demais
 //     optional features escolhidas na classe.
+//   increasedAbility(bag): o atributo que o próprio talento aumentou.
 //   grantedOrigin(opts): uma origem racial ou de talento.
 //   deriveSpellcasting(character, db, derived): a conjuração inteira, por origem.
 //   spellRefName(ref), grantedNamesOf(additionalSpells, level, db, entity, opts):
@@ -120,7 +121,8 @@
 //   - resolveGranted: o registro curado funde concessões que só a prosa declara
 //     (TC-0026); `entity` deixa o overlay preencher a frequência (DDL-0011); o
 //     bag liga as escolhas de magia (TC-0011). grantedOrigin não chuta atributo
-//     enquanto a escolha não foi feita: sem ele, sem DC.
+//     enquanto a escolha não foi feita: sem ele, sem DC. `ability: 'inherit'` (Fey-Touched,
+//     Telekinetic...) é o atributo aumentado pelo talento, não um atributo (TC-0243).
 //   - reconcileClassSpells (pedido do usuário): (1) trocar ou remover a subclasse
 //     remove as sempre-preparadas da ANTIGA, senão a cópia manual que colapsou na
 //     concessão ressurgia duplicada (o bug do Paladin/Devotion); (2) no level-down,
@@ -158,7 +160,7 @@ import { deriveGrantedProficiencies } from './autoProficiencies';
 import { deriveFeatureGrants, cantripLimitBonus, acFeatureBonuses } from './featureEffects';
 import { deriveSubclassGrants } from './subclassGrants';
 import { deriveClassFeatureGrants } from './classFeatureGrants';
-import { collectChoicePicks } from './choices';
+import { collectAbilityPicks, collectChoicePicks } from './choices';
 import { optionEntries } from './optionTargets';
 import { deriveInventory, carryingCapacity } from './items';
 import { attunementMaxFor } from './attunement';
@@ -441,6 +443,11 @@ function optionalFeatureGrants(cls, db, ctx) {
   return out;
 }
 
+/** O atributo que o próprio talento aumentou (o `ability: 'inherit'` do 5etools), ou null. */
+function increasedAbility(bag) {
+  return collectAbilityPicks(bag)[0]?.ability ?? null;
+}
+
 /** Uma origem racial ou de talento, ou null sem concessão no nível. */
 function grantedOrigin({ key, kind, label, entity, additionalSpells, level, db, profBonus, modifiers, chosenAbility, bag }) {
   const { spells, ability: fixedAbility, abilityChoices, pendingChoices } = resolveGranted(
@@ -452,7 +459,7 @@ function grantedOrigin({ key, kind, label, entity, additionalSpells, level, db, 
     { bag },
   );
   if (spells.length === 0) return null;
-  const ability = fixedAbility ?? chosenAbility ?? null;
+  const ability = (fixedAbility === 'inherit' ? increasedAbility(bag) : fixedAbility) ?? chosenAbility ?? null;
   const abilityMod = ability ? (modifiers?.[ability] ?? 0) : null;
   return {
     key,

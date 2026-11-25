@@ -91,17 +91,20 @@ export default function SpellStatPanel({ stat, classLevel, className, onRule }) 
 }
 
 /** Os espaços de magia de uma origem. */
-export function SlotsPanel({ origin, onRule }) {
-  const { levels, total, pact, arcana } = slotSummary(origin);
+export function SlotsPanel({ origin, all, onRule }) {
+  const { levels, total, pact, arcana } = slotSummary(origin, all);
+  const both = total > 0 && !!pact;
   const times = spellTimes(origin);
   return (
     <div className={styles.body}>
       <div className={styles.hero}>
-        <span className={styles.heroValue}>{pact ? pact.count : total}</span>
+        <span className={styles.heroValue}>{total + (pact?.count ?? 0)}</span>
         <p className={styles.flavor}>The fuel of your magic.</p>
       </div>
       <p className={styles.note}>
-        {pact
+        {both
+          ? `A spell of level 1 or higher burns one slot of its level or above, and either kind casts the spells of any of your classes. The slots of your pact are all of level ${pact.level} and come back on a Short or Long Rest; the others, on a Long Rest.`
+          : pact
           ? `A spell of level 1 or higher burns one slot, and every slot of your pact is of level ${pact.level}: the spell is cast at that level. They all come back on a Short or Long Rest.`
           : 'A spell of level 1 or higher burns one slot of its level or above; a higher slot often makes it stronger. They all come back on a Long Rest.'}
       </p>

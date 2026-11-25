@@ -301,6 +301,29 @@ describe('deriveSpellcasting - origem de TALENTO', () => {
   });
 });
 
+describe("deriveSpellcasting - talento com ability: 'inherit' (TC-0243)", () => {
+  const dbI = { ...dbG, feats: { feat: [{ name: 'Fey-Touched', source: 'XPHB', additionalSpells: [{ ability: 'inherit', innate: { _: { daily: { '1e': ['bless|xphb'] } } } }] }] } };
+  const withFeat = (choices) => {
+    const ch = createCharacter();
+    ch.origin = { originFeat: { id: 'Fey-Touched', source: 'XPHB', choices } };
+    ch.classes = [{ ...createClassEntry(true), classId: 'fighter', source: 'XPHB', level: 5 }];
+    return deriveSpellcasting(ch, dbI, { ...ctxG, modifiers: { ...ctxG.modifiers, int: 4 } }).origins[0];
+  };
+
+  it('usa o atributo que o talento aumentou', () => {
+    const o = withFeat({ 'ability-0': { kind: 'ability', alt: 0, picks: [{ ability: 'int', amount: 1 }] } });
+    expect(o.ability).toBe('int');
+    expect(o.saveDc).toBe(8 + ctxG.profBonus + 4);
+    expect(o.attackBonus).toBe(ctxG.profBonus + 4);
+  });
+
+  it('sem a escolha, nenhuma CD (e nunca o texto "inherit")', () => {
+    const o = withFeat({});
+    expect(o.ability).toBeNull();
+    expect(o.saveDc).toBeNull();
+  });
+});
+
 describe('deriveSpellcasting - nenhuma magia concedida, nenhuma origem', () => {
   it('Fighter sem espécie mágica nem talento', () => {
     const ch = createCharacter();

@@ -68,7 +68,7 @@ export function showSpellStat({ stat, origin, character, db }) {
   open(TITLE[stat.key], <SpellStatPanel stat={stat} classLevel={cls?.level} className={origin?.label} onRule={onRule} />);
 }
 
-/** Abre os espaços de magia de uma origem. */
-export function showSpellSlots({ origin, character, db }) {
-  open('Spell slots', <SlotsPanel origin={origin} onRule={castingFeature(character, db, origin)} />);
+/** Abre os espaços de magia de uma origem (`all`: a conjuração derivada, no multiclasse). */
+export function showSpellSlots({ origin, all, character, db }) {
+  open('Spell slots', <SlotsPanel origin={origin} all={all} onRule={castingFeature(character, db, origin)} />);
 }

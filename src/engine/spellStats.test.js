@@ -96,6 +96,17 @@ describe('espaços', () => {
     expect(slotsAt(warlock, 6)).toEqual([{ kind: 'arcanum', level: 6, count: 1 }]);
   });
 
+  it('no multiclasse a classe conjuradora mostra os espaços do personagem', () => {
+    const all = { slots: { 1: 4, 2: 3, 3: 2 }, pactSlots: { level: 5, slots: 3 } };
+    const wiz = { ...wizard, kind: 'class', casterCode: 'full', slots: all.slots };
+    expect(slotSummary(wiz, all)).toMatchObject({ total: 9, pact: { level: 5, count: 3 } });
+    expect(slotSummary(wiz)).toMatchObject({ total: 9, pact: null });
+    expect(slotsAt(wiz, 1, all).map((p) => [p.kind, p.count])).toEqual([['slot', 4], ['pact', 3]]);
+    expect(slotsAt(wiz, 5, all).map((p) => p.kind)).toEqual(['pact']);
+    expect(slotSummary({ ...warlock, kind: 'class', casterCode: 'pact' }, all)).toMatchObject({ total: 9, pact: { count: 3 } });
+    expect(slotSummary({ kind: 'feat', slots: {} }, all)).toMatchObject({ total: 0, pact: null });
+  });
+
   it('os usos próprios', () => {
     expect(spellTimes(wizard)).toEqual([{ name: 'Shield', label: '1/Long Rest', note: null }]);
   });

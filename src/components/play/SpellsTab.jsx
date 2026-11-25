@@ -177,6 +177,7 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
               <button type="button" className={play.headToggle} aria-expanded={!isCollapsed}>
                 <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
               </button>
+              <span className={styles.panelCount}>{list.length}</span>
               {pools.length > 0 && (
                 <span className={styles.slots}>
                   {pools.map((p) => (
@@ -184,7 +185,6 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
                   ))}
                 </span>
               )}
-              <span className={styles.panelCount}>{list.length}</span>
               <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
                 <Icon name="chevron" />
               </span>

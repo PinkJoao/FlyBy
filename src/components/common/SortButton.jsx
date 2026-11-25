@@ -8,7 +8,8 @@
 //   mesma de novo inverte (src/sorting.js, nextSort).
 //
 // FUNÇÕES
-//   SortButton({ options, value, dir, onChange, className }): o botão.
+//   SortButton({ options, value, dir, onChange, size, className }): o botão; `size` é o
+//     do Button ("sm" no topo do seletor).
 //
 // DECISÕES E ARMADILHAS
 //   - O title e o aria-label dizem a ordenação atual ("Sort: Weight, High to
@@ -22,13 +23,13 @@ import { buttonClass } from './buttonClass';
 
 /**
  * O botão de ordenar.
- * @param {{ options: Array<object>, value: string, dir: 'asc'|'desc', onChange: (value: string, dir: string) => void, className?: string }} props
+ * @param {{ options: Array<object>, value: string, dir: 'asc'|'desc', onChange: (value: string, dir: string) => void, size?: 'sm'|'md', className?: string }} props
  */
-export default function SortButton({ options, value, dir, onChange, className }) {
+export default function SortButton({ options, value, dir, onChange, size = 'md', className }) {
   const active = options.find((o) => o.value === value) ?? options[0];
   return (
     <MenuButton
-      buttonClassName={buttonClass({ icon: true, className })}
+      buttonClassName={buttonClass({ icon: true, size, className })}
       buttonTitle={`Sort: ${active.label}${dirLabel(active, dir) === active.label ? '' : `, ${dirLabel(active, dir)}`}`}
       items={options.map((o) => ({
         label: o.label,

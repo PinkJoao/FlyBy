@@ -3,8 +3,8 @@
  * =============================================================================
  * CLASSES
  *   .panel, .now, .warn: a coluna, o HP (de agora e o que vai ficar) e o aviso.
- *   .rows, .row, .die, .left, .typed, .spend, .error: uma linha por face.
- *   .rolled, .link: os dados já rolados (cada um no Chip comum, DDL-0198) e o
+ *   .rows, .row, .die, .left, .typed, .error: uma linha por face.
+ *   .rolled: os dados já rolados (cada um no Chip comum, DDL-0198) e o
  *     "desfazer o último".
  * -------------------------------------------------------------------------- */
 
@@ -70,23 +70,6 @@
   text-align: center;
 }
 
-.spend {
-  font: inherit;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.spend:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .error {
   width: 100%;
   font-size: var(--fs-small);
@@ -99,14 +82,3 @@
   align-items: center;
   gap: 6px;
 }
-
-.link {
-  font: inherit;
-  font-size: var(--fs-meta);
-  border: none;
-  background: none;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
-}
-

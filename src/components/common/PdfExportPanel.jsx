@@ -98,9 +98,9 @@ export default function PdfExportPanel({ onExport }) {
         {preset === 'custom' && 'Your own mix, below.'}
       </p>
 
-      <button type="button" className={styles.more} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <Button variant="link" className={styles.more} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {open ? 'Hide options' : 'Customize'}
-      </button>
+      </Button>
       <Collapse open={open}>
         <div className={styles.custom}>
           <h4 className={styles.heading}>Sections</h4>

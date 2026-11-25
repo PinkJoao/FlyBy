@@ -42,6 +42,7 @@
 //     antes de gravar (resolveSourceInput); a falha pergunta, não bloqueia.
 // -----------------------------------------------------------------------------
 
+import Button from '../components/common/Button';
 import SegmentedControl from '../components/common/SegmentedControl';
 import SearchField from '../components/common/SearchField';
 import { useEffect, useMemo, useState } from 'react';
@@ -292,16 +293,16 @@ export default function Home() {
           </span>
         </button>
         <div className={styles.cardActions}>
-          <button type="button" className={styles.modeBtn} title="Build" aria-label={`Build ${c.meta.name || 'character'}`} onClick={() => navigate(c.meta?.creating ? `/build/${c.id}/wizard` : `/build/${c.id}`)}>
+          <Button icon size="sm" title="Build" aria-label={`Build ${c.meta.name || 'character'}`} onClick={() => navigate(c.meta?.creating ? `/build/${c.id}/wizard` : `/build/${c.id}`)}>
             <Icon name="build" />
-          </button>
+          </Button>
           {!c.meta?.creating && (
-            <button type="button" className={styles.modeBtn} title="Play" aria-label={`Play ${c.meta.name || 'character'}`} onClick={() => navigate(`/play/${c.id}`)}>
+            <Button icon size="sm" title="Play" aria-label={`Play ${c.meta.name || 'character'}`} onClick={() => navigate(`/play/${c.id}`)}>
               <Icon name="play" />
-            </button>
+            </Button>
           )}
           <MenuButton
-            buttonClassName={styles.menuTrigger}
+            buttonClassName={buttonClass({ icon: true, size: 'sm' })}
             buttonTitle="Character options"
             items={[
               { label: 'Duplicate', onClick: () => duplicate(c.id) },
@@ -370,12 +371,10 @@ export default function Home() {
             any you made here first.
           </p>
           <div className={styles.installHintActions}>
-            <a className={styles.installHintLink} href={chromeIntentUrl(window.location)}>
+            <a className={buttonClass({ size: 'sm', variant: 'primary' })} href={chromeIntentUrl(window.location)}>
               Open in Chrome
             </a>
-            <button type="button" className={styles.installHintClose} onClick={dismissSamsungHint}>
-              Dismiss
-            </button>
+            <Button size="sm" onClick={dismissSamsungHint}>Dismiss</Button>
           </div>
         </aside>
       )}
@@ -388,9 +387,9 @@ export default function Home() {
         ) : total === 0 ? (
           <div className={styles.empty}>
             <p>No characters yet.</p>
-            <button type="button" className={styles.primary} onClick={createNew}>
+            <Button variant="primary" onPage onClick={createNew}>
               <Icon name="plus" /> New Character
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -404,7 +403,6 @@ export default function Home() {
                   setSortBy(value);
                   setSortDir(dir);
                 }}
-                className={styles.sortBtn}
               />
               <SegmentedControl
                 size="row"

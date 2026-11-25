@@ -2,8 +2,7 @@
  * EquipmentShop.module.css: a loja de equipamento (dentro do SelectorPanel)
  * =============================================================================
  * CLASSES
- *   .shopBtn: o botão da loja, na mesma altura (40px) da busca ao lado e no padrão
- *     de cor do "Select" do SelectorPanel.
+ *   .shopBtn: o botão da loja (Button), que não encolhe ao lado da busca.
  *   .cardBuy: no card, SÓ o stepper (default 0 vai ao carrinho), centralizado.
  *   .cartWrap, .cartBar*, .cartChevron*: a barra do carrinho, um flex-child no
  *     rodapé do .panel do SelectorPanel.
@@ -17,23 +16,8 @@
  * -------------------------------------------------------------------------- */
 
 .shopBtn {
-  font: inherit;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  height: 40px;
-  box-sizing: border-box;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-field);
-  border: 1px solid var(--accent-border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
   flex: none;
   white-space: nowrap;
-}
-
-.shopBtn:hover {
-  filter: brightness(1.08);
 }
 
 .cardBuy {
@@ -142,22 +126,6 @@
   color: var(--text-h);
 }
 
-.cartClear {
-  font: inherit;
-  font-size: var(--fs-small);
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--danger);
-  cursor: pointer;
-}
-
-.cartClear:hover {
-  border-color: var(--danger);
-}
-
 .cartList {
   list-style: none;
   margin: 0;
@@ -221,6 +189,7 @@
 .cartSheetFoot {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border);

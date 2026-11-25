@@ -2,15 +2,18 @@
  * Button.module.css: o botão de ação padrão
  * =============================================================================
  * CLASSES
- *   .btn: a base (14px, 600, 8px 16px, raio 8, fundo --bg), com a altura padrão dos
- *     controles (--control-h; o .sm, --control-h-sm; o .link não tem altura, DDL-0310).
+ *   .btn: a base (14px, 600, 8px 16px, raio dos campos, fundo --bg), com a altura padrão
+ *     dos controles (--control-h; o .link não tem altura, DDL-0310).
  *   .default, .primary, .danger, .link: as variantes.
- *   .sm, .block: compacto e de linha inteira.
- *   .icon: o botão só de ícone, um quadrado de --control-h (com .sm, --control-h-sm).
+ *   .sm, .xs, .lg: --control-h-sm, --control-h-xs e --control-h-lg.
+ *   .block, .onPage: de linha inteira; solto na página (fundo --bg-soft).
+ *   .icon: o botão só de ícone, um quadrado da altura do tamanho.
  *
  * DECISÕES E ARMADILHAS
  *   - Os valores são os de .btn/.primary/.danger do DialogHost, a referência que já
  *     existia (DDL-0129): a primária tem borda accent e fundo neutro.
+ *   - O raio é o dos campos (9): o botão fica ao lado da busca, do alternador e do botão de
+ *     ícone, que já o usam. O .xs (30 px) usa o de 8 (DDL-0317).
  *   - .link não tem caixa: é texto clicável, para não competir com a ação principal.
  * -------------------------------------------------------------------------- */
 
@@ -26,7 +29,7 @@
   line-height: 1.2;
   min-height: var(--control-h);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-field);
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
@@ -88,6 +91,23 @@
   padding: 6px 12px;
 }
 
+.xs {
+  min-height: var(--control-h-xs);
+  font-size: var(--fs-small);
+  padding: 4px 10px;
+  border-radius: var(--radius-control);
+}
+
+.lg {
+  min-height: var(--control-h-lg);
+  font-size: var(--fs-field);
+  padding: 0 20px;
+}
+
+.onPage {
+  background: var(--bg-soft);
+}
+
 .sm.link {
   min-height: 0;
   font-size: var(--fs-small);
@@ -120,6 +140,20 @@
   min-height: 0;
   padding: 0;
   font-size: 16px;
+}
+
+.icon.xs {
+  width: var(--control-h-xs);
+  height: var(--control-h-xs);
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  font-size: 16px;
+}
+
+.icon.primary {
+  color: var(--accent);
 }
 
 .icon:hover:not(:disabled),

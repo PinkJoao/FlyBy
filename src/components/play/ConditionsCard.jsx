@@ -24,6 +24,8 @@
 //     personagem e não um detalhe.
 // -----------------------------------------------------------------------------
 
+import Stepper from '../common/Stepper';
+import Button from '../common/Button';
 import { useState } from 'react';
 import { CONDITIONS, conditionName } from '../../engine/playEffects';
 import Icon from '../common/Icon';
@@ -95,12 +97,12 @@ export default function ConditionsCard({ conditions, concentration, combat, insp
                   {roundsLeft != null && <span className={styles.rowNote}>{roundsLeft} round{roundsLeft === 1 ? '' : 's'} left</span>}
                 </div>
                 <div className={styles.rowCtrl}>
-                  <button type="button" className={styles.ctrlBtn} onClick={onConcentrationSave} aria-label="Concentration save" title="Concentration save">
+                  <Button icon size="xs" onClick={onConcentrationSave} aria-label="Concentration save" title="Concentration save">
                     <Icon name="dice" />
-                  </button>
-                  <button type="button" className={styles.ctrlBtn} onClick={onConcentrationEnd} aria-label="End concentration" title="End it">
+                  </Button>
+                  <Button icon size="xs" onClick={onConcentrationEnd} aria-label="End concentration" title="End it">
                     <Icon name="close" />
-                  </button>
+                  </Button>
                 </div>
               </li>
             )}
@@ -115,14 +117,12 @@ export default function ConditionsCard({ conditions, concentration, combat, insp
                   <div className={styles.rowCtrl}>
                     {c?.levels ? (
                       <>
-                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, level - 1)} aria-label="One level less"><Icon name="minus" /></button>
-                        <span className={styles.level}>{level}</span>
-                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, Math.min(c.levels, level + 1))} disabled={level >= c.levels} aria-label="One level more"><Icon name="plus" /></button>
+                        <Stepper value={level} min={0} max={c.levels} editable={false} buttonSize={26} onChange={(n) => onSet(id, n)} ariaLabel={`${conditionName(id)} level`} />
                       </>
                     ) : (
-                      <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, 0)} aria-label={`End ${conditionName(id)}`} title="End it">
+                      <Button icon size="xs" onClick={() => onSet(id, 0)} aria-label={`End ${conditionName(id)}`} title="End it">
                         <Icon name="close" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </li>

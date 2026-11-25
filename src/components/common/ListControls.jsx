@@ -9,15 +9,16 @@
 //
 // FUNÇÕES
 //   ListControls(props): `filterOptions`, `filter`, `onFilter`, `groupOptions` (sem
-//     opção, o botão some), `groupBy`, `onGroup`, `sortOptions`, `sortBy`, `sortDir`,
+//     opção, o botão some), `groupBy`, `onGroup`, `sortOptions` (idem), `sortBy`, `sortDir`,
 //     `onSort`, `dataTour`.
 //
 // DECISÕES E ARMADILHAS
 //   - Substitui o alternador Group (GroupSortBar, DDL-0310 a DDL-0312) e as abas de
 //     categoria (as do inventário e os círculos do grimório): três botões pequenos no
 //     lugar de duas faixas, e o que está escolhido continua escrito no botão.
-//   - Os três ficam juntos, no começo da linha, e não quebram: o texto dos dois primeiros
-//     encolhe com reticências.
+//   - Os três ficam juntos, à direita, e não quebram: o texto dos dois primeiros encolhe
+//     com reticências; no celular os dois crescem e a linha fica cheia (DDL-0317).
+//   - Sem `sortOptions` (as abas do jogo, que só filtram) não há botão de ordenar.
 // -----------------------------------------------------------------------------
 
 import ChoiceMenuButton from './ChoiceMenuButton';
@@ -29,12 +30,12 @@ export default function ListControls({ filterOptions, filter, onFilter, groupOpt
   return (
     <div className={styles.bar} data-tour={dataTour}>
       {filterOptions?.length > 0 && (
-        <ChoiceMenuButton icon="filter" label="Show" options={filterOptions} value={filter} onChange={onFilter} />
+        <ChoiceMenuButton icon="filter" label="Show" className={styles.choice} options={filterOptions} value={filter} onChange={onFilter} />
       )}
       {groupOptions?.length > 0 && (
-        <ChoiceMenuButton icon="group" label="Group by" options={groupOptions} value={groupBy} onChange={onGroup} />
+        <ChoiceMenuButton icon="group" label="Group by" className={styles.choice} options={groupOptions} value={groupBy} onChange={onGroup} />
       )}
-      <SortButton options={sortOptions} value={sortBy} dir={sortDir} onChange={onSort} />
+      {sortOptions?.length > 0 && <SortButton className={styles.square} options={sortOptions} value={sortBy} dir={sortDir} onChange={onSort} />}
     </div>
   );
 }

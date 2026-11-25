@@ -10,10 +10,14 @@
  *     painéis das listas, a lista de personagens, o About e os cards do guia fazem
  *     `composes: card from '.../common/Card.module.css'` e guardam só o próprio layout.
  *     Antes eram cópias com raio de 12 ou 14 px.
+ *   - ATENÇÃO: `:where` (especificidade zero). O Vite emite o CSS composto DEPOIS de quem
+ *     o compõe (no build e no HMR), e a regra comum apagava a borda, o fundo e o raio
+ *     próprios de cada card: o tracejado do "New Character" e a faixa lateral da
+ *     descrição de feature sumiram com o DDL-0313 (DDL-0317).
  *   - Linhas de lista, opções e janelas NÃO compõem: têm outro papel e outro desenho.
  * -------------------------------------------------------------------------- */
 
-.card {
+:where(.card) {
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   background: var(--bg-soft);

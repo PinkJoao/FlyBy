@@ -121,19 +121,6 @@
   color: var(--text);
 }
 
-.rulesHead {
-  appearance: none;
-  align-self: flex-start;
-  padding: 2px 0;
-  border: none;
-  background: none;
-  color: var(--accent);
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .rules {
   font-size: var(--fs-body);
 }
@@ -183,4 +170,8 @@
 .pick:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+button.rulesHead {
+  align-self: flex-start;
 }

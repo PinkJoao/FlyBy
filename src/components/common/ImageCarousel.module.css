@@ -79,7 +79,7 @@
   cursor: pointer;
   display: grid;
   place-items: center;
-  padding-bottom: 3px;
+  padding: 0;
 }
 
 .arrow:hover {

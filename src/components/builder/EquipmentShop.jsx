@@ -175,9 +175,7 @@ export default function EquipmentShop({ character, db, onPurchase, containerUid 
             <div className={styles.cartSheet} role="dialog" aria-label="Shopping cart">
               <div className={styles.cartSheetHead}>
                 <span className={styles.cartSheetTitle}>Cart</span>
-                <button type="button" className={styles.cartClear} onClick={emptyCart}>
-                  Empty cart
-                </button>
+                <Button variant="danger" size="sm" onClick={emptyCart}>Empty cart</Button>
               </div>
               <ul className={styles.cartList}>
                 {cartEntries().map(({ raw, qty }) => (
@@ -201,13 +199,10 @@ export default function EquipmentShop({ character, db, onPurchase, containerUid 
                 ))}
               </ul>
               <div className={styles.cartSheetFoot}>
-                <div className={styles.buyTotal}>
-                  <span className={styles.buyTotalLabel}>Total</span>
-                  <span className={styles.buyTotalValue}>{gpText(cartTotalCopper)}</span>
-                </div>
-                <button type="button" className={styles.buyBtn} onClick={checkout}>
+                <FootValue label="Total" value={gpText(cartTotalCopper)} />
+                <Button variant="primary" onClick={checkout}>
                   Buy {cartUnits} item{cartUnits > 1 ? 's' : ''}
-                </button>
+                </Button>
               </div>
             </div>
           </>
@@ -233,9 +228,9 @@ export default function EquipmentShop({ character, db, onPurchase, containerUid 
 
   return (
     <>
-      <button type="button" className={styles.shopBtn} onClick={() => setOpen(true)}>
-        <span aria-hidden="true"><Icon name="cart" /></span> {label}
-      </button>
+      <Button variant="primary" onPage className={styles.shopBtn} onClick={() => setOpen(true)}>
+        <Icon name="cart" /> {label}
+      </Button>
       {open && (
         <SelectorPanel
           entity={itemEntity}

@@ -31,7 +31,6 @@
 
 import { useRef, useState } from 'react';
 import CloseButton from './CloseButton';
-import Icon from './Icon';
 import SourceTag from './SourceTag';
 import styles from './PreviewShell.module.css';
 
@@ -78,9 +77,7 @@ export default function PreviewShell({ kicker, source, title, titleId, onClose, 
         {sheet && <span className={styles.grabber} aria-hidden="true" />}
         <div className={styles.headRow}>
           {onBack && (
-            <button type="button" className={styles.back} onClick={onBack} aria-label="Back" title="Back">
-              <Icon name="chevron" />
-            </button>
+            <CloseButton onClick={onBack} icon="chevronLeft" label="Back" className={styles.back} />
           )}
           <div className={styles.titles}>
             {kicker && <div className={styles.kicker}>{kicker}</div>}

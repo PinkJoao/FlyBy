@@ -19,6 +19,7 @@
 //     "See all" para a galeria (PortraitSuggestionsModal, DDL-0124, DDL-0127).
 // -----------------------------------------------------------------------------
 
+import Button from '../../common/Button';
 import StepExplain from './StepExplain';
 import { useRef, useState } from 'react';
 import { fileToPortrait } from '../../common/imageFile';
@@ -91,13 +92,9 @@ export default function NamePortraitStep({ character, onChange }) {
             {meta.portrait ? <img src={meta.portrait} alt="Portrait" /> : <span className={styles.portraitPlaceholder}><Icon name="portrait" /></span>}
           </button>
           <div className={styles.portraitControls}>
-            <button type="button" className={styles.smallBtn} onClick={() => fileRef.current?.click()}>
-              Upload image
-            </button>
+            <Button onPage onClick={() => fileRef.current?.click()}>Upload image</Button>
             {meta.portrait && (
-              <button type="button" className={styles.smallBtn} onClick={() => setPortrait(null)}>
-                Remove
-              </button>
+              <Button variant="danger" onClick={() => setPortrait(null)}>Remove</Button>
             )}
             <div className={styles.urlRow}>
               <ImageUrlField
@@ -108,9 +105,7 @@ export default function NamePortraitStep({ character, onChange }) {
                 onImage={applyFile}
                 onSubmit={applyUrl}
               />
-              <button type="button" className={styles.smallBtn} onClick={applyUrl} disabled={!url.trim()}>
-                Use
-              </button>
+              <Button onPage onClick={applyUrl} disabled={!url.trim()}>Use</Button>
             </div>
           </div>
         </div>

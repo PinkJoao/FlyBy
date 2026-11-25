@@ -17,18 +17,17 @@
  *     cabeçalho GRUDA no topo, com fundo, para Clear e Apply seguirem alcançáveis.
  *   .legend*, .dotInc, .dotExc: a legenda include/exclude, numa linha só (DDL-0297; era em duas no
  *     desktop (não disputa largura com o Clear) e horizontal no mobile.
- *   .filtersActions, .clear, .applyFilters: os botões (Apply só na gaveta).
+ *   .clear, .applyFilters: os botões (Apply só na gaveta); o desenho é o Button.
  *   .filterGroup, .chips, .noFilters: os grupos de filtro; cada opção é o Chip comum
  *     (incluída = `active`, excluída = tom `danger` riscado; DDL-0198).
  *   .chipEmpty: a opção que não alcança resultado agora: visível e inerte, nunca
  *     numa opção ativa (DDL-0077).
  *   Resultados
  *   .results, .cards, .sentinel: a grade e o sentinel das levas.
- *   .sortBtn: o botão de ordenar, na linha de cima.
  *   .viewToggle, .viewOpt, .resultsCards: o botão List | Cards (antes do ordenar) e a
  *     coluna no modo carrossel, que dá a altura ao SelectorCarousel (DDL-0286).
- *   .iconBtn, .iconBtnOn, .iconBadge, .srOnly: a lupa e o filtro do carrossel no celular,
- *     com o número de filtros ativos, e o texto só para leitor de tela (DDL-0287).
+ *   .filterBtn, .filterBtnOn, .iconBadge, .srOnly: o botão do filtro (Button icon), com o
+ *     número de filtros ativos, e o texto só para leitor de tela (DDL-0287).
  *   .cardBody, .cardExtra, .cardExtraLine: o corpo de altura fixa e as linhas extras no
  *     espaço que sobra (DDL-0288).
  *   .headerCompact h2: o título quebra em até duas linhas na coluna dos filtros, em vez de
@@ -48,8 +47,7 @@
  *   .cardWithThumb, .cardThumb: o card com a miniatura no topo, de borda a borda
  *     (a loja no celular, DDL-0285).
  *   Preview
- *   .preview, .selectBtn, .muted: a coluna do preview (a moldura PreviewShell dentro,
- *     DDL-0295) e o Select do carrossel.
+ *   .preview, .muted: a coluna do preview (a moldura PreviewShell dentro, DDL-0295).
  *
  * DECISÕES E ARMADILHAS
  *   - Card de forma FIXA (DDL-0286, DDL-0288): o corpo (.cardBody) tem a altura que a
@@ -61,10 +59,9 @@
  *     (height: 100%) e o stepper vai à base: todo card de um painel tem a mesma altura.
  *   - z-index 150: acima do guia (120), que o abre de DENTRO, e abaixo dos
  *     diálogos (1000).
- *   - A lupa é QUADRADA com o lado igual à altura do "Clear" (1lh + padding +
- *     borda). A line-height herdada do app é um comprimento (18px/145%), e
- *     aspect-ratio com align-self: stretch não serve (é ignorado num flex item
- *     esticado). Os dois botões têm a mesma altura, então centralizar basta.
+ *   - O filtro, o ordenar, o Clear e o Apply são o Button `sm` (34 px, a altura da linha).
+ *     Uma classe com width e height próprios não basta: o min-height da base do Button
+ *     vence, e o ordenar ficou 34 x 40 (DDL-0317).
  *   - No mobile (até 760px) só os resultados ficam no corpo, o toque no card faz
  *     o preview, e a busca principal some com a gaveta aberta (não filtra os chips
  *     e rouba altura); a busca dos filtros, então, fica sempre visível.
@@ -268,56 +265,12 @@
 .dotExc {
   background: var(--danger);
 }
-.filtersActions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.filtersHeadRow .clear {
   flex: none;
 }
-.clear {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-  box-sizing: border-box;
-  line-height: 1;
-  appearance: none;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: var(--radius-control);
-}
-.clear:hover {
-  color: var(--danger);
-  filter: brightness(1.1);
-}
-.applyFilters {
+.filtersHeadRow .applyFilters {
   display: none;
   flex: none;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-  box-sizing: border-box;
-  line-height: 1;
-  appearance: none;
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  padding: 5px 14px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--accent);
-  cursor: pointer;
-}
-.applyFilters:hover {
-  filter: brightness(1.1);
 }
 .filterGroup {
   margin-bottom: 18px;
@@ -488,21 +441,6 @@
   flex-direction: column;
   min-height: 0;
 }
-.selectBtn {
-  appearance: none;
-  width: 100%;
-  font: inherit;
-  font-size: var(--fs-field);
-  padding: 10px;
-  border-radius: var(--radius-field);
-  border: 1px solid var(--accent-border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
-}
-.selectBtn:hover {
-  filter: brightness(1.08);
-}
 .muted {
   opacity: 0.5;
   padding: 18px;
@@ -518,7 +456,7 @@
     border-radius: 0;
     border: none;
   }
-  .applyFilters {
+  .filtersHeadRow .applyFilters {
     display: inline-flex;
   }
   .body {
@@ -574,13 +512,6 @@
     margin-top: 0;
     padding-top: 6px;
   }
-
-}
-
-.sortBtn {
-  width: 32px;
-  height: 32px;
-  font-size: var(--fs-field);
 }
 
 .viewToggle {
@@ -603,22 +534,10 @@
   min-height: 0;
 }
 
-.iconBtn {
+.filterBtn {
   position: relative;
-  flex: none;
-  width: var(--control-h);
-  height: var(--control-h);
-  display: grid;
-  place-items: center;
-  line-height: 0;
-  font-size: var(--fs-lead);
-  border-radius: var(--radius-field);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
 }
-.iconBtnOn {
+.headerTools .filterBtnOn {
   border-color: var(--accent-border);
   color: var(--text-h);
 }
@@ -702,11 +621,6 @@
   .headerSearch {
     max-width: none;
   }
-}
-.headerTools .iconBtn,
-.headerTools .sortBtn {
-  width: 34px;
-  height: 34px;
 }
 
 .cardBody {

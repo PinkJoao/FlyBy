@@ -24,6 +24,7 @@
 //   - Nenhuma escolha é definitiva: o menu da Home troca a fonte depois.
 // -----------------------------------------------------------------------------
 
+import Button from './Button';
 import { useState } from 'react';
 import base from './UpdatingScreen.module.css';
 import styles from './SourceScreen.module.css';
@@ -87,17 +88,13 @@ function FirstVisit({ onChoose }) {
         </label>
         {problem ? <p className={styles.error}>{describeProblem(problem)}</p> : null}
         <div className={styles.row}>
-          <button type="button" className={styles.ghost} onClick={() => setStep('pick')}>
-            Back
-          </button>
+          <Button onClick={() => setStep('pick')}>Back</Button>
           {problem?.base ? (
-            <button type="button" className={styles.ghost} onClick={() => onChoose({ kind: 'url', base: problem.base })}>
-              Use anyway
-            </button>
+            <Button onClick={() => onChoose({ kind: 'url', base: problem.base })}>Use anyway</Button>
           ) : null}
-          <button type="submit" className={base.retry} disabled={checking}>
+          <Button type="submit" variant="primary" disabled={checking}>
             {checking ? 'Checking...' : 'Continue'}
-          </button>
+          </Button>
         </div>
       </form>
     );

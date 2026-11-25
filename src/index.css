@@ -40,8 +40,9 @@
  *     papel é um marrom dourado mais forte, nos outros o accent bem suave.
  *   - A escala de forma (DDL-0303, fase U1 do docs/UI-STUDY.md): --space-1 a 6
  *     (4, 8, 12, 16, 24, 32), --radius-control/field/card/layer, --control-h (40 px, um
- *     controle de linha numa página: busca, botão de ícone) e --control-h-sm (34 px, nas
- *     barras densas do seletor), --fs-*
+ *     controle de linha numa página: busca, botão de ícone) --control-h-sm (34 px, nas
+ *     barras densas do seletor), --control-h-xs (30 px, dentro de uma linha de lista) e
+ *     --control-h-lg (46 px, o rodapé do guia), --fs-*
  *     (rótulo 11 a título de página 26) e o movimento (--dur-enter, --dur-exit,
  *     --dur-slide, --dur-morph, --ease). Fica no :root e não muda por tema. Todo
  *     CSS de componente usa a escala onde o valor é dela (DDL-0313: 673 trocas exatas
@@ -120,6 +121,8 @@
   --radius-layer: 16px;
   --control-h: 40px;
   --control-h-sm: 34px;
+  --control-h-xs: 30px;
+  --control-h-lg: 46px;
   --fs-label: 11px;
   --fs-small: 12px;
   --fs-meta: 13px;

@@ -83,6 +83,7 @@
 //     descansos entram por portal) ficam fora do conteúdo do modo: não remontam.
 // -----------------------------------------------------------------------------
 
+import Button from '../components/common/Button';
 import CompactBar from '../components/builder/CompactBar';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -238,8 +239,8 @@ function GuideButton({ character, db, derived, onOpen }) {
   const demo = !shown && tourAnchor === TUT.SHEET_GUIDE;
   if (!shown && !demo) return null;
   return (
-    <button
-      type="button"
+    <Button
+      icon
       className={`${sheetPage.guideBtn} ${sheetPage.guideBtnAlert}`}
       onClick={shown ? onOpen : undefined}
       data-tour={TUT.SHEET_GUIDE}
@@ -247,7 +248,7 @@ function GuideButton({ character, db, derived, onOpen }) {
     >
       <span aria-hidden="true"><Icon name="guide" /></span>
       {pend.total > 0 && <span className={sheetPage.guideBadge}>{pend.total}</span>}
-    </button>
+    </Button>
   );
 }
 

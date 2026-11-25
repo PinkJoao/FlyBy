@@ -38,6 +38,7 @@
 //     texto para fora do cartão, e o texto é o que o novato precisa ler primeiro.
 // -----------------------------------------------------------------------------
 
+import Button from '../components/common/Button';
 import { useMemo, useRef, useState } from 'react';
 import Thumb from '../components/common/Thumb';
 import Icon from '../components/common/Icon';
@@ -113,9 +114,9 @@ function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
           </Collapse>
         )}
         {teaser?.length > 0 && (
-          <button type="button" className={styles.more} tabIndex={tab} onClick={() => setMore((v) => !v)}>
+          <Button variant="link" className={styles.more} tabIndex={tab} onClick={() => setMore((v) => !v)}>
             {more ? 'Show less' : 'Read more'}
-          </button>
+          </Button>
         )}
         {meta.length > 0 && (
           <div className={styles.meta}>

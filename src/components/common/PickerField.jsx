@@ -14,6 +14,7 @@
 //     o painel.
 // -----------------------------------------------------------------------------
 
+import Button from './Button';
 import { useEffect, useRef, useState } from 'react';
 import SelectorPanel from '../../selector/SelectorPanel';
 import DetailView from './DetailView';
@@ -82,14 +83,14 @@ export default function PickerField({
           )}
         </button>
         {current && showInfo && (
-          <button type="button" className={styles.infoBtn} onClick={() => setInfo(true)} aria-label={`About ${current.label}`}>
+          <Button icon className={styles.infoBtn} onClick={() => setInfo(true)} aria-label={`About ${current.label}`}>
             <Icon name="info" />
-          </button>
+          </Button>
         )}
         {current && (
-          <button type="button" className={styles.clearX} onClick={onClear} aria-label="Clear" title="Clear">
+          <Button icon className={styles.clearX} onClick={onClear} aria-label="Clear" title="Clear">
             <Icon name="close" />
-          </button>
+          </Button>
         )}
       </div>
 

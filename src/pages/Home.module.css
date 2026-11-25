@@ -8,24 +8,21 @@
  *   .grid, .carousel: os outros dois jeitos de ver; o card fica em pé, com o retrato
  *     grande em cima e Play e o menu embaixo.
  *   .page: preenche a área de conteúdo e NÃO rola.
- *   .topbar, .brand, .brandLogo, .hamburger: a marca à esquerda (logo e nome; a
+ *   .topbar, .brand, .brandLogo: a marca à esquerda (logo e nome; a
  *     altura do logo define o tamanho, o SVG é quadrado) e o menu à direita.
  *   .main, .rosterTitle: o roster no espaço restante; título, controles e botão
  *     têm altura fixa.
- *   .controls, .sortBtn: a busca (SearchField) e o botão de ordenar
+ *   .controls: a busca (SearchField) e o botão de ordenar
  *     (SortButton), como nas abas de inventário e magias; o botão tem a altura
  *     da busca.
  *   .listScroll: a ÚNICA área que rola, com padding lateral para a barra não colar
  *     nos cards.
  *   .list, .card*, .avatar, .avatarImg, .info, .name, .sub: os cards; o retrato
  *     cabe em qualquer proporção, sem distorcer nem cortar.
- *   .menuTrigger: o gatilho do menu (substituiu os três botões soltos).
- *   .modeBtn: os atalhos do card para a ficha (Build, o martelo) e o jogo (Play), só com
- *     ícone (DDL-0309).
- *   .primary, .muted, .empty: o estado vazio, centralizado.
+ *   .cardActions: os atalhos do card (Build, Play e o menu), Button icon `sm` (DDL-0309).
+ *   .muted, .empty: o estado vazio, centralizado.
  *   .attribution: a atribuição discreta (fonte de dados e licença SRD).
- *   .installHint, .installHintText, .installHintActions, .installHintLink,
- *     .installHintClose: o aviso do Samsung Internet sob o topo (DDL-0095).
+ *   .installHint, .installHintText, .installHintActions: o aviso do Samsung Internet sob o topo (DDL-0095).
  * -------------------------------------------------------------------------- */
 
 .page {
@@ -88,36 +85,12 @@
   flex: none;
 }
 
-.sortBtn {
-  width: 40px;
-  height: 40px;
-}
-
 .listScroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   margin: 0 -4px;
   padding: 0 var(--space-1);
-}
-
-.primary {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: inherit;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  padding: 10px 18px;
-  border-radius: var(--radius-field);
-  border: 1px solid var(--accent-border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
-}
-.primary:hover {
-  filter: brightness(1.08);
 }
 
 .muted {
@@ -232,41 +205,6 @@
   padding: 0 var(--space-2);
 }
 
-.cardActions button {
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  color: var(--text);
-  font-size: var(--fs-field);
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.cardActions button:hover {
-  background: var(--accent-bg);
-  color: var(--text-h);
-}
-.cardActions .modeBtn {
-  width: 36px;
-  height: 36px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-field);
-  font-size: 16px;
-  line-height: 0;
-  color: var(--text-h);
-}
-.cardActions .modeBtn:hover {
-  border-color: var(--accent-border);
-}
-.menuTrigger {
-  font-size: 18px;
-  line-height: 1;
-}
-
 .attribution {
   flex: none;
   margin-top: var(--space-3);
@@ -307,27 +245,6 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-.installHintLink,
-.installHintClose {
-  appearance: none;
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  text-decoration: none;
-  cursor: pointer;
-}
-.installHintLink {
-  border-color: var(--accent-border);
-}
-.installHintLink:hover,
-.installHintClose:hover {
-  filter: brightness(1.08);
 }
 
 .pageWide {

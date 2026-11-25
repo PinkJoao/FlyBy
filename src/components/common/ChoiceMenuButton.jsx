@@ -26,7 +26,7 @@ import styles from './ChoiceMenuButton.module.css';
 /** O botão de escolha com a opção ativa à vista. */
 export default function ChoiceMenuButton({ icon, label, options, value, onChange, className }) {
   const active = options.find((o) => o.value === value) ?? options[0];
-  const cls = buttonClass({ className: className ? `${styles.btn} ${className}` : styles.btn });
+  const cls = buttonClass({ onPage: true, className: className ? `${styles.btn} ${className}` : styles.btn });
   const inner = (
     <>
       <Icon name={icon} className={styles.icon} />

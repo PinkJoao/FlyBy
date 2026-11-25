@@ -40,6 +40,7 @@
 //     `onClick` (o X) só fecha.
 // -----------------------------------------------------------------------------
 
+import Button from './Button';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useImageViewerStore from '../../store/imageViewerStore';
@@ -238,12 +239,8 @@ function ActionButton({ action, onClick }) {
     );
   }
   return (
-    <button
-      type="button"
-      className={action.tone === 'danger' ? `${styles.actionBtn} ${styles.actionDanger}` : styles.actionBtn}
-      onClick={onClick}
-    >
+    <Button variant={action.tone === 'danger' ? 'danger' : 'default'} onPage={action.tone !== 'danger'} onClick={onClick}>
       {action.label}
-    </button>
+    </Button>
   );
 }

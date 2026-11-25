@@ -11,8 +11,8 @@
  *   .head, .progress*, .title: o cabeçalho (voltar, progresso; o sair é o Button de ícone).
  *   .body, .step*, .placeholder: o corpo, que rola; .stepIcon e .stepLead, o ícone acima do título
  *     e a frase curta abaixo dele, na 1a página do passo (DDL-0313).
- *   .foot, .navBtn, .primaryBtn, .footNote: o rodapé (Back, Next, Skip); o Next ou
- *     Finish é o preenchido de accent, e o bloqueado (passo obrigatório vazio)
+ *   .foot, .primaryBtn, .footNote: o rodapé (Back, Next, Skip); o Next ou
+ *     Finish ocupa o resto da linha (Button `primary` `lg`), e o bloqueado (passo obrigatório vazio)
  *     fica visivelmente desabilitado.
  *   .review*: a revisão; o hover do botão respeita os cantos arredondados.
  *
@@ -188,45 +188,10 @@
   padding-top: var(--space-3);
   border-top: 1px solid var(--border);
 }
-.navBtn {
-  appearance: none;
-  font: inherit;
-  font-size: var(--fs-field);
-  font-weight: 600;
-  height: 46px;
-  padding: 0 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  flex: none;
-}
-.navBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-.primaryBtn {
-  flex: 1;
-  border-color: var(--accent-border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-}
-.primaryBtn:hover {
-  filter: brightness(1.08);
-}
 
-.navBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-  border-color: var(--border);
-  color: var(--text);
-  filter: none;
-}
-.navBtn:disabled:hover {
-  border-color: var(--border);
-  color: var(--text);
-  filter: none;
+.foot .primaryBtn {
+  flex: 1;
+  min-width: 0;
 }
 
 .footNote {

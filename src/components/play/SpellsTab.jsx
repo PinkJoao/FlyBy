@@ -43,6 +43,7 @@
 //   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
 // -----------------------------------------------------------------------------
 
+import ListControls from '../common/ListControls';
 import TabBar from '../common/TabBar';
 import SearchField from '../common/SearchField';
 import { useState } from 'react';
@@ -165,18 +166,12 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
 
       <div className={styles.controls}>
         <SearchField placeholder="Search spells…" value={query} onChange={setQuery} />
+        <ListControls
+          filterOptions={[{ value: 'all', label: 'All spells' }, ...levels.map((lv) => ({ value: lv, label: spellLevelLabel(lv) }))]}
+          filter={category}
+          onFilter={setCategory}
+        />
       </div>
-
-      <nav className={styles.categories} data-wheel-x="">
-        <button type="button" className={category === 'all' ? `${styles.category} ${styles.categoryActive}` : styles.category} onClick={() => setCategory('all')}>
-          All
-        </button>
-        {levels.map((lv) => (
-          <button key={lv} type="button" className={category === lv ? `${styles.category} ${styles.categoryActive}` : styles.category} onClick={() => setCategory(lv)}>
-            {spellLevelLabel(lv)}
-          </button>
-        ))}
-      </nav>
 
       {sections.length === 0 && <p className={styles.empty}>{needle ? 'No spells match your search.' : 'No prepared spells here.'}</p>}
 

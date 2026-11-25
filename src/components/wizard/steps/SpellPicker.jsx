@@ -22,6 +22,7 @@
 //     cópia desperdiça um slot e vira linha órfã se a subclasse mudar.
 // -----------------------------------------------------------------------------
 
+import Button from '../../common/Button';
 import { redundantPreparations } from '../../../engine/spellcasting';
 import Tag from '../../common/Tag';
 import { useMemo, useState } from 'react';
@@ -147,15 +148,15 @@ export default function SpellPicker({ origin, origins, db, level, maxLevel, limi
                   .filter(Boolean)
                   .join(' · ')}
               </span>
-              <button
-                type="button"
-                className={styles.spellRemove}
+              <Button
+                icon
+                size="xs"
                 onClick={() => remove(entry)}
                 aria-label={`Remove ${entry.raw.name}`}
                 title="Remove"
               >
                 <Icon name="close" />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

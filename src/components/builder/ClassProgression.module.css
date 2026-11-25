@@ -2,7 +2,7 @@
  * ClassProgression.module.css: a progressão de features por nível da classe
  * =============================================================================
  * CLASSES
- *   .progression, .head, .title, .modes, .modeBtn, .modeActive: o cabeçalho e os
+ *   .progression, .head, .title: o cabeçalho (o alternador é o SegmentedControl) e os
  *     modos de exibição.
  *   .level*, .future: os blocos por nível (os futuros esmaecidos, com a Tag "Locked");
  *     .levelFeatures repete o espaçamento do bloco dentro do Collapse.
@@ -31,34 +31,6 @@
   margin: 0;
   font-size: var(--fs-field);
   color: var(--text-h);
-}
-
-.modes {
-  display: flex;
-  gap: 6px;
-}
-
-.modeBtn {
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.modeBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-
-.modeActive {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-bg);
 }
 
 .levelBlock {

@@ -18,7 +18,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import styles from './RoleplayField.module.css';
 import Icon from './Icon';
-import { buttonClass } from './buttonClass';
+import Button from './Button';
 
 /** Textarea que cresce e encolhe com o texto. */
 function AutoTextarea({ value, ...props }) {
@@ -86,18 +86,18 @@ export default function RoleplayField({ label, value, placeholder, onRandom, onC
             </button>
           </div>
           <div className={styles.rpRowBtns}>
-            <button type="button" className={buttonClass({ icon: true })} onClick={() => removeAt(i)} title="Remove" aria-label="Remove">
+            <Button icon onClick={() => removeAt(i)} title="Remove" aria-label="Remove">
               <Icon name="close" />
-            </button>
-            <button
-              type="button"
-              className={buttonClass({ icon: true, className: styles.rpAddBtn })}
+            </Button>
+            <Button
+              icon
+              className={styles.rpAddBtn}
               onClick={() => addAfter(i)}
               title="Add another"
               aria-label="Add another"
             >
               <Icon name="plus" />
-            </button>
+            </Button>
           </div>
         </div>
       ))}

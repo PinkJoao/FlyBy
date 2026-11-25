@@ -14,6 +14,7 @@
 //   FeatureCard(props): uma feature colapsável.
 // -----------------------------------------------------------------------------
 
+import SegmentedControl from '../common/SegmentedControl';
 import { useState } from 'react';
 import { classFeatureLevels, isLongFeature } from '../../engine/classProgression';
 import EntryContent from '../common/EntryContent';
@@ -27,7 +28,6 @@ export default function ClassProgression({ db, classId, classObj, subclass, leve
   const [mode, setMode] = useState('default');
   const [collapsed, setCollapsed] = useState(() => new Set());
 
-  const toggleMode = (m) => setMode((cur) => (cur === m ? 'default' : m));
   const toggleLevel = (lvl) =>
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -48,22 +48,13 @@ export default function ClassProgression({ db, classId, classObj, subclass, leve
     <section className={styles.progression}>
       <div className={styles.head}>
         <h3 className={styles.title}>Features</h3>
-        <div className={styles.modes}>
-          <button
-            type="button"
-            className={mode === 'current' ? `${styles.modeBtn} ${styles.modeActive}` : styles.modeBtn}
-            onClick={() => toggleMode('current')}
-          >
-            Current
-          </button>
-          <button
-            type="button"
-            className={mode === 'full' ? `${styles.modeBtn} ${styles.modeActive}` : styles.modeBtn}
-            onClick={() => toggleMode('full')}
-          >
-            Full
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          ariaLabel="Which levels to show"
+          value={mode}
+          onChange={setMode}
+          options={[['current', 'This level'], ['default', 'Unlocked'], ['full', 'All']]}
+        />
       </div>
 
       <ClassTableView classObj={classObj} subclass={subclass} level={level} />

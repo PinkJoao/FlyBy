@@ -8,7 +8,7 @@
  *   .value, .small, .label: os textos, com fontes FLUIDAS (clamp e vw).
  *   .breakRow, .detailRow, .bName, .bSub, .bVal, .die, .emptyNote: o detalhe; o
  *     .breakRow divide os bônus (Constituição) dos dados de vida.
- *   .hpButtons, .hpBtn*: os botões do card de HP (Roll, Reset, e o +/-).
+ *   .hpButtons, .hpBtn: os botões do card de HP (Roll, Reset), dividindo a linha.
  *   .align*: o seletor de alinhamento (9 opções), com tinta por eixo moral (bons
  *     azuis, neutros roxos, maus vermelhos) e cor plena no selecionado.
  *   Atributos
@@ -181,35 +181,15 @@ button.tileHead:hover {
   border-top: 1px solid var(--border);
 }
 
+.hpButtons .hpBtn {
+  flex: 1;
+  min-width: 0;
+  padding-inline: 0;
+}
+
 .tileBody > .hpButtons:first-child {
   border-top: none;
   border-bottom: 1px solid var(--border);
-}
-
-.hpBtn {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  font-size: clamp(10px, 3.2vw, 12px);
-  font-weight: 600;
-  padding: 7px 0px 7px;
-  border-radius: 7px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-  place-items: center; 
-}
-
-.hpBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-
-.hpBtnActive {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-bg);
 }
 
 .alignGrid {

@@ -428,29 +428,6 @@
   margin-top: var(--space-3);
 }
 
-.contentsBtn {
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  padding: 9px 14px;
-  border-radius: var(--radius-field);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.contentsBtn:hover:not(:disabled) {
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
-
-.contentsBtn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .pickerAll {
   align-self: flex-start;
   margin-bottom: var(--space-2);
@@ -507,4 +484,3 @@
   font-weight: 500;
   color: var(--text-muted);
 }
-

@@ -348,7 +348,7 @@ import sheetHeader from '../components/builder/StatsHeader.module.css';
 import styles from './Play.module.css';
 import Tag from '../components/common/Tag';
 import useDialogStore from '../store/dialogStore';
-import { buttonClass } from '../components/common/buttonClass';
+import Button from '../components/common/Button';
 
 const TABS = ['Actions', 'Features', 'Spells', 'Inventory'];
 const PLAY_TAB_TOUR = { Actions: 'play-tab-actions', Features: 'play-tab-features', Spells: 'play-tab-spells', Inventory: 'play-tab-inventory' };
@@ -439,29 +439,27 @@ function HistoryHead({ onUndo, onRedo, onClear, canUndo, canRedo, canClear, last
         {round != null && <RoundBadge round={round} />}
       </span>
       <span className={styles.historyActions}>
-        <button
-          type="button"
-          className={buttonClass({ icon: true })}
+        <Button
+          icon
           onClick={onUndo}
           disabled={!canUndo}
           title={lastLabel ? `Undo: ${lastLabel}` : 'Nothing to undo'}
           aria-label="Undo"
         >
           <Icon name="undo" />
-        </button>
-        <button
-          type="button"
-          className={buttonClass({ icon: true })}
+        </Button>
+        <Button
+          icon
           onClick={onRedo}
           disabled={!canRedo}
           title={nextLabel ? `Redo: ${nextLabel}` : 'Nothing to redo'}
           aria-label="Redo"
         >
           <Icon name="redo" />
-        </button>
-        <button type="button" className={buttonClass({ icon: true })} onClick={onClear} disabled={!canClear} title="Clear the history" aria-label="Clear the history">
+        </Button>
+        <Button icon onClick={onClear} disabled={!canClear} title="Clear the history" aria-label="Clear the history">
           <Icon name="trash" />
-        </button>
+        </Button>
       </span>
     </div>
   );

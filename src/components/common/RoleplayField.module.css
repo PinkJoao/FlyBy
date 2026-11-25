@@ -7,7 +7,7 @@
  *   .rpInputWrap, .rpInput, .rpDie: a caixa de texto com o dado sobreposto no
  *     canto SUPERIOR direito (o padding deixa espaço para ele): ancorado no topo,
  *     ele fica parado quando a caixa cresce, como os botões ao lado.
- *   .rpRowBtns, .rpIconBtn: botões quadrados de tamanho FIXO, que não esticam com
+ *   .rpRowBtns: botões quadrados de tamanho FIXO, que não esticam com
  *     a caixa.
  *   .rpAddBtn: adicionar entrada, com o ícone na cor accent.
  *

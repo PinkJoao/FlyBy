@@ -3,7 +3,7 @@
  * =============================================================================
  * CLASSES
  *   .form, .note, .warn, .short: a coluna, as notas e os avisos em vermelho.
- *   .costs, .stepRow, .stepper, .stepValue, .smallBtn: os custos e os contadores.
+ *   .costs, .stepRow: os custos e os contadores (o Stepper).
  *   .field, .label, .input: os campos (os sim ou não são o Toggle comum).
  *   .summon: o bloco "Summon now" do diálogo de conjurar (DDL-0192).
  *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
@@ -47,39 +47,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-}
-
-.stepper {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.stepValue {
-  min-width: 20px;
-  text-align: center;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.smallBtn {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  font: inherit;
-  font-size: 16px;
-  line-height: 0;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.smallBtn:disabled {
-  opacity: 0.35;
-  cursor: default;
 }
 
 .field {

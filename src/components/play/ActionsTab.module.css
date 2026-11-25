@@ -3,7 +3,7 @@
  * =============================================================================
  * CLASSES
  *   .tab, .hint, .grid: a aba, o aviso do combate e a grade dos cards.
- *   .card, .spent, .name, .costs, .costUsed, .readied: um card (apagado quando nada
+ *   .card, .spent, .name, .costs, .readied: um card (apagado quando nada
  *     sobra no turno), o nome, as pílulas de custo (a gasta, apagada) e o gatilho
  *     guardado do Ready.
  *   .otherHead, .chev, .chevOpen: o cabeçalho do grupo "Other", recolhível.
@@ -69,11 +69,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
-}
-
-.costUsed {
-  opacity: 0.4;
-  text-decoration: line-through;
 }
 
 .readied {

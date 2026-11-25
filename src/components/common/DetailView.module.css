@@ -8,7 +8,7 @@
  *     esticar o painel; a de item do 5etools costuma ser alta.
  *   .imgButton, .imgAdd: a imagem editável e, sem imagem, o Chip de adicionar em
  *     vez do quadro grande.
- *   .credit, .name, .src, .meta: o cabeçalho; cada item da .meta é o Chip comum
+ *   .name, .src, .meta: o cabeçalho; cada item da .meta é o Chip comum
  *     pequeno (DDL-0199): o tom do dado (info caster, aceso half caster, danger
  *     martial), o destaque aceso, e o pré-requisito em success, danger ou warning
  *     (atende, não atende, confirmar com o DM).
@@ -56,12 +56,6 @@
 
 .imgButton:hover {
   filter: brightness(1.05);
-}
-
-.credit {
-  font-size: var(--fs-label);
-  opacity: 0.5;
-  margin: 0 0 var(--space-3);
 }
 
 .name {

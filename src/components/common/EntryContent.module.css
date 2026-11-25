@@ -7,7 +7,7 @@
  *   .footnote: as notas de rodapé de tabela, menores e discretas.
  *   .ref, .refLink: a menção de regra; .refLink é a tappável (glossário), com
  *     sublinhado pontilhado e cursor.
- *   .imageBtn, .image, .credit: as imagens.
+ *   .imageBtn, .image: as imagens.
  *
  * DECISÕES E ARMADILHAS
  *   - Tabelas usam o .data-table global dentro do TableViewer (scroll horizontal
@@ -129,10 +129,4 @@
   border-radius: var(--radius-field);
   margin: 0 0 var(--space-3);
   border: 1px solid var(--border);
-}
-
-.credit {
-  font-size: var(--fs-label);
-  opacity: 0.5;
-  margin: -8px 0 12px;
 }

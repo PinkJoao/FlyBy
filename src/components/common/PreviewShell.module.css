@@ -91,6 +91,9 @@
   color: var(--text-h);
   overflow-wrap: anywhere;
 }
+.back {
+  margin: -2px 0 0 -8px;
+}
 .close {
   flex: none;
   margin: -2px -4px 0 0;
@@ -218,29 +221,6 @@
     transform var(--dur-enter) var(--ease);
 }
 
-.back {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  margin: -2px 0 0 -8px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--text-muted);
-  font-size: 16px;
-  line-height: 0;
-  cursor: pointer;
-}
-.back:hover {
-  color: var(--text-h);
-  background: color-mix(in srgb, var(--text) 10%, transparent);
-}
-.back svg {
-  transform: rotate(90deg);
-}
 .depth {
   display: flex;
   gap: 5px;

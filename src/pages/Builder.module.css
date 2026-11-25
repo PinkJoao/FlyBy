@@ -8,7 +8,7 @@
  *   .levelSlot: o stepper de nível no bloco de identidade; no desktop o
  *     margin-left: auto o empurra à direita, no mobile empilha sob o nome.
  *   .guideBtn, .guideBtnAlert, .guideBadge: o botão do guia; tema accent com
- *     pendência, e o contador no canto. A caixa é justa ao glifo.
+ *     pendência, e o contador no canto. A caixa é a do Button icon; só o glifo é maior (28 px).
  *   .identity, .portraitWrap, .portrait, .nameWrap, .name, .sub: retrato e nome;
  *     .portraitFilled assume a PROPORÇÃO natural da foto (sem corte), com altura
  *     máxima.
@@ -17,7 +17,7 @@
  *   .tabBar: o espaço acima da barra de abas (a TabBar comum, DDL-0303); ela vai de
  *     borda a borda e gruda sob o topo compacto, no celular e no desktop (DDL-0306) (51 px: a barra de 52 menos
  *     a borda, que as duas dividem; DDL-0304).
- *   .panel, .label, .hint, .placeholder, .stack: o conteúdo da aba.
+ *   .panel, .stack: o conteúdo da aba.
  * -------------------------------------------------------------------------- */
 
 .page {
@@ -45,29 +45,12 @@
   display: flex;
 }
 
-.guideBtn {
+button.guideBtn {
   position: relative;
-  appearance: none;
-  display: inline-grid;
-  place-items: center;
-  width: var(--control-h);
-  height: var(--control-h);
-  padding: 0;
   font-size: 28px;
-  line-height: 1;
-  border-radius: var(--radius-field);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
 }
 
-.guideBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
-
-.guideBtnAlert {
+button.guideBtnAlert {
   border-color: var(--accent);
   background: var(--accent-bg);
   color: var(--accent);
@@ -195,27 +178,6 @@
 
 .panel {
   margin-top: var(--space-5);
-}
-
-.label {
-  display: block;
-  font-size: var(--fs-meta);
-  opacity: 0.7;
-  margin-bottom: 6px;
-}
-
-.hint {
-  margin-top: var(--space-4);
-  opacity: 0.5;
-  font-size: var(--fs-body);
-}
-
-.placeholder {
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  padding: 40px 24px;
-  text-align: center;
-  opacity: 0.6;
 }
 
 .stack {

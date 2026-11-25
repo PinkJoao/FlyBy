@@ -236,9 +236,9 @@ export default function ActionPanel({ item, ctx, catalog, state, rule }) {
 
       {rule?.entries?.length > 0 && (
         <>
-          <button type="button" className={styles.rulesHead} onClick={() => setRulesOpen((v) => !v)} aria-expanded={rulesOpen}>
+          <Button variant="link" className={styles.rulesHead} onClick={() => setRulesOpen((v) => !v)} aria-expanded={rulesOpen}>
             {rulesOpen ? 'Hide the rules' : 'Rules'}
-          </button>
+          </Button>
           <Collapse open={rulesOpen}>
             <div className={styles.rules}>
               <EntryContent entries={rule.entries} />

@@ -454,17 +454,12 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
               )}
 
               <div className={styles.contentsActions}>
-                <button type="button" className={styles.contentsBtn} onClick={() => setPicker('stow')}>
+                <Button onClick={() => setPicker('stow')}>
                   Load <Icon name="down" />
-                </button>
-                <button
-                  type="button"
-                  className={styles.contentsBtn}
-                  disabled={contents.length === 0}
-                  onClick={() => setPicker('takeOut')}
-                >
+                </Button>
+                <Button disabled={contents.length === 0} onClick={() => setPicker('takeOut')}>
                   Unload <Icon name="up" />
-                </button>
+                </Button>
                 <EquipmentShop
                   character={character}
                   db={db}

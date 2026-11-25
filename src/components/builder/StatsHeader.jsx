@@ -25,6 +25,7 @@
 //     existe nos dois modos desliza para o lugar novo, e o resto aparece.
 // -----------------------------------------------------------------------------
 
+import Button from '../common/Button';
 import { useState } from 'react';
 import { ABILITIES } from '../../schema/character';
 import { formatBonus } from '../../engine/math';
@@ -193,20 +194,8 @@ function HpTile({ maxHp, classBreakdown, hpBonus, rolled, onRoll, onAverage, onC
             </div>
           ))}
           <div className={styles.hpButtons}>
-            <button
-              type="button"
-              className={rolled ? styles.hpBtn : `${styles.hpBtn} ${styles.hpBtnActive}`}
-              onClick={onAverage}
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              className={rolled ? `${styles.hpBtn} ${styles.hpBtnActive}` : styles.hpBtn}
-              onClick={onRoll}
-            >
-              Roll
-            </button>
+            <Button size="xs" className={styles.hpBtn} disabled={!rolled && !hpBonus} onClick={onAverage}>Reset</Button>
+            <Button size="xs" className={styles.hpBtn} variant={rolled ? 'primary' : 'default'} onClick={onRoll}>Roll</Button>
           </div>
         </>
       )}

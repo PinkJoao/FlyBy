@@ -8,7 +8,7 @@
 //   <button> com ref própria (o voltar) também.
 //
 // FUNÇÕES
-//   buttonClass(opts): `variant`, `size`, `block`, `icon` e `className`.
+//   buttonClass(opts): `variant`, `size`, `block`, `icon`, `onPage` e `className`.
 //
 // DECISÕES E ARMADILHAS
 //   - Mora fora do Button.jsx: o arquivo de um componente só exporta componentes,
@@ -19,10 +19,10 @@ import styles from './Button.module.css';
 
 /**
  * As classes de um botão.
- * @param {{ variant?: 'default'|'primary'|'danger'|'link', size?: 'sm'|'md', block?: boolean, icon?: boolean, className?: string }} [opts]
+ * @param {{ variant?: 'default'|'primary'|'danger'|'link', size?: 'xs'|'sm'|'md'|'lg', block?: boolean, icon?: boolean, onPage?: boolean, className?: string }} [opts]
  */
-export function buttonClass({ variant = 'default', size = 'md', block = false, icon = false, className } = {}) {
-  return [styles.btn, styles[variant], size === 'sm' ? styles.sm : null, icon ? styles.icon : null, block ? styles.block : null, className]
+export function buttonClass({ variant = 'default', size = 'md', block = false, icon = false, onPage = false, className } = {}) {
+  return [styles.btn, styles[variant], size !== 'md' ? styles[size] : null, icon ? styles.icon : null, onPage ? styles.onPage : null, block ? styles.block : null, className]
     .filter(Boolean)
     .join(' ');
 }

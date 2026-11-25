@@ -9,8 +9,7 @@
  *     escurece o resto; uma borda accent marca o alvo.
  *   .dim: o passo sem alvo (balão central) escurece a tela inteira.
  *   .tip, .tipTitle, .tipBody, .tipFoot, .counter: o balão.
- *   .navBtns, .skip, .navBtn, .navPrimary: a navegação; o primário é borda e texto
- *     accent, o padrão do Select e do diálogo.
+ *   .navBtns: Back e Next (o Button comum); o Skip é o Button `link`.
  *
  * DECISÕES E ARMADILHAS
  *   - z-index acima do SelectorPanel (150), dos menus (200) e das tabelas (130), e
@@ -98,44 +97,4 @@
 .navBtns {
   display: flex;
   gap: 6px;
-}
-
-.skip {
-  font: inherit;
-  font-size: var(--fs-meta);
-  padding: 6px 4px;
-  border: none;
-  background: none;
-  color: var(--text);
-  opacity: 0.65;
-  cursor: pointer;
-}
-.skip:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-.navBtn {
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  padding: 7px 14px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-}
-.navBtn:hover {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-
-.navPrimary {
-  border-color: var(--accent-border);
-  color: var(--text-h);
-}
-.navPrimary:hover {
-  border-color: var(--accent);
-  filter: brightness(1.12);
 }

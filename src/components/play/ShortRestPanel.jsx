@@ -89,9 +89,9 @@ export default function ShortRestPanel({ catalog, state }) {
               placeholder="table"
               aria-label={`d${r.faces} rolled at the table (optional)`}
             />
-            <button type="button" className={styles.spend} disabled={r.left <= 0} onClick={() => spend(r.faces)}>
+            <Button size="sm" variant="primary" disabled={r.left <= 0} onClick={() => spend(r.faces)}>
               Roll d{r.faces}
-            </button>
+            </Button>
             {error?.faces === r.faces && <span className={styles.error}>{error.message}</span>}
           </li>
         ))}
@@ -102,7 +102,7 @@ export default function ShortRestPanel({ catalog, state }) {
           {spends.map((s, i) => (
             <Chip key={i} size="sm" onCard>d{s.faces} {s.rolls?.groups?.[0]?.total ?? `${s.faces} (${s.rules?.join(', ') ?? 'max'})`}: +{s.healed} HP</Chip>
           ))}
-          <button type="button" className={styles.link} onClick={undoLast}>Undo last</button>
+          <Button variant="link" onClick={undoLast}>Undo last</Button>
         </div>
       )}
 

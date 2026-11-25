@@ -41,19 +41,6 @@
   color: var(--text-muted);
 }
 
-.more {
-  appearance: none;
-  align-self: flex-start;
-  padding: var(--space-1) 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  color: var(--accent);
-  cursor: pointer;
-}
-
 .custom {
   display: flex;
   flex-direction: column;
@@ -80,3 +67,6 @@
   font-size: 13.5px;
 }
 
+button.more {
+  align-self: flex-start;
+}

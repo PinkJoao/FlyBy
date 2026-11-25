@@ -21,16 +21,17 @@ import Icon from './Icon';
 import styles from './CloseButton.module.css';
 
 /**
- * O X padrão. `variant`: 'plain' (diálogos e painéis) ou 'floating' (sobre mídia).
- * @param {{ onClick: () => void, variant?: 'plain'|'floating', label?: string, className?: string }} props
+ * O X padrão. `variant`: 'plain' (diálogos e painéis) ou 'floating' (sobre mídia);
+ * `icon` troca o desenho (o voltar da janela empilhada, "chevronLeft").
+ * @param {{ onClick: () => void, variant?: 'plain'|'floating', icon?: string, label?: string, className?: string }} props
  */
-export default function CloseButton({ onClick, variant = 'plain', label = 'Close', className }) {
+export default function CloseButton({ onClick, variant = 'plain', icon = 'close', label = 'Close', className }) {
   const cls = [styles.close, variant === 'floating' ? styles.floating : styles.plain, className]
     .filter(Boolean)
     .join(' ');
   return (
     <button type="button" className={cls} onClick={onClick} aria-label={label} title={label}>
-      <Icon name="close" />
+      <Icon name={icon} />
     </button>
   );
 }

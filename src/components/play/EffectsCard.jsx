@@ -29,6 +29,7 @@
 //     o tira junto (engine/playEffects).
 // -----------------------------------------------------------------------------
 
+import Button from '../common/Button';
 import { useState } from 'react';
 import { SKILL_LABEL } from '../builder/labels';
 import Icon from '../common/Icon';
@@ -115,9 +116,9 @@ export default function EffectsCard({ modifiers, combat, onAdd, onAddCustom, onR
                   {effectLines(m, combat).map((l) => <span key={l} className={styles.rowNote}>{l}</span>)}
                 </div>
                 <div className={styles.rowCtrl}>
-                  <button type="button" className={styles.ctrlBtn} onClick={() => onRemove(m.id)} aria-label={`End ${m.label}`} title="End it">
+                  <Button icon size="xs" onClick={() => onRemove(m.id)} aria-label={`End ${m.label}`} title="End it">
                     <Icon name="close" />
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}

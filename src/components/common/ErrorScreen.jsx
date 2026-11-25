@@ -10,6 +10,7 @@
 //   ErrorScreen({ onRetry, source, onUseSrd }): a tela.
 // -----------------------------------------------------------------------------
 
+import Button from './Button';
 import styles from './UpdatingScreen.module.css';
 import { describeSource } from '../../data/dataSource';
 
@@ -24,14 +25,10 @@ export default function ErrorScreen({ onRetry, source, onUseSrd }) {
             ? `Couldn't download the game data from ${describeSource(source)}, and there's no saved copy from this source yet. Check your connection or the address, or explore with the built-in SRD 5.2 content.`
             : "Couldn't load the game data. Try again."}
         </p>
-        <button type="button" className={styles.retry} onClick={onRetry}>
-          Try again
-        </button>
-        {fromUrl && onUseSrd ? (
-          <button type="button" className={styles.retry} onClick={onUseSrd}>
-            Use the built-in SRD 5.2
-          </button>
-        ) : null}
+        <div className={styles.actions}>
+          {fromUrl && onUseSrd ? <Button onClick={onUseSrd}>Use the built-in SRD 5.2</Button> : null}
+          <Button variant="primary" onClick={onRetry}>Try again</Button>
+        </div>
       </div>
     </div>
   );

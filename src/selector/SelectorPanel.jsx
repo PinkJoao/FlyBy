@@ -510,7 +510,7 @@ export default function SelectorPanel({
       value={activeSort.value}
       dir={sort.dir}
       onChange={(value, dir) => setSort({ value, dir })}
-      className={styles.sortBtn}
+      size="sm"
     />
   );
 
@@ -582,7 +582,7 @@ export default function SelectorPanel({
       className={styles.viewToggle}
       dataTour={TUT.SELECTOR_VIEW}
       options={[
-        ['list', <span key="l" className={styles.viewOpt} title="List"><Icon name="viewList" /><span className={styles.srOnly}>List</span></span>],
+        ['list', <span key="l" className={styles.viewOpt} title="List"><Icon name="viewGrid" /><span className={styles.srOnly}>List</span></span>],
         ['cards', <span key="c" className={styles.viewOpt} title="Cards"><Icon name="viewCards" /><span className={styles.srOnly}>Cards</span></span>],
       ]}
     />
@@ -600,10 +600,11 @@ export default function SelectorPanel({
         autoFocus={!isMobile()}
         count={cards && results.length ? `${Math.min(carouselIndex, results.length - 1) + 1}/${results.length}` : results.length}
       />
-      <button
-        type="button"
+      <Button
+        icon
+        size="sm"
         data-tour={TUT.SELECTOR_FILTERS_TOGGLE}
-        className={activeCount ? `${styles.iconBtn} ${styles.iconBtnOn}` : styles.iconBtn}
+        className={activeCount ? `${styles.filterBtn} ${styles.filterBtnOn}` : styles.filterBtn}
         aria-label={`Filters${activeCount ? ` (${activeCount})` : ''}`}
         aria-pressed={phone ? showFilters : !filtersHidden}
         onClick={() => {
@@ -614,7 +615,7 @@ export default function SelectorPanel({
       >
         <Icon name="filter" />
         {activeCount > 0 && <span className={styles.iconBadge}>{activeCount}</span>}
-      </button>
+      </Button>
       {sortButton}
       {viewToggle}
     </div>
@@ -696,13 +697,13 @@ export default function SelectorPanel({
                   onChange={setFilterQuery}
                 />
                 {activeCount > 0 && (
-                  <button type="button" className={styles.clear} onClick={clearFilters}>
+                  <Button size="sm" onPage className={styles.clear} onClick={clearFilters}>
                     Clear
-                  </button>
+                  </Button>
                 )}
-                <button type="button" className={styles.applyFilters} onClick={closeFilters}>
+                <Button size="sm" variant="primary" onPage className={styles.applyFilters} onClick={closeFilters}>
                   Apply
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -749,9 +750,9 @@ export default function SelectorPanel({
                 index={carouselIndex}
                 onIndex={setCarouselIndex}
                 footer={(raw) => (
-                  <button type="button" className={styles.selectBtn} data-tour={TUT.SELECTOR_SELECT} onClick={() => choose(raw)}>
+                  <Button variant="primary" block onPage data-tour={TUT.SELECTOR_SELECT} onClick={() => choose(raw)}>
                     {selectLabel === 'Next' ? 'Next' : `Select ${raw.name}`}
-                  </button>
+                  </Button>
                 )}
               />
             )}

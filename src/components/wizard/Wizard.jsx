@@ -63,7 +63,7 @@ import { directionOf, slideClass } from '../../motion';
 import styles from './Wizard.module.css';
 import Icon from '../common/Icon';
 import Tag from '../common/Tag';
-import { buttonClass } from '../common/buttonClass';
+import Button from '../common/Button';
 
 const STATUS_LABEL = { complete: 'Done', incomplete: 'Needs a choice', optional: 'Optional', info: 'Info' };
 const STATUS_TONE = { complete: 'success', incomplete: 'warning', optional: 'neutral', info: 'info' };
@@ -212,9 +212,9 @@ export default function Wizard({
           )}
         </div>
         {onExit && (
-          <button type="button" className={buttonClass({ icon: true })} onClick={onExit} aria-label="Exit guide">
+          <Button icon onClick={onExit} aria-label="Exit guide">
             <Icon name="close" />
-          </button>
+          </Button>
         )}
       </header>
 
@@ -246,28 +246,24 @@ export default function Wizard({
       </main>
 
       <footer className={styles.foot}>
-        <button type="button" className={styles.navBtn} onClick={back}>
-          Back
-        </button>
+        <Button size="lg" onClick={back}>Back</Button>
         {onReview ? (
-          <button type="button" className={`${styles.navBtn} ${styles.primaryBtn}`} onClick={onFinish}>
-            Finish
-          </button>
+          <Button size="lg" variant="primary" onPage className={styles.primaryBtn} onClick={onFinish}>Finish</Button>
         ) : (
           <>
             {canSkip && (
-              <button type="button" className={styles.navBtn} onClick={advance}>
-                Skip
-              </button>
+              <Button size="lg" onClick={advance}>Skip</Button>
             )}
-            <button
-              type="button"
-              className={`${styles.navBtn} ${styles.primaryBtn}`}
+            <Button
+              size="lg"
+              variant="primary"
+              onPage
+              className={styles.primaryBtn}
               onClick={stepAction ? stepAction.run : () => next()}
               disabled={nextBlocked}
             >
               {stepAction ? stepAction.label : nextBlocked ? step.need ?? 'Make this choice first' : primaryLabel}
-            </button>
+            </Button>
           </>
         )}
       </footer>

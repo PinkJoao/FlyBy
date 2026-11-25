@@ -711,15 +711,16 @@ export default function SpellbookTab({
       <div className={styles.controls} data-tour={TUT.TAB_SPELL_CONTROLS}>
         <SearchField placeholder="Search spells…" value={query} onChange={setQuery} />
         {canPrepare && (
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            onPage
             className={styles.prepareBtn}
             onClick={openPrepare}
             disabled={prepareDisabled}
             title={prepareDisabled ? 'Remove a spell to prepare another one.' : undefined}
           >
             <Icon name="plus" /> Prepare spell
-          </button>
+          </Button>
         )}
       </div>
 
@@ -941,15 +942,9 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
           <PreparedToggle prepared={!unprepared} name={raw.name} onClick={onTogglePrepared} />
         )}
         {onReplace && (
-          <button
-            type="button"
-            className={styles.swapBtn}
-            onClick={onReplace}
-            title={`Replace ${raw.name}`}
-            aria-label={`Replace ${raw.name}`}
-          >
+          <Button icon size="xs" onClick={onReplace} title={`Replace ${raw.name}`} aria-label={`Replace ${raw.name}`}>
             <Icon name="swap" />
-          </button>
+          </Button>
         )}
         {usesLeft && <Tag title="Free uses left">{usesLeft}</Tag>}
         {onCast && (
@@ -958,16 +953,17 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
           </Button>
         )}
         {onAssign && (
-          <button
-            type="button"
-            className={styles.assignBtn}
+          <Button
+            icon
+            size="xs"
+            variant="primary"
             onClick={onAssign}
             disabled={assignDisabled}
             title={assignDisabled ? 'This sheet has no spellcasting class.' : `Assign ${raw.name} to a class`}
             aria-label={`Assign ${raw.name} to a class`}
           >
             <Icon name="plus" />
-          </button>
+          </Button>
         )}
       </div>
     </li>

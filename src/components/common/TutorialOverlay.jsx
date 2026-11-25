@@ -33,6 +33,7 @@
 //     app (overflow hidden) para o lado, e a tela ficava torta depois do tour.
 // -----------------------------------------------------------------------------
 
+import Button from './Button';
 import { PHONE_QUERY } from '../../breakpoints';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -257,21 +258,15 @@ function Spotlight({ step, index, total, onNext, onBack, onSkip }) {
         {title && <h3 className={styles.tipTitle}>{title}</h3>}
         {body && <p className={styles.tipBody}>{body}</p>}
         <div className={styles.tipFoot}>
-          <button type="button" className={styles.skip} onClick={onSkip}>
-            Skip
-          </button>
+          <Button variant="link" onClick={onSkip}>Skip</Button>
           <span className={styles.counter}>
             {index + 1} / {total}
           </span>
           <span className={styles.navBtns}>
             {index > 0 && (
-              <button type="button" className={styles.navBtn} onClick={onBack}>
-                Back
-              </button>
+              <Button size="sm" onClick={onBack}>Back</Button>
             )}
-            <button type="button" className={`${styles.navBtn} ${styles.navPrimary}`} onClick={onNext}>
-              {isLast ? 'Done' : 'Next'}
-            </button>
+            <Button size="sm" variant="primary" onClick={onNext}>{isLast ? 'Done' : 'Next'}</Button>
           </span>
         </div>
       </div>

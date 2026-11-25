@@ -16,8 +16,8 @@
  *     360 px) e cada célula tem a largura do seu rótulo ("PREPARED" é o maior), DDL-0311.
  *   .controls: busca e "Prepare spell"; o filtro por círculo, o agrupamento e a ordenação
  *     são o ListControls comum (o mesmo do inventário, DDL-0314).
- *   .prepareBtn: "Prepare spell", no padrão do Shop; no limite (R11) não some,
- *     fica indisponível.
+ *   .prepareBtn: "Prepare spell" (Button), como o Shop; no limite (R11) não some, fica
+ *     indisponível.
  *   Painéis
  *   .empty, .panel*, .list, .row*, .thumb*, .metaDot: as linhas (as etiquetas são a
  *     Tag comum, DDL-0199);
@@ -26,9 +26,8 @@
  *   .prepRadio, .prepDot, .prepRadioOn: o toggle de preparar, igual ao de equipar.
  *   O detalhe da magia é a moldura comum (PreviewLayer, DDL-0296): a nota e os botões
  *     Remove e Change (ou Discard e Assign) no rodapé dela.
- *   .swapBtn: a troca no card da magia preparada.
- *   .assignBtn, .cargoNote: a sub-aba de CARGA; o botão de dar origem é o mesmo
- *     átomo do .swapBtn, com o accent por padrão, e fica DESABILITADO (visível)
+ *   .cargoNote: a sub-aba de CARGA; o botão de dar origem e o de trocar a magia são o
+ *     Button icon `xs`, o primeiro com o accent, e ele fica DESABILITADO (visível)
  *     sem classe conjuradora (DDL-0077). A nota explica a sub-aba, que não tem
  *     cards de estado porque não conta em limite nenhum.
  * -------------------------------------------------------------------------- */
@@ -198,32 +197,8 @@
 }
 
 .prepareBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: inherit;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  height: 40px;
-  box-sizing: border-box;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-field);
-  border: 1px solid var(--accent-border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
   flex: none;
   white-space: nowrap;
-}
-
-.prepareBtn:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.prepareBtn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  border-color: var(--border);
 }
 
 .empty {
@@ -444,59 +419,6 @@
   border-color: var(--accent);
 }
 
-.swapBtn {
-  appearance: none;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  font: inherit;
-  font-size: var(--fs-field);
-  line-height: 1;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  opacity: 0.7;
-  cursor: pointer;
-}
-
-.swapBtn:hover {
-  opacity: 1;
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
-
-.assignBtn {
-  appearance: none;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  font: inherit;
-  font-size: 18px;
-  line-height: 0;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--accent-border);
-  background: var(--bg);
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.assignBtn:hover:not(:disabled) {
-  background: var(--accent-bg, var(--bg));
-  border-color: var(--accent);
-}
-
-.assignBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  border-color: var(--border);
-  color: var(--text);
-}
-
 .cargoNote {
   margin: 0 0 var(--space-3);
   padding: 10px 12px;
@@ -508,4 +430,3 @@
   background: var(--bg);
   opacity: 0.85;
 }
-

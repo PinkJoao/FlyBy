@@ -3,7 +3,7 @@
  * =============================================================================
  * CLASSES
  *   .options, .option, .optionTitle, .optionSub, .primary, .field, .input,
- *   .row, .ghost, .error, .source.
+ *   .row, .error, .source.
  *
  * DECISÕES E ARMADILHAS
  *   - O quadro e o título vêm de UpdatingScreen.module.css: as telas antes do app
@@ -96,18 +96,6 @@
 /* ATENÇÃO: o botão de UpdatingScreen traz margin-top próprio, que desalinha a linha. */
 .row > button {
   margin-top: 0;
-}
-
-.ghost {
-  appearance: none;
-  padding: 10px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: var(--fs-field);
-  cursor: pointer;
 }
 
 .error {

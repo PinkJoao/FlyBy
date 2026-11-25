@@ -164,22 +164,12 @@
 .rest {
   font-size: var(--fs-field);
 }
-.more {
-  appearance: none;
-  align-self: flex-start;
-  border: none;
-  background: none;
-  padding: var(--space-1) 0;
-  min-height: 32px;
-  font: inherit;
-  font-size: var(--fs-body);
-  color: var(--accent);
-  cursor: pointer;
-}
-.more:hover {
-  text-decoration: underline;
-}
 
+button.more {
+  align-self: flex-start;
+  min-height: 32px;
+  padding-inline: 0;
+}
 .arrow {
   position: absolute;
   top: 50%;

@@ -3,7 +3,7 @@
 // =============================================================================
 // O QUE FAZ
 //   A aba "Inventory" do play mode (docs/PLAY-MODE-V2-PLAN.md §6, DDL-0150): a
-//   busca, as sub-abas por grupo (as da ficha) e as seções por tipo, com a linha ItemRow da ficha só para USAR: o
+//   busca, o filtro por grupo (o ListControls da ficha, ao lado dela) e as seções por tipo, com a linha ItemRow da ficha só para USAR: o
 //   consumível (poção, pergaminho, comida) tem "Use", o item com cargas mostra o que
 //   sobra e o "Use" gasta uma, e a arma tem "Attack" (DDL-0165), o mesmo ataque da
 //   aba Actions. Tocar na linha abre o detalhe do item.
@@ -27,7 +27,7 @@
 //   - O que está equipado ou atunado aparece destacado, como na ficha (rowActive).
 // -----------------------------------------------------------------------------
 
-import TabBar from '../common/TabBar';
+import ListControls from '../common/ListControls';
 import SearchField from '../common/SearchField';
 import { useState } from 'react';
 import { GROUP_ORDER } from '../../engine/items';
@@ -37,7 +37,7 @@ import itemEntity from '../../selector/entities/item';
 import { showDetailPopup } from '../common/detailPopup';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
-import { GROUP_ICONS, nameOf, thumbOf } from '../builder/inventoryDisplay';
+import { nameOf, thumbOf } from '../builder/inventoryDisplay';
 import { ItemRow } from '../builder/InventoryTab';
 import styles from '../builder/InventoryTab.module.css';
 import { TUT } from '../../tutorial/anchors';
@@ -94,20 +94,13 @@ export default function InventoryTab({ catalog, state, inventory, db, onUse, onC
     <div className={styles.tab}>
       <div className={styles.controls}>
         <SearchField placeholder="Search inventory…" value={query} onChange={setQuery} />
+        <ListControls
+          dataTour={TUT.PLAY_INV_GROUPS}
+          filterOptions={[{ value: 'all', label: 'All Items' }, ...presentGroups.map((g) => ({ value: g.key, label: g.label }))]}
+          filter={group}
+          onFilter={setGroup}
+        />
       </div>
-
-      <TabBar
-        variant="sub"
-        fill
-        items={[
-          { id: 'all', label: 'All Items', icon: GROUP_ICONS.all },
-          ...presentGroups.map((g) => ({ id: g.key, label: g.label, icon: GROUP_ICONS[g.key] ?? GROUP_ICONS.other })),
-        ]}
-        active={group}
-        onChange={setGroup}
-        ariaLabel="Item groups"
-        data-tour={TUT.PLAY_INV_GROUPS}
-      />
 
       {items.length === 0 && <p className={styles.empty}>No items.</p>}
       {items.length > 0 && shown.length === 0 && <p className={styles.empty}>No items match your search.</p>}

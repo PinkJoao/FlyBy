@@ -5,7 +5,7 @@
  *   .summary, .warn: a linha embaixo do cabeçalho fechado (os nomes ativos) e o
  *     aviso da exaustão 6.
  *   .list, .row, .rowMain, .rowName, .rowNote: uma condição ou efeito por linha.
- *   .rowCtrl, .ctrlBtn, .level: os controles (tirar, o nível com menos e mais).
+ *   .rowCtrl: os controles (tirar, o Button icon `xs`; o nível, o Stepper).
  *   .adds: a fila dos botões de acrescentar, no fim (o Chip `add`, DDL-0197).
  *   O nome da linha é um botão quando abre a regra (as condições).
  *
@@ -99,37 +99,3 @@ button.rowName:hover {
   gap: 6px;
   flex: none;
 }
-
-.ctrlBtn {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  font: inherit;
-  font-size: 16px;
-  line-height: 0;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text-h);
-  cursor: pointer;
-}
-
-.ctrlBtn:hover {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-}
-
-.ctrlBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.level {
-  min-width: 1.4em;
-  text-align: center;
-  font-weight: 700;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-

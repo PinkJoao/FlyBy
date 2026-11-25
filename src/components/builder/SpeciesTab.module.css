@@ -2,8 +2,7 @@
  * SpeciesTab.module.css: a aba Species
  * =============================================================================
  * CLASSES
- *   .tab, .section, .label, .sectionTitle, .about, .traits,
- *     .trait, .hint.
+ *   .tab, .section, .label, .sectionTitle, .about, .hint.
  * -------------------------------------------------------------------------- */
 
 .tab {
@@ -33,21 +32,6 @@
 .about {
   composes: card from '../common/Card.module.css';
   padding: var(--space-4);
-}
-
-.traits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.trait {
-  font-size: var(--fs-meta);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--src-species);
-  border-radius: var(--radius-control);
-  padding: 6px 12px;
-  color: var(--text-h);
 }
 
 .hint {

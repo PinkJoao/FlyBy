@@ -19,6 +19,7 @@
 //     slot gasto daquele círculo, o painel avisa que os pontos se perdem.
 // -----------------------------------------------------------------------------
 
+import Stepper from '../common/Stepper';
 import PanelFoot from '../common/PanelFoot';
 import ChoiceChips from '../common/ChoiceChips';
 import { useState } from 'react';
@@ -27,7 +28,6 @@ import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import styles from './PlayPanels.module.css';
 import Button from '../common/Button';
-import Icon from '../common/Icon';
 
 /**
  * Os slots a recuperar, contra o orçamento.
@@ -51,11 +51,7 @@ export function SlotRecoveryPanel({ catalog, state, rule }) {
           return (
             <li key={r.key} className={styles.stepRow}>
               <span>Level {r.level} ({spent} spent)</span>
-              <span className={styles.stepper}>
-                <button type="button" className={styles.smallBtn} disabled={n <= 0} onClick={() => setPicks({ ...picks, [r.level]: n - 1 })} aria-label="One less"><Icon name="minus" /></button>
-                <span className={styles.stepValue}>{n}</span>
-                <button type="button" className={styles.smallBtn} disabled={n >= spent} onClick={() => setPicks({ ...picks, [r.level]: n + 1 })} aria-label="One more"><Icon name="plus" /></button>
-              </span>
+              <Stepper value={n} min={0} max={spent} size="md" editable={false} onChange={(v) => setPicks({ ...picks, [r.level]: v })} ariaLabel={`level ${r.level} slots`} />
             </li>
           );
         })}

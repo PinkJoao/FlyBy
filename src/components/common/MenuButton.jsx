@@ -17,6 +17,8 @@
 //     acima, limitando a altura ao disponível. Mede o scrollHeight (a altura total,
 //     mesmo com um maxHeight residual da abertura anterior), com uma folga do
 //     gatilho e da borda.
+//   - Na horizontal fica preso à janela: o filtro do jogo mora à direita da busca e o
+//     menu alinhado ao começo dele saía pela borda (DDL-0317).
 //   - O menu renderiza assim que abre, escondido, para medir antes de decidir.
 // -----------------------------------------------------------------------------
 
@@ -57,7 +59,10 @@ export default function MenuButton({ items, buttonClassName, buttonTitle, align 
     const vertical = openUp
       ? { bottom: window.innerHeight - r.top + GAP, maxHeight: Math.max(0, spaceAbove - MARGIN) }
       : { top: r.bottom + GAP, maxHeight: Math.max(0, spaceBelow - MARGIN) };
-    const horizontal = align === 'left' ? { left: r.left } : { right: window.innerWidth - r.right };
+    const menuW = menuRef.current.offsetWidth;
+    const room = document.documentElement.clientWidth;
+    const left = align === 'left' ? r.left : r.right - menuW;
+    const horizontal = { left: Math.max(MARGIN, Math.min(left, room - MARGIN - menuW)) };
     setPos({ ...vertical, ...horizontal, overflowY: 'auto' });
   }, [open, align]);
 

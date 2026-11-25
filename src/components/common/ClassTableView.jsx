@@ -11,6 +11,7 @@
 //   ClassTableView(props): a tabela.
 // -----------------------------------------------------------------------------
 
+import Button from './Button';
 import { useState } from 'react';
 import { classTable } from '../../engine/classProgression';
 import { InlineEntry } from './EntryContent';
@@ -51,9 +52,9 @@ export default function ClassTableView({ classObj, subclass = null, level }) {
       <TableViewer
         fullscreenChildren={renderTable(table.rows)}
         footer={
-          <button type="button" className={styles.tableToggle} onClick={() => setFull((v) => !v)}>
+          <Button variant="link" block className={styles.tableToggle} onClick={() => setFull((v) => !v)}>
             {full ? 'Show current level only' : 'Show full table'}
-          </button>
+          </Button>
         }
       >
         {renderTable(full ? table.rows : table.rows.slice(level - 1, level))}

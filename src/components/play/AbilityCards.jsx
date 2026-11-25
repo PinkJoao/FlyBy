@@ -69,7 +69,7 @@ function AbilityCard({ ability, onCheck, onSave }) {
  */
 export default function AbilityCards({ abilities, onCheck, onSave, dataTour }) {
   return (
-    <div className={`${sheet.abilities} ${styles.grid}`} data-tour={dataTour}>
+    <div className={sheet.abilities} data-tour={dataTour}>
       {abilities.map((a) => <AbilityCard key={a.ability} ability={a} onCheck={onCheck} onSave={onSave} />)}
     </div>
   );

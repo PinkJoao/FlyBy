@@ -4,7 +4,7 @@
 // O QUE FAZ
 //   Espelha o InventoryTab de propósito, e a ordem da página segue a do resto do
 //   app: cards de estado no topo, sub-abas de ORIGEM (classe conjuradora, racial,
-//   talento e o balde de carga), busca com "Prepare spell", Filtrar (o círculo),
+//   talento e o balde de carga; ocultas com uma origem só), busca com "Prepare spell", Filtrar (o círculo),
 //   Agrupar e Ordenar (ListControls, DDL-0314), e a lista. Cada linha abre o DetailView da magia na moldura
 //   comum de preview (PreviewLayer, DDL-0296), com a origem na nota do rodapé.
 //
@@ -688,15 +688,17 @@ export default function SpellbookTab({
         )}
       </div>
 
-      <TabBar
-        variant="sub"
-        fill
-        items={origins.map((o) => ({ id: o.key, label: o.label, icon: ORIGIN_ICONS[o.kind] }))}
-        active={origin.key}
-        onChange={selectOrigin}
-        ariaLabel="Spell origins"
-        data-tour={TUT.TAB_SPELL_ORIGINS}
-      />
+      {origins.length > 1 && (
+        <TabBar
+          variant="sub"
+          fill
+          items={origins.map((o) => ({ id: o.key, label: o.label, icon: ORIGIN_ICONS[o.kind] }))}
+          active={origin.key}
+          onChange={selectOrigin}
+          ariaLabel="Spell origins"
+          data-tour={TUT.TAB_SPELL_ORIGINS}
+        />
+      )}
 
       {isCargo && (
         <p className={styles.cargoNote}>

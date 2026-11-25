@@ -7,9 +7,9 @@
  *   .classCard: o conteúdo da classe, SEM card com borda: as sub-abas já
  *     separam as classes e as features têm seção própria, então o conteúdo flui e
  *     ganha largura no mobile.
- *   .classRow, .classPick, .rowHead: o seletor da classe e o nível numa linha só, cada um
+ *   .classRow, .classPick, .rowHead, .rowHeadMid: o seletor da classe e o nível numa linha só, cada um
  *     com o seu cabeçalho em cima, na mesma altura (a etiqueta Original ou Multiclass e
- *     "Level"; DDL-0318).
+ *     "Level", centrado sobre o stepper; DDL-0318).
  *   .tab, .choices, .subLabel, .summary: o resto da aba.
  *
  * DECISÕES E ARMADILHAS
@@ -73,6 +73,10 @@
   font-size: var(--fs-meta);
   line-height: 1;
   color: color-mix(in srgb, var(--text) 75%, transparent);
+}
+
+.rowHeadMid {
+  justify-content: center;
 }
 
 .subLabel {

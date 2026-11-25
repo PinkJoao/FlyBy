@@ -12,6 +12,7 @@
 //
 // FUNÇÕES
 //   isMobile(): o mesmo breakpoint do SelectorPanel (seguro sem matchMedia).
+//   onScreen(anchor): a âncora de um passo `optional` está na página?
 //   loadPersisted(), persist(state): leitura e escrita no localStorage.
 //   useTutorialStore: o store. Ações:
 //     hasPersisted(): já há estado salvo? (a semeadura usa para a 1a execução).
@@ -45,6 +46,11 @@ function isMobile() {
     typeof window.matchMedia === 'function' &&
     window.matchMedia(PHONE_QUERY).matches
   );
+}
+
+/** A âncora está na página? (sem document, vale que sim.) */
+function onScreen(anchor) {
+  return typeof document === 'undefined' || !!document.querySelector(`[data-tour="${anchor}"]`);
 }
 
 function loadPersisted() {
@@ -111,7 +117,7 @@ const useTutorialStore = create((set, get) => ({
     const tour = getTour(id);
     if (!tour) return false;
     const mobile = isMobile();
-    const steps = tour.steps.filter((s) => !s.only || s.only === (mobile ? 'mobile' : 'desktop'));
+    const steps = tour.steps.filter((s) => (!s.only || s.only === (mobile ? 'mobile' : 'desktop')) && (!s.optional || onScreen(s.anchor)));
     if (steps.length === 0) return false;
     set({ tourId: id, steps, index: 0 });
     return true;

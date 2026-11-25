@@ -175,7 +175,7 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
           </div>
           {c.classId && (
             <div>
-              <span className={styles.rowHead}>Level</span>
+              <span className={`${styles.rowHead} ${styles.rowHeadMid}`}>Level</span>
               <Stepper
                 value={c.level}
                 min={1}

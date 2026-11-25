@@ -7,7 +7,9 @@
 //     title, body: o texto (body pode ser { desktop, mobile });
 //     placement: 'auto', 'top', 'bottom', 'left' ou 'right' (só uma dica);
 //     only: 'mobile' ou 'desktop', quando a ÂNCORA muda entre as interfaces (se só o
-//       texto muda, use o body com as duas versões).
+//       texto muda, use o body com as duas versões);
+//     optional: o passo some quando a âncora não está na página ao começar o tour (as
+//       sub-abas de origem do grimório só existem com mais de uma origem, DDL-0319).
 //   O tutorial é SEPARADO da Character Guidance (DDL-0069): a guidance ensina O QUE
 //   decidir; o tour ensina COMO usar o app.
 //
@@ -288,6 +290,7 @@ const tabSpellbook = {
     },
     {
       anchor: TUT.TAB_SPELL_ORIGINS,
+      optional: true,
       title: 'By source',
       body: 'One tab per source: each caster class, plus racial and feat spells.',
       placement: 'bottom',

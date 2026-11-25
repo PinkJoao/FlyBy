@@ -1,0 +1,51 @@
+/* =============================================================================
+ * ChoiceMenuButton.module.css: o botão de escolha com a opção à vista
+ * =============================================================================
+ * CLASSES
+ *   .btn: o botão (a altura padrão, o fundo e o raio do botão de ícone, DDL-0313).
+ *   .icon, .text, .chevron: o ícone do que se escolhe, o nome da opção e a seta.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O nome encolhe com reticências (min-width: 0) antes de o botão sair da linha.
+ *   - Desabilitado (uma opção só) fica legível: a opacidade do Button é para o que
+ *     não se usa, e aqui o texto ainda informa (DDL-0314).
+ * -------------------------------------------------------------------------- */
+
+.btn {
+  min-width: 0;
+  height: var(--control-h);
+  gap: 6px;
+  padding: 0 var(--space-3);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: var(--fs-body);
+}
+
+.btn:hover:not(:disabled),
+.btn[aria-expanded='true'] {
+  border-color: var(--accent-border);
+}
+
+.btn:disabled {
+  opacity: 0.8;
+}
+
+.icon {
+  flex: none;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex: none;
+  font-size: 12px;
+  color: var(--text);
+}

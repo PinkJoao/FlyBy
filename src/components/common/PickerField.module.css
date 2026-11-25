@@ -1,0 +1,104 @@
+/* =============================================================================
+ * PickerField.module.css: o campo que abre o seletor
+ * =============================================================================
+ * CLASSES
+ *   .field, .trigger, .name, .source, .ph, .clearX: o campo.
+ *   .infoBtn: o botão (i), a descrição do item selecionado.
+ *   .infoMuted: a descrição que falta; a descrição abre na moldura comum
+ *     (PreviewLayer, DDL-0296).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O campo e os dois botões têm a altura padrão dos controles (--control-h, DDL-0314): o
+ *     campo media 48 px e os botões 44 de largura, então os de ícone não ficavam quadrados.
+ *   - Sem capitalize no nome (TC-0040): todo caller passa o nome REAL da entidade
+ *     (ou um id já capitalizado, TC-0016), e capitalizar de novo quebra as
+ *     partículas ("Pass without Trace").
+ * -------------------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.trigger {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--fs-field);
+  height: var(--control-h);
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+/* ATENÇÃO: sem text-transform: capitalize (TC-0040): os nomes já chegam com a grafia real. */
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source {
+  margin-left: auto;
+  color: var(--text);
+  font-size: var(--fs-body);
+  flex: none;
+}
+
+.ph {
+  opacity: 0.6;
+}
+
+.clearX {
+  flex: none;
+  width: var(--control-h);
+  height: var(--control-h);
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.clearX:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.infoBtn {
+  flex: none;
+  width: var(--control-h);
+  height: var(--control-h);
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--accent);
+  font-size: var(--fs-lead);
+  line-height: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.infoBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.infoMuted {
+  opacity: 0.5;
+}
+

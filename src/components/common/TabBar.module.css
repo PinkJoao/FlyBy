@@ -1,0 +1,135 @@
+/* =============================================================================
+ * TabBar.module.css: a barra de abas única
+ * =============================================================================
+ * CLASSES
+ *   .bar: a faixa que rola de lado (sem barra de rolagem; o esmaecido da borda
+ *     vem do data-wheel-x).
+ *   .main, .sub, .fill: as duas aparências e as abas que crescem para a linha.
+ *   .tab, .on, .icon: a aba, a ativa e o ícone dela.
+ *   .indicator, .still: o realce que desliza; .still na primeira medida.
+ *   .stick: a barra gruda no alto ao rolar (celular e desktop, DDL-0306) (top: --tabbar-top), com o
+ *     fundo quase opaco e desfocado (DDL-0304).
+ *   .dock, .mark: a mesma barra presa também ao pé da tela (bottom: 0) enquanto o lugar dela está
+ *     abaixo; [data-docked] lhe dá a borda de cima; .mark é o marcador de altura zero (DDL-0311).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O realce desliza com --dur-slide e --ease (os tokens de movimento, DDL-0303);
+ *     o "reduzir movimento" global corta a transição.
+ *   - Na `main` o realce é a barra de 3 px sobre a linha de baixo da faixa, como
+ *     era o border-bottom da aba ativa; na `sub` é a pílula com borda accent atrás
+ *     da aba, e as abas ficam com a borda de sempre.
+ * -------------------------------------------------------------------------- */
+
+.bar {
+  position: relative;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: color var(--dur-slide) var(--ease);
+}
+.tab:hover {
+  color: var(--text-h);
+}
+.icon {
+  font-size: var(--fs-meta);
+}
+
+.indicator {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dur-slide) var(--ease),
+    width var(--dur-slide) var(--ease);
+}
+.still {
+  transition: none;
+}
+
+.main {
+  gap: var(--space-1);
+  border-bottom: 2px solid var(--border);
+}
+.main .tab {
+  font-size: var(--fs-field);
+  padding: 10px 16px 11px;
+  border: none;
+}
+.main .on {
+  color: var(--accent);
+}
+.main .indicator {
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+}
+
+.sub {
+  gap: 6px;
+  padding-bottom: 2px;
+}
+.sub .tab {
+  min-height: var(--control-h);
+  font-size: var(--fs-meta);
+  padding: 7px 12px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+.sub .on {
+  color: var(--accent);
+  border-color: transparent;
+  background: transparent;
+}
+.sub .indicator {
+  top: 0;
+  height: calc(100% - 2px);
+  box-sizing: border-box;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-field);
+  background: var(--accent-bg);
+}
+
+.fill .tab {
+  flex: 1 0 auto;
+}
+
+.stick {
+  position: sticky;
+  top: var(--tabbar-top, 0px);
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dock {
+  bottom: 0;
+}
+.dock[data-docked='true'] {
+  box-shadow: 0 -1px 0 var(--border);
+}
+.mark {
+  height: 0;
+}

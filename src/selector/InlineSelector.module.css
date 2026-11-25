@@ -1,0 +1,51 @@
+/* =============================================================================
+ * InlineSelector.module.css: o carrossel dentro do passo do guia (DDL-0286)
+ * =============================================================================
+ * CLASSES
+ *   .inline: o bloco; .bar, .count, .search: o contador e o atalho para o painel;
+ *   .carousel: a caixa que o SelectorCarousel preenche.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O carrossel preenche a altura que o passo do guia deixa livre acima do rodapé
+ *     (a coluna cresce, DDL-0289), com 420 px no mínimo (abaixo disso a página rola) e
+ *     720 no máximo (o desktop alto); o cartão rola por dentro. O `contain: size` tira o
+ *     texto do cartão da medida: sem ele a coluna crescia até o tamanho do texto e o
+ *     carrossel passava por trás do rodapé.
+ * -------------------------------------------------------------------------- */
+
+.inline {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.count {
+  font-size: var(--fs-meta);
+  opacity: 0.7;
+}
+
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.carousel {
+  flex: 1 0 420px;
+  contain: size;
+  max-height: 720px;
+  display: flex;
+  flex-direction: column;
+}
+.carousel > * {
+  flex: 1;
+  min-height: 0;
+}

@@ -1,0 +1,511 @@
+/* =============================================================================
+ * SpellbookTab.module.css: a aba Spellbook
+ * =============================================================================
+ * O QUE FAZ
+ *   Espelha o InventoryTab.module.css: os mesmos tokens, pills, painéis
+ *   colapsáveis e overlay de detalhe.
+ *
+ * CLASSES
+ *   Cabeçalho
+ *   .header, .card, .cardLabel: os cards de slots, DC/ataque e contadores; CRESCEM
+ *     para ocupar a linha no desktop e viram faixas rasas no mobile.
+ *   .slots, .slot*: os espaços; .slotEmpty é o arcanum destravado e sem magia.
+ *   .stats, .stat*: os números lado a lado, cada célula com o divisor à esquerda;
+ *     .statOver é acima do limite, no vermelho da sobrecarga do inventário. Abaixo de 700 px
+ *     a coluna não quebra (a quebra deixava o card crescer além da página, 337 px em 312 a
+ *     360 px) e cada célula tem a largura do seu rótulo ("PREPARED" é o maior), DDL-0311.
+ *   .controls: busca e "Prepare spell"; o filtro por círculo, o agrupamento e a ordenação
+ *     são o ListControls comum (o mesmo do inventário, DDL-0314).
+ *   .prepareBtn: "Prepare spell", no padrão do Shop; no limite (R11) não some,
+ *     fica indisponível.
+ *   Painéis
+ *   .empty, .panel*, .list, .row*, .thumb*, .metaDot: as linhas (as etiquetas são a
+ *     Tag comum, DDL-0199);
+ *     .rowGranted (concedida, sempre preparada) tem a faixa lateral do item
+ *     equipado, .rowUnprepared recua para o segundo plano.
+ *   .prepRadio, .prepDot, .prepRadioOn: o toggle de preparar, igual ao de equipar.
+ *   O detalhe da magia é a moldura comum (PreviewLayer, DDL-0296): a nota e os botões
+ *     Remove e Change (ou Discard e Assign) no rodapé dela.
+ *   .swapBtn: a troca no card da magia preparada.
+ *   .assignBtn, .cargoNote: a sub-aba de CARGA; o botão de dar origem é o mesmo
+ *     átomo do .swapBtn, com o accent por padrão, e fica DESABILITADO (visível)
+ *     sem classe conjuradora (DDL-0077). A nota explica a sub-aba, que não tem
+ *     cards de estado porque não conta em limite nenhum.
+ * -------------------------------------------------------------------------- */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.header {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.card {
+  composes: card from '../common/Card.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cardLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.55;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.slot {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.slotPact,
+.slotArcanum {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.slotEmpty {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.slotLevel {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.slotCount {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotPact .slotCount,
+.slotPact .slotLevel,
+.slotArcanum .slotCount,
+.slotArcanum .slotLevel {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.stats {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: var(--space-1);
+}
+
+.statCell {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 7px;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.statOver {
+  color: var(--danger);
+}
+
+.statLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+.statDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+@media (max-width: 760px) {
+  .header {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+  .statCell {
+    flex: 1 1 auto;
+  }
+  .stat {
+    padding: 0 2px;
+  }
+  .statLabel {
+    letter-spacing: 0.2px;
+  }
+  .header > * {
+    flex: none;
+  }
+  .card {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-1);
+  }
+  .statValue {
+    font-size: var(--fs-field);
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.prepareBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-field);
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+  flex: none;
+  white-space: nowrap;
+}
+
+.prepareBtn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.prepareBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--border);
+}
+
+.empty {
+  font-size: var(--fs-body);
+  opacity: 0.6;
+  padding: 20px 0;
+}
+
+.panel {
+  composes: card from '../common/Card.module.css';
+  overflow: hidden;
+}
+
+.panelHead {
+  appearance: none;
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.panelHead:hover {
+  filter: brightness(1.15);
+}
+
+.panelTitle {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panelCount {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 7px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.panelChevron {
+  margin-left: auto;
+  font-size: var(--fs-small);
+  transition: transform 0.15s ease;
+}
+
+.panelChevronClosed {
+  transform: rotate(-90deg);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px;
+}
+
+.list .row + .row,
+.panelHead + .list .row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.rowGranted {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.rowHit {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 150px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rowHit:hover .rowName {
+  color: var(--accent);
+}
+
+.thumb,
+.thumbGlyph {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  object-fit: cover;
+}
+
+.thumbGlyph {
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-lead);
+  filter: grayscale(0.35);
+  opacity: 0.8;
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowName {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-body);
+}
+
+.rowSub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+}
+
+.rowSub:empty {
+  display: none;
+}
+
+.rowMetaLine {
+  font-size: var(--fs-label);
+  opacity: 0.6;
+}
+
+.metaDot {
+  opacity: 0.7;
+}
+
+.chip,
+.rowSide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-left: auto;
+}
+
+.rowLevel {
+  font-size: var(--fs-small);
+  opacity: 0.6;
+  min-width: 46px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowUnprepared .rowText {
+  opacity: 0.55;
+}
+
+.rowUnprepared .thumb,
+.rowUnprepared .thumbGlyph {
+  opacity: 0.45;
+}
+
+.prepRadio {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.prepRadio:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.prepDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  box-sizing: border-box;
+}
+
+.prepRadioOn {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.prepRadioOn .prepDot {
+  background:
+    radial-gradient(circle at center, var(--accent) 0 4.5px, transparent 4.5px);
+  border-color: var(--accent);
+}
+
+.swapBtn {
+  appearance: none;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: var(--fs-field);
+  line-height: 1;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.swapBtn:hover {
+  opacity: 1;
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.assignBtn {
+  appearance: none;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 18px;
+  line-height: 0;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--accent-border);
+  background: var(--bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.assignBtn:hover:not(:disabled) {
+  background: var(--accent-bg, var(--bg));
+  border-color: var(--accent);
+}
+
+.assignBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.cargoNote {
+  margin: 0 0 var(--space-3);
+  padding: 10px 12px;
+  font-size: var(--fs-meta);
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-border);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  opacity: 0.85;
+}
+

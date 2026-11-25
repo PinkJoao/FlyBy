@@ -1,0 +1,237 @@
+// =============================================================================
+// SelectorCarousel: o modo carrossel de um seletor (classe, espécie, subclasse)
+// =============================================================================
+// O QUE FAZ
+//   Mostra uma entrada por vez num cartão grande: a arte (ou o ícone, sem arte), o
+//   nome e a fonte, as chips de meta da entity e um resumo tirado do dado
+//   (`entity.teaser`); "Read more" troca o resumo pelo texto inteiro no próprio
+//   cartão. Os vizinhos aparecem nas bordas e se navega deslizando, pelas setas,
+//   pelas teclas ou pela faixa de miniaturas com o nome de cada entrada (em todo
+//   carrossel desde o DDL-0293; antes, pontinhos até 15 itens). Usado no SelectorPanel (o botão Lista | Cartões) e no próprio passo do
+//   guia de criação (DDL-0286).
+//
+// FUNÇÕES
+//   galleryOf(entity, raw, db): as artes do fluff da entrada.
+//   CarouselCard(props): um cartão.
+//   SelectorCarousel(props): o carrossel. `items` são os resultados do seletor
+//     ({ id, raw }), `index` e `onIndex` o controle, `currentId` o já escolhido,
+//     `footer(raw)` o que vai embaixo (o Select do painel, o Choose do guia).
+//
+// DECISÕES E ARMADILHAS
+//   - Na faixa, um nome que se repete na lista ("Gnome" do PHB e do XPHB) leva a fonte
+//     embaixo (DDL-0301).
+//   - A faixa calcula as artes uma vez por lista (useMemo); as miniaturas são lazy, e a
+//     rolagem lateral só baixa as que chegam perto.
+//   - Só os cartões perto do atual (WINDOW) são desenhados; os outros são quadros
+//     vazios do mesmo tamanho, para o trilho não pular e as 179 espécies não pesarem.
+//   - O cartão vizinho é coberto por um botão transparente que o traz ao centro: os
+//     controles de dentro dele não recebem clique nem foco.
+//   - O deslocamento do trilho é CSS (--i e --peek em SelectorCarousel.module.css);
+//     o cartão vira horizontal (arte à esquerda) num container largo (desktop).
+//   - O texto vem só do dado (§6.4). Sem `teaser`, o cartão mostra o corpo inteiro.
+//   - "Read more" CONTINUA o resumo (DDL-0300): o resumo fica e o resto do texto abre
+//     embaixo dele, animado (Collapse), sem o parágrafo já lido e sem repetir o nome da
+//     entrada (DetailView `skip`); "Show less" fecha. Antes (DDL-0290) trocava o resumo
+//     pelo texto inteiro, que começava de novo.
+//   - O "Read more" fica logo abaixo do texto que ele estende, antes das chips (DDL-0293).
+//   - O resumo vem ANTES das chips: no celular as chips da classe (sete) empurravam o
+//     texto para fora do cartão, e o texto é o que o novato precisa ler primeiro.
+// -----------------------------------------------------------------------------
+
+import { useMemo, useRef, useState } from 'react';
+import Thumb from '../components/common/Thumb';
+import Icon from '../components/common/Icon';
+import Tag from '../components/common/Tag';
+import Chip from '../components/common/Chip';
+import SourceTag from '../components/common/SourceTag';
+import EntryContent from '../components/common/EntryContent';
+import DetailView from '../components/common/DetailView';
+import Collapse from '../components/common/Collapse';
+import { metaChip } from '../components/common/metaChip';
+import { showImageViewer } from '../store/imageViewerStore';
+import { imgUrl } from '../components/common/media';
+import { useSwipe } from '../components/common/imageNav';
+import useActiveInView from '../hooks/useActiveInView';
+import styles from './SelectorCarousel.module.css';
+
+const WINDOW = 2;
+
+/** As artes do fluff da entrada, prontas para o ImageViewer. */
+function galleryOf(entity, raw, db) {
+  const fluff = entity.fluff?.(raw, db);
+  return (fluff?.images ?? [])
+    .filter((i) => i.href)
+    .map((i) => ({ src: imgUrl(i.href), credit: i.credit, alt: raw.name }));
+}
+
+/** Um cartão do carrossel. */
+function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
+  const [more, setMore] = useState(false);
+  const gallery = galleryOf(entity, raw, db);
+  const meta = entity.meta?.(raw, db) ?? [];
+  const teaser = entity.teaser?.(raw, db) ?? null;
+  const icon = entity.icon?.(raw) ?? 'info';
+  const tab = active ? 0 : -1;
+
+  return (
+    <article className={active ? `${styles.card} ${styles.cardActive}` : styles.card} data-carousel-active={active ? '' : undefined}>
+      <div className={styles.art}>
+        {gallery.length > 0 ? (
+          <button
+            type="button"
+            className={styles.artBtn}
+            tabIndex={tab}
+            onClick={() => showImageViewer(gallery, 0)}
+            aria-label={`View ${raw.name} art`}
+          >
+            <Thumb src={gallery[0].src} icon={icon} width={360} className={styles.thumb} alt="" />
+          </button>
+        ) : (
+          <Thumb icon={icon} width={360} className={`${styles.thumb} ${styles.thumbIcon}`} />
+        )}
+        {chosen && (
+          <Tag tone="success" className={styles.chosen}>
+            <Icon name="check" /> Chosen
+          </Tag>
+        )}
+      </div>
+      <div className={styles.body}>
+        <div className={styles.head}>
+          <h3 className={styles.name}>{raw.name}</h3>
+          {raw.source && <SourceTag source={raw.source} />}
+        </div>
+        {teaser?.length > 0 && (
+          <div className={styles.teaser}>
+            <EntryContent entries={teaser} />
+          </div>
+        )}
+        {teaser?.length > 0 && (
+          <Collapse open={more}>
+            <div className={styles.rest}>
+              <DetailView entity={entity} raw={raw} db={db} hideHeader hideImage hideMeta skip={typeof teaser[0] === 'string' ? teaser[0] : null} />
+            </div>
+          </Collapse>
+        )}
+        {teaser?.length > 0 && (
+          <button type="button" className={styles.more} tabIndex={tab} onClick={() => setMore((v) => !v)}>
+            {more ? 'Show less' : 'Read more'}
+          </button>
+        )}
+        {meta.length > 0 && (
+          <div className={styles.meta}>
+            {meta.map((m, i) => (
+              <Chip key={`${m.label ?? m.value}-${i}`} onCard wrap {...metaChip(m)}>
+                {m.label ? <b>{m.label}</b> : null} {m.value}
+              </Chip>
+            ))}
+          </div>
+        )}
+        {!teaser?.length && <DetailView entity={entity} raw={raw} db={db} hideHeader hideImage hideMeta />}
+      </div>
+      {!active && (
+        <button type="button" className={styles.pick} onClick={onPick} aria-label={`Show ${raw.name}`} />
+      )}
+    </article>
+  );
+}
+
+/**
+ * O carrossel de um seletor.
+ * @param {{ entity: object, db: object, items: { id: string, raw: object }[], currentId?: string|null,
+ *   index: number, onIndex: (i: number) => void, footer?: (raw: object) => any }} props
+ */
+export default function SelectorCarousel({ entity, db, items, currentId, index, onIndex, footer }) {
+  const count = items.length;
+  const at = Math.max(0, Math.min(index, count - 1));
+  const go = (i) => onIndex(Math.max(0, Math.min(count - 1, i)));
+  const swipe = useSwipe(() => go(at - 1), () => go(at + 1));
+  const stripRef = useRef(null);
+  useActiveInView(stripRef, at);
+  const dupNames = useMemo(() => {
+    const seen = new Set();
+    const dup = new Set();
+    for (const it of items) (seen.has(it.raw.name) ? dup : seen).add(it.raw.name);
+    return dup;
+  }, [items]);
+  const stripArt = useMemo(
+    () => items.map((it) => galleryOf(entity, it.raw, db)[0]?.src ?? null),
+    [items, entity, db],
+  );
+
+  if (!count) return <p className={styles.empty}>Nothing to show.</p>;
+  const cur = items[at];
+
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      go(at - 1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      go(at + 1);
+    }
+  };
+
+  return (
+    <div className={styles.root}>
+      <div
+        className={styles.viewport}
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+        data-own-swipe=""
+        aria-roledescription="carousel"
+        aria-label={`${entity.title}: ${at + 1} of ${count}`}
+        {...swipe}
+      >
+        <div className={styles.track} style={{ '--i': at }}>
+          {items.map((it, i) => (
+            <div key={it.id} className={styles.slot}>
+              {Math.abs(i - at) <= WINDOW && (
+                <CarouselCard
+                  entity={entity}
+                  db={db}
+                  raw={it.raw}
+                  active={i === at}
+                  chosen={it.id === currentId}
+                  onPick={() => go(i)}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        {at > 0 && (
+          <button type="button" className={`${styles.arrow} ${styles.prev}`} onClick={() => go(at - 1)} aria-label="Previous">
+            <Icon name="chevronLeft" />
+          </button>
+        )}
+        {at < count - 1 && (
+          <button type="button" className={`${styles.arrow} ${styles.next}`} onClick={() => go(at + 1)} aria-label="Next">
+            <Icon name="chevronRight" />
+          </button>
+        )}
+      </div>
+
+      <div className={styles.strip} ref={stripRef} data-wheel-x="" data-carousel-strip="">
+        {items.map((it, i) => (
+          <button
+            key={it.id}
+            type="button"
+            className={i === at ? `${styles.stripItem} ${styles.stripOn}` : styles.stripItem}
+            data-active={i === at ? 'true' : undefined}
+            onClick={() => go(i)}
+          >
+            <Thumb
+              src={stripArt[i]}
+              icon={entity.icon?.(it.raw) ?? 'info'}
+              width={52}
+              className={styles.stripThumb}
+            />
+            <span className={styles.stripName}>{it.raw.name}</span>
+            {dupNames.has(it.raw.name) && it.raw.source && <span className={styles.stripSource}>{it.raw.source}</span>}
+          </button>
+        ))}
+      </div>
+
+      {footer && <div className={styles.foot}>{footer(cur.raw)}</div>}
+    </div>
+  );
+}

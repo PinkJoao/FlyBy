@@ -1,0 +1,34 @@
+/* =============================================================================
+ * ImageUrlField.module.css: o que o campo editável precisa para parecer um input
+ * =============================================================================
+ * CLASSES
+ *   .field: uma linha só, rolando de lado, com o placeholder quando vazio.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O visual (borda, fundo, padding) vem da classe de quem usa, a mesma do
+ *     input de antes; aqui só o que um contentEditable não faz sozinho.
+ *   - A barra de rolagem lateral fica escondida: uma URL longa rola com o cursor,
+ *     como num input.
+ * -------------------------------------------------------------------------- */
+
+.field {
+  display: block;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.field::-webkit-scrollbar {
+  display: none;
+}
+
+.field:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}

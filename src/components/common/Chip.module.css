@@ -1,0 +1,202 @@
+/* =============================================================================
+ * Chip.module.css: a pílula padrão (filtro, escolhida removível, estado)
+ * =============================================================================
+ * CLASSES
+ *   .chip, .sm, .onCard: a pílula, o tamanho compacto e o fundo dentro de card.
+ *   .active: acesa (filtro ligado, ou escolhida).
+ *   .info, .success, .warning, .danger: os tons de estado (color-mix sobre o token).
+ *   .static: só leitura (sem cursor nem realce).
+ *   .removable, .labelBtn, .remove: a escolhida com o X redondo.
+ *   .add: o botão de adicionar (tracejado, + e texto em accent).
+ *   .struck: riscado (o filtro excluído, o bônus desligado).
+ *   .wrap: o texto longo quebra linha (raio de 14px: pílula em uma linha, cápsula
+ *     em duas).
+ *   .label, .count: o rótulo e o número esmaecido.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Pílula de 999px, 14px, 6px 13px: 32px de altura, a mesma da escolhida (o X de
+ *     22px com 4px em volta) e da de adicionar (DDL-0198, um pouco maior que a do
+ *     DDL-0129 a pedido do dono). O X não tem fundo; o tom vermelho só no hover.
+ *   - Sem font-weight na acesa: a pílula não muda de largura ao acender.
+ * -------------------------------------------------------------------------- */
+
+.chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  font: inherit;
+  font-size: var(--fs-body);
+  line-height: 1.3;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.chip:focus-visible,
+.labelBtn:focus-visible,
+.remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.sm {
+  font-size: var(--fs-small);
+  padding: 3px 9px;
+  gap: var(--space-1);
+}
+
+.onCard {
+  background: var(--bg);
+}
+
+.active {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.active:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.info {
+  border-color: color-mix(in srgb, var(--info) 55%, transparent);
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  color: var(--info-text);
+}
+
+.warning {
+  border-color: color-mix(in srgb, var(--warning) 60%, transparent);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--text-h);
+}
+
+.success {
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--text-h);
+}
+
+.danger {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger-text);
+}
+
+.static {
+  cursor: default;
+}
+
+.static:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.removable {
+  gap: var(--space-1);
+  padding: 4px 4px 4px 13px;
+  color: var(--text-h);
+  cursor: default;
+}
+
+.removable:hover {
+  color: var(--text-h);
+}
+
+.labelBtn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+
+button.labelBtn {
+  cursor: pointer;
+}
+
+button.labelBtn:hover .label {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.remove {
+  appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.remove:hover {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+  color: var(--danger-text);
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.add {
+  border-style: dashed;
+  background: transparent;
+  color: var(--accent);
+}
+
+.add:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.struck .label {
+  text-decoration: line-through;
+}
+
+.wrap {
+  white-space: normal;
+  border-radius: var(--radius-card);
+}
+
+.wrap .label {
+  overflow: visible;
+}

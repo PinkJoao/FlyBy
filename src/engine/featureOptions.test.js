@@ -1,0 +1,273 @@
+// =============================================================================
+// featureOptions.test: testes das escolhas de sub-feature
+// =============================================================================
+// O QUE FAZ
+//   Usa um db mínimo com o Divine Order (bloco options com refClassFeature) e uma
+//   feature de nível 7 que não pode aparecer para um personagem de nível 3.
+// -----------------------------------------------------------------------------
+
+import { describe, it, expect } from 'vitest';
+import { featureOptionChoices, subclassFeatureOptionChoices, optionPicks } from './featureOptions';
+
+const db = {
+  'class-cleric': {
+    classFeature: [
+      {
+        name: 'Divine Order',
+        source: 'XPHB',
+        classSource: 'XPHB',
+        level: 1,
+        entries: [
+          'Choose one.',
+          {
+            type: 'options',
+            count: 1,
+            entries: [
+              { type: 'refClassFeature', classFeature: 'Protector|Cleric|XPHB|1|XPHB' },
+              { type: 'refClassFeature', classFeature: 'Thaumaturge|Cleric|XPHB|1|XPHB' },
+            ],
+          },
+        ],
+      },
+      { name: 'Protector', source: 'XPHB', classSource: 'XPHB', level: 1, entries: ['Martial weapons + Heavy armor.'] },
+      { name: 'Thaumaturge', source: 'XPHB', classSource: 'XPHB', level: 1, entries: ['Extra cantrip.'] },
+      {
+        name: 'Late Choice',
+        source: 'XPHB',
+        classSource: 'XPHB',
+        level: 7,
+        entries: [{ type: 'options', count: 1, entries: [{ type: 'refClassFeature', classFeature: 'Protector|Cleric|XPHB|1|XPHB' }] }],
+      },
+    ],
+  },
+};
+
+const clericObj = {
+  name: 'Cleric',
+  source: 'XPHB',
+  classFeatures: ['Divine Order|Cleric|XPHB|1', 'Late Choice|Cleric|XPHB|7'],
+};
+
+describe('featureOptionChoices', () => {
+  it('gera choice de sub-feature com opções resolvidas (nome + entries)', () => {
+    const out = featureOptionChoices(db, 'cleric', clericObj, 3);
+    expect(out).toHaveLength(1);
+    const c = out[0];
+    expect(c).toMatchObject({ id: 'featopt@Divine Order@1', kind: 'featureoption', count: 1, label: 'Divine Order' });
+    expect(c.pool.options.map((o) => o.label)).toEqual(['Protector', 'Thaumaturge']);
+    expect(c.pool.options[0]).toEqual({ value: 'Protector|XPHB', label: 'Protector', entries: ['Martial weapons + Heavy armor.'] });
+  });
+
+  it('omite options acima do nível atual', () => {
+    const out = featureOptionChoices(db, 'cleric', clericObj, 3);
+    expect(out.find((c) => c.id.includes('Late Choice'))).toBeUndefined();
+    const out7 = featureOptionChoices(db, 'cleric', clericObj, 7);
+    expect(out7.find((c) => c.id === 'featopt@Late Choice@7')).toBeTruthy();
+  });
+
+  it('ignora options de refOptionalfeature (tratadas pelo optionalfeatureProgression)', () => {
+    const db2 = {
+      'class-warlock': {
+        classFeature: [
+          {
+            name: 'Eldritch Invocation Options',
+            source: 'XPHB',
+            classSource: 'XPHB',
+            level: 1,
+            entries: [{ type: 'options', count: 1, entries: [{ type: 'refOptionalfeature', optionalfeature: 'Agonizing Blast|XPHB' }] }],
+          },
+        ],
+      },
+    };
+    const obj = { name: 'Warlock', source: 'XPHB', classFeatures: ['Eldritch Invocation Options|Warlock|XPHB|1'] };
+    expect(featureOptionChoices(db2, 'warlock', obj, 1)).toEqual([]);
+  });
+
+  it('feature curada em prosa (Blessed Strikes): extrai opções de refClassFeature', () => {
+    const db3 = {
+      'class-cleric': {
+        classFeature: [
+          {
+            name: 'Blessed Strikes', source: 'XPHB', classSource: 'XPHB', level: 7,
+            entries: ['You gain one of the following options of your choice.', { type: 'entries', entries: [
+              { type: 'refClassFeature', classFeature: 'Divine Strike|Cleric|XPHB|7|XPHB' },
+              { type: 'refClassFeature', classFeature: 'Potent Spellcasting|Cleric|XPHB|7|XPHB' },
+            ] }],
+          },
+          { name: 'Divine Strike', source: 'XPHB', classSource: 'XPHB', level: 7, entries: ['dmg'] },
+          { name: 'Potent Spellcasting', source: 'XPHB', classSource: 'XPHB', level: 7, entries: ['cantrip+wis'] },
+        ],
+      },
+    };
+    const obj = { name: 'Cleric', source: 'XPHB', classFeatures: ['Blessed Strikes|Cleric|XPHB|7'] };
+    const out = featureOptionChoices(db3, 'cleric', obj, 7);
+    expect(out).toHaveLength(1);
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Divine Strike', 'Potent Spellcasting']);
+  });
+
+  it('curada E com bloco `options` no dado (o Blessed Strikes do espelho atual): uma escolha só', () => {
+    const db4 = {
+      'class-cleric': {
+        classFeature: [
+          {
+            name: 'Blessed Strikes', source: 'XPHB', classSource: 'XPHB', level: 7,
+            entries: ['You gain one of the following options of your choice.', { type: 'options', count: 1, entries: [
+              { type: 'refClassFeature', classFeature: 'Divine Strike|Cleric|XPHB|7|XPHB' },
+              { type: 'refClassFeature', classFeature: 'Potent Spellcasting|Cleric|XPHB|7|XPHB' },
+            ] }],
+          },
+          { name: 'Divine Strike', source: 'XPHB', classSource: 'XPHB', level: 7, entries: ['dmg'] },
+          { name: 'Potent Spellcasting', source: 'XPHB', classSource: 'XPHB', level: 7, entries: ['cantrip+wis'] },
+        ],
+      },
+    };
+    const obj = { name: 'Cleric', source: 'XPHB', classFeatures: ['Blessed Strikes|Cleric|XPHB|7'] };
+    const out = featureOptionChoices(db4, 'cleric', obj, 7);
+    expect(out).toHaveLength(1);
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Divine Strike', 'Potent Spellcasting']);
+  });
+});
+
+describe('subclassFeatureOptionChoices', () => {
+  const db = {
+    'class-barbarian': {
+      subclassFeature: [
+        {
+          name: 'Rage of the Wilds', source: 'XPHB', classSource: 'XPHB',
+          subclassShortName: 'Wild Heart', subclassSource: 'XPHB', level: 3,
+          entries: ['Your Rage taps into primal power.',
+            { type: 'entries', name: 'Bear', entries: ['resistance'] },
+            { type: 'entries', name: 'Eagle', entries: ['disengage'] },
+            { type: 'entries', name: 'Wolf', entries: ['advantage'] },
+          ],
+        },
+        {
+          name: 'Elemental Epitome', source: 'XPHB', classSource: 'XPHB',
+          subclassShortName: 'Elements', subclassSource: 'XPHB', level: 17,
+          entries: ['Resistance to one of the following damage types of your choice: Acid, Cold...'],
+        },
+      ],
+    },
+  };
+
+  it('extrai sub-features nomeadas (Wild Heart Bear/Eagle/Wolf)', () => {
+    const sub = { shortName: 'Wild Heart', source: 'XPHB' };
+    const out = subclassFeatureOptionChoices(db, 'barbarian', sub, 3);
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe('sub:featopt@Rage of the Wilds@3');
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Bear', 'Eagle', 'Wolf']);
+  });
+
+  it('bloco `options` de refSubclassFeature sem curadoria vira escolha (o Multiattack do Hunter antigo, DDL-0221)', () => {
+    const db2 = {
+      'class-ranger': {
+        subclassFeature: [
+          { name: 'Multiattack', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 11,
+            entries: ['You gain one of the following features of your choice.', { type: 'options', count: 1, entries: [
+              { type: 'refSubclassFeature', subclassFeature: 'Volley|Ranger||Hunter||11' },
+              { type: 'refSubclassFeature', subclassFeature: 'Whirlwind Attack|Ranger||Hunter||11' },
+            ] }] },
+          { name: 'Volley', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 11, entries: ['volley'] },
+          { name: 'Whirlwind Attack', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 11, entries: ['whirlwind'] },
+        ],
+      },
+    };
+    const out = subclassFeatureOptionChoices(db2, 'ranger', { shortName: 'Hunter', source: 'PHB' }, 11);
+    expect(out.map((c) => c.id)).toEqual(['sub:featopt@Multiattack@11']);
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Volley', 'Whirlwind Attack']);
+  });
+
+  it('extrai refSubclassFeature de bloco options curado (Storm Aura Desert/Sea/Tundra - TC-0019)', () => {
+    const db2 = {
+      'class-barbarian': {
+        subclassFeature: [
+          {
+            name: 'Storm Aura', source: 'XGE', classSource: 'PHB',
+            subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 3,
+            entries: ['Choose desert, sea, or tundra.', { type: 'options', entries: [
+              { type: 'refSubclassFeature', subclassFeature: 'Desert|Barbarian|PHB|Storm Herald|XGE|3' },
+              { type: 'refSubclassFeature', subclassFeature: 'Sea|Barbarian|PHB|Storm Herald|XGE|3' },
+              { type: 'refSubclassFeature', subclassFeature: 'Tundra|Barbarian|PHB|Storm Herald|XGE|3' },
+            ] }],
+          },
+          { name: 'Desert', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 3, entries: ['fire'] },
+          { name: 'Sea', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 3, entries: ['lightning'] },
+          { name: 'Tundra', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 3, entries: ['temp hp'] },
+        ],
+      },
+    };
+    const sub = { shortName: 'Storm Herald', source: 'XGE' };
+    const out = subclassFeatureOptionChoices(db2, 'barbarian', sub, 3);
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe('sub:featopt@Storm Aura@3');
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Desert', 'Sea', 'Tundra']);
+  });
+
+  it('o Storm Soul segue o ambiente do Storm Aura: não é escolha, e o pick vem da líder (TC-0148)', () => {
+    const ref = (name, lvl) => ({ type: 'refSubclassFeature', subclassFeature: `${name}|Barbarian|PHB|Storm Herald|XGE|${lvl}` });
+    const env = (lvl, text) => ['Desert', 'Sea', 'Tundra'].map((name) => ({ name, source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: lvl, entries: [`${name} ${text}`] }));
+    const db2 = {
+      'class-barbarian': {
+        subclassFeature: [
+          { name: 'Storm Aura', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 3, entries: ['Choose desert, sea, or tundra.', { type: 'options', entries: [ref('Desert', 3), ref('Sea', 3), ref('Tundra', 3)] }] },
+          ...env(3, 'aura'),
+          { name: 'Storm Soul', source: 'XGE', classSource: 'PHB', subclassShortName: 'Storm Herald', subclassSource: 'XGE', level: 6, entries: ['Based on the environment you chose for your Storm Aura.', { type: 'options', count: 1, entries: [ref('Desert', 6), ref('Sea', 6), ref('Tundra', 6)] }] },
+          ...env(6, 'soul'),
+        ],
+      },
+    };
+    const sub = { shortName: 'Storm Herald', source: 'XGE' };
+    expect(subclassFeatureOptionChoices(db2, 'barbarian', sub, 6).map((c) => c.id)).toEqual(['sub:featopt@Storm Aura@3']);
+    const all = subclassFeatureOptionChoices(db2, 'barbarian', sub, 6, { followers: true });
+    const soul = all.find((c) => c.label === 'Storm Soul');
+    expect(soul.follows).toBe('sub:featopt@Storm Aura@3');
+    const choices = { 'sub:featopt@Storm Aura@3': { kind: 'featureoption', picks: ['Tundra|XGE'] }, 'sub:featopt@Storm Soul@6': { kind: 'featureoption', picks: ['Desert|XGE'] } };
+    expect(optionPicks(choices, soul, all)).toEqual(['Tundra|XGE']);
+    expect(soul.pool.options.find((o) => o.value === 'Tundra|XGE').entries).toEqual(['Tundra soul']);
+  });
+
+  it('usa lista explícita quando não há sub-features (Elemental Epitome → tipos de dano)', () => {
+    const sub = { shortName: 'Elements', source: 'XPHB' };
+    const out = subclassFeatureOptionChoices(db, 'barbarian', sub, 17);
+    expect(out[0].pool.options.map((o) => o.label)).toEqual(['Acid', 'Cold', 'Fire', 'Lightning', 'Thunder']);
+  });
+
+  it('gate por nível e subclasse nula', () => {
+    expect(subclassFeatureOptionChoices(db, 'barbarian', { shortName: 'Wild Heart', source: 'XPHB' }, 2)).toEqual([]);
+    expect(subclassFeatureOptionChoices(db, 'barbarian', null, 3)).toEqual([]);
+  });
+});
+
+describe('a escolha de subclasse é do mesmo livro (DDL-0247)', () => {
+  const db = {
+    'class-ranger': {
+      subclassFeature: [
+        { name: "Hunter's Prey", source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3,
+          entries: ['At 3rd level, you gain one of the following features of your choice.', { type: 'options', count: 1, entries: [
+            { type: 'refSubclassFeature', subclassFeature: 'Colossus Slayer|Ranger||Hunter||3' },
+            { type: 'refSubclassFeature', subclassFeature: 'Giant Killer|Ranger||Hunter||3' },
+            { type: 'refSubclassFeature', subclassFeature: 'Horde Breaker|Ranger||Hunter||3' },
+          ] }] },
+        { name: 'Colossus Slayer', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3, entries: ['1d8'] },
+        { name: 'Giant Killer', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3, entries: ['reaction'] },
+        { name: 'Horde Breaker', source: 'PHB', classSource: 'PHB', subclassShortName: 'Hunter', subclassSource: 'PHB', level: 3, entries: ['another attack'] },
+        { name: "Hunter's Prey", source: 'XPHB', classSource: 'XPHB', subclassShortName: 'Hunter', subclassSource: 'XPHB', level: 3,
+          entries: ['You gain one of the following feature options of your choice.', { type: 'entries', entries: [
+            { type: 'entries', name: 'Colossus Slayer', entries: ['1d8'] },
+            { type: 'entries', name: 'Horde Breaker', entries: ['another attack'] },
+          ] }] },
+      ],
+    },
+  };
+
+  it("o Hunter do XPHB não recebe o Giant Killer do PHB", () => {
+    const [ch] = subclassFeatureOptionChoices(db, 'ranger', { shortName: 'Hunter', source: 'XPHB' }, 3);
+    expect(ch.pool.options.map((o) => o.label)).toEqual(['Colossus Slayer', 'Horde Breaker']);
+  });
+
+  it('a escolha salva com o valor da outra edição vale pelo nome; a que não existe cai', () => {
+    const [ch] = subclassFeatureOptionChoices(db, 'ranger', { shortName: 'Hunter', source: 'XPHB' }, 3);
+    expect(optionPicks({ [ch.id]: { picks: ['Colossus Slayer|PHB'] } }, ch, [ch])).toEqual(['Colossus Slayer']);
+    expect(optionPicks({ [ch.id]: { picks: ['Giant Killer|PHB'] } }, ch, [ch])).toEqual([]);
+  });
+});

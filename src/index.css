@@ -1,0 +1,383 @@
+/* =============================================================================
+ * index.css: os tokens globais e a tabela padrão do app
+ * =============================================================================
+ * O QUE FAZ
+ *   Os tokens de tema (texto, fundo, borda, accent, estados, raridade, sombra,
+ *   fontes) para os três temas, escolhidos pelo `data-theme` do <html>
+ *   (src/theme.js): o claro em :root, o escuro e o papel por cima. Mais o corpo
+ *   da fonte (18px, 16px abaixo de 1024px) e os estilos globais.
+ *
+ * CLASSES
+ *   svg.icon: o ícone (Icon.jsx), alinhado à linha de texto.
+ *   .data-table: a tabela PADRÃO do app (progressão, raças, features...), a mesma
+ *     identidade para toda tabela renderizada; .data-table--center para as
+ *     numéricas (progressão).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Cor nova num CSS de componente usa um token daqui, nunca um hex: um hex
+ *     fica igual nos três temas (o texto branco fixo sobre --bg-soft sumia no
+ *     claro). Tom de um estado vem de color-mix sobre o token (`color-mix(in
+ *     srgb, var(--danger) 12%, transparent)`), não de um rgba copiado.
+ *   - Ficam fora dos tokens, de propósito: a moldura preta das telas de imagem e
+ *     tabela em tela cheia (mídia pede fundo escuro em qualquer tema), os véus
+ *     escuros atrás de diálogos e as moedas do CurrencyCard (cor do metal).
+ *   - Os estados: --danger (erro, excesso, apagar), --info (azul), --success,
+ *     --warning; --danger-text e --info-text são o mesmo tom legível como TEXTO
+ *     sobre o tom claro de fundo (no escuro, mais claro que o sólido).
+ *   - Cores de jogo: --econ-action, --econ-bonus e --econ-reaction são os três
+ *     gastos do turno (azul, verde, amarelo; DDL-0163), nos botões de combate e em
+ *     toda etiqueta de custo; --die-d4 a --die-d20 são os dados do histórico
+ *     (DDL-0160). O amarelo é mais escuro no claro e no papel, para ler como texto.
+ *   - O papel troca também as fontes: Cinzel nos títulos e Alegreya no texto
+ *     (importadas no main.jsx). O accent dele é bordô (vinho), e o --danger é
+ *     um escarlate alaranjado: com dois vermelhos parecidos, o include e o
+ *     exclude dos filtros ficavam indistinguíveis.
+ *   - --src-origin e --src-species são o que sobrou das cores por FONTE: o esquema
+ *     por categoria foi descartado e a diferenciação padrão agora é o accent.
+ *   - O --bg de cada tema é repetido em THEME_BAR (src/theme.js), a cor da barra
+ *     do sistema.
+ *   - --ornament é a cor dos cantos e filetes decorativos (src/decor.css); no
+ *     papel é um marrom dourado mais forte, nos outros o accent bem suave.
+ *   - A escala de forma (DDL-0303, fase U1 do docs/UI-STUDY.md): --space-1 a 6
+ *     (4, 8, 12, 16, 24, 32), --radius-control/field/card/layer, --control-h (40 px, um
+ *     controle de linha numa página: busca, botão de ícone) e --control-h-sm (34 px, nas
+ *     barras densas do seletor), --fs-*
+ *     (rótulo 11 a título de página 26) e o movimento (--dur-enter, --dur-exit,
+ *     --dur-slide, --dur-morph, --ease). Fica no :root e não muda por tema. Todo
+ *     CSS de componente usa a escala onde o valor é dela (DDL-0313: 673 trocas exatas
+ *     de tamanho de letra, espaço e raio; o raio de 10 px foi para --radius-field, 9);
+ *     o valor fora da escala (6 px, 10 px de espaço, raio 12) fica escrito, de propósito.
+ *   - Os breakpoints não cabem em var() dentro de @media; os valores do app
+ *     ficam em src/breakpoints.js (NARROW 560, PHONE 760, DESKTOP 1024, WIDE 1140,
+ *     HISTORY 1560) e o CSS usa SÓ esses números, à mão (DDL-0313).
+ *   - Barra de rolagem (DDL-0131): pílula fina e translúcida, SEMPRE visível e bem
+ *     apagada, só com ponteiro fino (o celular tem a do sistema). Os tokens
+ *     --scroll-thumb e --scroll-thumb-hover saem de --text por color-mix, então
+ *     valem nos três temas sem repetir. Chrome, Edge e Safari usam os
+ *     ::-webkit-scrollbar; o Firefox cai no `scrollbar-width: thin` (no Chrome,
+ *     definir scrollbar-width ou scrollbar-color num elemento desliga os
+ *     ::-webkit-scrollbar dele: por isso o padrão só entra sem o seletor WebKit).
+ *     Faixa horizontal não mostra barra; o esmaecido da borda ([data-fade]) é a
+ *     pista de que tem mais.
+ * -------------------------------------------------------------------------- */
+
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --text-muted: #8a8494;
+  --bg: #fff;
+  --bg-soft: #f7f6f9;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --on-accent: #fff;
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --danger: #d03b3b;
+  --danger-text: #b42323;
+  --info: #2f6fd6;
+  --info-text: #1f5fbf;
+  --success: #2e8b3e;
+  --warning: #b77a10;
+  --die-d4: #1f9d4c;
+  --die-d6: #14a9c0;
+  --die-d8: #8a3fe0;
+  --die-d10: #df338e;
+  --die-d12: #d92b2b;
+  --die-d20: #f06a0c;
+  --die-other: #6b7280;
+  --die-text: #fff;
+  --econ-action: #2563eb;
+  --econ-bonus: #16994a;
+  --econ-reaction: #8a6400;
+
+  --rarity-uncommon: #2e8b3e;
+  --rarity-rare: #2f74c0;
+  --rarity-very-rare: #8e44d0;
+  --rarity-legendary: #c56f12;
+  --rarity-artifact: #a8861a;
+
+  --src-origin: #d97706;
+  --src-species: #0d9488;
+
+  --ornament: rgba(170, 59, 255, 0.35);
+
+  --scroll-thumb: color-mix(in srgb, var(--text) 24%, transparent);
+  --scroll-thumb-hover: color-mix(in srgb, var(--text) 45%, transparent);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius-control: 8px;
+  --radius-field: 9px;
+  --radius-card: 14px;
+  --radius-layer: 16px;
+  --control-h: 40px;
+  --control-h-sm: 34px;
+  --fs-label: 11px;
+  --fs-small: 12px;
+  --fs-meta: 13px;
+  --fs-body: 14px;
+  --fs-field: 15px;
+  --fs-lead: 17px;
+  --fs-title: 19px;
+  --fs-page: 26px;
+  --dur-enter: 240ms;
+  --dur-exit: 160ms;
+  --dur-slide: 240ms;
+  --dur-morph: 400ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    font-size: 16px;
+  }
+}
+
+:root[data-theme='dark'] {
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --text-muted: #9aa0a6;
+  --bg: #16171d;
+  --bg-soft: #1c1d25;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --accent-border: rgba(192, 132, 252, 0.5);
+  --on-accent: #fff;
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+  --danger: #e05050;
+  --danger-text: #ff9a9a;
+  --info: #5a96ff;
+  --info-text: #8fb8ff;
+  --success: #46b35e;
+  --warning: #e0a02e;
+  --die-d4: #1f9d4c;
+  --die-d6: #14a9c0;
+  --die-d8: #8a3fe0;
+  --die-d10: #df338e;
+  --die-d12: #d92b2b;
+  --die-d20: #f06a0c;
+  --die-other: #6b7280;
+  --die-text: #fff;
+  --econ-action: #4f8ff7;
+  --econ-bonus: #3fbf6a;
+  --econ-reaction: #e8b923;
+
+  --rarity-uncommon: #3fa14b;
+  --rarity-rare: #4a90d9;
+  --rarity-very-rare: #a45ee5;
+  --rarity-legendary: #e08a2e;
+  --rarity-artifact: #c9a227;
+
+  --src-origin: #fbbf24;
+  --src-species: #2dd4bf;
+
+  --ornament: rgba(192, 132, 252, 0.45);
+
+  color-scheme: dark;
+}
+
+:root[data-theme='paper'] {
+  --text: #5b4636;
+  --text-h: #2a1a0e;
+  --text-muted: #8a7560;
+  --bg: #f3e8d0;
+  --bg-soft: #eadcbd;
+  --border: #cdb98f;
+  --code-bg: #e6d6b2;
+  --accent: #7a1e2c;
+  --accent-bg: rgba(122, 30, 44, 0.1);
+  --accent-border: rgba(122, 30, 44, 0.45);
+  --on-accent: #fbf3e2;
+  --shadow:
+    rgba(70, 40, 10, 0.18) 0 10px 15px -3px, rgba(70, 40, 10, 0.1) 0 4px 6px -2px;
+
+  --danger: #d4500f;
+  --danger-text: #a83a06;
+  --info: #2c5f8f;
+  --info-text: #234e78;
+  --success: #3d6e2a;
+  --warning: #9b6a10;
+  --die-d4: #3d7d3a;
+  --die-d6: #2b7f8e;
+  --die-d8: #6a3f93;
+  --die-d10: #a13a6d;
+  --die-d12: #a12f2f;
+  --die-d20: #b45a1c;
+  --die-other: #6b5a45;
+  --die-text: #fffaf0;
+  --econ-action: #2d5b8c;
+  --econ-bonus: #3d7a3a;
+  --econ-reaction: #7d5d08;
+
+  --rarity-uncommon: #3d6e2a;
+  --rarity-rare: #2c5f8f;
+  --rarity-very-rare: #6e3a9c;
+  --rarity-legendary: #a8560f;
+  --rarity-artifact: #84690f;
+
+  --src-origin: #a5560c;
+  --src-species: #1f6e66;
+
+  --ornament: rgba(122, 78, 22, 0.7);
+
+  --sans: 'Alegreya Variable', Georgia, serif;
+  --heading: 'Cinzel Variable', Georgia, serif;
+
+  color-scheme: light;
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(10px, 3vw, 12.5px);
+}
+
+table.data-table th,
+table.data-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+table.data-table th {
+  color: var(--text-h);
+  font-weight: 600;
+  background: var(--bg);
+  white-space: nowrap;
+}
+
+table.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+table.data-table--center th,
+table.data-table--center td {
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+table.data-table--center td:first-child,
+table.data-table--center th:first-child {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+svg.icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: -0.125em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-thumb-hover);
+    border-width: 2px;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scroll-thumb) transparent;
+    }
+  }
+}
+
+[data-wheel-x][data-fade='end'] {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+}
+
+[data-wheel-x][data-fade='start'] {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - 28px), transparent);
+}
+
+[data-wheel-x][data-fade='both'] {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 28px, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 28px, black calc(100% - 28px), transparent);
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  /* ATENÇÃO: abas e passos entram deslizando de lado (motion.css); `clip`, não `hidden`, para o sticky seguir valendo. */
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--code-bg);
+  color: var(--text-h);
+}

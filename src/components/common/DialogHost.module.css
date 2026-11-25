@@ -1,0 +1,65 @@
+/* =============================================================================
+ * DialogHost.module.css: o miolo das janelas in-app
+ * =============================================================================
+ * CLASSES
+ *   .message: o texto de um aviso, confirmação ou pergunta.
+ *   .fields, .field, .fieldLabel, .input, .checkField: os campos de uma pergunta;
+ *     o de sim ou não é o Toggle comum ("Remember my answer"), nunca a checkbox
+ *     nativa, e a escolha é ChoiceChips, nunca o <select>.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A janela (véu, moldura, topo, rodapé, saída) é a do PreviewFrame
+ *     (PreviewShell.module.css) desde o DDL-0303; aqui só fica o que é do conteúdo.
+ *   - .message respeita as quebras \n dos textos (white-space: pre-line).
+ * -------------------------------------------------------------------------- */
+
+.message {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.message + .fields {
+  margin-top: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-meta);
+}
+
+.fieldLabel {
+  color: var(--text-muted);
+}
+
+.checkField {
+  font-size: var(--fs-meta);
+}
+
+.input {
+  font: inherit;
+  font-size: var(--fs-body);
+  height: var(--control-h);
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}

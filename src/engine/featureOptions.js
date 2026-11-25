@@ -1,0 +1,245 @@
+// =============================================================================
+// featureOptions: as escolhas de "uma das seguintes sub-features"
+// =============================================================================
+// O QUE FAZ
+//   Duas formas no 5etools, ambas tratadas aqui:
+//     1. ESTRUTURADA: bloco `type:'options'` com `refClassFeature` (Divine Order,
+//        Primal Order, Elemental Fury); o count vem do bloco.
+//     2. EM PROSA: "you gain one of the following ... of your choice", com as
+//        opções como sub-entries nomeadas ou refs, sem o bloco. A prosa é frágil,
+//        então um conjunto CURADO (CHOOSE_ONE_FEATURES) marca QUAIS features são
+//        "escolha 1", e as opções são EXTRAÍDAS das sub-entries.
+//   Não confundir com `options` + `refOptionalfeature` (Maneuvers, Metamagic,
+//   Invocations): esses são o optionalfeatureProgression, com seletor próprio.
+//
+// FUNÇÕES
+//   norm(s), featureCopyId(f): normalização e id de cópia.
+//   poolIndex(pool): índice nome|nível do pool de features.
+//   findOptionBlocks(entries, out, refType): os blocos `options` estruturados (de classe ou de
+//     subclasse, `refSubclassFeature`).
+//   isOptionLike(e): é uma sub-feature nomeada ou uma ref?
+//   findChooseGroup(entries): o primeiro grupo (BFS) de 2+ opções irmãs.
+//   optionToCard(e, resolveRef): uma opção como card { value, label, entries }.
+//   curatedOptions(feature, resolveRef): as opções de uma feature curada.
+//   featureOptionChoices(db, classId, classObj, level): as escolhas das features
+//     de CLASSE até o nível.
+//   subclassFeatureOptionChoices(db, classId, subclass, level, opts): as de SUBCLASSE; com
+//     `followers` também as que SEGUEM outra (FOLLOWS), marcadas com `follows`.
+//   canonicalPick(ch, pick): a escolha salva como uma das opções (pelo nome, se veio de outra edição).
+//   optionPicks(choices, ch, all): os picks de uma escolha; a que segue outra lê os da líder.
+//
+// DECISÕES E ARMADILHAS
+//   - A feature de SUBCLASSE com um bloco `options` de `refSubclassFeature` (o Hunter's Prey,
+//     o Defensive Tactics e o Multiattack do Hunter antigo) vira escolha como a de classe; antes
+//     só a lista curada valia, e o Multiattack não tinha escolha (passe ao vivo, DDL-0221). O id
+//     é o mesmo da curada (`sub:featopt@<feature>@<nível>`), então a escolha salva continua. Só
+//     o bloco com `count` é escolha: o `options` sem ele é lista (o Psionic Power do Psi Warrior
+//     dá as três).
+//   - Uma feature que o dado JÁ escreve com opções (`refClassFeature`) e que também está em
+//     CHOOSE_ONE_FEATURES vira UMA escolha: o Blessed Strikes do espelho atual saía duas vezes
+//     com o mesmo id, e o export levava a opção em dobro (passe ao vivo, DDL-0219).
+//   - A feature marcada `isClassFeatureVariant` é OPCIONAL de outro livro (as do TCE nas
+//     classes PHB, o Pet Specialization do WoW na Ranger XPHB, que "replaces the Roving feature
+//     for a Hunter with the Beast Master subclass"): não entra sozinha (DDL-0216).
+//   - A feature de subclasse marcada `isClassFeatureVariant` também é OPCIONAL e não entra
+//     sozinha (DDL-0218): o Blessed Strikes do TCE em 18 domínios antigos ("which replaces
+//     the Divine Strike feature"), o Maneuver Options e o Primal Companion antigos.
+//   - CHOOSE_ONE_FEATURES: `true` extrai as opções da feature; uma lista explícita
+//     serve quando as opções não são sub-features (tipos de dano). A chave é o nome
+//     da feature em minúsculas, único entre as classes.
+//   - O Storm Aura do Storm Herald É escolha real ("Choose desert, sea, or
+//     tundra", TC-0019), ao contrário dos grant-all (Genie, Psi Warrior,
+//     Soulknife; DDL-0002). Storm Soul e Raging Storm SEGUEM essa escolha (FOLLOWS):
+//     "the environment you chose for your Storm Aura". Desde o DDL-0221 o bloco `options` com
+//     `count` delas virava uma escolha à parte, e o modelo saía Tundra e Desert (TC-0148). A
+//     seguidora não aparece no builder nem no import; o export (o item e o ItemChoice do
+//     Foundry) toma a opção de MESMO nome da líder (`optionPicks`, DDL-0227).
+//   - A feature de subclasse vale só para a subclasse de MESMO livro (`subclassSource`), como em
+//     classFeatureChoices: o Hunter do XPHB pegava as quatro escolhas do Hunter do PHB (o Giant
+//     Killer no Hunter's Prey, o Multiattack, as listas antigas do Defensive Tactics e do Superior
+//     Hunter's Defense), porque o primeiro de mesmo nome vencia (DDL-0247). A escolha já salva com
+//     o valor da outra edição ("Colossus Slayer|PHB") vale pelo nome (`canonicalPick`); a que não
+//     existe nesta edição (o Giant Killer) cai.
+//   - Os ids de subclasse começam com `sub:`, para serem podados quando a
+//     subclasse troca.
+// -----------------------------------------------------------------------------
+
+import { resolveCopies } from '../selector/copy';
+import { parseFeatureRef } from './classData';
+
+const norm = (s) => (s ?? '').toString().trim().toLowerCase();
+
+const featureCopyId = (f) =>
+  [f.name, f.source, f.classSource, f.subclassShortName, f.subclassSource, f.level].map(norm).join('|');
+
+const DAMAGE_TYPES = ['Acid', 'Cold', 'Fire', 'Lightning', 'Thunder'];
+const FOLLOWS = { 'storm soul': 'storm aura', 'raging storm': 'storm aura' };
+const CHOOSE_ONE_FEATURES = {
+  'blessed strikes': true,
+  "hunter's prey": true,
+  'defensive tactics': true,
+  "superior hunter's defense": true,
+  'rage of the wilds': true,
+  'aspect of the wilds': true,
+  'power of the wilds': true,
+  'storm aura': true,
+  'armor model': true,
+  'the third eye': true,
+  'fiendish resilience': ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder'],
+  'elemental epitome': DAMAGE_TYPES,
+};
+
+/** Índice frouxo (nome|nível) do pool de features. */
+function poolIndex(pool) {
+  const byLoose = new Map();
+  for (const f of pool) byLoose.set(`${norm(f.name)}|${f.level}`, f);
+  return byLoose;
+}
+
+/** Os blocos `options` de refClassFeature (ou refSubclassFeature) (forma estruturada). */
+export function findOptionBlocks(entries, out = [], refType = 'refClassFeature') {
+  const field = refType === 'refSubclassFeature' ? 'subclassFeature' : 'classFeature';
+  const walk = (e) => {
+    if (Array.isArray(e)) return e.forEach(walk);
+    if (!e || typeof e !== 'object') return;
+    if (e.type === 'options') {
+      const refs = (e.entries ?? []).filter((x) => x?.type === refType);
+      if (refs.length) out.push({ count: e.count ?? 1, explicit: e.count != null, refs: refs.map((r) => r[field]) });
+    }
+    if (e.entries) walk(e.entries);
+    if (e.items) walk(e.items);
+  };
+  walk(entries);
+  return out;
+}
+
+/** É uma sub-feature nomeada ou uma ref de feature? */
+function isOptionLike(e) {
+  return (
+    e &&
+    typeof e === 'object' &&
+    ((e.type === 'entries' && e.name) || e.type === 'refClassFeature' || e.type === 'refSubclassFeature')
+  );
+}
+
+/** O primeiro grupo (BFS) de duas ou mais opções irmãs. */
+function findChooseGroup(entries) {
+  const queue = [entries];
+  while (queue.length) {
+    const arr = queue.shift();
+    if (!Array.isArray(arr)) continue;
+    const opts = arr.filter(isOptionLike);
+    if (opts.length >= 2) return opts;
+    for (const e of arr) {
+      if (e && typeof e === 'object') {
+        if (Array.isArray(e.entries)) queue.push(e.entries);
+        if (Array.isArray(e.items)) queue.push(e.items);
+      }
+    }
+  }
+  return null;
+}
+
+/** Uma opção como card { value, label, entries }. */
+function optionToCard(e, resolveRef) {
+  if (e.type === 'refClassFeature' || e.type === 'refSubclassFeature') {
+    const r = resolveRef(e);
+    return r ? { value: `${r.name}|${r.source}`, label: r.name, entries: r.entries ?? [] } : null;
+  }
+  return { value: e.name, label: e.name, entries: e.entries ?? [] };
+}
+
+/** As opções de uma feature curada: explícitas ou extraídas. */
+function curatedOptions(feature, resolveRef) {
+  const spec = CHOOSE_ONE_FEATURES[norm(feature.name)];
+  if (!spec) return null;
+  if (Array.isArray(spec)) return spec.map((v) => ({ value: v, label: v, entries: [] }));
+  const group = findChooseGroup(feature.entries);
+  return group ? group.map((e) => optionToCard(e, resolveRef)).filter(Boolean) : [];
+}
+
+/**
+ * Escolhas de sub-feature das features de classe até o nível.
+ * @returns {import('./choices').Choice[]}
+ */
+export function featureOptionChoices(db, classId, classObj, level) {
+  const pool = resolveCopies(db?.[`class-${classId}`]?.classFeature ?? [], featureCopyId);
+  const idx = poolIndex(pool);
+  const resolveRef = (e) => {
+    const rr = parseFeatureRef(e.classFeature);
+    const sub = idx.get(`${norm(rr.name)}|${rr.level}`);
+    return sub ? { name: sub.name, source: sub.source, entries: sub.entries } : null;
+  };
+  const out = [];
+
+  for (const ref of classObj?.classFeatures ?? []) {
+    const r = parseFeatureRef(ref);
+    if (r.level > level) continue;
+    const feature = idx.get(`${norm(r.name)}|${r.level}`);
+    if (!feature || feature.isClassFeatureVariant) continue;
+
+    for (const block of findOptionBlocks(feature.entries)) {
+      const options = block.refs.map((cf) => optionToCard({ type: 'refClassFeature', classFeature: cf }, resolveRef)).filter(Boolean);
+      if (options.length) {
+        out.push({ id: `featopt@${feature.name}@${feature.level}`, kind: 'featureoption', count: block.count, level: feature.level, label: feature.name, feature: { name: feature.name, level: feature.level }, pool: { type: 'featureoption', options } });
+      }
+    }
+    const curated = curatedOptions(feature, resolveRef);
+    if (curated?.length && !out.some((c) => c.id === `featopt@${feature.name}@${feature.level}`)) {
+      out.push({ id: `featopt@${feature.name}@${feature.level}`, kind: 'featureoption', count: 1, level: feature.level, label: feature.name, feature: { name: feature.name, level: feature.level }, pool: { type: 'featureoption', options: curated } });
+    }
+  }
+  return out;
+}
+
+/** A escolha salva como uma das opções: o valor exato, ou o nome antes do `|` (a escolha de outra edição). */
+function canonicalPick(ch, pick) {
+  const options = ch.pool?.options ?? [];
+  if (!options.length || options.some((o) => o.value === pick)) return pick;
+  const name = norm(String(pick).split('|')[0]);
+  return options.find((o) => norm(o.label) === name)?.value ?? null;
+}
+
+/**
+ * Escolhas de sub-feature da subclasse (ids com `sub:`).
+ * @returns {import('./choices').Choice[]}
+ */
+export function subclassFeatureOptionChoices(db, classId, subclass, level, { followers = false } = {}) {
+  if (!subclass) return [];
+  const short = norm(subclass.shortName);
+  const src = norm(subclass.source);
+  const own = (f) => norm(f.subclassShortName) === short && !(src && f.subclassSource && norm(f.subclassSource) !== src);
+  const pool = resolveCopies(db?.[`class-${classId}`]?.subclassFeature ?? [], featureCopyId).filter(own);
+  const idx = poolIndex(pool);
+  const resolveRef = (e) => {
+    const [name, , , , source, lvl] = String(e.subclassFeature).split('|');
+    const sub = idx.get(`${norm(name)}|${Number(lvl)}`);
+    return sub ? { name: sub.name, source: sub.source ?? source, entries: sub.entries } : null;
+  };
+  const out = [];
+  const seen = new Set();
+  for (const f of pool) {
+    if (f.isClassFeatureVariant) continue;
+    if ((f.level ?? 0) > level) continue;
+    const block = findOptionBlocks(f.entries, [], 'refSubclassFeature').find((b) => b.explicit);
+    const fromBlock = block ? block.refs.map((sf) => optionToCard({ type: 'refSubclassFeature', subclassFeature: sf }, resolveRef)).filter(Boolean) : [];
+    const options = fromBlock.length ? fromBlock : curatedOptions(f, resolveRef);
+    if (!options?.length) continue;
+    if (seen.has(`${norm(f.name)}|${f.level}`)) continue;
+    seen.add(`${norm(f.name)}|${f.level}`);
+    out.push({ id: `sub:featopt@${f.name}@${f.level}`, kind: 'featureoption', count: 1, level: f.level, label: f.name, feature: { name: f.name, level: f.level, subclass: subclass.shortName }, pool: { type: 'featureoption', options } });
+  }
+  for (const ch of out) {
+    const leader = FOLLOWS[norm(ch.label)] && out.find((x) => norm(x.label) === FOLLOWS[norm(ch.label)]);
+    if (leader) ch.follows = leader.id;
+  }
+  return followers ? out : out.filter((ch) => !ch.follows);
+}
+
+/** Os picks de uma escolha; a que segue outra toma a opção de mesmo nome da líder. */
+export function optionPicks(choices, ch, all) {
+  if (!ch.follows) return (choices?.[ch.id]?.picks ?? []).map((p) => canonicalPick(ch, p)).filter(Boolean);
+  const leader = all.find((x) => x.id === ch.follows);
+  const labels = (choices?.[ch.follows]?.picks ?? []).map((p) => leader && canonicalPick(leader, p)).map((p) => (leader?.pool?.options ?? []).find((o) => o.value === p)?.label).filter(Boolean);
+  return (ch.pool?.options ?? []).filter((o) => labels.some((l) => norm(l) === norm(o.label))).map((o) => o.value);
+}

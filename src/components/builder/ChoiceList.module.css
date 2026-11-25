@@ -1,0 +1,188 @@
+/* =============================================================================
+ * ChoiceList.module.css: a lista de escolhas (o choke-point de toda escolha)
+ * =============================================================================
+ * CLASSES
+ *   .list, .choice, .head, .label, .counter: o bloco de cada escolha; .counterOver
+ *     é a contagem acima do limite (vermelha), .hint a linha do limite abaixo do título.
+ *   .labelLink: o título tappável (abre a feature no glossário), com o sublinhado
+ *     pontilhado dos links de regra.
+ *   .tags: a fila das escolhidas e do botão de adicionar, ambos o Chip comum
+ *     (components/common/Chip.jsx, DDL-0197).
+ *   .abilityChoice, .ability*: o ASI embutido em talento.
+ *   .pillsWrap: a fila de Chips das escolhas curtas de vários (tipos de dano: até 9
+ *     opções no Boon of Energy Resistance); a alternativa do ASI é o SegmentedControl
+ *     (DDL-0307).
+ *   .option*: cards de sub-feature (Divine Order, Primal Order).
+ *   .featSlot, .nested: os slots de talento e o aninhamento recursivo;
+ *     .nestedTitle nomeia o bloco aninhado de uma optional feature (o Pact of the
+ *     Tome), já que os chips ficam acima e pode haver mais de uma.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - As escolhidas, o "Add" e as pílulas de escolha são o Chip comum (DDL-0197,
+ *     DDL-0307), nunca uma cópia aqui.
+ *   - Sem capitalize nos chips (TC-0040): os rótulos já chegam com a grafia certa
+ *     (SKILL_LABEL, titleCase do engine ou o nome real da entidade), e capitalizar
+ *     de novo quebrava as partículas ("Pact Of The Blade").
+ * -------------------------------------------------------------------------- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.labelLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 2px;
+}
+
+.labelLink:hover,
+.labelLink:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+  outline: none;
+}
+
+.counter {
+  font-size: var(--fs-small);
+  opacity: 0.55;
+}
+
+.counterOver {
+  color: var(--danger);
+  opacity: 1;
+}
+
+.hint {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.abilityChoice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pillsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.abilityRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.abilityRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.abilityAmount {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 24px;
+  text-align: center;
+}
+
+.optionCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.optionCard {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.optionCard:hover {
+  border-color: var(--accent-border);
+}
+
+.optionCardSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.optionName {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.optionDesc {
+  font-size: var(--fs-meta);
+  opacity: 0.9;
+}
+
+.featSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nested {
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.nestedTitle {
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  color: var(--text-muted);
+}

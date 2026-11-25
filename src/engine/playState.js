@@ -1,0 +1,411 @@
+// =============================================================================
+// playState: o estado de jogo como LOG de eventos, com desfazer, refazer e janela
+// =============================================================================
+// O QUE FAZ
+//   O play mode não guarda o estado atual: guarda o log de eventos e o deriva
+//   (docs/PLAY-MODE-PLAN.md 3.1). O documento de jogo de um personagem é
+//   `{ characterId, version, baseline, events, cursor }`: o estado é o `baseline`
+//   com os eventos de 0 a `cursor` aplicados. Desfazer recua o cursor, refazer
+//   avança, e um evento novo depois de desfazer descarta o ramo refazível.
+//
+//   Cada evento leva OPERAÇÕES concretas, já calculadas por quem o criou (a tela,
+//   com o catálogo e a derivação na mão): "dano +7, temporário -5", "gasta 1 de
+//   slot:3". O redutor só as aplica, sem ler ficha nem compêndio, então o replay é
+//   determinístico mesmo que a ficha mude depois (subir de nível não reescreve o
+//   passado). As rolagens vão no evento (`rolls`, o resultado do dice.js).
+//
+//   O estado guarda o GASTO, não o valor atual (3.2): `damage` é o dano sofrido
+//   (o HP atual é o máximo menos o dano), `spent` conta o consumido por chave estável
+//   (`slot:3`, `pact`, `hd:d10`, `pool:<origem>|<nome>`, `granted:<origem>|<magia>`).
+//
+// FUNÇÕES
+//   clamp(n, lo, hi), num(n): prender num intervalo; número ou 0.
+//   Estado
+//     emptyPlayState(): o estado descansado.
+//     applyOp(state, op), applyEvent(state, event): o redutor puro.
+//     summonsAfter(list, op): a lista de summons depois de uma operação `summon` (`castUsed`: os extras
+//       de uma rolagem por lançamento já usados no grupo, DDL-0250).
+//     hpView(state, maxHp), remainingOf(state, key, max): os valores atuais.
+//   Documento e log
+//     createPlayDoc(characterId), normalizePlayDoc(raw, characterId): o
+//       documento novo e a coerção defensiva de um salvo.
+//     currentPlayState(doc): o estado no cursor.
+//     makeEvent(kind, fields, now): um evento com id e data.
+//     recordEvent(doc, event): grava, descartando o ramo refazível.
+//     undoEvent(doc), redoEvent(doc), canUndo(doc), canRedo(doc): o cursor.
+//     clearPlayHistory(doc): limpa o histórico, guardando o estado atual.
+//     normalizeLimits(limits), compactPlayDoc(doc, limits, now): a janela.
+//   Personagem (inventário e moedas)
+//     characterOps(event): as operações do evento que tocam o personagem.
+//     deepEqual(a, b): igualdade estrutural, para o conflito.
+//     applyCharacterOps(character, ops, direction): aplica ou desfaz no
+//       personagem, com a lista do que conflitou.
+//
+// DECISÕES E ARMADILHAS
+//   - `pactWeapon` é a arma de pacto do Pact of the Blade (op `pact`, engine/playPact.js, DDL-0236):
+//     `{ kind: 'bond', uid, name }` (uma arma que carrega) ou `{ kind: 'conjure', weapon, name }`.
+//   - Summons (DDL-0192): `summons` é a lista de grupos; a operação `summon` põe
+//     (`add`), tira (`remove`) ou muda um membro (`damage`, `temp`, `max`, `condition`
+//     com `on`). O temporário e o ajuste do máximo (`maxDelta`) só entram no membro
+//     quando existem (DDL-0201), e o membro antigo, sem eles, deriva igual.
+//     O membro guarda o dano, não o PV, e o grupo traz o contexto do invocador
+//     (engine/playSummons.js): o reducer não lê a ficha nem o bestiário.
+//   - Forma (DDL-0195): `form` é a forma atual ou null; a operação `form` põe (`set`)
+//     ou tira (`clear`). Quem cria o evento (engine/playForms.js) decide o resto.
+//   Operações (`op`)
+//   - `hp` { damage, temp, max }: somas; dano e temporário com piso em 0; `max`
+//     soma ao ajuste do HP máximo (`maxHpDelta`: Aid sobe, um dreno desce), que o
+//     hpView aplica sobre o máximo da ficha. `spend` { key,
+//     amount }: soma ao gasto (negativo devolve), piso 0, a chave some no 0.
+//     `restore` { key, amount? }: devolve `amount` ou tudo. `resourceMax` { key,
+//     amount }: soma ao ajuste do máximo do recurso (`resourceMax`, a chave some no
+//     0), que o withResourceMax (playUse) aplica sobre o máximo da ficha; o gasto
+//     fica, então subir o máximo sobe o que resta junto, como no HP. `death` { success,
+//     failure, set, reset }: `set` troca campos ({ success, failure, stable, dead })
+//     e então soma, preso entre 0 e 3; `reset` zera tudo. `condition` { id, level }: 0
+//     tira. `inspiration` { value }, `concentration` { value }, `combat` { value }:
+//     definem. `modifier` { add } ou { remove: id }. `lockout` { key, rests } trava a recarga de um
+//     recurso por N descansos longos, { key, tick: -1 } desconta um (o "until you finish 2d4 long rests"
+//     do Greater Divine Intervention; DDL-0275); o estado antigo, sem `lockouts`, vale vazio.
+//   - Operação desconhecida é IGNORADA e o evento fica no log: um evento gravado
+//     por uma versão mais nova não derruba a mais velha (carga, §6.3).
+//   - `inventory` { uid, before, after, index? } e `currency` { delta } tocam o
+//     PERSONAGEM (pergunta 3 do plano), não o estado: o redutor as pula, e quem
+//     move o cursor chama applyCharacterOps. Ir para a frente exige o item igual
+//     a `before`; voltar, igual a `after`. Se o jogador mexeu no item pelo builder
+//     depois, a operação CONFLITA: não aplica e volta na lista, para a tela
+//     avisar, em vez de adivinhar. Moeda conflita se alguma ficaria negativa.
+//   Janela (pergunta 4 do plano)
+//   - Ficam as últimas `maxEvents` aplicadas OU as de até `maxAgeDays` dias, o
+//     que for MENOR; as mais velhas são DOBRADAS no `baseline`: o estado continua
+//     exato, só a entrada sai do histórico. O ramo refazível (depois do cursor)
+//     nunca é dobrado nem descartado aqui. A operação de personagem dobrada não
+//     precisa de nada: ela já está na ficha.
+//   - HISTORY_LIMITS (500 ações, 30 dias) é o padrão do plano; a tela passa o que
+//     o jogador ajustou.
+// -----------------------------------------------------------------------------
+
+import { makeId } from '../schema/character';
+
+export const PLAY_DOC_VERSION = 1;
+
+export const HISTORY_LIMITS = { maxEvents: 500, maxAgeDays: 30 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const NO_DEATH = { success: 0, failure: 0, stable: false, dead: false };
+
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+const num = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
+
+/** O estado descansado: nada gasto, nenhuma condição. */
+export function emptyPlayState() {
+  return {
+    damage: 0,
+    tempHp: 0,
+    maxHpDelta: 0,
+    death: { ...NO_DEATH },
+    spent: {},
+    resourceMax: {},
+    conditions: {},
+    inspiration: false,
+    concentration: null,
+    modifiers: [],
+    combat: null,
+    summons: [],
+    form: null,
+    pactWeapon: null,
+  };
+}
+
+/** Aplica uma operação ao estado, sem mutá-lo. */
+export function applyOp(state, op) {
+  switch (op?.op) {
+    case 'hp':
+      return {
+        ...state,
+        damage: Math.max(0, state.damage + num(op.damage)),
+        tempHp: Math.max(0, state.tempHp + num(op.temp)),
+        ...(op.max ? { maxHpDelta: num(state.maxHpDelta) + num(op.max) } : {}),
+      };
+    case 'spend':
+    case 'restore': {
+      if (!op.key) return state;
+      const before = state.spent[op.key] ?? 0;
+      const after = op.op === 'spend'
+        ? Math.max(0, before + num(op.amount))
+        : op.amount == null ? 0 : Math.max(0, before - num(op.amount));
+      const spent = { ...state.spent };
+      if (after > 0) spent[op.key] = after;
+      else delete spent[op.key];
+      return { ...state, spent };
+    }
+    case 'resourceMax': {
+      if (!op.key) return state;
+      const after = num(state.resourceMax?.[op.key]) + num(op.amount);
+      const resourceMax = { ...(state.resourceMax ?? {}) };
+      if (after !== 0) resourceMax[op.key] = after;
+      else delete resourceMax[op.key];
+      return { ...state, resourceMax };
+    }
+    case 'death': {
+      if (op.reset) return { ...state, death: { ...NO_DEATH } };
+      const base = { ...NO_DEATH, ...state.death, ...(op.set ?? {}) };
+      return {
+        ...state,
+        death: {
+          ...base,
+          success: clamp(num(base.success) + num(op.success), 0, 3),
+          failure: clamp(num(base.failure) + num(op.failure), 0, 3),
+          stable: base.stable === true,
+          dead: base.dead === true,
+        },
+      };
+    }
+    case 'condition': {
+      if (!op.id) return state;
+      const conditions = { ...state.conditions };
+      const level = Math.max(0, num(op.level));
+      if (level > 0) conditions[op.id] = level;
+      else delete conditions[op.id];
+      return { ...state, conditions };
+    }
+    case 'inspiration':
+      return { ...state, inspiration: op.value === true };
+    case 'lockout': {
+      if (!op.key) return state;
+      const lockouts = { ...(state.lockouts ?? {}) };
+      const n = op.rests != null ? num(op.rests) : num(lockouts[op.key]) + num(op.tick);
+      if (n > 0) lockouts[op.key] = n;
+      else delete lockouts[op.key];
+      return { ...state, lockouts };
+    }
+    case 'concentration':
+      return { ...state, concentration: op.value ?? null };
+    case 'combat':
+      return { ...state, combat: op.value ?? null };
+    case 'summon':
+      return { ...state, summons: summonsAfter(state.summons ?? [], op) };
+    case 'form':
+      return { ...state, form: op.clear ? null : op.set ?? state.form ?? null };
+    case 'pact':
+      return { ...state, pactWeapon: op.value ?? null };
+    case 'modifier':
+      if (op.add) return { ...state, modifiers: [...state.modifiers.filter((m) => m.id !== op.add.id), op.add] };
+      if (op.remove) {
+        const gone = state.modifiers.find((m) => m.id === op.remove);
+        const damage = gone?.hpMax ? Math.max(0, state.damage - num(gone.hpMax)) : state.damage;
+        return { ...state, damage, modifiers: state.modifiers.filter((m) => m.id !== op.remove) };
+      }
+      return state;
+    default:
+      return state;
+  }
+}
+
+/** A lista de summons depois de uma operação `summon` (pôr, tirar, dano, temporário e máximo num membro, condição). */
+function summonsAfter(list, op) {
+  if (op.add) return [...list.filter((g) => g.id !== op.add.id), op.add];
+  if (op.remove) return list.filter((g) => g.id !== op.remove);
+  return list.map((g) => {
+    if (g.id !== op.id) return g;
+    if (op.castUsed) return { ...g, castUsed: [...new Set([...(g.castUsed ?? []), ...op.castUsed])] };
+    if (op.count && g.light?.count) return { ...g, light: { ...g.light, count: { ...g.light.count, left: Math.max(0, g.light.count.left + op.count) } } };
+    const members = (g.members ?? []).map((m, i) => {
+      if (i !== op.member) return m;
+      const conditions = op.condition
+        ? (op.on ? [...new Set([...(m.conditions ?? []), op.condition])] : (m.conditions ?? []).filter((c) => c !== op.condition))
+        : m.conditions ?? [];
+      const out = { ...m, damage: Math.max(0, num(m.damage) + num(op.damage)), conditions };
+      if (op.temp || m.temp) out.temp = Math.max(0, num(m.temp) + num(op.temp));
+      if (op.max || m.maxDelta) out.maxDelta = num(m.maxDelta) + num(op.max);
+      return out;
+    });
+    return { ...g, members };
+  });
+}
+
+/** Aplica todas as operações de um evento. */
+export function applyEvent(state, event) {
+  return (event?.ops ?? []).reduce(applyOp, state);
+}
+
+/** HP máximo, atual (o máximo menos o dano, preso no intervalo) e temporário. */
+export function hpView(state, maxHp) {
+  const aid = (state.modifiers ?? []).reduce((s, m) => s + num(m.hpMax), 0);
+  const max = Math.max(0, num(maxHp) + num(state.maxHpDelta) + aid);
+  return { max, current: clamp(max - state.damage, 0, max), temp: state.tempHp };
+}
+
+/** Quanto resta de um recurso de máximo `max`. */
+export function remainingOf(state, key, max) {
+  return Math.max(0, num(max) - (state.spent[key] ?? 0));
+}
+
+/**
+ * Um documento de jogo novo, descansado.
+ * @param {string} characterId
+ */
+export function createPlayDoc(characterId) {
+  return { characterId, version: PLAY_DOC_VERSION, baseline: emptyPlayState(), events: [], cursor: 0 };
+}
+
+/** Coerção defensiva de um documento salvo (ou ausente) para a forma atual. */
+export function normalizePlayDoc(raw, characterId) {
+  if (!raw || typeof raw !== 'object') return createPlayDoc(characterId);
+  const base = emptyPlayState();
+  const b = raw.baseline && typeof raw.baseline === 'object' ? raw.baseline : {};
+  const baseline = {
+    ...base,
+    ...b,
+    damage: Math.max(0, num(b.damage)),
+    tempHp: Math.max(0, num(b.tempHp)),
+    maxHpDelta: num(b.maxHpDelta),
+    death: { ...NO_DEATH, ...(b.death ?? {}) },
+    spent: b.spent && typeof b.spent === 'object' ? { ...b.spent } : {},
+    resourceMax: b.resourceMax && typeof b.resourceMax === 'object' ? { ...b.resourceMax } : {},
+    conditions: b.conditions && typeof b.conditions === 'object' ? { ...b.conditions } : {},
+    modifiers: Array.isArray(b.modifiers) ? b.modifiers : [],
+    summons: Array.isArray(b.summons) ? b.summons : [],
+    form: b.form && typeof b.form === 'object' ? b.form : null,
+    pactWeapon: b.pactWeapon && typeof b.pactWeapon === 'object' ? b.pactWeapon : null,
+  };
+  const events = Array.isArray(raw.events) ? raw.events.filter((e) => e && typeof e === 'object') : [];
+  const cursor = clamp(Number.isInteger(raw.cursor) ? raw.cursor : events.length, 0, events.length);
+  return { characterId: raw.characterId ?? characterId, version: PLAY_DOC_VERSION, baseline, events, cursor };
+}
+
+/** O estado no cursor. */
+export function currentPlayState(doc) {
+  return doc.events.slice(0, doc.cursor).reduce(applyEvent, doc.baseline);
+}
+
+/**
+ * Um evento com id e data.
+ * @param {string} kind
+ * @param {{ ops?: object[], payload?: object, rolls?: object|null, label?: string }} [fields]
+ * @param {Date} [now]
+ */
+export function makeEvent(kind, { ops = [], payload = {}, rolls = null, label = '' } = {}, now = new Date()) {
+  return { id: makeId(), at: now.toISOString(), kind, label, payload, rolls, ops };
+}
+
+/** Grava um evento no cursor; o ramo refazível é descartado e devolvido. */
+export function recordEvent(doc, event) {
+  const discarded = doc.events.slice(doc.cursor);
+  const events = [...doc.events.slice(0, doc.cursor), event];
+  return { doc: { ...doc, events, cursor: events.length }, discarded };
+}
+
+/** Desfaz o último evento aplicado; null se não há o que desfazer. */
+export function undoEvent(doc) {
+  if (!canUndo(doc)) return null;
+  return { doc: { ...doc, cursor: doc.cursor - 1 }, event: doc.events[doc.cursor - 1] };
+}
+
+/** Refaz o próximo evento do ramo; null se não há o que refazer. */
+export function redoEvent(doc) {
+  if (!canRedo(doc)) return null;
+  return { doc: { ...doc, cursor: doc.cursor + 1 }, event: doc.events[doc.cursor] };
+}
+
+/** Limpa o histórico: o estado no cursor vira o baseline; o ramo desfeito some. */
+export function clearPlayHistory(doc) {
+  return { ...doc, baseline: currentPlayState(doc), events: [], cursor: 0 };
+}
+
+/** Há evento aplicado para desfazer? */
+export function canUndo(doc) {
+  return doc.cursor > 0;
+}
+
+/** Há evento desfeito para refazer? */
+export function canRedo(doc) {
+  return doc.cursor < doc.events.length;
+}
+
+/** Os limites da janela, inteiros e no mínimo 1. */
+export function normalizeLimits(limits = {}) {
+  const pick = (v, d) => (Number.isFinite(Number(v)) && Number(v) >= 1 ? Math.floor(Number(v)) : d);
+  return {
+    maxEvents: pick(limits.maxEvents, HISTORY_LIMITS.maxEvents),
+    maxAgeDays: pick(limits.maxAgeDays, HISTORY_LIMITS.maxAgeDays),
+  };
+}
+
+/**
+ * Dobra no baseline o que passou da janela (quantidade ou idade).
+ * @returns {{ doc: object, folded: number }}
+ */
+export function compactPlayDoc(doc, limits = HISTORY_LIMITS, now = new Date()) {
+  const { maxEvents, maxAgeDays } = normalizeLimits(limits);
+  const applied = doc.events.slice(0, doc.cursor);
+  const cutoff = now.getTime() - maxAgeDays * DAY_MS;
+  let old = 0;
+  while (old < applied.length && Date.parse(applied[old].at) < cutoff) old++;
+  const folded = Math.max(old, applied.length - maxEvents);
+  if (folded <= 0) return { doc, folded: 0 };
+  const baseline = applied.slice(0, folded).reduce(applyEvent, doc.baseline);
+  return {
+    doc: { ...doc, baseline, events: doc.events.slice(folded), cursor: doc.cursor - folded },
+    folded,
+  };
+}
+
+/** As operações do evento que tocam o personagem (inventário e moedas). */
+export function characterOps(event) {
+  return (event?.ops ?? []).filter((op) => op?.op === 'inventory' || op?.op === 'currency');
+}
+
+/** Igualdade estrutural (a ordem das chaves não importa). */
+export function deepEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a).filter((k) => a[k] !== undefined);
+  const kb = Object.keys(b).filter((k) => b[k] !== undefined);
+  if (ka.length !== kb.length) return false;
+  return ka.every((k) => deepEqual(a[k], b[k]));
+}
+
+/**
+ * Aplica (`forward`) ou desfaz (`backward`) as operações de personagem.
+ * @returns {{ character: object, conflicts: object[] }}
+ */
+export function applyCharacterOps(character, ops, direction = 'forward') {
+  const list = direction === 'forward' ? ops : [...ops].reverse();
+  let inventory = [...(character.inventory ?? [])];
+  let currency = { ...(character.currency ?? {}) };
+  const conflicts = [];
+
+  for (const op of list) {
+    if (op?.op === 'inventory') {
+      const expected = direction === 'forward' ? op.before ?? null : op.after ?? null;
+      const target = direction === 'forward' ? op.after ?? null : op.before ?? null;
+      const at = inventory.findIndex((e) => e.uid === op.uid);
+      const current = at >= 0 ? inventory[at] : null;
+      if (!deepEqual(current, expected)) {
+        conflicts.push(op);
+        continue;
+      }
+      if (target && at >= 0) {
+        inventory[at] = target;
+      } else if (target) {
+        const index = Number.isInteger(op.index) ? clamp(op.index, 0, inventory.length) : inventory.length;
+        inventory = [...inventory.slice(0, index), target, ...inventory.slice(index)];
+      } else if (at >= 0) {
+        inventory = inventory.filter((e, i) => i !== at);
+      }
+    } else if (op?.op === 'currency') {
+      const sign = direction === 'forward' ? 1 : -1;
+      const next = { ...currency };
+      for (const [coin, delta] of Object.entries(op.delta ?? {})) next[coin] = num(next[coin]) + sign * num(delta);
+      if (Object.values(next).some((v) => v < 0)) {
+        conflicts.push(op);
+        continue;
+      }
+      currency = next;
+    }
+  }
+  return { character: { ...character, inventory, currency }, conflicts };
+}

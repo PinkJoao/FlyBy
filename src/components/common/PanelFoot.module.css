@@ -1,0 +1,37 @@
+/* =============================================================================
+ * PanelFoot.module.css: o rodapé fixo de um painel
+ * =============================================================================
+ * CLASSES
+ *   .foot: a faixa presa ao pé do corpo da janela, com os botões dividindo a
+ *     largura (44 px de altura no celular, como o rodapé do preview).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - As margens negativas (18 px dos lados, 16 px embaixo) são o respiro do .body
+ *     do PreviewShell.module.css; mudar um pede mudar o outro.
+ *   - O fundo é o da janela (--bg-soft): o conteúdo que rola passa por baixo.
+ * -------------------------------------------------------------------------- */
+
+.foot {
+  position: sticky;
+  bottom: -16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 14px -18px -16px;
+  padding: 12px 18px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+.foot > * {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 40px;
+}
+
+@media (max-width: 760px) {
+  .foot > * {
+    min-height: 44px;
+  }
+}

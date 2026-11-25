@@ -1,0 +1,20 @@
+/* =============================================================================
+ * Card.module.css: a superfície de card do app
+ * =============================================================================
+ * CLASSES
+ *   .card: a borda, o raio (--radius-card) e o fundo (--bg-soft) de todo card.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Um só lugar para o desenho do card (DDL-0313, P10 do docs/UI-STUDY.md): os cards
+ *     da ficha (tiles, atributos, proficiências, moedas, carga, os do grimório), os
+ *     painéis das listas, a lista de personagens, o About e os cards do guia fazem
+ *     `composes: card from '.../common/Card.module.css'` e guardam só o próprio layout.
+ *     Antes eram cópias com raio de 12 ou 14 px.
+ *   - Linhas de lista, opções e janelas NÃO compõem: têm outro papel e outro desenho.
+ * -------------------------------------------------------------------------- */
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg-soft);
+}

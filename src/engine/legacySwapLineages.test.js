@@ -1,0 +1,240 @@
+// =============================================================================
+// legacySwapLineages.test: testes das linhagens de swap
+// =============================================================================
+// O QUE FAZ
+//   Recorte real do Halfling XPHB e das sub-raças 2014: o guarda-chuva no mesmo
+//   lugar, o Lightfoot reproduzindo a base, nenhuma opção acumulando o Naturally
+//   Stealthy, o Lotusden sem normalizar, e o compêndio incompleto (uma opção só
+//   não vira guarda-chuva). O mesmo padrão no Dwarf.
+//
+// FUNÇÕES
+//   halflingVersionName(lineage): o nome de uma variante do Halfling.
+// -----------------------------------------------------------------------------
+
+import { describe, it, expect } from 'vitest';
+import {
+  SWAP_LINEAGES,
+  swapVersionName,
+  swapLineageVersions,
+  withLineageUmbrella,
+  lineageUmbrellaName,
+  migrateSwapSpecies,
+} from './legacySwapLineages';
+
+const HALFLING_LINEAGES = SWAP_LINEAGES['Halfling|XPHB'].options;
+const UMBRELLA_TRAIT = SWAP_LINEAGES['Halfling|XPHB'].umbrella;
+const halflingVersionName = (lineage) => swapVersionName('Halfling', lineage);
+import { raceLineages, requiresLineage, lineageSelectorLabel, lineageDeferredKinds } from './speciesData';
+
+const db = {
+  races: {
+    race: [
+      { name: 'Halfling', source: 'PHB', speed: 25, reprintedAs: ['Halfling|XPHB'], entries: [] },
+      {
+        name: 'Halfling',
+        source: 'XPHB',
+        speed: 30,
+        size: ['S'],
+        entries: [
+          { type: 'entries', name: 'Brave', entries: ['b'] },
+          { type: 'entries', name: 'Luck', entries: ['l'] },
+          { type: 'entries', name: 'Naturally Stealthy', entries: ['redação 2024'] },
+        ],
+      },
+    ],
+    subrace: [
+      { name: 'Stout', source: 'PHB', raceName: 'Halfling', raceSource: 'PHB', ability: [{ con: 1 }],
+        resist: ['poison'],
+        entries: [{ type: 'entries', name: 'Stout Resilience', entries: ['veneno'] }] },
+      { name: 'Ghostwise', source: 'SCAG', raceName: 'Halfling', raceSource: 'PHB',
+        entries: [
+          { type: 'entries', name: 'Size', entries: ['prosa 2014'] },
+          { type: 'entries', name: 'Silent Speech', entries: ['telepatia'] },
+        ] },
+      { name: 'Lotusden', source: 'EGW', raceName: 'Halfling', raceSource: 'PHB',
+        additionalSpells: [{ ability: 'wis', known: { 1: ['druidcraft#c'] } }],
+        entries: [
+          { type: 'entries', name: 'Child of the Wood', entries: ['a'] },
+          { type: 'entries', name: 'Timberwalk', entries: ['b'] },
+        ] },
+    ],
+  },
+};
+
+const base = db.races.race[1];
+const other = { name: 'Elf', source: 'XPHB', entries: [] };
+
+describe('guarda-chuva "Halfling Lineage" (DDL-0063)', () => {
+  it('SUBSTITUI na base o traço que ela absorveu do Lightfoot', () => {
+    const race = withLineageUmbrella(db, base);
+    expect(race.entries.map((e) => e.name)).toEqual(['Brave', 'Luck', UMBRELLA_TRAIT]);
+    expect(base.entries.map((e) => e.name)).toContain('Naturally Stealthy');
+  });
+
+  it('lista as quatro opções, e o Lightfoot carrega a redação da BASE 2024', () => {
+    const umbrella = withLineageUmbrella(db, base).entries[2];
+    const list = umbrella.entries.find((e) => e?.type === 'list');
+    expect(list.items.map((i) => i.name)).toEqual(['Lightfoot', 'Stout', 'Ghostwise', 'Lotusden']);
+    expect(list.items[0].entries[0]).toMatchObject({ name: 'Naturally Stealthy', entries: ['redação 2024'] });
+  });
+
+  it('é idempotente e devolve a MESMA referência quando não há o que mudar', () => {
+    const once = withLineageUmbrella(db, base);
+    expect(withLineageUmbrella(db, once)).toBe(once);
+    expect(withLineageUmbrella(db, other)).toBe(other);
+    expect(withLineageUmbrella(null, base)).toBe(base);
+  });
+
+  it('dá o rótulo do seletor de linhagem (o dado não tem o que ler aqui)', () => {
+    expect(lineageUmbrellaName(base)).toBe(UMBRELLA_TRAIT);
+    expect(lineageUmbrellaName(other)).toBeNull();
+    expect(lineageSelectorLabel(withLineageUmbrella(db, base))).toBe(UMBRELLA_TRAIT);
+  });
+});
+
+describe('as linhagens do Halfling', () => {
+  it('são as quatro, cada uma com a procedência do livro que a nomeou', () => {
+    const versions = swapLineageVersions(db, base);
+    expect(versions.map((v) => v.name)).toEqual([
+      'Halfling; Lightfoot Lineage',
+      'Halfling; Stout Lineage',
+      'Halfling; Ghostwise Lineage',
+      'Halfling; Lotusden Lineage',
+    ]);
+    expect(versions.map((v) => v.source)).toEqual(['PHB', 'PHB', 'SCAG', 'EGW']);
+    expect(swapLineageVersions(db, other)).toEqual([]);
+  });
+
+  it('cada uma TROCA o traço absorvido - nunca soma a ele', () => {
+    const byName = Object.fromEntries(raceLineages(db, base).map((v) => [v.name, v]));
+    for (const spec of HALFLING_LINEAGES) {
+      const v = byName[halflingVersionName(spec.lineage)];
+      const traits = v.entries.map((e) => e.name);
+      expect(traits).toEqual(['Brave', 'Luck', `${UMBRELLA_TRAIT} (${spec.lineage})`]);
+    }
+  });
+
+  it('o Lightfoot reproduz a base 2024 exatamente (nada muda além do nome)', () => {
+    const v = raceLineages(db, base).find((x) => x.name === 'Halfling; Lightfoot Lineage');
+    expect(v.speed).toBe(30);
+    expect(v.resist).toBeUndefined();
+    expect(v.additionalSpells).toBeUndefined();
+    expect(v.entries[2].entries[0]).toMatchObject({ name: 'Naturally Stealthy' });
+  });
+
+  it('as demais levam os campos estruturados da sub-raça 2014', () => {
+    const byName = Object.fromEntries(raceLineages(db, base).map((v) => [v.name, v]));
+    expect(byName['Halfling; Stout Lineage'].resist).toEqual(['poison']);
+    expect(byName['Halfling; Lotusden Lineage'].additionalSpells).toEqual([
+      { ability: 'wis', known: { 1: ['druidcraft#c'] } },
+    ]);
+    expect(byName['Halfling; Lotusden Lineage'].entries[2].entries.map((e) => e.name)).toEqual([
+      'Child of the Wood', 'Timberwalk',
+    ]);
+    expect(byName['Halfling; Ghostwise Lineage'].entries[2].entries.map((e) => e.name)).toEqual(['Silent Speech']);
+  });
+
+  it('passam a OBRIGAR a escolha de linhagem (não são acréscimo opcional)', () => {
+    expect(requiresLineage(db, base)).toBe(true);
+    for (const v of swapLineageVersions(db, base)) expect(v._legacy).toBeUndefined();
+  });
+
+  it('não adiam escolha nenhuma: a base do Halfling não gera as que a linhagem resolve', () => {
+    expect([...lineageDeferredKinds(db, withLineageUmbrella(db, base))]).toEqual([]);
+  });
+
+  it('sem as sub-raças no compêndio, a espécie fica exatamente como está hoje', () => {
+    const bare = { races: { race: db.races.race, subrace: [] } };
+    expect(swapLineageVersions(bare, base)).toEqual([]);
+    expect(withLineageUmbrella(bare, base)).toBe(base);
+    expect(requiresLineage(bare, base)).toBe(false);
+  });
+});
+
+describe('migração das formas antigas', () => {
+  it('espécie à parte volta a ser Halfling XPHB + linhagem, zerando o bag', () => {
+    expect(migrateSwapSpecies({ id: 'halfling (ghostwise)', source: 'SCAG', choices: { a: 1 } })).toEqual({
+      id: 'halfling', source: 'XPHB', lineage: 'Halfling; Ghostwise Lineage', choices: {},
+    });
+    expect(migrateSwapSpecies({ id: 'halfling (lotusden)', source: 'EGW' })).toMatchObject({
+      id: 'halfling', lineage: 'Halfling; Lotusden Lineage',
+    });
+  });
+
+  it('Halfling XPHB sem linhagem recebe Lightfoot - sem perda e sem zerar o bag', () => {
+    expect(migrateSwapSpecies({ id: 'halfling', source: 'XPHB', lineage: null, choices: { a: 1 } })).toEqual({
+      id: 'halfling', source: 'XPHB', lineage: 'Halfling; Lightfoot Lineage', choices: { a: 1 },
+    });
+  });
+
+  it('não mexe em quem já tem linhagem nem em outra espécie', () => {
+    const chosen = { id: 'halfling', source: 'XPHB', lineage: 'Halfling; Stout Lineage' };
+    expect(migrateSwapSpecies(chosen)).toBe(chosen);
+    const elf = { id: 'elf', source: 'XPHB' };
+    expect(migrateSwapSpecies(elf)).toBe(elf);
+    expect(migrateSwapSpecies(null)).toBeNull();
+  });
+});
+
+describe('guarda-chuva "Dwarf Lineage" (o segundo caso de swap)', () => {
+  const dwarfDb = {
+    races: {
+      race: [
+        { name: 'Dwarf', source: 'PHB', reprintedAs: ['Dwarf|XPHB'], entries: [] },
+        {
+          name: 'Dwarf',
+          source: 'XPHB',
+          entries: [
+            { type: 'entries', name: 'Dwarven Resilience', entries: ['veneno'] },
+            { type: 'entries', name: 'Dwarven Toughness', entries: ['+1 HP por nível'] },
+            { type: 'entries', name: 'Stonecunning', entries: ['s'] },
+          ],
+        },
+      ],
+      subrace: [
+        {
+          name: 'Mountain', source: 'PHB', raceName: 'Dwarf', raceSource: 'PHB',
+          ability: [{ str: 2 }],
+          armorProficiencies: [{ light: true, medium: true }],
+          entries: [{ type: 'entries', name: 'Dwarven Armor Training', entries: ['leve e média'] }],
+        },
+        {
+          name: 'Duergar', source: 'MTF', raceName: 'Dwarf', raceSource: 'PHB',
+          reprintedAs: ['Duergar|MPMM'],
+          entries: [{ type: 'entries', name: 'Duergar Resilience', entries: ['d'] }],
+        },
+      ],
+    },
+  };
+  const dwarf = dwarfDb.races.race[1];
+
+  it('as duas opções TROCAM o traço absorvido, e o Hill reproduz a base', () => {
+    const byName = Object.fromEntries(swapLineageVersions(dwarfDb, dwarf).map((v) => [v.name, v]));
+    expect(Object.keys(byName)).toEqual(['Dwarf; Hill Lineage', 'Dwarf; Mountain Lineage']);
+    const traits = (v) => raceLineages(dwarfDb, dwarf).find((x) => x.name === v).entries.map((e) => e.name);
+    expect(traits('Dwarf; Hill Lineage')).toEqual([
+      'Dwarven Resilience', 'Dwarf Lineage (Hill)', 'Stonecunning',
+    ]);
+    expect(traits('Dwarf; Mountain Lineage')).toEqual([
+      'Dwarven Resilience', 'Dwarf Lineage (Mountain)', 'Stonecunning',
+    ]);
+  });
+
+  it('o Mountain leva o campo ESTRUTURADO de armadura (a mecânica dele)', () => {
+    const mountain = swapLineageVersions(dwarfDb, dwarf).find((v) => /Mountain/.test(v.name));
+    expect(mountain.armorProficiencies).toEqual([{ light: true, medium: true }]);
+    const hill = swapLineageVersions(dwarfDb, dwarf).find((v) => /Hill/.test(v.name));
+    expect(hill.armorProficiencies).toBeUndefined();
+  });
+
+  it('escolher uma linhagem passa a ser obrigatório, com o rótulo do guarda-chuva', () => {
+    expect(requiresLineage(dwarfDb, dwarf)).toBe(true);
+    expect(lineageUmbrellaName(dwarf)).toBe('Dwarf Lineage');
+  });
+
+  it('um Dwarf salvo sem linhagem migra para Hill, preservando o bag', () => {
+    expect(migrateSwapSpecies({ id: 'dwarf', source: 'XPHB', lineage: null, choices: { a: 1 } })).toEqual({
+      id: 'dwarf', source: 'XPHB', lineage: 'Dwarf; Hill Lineage', choices: { a: 1 },
+    });
+  });
+});

@@ -1,0 +1,26 @@
+/* =============================================================================
+ * HpPanels.module.css: o que os painéis do card de HP têm além do PlayPanels
+ * =============================================================================
+ * CLASSES
+ *   .now, .preview: o HP de agora e o que vai acontecer.
+ *   .full: o "To full" do Heal, centrado abaixo do número.
+ * -------------------------------------------------------------------------- */
+
+.now {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+}
+
+.preview {
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.full {
+  align-self: center;
+}

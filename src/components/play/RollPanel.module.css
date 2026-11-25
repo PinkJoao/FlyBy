@@ -1,0 +1,92 @@
+/* =============================================================================
+ * RollPanel.module.css: o diálogo de rolagem do play mode
+ * =============================================================================
+ * CLASSES
+ *   .form: a coluna do diálogo.
+ *   .formula, .note: a fórmula que vai ser rolada e a nota (a CD de um save).
+ *   .effects: os efeitos que valem para a rolagem (condições, Bless), em Toggle.
+ *   .field, .label, .input, .invalid, .error, .hint: os campos de texto.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O seletor de modo usa SegmentedControl (SegmentedControl.module.css).
+ * -------------------------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: min(340px, 78vw);
+}
+
+.formula {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: var(--fs-field);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-meta);
+  text-align: center;
+}
+
+.effects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  border: 1px dashed var(--accent-border);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.input {
+  font: inherit;
+  font-size: var(--fs-field);
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.invalid,
+.invalid:focus {
+  border-color: var(--danger);
+}
+
+.error {
+  font-size: var(--fs-small);
+  color: var(--danger-text);
+}
+
+.hint {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+

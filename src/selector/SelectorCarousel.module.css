@@ -1,0 +1,298 @@
+/* =============================================================================
+ * SelectorCarousel.module.css: o carrossel dos seletores (DDL-0286)
+ * =============================================================================
+ * CLASSES
+ *   .root, .empty: o carrossel (coluna que ocupa a altura dada) e a lista vazia.
+ *   .viewport, .track, .slot: a janela, o trilho deslocado por --i e cada vaga.
+ *   .arrow, .prev, .next: as setas (só no container largo, DDL-0287).
+ *   .card, .cardActive, .pick: o cartão, o do centro e o botão que cobre o vizinho.
+ *   .art, .artBtn, .thumb, .thumbIcon, .chosen: o quadro da arte (ou do ícone) e a
+ *     etiqueta do já escolhido.
+ *   .body, .head, .name, .meta, .teaser, .rest, .more: o texto do cartão; .rest é o resto
+ *     que o Read more abre embaixo do resumo, na mesma letra e com o espaço de um
+ *     parágrafo entre os dois (DDL-0300).
+ *   .strip, .stripItem, .stripOn, .stripThumb, .stripName, .stripSource: a faixa de
+ *     miniaturas (a fonte só sob um nome repetido, DDL-0301), em todo
+ *     carrossel (DDL-0293).
+ *   .foot: o rodapé (Select ou Choose).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O trilho anda em porcentagem da própria largura (a da janela): cada vaga tem
+ *     100% menos as duas espiadas, e o deslocamento é --peek menos --i vagas.
+ *   - Cartão horizontal em container largo (`@container`), não por media query: no
+ *     guia o passo é estreito mesmo no desktop.
+ *   - A faixa de miniaturas esconde a barra, como toda faixa lateral (DDL-0131); a roda
+ *     do mouse a rola de lado pelo `data-wheel-x`.
+ *   - O cartão do centro rola por dentro (o corpo), a janela não: deslizar de lado e
+ *     rolar o texto não brigam.
+ * -------------------------------------------------------------------------- */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  container-type: inline-size;
+}
+
+.empty {
+  opacity: 0.5;
+  padding: 18px;
+}
+
+.viewport {
+  --peek: 22px;
+  --gap: 10px;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  outline: none;
+}
+.viewport:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-border);
+  border-radius: var(--radius-card);
+}
+
+.track {
+  display: flex;
+  gap: var(--gap);
+  height: 100%;
+  transform: translateX(calc(var(--peek) - var(--i) * (100% - 2 * var(--peek) + var(--gap))));
+  transition: transform 0.32s ease;
+}
+
+.slot {
+  flex: 0 0 calc(100% - 2 * var(--peek));
+  min-width: 0;
+  height: 100%;
+}
+
+.card {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg-soft);
+  overflow: hidden;
+  opacity: 0.45;
+  transform: scale(0.95);
+  transition: opacity 0.32s ease, transform 0.32s ease, border-color 0.2s ease;
+}
+.cardActive {
+  opacity: 1;
+  transform: none;
+  border-color: var(--accent-border);
+}
+
+.pick {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.art {
+  position: relative;
+  flex: none;
+  height: clamp(120px, 24svh, 220px);
+  border-bottom: 1px solid var(--border);
+}
+.artBtn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+.thumb {
+  width: 100%;
+  height: 100%;
+  font-size: 64px;
+}
+.thumbIcon {
+  color: var(--accent);
+}
+.chosen {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.name {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--text-h);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.teaser {
+  font-size: var(--fs-field);
+}
+.teaser > :last-child > :last-child,
+.teaser p:last-child {
+  margin-bottom: 0;
+}
+.rest {
+  font-size: var(--fs-field);
+}
+.more {
+  appearance: none;
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: var(--space-1) 0;
+  min-height: 32px;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--accent);
+  cursor: pointer;
+}
+.more:hover {
+  text-decoration: underline;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  margin-top: -20px;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  font-size: 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.arrow:hover {
+  border-color: var(--accent-border);
+}
+.prev {
+  left: 4px;
+}
+.next {
+  right: 4px;
+}
+/* ATENÇÃO: só no container largo; no celular as setas cobriam a arte e o texto (deslizar e as espiadas bastam). */
+.arrow {
+  display: none;
+}
+
+.strip {
+  flex: none;
+  display: flex;
+  gap: var(--space-2);
+  padding: 10px 2px 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar {
+  display: none;
+}
+.stripItem {
+  appearance: none;
+  flex: none;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.stripThumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  font-size: 22px;
+}
+.stripOn {
+  color: var(--text-h);
+}
+.stripOn .stripThumb {
+  border: 2px solid var(--accent);
+}
+.stripName {
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stripSource {
+  margin-top: -2px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.foot {
+  flex: none;
+  padding-top: 10px;
+}
+
+@container (min-width: 620px) {
+  .arrow {
+    display: grid;
+  }
+  .viewport {
+    --peek: 56px;
+    --gap: 16px;
+  }
+  .card {
+    flex-direction: row;
+  }
+  .art {
+    width: 38%;
+    height: auto;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+  }
+  .body {
+    padding: 20px 22px;
+  }
+  .name {
+    font-size: var(--fs-page);
+  }
+}

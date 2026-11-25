@@ -1,0 +1,300 @@
+/* =============================================================================
+ * Play.module.css: a tela do play mode
+ * =============================================================================
+ * CLASSES
+ *   .sideContent, .sideScroll: o histórico dentro da coluna que a pages/Character
+ *     põe ao lado; só a lista (e a barra do combate) rola, em .sideScroll.
+ *   .historyHead, .historyActions: o título do histórico com desfazer, refazer e limpar (o Button de
+ *     ícone, buttonClass, DDL-0313).
+ *   .restGroup, .restBtn: Short rest e Long rest no lugar do controle de nível.
+ *   .cardPair: Conditions e Effects lado a lado no desktop, abertos ou não, e um acima do
+ *     outro no celular (DDL-0306).
+ *   .status: a faixa de estado (a morte e o combate; só aparece com um deles).
+ *   .formCard, .formTitle, .formNote: o aviso da forma no topo (Wild Shape, DDL-0195);
+ *     o título não encolhe: sem espaço, o Revert (com a Tag do gasto) desce (DDL-0201).
+ *   .deathCard, .deadCard, .deathTitle, .pips, .pip, .pipOk, .pipBad,
+ *     .deathHint: os testes contra a morte.
+ *   .historyTitle, .sideHead: o título do histórico com a rodada do combate, e o
+ *     topo da coluna do desktop, FORA da rolagem (DDL-0164): o histórico rola só
+ *     abaixo dele. Preso por cima da lista, ele precisava de fundo (com --bg virava
+ *     uma caixa sobre o degradê do app) ou de desfoque (o texto passando por trás
+ *     ficava borrado). Os comandos do combate moram no CombatControls.
+ *   .heading: os títulos.
+ *   .rollBtn, .rollLabel: o botão de rolar com rótulo (o teste contra a morte).
+ *   .toast, .toastLabel, .toastTotal: o aviso da última rolagem (o crítico e o 1
+ *     natural são a Tag comum, DDL-0199).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O que fica preso ao pé da tela soma --dock-h, a altura da barra de abas do rodapé
+ *     (a TabBar com `dock`) enquanto ela está presa lá (DDL-0306, DDL-0311).
+ *   - O layout É o da ficha (DDL-0114): .page, .topBar, .tabBar, .tab, .panel e
+ *     .stack vêm do Builder.module.css, com as mesmas larguras, margens e quebras.
+ *     Daqui só sai o que é do play mode: o perfil, a faixa de estado, o histórico
+ *     e o aviso. A coluna principal tem a largura da ficha em qualquer tela.
+ *   - A página, o topo e a coluna do histórico (posição, largura, quando aparece)
+ *     são da pages/Character (Character.module.css, DDL-0117); abaixo de 1140px o
+ *     histórico é a PRIMEIRA aba (DDL-0115).
+ *   - O nome QUEBRA em vez de ser cortado: com overflow hidden e nowrap, a altura
+ *     da linha cortava acentos e descendentes (mais ainda na Cinzel do tema papel).
+ *   - O perfil é o da ficha (Builder.module.css .identity), empilhado e centrado
+ *     até 560px como lá; .restGroup copia os tokens do controle de nível
+ *     (LevelControls.module.css) para ocupar o mesmo lugar com o mesmo peso, e a
+ *     MESMA altura fixa (37px): na troca de modo as duas são uma peça que só muda de
+ *     largura (DDL-0144). Os botões não encolhem (flex: none) nem quebram linha.
+ *   - Os atributos usam os cards da ficha (AbilityCards, StatsHeader.module.css).
+ *   - O aviso fica acima da área de gestos do celular (safe-area-inset-bottom).
+ * -------------------------------------------------------------------------- */
+
+/* ATENÇÃO: os tokens espelham o .group do LevelControls.module.css: se mudarem lá, mude aqui. */
+.restGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 37px;
+  padding: 2px;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  flex: none;
+}
+
+.restBtn {
+  flex: none;
+  height: 31px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.restBtn:hover {
+  background: var(--accent-bg);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--space-4);
+}
+
+.deathCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.deadCard {
+  border-color: var(--text-muted);
+  background: var(--bg-soft);
+}
+
+.deathTitle {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--danger-text);
+}
+
+.deadCard .deathTitle {
+  color: var(--text-h);
+}
+
+.pips {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.pip {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+}
+
+.pipOk {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.pipBad {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+.deathHint {
+  flex: 1 1 100%;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.sideContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 48px);
+}
+
+.sideScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.historyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: 10px;
+}
+
+.historyActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.heading {
+  margin: 6px 0 0;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rollBtn {
+  appearance: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  padding: 5px 8px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font: inherit;
+  line-height: 1.15;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.rollBtn {
+  cursor: pointer;
+}
+
+.rollBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.rollBtn:active {
+  background: var(--accent-bg);
+}
+
+.rollLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom) + var(--dock-h, 0px));
+  transform: translateX(-50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-border);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.toastLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toastTotal {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.historyTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sideHead {
+  flex: none;
+}
+
+.formCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.formTitle {
+  flex: 1 0 auto;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.formNote {
+  flex-basis: 100%;
+  order: 3;
+  font-size: var(--fs-meta);
+  color: var(--text-muted);
+}
+
+.cardPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 760px) {
+  .cardPair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

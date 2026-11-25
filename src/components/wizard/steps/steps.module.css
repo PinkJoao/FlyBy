@@ -1,0 +1,669 @@
+/* =============================================================================
+ * steps.module.css: os estilos das telas de passo do wizard
+ * =============================================================================
+ * O QUE FAZ
+ *   Compartilhados por todas as telas de passo. Cada tela é enxuta: o shell
+ *   (Wizard) dá título, ajuda e rodapé; aqui fica só o corpo.
+ *
+ * CLASSES
+ *   .spellTag: a Tag "Already granted" ao lado do nome da magia escolhida (DDL-0306).
+ *   .explain: o texto da explicação do passo, inteiro (StepExplain, DDL-0308).
+ *   .step, .note: a base.
+ *   .introBlock, .introEmoji, .introText: as telas informativas (intro, transição).
+ *   .callout: o callout do guia (o texto do PHB na tela de classe).
+ *   .suggestion*: a sugestão de QoL, em amber para não parecer erro nem bloqueio
+ *     (ex.: magia obtida em dobro).
+ *   .field, .fieldLabel, .textInput, .textArea: campos rotulados e inputs de texto.
+ *   .portrait*, .smallBtn, .urlRow: o retrato (caixa clicável, upload, remover,
+ *     URL).
+ *   .featureDesc*: o card de descrição de uma feature.
+ *   .spellOrigin*, .spellPick, .spell*: as magias (uma seção por classe
+ *     conjuradora; contador, lista e botão de adicionar).
+ *   .align*: o alinhamento em cards grandes (estilo Divine Order), com o código
+ *     tingido por eixo como na ficha.
+ *   .preview: o DetailView da entidade escolhida.
+ *   .abilityList: a lista explicativa das seis habilidades.
+ *   .method*, .pointsOver, .abilityGrid, .abilityRow, .abilityName: o método
+ *     segmentado e a grade de atributos.
+ *   .resultRow, .boost*: a linha de resultado dos boosts (nome, base, badge,
+ *     total, mod).
+ *   .abilityControl, .abilityTotal, .abilityMod: a caixa de largura fixa do stepper;
+ *     .abilityRowArray e .arrayControl: o standard array é um alternador com os seis
+ *     valores na MESMA linha do atributo, como o stepper do point buy; abaixo de 560 px
+ *     ele desce para uma segunda linha da caixa (DDL-0307).
+ *   .kit*: as opções de equipamento A/B/C.
+ *
+ *   .chosenName, .traitText: o nome da espécie escolhida no alto da página das escolhas
+ *     dela e o texto do traço que pede cada escolha (DDL-0289, DDL-0290).
+ * DECISÕES E ARMADILHAS
+ *   - Os estilos do RoleplayField moraram aqui e foram para
+ *     components/common/RoleplayField.
+ * -------------------------------------------------------------------------- */
+
+.step {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--fs-meta);
+  opacity: 0.6;
+}
+
+.introBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  padding: var(--space-5) var(--space-2);
+}
+
+.introEmoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.introText {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.introText strong {
+  color: var(--text-h);
+}
+
+.callout {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--bg-soft);
+}
+
+.explain > * {
+  margin: 0;
+}
+.explain > * + * {
+  margin-top: var(--space-2);
+}
+
+.suggestion {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--src-origin);
+  background: var(--bg-soft);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.suggestionHead {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.suggestionList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.suggestionList strong {
+  color: var(--text-h);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fieldLabel {
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.75;
+}
+
+.textInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: var(--fs-field);
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.textArea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: var(--fs-field);
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.portraitRow {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.portraitBox {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portraitBox:hover {
+  border-color: var(--accent-border);
+}
+
+.portraitBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portraitPlaceholder {
+  font-size: 34px;
+  opacity: 0.5;
+}
+
+.portraitControls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.smallBtn {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.smallBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.urlRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.urlRow .textInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.urlRow .smallBtn {
+  flex: none;
+}
+
+.featureDesc {
+  composes: card from '../../common/Card.module.css';
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+}
+
+.featureDescName {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-field);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.spellOrigin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.spellOriginName {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-field);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.spellPick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spellHead {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.spellCount {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.spellList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.spellRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.spellName {
+  font-size: var(--fs-field);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.spellMeta {
+  font-size: 12.5px;
+  color: var(--text);
+  opacity: 0.7;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spellRemove {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--fs-meta);
+  line-height: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.spellRemove:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.spellDone {
+  margin: 0;
+  font-size: var(--fs-meta);
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.alignOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.alignOption {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.alignOption:hover {
+  border-color: var(--accent-border);
+}
+
+.alignOptionSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.alignName {
+  font-size: var(--fs-field);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.alignCode {
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.alignCodeGood {
+  color: var(--info);
+}
+
+.alignCodeEvil {
+  color: var(--danger);
+}
+
+.alignDash {
+  opacity: 0.5;
+}
+
+.alignDesc {
+  font-size: var(--fs-meta);
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.preview {
+  composes: card from '../../common/Card.module.css';
+  padding: var(--space-4);
+}
+
+.abilityList {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.abilityList strong {
+  color: var(--text-h);
+}
+
+.methodHelp {
+  margin: 0;
+  font-size: var(--fs-meta);
+  line-height: 1.5;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.methodHelp strong {
+  color: var(--text-h);
+  opacity: 1;
+}
+
+.pointsOver strong {
+  color: var(--danger);
+}
+
+.abilityGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.abilityRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.abilityName {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.resultRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.boostBase {
+  min-width: 2ch;
+  text-align: right;
+  font-size: var(--fs-field);
+  color: var(--text);
+}
+
+.boostBadge {
+  min-width: 2.5ch;
+  text-align: center;
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.boostBadgeEmpty {
+  min-width: 2.5ch;
+  text-align: center;
+  font-size: var(--fs-meta);
+  color: var(--text);
+  opacity: 0.35;
+}
+
+.abilityControl {
+  width: 96px;
+  display: flex;
+  justify-content: center;
+}
+
+.arrayControl {
+  width: 252px;
+}
+.arrayControl > * {
+  flex: 1;
+}
+
+@media (max-width: 560px) {
+  .abilityRowArray {
+    grid-template-columns: 1fr auto auto;
+  }
+  .arrayControl {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: auto;
+  }
+}
+
+.abilityTotal {
+  min-width: 2ch;
+  text-align: right;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.abilityMod {
+  min-width: 3ch;
+  text-align: right;
+  font-size: var(--fs-body);
+  color: var(--accent);
+}
+
+.boostRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.boostRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.boostAmount {
+  flex: none;
+  min-width: 2.5ch;
+  font-size: var(--fs-lead);
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.kitList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kitCard {
+  composes: card from '../../common/Card.module.css';
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kitCard:hover {
+  border-color: var(--accent-border);
+}
+
+.kitCardActive {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.kitHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.kitKey {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.kitChosen {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kitItems {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+
+.kitGold {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+
+.kitGold strong {
+  color: var(--text-h);
+}
+
+.spellAddChip {
+  align-self: flex-start;
+}
+
+.chosenName {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+.traitText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: var(--fs-body);
+}
+
+.spellTag {
+  margin-left: var(--space-2);
+  vertical-align: 0.1em;
+}

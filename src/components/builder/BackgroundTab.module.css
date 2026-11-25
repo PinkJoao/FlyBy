@@ -1,0 +1,123 @@
+/* =============================================================================
+ * BackgroundTab.module.css: a aba Background (origem)
+ * =============================================================================
+ * CLASSES
+ *   .tab, .section*, .titleLink: as seções; .titleLink é o título tappável que abre
+ *     a regra no glossário (a cara do .sectionTitle com o sublinhado pontilhado dos
+ *     links de regra, como o .labelLink do ChoiceList).
+ *   .mode*, .boost*: os ability boosts; o .boostAmount (+2, +1) é só texto, bold e claro: com
+ *     fundo e borda accent ele parecia um botão (DDL-0314).
+ *   .featChoices: as sub-escolhas do talento de origem (Skilled, Crafter, Magic
+ *     Initiate).
+ *   .story: o texto livre da origem contada em prosa.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - As escolhas da origem (idiomas, ferramentas, perícias) vão pelo ChoiceList e
+ *     pelo Chip comum (DDL-0197); esta folha não tem chip próprio.
+ * -------------------------------------------------------------------------- */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--fs-lead);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.titleLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 3px;
+}
+
+.titleLink:hover,
+.titleLink:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+  outline: none;
+}
+
+.sectionHint {
+  font-size: var(--fs-meta);
+  opacity: 0.6;
+}
+
+.modeRow {
+  margin-bottom: var(--space-1);
+}
+
+.boostRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.boostRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.boostAmount {
+  flex: none;
+  min-width: 2.5ch;
+  font-size: var(--fs-lead);
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.featChoices {
+  margin-top: var(--space-1);
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--src-origin);
+}
+
+.story {
+  font: inherit;
+  font-size: var(--fs-body);
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.story:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.story::placeholder {
+  opacity: 0.45;
+}

@@ -1,0 +1,244 @@
+// =============================================================================
+// playActions: as rolagens do play mode como eventos do log
+// =============================================================================
+// O QUE FAZ
+//   A ponte pura entre o catálogo de jogo (engine/playCatalog), o motor de dados
+//   (engine/dice) e o log (engine/playState): recebe o que o jogador escolheu no
+//   diálogo de rolagem e devolve o EVENTO pronto para gravar, com a rolagem
+//   inteira dentro (o refazer reaplica o mesmo resultado, DDL-0108).
+//
+//   As opções do diálogo são sempre { mode, bonus, manual, critical, versatile,
+//   applied }: `applied` é a soma dos efeitos ligados (engine/playEffects:
+//   vantagem e desvantagem das condições, partes do Bless, do Rage, do Sneak
+//   Attack, o piso do Reliable Talent, o limiar do Improved Critical).
+//   Antes:
+//   `mode` é 'advantage' | 'normal' | 'disadvantage'; `bonus`, uma fórmula livre
+//   (o "+1d4" do Bless, o "-2" do mestre); `manual`, os valores dos dados rolados
+//   na mesa, em ordem; `critical` e `versatile`, só no dano.
+//
+// FUNÇÕES
+//   testParts(catalog, test): as partes de um teste (atributo, save, perícia,
+//     ferramenta, iniciativa); com as partes do catálogo, uma linha por peça (o atributo, a
+//     proficiência, o item: engine/playChecks).
+//   bonusParts(options): a parte do bônus livre, se houver.
+//   rngFor(options, rng): o rng com os dados físicos na frente.
+//   modeFlags(mode): vantagem e desvantagem do modo.
+//   d20Options(options): o modo somado aos efeitos, o piso e o limiar, e `physical`
+//     quando o jogador digitou o dado da mesa.
+//   rollTestEvent(args): o evento de um teste de d20.
+//   rollAttackEvent(args): o evento do acerto de um ataque.
+//   canCrit(attack): o dano pode ser crítico? Só com rolagem de ataque; o de salvaguarda e o automático
+//     nunca (DDL-0248), e rollDamageEvent ignora o `critical` pedido fora disso.
+//   damageParts(attack, options): as partes do dano de um ataque (com o dano extra tipado de
+//     `damage.extra`: o Elemental Weapon, os STRIKE, DDL-0242); com `applied.twice`
+//     (Savage Attacker) o dado da arma vira `max(dado, dado)`.
+//   rollDamageEvent(args): o evento do dano de um ataque.
+//   forgoDice(formula, n, data): o dado com `n` dados a menos (Cunning Strike, DDL-0217).
+//   withDiceMax(formula, data): todo dado no máximo (Supreme Healing, DDL-0217).
+//   withDiceMin(formula, floor, data): o dado da arma com o piso por dado (`minN`): o
+//     Clean Hits do Fists of Fury, `applied.diceMin` (DDL-0215); a `@ref` é resolvida antes.
+//
+// DECISÕES E ARMADILHAS
+//   - Um teste rolado só ENTRA no histórico (`ops` vazio): na C2 nada muda no
+//     estado. A munição gasta pelo ataque e o dano sofrido chegam na C3 e na C6,
+//     como operações no MESMO evento.
+//   - O acerto e o dano são DOIS eventos, como os dois cartões do chat do
+//     Foundry: o dano se rola depois de saber se acertou, e o crítico vem do
+//     acerto (`payload.critical` do ataque pré-marca o diálogo do dano).
+//   - Cantrip de SALVAGUARDA não tem acerto: só o dano, com a CD no payload.
+//   - O ataque desarmado não tem dado (1 + FOR); o crítico não dobra nada nele,
+//     o que é a regra.
+//   - O efeito com falha AUTOMÁTICA (Paralyzed num save de FOR) rola mesmo assim e
+//     o evento leva `autoFail`, para o cartão dizer "Automatic failure".
+//   - O limiar do crítico vem nas opções (`critThreshold`, 20 por padrão); quem
+//     o baixa (Champion) é a fase C5.
+// -----------------------------------------------------------------------------
+
+import { d20Test, rollParts, sequenceRng, cryptoRng, resolveRefs } from './dice';
+import { makeEvent } from './playState';
+import { checkPartsOf, partLabel } from './playChecks';
+
+/**
+ * As partes de um teste de d20 do catálogo.
+ * @param {object} catalog
+ * @param {{ type: 'ability'|'save'|'skill'|'tool'|'initiative', id?: string, ability?: string }} test
+ * @returns {{ label: string, formula: number }[]}
+ */
+export function testParts(catalog, test) {
+  const checks = catalog.checks ?? {};
+  const parts = checkPartsOf(catalog, test);
+  if (parts?.length) return parts.map((p) => ({ label: partLabel(p), formula: p.value }));
+  switch (test.type) {
+    case 'ability': {
+      const a = checks.abilities?.find((x) => x.ability === test.id);
+      return [{ label: 'Modifier', formula: a?.mod ?? 0 }];
+    }
+    case 'save': {
+      const a = checks.abilities?.find((x) => x.ability === test.id);
+      return [{ label: 'Save bonus', formula: a?.save ?? 0 }];
+    }
+    case 'skill': {
+      const s = checks.skills?.find((x) => x.skill === test.id);
+      return [{ label: 'Skill bonus', formula: s?.bonus ?? 0 }];
+    }
+    case 'initiative':
+      return [{ label: 'Initiative bonus', formula: checks.initiative?.bonus ?? 0 }];
+    default:
+      return [];
+  }
+}
+
+/** A parte do bônus livre do diálogo, se houver. */
+export function bonusParts(options = {}) {
+  const bonus = String(options.bonus ?? '').trim();
+  return bonus ? [{ label: 'Bonus', formula: bonus }] : [];
+}
+
+/** O rng com os dados físicos digitados na frente (os que faltarem, o app rola). */
+export function rngFor(options = {}, rng = cryptoRng) {
+  const manual = (options.manual ?? []).filter((v) => Number.isFinite(v));
+  if (!manual.length) return rng;
+  const seq = sequenceRng(manual, rng);
+  seq.physical = true;
+  return seq;
+}
+
+/** Vantagem e desvantagem do modo do diálogo. */
+export function modeFlags(mode) {
+  return { advantage: mode === 'advantage' ? 1 : 0, disadvantage: mode === 'disadvantage' ? 1 : 0 };
+}
+
+/** O modo do diálogo somado aos efeitos ligados, com o piso e o limiar do crítico. */
+export function d20Options(options = {}) {
+  const a = options.applied ?? {};
+  const m = modeFlags(options.mode);
+  return {
+    advantage: m.advantage + (a.advantage ?? 0),
+    disadvantage: m.disadvantage + (a.disadvantage ?? 0),
+    d20Min: a.d20Min ?? null,
+    totalMin: a.totalMin ?? null,
+    rerollOnes: !!a.rerollOnes,
+    elven: !!a.elven,
+    critThreshold: options.critThreshold ?? a.critThreshold ?? 20,
+    physical: (options.manual ?? []).some((v) => Number.isFinite(v)),
+  };
+}
+
+/**
+ * O evento de um teste de d20 (atributo, save, perícia, iniciativa).
+ * @param {{ catalog: object, test: object, name: string, options?: object, rng?: Function, now?: Date }} args
+ */
+export function rollTestEvent({ catalog, test, name, options = {}, rng, now = new Date() }) {
+  const result = d20Test({
+    parts: [...testParts(catalog, test), ...(options.applied?.parts ?? []), ...bonusParts(options)],
+    ...d20Options(options),
+    data: catalog.rollData,
+    rng: rngFor(options, rng),
+  });
+  const effects = options.applied?.labels ?? [];
+  return makeEvent('check', { label: name, payload: { test, mode: result.mode, effects, autoFail: !!options.applied?.autoFail }, rolls: result }, now);
+}
+
+/**
+ * O evento do acerto de um ataque do catálogo.
+ * @param {{ catalog: object, attack: object, options?: object, rng?: Function, now?: Date }} args
+ */
+export function rollAttackEvent({ catalog, attack, options = {}, rng, now = new Date() }) {
+  const parts = attack.toHit
+    ? attack.toHit.parts
+    : attack.attack ? [{ label: 'Spell attack', formula: attack.attack.bonus ?? 0 }] : [];
+  const result = d20Test({
+    parts: [...parts, ...(options.applied?.parts ?? []), ...bonusParts(options)],
+    ...d20Options(options),
+    data: catalog.rollData,
+    rng: rngFor(options, rng),
+  });
+  return makeEvent('attack', {
+    label: attack.name,
+    payload: { attackKey: attack.key, mode: result.mode, critical: result.isCritical, effects: options.applied?.labels ?? [], ...(attack.kind === 'spell' && attack.level != null ? { level: attack.level, name: attack.name } : {}) },
+    rolls: result,
+  }, now);
+}
+
+/** O dado da arma com o piso de cada dado (Clean Hits: "treat any 1 on a damage die as a 2"). */
+export function withDiceMin(formula, floor, data = {}) {
+  let text = String(formula);
+  try {
+    text = resolveRefs(text, data);
+  } catch {
+    return text;
+  }
+  return text.replace(/(\d*d\d+)(?!\d)/g, `$1min${floor}`);
+}
+
+/** O dado com `n` dados a menos (o Cunning Strike tira dados do Sneak Attack), nunca abaixo de 0. */
+export function forgoDice(formula, n, data = {}) {
+  let text = String(formula);
+  try {
+    text = resolveRefs(text, data);
+  } catch {
+    return text;
+  }
+  return text.replace(/(\d+)d(\d+)/, (m, count, faces) => `${Math.max(0, Number(count) - n)}d${faces}`);
+}
+
+/** Todo dado no valor máximo (o Supreme Healing: "use the highest number possible for each die"). */
+export function withDiceMax(formula, data = {}) {
+  let text = String(formula);
+  try {
+    text = resolveRefs(text, data);
+  } catch {
+    return text;
+  }
+  return text.replace(/(\d*)d(\d+)(?!\d)/g, (m, count, faces) => `${count}d${faces}min${faces}`);
+}
+
+/** O dano pode ser crítico? Só o de uma rolagem de ataque (arma, magia de ataque, ataque de summon); o de uma salvaguarda nunca: quem rola é o alvo. */
+export function canCrit(attack) {
+  return attack?.kind === 'weapon' || attack?.kind === 'unarmed' || !!(attack?.toHit || attack?.attack);
+}
+
+/** As partes do dano de um ataque (dado, modificador), com o versátil se pedido. */
+export function damageParts(attack, options = {}) {
+  const d = attack.damage;
+  if (!d) return [];
+  const picked = options.versatile && attack.versatile ? attack.versatile : d.dice;
+  const floor = options.applied?.diceMin;
+  const dice = picked && floor ? withDiceMin(picked, floor, options.data) : picked;
+  const twice = dice && options.applied?.twice;
+  return [
+    ...(dice ? [{ label: twice ? `${attack.name} (best of two)` : attack.name, formula: twice ? `max(${dice}, ${dice})` : dice }] : []),
+    ...(d.bonus ? [{ label: 'Modifier', formula: d.bonus }] : []),
+    ...(d.extra ?? []).map((x) => ({ label: `${x.label} (${x.type})`, formula: x.formula })),
+  ];
+}
+
+/**
+ * O evento do dano de um ataque, com crítico e versátil.
+ * @param {{ catalog: object, attack: object, options?: object, rng?: Function, now?: Date }} args
+ */
+export function rollDamageEvent({ catalog, attack, options = {}, rng, now = new Date() }) {
+  const forgo = options.applied?.forgo ?? 0;
+  const floor = options.applied?.forgoableMin ?? null;
+  const riders = (options.applied?.parts ?? [])
+    .map((p) => (forgo && p.forgoable ? { ...p, label: `${p.label} (${forgo} die${forgo > 1 ? 's' : ''} forgone)`, formula: forgoDice(p.formula, forgo, catalog.rollData) } : p))
+    .map((p) => (floor && p.forgoable ? { ...p, formula: withDiceMin(p.formula, floor, catalog.rollData) } : p));
+  const critical = !!options.critical && canCrit(attack);
+  const result = rollParts([...damageParts(attack, { ...options, data: catalog.rollData }), ...riders, ...bonusParts(options)], {
+    data: catalog.rollData,
+    rng: rngFor(options, rng),
+    critical,
+  });
+  return makeEvent('damageRoll', {
+    label: attack.name,
+    payload: {
+      attackKey: attack.key,
+      types: options.damageType ? [options.damageType] : attack.damage?.types ?? [],
+      critical,
+      versatile: !!(options.versatile && attack.versatile),
+      save: attack.save ?? null,
+      effects: options.applied?.labels ?? [],
+    },
+    rolls: result,
+  }, now);
+}

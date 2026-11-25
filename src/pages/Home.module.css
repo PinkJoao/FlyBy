@@ -1,0 +1,452 @@
+/* =============================================================================
+ * Home.module.css: a página inicial (roster)
+ * =============================================================================
+ * CLASSES
+ *   .pageWide: a página alargada no desktop quando a lista está em grade (DDL-0308).
+ *   .viewToggle, .viewOpt, .srOnly: o alternador Lista | Grade | Carrossel, só com ícones.
+ *   .newCard, .newIcon, .newSub: o card de "New Character", o primeiro da lista.
+ *   .grid, .carousel: os outros dois jeitos de ver; o card fica em pé, com o retrato
+ *     grande em cima e Play e o menu embaixo.
+ *   .page: preenche a área de conteúdo e NÃO rola.
+ *   .topbar, .brand, .brandLogo, .hamburger: a marca à esquerda (logo e nome; a
+ *     altura do logo define o tamanho, o SVG é quadrado) e o menu à direita.
+ *   .main, .rosterTitle: o roster no espaço restante; título, controles e botão
+ *     têm altura fixa.
+ *   .controls, .sortBtn: a busca (SearchField) e o botão de ordenar
+ *     (SortButton), como nas abas de inventário e magias; o botão tem a altura
+ *     da busca.
+ *   .listScroll: a ÚNICA área que rola, com padding lateral para a barra não colar
+ *     nos cards.
+ *   .list, .card*, .avatar, .avatarImg, .info, .name, .sub: os cards; o retrato
+ *     cabe em qualquer proporção, sem distorcer nem cortar.
+ *   .menuTrigger: o gatilho do menu (substituiu os três botões soltos).
+ *   .modeBtn: os atalhos do card para a ficha (Build, o martelo) e o jogo (Play), só com
+ *     ícone (DDL-0309).
+ *   .primary, .muted, .empty: o estado vazio, centralizado.
+ *   .attribution: a atribuição discreta (fonte de dados e licença SRD).
+ *   .installHint, .installHintText, .installHintActions, .installHintLink,
+ *     .installHintClose: o aviso do Samsung Internet sob o topo (DDL-0095).
+ * -------------------------------------------------------------------------- */
+
+.page {
+  height: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: none;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.brandLogo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  padding: 20px 0 0;
+}
+
+.rosterTitle {
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-h);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.sortBtn {
+  width: 40px;
+  height: 40px;
+}
+
+.listScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 var(--space-1);
+}
+
+.primary {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.muted {
+  opacity: 0.6;
+  text-align: center;
+}
+
+.empty {
+  margin: auto 0;
+  text-align: center;
+  padding: 48px 24px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-layer);
+}
+.empty p {
+  margin: 0 0 var(--space-4);
+  opacity: 0.7;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  composes: card from '../components/common/Card.module.css';
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+.card:hover {
+  border-color: var(--accent-border);
+}
+
+.cardMain {
+  appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-field);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.avatarImg {
+  flex: none;
+  max-width: 64px;
+  max-height: 44px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-control);
+  display: block;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-lead);
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.sub {
+  font-size: var(--fs-meta);
+  opacity: 0.7;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--space-2);
+}
+
+.cardActions button {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: var(--fs-field);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cardActions button:hover {
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+.cardActions .modeBtn {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  font-size: 16px;
+  line-height: 0;
+  color: var(--text-h);
+}
+.cardActions .modeBtn:hover {
+  border-color: var(--accent-border);
+}
+.menuTrigger {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.attribution {
+  flex: none;
+  margin-top: var(--space-3);
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: var(--fs-label);
+  line-height: 1.45;
+  opacity: 0.55;
+  color: var(--text);
+}
+.attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+.attribution a:hover {
+  color: var(--accent);
+}
+
+.installHint {
+  flex: none;
+  margin-top: var(--space-4);
+  padding: 12px 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  background: var(--accent-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.installHintText {
+  margin: 0;
+  font-size: var(--fs-meta);
+  line-height: 1.45;
+  color: var(--text-h);
+}
+.installHintActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.installHintLink,
+.installHintClose {
+  appearance: none;
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  text-decoration: none;
+  cursor: pointer;
+}
+.installHintLink {
+  border-color: var(--accent-border);
+}
+.installHintLink:hover,
+.installHintClose:hover {
+  filter: brightness(1.08);
+}
+
+.pageWide {
+  max-width: 760px;
+}
+@media (min-width: 1024px) {
+  .pageWide {
+    max-width: 1240px;
+  }
+}
+
+.viewToggle {
+  flex: none;
+}
+.viewOpt {
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 0;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.newCard {
+  border-style: dashed;
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-soft));
+}
+.newIcon {
+  font-size: 20px;
+}
+.newSub {
+  font-size: var(--fs-meta);
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+.carousel {
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  gap: 14px;
+  padding: 2px 2px 10px;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+.carousel > li {
+  flex: 0 0 min(78%, 300px);
+  scroll-snap-align: center;
+}
+
+.grid .card,
+.carousel .card {
+  flex-direction: column;
+}
+.grid .cardMain,
+.carousel .cardMain {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 12px 10px;
+  gap: 10px;
+}
+.grid .avatar,
+.grid .avatarImg,
+.carousel .avatar,
+.carousel .avatarImg {
+  width: 100%;
+  max-width: none;
+  height: 120px;
+  max-height: none;
+  border-radius: var(--radius-field);
+  object-fit: cover;
+}
+.carousel .avatar,
+.carousel .avatarImg {
+  height: 220px;
+}
+.grid .avatar,
+.carousel .avatar {
+  font-size: 44px;
+}
+.grid .info,
+.carousel .info {
+  align-items: center;
+  width: 100%;
+}
+.grid .name,
+.carousel .name {
+  max-width: 100%;
+}
+.grid .cardActions,
+.carousel .cardActions {
+  justify-content: space-between;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+}
+.grid .newCard .cardMain,
+.carousel .newCard .cardMain {
+  flex: 1;
+  justify-content: center;
+}

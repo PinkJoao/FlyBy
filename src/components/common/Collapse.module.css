@@ -1,0 +1,40 @@
+/* =============================================================================
+ * Collapse.module.css: a altura animada do corpo de um card expansível
+ * =============================================================================
+ * CLASSES
+ *   .collapse, .expanded: a grade de uma linha, 0fr fechada e 1fr aberta.
+ *   .inner: o conteúdo, cortado enquanto a linha cresce ou encolhe.
+ *   .shown: aberto e parado; o corte sai.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A opacidade anda junto com a altura: o conteúdo aparece enquanto cresce e
+ *     some enquanto encolhe, em vez de ser cortado seco.
+ *   - O .inner precisa de min-width: 0 além de min-height: 0: enquanto tem
+ *     overflow: hidden o grid já zera a largura mínima, mas ao entrar em .shown
+ *     (overflow: visible) o piso voltava para min-content e deslocava o conteúdo
+ *     para a direita nos cards estreitos.
+ * -------------------------------------------------------------------------- */
+
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.expanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.inner {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shown .inner {
+  overflow: visible;
+}

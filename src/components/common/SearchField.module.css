@@ -1,0 +1,89 @@
+/* =============================================================================
+ * SearchField.module.css: a caixa de busca única
+ * =============================================================================
+ * CLASSES
+ *   .field, .sm: a caixa (raio --radius-field): 40 px (--control-h) nas páginas, 34 px
+ *     (--control-h-sm) com .sm, nas barras do seletor e dos filtros.
+ *   .lens, .input, .count, .clear: a lupa, o texto, o contador e o X.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A largura é de quem usa (flex: 1 no pai, ou o className): a caixa só
+ *     estica até a largura que recebe.
+ *   - O realce de foco é a borda accent na caixa inteira (:focus-within), não um
+ *     contorno no <input>, que ficaria menor que a caixa.
+ * -------------------------------------------------------------------------- */
+
+.field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h);
+  font-size: var(--fs-body);
+  box-sizing: border-box;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  cursor: text;
+}
+.field:focus-within {
+  border-color: var(--accent-border);
+}
+.sm {
+  height: var(--control-h-sm);
+}
+
+.lens {
+  flex: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font: inherit;
+  color: var(--text-h);
+}
+.input::-webkit-search-cancel-button,
+.input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.count {
+  flex: none;
+  padding-right: 6px;
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.clear {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--fs-meta);
+  line-height: 0;
+  cursor: pointer;
+}
+.clear:hover {
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+.count + .clear {
+  margin-left: -4px;
+}

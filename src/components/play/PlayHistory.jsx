@@ -1,0 +1,508 @@
+// =============================================================================
+// PlayHistory: o histórico de ações do play mode, como o chat do Foundry
+// =============================================================================
+// O QUE FAZ
+//   Desenha o log de eventos do documento de jogo (engine/playState) do mais novo
+//   para o mais velho, separado por dia. O cartão de uma ROLAGEM mostra o total,
+//   cada dado (o descartado riscado, o mudado por piso com o valor sorteado), o
+//   modo e o crítico. O de um evento de VIDA (dano, cura, temporário, morte,
+//   concentração, descanso) mostra o número que importa e o resumo que o evento
+//   gravou. Item, dinheiro e combate (C6) mostram o que saiu ou entrou e a rodada.
+//   Os eventos DESFEITOS (depois do cursor) ficam esmaecidos, marcados,
+//   até o refazer ou uma ação nova os descartar.
+//
+// FUNÇÕES
+//   dayLabel(iso), timeLabel(iso): a data e a hora do evento.
+//   detailOf(event): o número, as marcas e as linhas de um evento.
+//   DieShape(props): um dado na silhueta colorida da forma dele, com o valor;
+//     DIE_SHAPES guarda o contorno, a face e a faceta de cada tipo.
+//   DiceList(props): os dados de um grupo.
+//   RollCard(props): o cartão de um evento; openFromCard(e, open) abre a prévia só quando o clique não veio de um controle.
+//   PlayHistory(props): a lista, com os separadores de dia.
+//
+// DECISÕES E ARMADILHAS
+//   - DDL-0243: o card de uma feature usada ou de uma magia lançada tem o título como botão que abre a
+//     descrição (`onRead`: a magia, ou a feature de `payload.feature` ou da activity), e a opção usada
+//     (`payload.option`: Bond, Conjure, a activity escolhida, a opção do "Use", a arma da magia de arma) vem
+//     em destaque, na primeira etiqueta.
+//   - DDL-0251: todo card abre algo (a tela decide o quê, `onRead`). DDL-0280 (pedido do dono): TODO card com o que
+//     abrir é clicável inteiro; o toque num botão do card ("Roll damage", "Reroll", "Dismiss"...) faz só o botão
+//     (`openFromCard` ignora o clique que veio de um controle). O card sem botão é o botão (`whole`, com teclado);
+//     o com botão mantém o título como botão de abrir, o caminho do teclado, sem botão dentro de botão.
+//   - DDL-0245: `canRead` (da tela) diz se o card tem o que abrir; assim a rolagem de uma magia (pelo
+//     `attackKey`, também o "again" da instância leve) abre a magia, e a de arma não promete nada.
+//     O "Use" de uma instância leve (um `use` com `spellKey`) leva a etiqueta Spell.
+//   - A feature levada ao histórico à mão (`logged`, DDL-0203) mostra o custo do turno
+//     na Tag do tom do gasto e diz que nada foi rolado. O gasto de um extra ligado na
+//     rolagem (`spent`, DDL-0205) vira uma linha em qualquer tipo de card.
+//   - Cada dado aparece na SILHUETA da forma dele (DieShape, DDL-0158): com 2d4 e
+//     2d8 na mesma parte, dá para ver qual é qual. Desde o DDL-0160, no estilo do
+//     rolador do Google que o dono mandou: cada tipo com a cor dele (tokens
+//     --die-d4 a --die-d20, mais sóbrios no tema papel), a face da frente mais clara e
+//     a faceta de baixo mais escura. O d100 usa o d10; um dado sem forma, o círculo. O que o piso mudou (Reliable Talent) leva o
+//     contorno tracejado e o valor que conta; o título diz o que caiu.
+//   - O cartão de uma feature que rolou só o ataque (`payload.only`, DDL-0156) tem o
+//     "Roll damage" (ou "Roll healing"), que rola sem gastar de novo.
+//   - O cartão do ATAQUE tem o botão "Roll damage" (como o do chat do Foundry),
+//     com o crítico pré-marcado quando o acerto foi crítico; o do DANO SOFRIDO,
+//     o "Concentration save" com a CD, enquanto houver concentração; o da MAGIA
+//     lançada, o ataque, o dano e a cura no círculo em que ela saiu. Num evento
+//     desfeito os botões somem.
+//   - O card da MAGIA lançada tem o botão do que uma feature dá depois de lançar (Blessed
+//     Healer, Abjuration Adept), por `live.castTriggersOf` e `live.onCastTrigger` (DDL-0215).
+//   - O card do DANO e da CURA tem "Reroll dice" quando há o que rolar de novo
+//     (`live.canRerollDice`, `live.onRerollDice`, DDL-0215).
+//   - O card do TESTE e do ATAQUE tem "Reroll" (DDL-0214): rola de novo pela regra de uma
+//     feature (engine/playRerolls), num evento NOVO; o card novo diz "Rerolled by X".
+//   - O card que CRIOU um summon tem "Dismiss" e o que pôs a forma ATUAL tem "Revert"
+//     (o RevertFormButton do aviso), enquanto ela ou ele estiver ativo (DDL-0201).
+//     `live` traz o estado vivo: os ids dos grupos em campo, o id do evento que pôs a
+//     forma e as ações. Dispensar e reverter são eventos NOVOS, diferentes de desfazer.
+//   - "Critical" só no ATAQUE e no dano dele (CRIT_KINDS): no XPHB só o ataque
+//     tem crítico; o 20 natural de um teste ou save sai como "Natural 20".
+//   - Dados e partes usam o ÍNDICE como key: dois dados podem ter o mesmo valor e
+//     duas partes o mesmo rótulo, e a lista de um evento gravado nunca muda.
+//   - O cartão só LÊ o evento: nenhuma conta é refeita aqui. O que aparece é o que
+//     foi gravado, então o refazer mostra o mesmo cartão (DDL-0108).
+// -----------------------------------------------------------------------------
+
+import { ABILITY_FULL } from '../builder/labels';
+import styles from './PlayHistory.module.css';
+import Button from '../common/Button';
+import Tag from '../common/Tag';
+import Icon from '../common/Icon';
+import RevertFormButton from './RevertFormButton';
+
+/** O tom da Tag de cada etiqueta do cartão (o acerto em verde, a falha em vermelho). */
+const HISTORY_TONE = { crit: 'success', fumble: 'danger', action: 'action', bonus: 'bonus', reaction: 'reaction' };
+
+const TURN_COST = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction' };
+
+const KIND_LABEL = {
+  check: 'Check',
+  attack: 'Attack',
+  damageRoll: 'Damage',
+  damage: 'Hurt',
+  heal: 'Healing',
+  tempHp: 'Temp HP',
+  maxHp: 'Max HP',
+  hitDice: 'Hit dice',
+  deathSave: 'Death save',
+  concentration: 'Concentration',
+  concentrationCheck: 'Concentration',
+  shortRest: 'Rest',
+  longRest: 'Rest',
+  use: 'Feature',
+  cast: 'Spell',
+  healRoll: 'Healing',
+  resource: 'Resource',
+  condition: 'Condition',
+  modifier: 'Effect',
+  item: 'Item',
+  currency: 'Money',
+  combat: 'Combat',
+  summon: 'Summon',
+  form: 'Form',
+};
+
+const CRIT_KINDS = new Set(['attack', 'damageRoll', 'use']);
+
+const TRAIT_WORD = { immune: 'immune', resist: 'resisted', vulnerable: 'vulnerable', 'resist+vulnerable': 'resisted, vulnerable' };
+
+/** A data do evento, por extenso curto ("Fri, Oct 24"). */
+const dayLabel = (iso) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** A hora do evento ("20:41"). */
+const timeLabel = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+/** O número principal, as marcas e as linhas de resumo de um evento. */
+function detailOf(event) {
+  const p = event.payload ?? {};
+  const rolls = event.rolls ?? {};
+  const tags = [];
+  const lines = [];
+  let total = rolls.total ?? null;
+  switch (event.kind) {
+    case 'damage':
+      total = p.taken;
+      if (p.type) tags.push({ text: p.type });
+      if (p.trait) tags.push({ text: TRAIT_WORD[p.trait] ?? p.trait });
+      if (p.critical) tags.push({ text: 'Critical', tone: 'crit' });
+      if (p.toTemp) lines.push(`${p.toTemp} from temporary hit points`);
+      if (p.maxCut) lines.push(`Hit point maximum -${p.maxCut} (now ${p.maxTo})`);
+      for (const n of p.notes ?? []) lines.push(n);
+      break;
+    case 'heal':
+      total = p.healed;
+      lines.push(`${p.from} to ${p.to} hit points`);
+      if (p.bonus) lines.push(`${p.bonus.label}: +${p.bonus.value}`);
+      break;
+    case 'maxHp':
+      total = p.amount;
+      lines.push(`Maximum ${p.from} to ${p.to}`);
+      break;
+    case 'hitDice':
+      total = p.restored != null ? p.restored : p.healed;
+      lines.push(Object.entries(p.dice ?? {}).map(([f, k]) => `${k}d${f}`).join(' + ') || 'No hit dice');
+      if (p.restored != null) lines.push('Recovered');
+      else if (p.spent) lines.push(`${p.from} to ${p.to} hit points`);
+      if (p.asked > (p.spent ?? 0)) lines.push(`Only ${p.spent} left to spend`);
+      break;
+    case 'tempHp':
+      total = p.to;
+      if (p.bonus) lines.push(`${p.bonus.label}: +${p.bonus.value}`);
+      if (p.kept) lines.push(`Kept the ${p.from} you had (more than ${p.amount})`);
+      break;
+    case 'deathSave':
+      if (p.result) tags.push({ text: p.result, tone: /Dies|failure|Failure/.test(p.result) ? 'fumble' : 'crit' });
+      break;
+    case 'concentrationCheck':
+      tags.push({ text: `DC ${p.dc}` });
+      tags.push(p.kept ? { text: 'Kept', tone: 'crit' } : { text: 'Lost', tone: 'fumble' });
+      break;
+    case 'shortRest':
+    case 'longRest':
+      total = event.kind === 'shortRest' && rolls.total ? rolls.total : null;
+      for (const l of p.lines ?? []) lines.push(`${l.name}: ${l.detail}`);
+      if (!(p.lines ?? []).length) lines.push('Nothing to recover');
+      break;
+    case 'check':
+    case 'attack':
+    case 'damageRoll':
+      for (const t of p.effects ?? []) tags.push({ text: t });
+      if (p.autoFail) tags.push({ text: 'Automatic failure', tone: 'fumble' });
+      if (p.ammo) lines.push(`${p.ammo}: ${p.ammoLeft} left`);
+      if (p.ammoMissing) tags.push({ text: 'No ammunition', tone: 'fumble' });
+      break;
+    case 'item':
+      if (p.used) lines.push(p.left ? `${p.left} left` : 'That was the last one');
+      else if (p.delta) lines.push(`${p.delta > 0 ? '+' : ''}${p.delta}, ${p.left} now`);
+      if (p.healed) lines.push(`${p.healed.from} to ${p.healed.to} hit points`);
+      else if (rolls.total != null && p.used) lines.push('Healing for someone else');
+      break;
+    case 'currency':
+      lines.push(Object.entries(p.delta ?? {}).map(([c, v]) => `${v > 0 ? '+' : ''}${v} ${c}`).join(', ') || 'Nothing');
+      break;
+    case 'combat':
+      total = rolls.total ?? p.round ?? null;
+      if (p.started) lines.push('Initiative');
+      if (p.moved != null || p.dash) lines.push(`${p.left} ft left this turn`);
+      if (p.rounds) lines.push(`${p.rounds} round${p.rounds === 1 ? '' : 's'}`);
+      for (const n of p.ended ?? []) lines.push(`${n} ended`);
+      if (p.after?.length) lines.push(`Your summons act: ${p.after.join(', ')}`);
+      for (const t of p.effects ?? []) tags.push({ text: t });
+      break;
+    case 'use':
+      total = p.attack ? p.attack.total : rolls.total ?? null;
+      if (p.attack?.critical) tags.push({ text: 'Critical', tone: 'crit' });
+      if (p.save?.dc) tags.push({ text: `DC ${p.save.dc} ${(p.save.abilities ?? []).join('/')}` });
+      if ((p.types ?? []).length) tags.push({ text: [...new Set(p.types)].join(' / ') });
+      if (p.attack && rolls.damage != null) lines.push(`${rolls.damage} damage`);
+      for (const c of p.costs ?? []) lines.push(c.amount >= 0 ? `${c.name}: ${c.amount} spent` : `${c.name}: ${-c.amount} regained`);
+      for (const l of p.lines ?? []) lines.push(l);
+      if (p.healed) lines.push(`${p.healed.from} to ${p.healed.to} hit points`);
+      if ((p.short ?? []).length) lines.push(`Not enough: ${p.short.join(', ')}`);
+      if (p.over) lines.push('Over the recovery limit');
+      if (p.noSpentSlot) lines.push('No spent slot to refill');
+      if (p.effect) tags.push({ text: `${p.effect} on`, tone: 'crit' });
+      if (p.logged && p.cost) tags.push({ text: TURN_COST[p.cost] ?? p.cost, tone: p.cost });
+      if (p.temp) lines.push(p.temp.kept ? `Kept ${p.temp.from} temporary hit points` : `${p.temp.to} temporary hit points`);
+      if (p.logged && !(p.costs ?? []).length && !p.effect && !p.save && !p.rolled) lines.push('Logged, nothing rolled');
+      break;
+    case 'cast':
+      tags.push({ text: p.way });
+      if (p.concentration) tags.push({ text: 'Concentration' });
+      if (p.save?.dc) tags.push({ text: `DC ${p.save.dc} ${ABILITY_FULL[p.save.ability] ?? p.save.ability} save` });
+      if (p.ended) lines.push(`Concentration on ${p.ended} ended`);
+      if (p.short) lines.push('Nothing was left to spend');
+      if (p.effect) tags.push({ text: `${p.effect} on`, tone: 'crit' });
+      break;
+    case 'healRoll':
+      if (p.healed) lines.push(`${p.healed.from} to ${p.healed.to} hit points`);
+      break;
+    case 'summon':
+      if (p.from != null && p.to != null) lines.push(`${p.from} to ${p.to} hit points`);
+      if (p.toTemp) lines.push(`${p.toTemp} from temporary hit points`);
+      if (p.maxCut) lines.push(`Hit point maximum -${p.maxCut} (now ${p.maxTo})`);
+      if (p.maxTo != null && !p.maxCut) lines.push(`Maximum ${p.maxFrom} to ${p.maxTo}`);
+      if (p.kept) lines.push(`Kept the ${p.tempFrom} it had (more than ${p.amount})`);
+      break;
+    case 'resource':
+      total = p.delta ? Math.abs(p.delta) : null;
+      if (p.was && p.now && p.was.max !== p.now.max) {
+        lines.push(`Maximum ${p.was.max} to ${p.now.max} by hand`);
+        if (p.delta !== 0) lines.push(`${p.was.left} to ${p.now.left} left`);
+      } else lines.push(p.delta >= 0 ? 'Spent by hand' : 'Regained by hand');
+      if (p.asked != null) lines.push(`Asked for ${Math.abs(p.asked)}, only ${Math.abs(p.delta)} possible`);
+      break;
+    case 'modifier':
+      for (const l of p.lines ?? []) if (typeof l === 'string') lines.push(l);
+      break;
+    default:
+      break;
+  }
+  if (p.regained) lines.push(p.regained);
+  if (p.reroll) lines.push(`${p.reroll.keep ? 'Raised' : 'Rerolled'} by ${p.reroll.source}`);
+  for (const s of Array.isArray(p.spent) ? p.spent : []) lines.push(`${s.name}: ${s.amount} spent`);
+  return { total, tags, lines };
+}
+
+/** Os dados de um grupo: o mantido em destaque, o descartado riscado. */
+/**
+ * A silhueta de cada dado, no estilo do rolador do Google (DDL-0160): o contorno, a
+ * face da frente (mais clara) e a faceta de baixo (mais escura).
+ */
+const DIE_SHAPES = {
+  4: {
+    base: '16,1.5 31,29.5 1,29.5',
+    face: null,
+    shade: null,
+    y: 21.5
+  },
+  6: {
+    base: '3,3 29,3 29,29 3,29',
+    face: null,
+    shade: null,
+    y: 16.5
+  },
+  8: {
+    base: '16,1 30,9 30,23 16,31 2,23 2,9',
+    face: '16,1 30,23 2,23',
+    shade: '2,23 30,23 16,31',
+    y: 17
+  },
+  10: {
+    base: '16,1 30,12 30,19 16,31 2,19 2,12',
+    face: '16,1 26,16 16,25 6,16',
+    shade: '2,19 6,16 16,25 26,16 30,19 16,31',
+    y: 16
+  },
+  12: {
+    base: '16.0,1.0 24.8,3.9 30.3,11.4 30.3,20.6 24.8,28.1 16.0,31.0 7.2,28.1 1.7,20.6 1.7,11.4 7.2,3.9',
+    face: '16.0,7.5 24.1,13.4 21.0,22.9 11.0,22.9 7.9,13.4',
+    shade: null,
+    y: 16.5
+  },
+  20: {
+    base: '16,1 29.5,8.5 29.5,23.5 16,31 2.5,23.5 2.5,8.5',
+    face: '16,6 26,23 6,23',
+    shade: '2.5,23.5 6,23 26,23 29.5,23.5 16,31',
+    y: 17.5
+  }
+};
+
+/** Um dado na silhueta colorida da forma dele (d4 triângulo verde, d20 hexágono laranja...), com o valor dentro. */
+function DieShape({ faces, value, className, title }) {
+  const shape = DIE_SHAPES[faces === 100 ? 10 : faces];
+  const text = String(value);
+  const kind = shape ? `d${faces === 100 ? 10 : faces}` : 'other';
+  return (
+    <svg className={`${className} ${styles[kind]}`} viewBox="0 0 32 32" role="img" aria-label={`d${faces}: ${text}`}>
+      {title && <title>{title}</title>}
+      {shape ? <polygon className={styles.base} points={shape.base} /> : <circle className={styles.base} cx="16" cy="16" r="14.5" />}
+      {shape?.face && <polygon className={styles.face} points={shape.face} />}
+      {shape?.shade && <polygon className={styles.shade} points={shape.shade} />}
+      <text x="16" y={shape?.y ?? 16.5} fontSize={text.length > 2 ? 9 : text.length > 1 ? 11 : 13}>{text}</text>
+    </svg>
+  );
+}
+
+/** Os dados de um grupo, cada um na silhueta do dado. */
+function DiceList({ group }) {
+  return (
+    <span className={styles.dice}>
+      {group.results.map((r, i) => (
+        <DieShape
+          key={i}
+          faces={group.faces}
+          value={r.value}
+          className={[styles.die, !r.kept && styles.dropped, r.raw != null && styles.adjusted, group.faces === 20 && r.kept && (r.raw ?? r.value) === 20 && styles.nat20, group.faces === 20 && r.kept && (r.raw ?? r.value) === 1 && styles.nat1].filter(Boolean).join(' ')}
+          title={r.raw != null ? `Rolled ${r.raw}, counts as ${r.value}` : `d${group.faces}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** O cartão de um evento. */
+const CONTROL = 'button, a, input, select, textarea';
+
+/** Abre a prévia pelo card, menos quando o clique foi num controle dele (o botão faz só o que diz). */
+function openFromCard(e, open) {
+  const control = e.target.closest?.(CONTROL);
+  if (control && control !== e.currentTarget) return;
+  open();
+}
+
+function RollCard({ event, undone, onDamage, onConcentration, concentrating, onSpell, onFeatureEffect, onReroll, onRead, canRead, live }) {
+  const readable = !!onRead && (canRead ? canRead(event) : event.kind === 'cast' || !!event.payload?.feature || !!event.payload?.actionKey);
+  const rolls = event.rolls ?? {};
+  const critical = event.kind === 'damageRoll' ? event.payload?.critical : rolls.isCritical;
+  const save = event.kind === 'damageRoll' ? event.payload?.save : null;
+  const detail = detailOf(event);
+  const dc = event.kind === 'damage' ? event.payload?.concentrationDc : null;
+  const groups = undone || !live?.onDismiss ? [] : (event.ops ?? []).filter((o) => o.op === 'summon' && o.add && live.summons?.has(o.add.id)).map((o) => o.add);
+  const formLive = !undone && live?.form && live.formEventId === event.id && live.onRevert;
+  const castTriggers = event.kind === 'cast' && !undone && onSpell ? (live?.castTriggersOf?.(event) ?? []) : [];
+  const hasButtons = !undone && (
+    (event.kind === 'attack' && !!onDamage)
+    || ((event.kind === 'damageRoll' || event.kind === 'healRoll') && !!live?.canRerollDice?.(event))
+    || ((event.kind === 'attack' || event.kind === 'check') && !!event.rolls && !!onReroll)
+    || (event.kind === 'use' && event.payload?.only === 'attack' && !!onFeatureEffect)
+    || (event.kind === 'cast' && !!onSpell && (event.payload?.attack != null || !!event.payload?.damage || !!event.payload?.heal || castTriggers.length > 0))
+    || groups.length > 0 || !!formLive
+    || (!!dc && concentrating && !!onConcentration)
+  );
+  const whole = readable && !hasButtons;
+  const open = () => onRead(event);
+  const onClick = (e) => openFromCard(e, open);
+  const cardProps = whole
+    ? { role: 'button', tabIndex: 0, onClick, onKeyDown: (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(); } }, title: `What ${event.label} is` }
+    : readable ? { onClick } : {};
+  const cls = [styles.card, undone ? styles.undone : '', readable ? styles.cardClickable : ''].filter(Boolean).join(' ');
+  return (
+    <li className={cls} {...cardProps}>
+      <div className={styles.head}>
+        <span className={styles.kind}>{event.kind === 'use' && event.payload?.spellKey ? 'Spell' : KIND_LABEL[event.kind] ?? event.kind}</span>
+        {whole ? (
+          <span className={`${styles.title} ${styles.titleButton}`}>
+            {event.label}
+            <Icon name="info" className={styles.readIcon} />
+          </span>
+        ) : readable ? (
+          <button type="button" className={`${styles.title} ${styles.titleButton}`} onClick={() => onRead(event)} title={`What ${event.label} does`}>
+            {event.label}
+            <Icon name="info" className={styles.readIcon} />
+          </button>
+        ) : (
+          <span className={styles.title}>{event.label}</span>
+        )}
+        <span className={styles.time}>{undone ? 'Undone' : timeLabel(event.at)}</span>
+      </div>
+      <div className={styles.body}>
+        {detail.total != null && <span className={styles.total}>{detail.total}</span>}
+        <span className={styles.tags}>
+          {event.payload?.option && <Tag tone="info">{event.payload.option}</Tag>}
+          {rolls.mode && rolls.mode !== 'normal' && (
+            <Tag>{rolls.mode === 'advantage' ? 'Advantage' : 'Disadvantage'}</Tag>
+          )}
+          {critical && <Tag tone="success">{CRIT_KINDS.has(event.kind) ? 'Critical' : 'Natural 20'}</Tag>}
+          {rolls.isFumble && <Tag tone="danger">Natural 1</Tag>}
+          {event.kind === 'damageRoll' && (event.payload?.types ?? []).length > 0 && (
+            <Tag>{event.payload.types.join(' / ')}</Tag>
+          )}
+          {save && <Tag>DC {save.dc} {ABILITY_FULL[save.ability] ?? save.ability} save</Tag>}
+          {detail.tags.map((t) => (
+            <Tag key={t.text} tone={HISTORY_TONE[t.tone] ?? undefined}>{t.text}</Tag>
+          ))}
+        </span>
+      </div>
+      {detail.lines.length > 0 && (
+        <ul className={styles.lines}>
+          {detail.lines.map((l) => <li key={l}>{l}</li>)}
+        </ul>
+      )}
+      {(rolls.parts ?? []).length > 0 && (
+        <ul className={styles.parts}>
+          {rolls.parts.map((p, i) => (
+            <li key={i} className={styles.part}>
+              <span className={styles.partLabel}>{p.label}</span>
+              <span className={styles.partFormula}>{p.formula}</span>
+              {p.groups.map((g, j) => <DiceList key={j} group={g} />)}
+              <span className={styles.partTotal}>{p.total}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {event.kind === 'attack' && !undone && onDamage && (
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onDamage(event.payload?.attackKey, { critical: !!critical, level: event.payload?.level ?? null, name: event.payload?.name ?? null })}>
+          Roll damage{critical ? ' (critical)' : ''}
+        </Button>
+      )}
+      {(event.kind === 'damageRoll' || event.kind === 'healRoll') && !undone && live?.canRerollDice?.(event) && (
+        <Button size="sm" className={styles.action} onClick={() => live.onRerollDice(event)} title="Roll some of these dice again, by a feature or another rule">
+          Reroll dice
+        </Button>
+      )}
+      {(event.kind === 'attack' || event.kind === 'check') && event.rolls && !undone && onReroll && (
+        <Button size="sm" className={styles.action} onClick={() => onReroll(event)} title="Roll it again, by a feature or another rule">
+          Reroll
+        </Button>
+      )}
+      {event.kind === 'use' && event.payload?.only === 'attack' && !undone && onFeatureEffect && (
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onFeatureEffect(event)}>
+          {(event.payload?.types ?? []).length ? 'Roll damage' : 'Roll healing'}{event.payload?.attack?.critical ? ' (critical)' : ''}
+        </Button>
+      )}
+      {event.kind === 'cast' && !undone && onSpell && (
+        <span className={styles.actionRow}>
+          {event.payload?.attack != null && (
+            <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'attack')}>Attack</Button>
+          )}
+          {event.payload?.damage && (
+            <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'damage')}>Damage</Button>
+          )}
+          {event.payload?.heal && (
+            <Button size="sm" variant="primary" className={styles.action} onClick={() => onSpell(event.payload.spellKey, event.payload.level, 'heal')}>Healing</Button>
+          )}
+          {castTriggers.map((t) => (
+            <Button key={t.name} size="sm" className={styles.action} onClick={() => live.onCastTrigger(t)}>{t.label}</Button>
+          ))}
+        </span>
+      )}
+      {(groups.length > 0 || formLive) && (
+        <span className={styles.actionRow}>
+          {formLive && <RevertFormButton form={live.form} onClick={live.onRevert} className={styles.action} />}
+          {groups.map((g) => (
+            <Button key={g.id} size="sm" className={styles.action} onClick={() => live.onDismiss(g.id)} title={`Dismiss ${g.label}`}>
+              Dismiss{groups.length > 1 ? ` ${g.label}` : ''}
+            </Button>
+          ))}
+        </span>
+      )}
+      {dc && !undone && concentrating && onConcentration && (
+        <Button size="sm" variant="primary" className={styles.action} onClick={() => onConcentration(dc)}>
+          Concentration save (DC {dc})
+        </Button>
+      )}
+    </li>
+  );
+}
+
+/**
+ * O histórico: do mais novo para o mais velho, separado por dia.
+ * @param {{ doc: object|null, onDamage?: Function, onConcentration?: Function, concentrating?: boolean, onSpell?: Function, onFeatureEffect?: Function, onReroll?: Function, live?: object }} props
+ */
+export default function PlayHistory({ doc, onDamage, onConcentration, concentrating = false, onSpell, onFeatureEffect, onReroll, onRead, canRead, live }) {
+  const events = doc?.events ?? [];
+  if (!events.length) {
+    return <p className={styles.empty}>Nothing rolled yet. Your rolls and actions show up here, and you can undo them.</p>;
+  }
+  const items = [];
+  let lastDay = null;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    const day = dayLabel(e.at);
+    if (day !== lastDay) {
+      items.push(<li key={`day-${day}`} className={styles.day}>{day}</li>);
+      lastDay = day;
+    }
+    items.push(
+      <RollCard
+        key={e.id}
+        event={e}
+        undone={i >= doc.cursor}
+        onDamage={onDamage}
+        onConcentration={onConcentration}
+        concentrating={concentrating}
+        onSpell={onSpell}
+        onFeatureEffect={onFeatureEffect}
+        onReroll={onReroll}
+        onRead={onRead}
+        canRead={canRead}
+        live={live}
+      />,
+    );
+  }
+  return <ul className={styles.list}>{items}</ul>;
+}

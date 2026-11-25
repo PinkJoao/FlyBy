@@ -1,0 +1,243 @@
+// =============================================================================
+// playRest.test: testes dos descansos do play mode
+// =============================================================================
+// O QUE FAZ
+//   Os descansos, o Dado de Vida e o Gift of the Ever-Living Ones (DDL-0238).
+//
+// FUNÇÕES
+//   seq(...values): um rng que devolve os valores em ordem e falha se acabarem.
+//   st(patch): um estado de jogo com o patch por cima do descansado.
+//   run(state, event): o estado depois das operações do evento.
+//
+// DECISÕES E ARMADILHAS
+//   - O catálogo é uma fixture com um recurso de cada forma de recuperação: tudo
+//     no longo e 1 no curto (Second Wind), tudo no curto (pacto), uma vez por dia
+//     (magia concedida), e o dado de vida, que só volta no longo.
+// -----------------------------------------------------------------------------
+
+import { describe, it, expect } from 'vitest';
+import { sequenceRng } from './dice';
+import { emptyPlayState, applyOp, hpView } from './playState';
+import { recoveryFor, rollHitDie, hitDiceLeft, shortRestEvent, longRestEvent, hitDiceEvent, hitDieRules, restInspiration, restProficiencies, restProficiencyModifier } from './playRest';
+
+const seq = (...values) => sequenceRng(values, () => {
+  throw new Error('rolou um dado a mais');
+});
+const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
+const run = (state, event) => event.ops.reduce(applyOp, state);
+
+const LR = { period: 'lr', type: 'recoverAll' };
+const catalog = {
+  stats: { hpMax: 30 },
+  rollData: { abilities: { con: { mod: 2 } } },
+  resources: [
+    { key: 'hd:d10', kind: 'hitDice', name: 'd10 Hit Dice', faces: 10, max: 3, recovery: [LR] },
+    { key: 'hd:d8', kind: 'hitDice', name: 'd8 Hit Dice', faces: 8, max: 2, recovery: [LR] },
+    { key: 'pact', kind: 'pact', name: 'Pact slots', max: 2, recovery: [{ period: 'sr', type: 'recoverAll' }] },
+    { key: 'pool:second-wind', kind: 'pool', name: 'Second Wind', max: 3, recovery: [LR, { period: 'sr', type: 'formula', formula: '1' }] },
+    { key: 'granted:race|Misty Step', kind: 'granted', name: 'Misty Step', max: 1, recovery: [{ period: 'day', type: 'recoverAll' }] },
+  ],
+};
+
+describe('recoveryFor', () => {
+  const spent = st({ spent: { pact: 2, 'pool:second-wind': 3, 'granted:race|Misty Step': 1, 'hd:d10': 2 } });
+
+  it('o curto devolve o que é de curto: tudo do pacto, 1 do Second Wind', () => {
+    const r = recoveryFor(catalog, spent, 'sr');
+    expect(r.ops).toEqual([{ op: 'restore', key: 'pact' }, { op: 'restore', key: 'pool:second-wind', amount: 1 }]);
+    expect(run(spent, { ops: r.ops }).spent).toEqual({ 'pool:second-wind': 2, 'granted:race|Misty Step': 1, 'hd:d10': 2 });
+  });
+
+  it('o longo devolve tudo, inclusive o diário e os dados de vida', () => {
+    expect(run(spent, { ops: recoveryFor(catalog, spent, 'lr').ops }).spent).toEqual({});
+  });
+
+  it('nada gasto, nada a devolver', () => {
+    expect(recoveryFor(catalog, st(), 'lr')).toEqual({ ops: [], lines: [], groups: [] });
+  });
+});
+
+describe('dados de vida', () => {
+  it('rola com a CON e cura no mínimo 1', () => {
+    expect(rollHitDie({ catalog, faces: 10, rng: seq(7) }).healed).toBe(9);
+    const low = rollHitDie({ catalog: { ...catalog, rollData: { abilities: { con: { mod: -3 } } } }, faces: 8, rng: seq(1) });
+    expect(low.rolls.total).toBe(-2);
+    expect(low.healed).toBe(1);
+  });
+
+  it('conta o que sobra por face', () => {
+    expect(hitDiceLeft(catalog, st({ spent: { 'hd:d10': 1 } }))).toEqual([
+      { key: 'hd:d10', faces: 10, max: 3, left: 2 },
+      { key: 'hd:d8', faces: 8, max: 2, left: 2 },
+    ]);
+  });
+});
+
+describe('descanso curto', () => {
+  it('gasta os dados por face, cura a soma e recupera o que é de curto, num evento só', () => {
+    const s = st({ damage: 25, spent: { pact: 1 } });
+    const spends = [rollHitDie({ catalog, faces: 10, rng: seq(6) }), rollHitDie({ catalog, faces: 10, rng: seq(3) }), rollHitDie({ catalog, faces: 8, rng: seq(8) })];
+    const e = shortRestEvent({ state: s, catalog, spends });
+    const next = run(s, e);
+    expect(next.spent).toEqual({ 'hd:d10': 2, 'hd:d8': 1 });
+    expect(hpView(next, 30).current).toBe(5 + 8 + 5 + 10);
+    expect(e.payload.lines[0]).toEqual({ name: 'Hit Point Dice', detail: '1d8 + 2d10 spent, 23 HP regained' });
+    expect(e.rolls.total).toBe(23);
+  });
+
+  it('a cura não passa do máximo', () => {
+    const s = st({ damage: 3 });
+    const e = shortRestEvent({ state: s, catalog, spends: [rollHitDie({ catalog, faces: 10, rng: seq(10) })] });
+    expect(hpView(run(s, e), 30).current).toBe(30);
+    expect(e.rolls.total).toBe(3);
+  });
+
+  it('a concentração de até uma hora acaba; a de 8 horas e a sem duração ficam', () => {
+    const sphere = st({ concentration: { name: 'Flaming Sphere', rounds: 10 } });
+    const e = shortRestEvent({ state: sphere, catalog, spends: [] });
+    expect(run(sphere, e).concentration).toBeNull();
+    expect(e.payload.lines).toContainEqual({ name: 'Concentration', detail: 'Flaming Sphere ended (it lasts less than the rest)' });
+    const hex = st({ concentration: { name: 'Hex', rounds: 600 } });
+    expect(run(hex, shortRestEvent({ state: hex, catalog, spends: [] })).concentration).toBeNull();
+    for (const value of [{ name: 'Mordenkainen\'s Private Sanctum', rounds: 4800 }, { name: 'Old', level: 2 }]) {
+      const s = st({ concentration: value });
+      expect(run(s, shortRestEvent({ state: s, catalog, spends: [] })).concentration).toEqual(value);
+    }
+  });
+});
+
+describe('descanso longo', () => {
+  it('devolve HP, dados de vida e recursos; tira temporário, exaustão, morte e concentração', () => {
+    const s = st({
+      damage: 25, tempHp: 4, spent: { 'hd:d10': 3, pact: 2 },
+      conditions: { exhaustion: 2 }, death: { success: 0, failure: 0, stable: true, dead: false },
+      concentration: { name: 'Bless' },
+    });
+    const e = longRestEvent({ state: s, catalog });
+    const next = run(s, e);
+    expect(hpView(next, 30)).toEqual({ max: 30, current: 30, temp: 0 });
+    expect(next.spent).toEqual({});
+    expect(next.conditions).toEqual({ exhaustion: 1 });
+    expect(next.death).toEqual({ success: 0, failure: 0, stable: false, dead: false });
+    expect(next.concentration).toBeNull();
+    expect(e.payload.lines.map((l) => l.name)).toEqual(['Hit points', 'd10 Hit Dice', 'Pact slots', 'Exhaustion', 'Concentration']);
+  });
+
+  it('descansado, o longo não muda nada', () => {
+    expect(longRestEvent({ state: st(), catalog }).ops).toEqual([]);
+  });
+});
+
+describe('hitDiceEvent', () => {
+  it('gasta da maior face para a menor e cura', () => {
+    const s = st({ damage: 20 });
+    const ev = hitDiceEvent({ state: s, catalog, count: 4, rng: seq(5, 6, 7, 3) });
+    expect(ev.ops.filter((o) => o.op === 'spend')).toEqual([{ op: 'spend', key: 'hd:d10', amount: 3 }, { op: 'spend', key: 'hd:d8', amount: 1 }]);
+    expect(ev.rolls.parts.map((p) => p.total)).toEqual([7, 8, 9, 5]);
+    expect(ev.payload.healed).toBe(20);
+    expect(hpView(run(s, ev), 30).current).toBe(30);
+  });
+
+  it('pedir mais do que sobra gasta o que houver', () => {
+    const s = st({ damage: 5, spent: { 'hd:d10': 3, 'hd:d8': 1 } });
+    const ev = hitDiceEvent({ state: s, catalog, count: 3, rng: seq(1) });
+    expect(ev.payload.spent).toBe(1);
+    expect(run(s, ev).spent).toEqual({ 'hd:d10': 3, 'hd:d8': 2 });
+  });
+
+  it('negativo devolve os gastos, a maior face primeiro', () => {
+    const s = st({ spent: { 'hd:d10': 1, 'hd:d8': 2 } });
+    const ev = hitDiceEvent({ state: s, catalog, count: -2 });
+    expect(ev.payload.restored).toBe(2);
+    expect(run(s, ev).spent).toEqual({ 'hd:d8': 1 });
+  });
+
+  it('o descanso longo desfaz o ajuste do máximo', () => {
+    const s = st({ maxHpDelta: 5, damage: 10 });
+    const s1 = run(s, longRestEvent({ state: s, catalog }));
+    expect(s1.maxHpDelta).toBe(0);
+    expect(hpView(s1, 30)).toEqual({ max: 30, current: 30, temp: 0 });
+  });
+});
+
+describe('Gift of the Ever-Living Ones (DDL-0238)', () => {
+  it('com `maxed`, o Dado de Vida vai ao máximo', () => {
+    const r = rollHitDie({ catalog, faces: 8, rng: seq(), maxed: true });
+    expect(r.healed).toBe(10);
+    expect(r.rules).toContain('Gift of the Ever-Living Ones');
+  });
+
+  it('o hitDiceEvent põe no máximo com o efeito `healMax` ligado', () => {
+    const ev = hitDiceEvent({ state: st({ damage: 20, modifiers: [{ id: 'g', healMax: true, effects: [] }] }), catalog, count: 1, rng: seq() });
+    expect(ev.rolls.total).toBe(12);
+  });
+});
+
+describe('o pool que volta a um número (Power Surge, DDL-0253)', () => {
+  const cat = { rollData: {}, resources: [{ key: 'pool:power-surge', kind: 'pool', name: 'Power Surge', item: 'Power Surge', max: 4, recovery: [{ period: 'lr', type: 'resetTo', formula: '1' }, { period: 'sr', type: 'ifEmpty', formula: '1' }] }] };
+  const run = (state, ops) => ops.reduce(applyOp, state);
+  it('no descanso longo volta a 1, gaste o que tiver gasto', () => {
+    const s = { ...emptyPlayState(), spent: { 'pool:power-surge': 0 } };
+    const r = recoveryFor(cat, s, 'lr');
+    expect(run(s, r.ops).spent['pool:power-surge']).toBe(3);
+    const empty = { ...emptyPlayState(), spent: { 'pool:power-surge': 4 } };
+    expect(run(empty, recoveryFor(cat, empty, 'lr').ops).spent['pool:power-surge']).toBe(3);
+  });
+  it('no curto ganha 1 só se estava vazio', () => {
+    const empty = { ...emptyPlayState(), spent: { 'pool:power-surge': 4 } };
+    expect(run(empty, recoveryFor(cat, empty, 'sr').ops).spent['pool:power-surge']).toBe(3);
+    const two = { ...emptyPlayState(), spent: { 'pool:power-surge': 2 } };
+    expect(recoveryFor(cat, two, 'sr').ops).toEqual([]);
+  });
+});
+
+describe('traços de espécie no descanso (TC-0220, TC-0222)', () => {
+  const resourceful = { ...catalog, featureList: [{ name: 'Resourceful', entries: ['You gain Heroic Inspiration whenever you finish a Long Rest.'] }] };
+  it('Resourceful: o descanso longo liga a Heroic Inspiration, só se ela estiver desligada', () => {
+    expect(restInspiration(resourceful)).toBe('Resourceful');
+    expect(run(st(), longRestEvent({ state: st(), catalog: resourceful })).inspiration).toBe(true);
+    expect(longRestEvent({ state: st({ inspiration: true }), catalog: resourceful }).ops).toEqual([]);
+    expect(restInspiration(catalog)).toBe(null);
+  });
+  it('Quiet Contemplation: +1 por dado de vida gasto, só no descanso curto', () => {
+    const c = { ...catalog, features: ['quiet contemplation'] };
+    expect(hitDieRules(c, true).map((r) => r.plus)).toEqual([1]);
+    expect(hitDieRules(c, false)).toEqual([]);
+  });
+});
+
+describe('recuperação sem tipo (DDL-0273)', () => {
+  it('vale recoverAll, o padrão do dnd5e', () => {
+    const c = { ...catalog, resources: [{ key: 'pool:x', kind: 'pool', name: 'X', max: 1, recovery: [{ period: 'lr' }] }] };
+    expect(recoveryFor(c, st({ spent: { 'pool:x': 1 } }), 'lr').ops).toEqual([{ op: 'restore', key: 'pool:x' }]);
+    expect(recoveryFor(c, st({ spent: { 'pool:x': 1 } }), 'sr').ops).toEqual([]);
+  });
+});
+
+describe('recarga em vários descansos e proficiência de descanso (DDL-0275)', () => {
+  const pool = { key: 'pool:x', kind: 'pool', name: 'X', max: 1, recovery: [{ period: 'lr', type: 'recoverAll' }] };
+  const c = { ...catalog, resources: [pool] };
+  it('a trava segura o pool até o N-ésimo descanso longo, e desconta em cada um', () => {
+    let s = applyOp(st({ spent: { 'pool:x': 1 } }), { op: 'lockout', key: 'pool:x', rests: 2 });
+    s = run(s, longRestEvent({ state: s, catalog: c }));
+    expect(s.spent['pool:x']).toBe(1);
+    expect(s.lockouts['pool:x']).toBe(1);
+    s = run(s, longRestEvent({ state: s, catalog: c }));
+    expect(s.spent['pool:x']).toBeUndefined();
+    expect(s.lockouts['pool:x']).toBeUndefined();
+  });
+  it('lê a regra do texto: o Trance do MPMM, o Astral Knowledge, o Severed from Dreams e o Versatile Merc; o Trance do XPHB não', () => {
+    const fl = (name, text) => ({ ...catalog, featureList: [{ name, entries: [text] }] });
+    expect(restProficiencies(fl('Trance', "Whenever you finish this trance, you can gain two proficiencies that you don't have, each one with a weapon or a tool of your choice"))[0]).toMatchObject({ tools: 2, skills: 0 });
+    expect(restProficiencies(fl('Astral Knowledge', 'Whenever you finish a long rest, you gain proficiency in one skill of your choice and with one weapon or tool of your choice'))[0]).toMatchObject({ skills: 1, tools: 1 });
+    expect(restProficiencies(fl('Severed from Dreams', 'In addition, when you finish a Long Rest, you gain proficiency in one skill of your choice.'))[0]).toMatchObject({ skills: 1, tools: 0 });
+    expect(restProficiencies(fl('Zhentarim Tactics', 'When you finish a Long Rest, choose a skill in which you have proficiency. You have Expertise in that skill until you finish your next Long Rest.'))[0]).toMatchObject({ expertise: 1 });
+    expect(restProficiencies(fl('Trance', "You don't need to sleep. You can finish a Long Rest in 4 hours."))).toEqual([]);
+  });
+  it('o efeito soma o PB na perícia e dura até o próximo descanso longo', () => {
+    const m = restProficiencyModifier({ feature: 'Astral Knowledge', skills: ['arc'], tools: ['Longsword'] });
+    expect(m.duration).toBe('longRest');
+    expect(m.effects[0]).toMatchObject({ targets: ['skill:arc'], formula: '@prof' });
+    expect(m.effects[1]).toMatchObject({ optional: true });
+  });
+});

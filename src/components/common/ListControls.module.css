@@ -1,0 +1,21 @@
+/* =============================================================================
+ * ListControls.module.css: a linha Filtrar, Agrupar, Ordenar
+ * =============================================================================
+ * CLASSES
+ *   .bar: os três botões juntos, no começo da linha, sem quebrar.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Os dois botões de escolha encolhem (o texto ganha reticências) e o de ordenar,
+ *     quadrado, nunca: a linha cabe a 360 px com os nomes mais longos (DDL-0314).
+ * -------------------------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.bar > * {
+  flex: 0 1 auto;
+}

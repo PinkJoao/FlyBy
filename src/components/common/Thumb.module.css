@@ -1,0 +1,43 @@
+/* =============================================================================
+ * Thumb.module.css: a miniatura (arte ou ícone)
+ * =============================================================================
+ * CLASSES
+ *   .thumb: o quadro (o tamanho vem de quem usa, pela className).
+ *   .img, .contain: a arte, cortada para preencher ou inteira.
+ *   .glyph, .tinted: o ícone no lugar da arte, apagado; com `tint` (a raridade), na cor
+ *     dela e sem o cinza.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O quadro tem fundo e borda próprios para a arte de fundo transparente não
+ *     sumir no card; o ícone usa font-size, então quem usa escala pelo font-size.
+ * -------------------------------------------------------------------------- */
+
+.thumb {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.contain {
+  object-fit: contain;
+}
+
+.glyph {
+  filter: grayscale(0.35);
+  opacity: 0.8;
+}
+
+.tinted {
+  filter: none;
+  opacity: 0.9;
+}

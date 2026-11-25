@@ -1,0 +1,789 @@
+/* =============================================================================
+ * SelectorPanel.module.css: o painel de seleção (busca, filtros, resultados, preview)
+ * =============================================================================
+ * CLASSES
+ *   Painel
+ *   .overlay, .panel, .header, .headerText, .hint: o painel (o X é o CloseButton); .hint é a
+ *     dica opcional sob o título (glossário).
+ *   .chosenStrip, .chosenLabel: a faixa do que já foi escolhido numa escolha
+ *     múltipla, com desfazer; as pílulas são o Chip comum (DDL-0197).
+ *   .detailScrim, .detailSheet, .detailClosing: a gaveta de DETALHE do celular (tocar
+ *     num card a abre antes de selecionar), com a moldura PreviewShell (DDL-0295).
+ *   .body, .bodyNoPreview, .bodyNoFilters: o corpo; sem preview (glossário, carrossel),
+ *     filtros e resultados; sem filtros, a coluna fechada pelo botão do filtro no
+ *     desktop (DDL-0296).
+ *   Filtros
+ *   .filters, .grabber, .filtersHead*: a coluna (a gaveta, no mobile); o
+ *     cabeçalho GRUDA no topo, com fundo, para Clear e Apply seguirem alcançáveis.
+ *   .legend*, .dotInc, .dotExc: a legenda include/exclude, numa linha só (DDL-0297; era em duas no
+ *     desktop (não disputa largura com o Clear) e horizontal no mobile.
+ *   .filtersActions, .clear, .applyFilters: os botões (Apply só na gaveta).
+ *   .filterGroup, .chips, .noFilters: os grupos de filtro; cada opção é o Chip comum
+ *     (incluída = `active`, excluída = tom `danger` riscado; DDL-0198).
+ *   .chipEmpty: a opção que não alcança resultado agora: visível e inerte, nunca
+ *     numa opção ativa (DDL-0077).
+ *   Resultados
+ *   .results, .cards, .sentinel: a grade e o sentinel das levas.
+ *   .sortBtn: o botão de ordenar, na linha de cima.
+ *   .viewToggle, .viewOpt, .resultsCards: o botão List | Cards (antes do ordenar) e a
+ *     coluna no modo carrossel, que dá a altura ao SelectorCarousel (DDL-0286).
+ *   .iconBtn, .iconBtnOn, .iconBadge, .srOnly: a lupa e o filtro do carrossel no celular,
+ *     com o número de filtros ativos, e o texto só para leitor de tela (DDL-0287).
+ *   .cardBody, .cardExtra, .cardExtraLine: o corpo de altura fixa e as linhas extras no
+ *     espaço que sobra (DDL-0288).
+ *   .headerCompact h2: o título quebra em até duas linhas na coluna dos filtros, em vez de
+ *     cortar ("Choose Wizard Subclass", DDL-0301).
+ *   .headerNoPreview: no desktop o topo é uma grade com as colunas do corpo (filtros | lista |
+ *     preview), a busca e os botões na largura da lista (DDL-0298); a grade não muda com o
+ *     modo nem com a coluna de filtros (DDL-0299), só o painel sem preview (o glossário).
+ *   .headerTools, .headerSearch, .headerCompact: a linha de cima do carrossel no celular:
+ *     a busca, o filtro, o List | Cards e o ordenar, sem o título visível (DDL-0288,
+ *     DDL-0293); desde o DDL-0294, o topo de todo seletor no celular, nos dois modos.
+ *   .caption, .captionTitle, .captionHint: a legenda do título próprio, da dica e da
+ *     escolha múltipla (DDL-0294). A busca é a SearchField comum (DDL-0303).
+ *   .card*, .badges, .badgesOne, .cardTag: os cards; .cardBox é o card COM ações
+ *     (loja), um <div> com o botão de info e o stepper na base. A raridade (cor do
+ *     dado), os pré-requisitos (success, danger, warning pelo status contra o
+ *     personagem) e os badges do cartão são a Tag comum (DDL-0199), numa área só.
+ *   .cardWithThumb, .cardThumb: o card com a miniatura no topo, de borda a borda
+ *     (a loja no celular, DDL-0285).
+ *   Preview
+ *   .preview, .selectBtn, .muted: a coluna do preview (a moldura PreviewShell dentro,
+ *     DDL-0295) e o Select do carrossel.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Card de forma FIXA (DDL-0286, DDL-0288): o corpo (.cardBody) tem a altura que a
+ *     `cardShape` da entity orça (--body-h); título, fonte, meta e etiquetas entram até o
+ *     máximo de linhas de cada (--title-lines, --meta-lines, --tag-rows) e o que sobra
+ *     vai às linhas extras (.cardExtra), só as inteiras (a coluna que quebra joga a linha
+ *     que não cabe para fora, à direita, cortada; um ::before vazio abre a coluna para
+ *     que nem a primeira linha apareça pela metade). O card ocupa a célula inteira
+ *     (height: 100%) e o stepper vai à base: todo card de um painel tem a mesma altura.
+ *   - z-index 150: acima do guia (120), que o abre de DENTRO, e abaixo dos
+ *     diálogos (1000).
+ *   - A lupa é QUADRADA com o lado igual à altura do "Clear" (1lh + padding +
+ *     borda). A line-height herdada do app é um comprimento (18px/145%), e
+ *     aspect-ratio com align-self: stretch não serve (é ignorado num flex item
+ *     esticado). Os dois botões têm a mesma altura, então centralizar basta.
+ *   - No mobile (até 760px) só os resultados ficam no corpo, o toque no card faz
+ *     o preview, e a busca principal some com a gaveta aberta (não filtra os chips
+ *     e rouba altura); a busca dos filtros, então, fica sempre visível.
+ *   - O puxador GRUDA no topo, opaco e de largura cheia (margem negativa), para os
+ *     chips passarem POR BAIXO; o gesto é nosso, não do scroll. --grab-h é a
+ *     altura dele (10 + 4 da barra + 6).
+ * -------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  z-index: 150;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  height: min(90svh, 800px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-layer);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.detailScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.45);
+  animation: sel-scrim-in 0.2s ease backwards;
+}
+.detailSheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 90%;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  animation: sel-sheet-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.detailClosing {
+  animation: sel-fade-out 0.16s ease-in forwards;
+}
+.detailClosing .detailSheet {
+  animation: sel-sheet-out 0.16s ease-in forwards;
+}
+@keyframes sel-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes sel-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes sel-scrim-in {
+  from {
+    background: transparent;
+  }
+}
+@keyframes sel-fade-out {
+  to {
+    background: transparent;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.chosenStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.chosenLabel {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: var(--space-1);
+}
+
+.headerText {
+  min-width: 0;
+}
+.hint {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  min-height: 0;
+  transition: grid-template-columns 0.22s ease;
+}
+.bodyNoPreview {
+  grid-template-columns: 220px 1fr;
+}
+@media (min-width: 761px) {
+  .bodyNoFilters {
+    grid-template-columns: 0 1fr 320px;
+  }
+  .bodyNoFilters.bodyNoPreview {
+    grid-template-columns: 0 1fr;
+  }
+  .bodyNoFilters .filters {
+    visibility: hidden;
+    padding: 0;
+    border: 0;
+  }
+}
+
+.filters {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.grabber {
+  display: none;
+}
+
+.filtersHead {
+  position: sticky;
+  top: -16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: -16px -16px 12px;
+  padding: 14px 16px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.filtersHeadRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.noFilters {
+  font-size: var(--fs-meta);
+  opacity: 0.6;
+}
+.legend {
+  font-size: var(--fs-label);
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.legendRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.dotInc,
+.dotExc {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.dotInc {
+  background: var(--accent);
+}
+.dotExc {
+  background: var(--danger);
+}
+.filtersActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+.clear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  box-sizing: border-box;
+  line-height: 1;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-control);
+}
+.clear:hover {
+  color: var(--danger);
+  filter: brightness(1.1);
+}
+.applyFilters {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  box-sizing: border-box;
+  line-height: 1;
+  appearance: none;
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--accent);
+  cursor: pointer;
+}
+.applyFilters:hover {
+  filter: brightness(1.1);
+}
+.filterGroup {
+  margin-bottom: 18px;
+}
+.filterGroup h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-meta);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.results {
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.sentinel {
+  grid-column: 1 / -1;
+  height: 1px;
+}
+.card {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  appearance: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--space-3);
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: inherit;
+  font: inherit;
+  transition: border-color 0.12s ease;
+}
+.card:hover {
+  border-color: var(--accent-border);
+}
+.cardPinned {
+  border-color: var(--accent-border);
+}
+.cardSel {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.cardTitle {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-field);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--title-lines, 2);
+  line-clamp: var(--title-lines, 2);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  flex: none;
+}
+.cardSub {
+  font-size: var(--fs-small);
+  line-height: 1.4;
+  min-height: 1.4em;
+  opacity: 0.6;
+  font-family: var(--mono);
+  flex: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  font-size: var(--fs-label);
+  line-height: 1.35;
+  opacity: 0.75;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--meta-lines, 1);
+  line-clamp: var(--meta-lines, 1);
+  overflow: hidden;
+  flex: none;
+}
+
+.cardBox {
+  cursor: default;
+  padding: 10px;
+}
+.cardInfo {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ATENÇÃO: o margin-top: auto prende o stepper à base; com as peças de altura fixa, ele fica no mesmo lugar em todo card. */
+.cardActions {
+  margin-top: auto;
+  padding-top: 6px;
+  display: flex;
+  justify-content: center;
+}
+
+.cardWithThumb {
+  padding-top: 0;
+  overflow: hidden;
+}
+.cardThumb {
+  flex: none;
+  height: 96px;
+  margin: 0 -12px 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 34px;
+}
+.cardBox .cardThumb {
+  margin: 0 -10px 6px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  overflow: hidden;
+  flex: none;
+  max-height: calc(var(--tag-rows, 1) * 16px + (var(--tag-rows, 1) - 1) * 4px);
+}
+.badgesOne {
+  flex-wrap: nowrap;
+}
+.cardTag {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.cardTag > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.preview {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.selectBtn {
+  appearance: none;
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-field);
+  padding: 10px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.selectBtn:hover {
+  filter: brightness(1.08);
+}
+.muted {
+  opacity: 0.5;
+  padding: 18px;
+}
+
+@media (max-width: 760px) {
+  .overlay {
+    padding: 0;
+  }
+  .panel {
+    height: 100svh;
+    max-width: none;
+    border-radius: 0;
+    border: none;
+  }
+  .applyFilters {
+    display: inline-flex;
+  }
+  .body {
+    grid-template-columns: 1fr;
+  }
+  .preview {
+    display: none;
+  }
+  .filters {
+    position: absolute;
+    inset: 0;
+    top: auto;
+    height: 70svh;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    z-index: 10;
+    padding-top: 0;
+    --grab-h: 20px;
+  }
+  .filtersOpen {
+    transform: translateY(0);
+  }
+
+  /* ATENÇÃO: o .filtersHead gruda em --grab-h, a altura exata deste puxador; os dois em top: 0 se sobrepõem. */
+  .grabber {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin: 0 -16px;
+    padding: 10px 16px 6px;
+    background: var(--bg);
+    cursor: grab;
+    touch-action: none;
+  }
+  .grabber:active {
+    cursor: grabbing;
+  }
+  .grabberBar {
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--border);
+  }
+
+  .filtersHead {
+    top: var(--grab-h);
+    margin-top: 0;
+    padding-top: 6px;
+  }
+
+}
+
+.sortBtn {
+  width: 32px;
+  height: 32px;
+  font-size: var(--fs-field);
+}
+
+.viewToggle {
+  margin-left: auto;
+}
+.viewOpt {
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+/* ATENÇÃO: no modo carrossel a coluna não rola; quem rola é o corpo do cartão (SelectorCarousel). */
+.resultsCards {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.resultsCards > :last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+.iconBtn {
+  position: relative;
+  flex: none;
+  width: var(--control-h);
+  height: var(--control-h);
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  font-size: var(--fs-lead);
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+.iconBtnOn {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+.iconBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--space-1);
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .results {
+    padding: 10px 12px 12px;
+  }
+  .resultsCards {
+    padding: 10px 12px 12px;
+  }
+}
+
+.headerTools {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 var(--space-2) 0 var(--space-6);
+}
+.headerSearch {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-field);
+}
+.headerTools .viewToggle {
+  margin-left: 0;
+  height: 34px;
+}
+.headerTools .viewToggle button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 0;
+}
+.headerCompact {
+  padding: 12px 14px 12px 20px;
+}
+.headerCompact h2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .headerCompact {
+    padding: 10px 8px 10px 12px;
+  }
+  .headerTools {
+    margin: 0 6px 0 0;
+  }
+  .headerSearch {
+    max-width: none;
+  }
+}
+.headerTools .iconBtn,
+.headerTools .sortBtn {
+  width: 34px;
+  height: 34px;
+}
+
+.cardBody {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  height: var(--body-h);
+  min-height: 0;
+  overflow: hidden;
+}
+.cardExtra {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: var(--space-5);
+  row-gap: 1px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+/* ATENÇÃO: o vazio de altura zero ocupa a 1a coluna; sem ele a 1a linha extra ficaria cortada ao meio quando não cabe. */
+.cardExtra::before {
+  content: '';
+  width: 100%;
+  height: 0;
+}
+.cardExtraLine {
+  width: 100%;
+  font-size: var(--fs-label);
+  line-height: 1.35;
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 6px 14px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.captionTitle {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  color: var(--text-h);
+}
+.captionHint {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+@media (min-width: 761px) {
+  .headerCompact {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
+    align-items: center;
+    padding: var(--space-3) 0;
+  }
+  .headerCompact .headerText {
+    min-width: 0;
+    padding: 0 12px 0 20px;
+  }
+  .headerCompact .headerTools {
+    margin: 0;
+    padding: 0 calc(16px + var(--results-sb, 0px)) 0 16px;
+  }
+  .headerCompact > :last-child {
+    justify-self: end;
+    margin-right: 14px;
+  }
+  .headerNoPreview {
+    grid-template-columns: 220px minmax(0, 1fr) auto;
+  }
+}

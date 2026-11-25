@@ -1,0 +1,447 @@
+// =============================================================================
+// Home: o roster de personagens
+// =============================================================================
+// O QUE FAZ
+//   A marca e o menu sanduíche no topo; abaixo, centralizados, o título, a barra
+//   de busca, agrupamento e ordenação (como no Inventário e nas Magias) com o botão
+//   "Add", e a lista (só ela rola; a página cabe na tela). O menu tem o
+//   glossário, importar, e dois submenus em janelinha (AppMenus): Game data (a
+//   fonte, atualizar, o link da mesa) e Settings (tema, guia, tutoriais); mais o
+//   feedback. No Samsung Internet, um aviso dispensável sob o topo manda instalar
+//   pelo Chrome (installHint, DDL-0095).
+//
+// FUNÇÕES
+//   Home(): a página. Por dentro: startNew, createNew, updateData, chooseSource
+//     (a fonte de dados, DDL-0091), copySetupLink (o link da mesa), openSettings
+//     e openGameData (os submenus) e as ações por card (abrir, jogar, duplicar,
+//     exportar Foundry e PDF, apagar).
+//
+// DECISÕES E ARMADILHAS
+//   - A lista tem três jeitos de ver (DDL-0308, fase U6 do docs/UI-STUDY.md): Lista,
+//     Grade (no desktop a página alarga até 1240 px) e Carrossel (um card grande por
+//     vez, deslizando de lado), lembrados no settingsStore como o modo dos seletores
+//     (`selectorView.roster`). O "New Character" é o PRIMEIRO card em todos, e some
+//     durante uma busca. Cada card tem os dois caminhos lado a lado, só com ícone: Build
+//     (o martelo) e Play (o play), DDL-0309; a atribuição fica presa ao pé da página.
+//   - Criar respeita a Character Guidance: 'ask' pergunta, com "remember my
+//     answer". O guiado vai para a rota do wizard, marca `meta.creating` e usa
+//     Standard Array; "just the sheet" grava `guided: false`.
+//   - Semeadura do tutorial na 1a carga do roster: quem já tem personagens nasce
+//     com os tours vistos; instalação nova os mantém para disparar.
+//   - O PDF usa o mesmo pipeline do Builder, importado dinamicamente.
+//   - O botão de play do card abre o play mode (DDL-0004; lançado no DDL-0283, antes só com os recursos experimentais,
+//     DDL-0111), e some enquanto a criação guiada não termina, porque não há ficha para jogar ainda.
+//   - O aviso do Samsung Internet lembra que os personagens ficam neste navegador:
+//     o Chrome tem armazenamento próprio, então exportar antes evita a surpresa.
+//   - O menu agrupa em submenus porque passava de dez itens, três deles títulos
+//     desabilitados; as escolhas de Settings aplicam na hora (MenuList, keepOpen).
+//   - chooseSource: trocar de fonte não toca nos personagens; a fonte nova vale a
+//     partir do recarregamento do compêndio. "Update game data" só existe para
+//     fonte por URL (o SRD embutido não tem o que re-baixar). O campo aceita o
+//     endereço, um link do GitHub ou um link de configuração colado, e o testa
+//     antes de gravar (resolveSourceInput); a falha pergunta, não bloqueia.
+// -----------------------------------------------------------------------------
+
+import SegmentedControl from '../components/common/SegmentedControl';
+import SearchField from '../components/common/SearchField';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useCharacterStore from '../store/characterStore';
+import useSettingsStore from '../store/settingsStore';
+import { useData } from '../data/dataContext';
+import { describeSource, sameSource, SRD_SOURCE, SOURCE_PLACEHOLDER } from '../data/dataSource';
+import { buildSetupLink, resolveSourceInput } from '../data/setupLink';
+import { describeProblem } from '../data/sourceAddress';
+import useCharacterImport from '../hooks/useCharacterImport';
+import { assembleFoundryActor } from '../engine/foundryActor';
+import { loadFoundryMechanics } from '../engine/foundryMechanicsData';
+import { deriveFromDb } from '../engine/resolve';
+import { totalLevel, classNames } from '../schema/character';
+import { orderRoster } from './roster';
+import MenuButton from '../components/common/MenuButton';
+import { openGlossary } from '../store/glossaryStore';
+import { FEEDBACK_URL } from '../feedback';
+import useTutorialStore, { seedTutorials } from '../store/tutorialStore';
+import { alert, confirm, ask, menu } from '../components/common/dialog';
+import { isSamsungInternet, isStandalone, chromeIntentUrl } from '../installHint';
+import { SettingsMenu, GameDataMenu } from '../components/common/AppMenus';
+import styles from './Home.module.css';
+import Icon from '../components/common/Icon';
+import { showPdfExport } from '../components/common/pdfExportDialog';
+import SortButton from '../components/common/SortButton';
+import { NAME_SORT } from '../sorting';
+import { buttonClass } from '../components/common/buttonClass';
+
+const VIEWS = [
+  { id: 'list', label: 'List', icon: 'viewList' },
+  { id: 'grid', label: 'Grid', icon: 'viewGrid' },
+  { id: 'carousel', label: 'Carousel', icon: 'viewCards' },
+];
+
+const SORT_OPTIONS = [
+  NAME_SORT,
+  { value: 'level', label: 'Level', defaultDir: 'desc', dirLabels: ['Lowest first', 'Highest first'] },
+  { value: 'created', label: 'Recent', defaultDir: 'desc', dirLabels: ['Oldest first', 'Newest first'] },
+  { value: 'class', label: 'Class', defaultDir: 'asc', dirLabels: ['A to Z', 'Z to A'] },
+];
+
+export default function Home() {
+  const navigate = useNavigate();
+  const { inputRef, onFileChange, pickFile } = useCharacterImport();
+
+  const characters = useCharacterStore((s) => s.characters);
+  const loaded = useCharacterStore((s) => s.loaded);
+  const load = useCharacterStore((s) => s.load);
+  const create = useCharacterStore((s) => s.create);
+  const duplicate = useCharacterStore((s) => s.duplicate);
+  const remove = useCharacterStore((s) => s.remove);
+  const guidance = useSettingsStore((s) => s.guidance);
+  const setGuidance = useSettingsStore((s) => s.setGuidance);
+  const samsungHintDismissed = useSettingsStore((s) => s.samsungHintDismissed);
+  const dismissSamsungHint = useSettingsStore((s) => s.dismissSamsungHint);
+  const showSamsungHint = !samsungHintDismissed && isSamsungInternet(navigator.userAgent) && !isStandalone();
+  const setTutEnabled = useTutorialStore((s) => s.setEnabled);
+  const resetTutorials = useTutorialStore((s) => s.resetSeen);
+  const replayTutorials = () => {
+    setTutEnabled(true);
+    resetTutorials();
+  };
+  const { db, forceCacheUpdate, source, missing, changeSource } = useData();
+
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+
+  useEffect(() => {
+    if (!loaded) load();
+  }, [loaded, load]);
+
+  useEffect(() => {
+    if (loaded) seedTutorials(characters.length);
+  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Cria o personagem e navega (guiado vai ao wizard). */
+  const startNew = async (guided) => {
+    const c = await create(
+      guided ? { creating: true, guided: true, scoreMethod: 'standard-array' } : { guided: false },
+    );
+    navigate(guided ? `/build/${c.id}/wizard` : `/build/${c.id}`);
+  };
+
+  /** O fluxo de novo personagem, respeitando a preferência de guidance. */
+  const createNew = async () => {
+    if (guidance === 'on') return startNew(true);
+    if (guidance === 'off') return startNew(false);
+    const res = await ask({
+      title: 'Character Guidance',
+      message: 'Want a step-by-step guide through creation, or jump straight into the sheet?',
+      fields: [{ type: 'checkbox', name: 'remember', label: 'Remember my answer' }],
+      actions: [
+        { label: 'Just the sheet', value: 'plain' },
+        { label: 'Guide me', value: 'guided', tone: 'primary', autoFocus: true },
+      ],
+      dismissValue: null,
+    });
+    if (!res || res.action == null) return;
+    const guided = res.action === 'guided';
+    if (res.values.remember) setGuidance(guided ? 'on' : 'off');
+    startNew(guided);
+  };
+
+  /** Força re-baixar da fonte configurada; os personagens não são tocados. */
+  const updateData = async () => {
+    const ok = await confirm({
+      title: 'Update game data',
+      message: `Re-download the game data from ${describeSource(source)} now? The app will refresh while it downloads. Your characters are not affected.`,
+      confirmLabel: 'Update',
+    });
+    if (ok) forceCacheUpdate();
+  };
+
+  /** Copia o link de configuração da fonte atual, para mandar à mesa. */
+  const copySetupLink = async () => {
+    const link = buildSetupLink(window.location.origin, source.base);
+    const copied = await navigator.clipboard.writeText(link).then(() => true, () => false);
+    await alert({
+      title: copied ? 'Setup link copied' : 'Setup link',
+      message:
+        `${link}\n\n` +
+        'Send it to your players. Opening it the first time sets FlyBy to this game data; opening it again changes nothing, so they can keep using it as the site link.',
+    });
+  };
+
+  /** Escolhe a fonte de dados: o SRD embutido ou um endereço do usuário. */
+  const chooseSource = async () => {
+    const current = describeSource(source);
+    const gaps = missing?.length
+      ? `\n\nThis source is missing ${missing.length} of the files the app reads; that content is unavailable.`
+      : '';
+    const res = await ask({
+      title: 'Game data source',
+      message:
+        `Currently using: ${current}.${gaps}\n\n` +
+        'The built-in SRD 5.2 content works offline and needs no download. To use other content, paste a GitHub repository or release link, or the address of a folder of game data in the 5etools format. Your characters are not affected.',
+      fields: [{
+        type: 'text',
+        name: 'url',
+        label: 'Data address',
+        placeholder: SOURCE_PLACEHOLDER,
+        default: source?.kind === 'url' ? source.base : '',
+      }],
+      actions: [
+        { label: 'Cancel', value: null },
+        { label: 'Use SRD 5.2', value: 'srd' },
+        { label: 'Use this address', value: 'url', tone: 'primary' },
+      ],
+    });
+    if (!res || res.action == null) return;
+    if (res.action === 'srd') {
+      if (source?.kind !== 'srd') changeSource(SRD_SOURCE);
+      return;
+    }
+    const result = await resolveSourceInput(res.values.url);
+    if (!result.ok && !result.base) {
+      const title = result.reason === 'no-repo' ? 'Repository not found' : 'Invalid address';
+      await alert({ title, message: describeProblem(result) });
+      return;
+    }
+    if (!result.ok) {
+      const anyway = await confirm({ title: 'No game data found', message: describeProblem(result), confirmLabel: 'Use anyway' });
+      if (!anyway) return;
+    }
+    if (sameSource(source, { kind: 'url', base: result.base })) return;
+    changeSource({ kind: 'url', base: result.base });
+  };
+
+  /** O submenu Settings: tema, guia e tutoriais (AppMenus). */
+  const openSettings = () => menu({ title: 'Settings', content: <SettingsMenu onReplayTutorials={replayTutorials} /> });
+
+  /** O submenu Game data: a fonte, a atualização e o link da mesa (AppMenus). */
+  const openGameData = () =>
+    menu({
+      title: 'Game data',
+      content: (
+        <GameDataMenu source={source} onChooseSource={chooseSource} onUpdate={updateData} onCopyLink={copySetupLink} />
+      ),
+    });
+
+  const handleExport = async (character) => {
+    await loadFoundryMechanics();
+    const actor = assembleFoundryActor(character, db);
+    const blob = new Blob([JSON.stringify(actor, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safe = (character.meta.name || 'character').replace(/[^\w.-]+/g, '_');
+    a.href = url;
+    a.download = `${safe}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPdf = (character) =>
+    showPdfExport(async (options) => {
+      const { exportCharacterPdf } = await import('../pdf/exportPdf');
+      await exportCharacterPdf(character, deriveFromDb(character, db), db, options);
+    });
+
+  const askDelete = async (character) => {
+    const ok = await confirm({
+      title: 'Delete character',
+      message: `Delete "${character.meta.name || 'Unnamed'}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (ok) remove(character.id);
+  };
+
+  const items = useMemo(
+    () => {
+      const option = SORT_OPTIONS.find((o) => o.value === sortBy) ?? SORT_OPTIONS[0];
+      return orderRoster(characters, { query, sortBy, reverse: sortDir !== option.defaultDir })[0].items;
+    },
+    [characters, query, sortBy, sortDir],
+  );
+
+  const total = characters.length;
+
+  const view = useSettingsStore((s) => s.selectorView?.roster ?? 'list');
+  const setView = useSettingsStore((s) => s.setSelectorView);
+
+  const renderCard = (c) => {
+    const summary = classNames(c);
+    return (
+      <li key={c.id} className={styles.card}>
+        <button
+          type="button"
+          className={styles.cardMain}
+          onClick={() => navigate(c.meta?.creating ? `/build/${c.id}/wizard` : `/build/${c.id}`)}
+        >
+          {c.meta.portrait ? (
+            <img className={styles.avatarImg} src={c.meta.portrait} alt="" aria-hidden="true" />
+          ) : (
+            <span className={styles.avatar} aria-hidden="true">
+              {(c.meta.name || '?').charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span className={styles.info}>
+            <span className={styles.name}>{c.meta.name || 'Unnamed'}</span>
+            <span className={styles.sub}>
+              Level {totalLevel(c)}
+              {summary ? ` · ${summary}` : ''}
+            </span>
+          </span>
+        </button>
+        <div className={styles.cardActions}>
+          <button type="button" className={styles.modeBtn} title="Build" aria-label={`Build ${c.meta.name || 'character'}`} onClick={() => navigate(c.meta?.creating ? `/build/${c.id}/wizard` : `/build/${c.id}`)}>
+            <Icon name="build" />
+          </button>
+          {!c.meta?.creating && (
+            <button type="button" className={styles.modeBtn} title="Play" aria-label={`Play ${c.meta.name || 'character'}`} onClick={() => navigate(`/play/${c.id}`)}>
+              <Icon name="play" />
+            </button>
+          )}
+          <MenuButton
+            buttonClassName={styles.menuTrigger}
+            buttonTitle="Character options"
+            items={[
+              { label: 'Duplicate', onClick: () => duplicate(c.id) },
+              { label: 'Export', sub: 'Foundry actor JSON', onClick: () => handleExport(c) },
+              { label: 'Export PDF', sub: 'Printable character sheet', onClick: () => handleExportPdf(c) },
+              { label: 'Delete', danger: true, onClick: () => askDelete(c) },
+            ]}
+          >
+            <span aria-hidden="true"><Icon name="more" /></span>
+          </MenuButton>
+        </div>
+      </li>
+    );
+  };
+
+  const attribution = (
+    <footer className={styles.attribution}>
+      {source?.kind === 'srd' ? 'Built-in game data in the ' : 'Game data from '}
+      <a href="https://5e.tools" target="_blank" rel="noopener noreferrer">5e.tools</a>
+      {source?.kind === 'srd' ? ' format' : ''}. Includes SRD
+      5.2 and SRD 5.1 content © Wizards of the Coast, licensed under{' '}
+      <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">
+        CC BY 4.0
+      </a>
+      . An unofficial fan-made tool, not affiliated with or endorsed by Wizards of the Coast.{' '}
+      <a
+        href="/about"
+        onClick={(e) => {
+          e.preventDefault();
+          navigate('/about');
+        }}
+      >
+        Credits
+      </a>
+    </footer>
+  );
+
+  return (
+    <div className={view === 'grid' ? `${styles.page} ${styles.pageWide} motion-page` : `${styles.page} motion-page`}>
+      <header className={styles.topbar}>
+        <span className={styles.brand}>
+          <img src="/logo.svg" alt="" className={styles.brandLogo} />
+          FlyBy
+        </span>
+        <MenuButton
+          buttonClassName={buttonClass({ icon: true })}
+          buttonTitle="Settings"
+          items={[
+            { label: 'Glossary', sub: 'Search every rule, spell, item and feature', onClick: openGlossary },
+            { label: 'Import character', sub: 'Foundry actor JSON', onClick: pickFile },
+            { label: 'Game data', sub: describeSource(source), onClick: openGameData },
+            { label: 'Settings', sub: 'Theme, creation guide and tutorials', onClick: openSettings },
+            { label: 'About FlyBy', sub: 'Version, credits and licenses', onClick: () => navigate('/about') },
+            { label: 'Feedback / report a bug', sub: 'Sends an e-mail', href: FEEDBACK_URL },
+          ]}
+        >
+          <span aria-hidden="true"><Icon name="menu" /></span>
+        </MenuButton>
+      </header>
+
+      {showSamsungHint && (
+        <aside className={styles.installHint}>
+          <p className={styles.installHintText}>
+            Installing from Samsung Internet is blocked by Google Play Protect. To install
+            FlyBy as an app, open it in Chrome. Characters stay in this browser, so export
+            any you made here first.
+          </p>
+          <div className={styles.installHintActions}>
+            <a className={styles.installHintLink} href={chromeIntentUrl(window.location)}>
+              Open in Chrome
+            </a>
+            <button type="button" className={styles.installHintClose} onClick={dismissSamsungHint}>
+              Dismiss
+            </button>
+          </div>
+        </aside>
+      )}
+
+      <main className={styles.main}>
+        <h2 className={`${styles.rosterTitle} ornate-rule ornate-rule-center`}>Characters</h2>
+
+        {!loaded ? (
+          <p className={styles.muted}>Loading…</p>
+        ) : total === 0 ? (
+          <div className={styles.empty}>
+            <p>No characters yet.</p>
+            <button type="button" className={styles.primary} onClick={createNew}>
+              <Icon name="plus" /> New Character
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={styles.controls}>
+              <SearchField placeholder="Search…" ariaLabel="Search characters" value={query} onChange={setQuery} count={items.length} />
+              <SortButton
+                options={SORT_OPTIONS}
+                value={sortBy}
+                dir={sortDir}
+                onChange={(value, dir) => {
+                  setSortBy(value);
+                  setSortDir(dir);
+                }}
+                className={styles.sortBtn}
+              />
+              <SegmentedControl
+                size="row"
+                className={styles.viewToggle}
+                ariaLabel="How to show the characters"
+                value={view}
+                onChange={(v) => setView('roster', v)}
+                options={VIEWS.map((v) => [v.id, <span key={v.id} className={styles.viewOpt} title={v.label}><Icon name={v.icon} /><span className={styles.srOnly}>{v.label}</span></span>])}
+              />
+            </div>
+
+            <div className={styles.listScroll}>
+              <ul className={`${styles.list} ${styles[view] ?? ''}`} data-wheel-x={view === 'carousel' ? '' : undefined}>
+                {!query && (
+                  <li className={`${styles.card} ${styles.newCard}`}>
+                    <button type="button" className={styles.cardMain} onClick={createNew}>
+                      <span className={`${styles.avatar} ${styles.newIcon}`} aria-hidden="true">
+                        <Icon name="plus" />
+                      </span>
+                      <span className={styles.info}>
+                        <span className={styles.name}>New Character</span>
+                        <span className={styles.newSub}>With the step-by-step guide, or straight to the sheet</span>
+                      </span>
+                    </button>
+                  </li>
+                )}
+                {items.map(renderCard)}
+              </ul>
+              {items.length === 0 && query && <p className={styles.muted}>No characters match your search.</p>}
+            </div>
+          </>
+        )}
+      </main>
+      {attribution}
+
+
+      <input ref={inputRef} type="file" accept="application/json,.json" hidden onChange={onFileChange} />
+    </div>
+  );
+}

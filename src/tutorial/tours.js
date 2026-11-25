@@ -1,0 +1,525 @@
+// =============================================================================
+// tours: a definição dos tutoriais de uso
+// =============================================================================
+// O QUE FAZ
+//   Cada tour é uma lista de passos:
+//     anchor: a chave do TUT a destacar (sem ela, balão central);
+//     title, body: o texto (body pode ser { desktop, mobile });
+//     placement: 'auto', 'top', 'bottom', 'left' ou 'right' (só uma dica);
+//     only: 'mobile' ou 'desktop', quando a ÂNCORA muda entre as interfaces (se só o
+//       texto muda, use o body com as duas versões).
+//   O tutorial é SEPARADO da Character Guidance (DDL-0069): a guidance ensina O QUE
+//   decidir; o tour ensina COMO usar o app.
+//
+// FUNÇÕES
+//   getTour(id): o tour de um id.
+//
+// DECISÕES E ARMADILHAS
+//   - Tours: `selector` (na 1a abertura do seletor), `selector-view` (o botão List | Cards, na
+//     1a abertura de um seletor que o tem, depois do `selector`; DDL-0288), `sheet` (F2, na 1a ficha) e os
+//     micro-tours por ABA (F3, na 1a abertura de cada uma; curtos, só os elementos
+//     estáveis).
+//   - O play mode tem os seus: `play-start` (na 1a abertura da tela de jogo; era `play`, renomeado no lançamento,
+//     DDL-0282, para quem já o viu ver o novo), um por aba como na ficha (`play-tab-actions`, `play-tab-features`,
+//     `play-tab-spells`, `play-tab-inventory`, na 1a abertura de cada aba), `play-combat` (no 1o combate, sobre a
+//     barra que só existe então), `play-summons` (na 1a abertura da aba Summons) e `play-form` (na 1a forma), DDL-0196.
+//   - No mobile o tour do seletor ABRE a gaveta e a tela de detalhe
+//     (`mobileAction`) e as fecha ao avançar e terminar; por isso a âncora é o
+//     painel, não o botão "Filters" (que some com a gaveta aberta).
+//   - O passo do botão do guia degrada para balão central quando o botão não está
+//     na tela.
+// -----------------------------------------------------------------------------
+
+import { TUT } from './anchors';
+
+const selector = {
+  id: 'selector',
+  steps: [
+    {
+      title: 'Picking things',
+      body: 'This panel is how you choose species, classes, spells, items and more. Here is a quick tour of it.',
+    },
+    {
+      anchor: TUT.SELECTOR_SEARCH,
+      title: 'Search',
+      body: 'Type here to find something by name.',
+      placement: 'bottom',
+    },
+    {
+      only: 'desktop',
+      anchor: TUT.SELECTOR_FILTERS,
+      title: 'Filters',
+      body: 'Narrow the list with these filters. Tap a chip once to require it (purple), twice to exclude it (red).',
+      placement: 'right',
+    },
+    {
+      only: 'mobile',
+      anchor: TUT.SELECTOR_FILTERS,
+      mobileAction: 'filters',
+      title: 'Filters',
+      body: 'The "Filters" button opens this drawer. Tap a chip once to include it (purple), twice to exclude it (red).',
+      placement: 'top',
+    },
+    {
+      anchor: TUT.SELECTOR_RESULTS,
+      title: 'Results',
+      body: 'Matches show up here, with the count at the top.',
+      placement: 'auto',
+    },
+    {
+      only: 'desktop',
+      anchor: TUT.SELECTOR_PREVIEW,
+      title: 'Preview',
+      body: 'Point at any result to see its art, lore and full details here.',
+      placement: 'left',
+    },
+    {
+      only: 'mobile',
+      anchor: TUT.SELECTOR_DETAIL,
+      mobileAction: 'detail',
+      title: 'Details',
+      body: 'Tapping a card opens its full details, art and lore. Select adds it - or go back to pick another. When you get to choose more than one, the button says Next and the panel stays open for the rest.',
+      placement: 'top',
+    },
+    {
+      only: 'desktop',
+      anchor: TUT.SELECTOR_SELECT,
+      title: 'Select',
+      body: 'Happy with it? Press Select, or double-click the card, to add it to your character. When you get to choose more than one, the button says Next and the panel stays open for the rest.',
+      placement: 'top',
+    },
+  ],
+};
+
+const selectorView = {
+  id: 'selector-view',
+  steps: [
+    {
+      anchor: TUT.SELECTOR_VIEW,
+      title: 'List or cards',
+      body: 'Switch between the list and big cards, one at a time, with the art and a short description. Swipe to see the next one. FlyBy remembers your choice for each kind of picker.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const sheet = {
+  id: 'sheet',
+  steps: [
+    {
+      title: 'Your character sheet',
+      body: 'Everything about your character lives here. Let us walk through it - the numbers up top update on their own as you make choices below.',
+    },
+    {
+      anchor: TUT.SHEET_IDENTITY,
+      title: 'Portrait & name',
+      body: {
+        desktop: 'Set the name here, and click the portrait to add art (upload a file or paste an image URL).',
+        mobile: 'Tap the name to edit it, and tap the portrait to add art (upload a file or paste an image URL).',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.MODE_SWITCH,
+      title: 'Build and Play',
+      body: 'Build is where you make the character. Play is the sheet for the table: rolls, hit points, resources and spells, with a history you can undo.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_LEVEL,
+      title: 'Level',
+      body: 'Raise or lower your level here. When a new level unlocks a decision, the guide opens to help.',
+      placement: 'auto',
+    },
+    {
+      anchor: TUT.SHEET_TILES,
+      title: 'Key numbers',
+      body: 'Level, Hit Points, Armor Class and Alignment. Tap any tile to expand it - see the breakdown, roll HP, or set your alignment.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_ABILITIES,
+      title: 'Ability scores',
+      body: 'Your six abilities, each with its total and modifier. Tap a card to set the base score - bonuses from your species and background fold in automatically.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_PROFICIENCIES,
+      title: 'Proficiencies',
+      body: 'Your proficiency bonus, plus every save, skill, tool, language and more you are proficient in. Tap to expand the full list - it all comes from your choices.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_TABS,
+      title: 'Building tabs',
+      body: {
+        desktop: 'Switch between Species, Background, Class, Inventory, Spellbook and Biography here. This is where you actually build the character.',
+        mobile: 'Tap through Species, Background, Class, Inventory, Spellbook and Biography here. This is where you actually build the character.',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_GUIDE,
+      title: 'The guide',
+      body: 'When required choices are still missing, this button appears with a count. Tap it to be walked through what is left.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_MENU,
+      title: 'Menu',
+      body: "The rules glossary, export to Foundry VTT or PDF, this character's guide, and settings like the theme and these tutorials.",
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabSpecies = {
+  id: 'tab-species',
+  steps: [
+    {
+      title: 'Species',
+      body: 'Your species sets your size, speed and innate traits. Here is how this tab works.',
+    },
+    {
+      anchor: TUT.TAB_SPECIES_PICKER,
+      title: 'Choose a species',
+      body: "Pick your species here. If it has lineages (like an Elf's Drow, High or Wood), a second picker appears - then any trait choices, and the full description below.",
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabBackground = {
+  id: 'tab-background',
+  steps: [
+    {
+      title: 'Background',
+      body: 'Your origin: where the character came from, and the mechanical benefits it grants.',
+    },
+    {
+      anchor: TUT.TAB_BG_BOOSTS,
+      title: 'Ability boosts',
+      body: 'In the 2024 rules your ability increases come from your background: +2 and +1, or +1 to three. Choose the abilities here.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BG_FEAT,
+      title: 'Origin feat',
+      body: 'Your starting feat goes here - and if it has its own choices (like Magic Initiate), they show up right below it.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BG_PROFS,
+      title: 'Proficiencies & language',
+      body: 'Pick your background skills, a tool and a language here.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BG_STORY,
+      title: 'Story',
+      body: 'Write where they came from. It also fills the background description when you export.',
+      placement: 'top',
+    },
+  ],
+};
+
+const tabClass = {
+  id: 'tab-class',
+  steps: [
+    {
+      title: 'Class',
+      body: 'Your class drives most of the sheet - hit points, proficiencies, features and spells.',
+    },
+    {
+      anchor: TUT.TAB_CLASS_TABS,
+      title: 'One tab per class',
+      body: 'Each tab is a class. The first is your original class; use + to multiclass into another.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_CLASS_CARD,
+      title: 'Configure the class',
+      body: 'Choose the class here, then set its level, its subclass (from level 3), and any class choices. The full feature progression is listed underneath.',
+      placement: 'auto',
+    },
+  ],
+};
+
+const tabInventory = {
+  id: 'tab-inventory',
+  steps: [
+    {
+      title: 'Inventory',
+      body: 'Everything the character carries - gear, weapons, armor, coins.',
+    },
+    {
+      anchor: TUT.TAB_INV_TOP,
+      title: 'Coins & load',
+      body: 'Your currency on the left; carried weight and attunement (max 3 items) on the right.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_INV_CONTROLS,
+      title: 'Search & shop',
+      body: 'Search what you carry, or open the Shop to buy gear - it stays open across purchases.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_INV_LIST,
+      title: 'Show, group & sort',
+      body: 'Pick what the list shows (all items, weapons, armor...), how it is grouped, and the order. Each button says what is on screen.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabSpellbook = {
+  id: 'tab-spellbook',
+  steps: [
+    {
+      title: 'Spellbook',
+      body: 'Your spells, grouped by where they come from. Only shown for spellcasters.',
+    },
+    {
+      anchor: TUT.TAB_SPELL_CARDS,
+      title: 'Slots & numbers',
+      body: 'Your spell slots (or pact slots), save DC and attack bonus, and how many cantrips and spells you can prepare.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_SPELL_ORIGINS,
+      title: 'By source',
+      body: 'One tab per source: each caster class, plus racial and feat spells.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_SPELL_CONTROLS,
+      title: 'Prepare spells',
+      body: 'Search your list, or use "Prepare spell" to add one. Spells granted for free show "Always Prepared" and do not count against your limit.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_SPELL_LIST,
+      title: 'Show, group & sort',
+      body: 'Show every spell or one spell level, group them by level, school, roll or casting time, and pick the order.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const tabBiography = {
+  id: 'tab-biography',
+  steps: [
+    {
+      title: 'Biography',
+      body: 'Who the character is, outside the rules - none of this affects your numbers.',
+    },
+    {
+      anchor: TUT.TAB_BIO_TRAITS,
+      title: 'Traits',
+      body: 'Personality, ideals, bonds and flaws - free text, or roll the die for a suggestion. Appearance goes here too.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_BIO_DETAILS,
+      title: 'Details',
+      body: 'Physical descriptors: age, height, eyes, faith and more.',
+      placement: 'top',
+    },
+  ],
+};
+
+const playStart = {
+  id: 'play-start',
+  steps: [
+    {
+      title: 'Play mode',
+      body: 'This is the sheet you play with at the table. Every roll and every change is saved in the history, and anything can be undone.',
+    },
+    {
+      anchor: TUT.MODE_SWITCH,
+      title: 'Build and Play',
+      body: 'Build is where you make the character; Play is where you use it. Switch any time: both are the same character.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.SHEET_LEVEL,
+      title: 'Rests',
+      body: 'Short rest lets you spend Hit Point Dice and brings back what a Short Rest recovers; Long rest brings back the rest. Each feature recovers when its own text says.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_STATS,
+      title: 'Hit points, initiative and movement',
+      body: {
+        desktop: 'Click Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Move and Dash. Armor Class shows what makes it up.',
+        mobile: 'Tap Hit points to open Heal, Hurt and Hit dice. Roll initiative starts combat. Move opens your speeds and, in combat, Move and Dash. Armor Class shows what makes it up.',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_ABILITIES,
+      title: 'Checks and saves',
+      body: {
+        desktop: 'Click an ability to open it. Check asks which skill (or none) and shows every bonus that applies; Save rolls the saving throw. In Proficiencies, a save, skill or tool rolls when you click it.',
+        mobile: 'Tap an ability to open it. Check asks which skill (or none) and shows every bonus that applies; Save rolls the saving throw. In Proficiencies, a save, skill or tool rolls when you tap it.',
+      },
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_CONDITIONS,
+      title: 'Conditions and effects',
+      body: 'Conditions, statuses like Concentration, diseases and Heroic Inspiration go in the first; effects go in the second, found by the spell or feature that caused them or made up by the DM. Rolls take them into account.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_TABS,
+      title: 'Tabs',
+      body: 'Actions has the basic actions and what each costs; Features, your abilities and resources; Spells, slots and casting; Summons, while something you summoned is on the field; Inventory, items to use. On a narrow screen, History is the first tab.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_HISTORY,
+      title: 'History',
+      body: 'Every roll and change lands in the history, like a chat log. Tap a card to read what it was; its buttons do the next step, such as Roll damage after a hit. Undo and redo sit at its top: undo takes back the last action, even a long rest.',
+      placement: 'auto',
+    },
+  ],
+};
+
+const playTabActions = {
+  id: 'play-tab-actions',
+  steps: [
+    {
+      anchor: TUT.PLAY_ROLLS,
+      title: 'Actions',
+      body: {
+        desktop: 'The basic actions you can take, with what each one costs you. Click one to choose how: which weapon, which spell, which skill. In combat, a cost you already used this turn fades.',
+        mobile: 'The basic actions you can take, with what each one costs you. Tap one to choose how: which weapon, which spell, which skill. In combat, a cost you already used this turn fades.',
+      },
+      placement: 'auto',
+    },
+  ],
+};
+
+const playTabFeatures = {
+  id: 'play-tab-features',
+  steps: [
+    {
+      anchor: TUT.PLAY_FEATURES_CONTROLS,
+      title: 'Active and Passive',
+      body: 'Active lists what you use: features with a cost, a resource or a trigger. Passive lists what is always on, already counted in your rolls. The search looks in the side you are on and offers the other.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_FEATURES_LIST,
+      title: 'Use and resources',
+      body: 'Use spends the resource of a feature and rolls what it rolls. The dots are its uses: tap them to set the count by hand when the DM gives or takes some. Tap a name to read the full text; a creature it names opens its stat block.',
+      placement: 'auto',
+    },
+  ],
+};
+
+const playTabSpells = {
+  id: 'play-tab-spells',
+  steps: [
+    {
+      anchor: TUT.PLAY_SPELLS_SLOTS,
+      title: 'Slots by level',
+      body: 'Each spell level shows its slots as gems. Cast spends one, and a higher slot casts the spell at that level. Tap the gems to fix the count by hand.',
+      placement: 'auto',
+    },
+    {
+      anchor: TUT.PLAY_SPELLS_TOGGLE,
+      title: 'Prepared spells',
+      body: 'Only the spells you have prepared show here; this switch lists the others. Preparing a spell is done in Build.',
+      placement: 'top',
+    },
+  ],
+};
+
+const playTabInventory = {
+  id: 'play-tab-inventory',
+  steps: [
+    {
+      anchor: TUT.PLAY_INV_GROUPS,
+      title: 'Items in play',
+      body: 'Use spends a potion, a scroll or a charge; a weapon has Attack. Buying, equipping and attuning stay in Build.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const playCombat = {
+  id: 'play-combat',
+  steps: [
+    {
+      anchor: TUT.PLAY_COMBAT,
+      title: 'Combat',
+      body: 'Your round and initiative. Action, Bonus and Reaction are crossed out as you use them; tap one to fix it by hand.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.PLAY_COMBAT,
+      title: 'Next turn',
+      body: 'Press Next turn when your turn starts: your action, bonus action and reaction come back, and effects that ran out end on their own. End combat when the fight is over.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+const playSummons = {
+  id: 'play-summons',
+  steps: [
+    {
+      anchor: TUT.PLAY_SUMMONS,
+      title: 'Summons',
+      body: 'One card for each thing you brought to the fight: a creature, a group of the same creature, or a spell you track like Spiritual Weapon. It shows the AC, the hit points of each one with Hurt and Heal, the actions to roll, and when it acts and how you command it.',
+      placement: 'auto',
+    },
+    {
+      anchor: TUT.PLAY_SUMMONS,
+      title: 'When it ends',
+      body: 'A summon tied to your concentration leaves when the concentration ends, and one with a duration leaves when its time runs out in combat. Dismiss removes it yourself. Undo brings any of them back. In combat, "Then:" under the turn buttons lists who acts after you.',
+      placement: 'auto',
+    },
+  ],
+};
+
+const playForm = {
+  id: 'play-form',
+  steps: [
+    {
+      anchor: TUT.PLAY_FORM,
+      title: 'In another form',
+      body: 'Armor Class, speed, Strength, Dexterity, Constitution, checks and attacks now come from the form; what the form keeps of you (your hit points, and for Wild Shape your mind and proficiencies) stays. Revert ends it. A form from a spell also ends with your concentration.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+export const TOURS = {
+  selector,
+  'selector-view': selectorView,
+  sheet,
+  'tab-species': tabSpecies,
+  'tab-background': tabBackground,
+  'tab-class': tabClass,
+  'tab-inventory': tabInventory,
+  'tab-spellbook': tabSpellbook,
+  'tab-biography': tabBiography,
+  'play-start': playStart,
+  'play-tab-actions': playTabActions,
+  'play-tab-features': playTabFeatures,
+  'play-tab-spells': playTabSpells,
+  'play-tab-inventory': playTabInventory,
+  'play-combat': playCombat,
+  'play-summons': playSummons,
+  'play-form': playForm,
+};
+
+export const ALL_TOUR_IDS = Object.keys(TOURS);
+
+export function getTour(id) {
+  return TOURS[id] ?? null;
+}

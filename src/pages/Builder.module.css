@@ -1,0 +1,226 @@
+/* =============================================================================
+ * Builder.module.css: a página da ficha
+ * =============================================================================
+ * CLASSES
+ *   .page, .topBar, .topActions: a página e o topo; quem os monta é a pages/Character
+ *     (o voltar, o seletor Sheet | Play e os botões do modo), centrados na vertical
+ *     (o voltar tem 36px, os outros 38).
+ *   .levelSlot: o stepper de nível no bloco de identidade; no desktop o
+ *     margin-left: auto o empurra à direita, no mobile empilha sob o nome.
+ *   .guideBtn, .guideBtnAlert, .guideBadge: o botão do guia; tema accent com
+ *     pendência, e o contador no canto. A caixa é justa ao glifo.
+ *   .identity, .portraitWrap, .portrait, .nameWrap, .name, .sub: retrato e nome;
+ *     .portraitFilled assume a PROPORÇÃO natural da foto (sem corte), com altura
+ *     máxima.
+ *   .nameRule: o filete de decor.css sob o nome, só com a identidade empilhada e centrada (até
+ *     560 px; ao lado do retrato o nome fica alinhado ao início e o filete ficaria torto, DDL-0312).
+ *   .tabBar: o espaço acima da barra de abas (a TabBar comum, DDL-0303); ela vai de
+ *     borda a borda e gruda sob o topo compacto, no celular e no desktop (DDL-0306) (51 px: a barra de 52 menos
+ *     a borda, que as duas dividem; DDL-0304).
+ *   .panel, .label, .hint, .placeholder, .stack: o conteúdo da aba.
+ * -------------------------------------------------------------------------- */
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.levelSlot {
+  margin-left: auto;
+  display: flex;
+}
+
+.guideBtn {
+  position: relative;
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  padding: 0;
+  font-size: 28px;
+  line-height: 1;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.guideBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.guideBtnAlert {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.guideBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--space-1);
+  box-sizing: border-box;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.portraitWrap {
+  position: relative;
+  flex: none;
+  max-width: 100%;
+}
+
+.portrait {
+  width: 88px;
+  height: 88px;
+  flex: none;
+  border-radius: var(--radius-layer);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.portrait:hover {
+  border-color: var(--accent-border);
+}
+
+.portraitFilled {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+
+.portraitFilled img {
+  display: block;
+  max-height: 180px;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.nameWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 2px 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  outline: none;
+}
+
+.sub {
+  margin: 2px 0 0;
+  opacity: 0.7;
+  font-size: var(--fs-field);
+}
+
+.nameRule {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .identity {
+    flex-direction: column;
+    text-align: center;
+  }
+  .name {
+    text-align: center;
+  }
+  .nameRule {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .levelSlot {
+    margin: 0 auto;
+    align-self: center;
+  }
+}
+
+.tabBar {
+  margin-top: var(--space-5);
+}
+
+.tabBar {
+  --tabbar-top: 51px;
+  margin-inline: -24px;
+  padding-inline: var(--space-5);
+}
+
+.panel {
+  margin-top: var(--space-5);
+}
+
+.label {
+  display: block;
+  font-size: var(--fs-meta);
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.hint {
+  margin-top: var(--space-4);
+  opacity: 0.5;
+  font-size: var(--fs-body);
+}
+
+.placeholder {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}

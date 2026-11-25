@@ -1,0 +1,155 @@
+/* =============================================================================
+ * PlayPanels.module.css: os diálogos de usar, lançar e recuperar do play mode
+ * =============================================================================
+ * CLASSES
+ *   .form, .note, .warn, .short: a coluna, as notas e os avisos em vermelho.
+ *   .costs, .stepRow, .stepper, .stepValue, .smallBtn: os custos e os contadores.
+ *   .field, .label, .input: os campos (os sim ou não são o Toggle comum).
+ *   .summon: o bloco "Summon now" do diálogo de conjurar (DDL-0192).
+ *   .options, .option, .optionOn, .optionText, .left: as formas de lançar.
+ *   .chips: a fila dos dados do Reroll dice (o Chip do app, DDL-0215).
+ * -------------------------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: min(340px, 78vw);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+
+.warn {
+  margin: 0;
+  font-size: var(--fs-meta);
+  color: var(--danger-text);
+}
+
+.short {
+  color: var(--danger-text);
+}
+
+.costs {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-body);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepValue {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.smallBtn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 16px;
+  line-height: 0;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.smallBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.input {
+  font: inherit;
+  font-size: var(--fs-field);
+  padding: 7px 10px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.optionOn {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.optionText {
+  flex: 1 1 auto;
+  font-size: var(--fs-body);
+  color: var(--text-h);
+}
+
+.left {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.summon {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+}

@@ -1,0 +1,149 @@
+/* =============================================================================
+ * ProficienciesCard.module.css: o card de proficiências da ficha
+ * =============================================================================
+ * CLASSES
+ *   .card, .head, .icon, .title, .bonus*, .chevron, .open: o cabeçalho colapsável;
+ *     o .icon é uma caixa justa ao glifo, para centralizar exato.
+ *   .body, .section, .sectionTitle, .pills, .pill, .pillBonus, .empty: o corpo.
+ *   .pillRoll, .pillDice: o item que rola, no play mode (botão com o dado).
+ * -------------------------------------------------------------------------- */
+
+.card {
+  composes: card from '../common/Card.module.css';
+  overflow: hidden;
+}
+
+.head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 14px 16px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.head:hover {
+  background: var(--accent-bg);
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--radius-field);
+  background: var(--accent-bg);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-lead);
+  line-height: 1;
+}
+
+.title {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.bonusWrap {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.bonusLabel {
+  font-size: var(--fs-small);
+  opacity: 0.55;
+}
+
+.bonus {
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.chevron {
+  font-size: var(--fs-label);
+  opacity: 0.5;
+  margin-left: var(--space-3);
+  transition: transform 0.15s;
+}
+
+.card.open .chevron {
+  transform: rotate(180deg);
+}
+
+.body {
+  border-top: 1px solid var(--border);
+  padding: 8px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sectionTitle {
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: var(--radius-control);
+  padding: 4px 9px;
+  font-size: var(--fs-meta);
+  color: var(--text-h);
+}
+
+.pillRoll {
+  font: inherit;
+  font-size: var(--fs-meta);
+  cursor: pointer;
+}
+
+.pillRoll:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.pillDice {
+  display: inline-flex;
+  font-size: var(--fs-label);
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.pill .pillBonus {
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  font-size: var(--fs-meta);
+  opacity: 0.6;
+  line-height: 1.5;
+}

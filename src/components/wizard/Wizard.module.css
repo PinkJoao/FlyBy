@@ -1,0 +1,289 @@
+/* =============================================================================
+ * Wizard.module.css: o shell do wizard
+ * =============================================================================
+ * O QUE FAZ
+ *   O wizard preenche a área de conteúdo (o .main do App): cabeçalho e rodapé
+ *   fixos, e só o corpo rola.
+ *
+ * CLASSES
+ *   .parts, .part, .partFill, .partDone: a barra em partes fixas, uma por seção da criação
+ *     (DDL-0306); .partDone brilha uma vez quando a parte se completa (DDL-0309).
+ *   .head, .progress*, .title: o cabeçalho (voltar, progresso; o sair é o Button de ícone).
+ *   .body, .step*, .placeholder: o corpo, que rola; .stepIcon e .stepLead, o ícone acima do título
+ *     e a frase curta abaixo dele, na 1a página do passo (DDL-0313).
+ *   .foot, .navBtn, .primaryBtn, .footNote: o rodapé (Back, Next, Skip); o Next ou
+ *     Finish é o preenchido de accent, e o bloqueado (passo obrigatório vazio)
+ *     fica visivelmente desabilitado.
+ *   .review*: a revisão; o hover do botão respeita os cantos arredondados.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O corpo, o passo e o .stepBody são colunas que crescem até o fim da área (flex 1 0
+ *     auto): o carrossel do guia (InlineSelector) preenche a altura que sobra acima do
+ *     rodapé, e um passo comprido continua rolando (DDL-0289).
+ *   - .stepBare: a página sem título (a 2a em diante) tira a margem do corpo; o título
+ *     é centrado com o enfeite (ornate-rule-center) e o rótulo do topo, a etapa, fica
+ *     em destaque (DDL-0291).
+ * -------------------------------------------------------------------------- */
+
+.wizard {
+  height: 100%;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+}
+
+.progressWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.title {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--text-h);
+}
+
+.progressBar {
+  width: 100%;
+  height: 5px;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+.parts {
+  width: 100%;
+  display: flex;
+  gap: var(--space-1);
+}
+.part {
+  flex: 1;
+  height: 5px;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.partFill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width var(--dur-slide) var(--ease);
+}
+.partDone {
+  animation: part-glow 0.9s var(--ease);
+}
+@keyframes part-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  35% {
+    box-shadow: 0 0 10px 2px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+.progressText {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  opacity: 0.55;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  /* ATENÇÃO: o passo entra deslizando de lado (motion.css); sem isto pisca uma barra horizontal. */
+  overflow-x: hidden;
+  padding: var(--space-4) 0 var(--space-3);
+}
+
+.step {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.stepTitle {
+  margin: 0;
+  font-size: var(--fs-page);
+  color: var(--text-h);
+  text-align: center;
+}
+
+.stepIcon {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  line-height: 0;
+}
+.stepLead {
+  margin: 0 auto;
+  max-width: 40ch;
+  text-align: center;
+  font-size: var(--fs-lead);
+  color: var(--text);
+}
+
+.stepBare .stepBody {
+  margin-top: 0;
+}
+.stepHelp {
+  margin: 0;
+  font-size: var(--fs-field);
+  opacity: 0.7;
+  line-height: 1.5;
+}
+.stepBody {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-4);
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  opacity: 0.85;
+}
+
+.foot {
+  display: flex;
+  gap: 10px;
+  flex: none;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.navBtn {
+  appearance: none;
+  font: inherit;
+  font-size: var(--fs-field);
+  font-weight: 600;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  flex: none;
+}
+.navBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+.primaryBtn {
+  flex: 1;
+  border-color: var(--accent-border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+}
+.primaryBtn:hover {
+  filter: brightness(1.08);
+}
+
+.navBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  border-color: var(--border);
+  color: var(--text);
+  filter: none;
+}
+.navBtn:disabled:hover {
+  border-color: var(--border);
+  color: var(--text);
+  filter: none;
+}
+
+.footNote {
+  flex: none;
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-small);
+  text-align: center;
+  color: var(--warning);
+}
+
+.reviewList {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.reviewRow {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.reviewJump {
+  appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.reviewJump:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.reviewJump:hover .reviewName {
+  color: var(--accent);
+}
+.reviewText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.reviewName {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-field);
+}
+.reviewSub {
+  font-size: var(--fs-small);
+  opacity: 0.6;
+}

@@ -1,0 +1,86 @@
+/* =============================================================================
+ * MenuButton.module.css: o menu sanduíche
+ * =============================================================================
+ * CLASSES
+ *   .menu, .item, .itemTitle, .itemSub: o menu e os itens.
+ *   .itemDanger: ação destrutiva (Delete), vermelha, e o hover não usa o accent.
+ *   .itemChoice, .itemCheck, .itemText: item de escolha única, com o check numa
+ *     coluna fixa à esquerda (o texto não pula quando a marca muda).
+ * -------------------------------------------------------------------------- */
+
+.menu {
+  position: fixed;
+  min-width: 190px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 200;
+}
+
+.item {
+  appearance: none;
+  border: none;
+  background: none;
+  border-radius: var(--radius-control);
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: inherit;
+  color: var(--text-h);
+  text-decoration: none;
+}
+
+.item:hover:not(:disabled) {
+  background: var(--accent-bg);
+}
+
+.item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.itemTitle {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.itemSub {
+  font-size: var(--fs-small);
+  color: var(--text);
+}
+
+.itemDanger .itemTitle {
+  color: var(--danger);
+}
+
+.itemDanger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.itemChoice {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.itemCheck {
+  flex: none;
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}

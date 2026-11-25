@@ -1,0 +1,510 @@
+/* =============================================================================
+ * InventoryTab.module.css: a aba Inventory
+ * =============================================================================
+ * CLASSES
+ *   Cabeçalho
+ *   .header, .statusCard, .carried*, .statusDivider, .attuned*: moedas e o card de
+ *     carga e attunement; abaixo de 700px empilham.
+ *   Controles
+ *   .controls: busca e loja numa linha fixa; abaixo, Filtrar, Agrupar e Ordenar são o
+ *     ListControls comum (o mesmo do grimório, DDL-0314).
+ *   Painéis (estilo items-section do dnd5e)
+ *   .empty, .panel, .panelHead, .panel*: o painel colapsável (nome, contagem,
+ *     chevron).
+ *   .list, .row*, .thumb (o quadro do Thumb comum), .rowText, .metaDot: as linhas flat, separadas por
+ *     divisor; .rowHit é a área clicável que abre o item, .rowSub a sublinha de
+ *     tipo e badges, .rowSide o lado direito (peso, quantidade, equipar, menu).
+ *   .rowQty: no play mode, a quantidade só lida ("x3") e as cargas (o botão de usar
+ *     é o Button do app, DDL-0160); .rowQtyBtn: as cargas tocáveis do ajuste à mão
+ *     (DDL-0202), na pílula de borda fina do contador do jogo.
+ *   .equipRadio, .equipDot, .equipRadioOn: o toggle de equipar, SÓ o círculo (área
+ *     de toque 28px, dote 16px; preenchido = equipado).
+ *   Detalhe do item (a moldura comum PreviewLayer, DDL-0296)
+ *   .infoUnresolved: o item que não casou com o catálogo.
+ *   .custom*: o detalhe de um item CUSTOM (importado, sem entrada no catálogo).
+ *   .contents*: o mini-inventário do contêiner, no corpo do detalhe.
+ *   .picker*: a multi-seleção (guardar e tirar do contêiner).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Em coluna (abaixo de 700px), o flex: 1 do card de moedas agiria no eixo
+ *     VERTICAL; cada card fica com a altura natural.
+ *   - .list zera a margem e o padding-left padrão do <ul> (eram a "margem grande à
+ *     esquerda" e o espaço morto entre as listas).
+ *   - As opções do select herdam do sistema (branco): o tema escuro é forçado.
+ *   - .contents reusa .list e .row: uma linha guardada tem de se ler igual a uma
+ *     solta; só sai o que não se aplica (agrupar, ordenar, buscar, equipar).
+ *   - A multi-seleção é a janela comum (PreviewLayer, DDL-0313); aqui ficam só a lista,
+ *     as linhas e o "Select all".
+ * -------------------------------------------------------------------------- */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.header {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.statusCard {
+  composes: card from '../common/Card.module.css';
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  flex: none;
+}
+
+@media (max-width: 760px) {
+  .header {
+    flex-direction: column;
+  }
+  .header > * {
+    flex: none;
+  }
+  .statusCard {
+    justify-content: space-between;
+  }
+}
+
+.carried {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 96px;
+}
+
+.carriedText {
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.carriedOver .carriedText {
+  color: var(--danger);
+}
+
+.carriedBar {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.carriedFill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.75;
+  transition: width 0.25s ease;
+}
+
+.carriedFillOver {
+  background: var(--danger);
+  opacity: 1;
+}
+
+.statusDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+.attuned {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.attunedOver {
+  color: var(--danger);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.empty {
+  font-size: var(--fs-body);
+  opacity: 0.6;
+  padding: 20px 0;
+}
+
+.panel {
+  composes: card from '../common/Card.module.css';
+  overflow: hidden;
+}
+
+.panelHead {
+  appearance: none;
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.panelHead:hover {
+  filter: brightness(1.15);
+}
+
+.panelTitle {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panelCount {
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 7px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.panelChevron {
+  margin-left: auto;
+  font-size: var(--fs-small);
+  transition: transform 0.15s ease;
+}
+
+.panelChevronClosed {
+  transform: rotate(-90deg);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px;
+}
+
+.list .row + .row,
+.panelHead + .list .row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.rowActive {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.rowHit {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 150px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rowHit:disabled {
+  cursor: default;
+}
+
+.rowHit:not(:disabled):hover .rowName {
+  color: var(--accent);
+}
+
+.thumb {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  font-size: var(--fs-lead);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowName {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--fs-body);
+}
+
+.rowSub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+}
+
+.rowSub:empty {
+  display: none;
+}
+
+.rowMetaLine {
+  font-size: var(--fs-label);
+  opacity: 0.6;
+}
+
+.metaDot {
+  opacity: 0.7;
+}
+
+.rowSide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-left: auto;
+}
+
+.rowQty {
+  flex: none;
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.rowQtyBtn {
+  appearance: none;
+  font-family: inherit;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rowQtyBtn:hover,
+.rowQtyBtn:focus-visible {
+  border-color: var(--accent-border);
+}
+
+.rowWeight {
+  font-size: var(--fs-small);
+  opacity: 0.6;
+  min-width: 42px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.equipRadio {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.equipRadio:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.equipDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  box-sizing: border-box;
+}
+
+.equipRadioOn {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.equipRadioOn .equipDot {
+  background:
+    radial-gradient(circle at center, var(--accent) 0 4.5px, transparent 4.5px);
+  border-color: var(--accent);
+}
+
+.infoUnresolved {
+  font-size: var(--fs-body);
+  color: var(--danger);
+}
+
+.customDetail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.customMeta {
+  margin: 0;
+  font-size: var(--fs-meta);
+  color: var(--text-muted);
+}
+.customDesc {
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+.customDesc :is(p, ul, ol) {
+  margin: 0 0 var(--space-2);
+}
+
+.contents {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.contentsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: var(--space-2);
+}
+
+.contentsTitle {
+  margin: 0;
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.contentsWeight {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.contentsEmpty {
+  margin: 0;
+  padding: 14px 4px;
+  font-size: var(--fs-meta);
+  color: var(--text-muted);
+}
+
+.contentsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.contentsBtn {
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.contentsBtn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.contentsBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pickerAll {
+  align-self: flex-start;
+  margin-bottom: var(--space-2);
+}
+
+.pickerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pickerRow {
+  font: inherit;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-field);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pickerRow:hover {
+  background: var(--bg-soft);
+}
+
+.pickerRowOn {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.pickerBox {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: var(--fs-small);
+  line-height: 1;
+  color: var(--accent);
+}
+
+.pickerBoxOn {
+  border-color: var(--accent);
+}
+
+.pickerQty {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+

@@ -1,0 +1,96 @@
+// =============================================================================
+// vite.config: configuração do Vite e do Vitest
+// =============================================================================
+// O QUE FAZ
+//   O plugin do React com o React Compiler (via babel), a PWA (vite-plugin-pwa,
+//   Fase 6 do DDL-0091) e a configuração de teste do Vitest. Referência:
+//   https://vite.dev/config/ e https://vite-pwa-org.netlify.app/
+//
+// DECISÕES E ARMADILHAS
+//   - O Vitest exclui 'DnD Source Material/**': o snapshot do 5etools (DDL-0037)
+//     traz os testes jest DELES, e coletá-los quebra a suíte. Exclui também
+//     '.claude/**': a worktree de outra sessão do agente mora em
+//     `.claude/worktrees/`, com uma cópia inteira do projeto, e a suíte rodava em
+//     dobro (e quebrava nos testes do 5etools da cópia) (2026-10-24).
+//   - Com o React Compiler, o grafo de módulos sobrevive a um reload no HMR: um
+//     aviso de ordem de hooks no dev pede uma ABA NOVA antes de virar bug (§6.1).
+//   - PWA: o service worker só existe no BUILD (o dev segue sem ele). Ele
+//     pré-cacheia o app inteiro, inclusive o pacote SRD e o PDF, para abrir sem
+//     rede; o compêndio de uma fonte do usuário NÃO entra no cache dele (já mora
+//     no IndexedDB, com o sync por SHA). Por isso o limite de tamanho sobe: o
+//     chunk principal e o pacote SRD passam dos 2 MB padrão do Workbox.
+//   - Os retratos GPL embutidos (public/portraits-licensed/, DDL-0137) são WebP e
+//     ficam FORA do precache (2,7 MB): entram no cache em tempo de execução quando
+//     aparecem numa faixa (CacheFirst), e daí em diante abrem sem rede.
+//   - Das fontes do tema papel, só o subconjunto LATINO entra no precache (cerca
+//     de 113 KB): os outros alfabetos só aparecem em nome raro e vêm sob demanda.
+//   - `autoUpdate`: o worker novo assume assim que baixa (skipWaiting), e um
+//     reload comum já traz a versão nova. O registro é do app (`injectRegister:
+//     false`, `virtual:pwa-register` em src/appUpdate.js): o aviso com Reload, a
+//     checagem ao voltar ao app e a recarga por pedaço perdido moram lá; o script
+//     injetado antes só registrava e nunca avisava (DDL-0208).
+//   - `skipWaiting` e `clientsClaim` ficam EXPLÍCITOS no workbox: o plugin só os
+//     liga sozinho com `injectRegister` 'auto' ou nulo. Com o 'script-defer' de
+//     antes, o worker novo ficava esperando até TODA aba do app fechar, o que no
+//     celular quase nunca acontece; reload não o soltava, e só limpar os dados do
+//     site resolvia (medido no preview, 2026-11-12).
+//   - O `navigateFallback` responde qualquer rota com o index.html, como o rewrite
+//     do Firebase; a query (`?fonte=`) segue na URL e o app a lê igual.
+//   - O manifesto não usa marca da Wizards no nome nem na descrição: é o texto
+//     da tela de instalação (PACKAGING-STUDY.md §4).
+//   - No iPhone, o app da Tela de Início tem armazenamento SEPARADO do Safari e
+//     escapa da limpeza de 7 dias; é a correção que o README indica.
+// -----------------------------------------------------------------------------
+
+import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
+import { VitePWA } from 'vite-plugin-pwa'
+
+const BG = '#16171d'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: false,
+      includeAssets: ['logo.svg', 'icons/apple-touch-icon.png'],
+      manifest: {
+        name: 'FlyBy',
+        short_name: 'FlyBy',
+        description: 'Character builder for the 5th edition fantasy roleplaying game (2024 rules).',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: BG,
+        theme_color: BG,
+        icons: [
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png}', '**/*-latin-wght-*.woff2'],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/portraits-licensed/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'portraits-licensed', expiration: { maxEntries: 300 } },
+          },
+        ],
+      },
+    }),
+  ],
+  test: {
+    exclude: [...configDefaults.exclude, 'DnD Source Material/**', '.claude/**'],
+  },
+})

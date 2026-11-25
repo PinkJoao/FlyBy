@@ -1,0 +1,112 @@
+/* =============================================================================
+ * ShortRestPanel.module.css: o diálogo do descanso curto
+ * =============================================================================
+ * CLASSES
+ *   .panel, .now, .warn: a coluna, o HP (de agora e o que vai ficar) e o aviso.
+ *   .rows, .row, .die, .left, .typed, .spend, .error: uma linha por face.
+ *   .rolled, .link: os dados já rolados (cada um no Chip comum, DDL-0198) e o
+ *     "desfazer o último".
+ * -------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: min(340px, 78vw);
+}
+
+.now {
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  margin: 0;
+  font-size: var(--fs-meta);
+  color: var(--danger-text);
+  text-align: center;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.die {
+  font-weight: 700;
+  color: var(--text-h);
+  min-width: 34px;
+}
+
+.left {
+  flex: 1 1 auto;
+  font-size: var(--fs-meta);
+  color: var(--text-muted);
+}
+
+.typed {
+  width: 64px;
+  font: inherit;
+  font-size: var(--fs-body);
+  padding: 6px 8px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  text-align: center;
+}
+
+.spend {
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.spend:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.error {
+  width: 100%;
+  font-size: var(--fs-small);
+  color: var(--danger-text);
+}
+
+.rolled {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.link {
+  font: inherit;
+  font-size: var(--fs-meta);
+  border: none;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+

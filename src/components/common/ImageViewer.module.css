@@ -1,0 +1,291 @@
+/* =============================================================================
+ * ImageViewer.module.css: o visualizador de imagem em tela cheia (lightbox)
+ * =============================================================================
+ * CLASSES
+ *   .closing: a saída (o véu esmaece e o palco encolhe um pouco); a entrada é a animação do
+ *     próprio .overlay e do .stage (DDL-0314).
+ *   .overlay, .stage, .img, .close: o lightbox; o .stage deixa espaço para o X, os
+ *     créditos e os pontinhos, e o swipe horizontal para o carrossel.
+ *   .arrow, .arrowL, .arrowR: as setas, fixas nas EXTREMIDADES da tela.
+ *   .bar, .barArrow: a barra sob a imagem; no celular ela leva as setas nas pontas.
+ *   .actions, .actionBtn, .actionDanger: os botões de texto sob a imagem (Trocar,
+ *     Remover do item do inventário), no molde do visualizador do retrato.
+ *   .roundBtn, .roundSuccess, .roundDanger: as ações redondas com ícone (o check verde
+ *     e o X vermelho da prévia dos retratos sugeridos).
+ *   .credit, .dots, .dot, .dotOn, .counter: o crédito e a posição no carrossel
+ *     (pontinhos, ou o contador "n / total" quando são muitas imagens).
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O z-index fica acima dos diálogos (DialogHost, 1000), de onde costuma abrir.
+ *   - No desktop (700px ou mais) há calhas laterais, e as setas presas ao overlay
+ *     (não à imagem) nunca cobrem a arte nem se deslocam quando a proporção muda.
+ *   - No mobile as setas laterais somem (sem as calhas elas ficariam sobre a
+ *     arte) e aparecem as da barra (.barArrow), nas pontas, junto do deslize.
+ * -------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: var(--space-5);
+  outline: none;
+}
+
+.overlay {
+  animation: viewer-in var(--dur-enter) var(--ease);
+}
+
+.overlay > .stage {
+  animation: viewer-pop-in var(--dur-enter) var(--ease);
+}
+
+.closing {
+  animation: viewer-out var(--dur-exit) var(--ease) forwards;
+  pointer-events: none;
+}
+
+.closing > .stage {
+  animation: viewer-pop-out var(--dur-exit) var(--ease) forwards;
+}
+
+@keyframes viewer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes viewer-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes viewer-pop-in {
+  from {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes viewer-pop-out {
+  to {
+    transform: scale(0.96);
+  }
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: calc(100svh - 120px);
+  touch-action: pan-y;
+}
+
+@media (min-width: 761px) {
+  .overlay {
+    padding-left: 76px;
+    padding-right: 76px;
+  }
+}
+
+.img {
+  max-width: min(100%, 1100px);
+  max-height: calc(100svh - 120px);
+  object-fit: contain;
+  border-radius: 12px;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding-bottom: var(--space-1);
+}
+
+.arrow:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.arrowL {
+  left: 14px;
+}
+
+.arrowR {
+  right: 14px;
+}
+
+/* ATENÇÃO: o mesmo breakpoint das calhas laterais (700px): as duas regras não podem discordar. */
+@media (max-width: 760px) {
+  .arrow {
+    display: none;
+  }
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.bar:empty {
+  display: none;
+}
+
+.barArrow {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: none;
+  place-items: center;
+}
+
+.barArrow:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 760px) {
+  .bar {
+    justify-content: space-between;
+  }
+
+  .barArrow {
+    display: grid;
+  }
+}
+
+.roundBtn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  font-size: var(--fs-page);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.roundBtn:hover {
+  filter: brightness(1.1);
+}
+
+.roundBtn:active {
+  transform: scale(0.94);
+}
+
+.roundSuccess {
+  background: var(--success);
+}
+
+.roundDanger {
+  background: var(--danger);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.actionBtn {
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  border-color: var(--accent-border);
+}
+
+.actionDanger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.credit {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+}
+
+.counter {
+  margin: 0;
+  font-size: var(--fs-meta);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dots {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dotOn {
+  background: #fff;
+  border-color: #fff;
+}

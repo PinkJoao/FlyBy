@@ -1,0 +1,296 @@
+// =============================================================================
+// playHealth.test: testes de dano, cura, temporário, morte e concentração
+// =============================================================================
+// FUNÇÕES
+//   seq(...values): um rng que devolve os valores em ordem e falha se acabarem.
+//   st(patch): um estado de jogo com o patch por cima do descansado.
+//   after(state, outcome): o estado depois das operações de um resultado.
+//   catalog(hpMax, defenses): um catálogo mínimo com o HP e as defesas.
+//
+// DECISÕES E ARMADILHAS
+//   - Cada regra do XPHB tem o seu teste com o exemplo do próprio livro quando
+//     ele dá um (5 de temporário e 7 de dano; HP máximo 12 com 6 e 18 de dano).
+//   - O estado depois é sempre o do REDUTOR (applyOp): o que se testa é o que a
+//     tela vai gravar, não um número calculado à parte.
+// -----------------------------------------------------------------------------
+
+import { describe, it, expect } from 'vitest';
+import { sequenceRng } from './dice';
+import { emptyPlayState, applyOp, hpView } from './playState';
+import {
+  vitals, traitFor, adjustDamage, concentrationDc, damageOutcome, healOutcome, tempHpOutcome, deathSaveOutcome,
+  damageEvent, deathSaveEvent, concentrationEvent, concentrationCheckEvent, maxHpOutcome, hurtOutcome, hurtEvent, saveDamage, reductionFor,
+} from './playHealth';
+
+const seq = (...values) => sequenceRng(values, () => {
+  throw new Error('rolou um dado a mais');
+});
+const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
+const after = (state, outcome) => outcome.ops.reduce(applyOp, state);
+const catalog = (hpMax = 12, defenses = {}) => ({
+  stats: { hpMax },
+  defenses: { resist: [], immune: [], vulnerable: [], ...defenses },
+  checks: { concentration: { bonus: 3 } },
+  rollData: {},
+});
+
+describe('defesas', () => {
+  it('lê a defesa pelo tipo, sem caixa', () => {
+    const c = catalog(12, { resist: ['fire'], immune: ['poison'], vulnerable: ['cold', 'fire'] });
+    expect(traitFor(c, 'Poison')).toBe('immune');
+    expect(traitFor(c, 'fire')).toBe('resist+vulnerable');
+    expect(traitFor(c, 'cold')).toBe('vulnerable');
+    expect(traitFor(c, '')).toBeNull();
+  });
+
+  it('imunidade zera, resistência divide para baixo, vulnerabilidade dobra depois', () => {
+    expect(adjustDamage(9, 'immune')).toBe(0);
+    expect(adjustDamage(9, 'resist')).toBe(4);
+    expect(adjustDamage(9, 'vulnerable')).toBe(18);
+    expect(adjustDamage(9, 'resist+vulnerable')).toBe(8);
+    expect(adjustDamage(9, null)).toBe(9);
+  });
+
+  it('CD de concentração: 10 ou metade, o maior, até 30', () => {
+    expect(concentrationDc(7)).toBe(10);
+    expect(concentrationDc(25)).toBe(12);
+    expect(concentrationDc(100)).toBe(30);
+  });
+});
+
+describe('dano', () => {
+  it('o temporário vai primeiro (o exemplo do livro: 5 de temporário, 7 de dano)', () => {
+    const s = st({ tempHp: 5 });
+    const o = damageOutcome(s, catalog(), { amount: 7 });
+    expect(o.summary).toMatchObject({ taken: 7, toTemp: 5, toHp: 2 });
+    const next = after(s, o);
+    expect(hpView(next, 12)).toEqual({ max: 12, current: 10, temp: 0 });
+  });
+
+  it('o dano não deixa o HP negativo e marca a queda a 0', () => {
+    const o = damageOutcome(st({ damage: 9 }), catalog(), { amount: 5 });
+    expect(o.summary.toHp).toBe(3);
+    expect(o.summary.notes).toEqual(['Drops to 0 hit points']);
+  });
+
+  it('dano maciço mata (o exemplo do livro: máximo 12, com 6, toma 18)', () => {
+    const o = damageOutcome(st({ damage: 6 }), catalog(), { amount: 18 });
+    expect(after(st({ damage: 6 }), o).death.dead).toBe(true);
+    expect(o.summary.notes).toEqual(['Dies from massive damage']);
+  });
+
+  it('com 0 HP, dano é uma falha, duas no crítico, e tira a estabilidade', () => {
+    const zero = st({ damage: 12, death: { success: 0, failure: 0, stable: true, dead: false } });
+    const one = after(zero, damageOutcome(zero, catalog(), { amount: 3 }));
+    expect(one.death).toEqual({ success: 0, failure: 1, stable: false, dead: false });
+    const two = after(one, damageOutcome(one, catalog(), { amount: 3, critical: true }));
+    expect(two.death).toMatchObject({ failure: 3, dead: true });
+  });
+
+  it('com 0 HP, dano maior ou igual ao máximo mata', () => {
+    const zero = st({ damage: 12 });
+    expect(after(zero, damageOutcome(zero, catalog(), { amount: 12 })).death.dead).toBe(true);
+  });
+
+  it('a defesa entra antes do temporário, e a CD de concentração sai do dano sofrido', () => {
+    const s = st({ concentration: { name: 'Bless' } });
+    const o = damageOutcome(s, catalog(40, { resist: ['fire'] }), { amount: 30, type: 'fire' });
+    expect(o.summary).toMatchObject({ taken: 15, trait: 'resist', concentrationDc: 10 });
+    expect(damageOutcome(st(), catalog(), { amount: 30 }).summary.concentrationDc).toBeNull();
+  });
+});
+
+describe('cura e temporário', () => {
+  it('cura até o máximo e, saindo do zero, limpa a morte', () => {
+    const s = st({ damage: 12, death: { success: 1, failure: 2, stable: false, dead: false } });
+    const o = healOutcome(s, catalog(), 20);
+    expect(o.summary).toMatchObject({ from: 0, to: 12, healed: 12 });
+    expect(after(s, o)).toMatchObject({ damage: 0, death: { success: 0, failure: 0 } });
+  });
+
+  it('cura com o dano guardado acima do máximo (a ficha desceu de nível)', () => {
+    const s = st({ damage: 30 });
+    expect(hpView(after(s, healOutcome(s, catalog(12), 5)), 12).current).toBe(5);
+  });
+
+  it('temporário não soma: fica o maior, ou o novo com replace', () => {
+    expect(after(st({ tempHp: 10 }), tempHpOutcome(st({ tempHp: 10 }), 12)).tempHp).toBe(12);
+    const keep = tempHpOutcome(st({ tempHp: 10 }), 4);
+    expect(keep.ops).toEqual([]);
+    expect(keep.summary.kept).toBe(true);
+    expect(after(st({ tempHp: 10 }), tempHpOutcome(st({ tempHp: 10 }), 4, { replace: true })).tempHp).toBe(4);
+  });
+});
+
+describe('teste contra a morte', () => {
+  const zero = (death = {}) => st({ damage: 12, death: { success: 0, failure: 0, stable: false, dead: false, ...death } });
+
+  it('10 ou mais é sucesso; o terceiro deixa estável e zera', () => {
+    expect(after(zero(), deathSaveOutcome(zero(), catalog(), { natural: 12, total: 12 })).death.success).toBe(1);
+    const o = deathSaveOutcome(zero({ success: 2 }), catalog(), { natural: 15, total: 15 });
+    expect(o.result).toBe('Stable');
+    expect(after(zero({ success: 2 }), o).death).toEqual({ success: 0, failure: 0, stable: true, dead: false });
+  });
+
+  it('menos de 10 é falha; 1 natural conta duas; a terceira mata', () => {
+    expect(deathSaveOutcome(zero(), catalog(), { natural: 9, total: 9 }).result).toBe('Failure');
+    expect(after(zero(), deathSaveOutcome(zero(), catalog(), { natural: 1, total: 1 })).death.failure).toBe(2);
+    expect(after(zero({ failure: 2 }), deathSaveOutcome(zero({ failure: 2 }), catalog(), { natural: 5, total: 5 })).death.dead).toBe(true);
+  });
+
+  it('20 natural recupera 1 HP e zera a contagem', () => {
+    const s = zero({ failure: 2 });
+    const next = after(s, deathSaveOutcome(s, catalog(), { natural: 20, total: 20 }));
+    expect(hpView(next, 12).current).toBe(1);
+    expect(next.death).toEqual({ success: 0, failure: 0, stable: false, dead: false });
+    expect(vitals(next, catalog()).dying).toBe(false);
+  });
+
+  it('o evento rola o d20 e grava o resultado', () => {
+    const e = deathSaveEvent({ state: zero(), catalog: catalog(), rng: seq(14) });
+    expect(e).toMatchObject({ kind: 'deathSave', payload: { result: 'Success' } });
+    expect(e.rolls.natural).toBe(14);
+  });
+});
+
+describe('concentração', () => {
+  it('começar e terminar viram uma operação cada', () => {
+    expect(concentrationEvent({ name: 'Bless' }).ops).toEqual([{ op: 'concentration', value: { name: 'Bless' } }]);
+    expect(concentrationEvent({}).ops).toEqual([{ op: 'concentration', value: null }]);
+  });
+
+  it('o save mantém com total igual ou maior que a CD, e a falha termina no mesmo evento', () => {
+    const s = st({ concentration: { name: 'Bless' } });
+    const kept = concentrationCheckEvent({ state: s, catalog: catalog(), dc: 12, rng: seq(9) });
+    expect(kept.payload).toMatchObject({ dc: 12, kept: true });
+    expect(kept.ops).toEqual([]);
+    const lost = concentrationCheckEvent({ state: s, catalog: catalog(), dc: 12, rng: seq(8) });
+    expect(lost.payload.kept).toBe(false);
+    expect(lost.ops).toEqual([{ op: 'concentration', value: null }]);
+  });
+
+  it('o evento de dano leva o resumo para o cartão', () => {
+    const e = damageEvent({ state: st({ concentration: { name: 'Bless' } }), catalog: catalog(), amount: 22, type: 'fire', critical: false });
+    expect(e).toMatchObject({ kind: 'damage', payload: { taken: 22, concentrationDc: 11, type: 'fire' } });
+  });
+});
+
+describe('dano com efeitos', () => {
+  it('a resistência da Rage divide o dano físico', () => {
+    const s = st({ modifiers: [{ id: 'r', label: 'Rage', resist: ['slashing'], effects: [] }] });
+    expect(damageOutcome(s, catalog(), { amount: 9, type: 'slashing' }).summary).toMatchObject({ taken: 4, trait: 'resist' });
+  });
+
+  it('terminar a concentração tira o que dependia dela', () => {
+    const s = st({ concentration: { name: 'Bless' }, modifiers: [{ id: 'b', label: 'Bless', concentration: 'k', effects: [] }] });
+    expect(after(s, concentrationEvent({ state: s })).modifiers).toEqual([]);
+  });
+});
+
+describe('HP máximo e o painel Hurt', () => {
+  it('subir o máximo sobe o atual junto, e o descanso desfaz pelo playRest', () => {
+    const s = st({ damage: 4 });
+    const out = maxHpOutcome(s, catalog(12), 5);
+    expect(out.ops).toEqual([{ op: 'hp', max: 5 }]);
+    const s1 = after(s, out);
+    expect(hpView(s1, 12)).toEqual({ max: 17, current: 13, temp: 0 });
+  });
+
+  it('Hurt sem afetar o máximo é o dano comum, sem tipo', () => {
+    const s = st({ tempHp: 3 });
+    const s1 = after(s, hurtOutcome(s, catalog(12), { amount: 5 }));
+    expect(hpView(s1, 12)).toEqual({ max: 12, current: 10, temp: 0 });
+  });
+
+  it('Hurt com tipo aplica a defesa, também a de um modificador (Rage); sem tipo, não (TC-0134)', () => {
+    const raging = st({ modifiers: [{ id: 'rage', label: 'Rage', resist: ['slashing', 'piercing', 'bludgeoning'] }] });
+    const out = hurtOutcome(raging, catalog(30), { amount: 10, type: 'slashing' });
+    expect(out.summary).toMatchObject({ taken: 5, trait: 'resist', type: 'slashing' });
+    expect(hpView(after(raging, out), 30).current).toBe(25);
+    expect(hurtOutcome(raging, catalog(30), { amount: 10 }).summary.taken).toBe(10);
+    const ev = hurtEvent({ state: st(), catalog: catalog(30, { immune: ['poison'] }), amount: 8, type: 'poison', affectMax: true });
+    expect(ev.payload).toMatchObject({ taken: 0, trait: 'immune' });
+    expect(ev.ops).toEqual([]);
+  });
+
+  it('Hurt afetando o máximo corta o que passou do temporário', () => {
+    const s = st({ tempHp: 3 });
+    const out = hurtOutcome(s, catalog(12), { amount: 5, affectMax: true });
+    expect(out.summary.maxCut).toBe(2);
+    const s1 = after(s, out);
+    expect(hpView(s1, 12)).toEqual({ max: 10, current: 10, temp: 0 });
+    expect(s1.maxHpDelta).toBe(-2);
+  });
+
+  it('com o atual abaixo do novo máximo, o atual cai só pelo dano', () => {
+    const s = st({ damage: 6 });
+    const s1 = after(s, hurtOutcome(s, catalog(12), { amount: 2, affectMax: true }));
+    expect(hpView(s1, 12)).toEqual({ max: 10, current: 4, temp: 0 });
+  });
+
+  it('o máximo em 0 mata', () => {
+    const s = st();
+    const ev = hurtEvent({ state: s, catalog: catalog(12), amount: 12, affectMax: true });
+    const s1 = ev.ops.reduce(applyOp, s);
+    expect(hpView(s1, 12).max).toBe(0);
+    expect(s1.death.dead).toBe(true);
+  });
+});
+
+describe('saveDamage (TC-0154)', () => {
+  it('metade no sucesso; com Evasion, nada no sucesso e metade na falha', () => {
+    expect(saveDamage(21, null)).toBe(21);
+    expect(saveDamage(21, 'saved')).toBe(10);
+    expect(saveDamage(21, 'failed')).toBe(21);
+    expect(saveDamage(21, 'saved', true)).toBe(0);
+    expect(saveDamage(21, 'failed', true)).toBe(10);
+  });
+});
+
+describe('concentração que o dano não quebra (DDL-0234)', () => {
+  const base = { stats: { hpMax: 40 }, features: ['focused conjuration'], spells: [{ key: 'class:wizard', spells: [{ key: 'spell:class:wizard|Summon Fey', school: 'C' }, { key: 'spell:class:wizard|Haste', school: 'T' }] }] };
+  it('Focused Conjuration: sem save numa magia de Conjuration, com save nas outras', () => {
+    const conj = { ...emptyPlayState(), concentration: { name: 'Summon Fey', spellKey: 'spell:class:wizard|Summon Fey' } };
+    const other = { ...emptyPlayState(), concentration: { name: 'Haste', spellKey: 'spell:class:wizard|Haste' } };
+    expect(hurtOutcome(conj, base, { amount: 10 }).summary.concentrationDc).toBeNull();
+    expect(hurtOutcome(other, base, { amount: 10 }).summary.concentrationDc).toBe(10);
+  });
+});
+
+describe('redução fixa (Heavy Armor Master, DDL-0261)', () => {
+  const ham = (extra = {}) => catalog(40, { reduce: [{ types: ['bludgeoning', 'piercing', 'slashing'], amount: 3, label: 'Heavy Armor Master' }], ...extra });
+  it('tira o número antes da resistência, só nos tipos dela', () => {
+    expect(reductionFor(ham(), 'Slashing')).toEqual({ amount: 3, label: 'Heavy Armor Master' });
+    expect(reductionFor(ham(), 'fire')).toBeNull();
+    expect(damageOutcome(st(), ham(), { amount: 10, type: 'slashing' }).summary.taken).toBe(7);
+    expect(damageOutcome(st(), ham({ resist: ['slashing'] }), { amount: 10, type: 'slashing' }).summary.taken).toBe(3);
+    expect(damageOutcome(st(), ham(), { amount: 2, type: 'piercing' }).summary.taken).toBe(0);
+    expect(damageOutcome(st(), ham(), { amount: 10, type: 'fire' }).summary.taken).toBe(10);
+    expect(damageOutcome(st(), ham(), { amount: 10 }).summary.taken).toBe(10);
+  });
+
+  it('o card mostra a linha', () => {
+    expect(damageOutcome(st(), ham(), { amount: 10, type: 'bludgeoning' }).summary.notes).toContain('Heavy Armor Master: -3');
+  });
+});
+
+describe('Death Ward (DDL-0272)', () => {
+  it('o dano que levaria a 0 deixa em 1 e encerra o efeito; sem ele, cai a 0', () => {
+    const s = st({ modifiers: [{ id: 'dw', label: 'Death Ward', deathWard: true }] });
+    const out = damageOutcome(s, catalog(12), { amount: 30 });
+    const next = after(s, out);
+    expect(hpView(next, 12).current).toBe(1);
+    expect(next.modifiers).toEqual([]);
+    expect(next.death?.dead).toBeFalsy();
+    expect(hpView(after(st(), damageOutcome(st(), catalog(12), { amount: 5 })), 12).current).toBe(7);
+  });
+});
+
+describe('redução do primeiro dano (DDL-0275)', () => {
+  it('o primeiro dano perde o valor e o modificador sai', () => {
+    const s = st({ modifiers: [{ id: 'n', label: 'Nose for Trouble', reduceNext: 4 }] });
+    const next = after(s, damageOutcome(s, catalog(12), { amount: 7 }));
+    expect(hpView(next, 12).current).toBe(9);
+    expect(next.modifiers).toEqual([]);
+  });
+});

@@ -1,0 +1,71 @@
+/* =============================================================================
+ * LargePanel.module.css: o véu e o painel grande
+ * =============================================================================
+ * CLASSES
+ *   .overlay, .closing: o véu (com 24 px de respiro) e a saída animada.
+ *   .panel: o painel (--bg, raio 16, sombra), com a largura e a altura máximas por uso
+ *     (--panel-max-w, --panel-max-h), TELA CHEIA a 760 px ou menos.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - As medidas são as do "Large panel" do docs/UI-PATTERNS.md (o SelectorPanel);
+ *     a saída usa --dur-exit e --ease, como as janelas (DDL-0303, DDL-0309).
+ *   - O foco vai ao painel ao abrir (sem contorno): é por ele que o Esc chega.
+ * -------------------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+}
+
+.closing {
+  animation: large-fade-out var(--dur-exit) var(--ease) forwards;
+  pointer-events: none;
+}
+
+.closing .panel {
+  animation: large-pop-out var(--dur-exit) var(--ease) forwards;
+}
+
+@keyframes large-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes large-pop-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: var(--panel-max-w, 900px);
+  height: min(90svh, var(--panel-max-h, 800px));
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-layer);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  outline: none;
+}
+
+@media (max-width: 760px) {
+  .overlay {
+    padding: 0;
+  }
+  .panel {
+    max-width: none;
+    height: 100svh;
+    border: none;
+    border-radius: 0;
+  }
+}

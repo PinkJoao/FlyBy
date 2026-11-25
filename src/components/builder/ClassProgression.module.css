@@ -1,0 +1,177 @@
+/* =============================================================================
+ * ClassProgression.module.css: a progressão de features por nível da classe
+ * =============================================================================
+ * CLASSES
+ *   .progression, .head, .title, .modes, .modeBtn, .modeActive: o cabeçalho e os
+ *     modos de exibição.
+ *   .level*, .future: os blocos por nível (os futuros esmaecidos, com a Tag "Locked");
+ *     .levelFeatures repete o espaçamento do bloco dentro do Collapse.
+ *   .levelChevronClosed, .chevronOpen: as setas giram (uma só seta, como nos
+ *     outros cards), em vez de trocar de caractere.
+ *   .feature*, .longHint, .chevron, .empty: o card de feature; o de subclasse ganha
+ *     borda accent à esquerda e a Tag accent com o nome, diferenciando sem esquema
+ *     de cores.
+ * -------------------------------------------------------------------------- */
+
+.progression {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-field);
+  color: var(--text-h);
+}
+
+.modes {
+  display: flex;
+  gap: 6px;
+}
+
+.modeBtn {
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.modeBtn:hover {
+  border-color: var(--accent-border);
+  color: var(--text-h);
+}
+
+.modeActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.levelBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.levelFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.levelHead {
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.65;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  padding: 2px 0;
+}
+
+.levelHead:hover {
+  opacity: 0.9;
+}
+
+.levelChevron {
+  font-size: 10px;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+.levelChevronClosed {
+  transform: rotate(-90deg);
+}
+
+.future {
+  opacity: 0.62;
+}
+
+.feature {
+  composes: card from '../common/Card.module.css';
+  overflow: hidden;
+}
+
+.featureSub {
+  border-left: 3px solid var(--accent);
+}
+
+.featureHead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+  font: inherit;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.featureHead:hover {
+  background: var(--accent-bg);
+}
+
+.featureName {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-h);
+  min-width: 0;
+}
+
+.longHint {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.chevron {
+  margin-left: auto;
+  font-size: var(--fs-label);
+  opacity: 0.5;
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.featureBody {
+  padding: 0 12px 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.empty {
+  opacity: 0.55;
+  font-size: var(--fs-body);
+}

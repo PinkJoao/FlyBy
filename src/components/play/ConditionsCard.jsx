@@ -1,0 +1,139 @@
+// =============================================================================
+// ConditionsCard: o painel expansível das condições no play mode
+// =============================================================================
+// O QUE FAZ
+//   Um card no estilo do de proficiências (o mesmo CSS), logo abaixo dele: o
+//   cabeçalho conta as condições ativas; aberto, lista cada uma com o que ela faz
+//   (lido do registro CONDITIONS, engine/playEffects), o nível da exaustão com os
+//   botões de menos e mais, o botão de tirar, e "Add condition" (que abre o painel
+//   seletor, na tela). Status e doenças também entram aqui, e a CONCENTRAÇÃO
+//   (DDL-0121), com o save e o fim dela; tocar no nome abre a regra. A Heroic Inspiration (DDL-0275) é um
+//   interruptor no topo do card: o mestre a dá, o descanso longo do Resourceful liga, e o "Reroll" do card do
+//   histórico a gasta.
+//
+// FUNÇÕES
+//   ConditionsCard(props): o card.
+//   effectLines(condition, level): as linhas do que a condição faz.
+//
+// DECISÕES E ARMADILHAS
+//   - O texto do que a condição faz sai dos MESMOS campos que as rolagens usam
+//     (attack, check, speedZero, autoFail...): o card promete o que o engine aplica.
+//   - Uma condição fora do registro (Surprised, Sewer Plague) só tem o nome e a
+//     regra: não mexe em rolagem, então o card não promete efeito nenhum.
+//   - A exaustão 6 mata: o aviso fica no card, aberto ou não, porque é o fim do
+//     personagem e não um detalhe.
+// -----------------------------------------------------------------------------
+
+import { useState } from 'react';
+import { CONDITIONS, conditionName } from '../../engine/playEffects';
+import Icon from '../common/Icon';
+import Collapse from '../common/Collapse';
+import Chip from '../common/Chip';
+import Toggle from '../common/Toggle';
+import card from '../builder/ProficienciesCard.module.css';
+import styles from './PlayCards.module.css';
+
+const MODE = { adv: 'Advantage', dis: 'Disadvantage' };
+const ABILITY_SHORT = { str: 'Str', dex: 'Dex', con: 'Con', int: 'Int', wis: 'Wis', cha: 'Cha' };
+
+/** As linhas do que uma condição faz, dos campos que o engine aplica. */
+function effectLines(c, level) {
+  if (!c) return [];
+  const lines = [];
+  if (c.levels) lines.push(`-${2 * level} to d20 tests, -${5 * level} ft speed`);
+  if (c.attack) lines.push(`${MODE[c.attack]} on attack rolls`);
+  if (c.check) lines.push(`${MODE[c.check]} on ability checks`);
+  if (c.initiative) lines.push(`${MODE[c.initiative]} on Initiative`);
+  if (c.speedZero) lines.push('Speed 0');
+  if (c.autoFail) lines.push(`Fails ${c.autoFail.map((a) => ABILITY_SHORT[a]).join(' and ')} saves`);
+  if (c.resistAll) lines.push('Resistance to all damage');
+  if (c.conditional) lines.push(`(${c.conditional})`);
+  return [...lines, ...(c.notes ?? [])];
+}
+
+/**
+ * O card das condições.
+ * @param {{ conditions: object, concentration: object|null, combat: object|null, onAdd: Function, onSet: Function,
+ *   onInfo: Function, onConcentrationSave: Function, onConcentrationEnd: Function }} props
+ */
+export default function ConditionsCard({ conditions, concentration, combat, inspiration = false, onInspiration = null, onAdd, onSet, onInfo, onConcentrationSave, onConcentrationEnd }) {
+  const [open, setOpen] = useState(false);
+  const active = Object.entries(conditions ?? {}).filter(([, level]) => level > 0);
+  const count = active.length + (concentration ? 1 : 0) + (inspiration ? 1 : 0);
+  const names = [
+    ...(inspiration ? ['Heroic Inspiration'] : []),
+    ...(concentration ? [`Concentration (${concentration.name})`] : []),
+    ...active.map(([id, level]) => `${conditionName(id)}${CONDITIONS[id]?.levels ? ` ${level}` : ''}`),
+  ];
+  const roundsLeft = combat && concentration?.expiresRound ? concentration.expiresRound - combat.round : null;
+  const dead = (conditions?.exhaustion ?? 0) >= 6;
+
+  return (
+    <div className={open ? `${card.card} ${card.open}` : card.card} data-flip="conditions" data-flip-scale="" data-flip-after="">
+      <button type="button" className={card.head} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span className={card.icon}><Icon name="condition" /></span>
+        <span className={card.title}>Conditions</span>
+        <span className={card.bonusWrap}>
+          <span className={card.bonusLabel}>{count ? 'Active' : 'None'}</span>
+          {count > 0 && <span className={card.bonus}>{count}</span>}
+        </span>
+        <span className={card.chevron}><Icon name="chevron" /></span>
+      </button>
+      {!open && count > 0 && <p className={styles.summary}>{names.join(', ')}</p>}
+      {dead && <p className={styles.warn}>Exhaustion 6: the character dies.</p>}
+
+      <Collapse open={open}>
+        <div className={card.body}>
+          {onInspiration && <Toggle size="sm" checked={inspiration} onChange={onInspiration} label="Heroic Inspiration" hint="Spend it from Reroll on a roll in the history" />}
+          {count === 0 && <p className={card.empty}>No conditions.</p>}
+          <ul className={styles.list}>
+            {concentration && (
+              <li className={styles.row}>
+                <div className={styles.rowMain}>
+                  <button type="button" className={styles.rowName} onClick={() => onInfo('concentration')}>Concentration</button>
+                  <span className={styles.rowNote}>On {concentration.name}</span>
+                  {roundsLeft != null && <span className={styles.rowNote}>{roundsLeft} round{roundsLeft === 1 ? '' : 's'} left</span>}
+                </div>
+                <div className={styles.rowCtrl}>
+                  <button type="button" className={styles.ctrlBtn} onClick={onConcentrationSave} aria-label="Concentration save" title="Concentration save">
+                    <Icon name="dice" />
+                  </button>
+                  <button type="button" className={styles.ctrlBtn} onClick={onConcentrationEnd} aria-label="End concentration" title="End it">
+                    <Icon name="close" />
+                  </button>
+                </div>
+              </li>
+            )}
+            {active.map(([id, level]) => {
+              const c = CONDITIONS[id];
+              return (
+                <li key={id} className={styles.row}>
+                  <div className={styles.rowMain}>
+                    <button type="button" className={styles.rowName} onClick={() => onInfo(id)}>{conditionName(id)}</button>
+                    {effectLines(c, level).map((l) => <span key={l} className={styles.rowNote}>{l}</span>)}
+                  </div>
+                  <div className={styles.rowCtrl}>
+                    {c?.levels ? (
+                      <>
+                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, level - 1)} aria-label="One level less"><Icon name="minus" /></button>
+                        <span className={styles.level}>{level}</span>
+                        <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, Math.min(c.levels, level + 1))} disabled={level >= c.levels} aria-label="One level more"><Icon name="plus" /></button>
+                      </>
+                    ) : (
+                      <button type="button" className={styles.ctrlBtn} onClick={() => onSet(id, 0)} aria-label={`End ${conditionName(id)}`} title="End it">
+                        <Icon name="close" />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className={styles.adds}>
+            <Chip add onCard onClick={onAdd}>Add condition</Chip>
+          </div>
+        </div>
+      </Collapse>
+    </div>
+  );
+}

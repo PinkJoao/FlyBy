@@ -1,0 +1,44 @@
+// =============================================================================
+// ModeSwitch: o seletor Build | Play no topo da página do personagem
+// =============================================================================
+// O QUE FAZ
+//   Os dois modos da mesma página (DDL-0117): a ficha (montar o personagem) e o
+//   jogo (jogar com ele). Delega para SegmentedControl na escala grande (`size="lg"`
+//   e `equal`) e chama onChange com 'sheet' ou 'play'.
+//
+// FUNÇÕES
+//   ModeSwitch(props): o seletor.
+//
+// DECISÕES E ARMADILHAS
+//   - MODES dá a ordem e o rótulo; a ordem é também a direção da animação da troca
+//     (a ficha à esquerda, o jogo à direita).
+//   - É um grupo de botões com aria-pressed, não abas: o conteúdo inteiro da página
+//     troca, e as abas de verdade ficam embaixo.
+//   - O rótulo é "Build" (DDL-0201, como a rota `/build/:id`); o valor interno segue
+//     'sheet', que nenhum jogador vê e que a página, o FLIP e os testes leem.
+// -----------------------------------------------------------------------------
+
+import SegmentedControl from './SegmentedControl';
+
+const MODES = [
+  { value: 'sheet', label: 'Build' },
+  { value: 'play', label: 'Play' },
+];
+
+/**
+ * O seletor de modo.
+ * @param {{ mode: 'sheet'|'play', onChange: (mode: string) => void, dataTour?: string }} props
+ */
+export default function ModeSwitch({ mode, onChange, dataTour }) {
+  return (
+    <SegmentedControl
+      value={mode}
+      options={MODES}
+      onChange={onChange}
+      size="lg"
+      equal
+      ariaLabel="Mode"
+      dataTour={dataTour}
+    />
+  );
+}

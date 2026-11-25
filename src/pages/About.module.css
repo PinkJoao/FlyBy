@@ -1,0 +1,89 @@
+/* =============================================================================
+ * About.module.css: a página "sobre" e os créditos
+ * =============================================================================
+ * CLASSES
+ *   .page, .top: a coluna da página e a barra com o voltar.
+ *   .hero, .logo, .name, .version, .lead, .links: a apresentação do app.
+ *   .section, .sectionTitle: um bloco de créditos, sem o filete (o filete só fica
+ *     sob título centrado, decor.css); quebra em qualquer ponto, porque as URLs das licenças são
+ *     escritas por extenso e passariam da largura do celular.
+ *   .credits: a lista de autores dos ícones.
+ *   .disclaimer: o aviso de não afiliação, no pé.
+ * -------------------------------------------------------------------------- */
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+}
+
+.hero {
+  text-align: center;
+  margin: var(--space-2) 0 var(--space-5);
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+}
+
+.name {
+  margin: var(--space-2) 0 0;
+  font-size: 32px;
+}
+
+.version {
+  margin: 6px 0 0;
+  font-size: var(--fs-meta);
+  color: var(--text-muted);
+}
+
+.lead {
+  margin: 14px auto 0;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+.links {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-field);
+}
+
+.section {
+  composes: card from '../components/common/Card.module.css';
+  margin-top: var(--space-4);
+  padding: 18px 22px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.section p {
+  margin: 10px 0 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 18px;
+}
+
+.credits {
+  margin: var(--space-2) 0 0;
+  padding-left: 20px;
+  font-size: var(--fs-body);
+}
+
+.credits li {
+  margin-top: var(--space-1);
+}
+
+.disclaimer {
+  margin: var(--space-5) 0 0;
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}

@@ -1,0 +1,89 @@
+/* =============================================================================
+ * PortraitSuggestionStrip.module.css: a faixa de retratos sugeridos
+ * =============================================================================
+ * CLASSES
+ *   .strip, .head, .title: o bloco e o topo ("See all" é um Button link).
+ *   .row, .thumb, .placeholder: a fileira rolável de miniaturas sem corte.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - A miniatura tem ALTURA fixa e largura natural (`width: auto`): a imagem
+ *     inteira aparece, como na galeria (DDL-0127). O placeholder guarda 3/4.
+ *   - Cores só por token (DDL-0097).
+ *   - Sem barra, como as outras faixas laterais: rola com a roda, o arrasto e o
+ *     toque, e o esmaecido de borda global mostra que tem mais (DDL-0131).
+ * -------------------------------------------------------------------------- */
+
+.strip {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.title svg {
+  color: var(--accent);
+}
+
+.row {
+  display: flex;
+  min-width: 0;
+  scroll-behavior: auto;
+  overscroll-behavior-x: contain;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--space-1);
+  scrollbar-width: none;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+.thumb,
+.placeholder {
+  flex-shrink: 0;
+  height: 104px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.thumb {
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.thumb:hover {
+  border-color: var(--accent);
+}
+
+.thumb img {
+  display: block;
+  height: 100%;
+  width: auto;
+  min-width: 60px;
+}
+
+.placeholder {
+  aspect-ratio: 3 / 4;
+}

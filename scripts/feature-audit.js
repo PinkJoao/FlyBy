@@ -1,0 +1,679 @@
+// =============================================================================
+// feature-audit: o registro de cada feature de classe e subclasse no app
+// =============================================================================
+// O QUE FAZ
+//   Uso: npx vite-node scripts/feature-audit.js [--tier=srd|xphb|post|legacy|options|feats|species] [--review] [--only=<classId, tipo ou nome>]
+//   O registro do DDL-0228: cada feature de classe e de subclasse que o seletor oferece, numa
+//   camada (srd: as 12 classes do XPHB e as 12 subclasses do SRD 5.2; xphb: as outras do XPHB;
+//   post: os livros depois de 2024; legacy: as antigas sem reprint), com o que o app faz
+//   com ela, montado sozinho:
+//   - Builder: as escolhas guardadas que citam a feature (o saco, as magias, as formas);
+//   - Ficha: o que muda na derivação no nível dela (CA, salvaguardas, perícias, armas e
+//     armaduras, ferramentas, idiomas, resistências) e os registros do motor que a citam;
+//   - Jogo: use, log ou passive, o custo do turno, o pool, as activities, o registro curado;
+//   - Export: o item no ator do Foundry (activities, efeitos, usos);
+//   - Pistas: o que os levantamentos acham e ninguém explica (jogo, escolha, concessão).
+//   O veredito de quem revisa (ok, lacuna, explicada, com uma nota) vem de
+//   testing/feature-audit/verdicts.json; a assinatura das facetas guardada com ele avisa
+//   quando a feature mudou depois. Escreve testing/feature-audit/<CAMADA>.md, por livro >
+//   classe > subclasse > nível. `--review` lista só as que ainda não têm veredito válido.
+//
+// FUNÇÕES
+//   norm(s): o nome normalizado.
+//   tierOfSubclass(sub), tierOfClass(classObj): a camada.
+//   registryIndex(): os textos do motor (sem os gerados e os testes) para achar quem cita.
+//   mentions(name, classId, short): os arquivos do motor que citam a feature como chave.
+//   snapshot(derived), diff(a, b): o que a derivação muda de um nível para o outro.
+//   levelDiffs(character): a mudança de cada nível (1 a 20) da classe do personagem.
+//   choiceOwners(db, character): a feature dona de cada escolha, pelos descritores do builder.
+//   builderOf(f, level, character, entries, owners): as escolhas que guardam a feature.
+//   playOf(f, catalog, bridged): o que o modo de jogo faz.
+//   exportOf(name, level, actor): o item do ator.
+//   shapesOf(text): as famílias de FORMA que o texto declara (forma, objeto, alvo, até trocar, tipo; DDL-0241).
+//   shapeFacet(text, ctx): a faceta "forma" com os quatro lugares (decisão no builder, o módulo do jogo que cita
+//     a feature, o export), só quando o texto declara uma família (DDL-0251).
+//   facetsOf(...): todas as facetas de uma feature, e a assinatura delas.
+//   stateOf(row): o estado do veredito (sem veredito, ok, lacuna, explicada, ou "mudou").
+//   bookOf(): o texto do livro.
+//   optionUniverse(): as opções de classe oferecidas (invocações, manobras, metamagias, Arcane
+//     Shots, runas; OPTION_TYPES), sem as reeditadas.
+//   hostRow(type): a linha da matriz que hospeda o tipo (a classe do XPHB primeiro).
+//   optionPrereqs(o): as opções que ela pede (o pacto do XGE vira a invocação do XPHB).
+//   attackView(catalog), attackDiff(a, b): os ataques e as magias do jogo, e o que mudou.
+//   screenCatalog(character): o catálogo da tela, com uma arma de pacto invocada se houver o pacto.
+//   featBag(character, host): as sub-escolhas guardadas do talento (tipo e quantas).
+//   statView(catalog): os números do jogo que um talento pode mudar (PV, CA, iniciativa, deslocamentos, testes).
+//   traitKey(name): o nome-base de um traço ("Elven Lineage (Drow)" e "Elven Lineage, Drow" casam).
+//   speciesChoicesOf(row, character): as escolhas da espécie, com o traço que cada uma cita.
+//
+// DECISÕES E ARMADILHAS
+//   - O universo é o da lista de features da classe e da subclasse (resolveClassFeatures,
+//     resolveSubclassFeatures), não o ator: a feature que não vira item também aparece.
+//     As opções de uma escolha (Divine Order: Protector) ficam na guarda-chuva.
+//   - O diff de nível é da CLASSE, não da feature: todas as features do nível o recebem, e o
+//     revisor atribui. Quem diz qual feature muda o quê são os registros que a citam.
+//   - A assinatura cobre as facetas, não o texto: um veredito antigo vira "mudou" quando o
+//     app passa a tratar a feature de outro jeito, e o revisor confere de novo.
+//   - A camada `options` (DDL-0237) mede cada opção pela DIFERENÇA: o hospedeiro de nível 20 com a
+//     opção (o autoBuild preenche as sub-escolhas dela; `allow` não deixa sortear outra do tipo)
+//     contra a cópia dele só com os pré-requisitos e sem o `sub` dela (a ficha, os ataques e as magias do jogo,
+//     os ataques por ação). A pista `jogo:ataque` é o texto que fala de ataque ou dano sem nenhuma
+//     mudança nos ataques e sem registro: o furo que deixou o Pact of the Blade passar (DDL-0236).
+//   - A faceta "forma" (DDL-0251) só entra na linha cuja prosa declara uma família de FORMA (`SHAPES`, por prosa e
+//     estreita: "transform into", "assume the ... form", "imbue ... weapon", "one of your known ... cantrips", "your
+//     choice of ... damage"), para a assinatura das outras não mudar. Ela não é pista: uma forma sem estado no jogo
+//     pode estar certa (só texto), e quem decide é o revisor, olhando os quatro lugares.
+//   - A camada `feats` mede cada talento do seletor (featMatrix) pela DIFERENÇA, como as opções: o
+//     hospedeiro da T3 (lib/featHost.js: o espaço da categoria, a classe e a espécie do pré-requisito)
+//     subido ao nível 20, contra a cópia dele com o espaço vazio. O livro agrupa por fonte > categoria.
+//     A pista `pré:bad` é o pré-requisito que o hospedeiro não cumpre (o instrumento, não o talento).
+//   - A camada `species` (DDL-0270) mede cada TRAÇO de cada linha da matriz de espécie (a linhagem já resolvida)
+//     num hospedeiro fixo, o guerreiro Champion do XPHB no nível 20 (o mesmo da régua): o traço vem do `entries`
+//     da raça, o jogo pelo nome-base no catálogo, a ficha pela diferença da mesma ficha sem espécie (da espécie
+//     inteira, como o diff de nível da classe: o revisor atribui) e pelos registros que citam o traço.
+//   - Nada de texto de livro no registro: só nomes e o que o app faz (`testing/` é privado).
+// -----------------------------------------------------------------------------
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import process from 'node:process';
+import { loadDb } from './lib/loadDb.js';
+import { classMatrix, defaultSpecies } from './lib/matrix.js';
+import { autoBuild } from './lib/autoBuild.js';
+import { hashSeed } from './lib/rng.js';
+import { bagEntries, pendingChoice } from './lib/builderCues.js';
+import { grantsOf, missingOf, EXPLAINED as GRANT_EXPLAINED } from './lib/proseGrants.js';
+import { classify, cuesOf, unexplainedCues } from './lib/playCoverage.js';
+import { derivePlayCatalog, safeActor } from '../src/engine/playCatalog.js';
+import { plainText, featureCosts } from '../src/engine/playFeatures.js';
+import { featureRollOf } from '../src/engine/playFeatureRolls.js';
+import { isSummonFeature } from '../src/engine/playSummons.js';
+import { transformRuleOf } from '../src/engine/playForms.js';
+import { deriveFromDb, resolveClassObj, resolveSubclassObj } from '../src/engine/resolve.js';
+import { resolveClassFeatures, resolveSubclassFeatures } from '../src/engine/foundryItems.js';
+import { buildClassChoices } from '../src/components/builder/classChoices.js';
+import { optionalFeatureChoices } from '../src/engine/classFeatureChoices.js';
+import { collectFeatIds } from '../src/engine/proficiency.js';
+import { attacksPerAction } from '../src/engine/playBasicActions.js';
+import { withPactWeapon } from '../src/engine/playPact.js';
+import { featMatrix, speciesMatrix } from './lib/matrix.js';
+import { speciesChoices } from '../src/engine/speciesData.js';
+import { resolveRaceObj } from '../src/engine/resolve.js';
+import { featHost, buildFeatHost, withoutFeat } from './lib/featHost.js';
+import { resolveFeat } from '../src/engine/resolve.js';
+import { prereqContext, prereqStatus } from '../src/engine/prereq.js';
+
+const args = Object.fromEntries(process.argv.slice(2).map((a) => {
+  const m = a.match(/^--([^=]+)(?:=(.*))?$/);
+  return m ? [m[1], m[2] ?? true] : [a, true];
+}));
+const TIER = args.tier ?? 'srd';
+const TIER_LABEL = { srd: 'SRD 5.2', xphb: 'XPHB fora do SRD', post: 'Livros depois de 2024', legacy: 'Legado sem reprint', options: 'Opções de classe', feats: 'Talentos', species: 'Espécies' };
+const FEAT_CATS = { O: 'Origin', G: 'General', FS: 'Fighting Style', 'FS:P': 'Fighting Style (Paladin)', 'FS:R': 'Fighting Style (Ranger)', EB: 'Epic Boon', D: 'Dragonmark', DG: 'Dark Gift' };
+const OPTION_TYPES = { EI: 'Eldritch Invocations', 'MV:B': 'Maneuvers', MM: 'Metamagic', AS: 'Arcane Shots', RN: 'Runes' };
+const OUT_DIR = 'testing/feature-audit';
+const VERDICTS = path.join(OUT_DIR, 'verdicts.json');
+const norm = (s) => String(s ?? '').trim().toLowerCase();
+
+/** A camada de uma subclasse. */
+function tierOfSubclass(sub) {
+  if (sub.edition === 'classic') return 'legacy';
+  if (sub.source === 'XPHB') return sub.srd52 ? 'srd' : 'xphb';
+  return 'post';
+}
+
+/** A camada das features de uma classe. */
+function tierOfClass(classObj) {
+  return classObj.source === 'XPHB' ? 'srd' : 'post';
+}
+
+/** Os textos do motor (sem os gerados e os testes). */
+function registryIndex() {
+  const dir = 'src/engine';
+  return fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.js') && !f.endsWith('.test.js') && !/Data\.js$/.test(f))
+    .map((f) => ({ file: f.replace(/\.js$/, ''), text: fs.readFileSync(path.join(dir, f), 'utf8').toLowerCase() }));
+}
+const INDEX = registryIndex();
+const NOT_REGISTRY = new Set(['playFeatures', 'resolve', 'classData', 'foundryItems']);
+
+/** Os arquivos do motor que citam a feature como chave de registro. */
+function mentions(name, classId, short) {
+  const n = norm(name).replace(/'/g, "\\'");
+  const keys = [`'${n}'`, `"${n}"`, `'${norm(classId)}|${n}'`, `|${n}'`, `'${n}|`];
+  if (short) keys.push(`'${norm(short)}|${n}'`);
+  return INDEX.filter((e) => !NOT_REGISTRY.has(e.file) && keys.some((k) => e.text.includes(k))).map((e) => e.file);
+}
+
+/** O que a ficha mostra que pode mudar com um nível. */
+function snapshot(d) {
+  const skills = Object.entries(d.skills ?? {}).filter(([, v]) => v?.proficiency).map(([k, v]) => (v.proficiency >= 2 ? `${k}*` : k));
+  return {
+    CA: [String(d.armorClass?.total ?? '')],
+    salvaguardas: d.proficientSaves ?? [],
+    pericias: skills,
+    armaduras: d.armor ?? [],
+    armas: [...(d.weapons ?? []), ...(d.weaponNames ?? [])],
+    ferramentas: d.tools ?? [],
+    idiomas: d.languages ?? [],
+    resistencias: d.damageTraits?.resist ?? [],
+    imunidades: d.damageTraits?.immune ?? [],
+    sintonia: [String(d.attunementMax ?? '')],
+    'magias sempre preparadas': (d.spellcasting?.origins ?? []).flatMap((o) => (o.alwaysPrepared ?? []).map((x) => x.name)),
+  };
+}
+
+/** O que mudou de `a` para `b`. */
+function diff(a, b) {
+  const out = [];
+  for (const k of Object.keys(b)) {
+    if (k === 'CA' || k === 'sintonia') {
+      if (a[k][0] !== b[k][0]) out.push(`${k} ${a[k][0]}->${b[k][0]}`);
+      continue;
+    }
+    const added = b[k].filter((x) => !a[k].includes(x));
+    if (added.length) out.push(`${k} +${added.join(',')}`);
+  }
+  return out;
+}
+
+/** A mudança de cada nível da classe do personagem (1 a 20). */
+function levelDiffs(character, db) {
+  const out = {};
+  let prev = null;
+  for (let level = 1; level <= 20; level++) {
+    const c = structuredClone(character);
+    c.classes[0].level = level;
+    let snap;
+    try {
+      snap = snapshot(deriveFromDb(c, db));
+    } catch {
+      snap = null;
+    }
+    out[level] = prev && snap ? diff(prev, snap) : [];
+    prev = snap ?? prev;
+  }
+  return out;
+}
+
+const ALIASES = {
+  'weapon mastery': ['weaponmastery'],
+  'fighting style': ['feat@fs', 'feat@1', 'feat@2'],
+  'ability score improvement': ['feat@'],
+  'epic boon': ['feat@19'],
+  expertise: ['expertise@'],
+  'eldritch invocations': ['optfeat@ei'],
+  'pact of the magic': ['optfeat@ei'],
+  metamagic: ['optfeat@mm'],
+  scholar: ['expertise@scholar'],
+  "thieves' cant": ['classgrant-lang'],
+};
+
+/** O nome da feature dona de cada escolha do builder, pela id (os descritores do builder). */
+function choiceOwners(db, character) {
+  const out = new Map();
+  try {
+    for (const ch of buildClassChoices(db, character.classes[0], character)) out.set(norm(ch.id), norm(ch.feature?.name ?? ch.label));
+  } catch {
+    /* sem descritores, só o nome na id */
+  }
+  return out;
+}
+
+/** As escolhas guardadas que citam a feature. */
+function builderOf(f, level, character, entries, owners) {
+  const name = norm(f.name);
+  const keys = ALIASES[name] ?? [];
+  const hit = entries.filter((e) => e.key.includes(name) || keys.some((k) => e.key.startsWith(k)) || e.picks.some((p) => p.startsWith(`${name}|`)) || (owners.get(e.key) ?? '').startsWith(name));
+  const out = [...new Set(hit.map((e) => e.key.replace(/@\d+$/, '')))];
+  const cls = character.classes[0];
+  if (/^(?:spellcasting|pact magic)$/.test(name) && (cls.spells?.length ?? Object.keys(cls.spells ?? {}).length)) out.push(`magias (${cls.spells.length ?? Object.keys(cls.spells).length})`);
+  if (name === 'wild shape' && character.wildShapeForms?.length) out.push(`formas (${character.wildShapeForms.length})`);
+  return out;
+}
+
+/** O que o modo de jogo faz. */
+function playOf(f, catalog, bridged) {
+  if (!f) return { cat: 'fora do ator', parts: [] };
+  const action = (catalog.actions ?? []).find((a) => a.key === f.actionKey);
+  const pools = (catalog.resources ?? []).filter((r) => r.kind === 'pool' && r.item === f.name);
+  const cat = classify(f, action, pools, bridged.has(f.name));
+  const parts = [];
+  const costs = featureCosts(f, action);
+  if (costs.length) parts.push(costs.join('/'));
+  for (const p of pools) parts.push(`pool ${p.max}${p.recovery?.length ? ` ${p.recovery.map((r) => r.period).join('/')}` : ''}`);
+  const acts = (action?.activities ?? []).map((a) => `${a.type}${a.consumes?.length ? '+gasta' : ''}`);
+  if (acts.length) parts.push(`activities ${acts.join(',')}`);
+  const reg = featureRollOf(f.name);
+  if (reg) parts.push(`registro ${reg.kind}`);
+  if (f.spendItem) parts.push(`gasta ${f.spendItem}`);
+  if (bridged.has(f.name)) parts.push('efeito na rolagem');
+  if (isSummonFeature(f.name)) parts.push('summon');
+  if (transformRuleOf(f.name)) parts.push('forma');
+  return { cat, parts };
+}
+
+/** O item do ator. */
+function exportOf(name, level, actor) {
+  const items = (actor?.items ?? []).filter((i) => i.type === 'feat' && norm(i.name) === norm(name));
+  const item = items.find((i) => (i.flags?.builder5e?.level ?? null) === level) ?? items[0];
+  if (!item) return '-';
+  const acts = Object.values(item.system?.activities ?? {}).length;
+  const effects = (item.effects ?? []).length;
+  const uses = item.system?.uses?.max;
+  const parts = ['item'];
+  if (acts) parts.push(`${acts} activit${acts > 1 ? 'ies' : 'y'}`);
+  if (effects) parts.push(`${effects} efeito${effects > 1 ? 's' : ''}`);
+  if (uses) parts.push(`usos ${uses}`);
+  return parts.join(', ');
+}
+
+const SHAPES = [
+  ['forma', /\b(?:(?:transform|shape-?shift)s? (?:yourself )?into|(?:assume|take on) (?:the|a|an) (?:[\w-]+ ){0,3}(?:form|shape)\b|(?:beast|spectral|shadow|dread|lunar|starry|ghostly) form\b)/i],
+  ['objeto', /\b(?:create|conjure|forge|bond with|imbue|manifest|summon)s?\b[^.]{0,50}\b(?:weapons?|armor|shield|blades?)\b|becomes? (?:a )?magic(?:al)? (?:weapon|armor|shield)/i],
+  ['alvo', /\b(?:choose|chosen|pick)\b[^.]{0,20}\b(?:one|a|an) of (?:your|the) (?:[\w-]+ ){0,3}(?:cantrips?|weapons?)\b|\b(?:choose|chosen|pick)\b[^.]{0,30}\b(?:one|a|an) (?:simple or martial )?weapons? (?:you(?:'re| are) holding|you are proficient|with which you)/i],
+  ['ate-trocar', /\b(?:you can (?:change|replace) (?:this|that|your|the) (?:choice|type|damage type|option)|until you (?:choose|change|replace)\b[^.]{0,40}\b(?:again|different|another))/i],
+  ['tipo', /\b(?:damage type of your choice|choose (?:one|a) (?:of the following )?damage types?|your choice of [^.]{0,40}\bdamage\b|(?:acid|cold|fire|lightning|thunder|necrotic|radiant|poison|psychic|force)[^.]{0,60}\((?:your )?choice\))/i],
+];
+const SHAPE_MODULES = ['playForms', 'playPact', 'playWeapons', 'playSummons', 'optionTargets', 'playFeatureRolls', 'playEffects', 'playCatalog', 'playCast', 'playProseEffects', 'featureOptions', 'choices', 'grantedSpellUses'];
+
+/** As famílias de FORMA que o texto declara (DDL-0241): forma, objeto, alvo, até trocar, tipo. */
+function shapesOf(text) {
+  return SHAPES.filter(([, re]) => re.test(text)).map(([k]) => k);
+}
+
+/** A faceta "forma": as famílias e os quatro lugares (decisão no builder, estado e vista no jogo, export), ou null. */
+function shapeFacet(text, { builder, play, exp, files }) {
+  const families = shapesOf(text);
+  if (!families.length) return null;
+  const game = [...new Set([...files.filter((m) => SHAPE_MODULES.includes(m)), ...play.parts.filter((x) => /^(?:forma|summon|registro|activities)/.test(x))])];
+  return `${families.join(',')}: decisão ${builder === '-' ? '-' : 'sim'}; jogo ${game.join(',') || '-'}; export ${exp === '-' ? '-' : 'item'}`;
+}
+
+/** Todas as facetas de uma feature, e a assinatura delas. */
+function facetsOf({ feature, f, level, character, entries, owners, catalog, bridged, derived, actor, levelDiff, classId, short }) {
+  const text = plainText(f?.entries ?? feature.entries ?? []);
+  const play = playOf(f, catalog, bridged);
+  const choice = f ? pendingChoice(f, character, entries, text) : null;
+  const grants = GRANT_EXPLAINED[norm(feature.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+  const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+  const files = mentions(feature.name, classId, short);
+  const facets = {
+    builder: builderOf(feature, level, character, entries, owners).join('; ') || '-',
+    ficha: [...(levelDiff ?? []), ...files.map((m) => `reg:${m}`)].join('; ') || '-',
+    jogo: [play.cat, ...play.parts].join('; '),
+    export: exportOf(feature.name, level, actor),
+    pistas: [...playCues.map((c) => `jogo:${c}`), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
+  };
+  const shape = shapeFacet(text, { builder: facets.builder, play, exp: facets.export, files });
+  if (shape) facets.forma = shape;
+  const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+  return { facets, sig };
+}
+
+const db = loadDb();
+const species = defaultSpecies(db);
+const verdicts = fs.existsSync(VERDICTS) ? JSON.parse(fs.readFileSync(VERDICTS, 'utf8')) : {};
+const rows = [];
+const doneClasses = new Set();
+
+for (const row of TIER === 'options' || TIER === 'feats' || TIER === 'species' ? [] : classMatrix(db)) {
+  if (args.only && row.classId !== args.only) continue;
+  const classObj = resolveClassObj(db, row.classId, row.classSource);
+  const sub = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
+  const wantClass = !doneClasses.has(row.classId) && tierOfClass(classObj) === TIER;
+  const wantSub = sub && tierOfSubclass(sub) === TIER;
+  if (!wantClass && !wantSub) continue;
+  const built = autoBuild(db, { ...row, level: 20, ...species, seed: hashSeed(row.id, 1) });
+  const character = built.character;
+  const catalog = derivePlayCatalog(character, db);
+  const derived = deriveFromDb(character, db);
+  const actor = safeActor(character, db);
+  const entries = bagEntries(character);
+  const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+  const diffs = levelDiffs(character, db);
+  const ctx = { character, entries, owners: choiceOwners(db, character), catalog, bridged, derived, actor, classId: row.classId };
+  const listed = (name, level, kind) => (catalog.featureList ?? []).find((x) => norm(x.name) === norm(name) && (x.level ?? null) === level && x.kind === kind)
+    ?? (catalog.featureList ?? []).find((x) => norm(x.name) === norm(name) && x.kind === kind);
+  if (wantClass) {
+    doneClasses.add(row.classId);
+    for (const feature of resolveClassFeatures(db, row.classId, classObj, 20)) {
+      const f = listed(feature.name, feature.level, 'class');
+      const { facets, sig } = facetsOf({ ...ctx, feature, f, level: feature.level, levelDiff: diffs[feature.level], short: null });
+      rows.push({ id: `${TIER}|${row.classId}|-|${feature.level}|${feature.name}`, book: classObj.source, className: classObj.name, sub: '(classe)', level: feature.level, name: feature.name, facets, sig, text: plainText(feature.entries ?? []) });
+    }
+  }
+  if (wantSub) {
+    for (const feature of resolveSubclassFeatures(sub, row.classId, db, { max: 20 })) {
+      const f = listed(feature.name, feature.level, 'subclass') ?? listed(feature.name, feature.level, 'class');
+      const { facets, sig } = facetsOf({ ...ctx, feature, f, level: feature.level, levelDiff: diffs[feature.level], short: sub.shortName });
+      rows.push({ id: `${TIER}|${row.classId}|${sub.shortName}|${feature.level}|${feature.name}`, book: sub.source, className: classObj.name, sub: sub.name, level: feature.level, name: feature.name, facets, sig, text: plainText(feature.entries ?? []) });
+    }
+  }
+}
+
+/** As opções de classe que o seletor oferece (sem reprint), por tipo de escolha. */
+function optionUniverse() {
+  return (db.optionalfeatures?.optionalfeature ?? [])
+    .filter((o) => !o.reprintedAs && (o.featureType ?? []).some((t) => OPTION_TYPES[t]))
+    .map((o) => ({ ...o, type: o.featureType.find((t) => OPTION_TYPES[t]) }));
+}
+
+/** A linha da matriz que hospeda um tipo de opção (a classe do XPHB primeiro). */
+function hostRow(type) {
+  const rows = classMatrix(db).filter((r) => {
+    const c = resolveClassObj(db, r.classId, r.classSource);
+    const sub = r.subclassId ? resolveSubclassObj(db, r.classId, r.subclassId, r.subclassSource) : null;
+    return optionalFeatureChoices(c, sub, 20).some((ch) => (ch.pool.featureType ?? []).includes(type));
+  });
+  return rows.find((r) => r.classSource === 'XPHB' && (!r.subclassSource || r.subclassSource === 'XPHB')) ?? rows.find((r) => r.classSource === 'XPHB') ?? rows[0];
+}
+
+/** Os pré-requisitos de opção que a opção pede (outra opção, ou o pacto do XGE como invocação do XPHB). */
+function optionPrereqs(o) {
+  const out = [];
+  for (const pre of o.prerequisite ?? []) {
+    for (const ref of pre.optionalfeature ?? []) {
+      const [name, source] = ref.split('|');
+      const hit = (db.optionalfeatures?.optionalfeature ?? []).find((x) => norm(x.name) === norm(name) && norm(x.source) === norm(source ?? 'phb'));
+      if (hit) out.push(`${hit.name}|${hit.source}`);
+    }
+    if (pre.pact) out.push(`Pact of the ${pre.pact}|XPHB`);
+  }
+  return [...new Set(out)];
+}
+
+/** O que os ataques e as magias do jogo mostram (para o antes e o depois de uma opção). */
+function attackView(catalog) {
+  const out = new Map();
+  for (const a of catalog.attacks ?? []) out.set(`ataque ${a.name}`, `${a.ability} +${a.toHit?.total ?? '?'} ${a.damage?.dice ?? ''}+${a.damage?.bonus ?? 0}`);
+  for (const o of catalog.spells ?? []) for (const sp of o.spells ?? []) out.set(`magia ${sp.name}`, JSON.stringify([sp.mechanics, sp.uses, sp.castType]));
+  out.set('ataques por ação', String(attacksPerAction(catalog)));
+  return out;
+}
+
+/** O que mudou nos ataques e nas magias. */
+function attackDiff(a, b) {
+  const out = [];
+  for (const [k, v] of b) if (a.get(k) !== v) out.push(a.has(k) ? `${k} ${a.get(k)}->${v}` : `+${k}`);
+  return out;
+}
+
+/** O catálogo da tela: com o Pact of the Blade, uma espada longa invocada (o vínculo é estado do jogo). */
+function screenCatalog(character) {
+  const catalog = derivePlayCatalog(character, db);
+  return withPactWeapon(catalog, { kind: 'conjure', name: 'Longsword', weapon: { name: 'Longsword', dmg1: '1d8', dmgType: 'S', versatile: '1d10', props: ['V'], ranged: false, category: 'martial' } });
+}
+
+const ATTACK_CUE = /\b(?:attack rolls?|damage rolls?|pact weapon|weapon attack|attack action|extra attack|attack with|use your \w+ modifier|to hit)\b/;
+
+if (TIER === 'options') {
+  const hosts = new Map();
+  for (const o of optionUniverse()) {
+    if (args.only && norm(o.type) !== norm(args.only)) continue;
+    if (!hosts.has(o.type)) {
+      const row = hostRow(o.type);
+      const c = resolveClassObj(db, row.classId, row.classSource);
+      const sub = row.subclassId ? resolveSubclassObj(db, row.classId, row.subclassId, row.subclassSource) : null;
+      const id = optionalFeatureChoices(c, sub, 20).find((ch) => (ch.pool.featureType ?? []).includes(o.type)).id;
+      hosts.set(o.type, { row, id, label: OPTION_TYPES[o.type] });
+    }
+    const host = hosts.get(o.type);
+    const prereqs = optionPrereqs(o);
+    const picks = [...prereqs, `${o.name}|${o.source}`];
+    const allowed = new Set(picks);
+    const character = autoBuild(db, {
+      ...host.row,
+      level: 20,
+      ...species,
+      seed: hashSeed(host.row.id, 1),
+      allow: (raw) => !(raw.featureType ?? []).includes(o.type) || allowed.has(`${raw.name}|${raw.source}`),
+      preset: (c) => { c.classes[0].choices[host.id] = { kind: 'optionalfeature', picks: [...picks] }; },
+    }).character;
+    const base = structuredClone(character);
+    const entry = base.classes[0].choices[host.id];
+    entry.picks = [...prereqs];
+    entry.sub = Object.fromEntries(Object.entries(entry.sub ?? {}).filter(([k]) => prereqs.includes(k)));
+    let derived; let catalog; let baseCatalog; let actor;
+    try {
+      derived = deriveFromDb(character, db);
+      catalog = screenCatalog(character);
+      baseCatalog = screenCatalog(base);
+      actor = safeActor(character, db);
+    } catch (e) {
+      rows.push({ id: `options|${o.type}|${o.name}|${o.source}`, book: o.source, className: host.label, sub: '(opção)', level: 0, name: o.name, facets: { builder: 'ERRO', ficha: String(e.message).slice(0, 80), jogo: '-', export: '-', pistas: 'erro' }, sig: 'erro', text: '' });
+      continue;
+    }
+    const entries = bagEntries(character);
+    const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+    const f = (catalog.featureList ?? []).find((x) => norm(x.name) === norm(o.name));
+    const text = plainText(o.entries ?? []);
+    const play = playOf(f, catalog, bridged);
+    const sheet = diff(snapshot(deriveFromDb(base, db)), snapshot(derived));
+    const feats = collectFeatIds(character).filter((id) => !collectFeatIds(base).includes(id));
+    if (feats.length) sheet.push(`talentos +${feats.join(',')}`);
+    const attacks = attackDiff(attackView(baseCatalog), attackView(catalog));
+    const regs = mentions(o.name, host.row.classId, null);
+    const choice = f ? pendingChoice(f, character, entries, text) : null;
+    const grants = GRANT_EXPLAINED[norm(o.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+    const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+    const attackCue = ATTACK_CUE.test(text.toLowerCase()) && !attacks.length && !regs.length && !featureRollOf(o.name);
+    const kept = !!f;
+    const facets = {
+      builder: kept ? `${host.id}${prereqs.length ? ` (com ${prereqs.join(', ')})` : ''}` : 'não chega ao jogo',
+      ficha: [...sheet, ...regs.map((m) => `reg:${m}`)].join('; ') || '-',
+      jogo: [play.cat, ...play.parts, ...attacks].join('; '),
+      export: exportOf(o.name, null, actor),
+      pistas: [...playCues.map((c) => `jogo:${c}`), ...(attackCue ? ['jogo:ataque'] : []), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
+    };
+    const shape = shapeFacet(text, { builder: facets.builder === 'não chega ao jogo' ? '-' : facets.builder, play, exp: facets.export, files: regs });
+    if (shape) facets.forma = shape;
+    const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+    const level = (o.prerequisite ?? []).map((pre) => pre.level?.level ?? 0).reduce((m, n) => Math.max(m, n), 0);
+    rows.push({ id: `options|${o.type}|${o.name}|${o.source}`, book: o.source, className: host.label, sub: `(${host.row.id})`, level, name: o.name, facets, sig, text });
+  }
+}
+
+/** Os números do jogo que um talento pode mudar (só a camada `feats`: nas outras mudaria a assinatura). */
+function statView(catalog) {
+  const s = catalog.stats ?? {};
+  const out = new Map([['PV', String(s.hpMax)], ['CA jogo', String(s.ac)], ['iniciativa', String(catalog.checks?.initiative?.bonus ?? s.initiative)]]);
+  for (const [k, v] of Object.entries(s.speeds ?? {})) out.set(`desloc ${k}`, String(v?.feet ?? v));
+  for (const a of catalog.checks?.abilities ?? []) out.set(`salv ${a.ability}`, String(a.save));
+  for (const k of catalog.checks?.skills ?? []) out.set(`teste ${k.skill}`, String(k.bonus));
+  return out;
+}
+
+/** As sub-escolhas guardadas do talento: tipo e quantas. */
+function featBag(character, host) {
+  const bag = host.slot === 'origin' ? character.origin?.originFeat?.choices : character.classes[0].choices[host.slot]?.sub;
+  const out = [];
+  const walk = (o) => {
+    for (const v of Object.values(o ?? {})) {
+      if (v && typeof v === 'object' && v.kind) {
+        out.push(`${v.kind} ${(v.picks ?? []).length}`);
+        walk(v.sub);
+      } else if (v && typeof v === 'object') walk(v);
+    }
+  };
+  walk(bag);
+  return out;
+}
+
+if (TIER === 'feats') {
+  for (const row of featMatrix(db)) {
+    if (args.only && !norm(row.name).includes(norm(args.only))) continue;
+    const id = `feats|${row.name}|${row.source}`;
+    const cat = FEAT_CATS[row.category] ?? row.category;
+    const raw = resolveFeat(db, `${row.name}|${row.source}`);
+    const host = raw ? featHost(db, row, raw, species) : { skip: 'o talento não resolve' };
+    if (host.skip) {
+      rows.push({ id, book: row.source, className: cat, sub: '(talento)', level: 0, name: row.name, facets: { builder: 'não se aplica', ficha: host.skip, jogo: '-', export: '-', pistas: '-' }, sig: 'skip', text: '' });
+      continue;
+    }
+    let character; let base; let derived; let catalog; let baseCatalog; let actor;
+    try {
+      character = buildFeatHost(db, row, host, { level: 20 }).character;
+      base = withoutFeat(character, row, host);
+      derived = deriveFromDb(character, db);
+      catalog = screenCatalog(character);
+      baseCatalog = screenCatalog(base);
+      actor = safeActor(character, db);
+    } catch (e) {
+      rows.push({ id, book: row.source, className: cat, sub: '(talento)', level: 0, name: row.name, facets: { builder: 'ERRO', ficha: String(e.message).slice(0, 80), jogo: '-', export: '-', pistas: 'erro' }, sig: 'erro', text: '' });
+      continue;
+    }
+    const entries = bagEntries(character);
+    const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+    const f = (catalog.featureList ?? []).find((x) => x.kind === 'feat' && norm(x.name) === norm(row.name));
+    const text = plainText(raw.entries ?? []);
+    const play = playOf(f, catalog, bridged);
+    const sheet = diff(snapshot(deriveFromDb(base, db)), snapshot(derived));
+    sheet.push(...attackDiff(statView(baseCatalog), statView(catalog)));
+    const attacks = attackDiff(attackView(baseCatalog), attackView(catalog));
+    const regs = mentions(row.name, host.classId, null);
+    const choice = f ? pendingChoice(f, character, entries, text) : null;
+    const grants = GRANT_EXPLAINED[norm(row.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+    const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+    const attackCue = ATTACK_CUE.test(text.toLowerCase()) && !attacks.length && !regs.length && !featureRollOf(row.name) && !bridged.has(f?.name);
+    const pre = prereqStatus(raw, prereqContext(character, { db, grantedFeatures: row.category.startsWith('FS') ? ['Fighting Style'] : [] }));
+    const facets = {
+      builder: `${host.classId} ${host.slot}${featBag(character, host).length ? `: ${featBag(character, host).join(', ')}` : ''}`,
+      ficha: [...sheet, ...regs.map((m) => `reg:${m}`)].join('; ') || '-',
+      jogo: [play.cat, ...play.parts, ...attacks].join('; '),
+      export: row.name === 'Ability Score Improvement' ? 'aumento no item da classe' : exportOf(row.name, null, actor),
+      pistas: [...playCues.map((c) => `jogo:${c}`), ...(attackCue ? ['jogo:ataque'] : []), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`), ...(pre === 'bad' ? ['pré:bad'] : [])].join('; ') || '-',
+    };
+    const shape = shapeFacet(text, { builder: facets.builder, play, exp: facets.export, files: regs });
+    if (shape) facets.forma = shape;
+    const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+    rows.push({ id, book: row.source, className: cat, sub: '(talento)', level: host.level, name: row.name, facets, sig, text });
+  }
+}
+
+/** O nome-base de um traço: "Elven Lineage (Drow)" e "Elven Lineage, Drow" casam. */
+function traitKey(name) {
+  return norm(name).replace(/\s*[(,].*$/, '');
+}
+
+/** As escolhas da espécie, com o traço que cada uma cita (pela id, pelo rótulo ou pela feature). */
+function speciesChoicesOf(row, character) {
+  const base = resolveRaceObj(db, row.speciesId, row.speciesSource);
+  const race = resolveRaceObj(db, row.speciesId, row.speciesSource, row.lineage);
+  try {
+    return speciesChoices({ db, baseRace: base, raceObj: race, lineage: row.lineage, level: 20, bag: character.species?.choices ?? {} })
+      .map((ch) => ({ id: ch.id, kind: ch.kind, cite: norm(`${ch.id} ${ch.label ?? ''} ${ch.feature?.name ?? ''} ${ch.trait ?? ''}`), done: (character.species?.choices?.[ch.id]?.picks ?? []).length }));
+  } catch {
+    return [];
+  }
+}
+
+if (TIER === 'species') {
+  const HOST = classMatrix(db).find((r) => r.classId === 'fighter' && r.classSource === 'XPHB' && r.subclassSource === 'XPHB' && /champion/i.test(r.subclassId ?? ''));
+  for (const row of speciesMatrix(db)) {
+    if (args.only && !norm(row.id).includes(norm(args.only))) continue;
+    const race = resolveRaceObj(db, row.speciesId, row.speciesSource, row.lineage);
+    let character; let derived; let catalog; let actor; let speciesDiff;
+    try {
+      character = autoBuild(db, { ...HOST, level: 20, speciesId: row.speciesId, speciesSource: row.speciesSource, lineage: row.lineage, seed: hashSeed(row.id, 20) }).character;
+      derived = deriveFromDb(character, db);
+      catalog = screenCatalog(character);
+      actor = safeActor(character, db);
+      const bare = { ...character, species: null };
+      speciesDiff = [...diff(snapshot(deriveFromDb(bare, db)), snapshot(derived)), ...attackDiff(statView(screenCatalog(bare)), statView(catalog)), ...attackDiff(attackView(screenCatalog(bare)), attackView(catalog))];
+    } catch (e) {
+      rows.push({ id: `species|${row.id}|-`, book: row.speciesSource, className: row.speciesName, sub: row.lineage ?? '(espécie)', level: 0, name: '-', facets: { builder: 'ERRO', ficha: String(e.message).slice(0, 80), jogo: '-', export: '-', pistas: 'erro' }, sig: 'erro', text: '' });
+      continue;
+    }
+    const entries = bagEntries(character);
+    const bridged = new Set([...(catalog.actorEffects ?? []), ...(catalog.proseEffects ?? [])].map((e) => e.name));
+    const choices = speciesChoicesOf(row, character);
+    const listed = (catalog.featureList ?? []).filter((x) => x.kind === 'species');
+    for (const trait of (race?.entries ?? []).filter((e) => e?.name)) {
+      const key = traitKey(trait.name);
+      const f = listed.find((x) => norm(x.name) === norm(trait.name)) ?? listed.find((x) => traitKey(x.name) === key);
+      const text = plainText(trait.entries ?? []);
+      const play = playOf(f, catalog, bridged);
+      const regs = mentions(trait.name, row.speciesId, null);
+      const mine = choices.filter((ch) => ch.cite.includes(key));
+      const choice = f ? pendingChoice(f, character, entries, text) : null;
+      const grants = GRANT_EXPLAINED[norm(trait.name)] ? [] : missingOf(grantsOf(text), derived).map((g) => g.label);
+      const playCues = f ? unexplainedCues(f, play.cat, cuesOf(text)) : [];
+      const facets = {
+        builder: mine.map((ch) => `${ch.id} ${ch.done ? 'ok' : 'vazio'}`).join('; ') || '-',
+        ficha: [...speciesDiff, ...regs.map((m) => `reg:${m}`)].join('; ') || '-',
+        jogo: [play.cat, ...play.parts].join('; '),
+        export: exportOf(trait.name, null, actor),
+        pistas: [...playCues.map((c) => `jogo:${c}`), ...(choice ? [`escolha:${choice}`] : []), ...grants.map((g) => `falta:${g}`)].join('; ') || '-',
+      };
+      const shape = shapeFacet(text, { builder: facets.builder, play, exp: facets.export, files: regs });
+      if (shape) facets.forma = shape;
+      const sig = crypto.createHash('sha1').update(JSON.stringify(facets)).digest('hex').slice(0, 10);
+      rows.push({ id: `species|${row.id}|${trait.name}`, book: row.speciesSource, className: row.speciesName, sub: row.lineage ?? '(espécie)', level: 0, name: trait.name, facets, sig, text });
+    }
+  }
+}
+
+/** O estado do veredito de uma linha. */
+function stateOf(r) {
+  const v = verdicts[r.id];
+  if (!v) return 'sem veredito';
+  return v.sig === r.sig ? v.v : `${v.v} (mudou)`;
+}
+
+/** O texto do livro. */
+function bookOf() {
+  const count = {};
+  for (const r of rows) count[stateOf(r)] = (count[stateOf(r)] ?? 0) + 1;
+  const lines = [
+    `# Registro de features: ${TIER_LABEL[TIER]}`,
+    '',
+    `Gerado por \`npx vite-node scripts/feature-audit.js --tier=${TIER}\` (DDL-0228). Os vereditos ficam em`,
+    '`testing/feature-audit/verdicts.json`; "mudou" quer dizer que o app passou a tratar a feature de outro',
+    'jeito depois do veredito. Ficha: o que a derivação muda no nível (da classe inteira) e os registros que',
+    'citam a feature. Jogo: use (o app gasta, rola ou aplica), log (vai ao histórico), passive (texto).',
+    '',
+    `${rows.length} features: ${Object.entries(count).map(([k, n]) => `${n} ${k}`).join(', ')}.`,
+    '',
+  ];
+  const tree = new Map();
+  for (const r of rows) {
+    const key = `${r.book}|${r.className}|${r.sub}`;
+    if (!tree.has(key)) tree.set(key, []);
+    tree.get(key).push(r);
+  }
+  let book = null;
+  let cls = null;
+  for (const [key, list] of [...tree.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const [b, c, s] = key.split('|');
+    if (b !== book) { lines.push(`## ${b}`, ''); book = b; cls = null; }
+    if (c !== cls) { lines.push(`### ${c}`, ''); cls = c; }
+    lines.push(`#### ${s}`, '', '| Nível | Feature | Builder | Ficha | Jogo | Export | Pistas | Veredito |', '|---|---|---|---|---|---|---|---|');
+    for (const r of list.sort((x, y) => x.level - y.level || x.name.localeCompare(y.name))) {
+      const v = verdicts[r.id];
+      const cell = (t) => String(t).replace(/\|/g, '/');
+      lines.push(`| ${r.level} | ${cell(r.name)} | ${cell(r.facets.builder)} | ${cell(r.facets.ficha)} | ${cell(r.facets.jogo)} | ${cell(r.facets.export)} | ${cell(r.facets.pistas)} | ${cell(stateOf(r))}${v?.note ? `: ${cell(v.note)}` : ''} |`);
+    }
+    lines.push('');
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+fs.mkdirSync(OUT_DIR, { recursive: true });
+fs.writeFileSync(path.join(OUT_DIR, `${TIER.toUpperCase()}.md`), bookOf());
+const pending = rows.filter((r) => !verdicts[r.id] || verdicts[r.id].sig !== r.sig);
+console.log(`${rows.length} features na camada ${TIER}; ${rows.length - pending.length} com veredito válido, ${pending.length} a revisar.`);
+if (args.dump) fs.writeFileSync(args.dump, JSON.stringify(rows.map((r) => ({ id: r.id, sig: r.sig, facets: r.facets }))));
+if (args.compact) {
+  for (const r of pending) {
+    const f = r.facets;
+    const bare = f.builder === '-' && f.ficha === '-' && /^passive$/.test(f.jogo) && f.pistas === '-';
+    console.log(`${bare ? 'TEXTO ' : f.pistas !== '-' ? 'PISTA ' : '      '}${r.id.replace(/^\w+\|/, '')} | B ${f.builder} | F ${f.ficha} | J ${f.jogo} | E ${f.export}${f.pistas !== '-' ? ` | P ${f.pistas}` : ''}`);
+    if (bare && args.text) console.log(`       ${r.text.slice(0, 260)}`);
+  }
+}
+if (args.review) {
+  for (const r of pending) {
+    console.log(`${r.id} [${r.sig}]\n  B: ${r.facets.builder}\n  F: ${r.facets.ficha}\n  J: ${r.facets.jogo}\n  E: ${r.facets.export}\n  P: ${r.facets.pistas}`);
+  }
+}

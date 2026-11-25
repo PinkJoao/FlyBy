@@ -1,0 +1,387 @@
+// =============================================================================
+// grantedSpellUses: as correções curadas das magias concedidas
+// =============================================================================
+// O QUE FAZ
+//   A maioria do 5etools codifica a frequência no próprio `additionalSpells`, e o
+//   conteúdo novo segue esse formato. Algumas entradas antigas trazem uma LISTA
+//   CRUA sob `innate`, ambígua: no Aarakocra é 1 por descanso longo, no Yuan-Ti à
+//   vontade, no Great Old One só "sempre preparada". A derivação não adivinha ("No
+//   Spell Slot"), e a frequência real vem daqui, do texto do traço (DDL-0011).
+//   Mais três registros da mesma família, onde a PROSA manda no dado:
+//     INNATE_USES: a frequência (castType 'restLong', 'rest', 'will', ou null
+//       quando NÃO há conjuração grátis).
+//     MISSING_ADDITIONAL_SPELLS: concessões que o dado omite (TC-0026; o Spell Mastery e o
+//     Signature Spells do mago XPHB como escolhas `innate`, "will" e "rest" 1e, TC-0149), fundidas
+//       no PRIMEIRO grupo do dado, nunca como grupo novo (seria alternativa).
+//     REGRADED_ADDITIONAL_SPELLS: concessões no nível errado (TC-0044).
+//     REMOVED_ADDITIONAL_SPELLS: concessões que a regra não dá (TC-0082).
+//   Chave "Nome|FONTE" da ENTIDADE (espécie, classe ou subclasse), e cada entrada
+//   cita a prosa que a justifica.
+//
+// FUNÇÕES
+//   overlayKey(entity): a chave da entidade.
+//   pruneEmpty(node), takeSpell(node, spell), putSpell(node, path, spell): a
+//     manipulação de um nó de nível.
+//   applyRegrades(groups, regrades): move as magias de nível.
+//   refName(s), stripSpells(node, wanted), applyRemovals(groups, spells): tira as
+//     não-concedidas de todos os baldes, em qualquer profundidade.
+//   mergeByCast(base, extra): funde um nível por tipo de conjuração (o `innate`).
+//   curatedAdditionalSpells(entity): o campo com as três correções; sem entrada,
+//     o original intacto. Nunca muta o dado.
+//   applyUsesOverlay(spells, entity, level): a frequência curada.
+//   tableColumnAt(entity, label, level): uma coluna da tabela da classe no nível.
+//
+// DECISÕES E ARMADILHAS
+//   - applyUsesOverlay só toca no que o dado NÃO declara, em duas formas:
+//     `castType: 'innate'` sem frequência, e sem castType nenhum quando a
+//     conjuração GRÁTIS existe só na prosa. Este é o Contact Patron do Warlock @9
+//     (DDL-0086): o dado diz `prepared` e só o texto dá o uso de 1 por descanso
+//     longo; sem a linha, o jogador perdia o recurso no export. O Eldritch Hex é o
+//     oposto: bucket `innate` mas sem conjuração grátis (castType null).
+//   - `slot` (DDL-0257): o uso por descanso que AINDA gasta um espaço ("cast X once using a warlock spell slot",
+//     as invocações de 2014): o lançamento só oferece espaços, cada um gastando também o uso. O tipo é
+//     `restLong` ("until you finish a long rest", o rótulo "1/Long Rest"; o `daily` dizia "1/Day", DDL-0258).
+//   - `overrides` (DDL-0238): a única entrada que troca um castType que o dado DECLARA: o Find Familiar
+//     do Pact of the Chain do XPHB vem como ritual, e a prosa diz "as a Magic action without expending
+//     a spell slot" (o Pact of the Legion do WoW, mesmo texto, já vem certo).
+//   - Invocações (TC-0092): o dado traz a magia como `innate` sem frequência, e a
+//     prosa diz "without expending a spell slot" sem limite (2024) ou "at will"
+//     (2014): castType 'will'. Linha por "Nome|Fonte", lida no texto de cada uma.
+//     As de uso único o dado já marca `daily` (1/Day): o overlay só preenche
+//     frequência AUSENTE (DDL-0011), então elas ficam com o dado.
+//   - Contagem que ESCALA com o nível (TC-0090, Favored Enemy do Ranger: 2 no 1,
+//     até 6 no 17): `countColumn` lê a coluna da tabela da classe, sem curar
+//     números. `poolOnFeature` diz que no Foundry o pool mora no ITEM da feature
+//     (`@scale.ranger.favored-enemy`, como o SRD e o premade da Quillathe), então o
+//     item da magia sai sem `uses`, senão seriam dois pools.
+//   - Gnomish Lineage (Forest Gnome): a prosa dá as duas magias no nível 1; o dado
+//     põe Speak with Animals no 3 (nenhuma outra espécie XPHB diverge assim).
+//   - REMOVED (TC-0082): o 5etools guarda em `prepared` uma magia que a feature
+//     só PERMITE conjurar. A varredura (refazer antes de acrescentar): cruzar toda
+//     magia de `prepared`/`known` com o texto procurando "to cast {@spell X}"; dá
+//     10 candidatos e 9 são falsos (a magia vem por outra via). Sobra o Wild
+//     Companion do Druida: Find Familiar é permissão, não preparada.
+//   - MISSING: o Giant Power do Path of the Giant (BGG) dá "a cantrip of your choice: either
+//     druidcraft or thaumaturgy" com SAB. O dado JÁ traz a escolha (dois grupos, o seletor
+//     "Spell List"), só sem o atributo: a entrada tem apenas `ability`, que vale para TODOS
+//     os grupos sem um. A primeira versão (DDL-0212) somava também a escolha ao primeiro
+//     grupo e a duplicava; vista na tela em 2026-11-15.
+//   - Telekinetic Master (Psi Warrior, XPHB): o Telekinesis sem espaço uma vez por descanso longo,
+//     com INT ("your spellcasting ability for it is Intelligence", `ability` no MISSING)
+//     (TC-0162); devolver o uso com um dado de Psionic Energy é ajuste à mão do contador.
+//   - Faithful Steed (XPHB): o Find Steed sempre preparado e grátis uma vez por descanso longo
+//     ("You can also cast the spell once without expending a spell slot", TC-0157).
+//   - MISSING: o Channeler do College of Spirits RHW conhece Guidance @3; o dado só
+//     codifica o Spirit Guardians @6 (a versão VRGR trazia).
+//   - O curado em `subrace` (Merge with Stone) existe por completude: a derivação
+//     ainda não consulta sub-raças por aqui.
+// -----------------------------------------------------------------------------
+
+/** @typedef {{ castType: 'restLong'|'rest'|'will'|null, count?: number, countColumn?: string, poolOnFeature?: string }} UsesOverride */
+
+/** @type {Record<string, Record<string, UsesOverride>>} */
+export const INNATE_USES = {
+  'Warlock|XPHB': {
+    'contact other plane': { castType: 'restLong', count: 1 },
+  },
+
+  'Psi Warrior|XPHB': {
+    telekinesis: { castType: 'restLong', count: 1 },
+  },
+
+  'Paladin|XPHB': {
+    'find steed': { castType: 'restLong', count: 1 },
+  },
+
+  'Ranger|XPHB': {
+    "hunter's mark": { castType: 'restLong', countColumn: 'Favored Enemy', poolOnFeature: 'Favored Enemy' },
+  },
+
+  'Aarakocra|MPMM': {
+    'gust of wind': { castType: 'restLong', count: 1 },
+  },
+
+  'Firbolg|MPMM': {
+    'detect magic': { castType: 'restLong', count: 1 },
+    'disguise self': { castType: 'restLong', count: 1 },
+  },
+
+  'Yuan-Ti|MPMM': {
+    'animal friendship': { castType: 'will' },
+  },
+  'Yuan-ti Pureblood|VGM': {
+    'animal friendship': { castType: 'will' },
+  },
+
+  'Earth|MPMM': {
+    'pass without trace': { castType: 'restLong', count: 1 },
+  },
+
+  'Variant; Mark of Detection|ERLW': {
+    'detect magic': { castType: 'restLong', count: 1 },
+    'detect poison and disease': { castType: 'restLong', count: 1 },
+  },
+  'Variant; Mark of Finding|ERLW': {
+    "hunter's mark": { castType: 'restLong', count: 1 },
+  },
+  'Mark of Healing|ERLW': {
+    'cure wounds': { castType: 'restLong', count: 1 },
+  },
+
+  'Artificer|EFA': {
+    mending: { castType: 'will' },
+  },
+
+  'Path of the Ancestral Guardian|XGE': {
+    augury: { castType: 'rest', count: 1 },
+    clairvoyance: { castType: 'rest', count: 1 },
+  },
+
+  'Path of the Giant|BGG': {
+    druidcraft: { castType: 'will' },
+    thaumaturgy: { castType: 'will' },
+  },
+
+  'College of Glamour|XGE': {
+    command: { castType: 'restLong', count: 1 },
+  },
+  'College of Glamour|XPHB': {
+    command: { castType: 'restLong', count: 1 },
+  },
+
+  'Great Old One Patron|XPHB': {
+    hex: { castType: null },
+  },
+
+  'Diviner|XPHB': {
+    'see invisibility': { castType: 'rest', count: 1 },
+  },
+
+  // ATENÇÃO: o dado diz ritual; a prosa diz 'as a Magic action without expending a spell slot' (DDL-0238).
+  'Pact of the Chain|XPHB': { 'find familiar': { castType: 'will', overrides: 'ritual' } },
+  'Armor of Shadows|XPHB': { 'mage armor': { castType: 'will' } },
+  'Ascendant Step|XPHB': { levitate: { castType: 'will' } },
+  'Fiendish Vigor|XPHB': { 'false life': { castType: 'will' } },
+  'Mask of Many Faces|XPHB': { 'disguise self': { castType: 'will' } },
+  'Master of Myriad Forms|XPHB': { 'alter self': { castType: 'will' } },
+  'Misty Visions|XPHB': { 'silent image': { castType: 'will' } },
+  'One with Shadows|XPHB': { invisibility: { castType: 'will' } },
+  // ATENÇÃO: o dado diz 1/dia; a prosa diz 'at will' (num celestial, ínfero ou elemental; o mesmo alvo só depois de um descanso longo).
+  'Chains of Carceri|PHB': { 'hold monster': { castType: 'will', overrides: 'daily' } },
+  // ATENÇÃO: 'You can cast X once using a warlock spell slot': o uso por descanso longo E o espaço de pacto (DDL-0257).
+  'Mire the Mind|PHB': { slow: { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Bewitching Whispers|PHB': { compulsion: { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Dreadful Word|PHB': { confusion: { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Sign of Ill Omen|PHB': { 'bestow curse': { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Thief of Five Fates|PHB': { bane: { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Sculptor of Flesh|PHB': { polymorph: { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Minions of Chaos|PHB': { 'conjure elemental': { castType: 'restLong', overrides: 'daily', count: 1, slot: true } },
+  'Otherworldly Leap|XPHB': { jump: { castType: 'will' } },
+  'Visions of Distant Realms|XPHB': { 'arcane eye': { castType: 'will' } },
+  'Whispers of the Grave|XPHB': { 'speak with dead': { castType: 'will' } },
+  'Armor of Shadows|PHB': { 'mage armor': { castType: 'will' } },
+  'Ascendant Step|PHB': { levitate: { castType: 'will' } },
+  'Beast Speech|PHB': { 'speak with animals': { castType: 'will' } },
+  'Eldritch Sight|PHB': { 'detect magic': { castType: 'will' } },
+  'Fiendish Vigor|PHB': { 'false life': { castType: 'will' } },
+  'Mask of Many Faces|PHB': { 'disguise self': { castType: 'will' } },
+  'Master of Myriad Forms|PHB': { 'alter self': { castType: 'will' } },
+  'Misty Visions|PHB': { 'silent image': { castType: 'will' } },
+  'Otherworldly Leap|PHB': { jump: { castType: 'will' } },
+  'Visions of Distant Realms|PHB': { 'arcane eye': { castType: 'will' } },
+  'Whispers of the Grave|PHB': { 'speak with dead': { castType: 'will' } },
+};
+
+/** A chave da entidade no overlay. */
+function overlayKey(entity) {
+  return entity?.name && entity?.source ? `${entity.name}|${entity.source}` : null;
+}
+
+
+/** @typedef {{ bucket: string, spell: string, from: number|string, to: number|string }} SpellRegrade */
+
+/** @type {Record<string, SpellRegrade[]>} */
+export const REGRADED_ADDITIONAL_SPELLS = {
+  'Gnome; Forest Gnome Lineage|XPHB': [
+    { bucket: 'innate', spell: 'speak with animals|xphb', from: 3, to: 1 },
+  ],
+};
+
+/** @type {Record<string, string[]>} */
+export const REMOVED_ADDITIONAL_SPELLS = {
+  'Druid|XPHB': ['find familiar'],
+};
+
+/** @type {Record<string, object>} */
+export const MISSING_ADDITIONAL_SPELLS = {
+  // ATENÇÃO: cada entrada é FUNDIDA no primeiro grupo; um grupo novo viraria alternativa (TC-0011).
+  'College of Spirits|RHW': { known: { 3: ['guidance|xphb#c'] } },
+  'Path of the Giant|BGG': { ability: 'wis' },
+  'Psi Warrior|XPHB': { ability: 'int' },
+  'Wizard|XPHB': {
+    innate: {
+      18: { will: [{ choose: 'level=1|class=Wizard', label: 'Spell Mastery' }, { choose: 'level=2|class=Wizard', label: 'Spell Mastery' }] },
+      20: { rest: { '1e': [{ choose: 'level=3|class=Wizard', count: 2, label: 'Signature Spells' }] } },
+    },
+  },
+};
+
+/** Funde um nível por tipo de conjuração ({ will: [...], rest: { '1e': [...] } }) no que já havia. */
+function mergeByCast(base, extra) {
+  const out = Array.isArray(base) ? { _: [...base] } : { ...(base ?? {}) };
+  for (const [cast, inner] of Object.entries(extra)) {
+    if (Array.isArray(inner)) out[cast] = [...(Array.isArray(out[cast]) ? out[cast] : []), ...inner];
+    else {
+      const prev = out[cast] && !Array.isArray(out[cast]) ? out[cast] : {};
+      const next = { ...prev };
+      for (const [key, list] of Object.entries(inner)) next[key] = [...(prev[key] ?? []), ...list];
+      out[cast] = next;
+    }
+  }
+  return out;
+}
+
+/** Poda arrays e objetos que ficaram vazios. */
+function pruneEmpty(node) {
+  if (Array.isArray(node)) return node.length ? node : null;
+  if (node && typeof node === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(node)) {
+      const p = pruneEmpty(v);
+      if (p !== null) out[k] = p;
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  return node;
+}
+
+/**
+ * Remove a magia de um nó de nível e devolve o caminho de onde saiu.
+ * @returns {{node: object|Array|null, path: string[]}|null}
+ */
+function takeSpell(node, spell) {
+  if (Array.isArray(node)) {
+    const i = node.findIndex((s) => typeof s === 'string' && s.toLowerCase() === spell);
+    return i < 0 ? null : { node: node.filter((_, k) => k !== i), path: [] };
+  }
+  if (node && typeof node === 'object') {
+    for (const [k, v] of Object.entries(node)) {
+      const found = takeSpell(v, spell);
+      if (found) return { node: { ...node, [k]: found.node }, path: [k, ...found.path] };
+    }
+  }
+  return null;
+}
+
+/** Insere a magia no nó de destino, no mesmo caminho. */
+function putSpell(node, path, spell) {
+  if (path.length === 0) return [...(Array.isArray(node) ? node : []), spell];
+  const [k, ...rest] = path;
+  const base = node && typeof node === 'object' && !Array.isArray(node) ? node : {};
+  return { ...base, [k]: putSpell(base[k], rest, spell) };
+}
+
+/** Aplica as correções de nível curadas (TC-0044). */
+function applyRegrades(groups, regrades) {
+  return groups.map((group) => {
+    let next = group;
+    for (const { bucket, spell, from, to } of regrades) {
+      const byLevel = next[bucket];
+      const taken = byLevel?.[from] ? takeSpell(byLevel[from], spell.toLowerCase()) : null;
+      if (!taken) continue;
+      const merged = { ...byLevel, [from]: taken.node };
+      const pruned = pruneEmpty(merged[from]);
+      if (pruned === null) delete merged[from];
+      else merged[from] = pruned;
+      merged[to] = putSpell(merged[to], taken.path, spell);
+      next = { ...next, [bucket]: merged };
+    }
+    return next;
+  });
+}
+
+/** O nome nu de uma ref de magia. */
+const refName = (s) => String(s).toLowerCase().split('|')[0].split('#')[0].trim();
+
+/** Tira as magias curadas como não-concedidas (TC-0082) de todos os baldes. */
+function stripSpells(node, wanted) {
+  if (Array.isArray(node)) return node.filter((s) => !(typeof s === 'string' && wanted.has(refName(s))));
+  if (node && typeof node === 'object') {
+    return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, stripSpells(v, wanted)]));
+  }
+  return node;
+}
+
+function applyRemovals(groups, spells) {
+  const wanted = new Set(spells.map((s) => refName(s)));
+  return groups.map((group) =>
+    Object.fromEntries(
+      Object.entries(group).map(([bucket, byLevel]) => [bucket, pruneEmpty(stripSpells(byLevel, wanted)) ?? {}]),
+    ),
+  );
+}
+
+/**
+ * O `additionalSpells` com as correções curadas, sem mutar o dado.
+ * @param {{name?: string, source?: string, additionalSpells?: Array}|null} entity
+ * @returns {Array<object>|undefined}
+ */
+export function curatedAdditionalSpells(entity) {
+  const key = overlayKey(entity);
+  const extra = MISSING_ADDITIONAL_SPELLS[key];
+  const regrades = REGRADED_ADDITIONAL_SPELLS[key];
+  const removed = REMOVED_ADDITIONAL_SPELLS[key];
+  if (!extra && !regrades && !removed) return entity?.additionalSpells;
+  let groups = entity?.additionalSpells ?? [];
+  if (regrades) groups = applyRegrades(groups, regrades);
+  if (removed) groups = applyRemovals(groups, removed);
+  if (!extra) return groups;
+  if (extra.ability) groups = (groups.length ? groups : [{}]).map((g) => (g.ability ? g : { ...g, ability: extra.ability }));
+  const first = { ...(groups[0] ?? {}) };
+  for (const [bucket, byLevel] of Object.entries(extra)) {
+    if (bucket === 'ability') continue;
+    const merged = { ...(first[bucket] ?? {}) };
+    for (const [lvl, spells] of Object.entries(byLevel)) {
+      merged[lvl] = Array.isArray(spells) ? [...(merged[lvl] ?? []), ...spells] : mergeByCast(merged[lvl], spells);
+    }
+    first[bucket] = merged;
+  }
+  return [first, ...groups.slice(1)];
+}
+
+/**
+ * Aplica a frequência curada às magias concedidas por uma entidade.
+ * @param {Array<object>} spells
+ * @param {{name?: string, source?: string}|null} entity
+ * @returns {Array<object>}
+ */
+export function applyUsesOverlay(spells, entity, level = 1) {
+  const table = INNATE_USES[overlayKey(entity)];
+  if (!table) return spells ?? [];
+  return (spells ?? []).map((s) => {
+    const override = table[s.name.toLowerCase()];
+    if (!override) return s;
+    if (s.castType && s.castType !== 'innate' && s.castType !== override.overrides) return s;
+    const count = override.countColumn ? tableColumnAt(entity, override.countColumn, level) : (override.count ?? null);
+    return {
+      ...s,
+      castType: override.castType,
+      count,
+      scale: null,
+      ...(override.poolOnFeature ? { poolOnFeature: override.poolOnFeature } : {}),
+      ...(override.slot ? { slot: true } : {}),
+    };
+  });
+}
+
+/** O valor de uma coluna da tabela da classe num nível, ou null. */
+export function tableColumnAt(entity, label, level) {
+  for (const group of entity?.classTableGroups ?? []) {
+    const col = (group.colLabels ?? []).findIndex((l) => String(l).toLowerCase() === label.toLowerCase());
+    if (col === -1) continue;
+    const cell = group.rows?.[Math.max(0, Math.min(20, level) - 1)]?.[col];
+    const value = typeof cell === 'object' && cell !== null ? cell.value : cell;
+    return Number.isFinite(Number(value)) ? Number(value) : null;
+  }
+  return null;
+}

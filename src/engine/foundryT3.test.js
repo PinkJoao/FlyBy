@@ -1,0 +1,278 @@
+// =============================================================================
+// foundryT3.test: magias com activity, itens mágicos e o export future-proof
+// =============================================================================
+// O QUE FAZ
+//   Prova as peças da T3 que o Foundry real cobrou (TC-0106, TC-0107, DDL-0167):
+//   a mecânica da magia (SRD, overlay, dado do 5etools), o lançamento grátis no
+//   formato dos premades, a identidade do item encantado no import, a mecânica
+//   do item pelo SRD, as marcas de procedência e as chaves atuais de effect.
+//
+// FUNÇÕES
+//   fakeDb(): um db mínimo com os itens que o import precisa achar.
+//   ench(value, origin, extra): um effect de encantamento com o nome e a origem.
+//
+// DECISÕES E ARMADILHAS
+//   - Os registros grandes vêm pelo loadFoundryMechanics, como no export de
+//     verdade; sem ele a magia do SRD cairia no dado do 5etools.
+// -----------------------------------------------------------------------------
+
+import { describe, it, expect, beforeAll } from 'vitest';
+import { loadFoundryMechanics } from './foundryMechanicsData';
+import { spellMechanics, srdSpellMechanics, derivedSpellMechanics, withFreeCasting } from './foundrySpellMechanics';
+import { srdItemMechanics } from './foundryItemMechanics';
+import { interopFlags, toolsHash } from './foundryInterop';
+import { modernizeEffects } from './foundryCompat';
+import { inventoryIdentity } from './foundryImport';
+import { srdFeatMechanics } from './foundryActivities';
+import { greatWeaponMinimum, standingEnchantments } from './foundryActor';
+import { buildInventoryItems } from './foundryItems';
+
+function fakeDb() {
+  return {
+    'items-base': { baseitem: [{ name: 'Shield', source: 'XPHB' }, { name: 'Plate Armor', source: 'XPHB' }] },
+    items: {
+      item: [
+        { name: '+2 Shield', source: 'XDMG' },
+        { name: 'Mithral Plate Armor', source: 'XDMG' },
+        { name: 'Elven Chain', source: 'XDMG' },
+        { name: 'Ring of Fire Resistance', source: 'XDMG' },
+        { name: 'Potion of Fire Giant Strength', source: 'XDMG' },
+      ],
+    },
+  };
+}
+
+const ench = (value, origin, extra = []) => ({
+  type: 'enchantment',
+  disabled: false,
+  origin,
+  changes: [{ key: 'name', mode: 5, value }, ...extra],
+});
+
+beforeAll(async () => {
+  await loadFoundryMechanics();
+});
+
+describe('mecânica das magias (TC-0106)', () => {
+  it('a magia de 2024 pega as activities do SRD, pelo nome do SRD', () => {
+    const gb = srdSpellMechanics({ name: 'Guiding Bolt', source: 'XPHB' });
+    expect(Object.values(gb.activities).map((a) => a.type)).toContain('attack');
+    const hl = srdSpellMechanics({ name: "Tasha's Hideous Laughter", source: 'XPHB' });
+    expect(Object.values(hl.activities).map((a) => a.type)).toContain('save');
+  });
+
+  it('a de 2014 não usa o SRD 2024; spellMechanics devolve CÓPIA', () => {
+    expect(srdSpellMechanics({ name: 'Guiding Bolt', source: 'PHB' })).toBeNull();
+    const a = spellMechanics({ name: 'Fire Bolt', source: 'XPHB' }, null);
+    const b = spellMechanics({ name: 'Fire Bolt', source: 'XPHB' }, null);
+    expect(a).toEqual(b);
+    expect(a).not.toBe(b);
+    Object.values(a.activities)[0].type = 'mutated';
+    expect(Object.values(spellMechanics({ name: 'Fire Bolt', source: 'XPHB' }, null).activities)[0].type).toBe('attack');
+  });
+
+  it('sem SRD nem overlay, monta ataque ou save dos campos do 5etools', () => {
+    const thunder = derivedSpellMechanics({
+      name: 'Thunderclap', level: 0, savingThrow: ['constitution'], damageInflict: ['thunder'],
+      entries: ['each creature ... {@damage 1d6} Thunder damage'],
+    });
+    const act = Object.values(thunder.activities)[0];
+    expect(act).toMatchObject({ type: 'save', save: { ability: 'con', dc: { calculation: 'spellcasting' } } });
+    expect(act.damage.parts[0]).toMatchObject({ number: 1, denomination: '6', types: ['thunder'], scaling: { mode: 'whole' } });
+    const steel = derivedSpellMechanics({
+      name: 'Steel Wind Strike', level: 5, spellAttack: ['M'], damageInflict: ['force'],
+      entries: ['{@damage 6d10} Force damage'], entriesHigherLevel: [],
+    });
+    expect(Object.values(steel.activities)[0]).toMatchObject({ type: 'attack', attack: { type: { value: 'melee', classification: 'spell' } } });
+    expect(derivedSpellMechanics({ name: 'Feign Death', level: 3, entries: [] })).toBeNull();
+  });
+
+  it('lançamento grátis: forward na concedida, uso do item no Mystic Arcanum', () => {
+    const granted = withFreeCasting(spellMechanics({ name: 'Command', source: 'XPHB' }, null), { hasUses: true, isArcanum: false });
+    const fwd = Object.values(granted.activities).find((a) => a.type === 'forward');
+    expect(fwd.consumption.targets).toEqual([{ type: 'itemUses', target: '', value: '1', scaling: {} }]);
+    expect(fwd.name).toMatch(/free casting/);
+    const arcanum = withFreeCasting(spellMechanics({ name: 'True Polymorph', source: 'XPHB' }, null), { hasUses: true, isArcanum: true });
+    for (const a of Object.values(arcanum.activities)) {
+      if (a.consumption?.spellSlot !== false) expect(a.consumption.targets.at(-1)).toMatchObject({ type: 'itemUses', target: '' });
+    }
+  });
+});
+
+describe('itens mágicos (TC-0107)', () => {
+  it('o import lê o encantamento do item base pelo nome e pela origem', () => {
+    const db = fakeDb();
+    const shield = { name: 'Shield', effects: [ench('{} +2', 'Compendium.dnd5e.equipment24.Item.dmgShield12or300')] };
+    expect(inventoryIdentity(shield, db)).toEqual({ name: '+2 Shield', source: 'XDMG' });
+    const mithral = { name: 'Plate Armor', effects: [ench('Mithral {}', 'Compendium.dnd5e.equipment24.Item.dmgMithralArmor0')] };
+    expect(inventoryIdentity(mithral, db)?.name).toBe('Mithral Plate Armor');
+    const elven = { name: 'Chain Shirt', effects: [ench('Elven {}', 'Compendium.dnd5e.equipment24.Item.dmgElvenChain000')] };
+    expect(inventoryIdentity(elven, db)?.name).toBe('Elven Chain');
+    const ring = {
+      name: 'Ring',
+      effects: [
+        ench('Ring of Resistance (garnet)', 'Compendium.dnd5e.equipment24.Item.dmgRingOfResista'),
+        { type: 'base', changes: [{ key: 'system.traits.dr.value', mode: 2, value: 'fire' }] },
+      ],
+    };
+    expect(inventoryIdentity(ring, db)?.name).toBe('Ring of Fire Resistance');
+    expect(inventoryIdentity({ name: 'Potion of Giant Strength (Fire)', effects: [] }, db)?.name).toBe('Potion of Fire Giant Strength');
+  });
+
+  it('encantamento de MAGIA não muda a identidade; o que não resolve vira snapshot', () => {
+    const db = fakeDb();
+    const staff = { name: 'Shield', effects: [ench('{} (Shillelagh)', 'Compendium.dnd5e.actors24.Actor.X.Item.Y')] };
+    expect(inventoryIdentity(staff, db)?.name).toBe('Shield');
+    expect(inventoryIdentity({ name: 'Homebrew Thing', effects: [] }, db)).toBeNull();
+  });
+
+  it('a mecânica do item vem do documento do SRD, em cópia', () => {
+    const belt = srdItemMechanics('Belt of Dwarvenkind');
+    expect(belt.effects.flatMap((e) => e.changes.map((c) => c.key))).toContain('system.abilities.con.value');
+    expect(srdItemMechanics('Potion of Fire Giant Strength').effects[0].changes[0]).toMatchObject({ key: 'system.abilities.str.value', value: '25' });
+    expect(srdItemMechanics('Ring of Acid Resistance')).toBeNull();
+  });
+});
+
+describe('export future-proof e interoperável (DDL-0167)', () => {
+  it('marca de procedência no formato do hash do 5etools', () => {
+    expect(toolsHash("Healer's Kit", 'XPHB')).toBe("healer's%20kit_xphb");
+    expect(toolsHash('Elf; Drow Lineage', 'XPHB')).toBe('elf%3b%20drow%20lineage_xphb');
+    expect(interopFlags('subclass', { name: 'Champion', source: 'XPHB', shortName: 'Champion', className: 'Fighter', classSource: 'XPHB' }).plutonium)
+      .toEqual({ page: 'classes.html', source: 'XPHB', hash: 'fighter_xphb,state:sub_champion_xphb=b1', propDroppable: 'subclass' });
+    expect(interopFlags('subclassFeature', {
+      name: 'Improved Critical', source: 'XPHB', level: 3, className: 'Fighter', classSource: 'XPHB', shortName: 'Champion', subclassSource: 'XPHB',
+    }).plutonium.hash).toBe('improved%20critical_fighter_xphb_champion_xphb_3_xphb');
+    expect(interopFlags('classFeature', { name: 'X', source: 'XPHB' })).toEqual({});
+  });
+
+  it('as chaves que o dnd5e moveu saem nas atuais, sem mexer no effect recebido', () => {
+    const old = { name: 'Belt', changes: [{ key: 'system.attributes.senses.darkvision', mode: 4, value: '60' }, { key: 'system.abilities.con.value', mode: 2, value: '2' }] };
+    const [now] = modernizeEffects([old]);
+    expect(now.changes.map((c) => c.key)).toEqual(['system.attributes.senses.ranges.darkvision', 'system.abilities.con.value']);
+    expect(old.changes[0].key).toBe('system.attributes.senses.darkvision');
+  });
+
+  it('as chaves de iniciativa mortas do overlay viram `init.bonus` (DDL-0277)', () => {
+    const [now] = modernizeEffects([{ name: 'X', changes: [{ key: 'system.attributes.init.total', mode: 2, value: '@abilities.int.mod' }, { key: 'system.attributes.init.roll.bonus', mode: 2, value: '@abilities.cha.mod' }] }]);
+    expect(now.changes.map((c) => c.key)).toEqual(['system.attributes.init.bonus', 'system.attributes.init.bonus']);
+  });
+});
+
+describe('talentos (T3)', () => {
+  it('o talento de 2024 pega a mecânica do SRD: o pool do Boon of Fate, a visão do Boon of Truesight', () => {
+    const fate = srdFeatMechanics({ name: 'Boon of Fate', source: 'XPHB' });
+    expect(fate.uses?.max).toBeTruthy();
+    const sight = srdFeatMechanics({ name: 'Boon of Truesight', source: 'XPHB' });
+    expect(sight.effects.flatMap((e) => e.changes.map((c) => c.key))).toContain('system.attributes.senses.truesight');
+    expect(srdFeatMechanics({ name: 'Boon of Fate', source: 'XGE' })).toBeNull();
+  });
+
+  it('Great Weapon Fighting: mínimo 3 só na arma corpo a corpo de duas mãos, sem mexer no objeto recebido', () => {
+    const two = { type: 'weapon', name: 'Greatsword', system: { type: { value: 'martialM' }, properties: ['hvy', 'two'], damage: { base: { number: 2, denomination: 6, custom: { enabled: false } } } } };
+    const vers = { type: 'weapon', name: 'Trident', system: { type: { value: 'martialM' }, properties: ['thr', 'ver'], damage: { base: { number: 1, denomination: 8, custom: { enabled: false } } } } };
+    const bow = { type: 'weapon', name: 'Longbow', system: { type: { value: 'martialR' }, properties: ['two'], damage: { base: { number: 1, denomination: 8, custom: { enabled: false } } } } };
+    const before = two.system;
+    greatWeaponMinimum([two, vers, bow]);
+    expect(two.system.damage.base.custom).toEqual({ enabled: true, formula: '2d6min3' });
+    expect(before.damage.base.custom.enabled).toBe(false);
+    expect(vers.system.damage.base.custom.enabled).toBe(false);
+    expect(bow.system.damage.base.custom.enabled).toBe(false);
+  });
+});
+
+describe('Martial Arts já aplicado nas armas de monge (TC-0241)', () => {
+  const effect = { _id: 'VnV6opO1b3apq6wt', type: 'enchantment', name: 'Dexterous Attacks & Martial Arts Damage', disabled: true, changes: [{ key: 'system.properties', mode: 2, value: 'fin' }] };
+  const martialArts = () => ({
+    type: 'feat', name: 'Martial Arts', _stats: { compendiumSource: 'Compendium.dnd5e.classes24.Item.phbmnkMartialArt' }, effects: [effect],
+    system: { activities: {
+      a: { _id: 'a', type: 'enchant', effects: [{ _id: effect._id }], restrictions: { type: 'weapon', categories: ['simpleM'], allowMagical: true } },
+      b: { _id: 'b', type: 'enchant', effects: [{ _id: effect._id }], restrictions: { type: 'weapon', categories: ['martialM'], properties: ['lgt'], allowMagical: true } },
+    } },
+  });
+  const weapon = (name, value, properties) => ({ type: 'weapon', name, system: { type: { value }, properties }, effects: [] });
+
+  it('ligado, com origem, em toda arma simples corpo a corpo e marcial leve; nunca no ataque desarmado nem na arma marcial pesada', () => {
+    const items = [martialArts(), weapon('Spear', 'simpleM', ['thr', 'ver']), weapon('Shortsword', 'martialM', ['fin', 'lgt']),
+      weapon('Longsword', 'martialM', ['ver']), weapon('Shortbow', 'simpleR', ['two']), weapon('Unarmed Strike', 'natural', ['fin'])];
+    standingEnchantments(items);
+    const enchanted = items.filter((i) => i.type === 'weapon' && i.effects.length).map((i) => i.name);
+    expect(enchanted).toEqual(['Spear', 'Shortsword']);
+    expect(items[1].effects[0]).toMatchObject({ disabled: false, origin: 'Compendium.dnd5e.classes24.Item.phbmnkMartialArt', name: effect.name });
+    expect(items[1].effects[0]._id).not.toBe(effect._id);
+    expect(effect.disabled).toBe(true);
+    standingEnchantments(items);
+    expect(items[1].effects).toHaveLength(1);
+  });
+
+  it('sem o Martial Arts, nenhuma arma muda', () => {
+    const items = [weapon('Spear', 'simpleM', ['thr'])];
+    standingEnchantments(items);
+    expect(items[0].effects).toEqual([]);
+  });
+});
+
+describe('ferramenta equipada (TC-0114)', () => {
+  it('o export leva equipped e attuned na ferramenta, que no dnd5e é equipável', () => {
+    const db = { 'items-base': { baseitem: [{ name: "Alchemist's Supplies", source: 'XPHB', type: 'AT|XPHB', weight: 8, value: 5000 }] } };
+    const character = { inventory: [{ uid: 'u1', itemId: "Alchemist's Supplies", source: 'XPHB', quantity: 1, equipped: true, attuned: false }] };
+    const [item] = buildInventoryItems(character, db);
+    expect(item.type).toBe('tool');
+    expect(item.system.equipped).toBe(true);
+    expect(item.system.attuned).toBe(false);
+  });
+});
+
+describe('toda magia com uma activity (DDL-0177)', () => {
+  it('sem SRD, overlay nem ataque ou save, sai uma utility que gasta o espaço', () => {
+    const m = spellMechanics({ name: 'Silvery Barbs', source: 'SCC', level: 1, entries: ['Magic.'] }, null);
+    const acts = Object.values(m.activities);
+    expect(acts).toHaveLength(1);
+    expect(acts[0].type).toBe('utility');
+    expect(acts[0].consumption.spellSlot).toBe(true);
+  });
+});
+
+describe('TC-0121: vínculo e documento do SRD nos itens (DDL-0180)', () => {
+  beforeAll(async () => { await loadFoundryMechanics(); });
+  it('o nome com as mesmas palavras liga ao documento; a contagem do pacote não', async () => {
+    const { equipmentUuid } = await import('./compendiumUuids');
+    expect(equipmentUuid('Potion of Greater Healing')).toBe(equipmentUuid('Potion of Healing (Greater)'));
+    expect(equipmentUuid('Belt of Fire Giant Strength')).toMatch(/BeltofGian|BeltOfGian/i);
+    expect(equipmentUuid('Arrows (20)')).toBeNull();
+  });
+  it('o documento do SRD dá tipo, subtipo e usos (Ring of the Ram, Healer\'s Kit)', () => {
+    const db = {
+      'items-base': { baseitem: [] },
+      items: { item: [
+        { name: 'Ring of the Ram', source: 'XDMG', type: 'RG|XDMG', rarity: 'rare', reqAttune: true, charges: 3, recharge: 'dawn', rechargeAmount: '{@dice 1d3}' },
+        { name: "Healer's Kit", source: 'XPHB', type: 'G|XPHB', rarity: 'none' },
+      ] },
+      'fluff-items': { itemFluff: [] },
+    };
+    const out = buildInventoryItems({ inventory: [
+      { uid: 'a', itemId: 'Ring of the Ram', source: 'XDMG', quantity: 1 },
+      { uid: 'b', itemId: "Healer's Kit", source: 'XPHB', quantity: 1 },
+    ] }, db);
+    const ring = out.find((i) => i.name === 'Ring of the Ram');
+    expect(ring.type).toBe('equipment');
+    expect(ring.system.type.value).toBe('ring');
+    expect(out.find((i) => i.name === "Healer's Kit").system.uses.max).toBe('10');
+  });
+});
+
+describe('T3e: campos estruturados do talento e alargamento por fonte (DDL-0184)', () => {
+  it('sentido e imunidade a condição do talento viram effect', async () => {
+    const { buildFeatItem: build } = await import('./foundryItems');
+    const it = build({ name: 'Odd Sight', source: 'X', category: 'G', senses: [{ blindsight: 10 }], conditionImmune: ['frightened'], entries: ['x'] }, { level: 4 });
+    const keys = it.effects.flatMap((e) => e.changes.map((c) => `${c.key}=${c.value}`));
+    expect(keys).toContain('system.attributes.senses.ranges.blindsight=10');
+    expect(keys).toContain('system.traits.ci.value=frightened');
+  });
+  it('o expanded "source=EGW" alarga com as magias do livro', async () => {
+    const { expandedSpellNames } = await import('./spellListWidening');
+    const db = { 'spells-egw': { spell: [{ name: 'Dark Star', source: 'EGW', level: 8 }, { name: 'Wristpocket', source: 'EGW', level: 2 }] } };
+    const sub = { additionalSpells: [{ expanded: { 1: [{ all: 'source=EGW' }] } }] };
+    expect([...expandedSpellNames(sub, { db, classLevel: 3, maxSlotLevel: 2 })].sort()).toEqual(['dark star', 'wristpocket']);
+  });
+});

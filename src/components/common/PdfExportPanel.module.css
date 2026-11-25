@@ -1,0 +1,82 @@
+/* =============================================================================
+ * PdfExportPanel.module.css: o painel de opções da ficha PDF
+ * =============================================================================
+ * CLASSES
+ *   .panel: a coluna do painel, na largura do diálogo.
+ *   .row, .label: uma linha rótulo + controle (quebra no celular estreito).
+ *   .hint: a frase que explica o atalho escolhido.
+ *   .more: o botão que abre o Customize.
+ *   .custom, .heading, .checks, .check: o bloco de personalização.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O Export é a ação primária no padrão do app (DDL-0129): borda accent, fundo
+ *     neutro. Accent preenchido é de indicador, não de botão.
+ *   - Os controles segmentados usam SegmentedControl (SegmentedControl.module.css).
+ * -------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(470px, calc(100vw - 72px));
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.label {
+  font-size: var(--fs-body);
+  color: var(--text-h);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.more {
+  appearance: none;
+  align-self: flex-start;
+  padding: var(--space-1) 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 4px 0 2px;
+}
+
+.heading {
+  margin: 6px 0 0;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: var(--space-1) var(--space-3);
+}
+
+.check {
+  font-size: 13.5px;
+}
+

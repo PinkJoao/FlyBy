@@ -1,0 +1,107 @@
+/* =============================================================================
+ * PlayTabs.module.css: o que as abas Features e Spells do play mode têm de próprio
+ * =============================================================================
+ * CLASSES
+ *   .pips, .pip, .pipOn, .count: o contador de um recurso (em bolinhas, ou em número).
+ *   .gem: o marcador em gema (losango) dos espaços de magia (DDL-0201).
+ *   .adjust: o contador tocável que abre o ajuste à mão (DDL-0202): pílula de borda fina,
+ *     32px de altura como o Chip (alvo de toque).
+ *   .slotBtn: o espaço do cabeçalho do círculo como botão; .headToggle: o título que recolhe.
+ *   .toggle: "Show unprepared spells".
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O resto das abas usa o CSS da ficha (SpellbookTab, InventoryTab) e os
+ *     componentes do app (Button, Chip): o que era cópia saiu (DDL-0160).
+ * -------------------------------------------------------------------------- */
+
+.pips {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 120px;
+  justify-content: flex-end;
+}
+
+.pip {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+}
+
+.pipOn {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.gem {
+  width: 9px;
+  height: 9px;
+  margin: 1px 2px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.gem.pipOn {
+  box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.adjust {
+  appearance: none;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+
+.adjust:hover:not(:disabled),
+.adjust:focus-visible {
+  border-color: var(--accent-border);
+}
+
+.adjust:disabled {
+  border-color: transparent;
+  cursor: default;
+}
+
+.slotBtn {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.slotBtn:hover:not(:disabled),
+.slotBtn:focus-visible {
+  border-color: var(--accent-border);
+}
+
+.headToggle {
+  appearance: none;
+  font: inherit;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.count {
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.toggle {
+  font-size: var(--fs-meta);
+}

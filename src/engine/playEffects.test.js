@@ -1,0 +1,328 @@
+// =============================================================================
+// playEffects.test: testes de condições, modificadores e efeitos
+// =============================================================================
+// FUNÇÕES
+//   st(patch): um estado de jogo com o patch por cima do descansado.
+//   run(state, event): o estado depois das operações do evento.
+//   ids(effects): os ids dos efeitos de uma rolagem.
+//
+// DECISÕES E ARMADILHAS
+//   - Cada condição testada é conferida contra o texto do XPHB: o que ela faz nas
+//     rolagens DO personagem; o resto é lembrete e não entra na soma.
+// -----------------------------------------------------------------------------
+
+import { describe, it, expect } from 'vitest';
+import { emptyPlayState, applyOp } from './playState';
+import {
+  conditionList, rollEffects, applyEffects, effectiveDefenses, effectiveAc, effectiveSpeed, makeModifier,
+  featureModifier, spellModifier, endConcentrationOps, restModifierOps, conditionEvent, modifierEvent, removeModifierEvent, conditionId, conditionName, sourceModifier, effectiveSenses,
+  defaultGrip, attackRollContext, effectiveSpeeds, spellEffectChoice, spellEffectReplacesRoll,
+} from './playEffects';
+import { hpView } from './playState';
+
+const st = (patch = {}) => ({ ...emptyPlayState(), ...patch });
+const run = (state, event) => event.ops.reduce(applyOp, state);
+const ids = (effects) => effects.map((e) => e.id);
+const catalog = {
+  stats: { ac: 15, speed: 30 },
+  defenses: { resist: ['fire'], immune: [], vulnerable: [] },
+  rollData: { 'scale.barbarian.rage-damage': 3, 'scale.rogue.sneak-attack': '3d6' },
+  features: ['improved critical', 'reliable talent'],
+};
+
+describe('condições', () => {
+  it('as incluídas entram junto (Unconscious traz Incapacitated e Prone)', () => {
+    expect(conditionList(st({ conditions: { unconscious: 1 } })).ids.sort()).toEqual(['incapacitated', 'prone', 'unconscious']);
+  });
+
+  it('Poisoned: desvantagem em ataque e teste, nada no save', () => {
+    const s = st({ conditions: { poisoned: 1 } });
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'attack' })).disadvantage).toBe(1);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'check', ability: 'dex' })).disadvantage).toBe(1);
+    expect(rollEffects(s, catalog, { kind: 'save', ability: 'con' })).toEqual([]);
+  });
+
+  it('Paralyzed: falha automática em saves de FOR e DES; deslocamento zero', () => {
+    const s = st({ conditions: { paralyzed: 1 } });
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'save', ability: 'dex' })).autoFail).toBe(true);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'save', ability: 'wis' })).autoFail).toBe(false);
+    expect(effectiveSpeed(catalog, s)).toBe(0);
+  });
+
+  it('Restrained: desvantagem em save de DES; Invisible: vantagem no ataque e na iniciativa', () => {
+    expect(applyEffects(rollEffects(st({ conditions: { restrained: 1 } }), catalog, { kind: 'save', ability: 'dex' })).disadvantage).toBe(1);
+    const inv = st({ conditions: { invisible: 1 } });
+    expect(applyEffects(rollEffects(inv, catalog, { kind: 'attack' })).advantage).toBe(1);
+    expect(applyEffects(rollEffects(inv, catalog, { kind: 'initiative', ability: 'dex' })).advantage).toBe(1);
+  });
+
+  it('Exaustão: -2 por nível em todo d20 e -5 pés por nível', () => {
+    const s = st({ conditions: { exhaustion: 2 } });
+    for (const kind of ['attack', 'check', 'save', 'deathSave', 'concentration', 'initiative']) {
+      expect(applyEffects(rollEffects(s, catalog, { kind, ability: 'str' })).parts).toEqual([{ label: 'Exhaustion 2', formula: -4 }]);
+    }
+    expect(rollEffects(s, catalog, { kind: 'damage' })).toEqual([]);
+    expect(effectiveSpeed(catalog, s)).toBe(20);
+  });
+
+  it('Frightened é condicional: vem ligado e com a nota', () => {
+    const [e] = rollEffects(st({ conditions: { frightened: 1 } }), catalog, { kind: 'attack' });
+    expect(e).toMatchObject({ defaultOn: true, dis: 1, note: 'while the source of fear is in sight' });
+    expect(applyEffects([e], []).disadvantage).toBe(0);
+  });
+
+  it('incapacitar quebra a concentração, o que dependia dela e a Rage, no mesmo evento', () => {
+    const rage = featureModifier({ key: 'action:rage' }, catalog);
+    const bless = spellModifier({ name: 'Bless', key: 'spell:x|Bless', concentration: true }).modifier;
+    const s = st({ concentration: { name: 'Bless' }, modifiers: [rage, bless] });
+    const next = run(s, conditionEvent({ state: s, id: 'stunned', level: 1 }));
+    expect(next.concentration).toBeNull();
+    expect(next.modifiers).toEqual([]);
+    expect(next.conditions).toEqual({ stunned: 1 });
+  });
+});
+
+describe('efeitos de feature e de magia', () => {
+  it('Rage: vantagem em FOR, dano extra só em ataque com FOR, resistência física', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:rage' }, catalog)] });
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'check', ability: 'str' })).advantage).toBe(1);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'save', ability: 'str' })).advantage).toBe(1);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'save', ability: 'dex' })).advantage).toBe(0);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'damage', attackAbility: 'str', weapon: true })).parts).toEqual([{ label: 'Rage damage', formula: '@scale.barbarian.rage-damage' }]);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'damage', attackAbility: 'dex', weapon: true })).parts).toEqual([]);
+    expect(effectiveDefenses(catalog, s).resist.sort()).toEqual(['bludgeoning', 'fire', 'piercing', 'slashing']);
+  });
+
+  it('Bless soma 1d4 no ataque, no save, no save de concentração e no de morte', () => {
+    const { modifier } = spellModifier({ name: 'Bless', key: 'k', concentration: true });
+    const s = st({ modifiers: [modifier] });
+    for (const kind of ['attack', 'save', 'concentration', 'deathSave']) {
+      expect(applyEffects(rollEffects(s, catalog, { kind, ability: 'wis' })).parts).toEqual([{ label: 'Bless', formula: '1d4' }]);
+    }
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'check', ability: 'wis' })).parts).toEqual([]);
+    expect(modifier.concentration).toBe('k');
+  });
+
+  it("Hunter's Mark é rider opcional; Shield of Faith soma 2 na CA", () => {
+    const hm = spellModifier({ name: "Hunter's Mark", key: 'h', concentration: true });
+    expect(hm.self).toBe(true);
+    const s = st({ modifiers: [hm.modifier, spellModifier({ name: 'Shield of Faith', key: 's', concentration: true }).modifier] });
+    const [rider] = rollEffects(s, catalog, { kind: 'damage', weapon: true }).filter((e) => e.source === "Hunter's Mark");
+    expect(rider.defaultOn).toBe(false);
+    expect(effectiveAc(catalog, s)).toBe(17);
+    expect(spellModifier({ name: 'Fireball' })).toBeNull();
+  });
+
+  it('Sneak Attack é rider opcional com a escala; as passivas mudam o crítico e o piso', () => {
+    expect(rollEffects(st(), catalog, { kind: 'damage', weapon: true }).find((e) => e.id === 'rider:sneak-attack')).toMatchObject({ defaultOn: false, part: { formula: '@scale.rogue.sneak-attack' } });
+    expect(applyEffects(rollEffects(st(), catalog, { kind: 'attack', weapon: true })).critThreshold).toBe(19);
+    expect(applyEffects(rollEffects(st(), catalog, { kind: 'check', proficient: true })).d20Min).toBe(10);
+    expect(applyEffects(rollEffects(st(), catalog, { kind: 'check', proficient: false })).d20Min).toBeNull();
+  });
+});
+
+describe('modificadores manuais e duração', () => {
+  it('o "-2 em tudo" do mestre pega cada alvo pedido, e a perícia por nome', () => {
+    const m = makeModifier({ label: 'DM penalty', effects: [{ targets: ['attack', 'check', 'save'], formula: '-2' }, { targets: ['skill:ste'], mode: 'advantage' }] });
+    const s = st({ modifiers: [m] });
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'save', ability: 'con' })).parts).toEqual([{ label: 'DM penalty', formula: '-2' }]);
+    expect(applyEffects(rollEffects(s, catalog, { kind: 'check', ability: 'dex', skill: 'ste' })).advantage).toBe(1);
+    expect(ids(rollEffects(s, catalog, { kind: 'damage' }))).toEqual([]);
+  });
+
+  it('o descanso tira o que é de descanso; terminar a concentração tira o que dependia dela', () => {
+    const manual = makeModifier({ label: 'Forever', effects: [] });
+    const short = makeModifier({ label: 'Until rest', duration: 'shortRest', effects: [] });
+    const long = makeModifier({ label: 'Until long rest', duration: 'longRest', effects: [] });
+    const rage = featureModifier({ key: 'action:rage' }, catalog);
+    const conc = makeModifier({ label: 'Bless', source: 'spell', concentration: 'k', effects: [] });
+    const s = st({ concentration: { name: 'Bless' }, modifiers: [manual, short, long, rage, conc] });
+    const removed = (ops) => ops.map((o) => s.modifiers.find((m) => m.id === o.remove).label).sort();
+    expect(removed(restModifierOps(s, 'sr'))).toEqual(['Rage', 'Until rest']);
+    expect(removed(restModifierOps(s, 'lr'))).toEqual(['Bless', 'Rage', 'Until long rest', 'Until rest']);
+    expect(endConcentrationOps(s)).toEqual([{ op: 'concentration', value: null }, { op: 'modifier', remove: conc.id }]);
+  });
+
+  it('ligar e tirar modificador viram eventos', () => {
+    const m = makeModifier({ label: 'Haste', ac: 2, speed: 30, effects: [] });
+    const on = run(st(), modifierEvent({ modifier: m }));
+    expect(effectiveAc(catalog, on)).toBe(17);
+    expect(effectiveSpeed(catalog, on)).toBe(60);
+    expect(run(on, removeModifierEvent({ state: on, id: m.id })).modifiers).toEqual([]);
+  });
+});
+
+describe('status, doenças e efeitos de outros', () => {
+  it('a chave é o nome em minúsculas, e o nome volta com maiúsculas', () => {
+    expect(conditionId('Sewer Plague')).toBe('sewer plague');
+    expect(conditionName('sewer plague')).toBe('Sewer Plague');
+    expect(conditionName('poisoned')).toBe('Poisoned');
+  });
+
+  it('um status fora do registro aparece mas não mexe em rolagem', () => {
+    const s = applyOp(emptyPlayState(), { op: 'condition', id: 'surprised', level: 1 });
+    expect(rollEffects(s, { features: [] }, { kind: 'attack' })).toEqual([]);
+    expect(conditionEvent({ state: emptyPlayState(), id: 'surprised', level: 1 }).label).toBe('Surprised');
+  });
+
+  it('o Bless lançado por outro vira o efeito curado, sem concentração', () => {
+    const m = sourceModifier('Bless');
+    expect(m.label).toBe('Bless');
+    expect(m.source).toBe('spell');
+    expect(m.concentration).toBeUndefined();
+    expect(sourceModifier('Fireball')).toBeNull();
+  });
+});
+
+describe('imunidade de um modificador (DDL-0245)', () => {
+  it('soma às imunidades da ficha', () => {
+    const d = effectiveDefenses({ defenses: { resist: [], immune: ['poison'], vulnerable: [] } }, st({ modifiers: [{ id: 'm1', immune: ['fire'] }] }));
+    expect(d.immune).toEqual(['poison', 'fire']);
+  });
+});
+
+describe('a empunhadura (DDL-0247)', () => {
+  const lance = { kind: 'weapon', name: 'Lance', range: 'melee', hands: 'mounted', properties: ['H', 'R', '2H'], damage: { dice: '1d10', types: ['piercing'] } };
+  const longsword = { kind: 'weapon', name: 'Longsword', range: 'melee', hands: 'versatile', versatile: '1d10', properties: ['V'], damage: { dice: '1d8', types: ['slashing'] } };
+  const shield = { shield: { name: 'Shield', handsFree: false } };
+  const animated = { shield: { name: 'Animated Shield', handsFree: true } };
+
+  it('a Lance começa a pé (duas mãos) sem escudo e montada (uma mão) com escudo', () => {
+    expect(defaultGrip(lance, {})).toBe('two');
+    expect(defaultGrip(lance, shield)).toBe('one');
+    expect(defaultGrip(lance, animated)).toBe('two');
+  });
+
+  it('a versátil começa com uma mão; a Two-Handed com duas', () => {
+    expect(defaultGrip(longsword, {})).toBe('one');
+    expect(defaultGrip({ ...longsword, hands: 'two' }, {})).toBe('two');
+  });
+
+  it('o contexto do dano leva as mãos e a empunhadura; a Lance não é Two-Handed para o Dueling', () => {
+    const ctx = attackRollContext(lance, 'damage', shield);
+    expect(ctx).toMatchObject({ hands: 'mounted', grip: 'one', twoHanded: false, versatile: true });
+  });
+
+  it('o Great Weapon Fighting na versátil acompanha a empunhadura', () => {
+    const cat = { features: ['great weapon fighting'], rollData: {} };
+    const one = rollEffects(emptyPlayState(), cat, attackRollContext(longsword, 'damage', {}));
+    const gwf = one.find((e) => /Great Weapon Fighting/.test(e.label));
+    expect(gwf).toMatchObject({ grip: 'two', defaultOn: false });
+    const onLance = rollEffects(emptyPlayState(), cat, attackRollContext(lance, 'damage', {})).find((e) => /Great Weapon Fighting/.test(e.label));
+    expect(onLance.defaultOn).toBe(true);
+  });
+});
+
+describe('as formas que dão defesa e deslocamento (TC-0177, DDL-0251)', () => {
+  const cat = { stats: { ac: 15, speeds: { walk: { feet: 30 } } }, defenses: { resist: [], immune: [], vulnerable: [] }, rollData: { classes: { ranger: { levels: 11 } } }, features: [] };
+
+  it('Rage of the Gods: voo igual ao deslocamento e as três resistências', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:rage-of-the-gods' }, cat)] });
+    expect(effectiveSpeeds(cat, s).fly.feet).toBe(30);
+    expect(effectiveDefenses(cat, s).resist).toEqual(['necrotic', 'psychic', 'radiant']);
+  });
+
+  it("Ghost Walk voa 10 pés; Djinni's Escape resiste a BPS; Wrath of the Wild dá +2 de CA no 11", () => {
+    expect(effectiveSpeeds(cat, st({ modifiers: [featureModifier({ key: 'action:ghost-walk' }, cat)] })).fly.feet).toBe(10);
+    expect(effectiveDefenses(cat, st({ modifiers: [featureModifier({ key: 'action:djinnis-escape' }, cat)] })).resist).toEqual(['bludgeoning', 'piercing', 'slashing']);
+    expect(effectiveAc(cat, st({ modifiers: [featureModifier({ key: 'action:wrath-of-the-wild' }, cat)] }))).toBe(17);
+    expect(effectiveAc(cat, st({ modifiers: [featureModifier({ key: 'action:wrath-of-the-wild' }, { ...cat, rollData: { classes: { ranger: { levels: 5 } } } })] }))).toBe(16);
+  });
+
+  it('Shadowform: o 1d6 do Void Empowerment desligado, só na magia com espaço psíquica ou necrótica', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:shadowform' }, cat)] });
+    const spell = rollEffects(s, cat, { kind: 'damage', spell: true, types: ['necrotic'] }).filter((e) => e.source === 'Shadowform');
+    expect(spell).toHaveLength(1);
+    expect(spell[0]).toMatchObject({ defaultOn: false, part: { formula: '1d6' } });
+    expect(rollEffects(s, cat, { kind: 'damage', spell: true, cantrip: true, types: ['necrotic'] }).filter((e) => e.source === 'Shadowform')).toEqual([]);
+    expect(rollEffects(s, cat, { kind: 'damage', spell: true, types: ['radiant'] }).filter((e) => e.source === 'Shadowform')).toEqual([]);
+    expect(rollEffects(s, cat, { kind: 'damage', weapon: true }).filter((e) => e.source === 'Shadowform')).toEqual([]);
+  });
+});
+
+describe('Dispersion e Holy Deliverance (DDL-0254)', () => {
+  const cat = { stats: { ac: 15, speeds: { walk: { feet: 30 } } }, defenses: { resist: [], immune: [], vulnerable: [] }, rollData: { prof: 6, abilities: { cha: { mod: 4 } } }, features: [] };
+  it('Dispersion resiste a todo dano e voa 40; Holy Deliverance diz a cura de CAR + PB', () => {
+    const s = st({ modifiers: [featureModifier({ key: 'action:dispersion' }, cat)] });
+    expect(effectiveDefenses(cat, s).resist).toHaveLength(13);
+    expect(effectiveSpeeds(cat, s).fly.feet).toBe(40);
+    expect(featureModifier({ key: 'action:holy-deliverance' }, cat).notes[0]).toMatch(/regains 10 Hit Points/);
+  });
+});
+
+describe('Mage Armor (Armor of Shadows, DDL-0257)', () => {
+  const cat = (hasArmor) => ({ stats: { ac: 12, hasArmor, acBreakdown: [{ label: 'Unarmored', value: 12, note: 'base' }] }, rollData: { abilities: { dex: { mod: 2 } } }, features: [] });
+  const mage = { id: 'm', label: 'Mage Armor', acBase: 13, effects: [] };
+  it('sem armadura a base vira 13 + DES; com armadura nada', () => {
+    expect(effectiveAc(cat(false), st({ modifiers: [mage] }))).toBe(15);
+    expect(effectiveAc(cat(true), st({ modifiers: [mage] }))).toBe(12);
+    expect(effectiveAc(cat(false), st({ modifiers: [mage, { id: 's', label: 'Shield of Faith', ac: 2, effects: [] }] }))).toBe(17);
+  });
+});
+
+describe('autobuffs de magia (DDL-0260)', () => {
+  const cat = { stats: { ac: 12, speed: 30, speeds: { walk: { feet: 30 } }, acBreakdown: [{ note: 'base', value: 12 }], profBonus: 4 }, rollData: { abilities: { dex: { mod: 2 } } }, defenses: { resist: [], immune: [] }, features: [] };
+  const on = (name, ctx = {}) => st({ modifiers: [spellModifier({ name, key: `spell:x|${name}` }, cat, ctx).modifier] });
+
+  it('Shield +5, Barkskin põe o piso de 17 (sem baixar a CA maior), Haste +2 e o dobro do deslocamento', () => {
+    expect(effectiveAc(cat, on('Shield'))).toBe(17);
+    expect(effectiveAc(cat, on('Barkskin'))).toBe(17);
+    expect(effectiveAc({ ...cat, stats: { ...cat.stats, ac: 19 } }, on('Barkskin'))).toBe(19);
+    const haste = on('Haste');
+    expect(effectiveAc(cat, haste)).toBe(14);
+    expect(effectiveSpeed(cat, haste)).toBe(60);
+    expect(effectiveSpeeds(cat, haste).walk.feet).toBe(60);
+    expect(rollEffects(haste, cat, { kind: 'save', ability: 'dex' }).some((e) => e.adv)).toBe(true);
+  });
+
+  it('deslocamentos: Longstrider +10, Fly 60, Spider Climb igual ao andar', () => {
+    expect(effectiveSpeed(cat, on('Longstrider'))).toBe(40);
+    expect(effectiveSpeeds(cat, on('Fly')).fly.feet).toBe(60);
+    expect(effectiveSpeeds(cat, on('Spider Climb')).climb.feet).toBe(30);
+  });
+
+  it('a escolha do lançamento: a perícia do Guidance, o tipo do Protection from Energy, Enlarge ou Reduce', () => {
+    expect(spellEffectChoice({ name: 'Guidance' }).options).toContainEqual({ label: 'Stealth', value: 'ste' });
+    expect(rollEffects(on('Guidance', { choice: 'ste' }), cat, { kind: 'check', ability: 'dex', skill: 'ste' })[0]).toMatchObject({ part: { formula: '1d4' } });
+    expect(rollEffects(on('Guidance', { choice: 'ste' }), cat, { kind: 'check', ability: 'str', skill: 'ath' })).toEqual([]);
+    expect(effectiveDefenses(cat, on('Protection from Energy', { choice: 'fire' })).resist).toEqual(['fire']);
+    expect(rollEffects(on('Enlarge/Reduce', { choice: 'reduce' }), cat, { kind: 'save', ability: 'str' })[0].dis).toBe(1);
+    expect(spellEffectChoice({ name: 'Shield' })).toBeNull();
+  });
+
+  it('Aid sobe o máximo e o atual pelo círculo; ao sair, o atual só cai se passar do máximo novo', () => {
+    const aid = spellModifier({ name: 'Aid', key: 'a' }, cat, { level: 3 }).modifier;
+    expect(aid.hpMax).toBe(10);
+    const hurt = { ...st({ modifiers: [aid] }), damage: 15 };
+    expect(hpView(hurt, 40)).toMatchObject({ max: 50, current: 35 });
+    expect(hpView(applyOp(hurt, { op: 'modifier', remove: aid.id }), 40)).toMatchObject({ max: 40, current: 35 });
+    const fresh = st({ modifiers: [aid] });
+    expect(hpView(applyOp(fresh, { op: 'modifier', remove: aid.id }), 40)).toMatchObject({ max: 40, current: 40 });
+  });
+
+  it('a magia que rola o próprio dano mantém a rolagem (Fire Shield); Bless e Haste não', () => {
+    expect(spellEffectReplacesRoll({ name: 'Fire Shield' })).toBe(false);
+    expect(spellEffectReplacesRoll({ name: 'Bless' })).toBe(true);
+    expect(spellEffectReplacesRoll({ name: 'Magic Missile' })).toBe(false);
+  });
+});
+
+describe('magias com dado sem caminho no jogo (DDL-0271)', () => {
+  it('Gift of Alacrity soma 1d8 na iniciativa; Zone of Amicability dá o piso 10 nas perícias de influência', () => {
+    const g = sourceModifier('Gift of Alacrity');
+    expect(g.effects[0]).toMatchObject({ targets: ['initiative'], formula: '1d8' });
+    const z = sourceModifier('Zone of Amicability');
+    expect(z.effects[0].d20Min).toBe(10);
+    expect(z.effects[0].targets).toContain('skill:prf');
+  });
+});
+
+describe('sentidos de efeito (DDL-0272)', () => {
+  it('a magia Darkvision dá 150 pés; o maior de cada sentido fica', () => {
+    const m = sourceModifier('Darkvision');
+    expect(m.senses).toEqual({ darkvision: 150 });
+    expect(effectiveSenses({ darkvision: 60 }, { modifiers: [m] })).toEqual({ darkvision: 150 });
+    expect(effectiveSenses({ darkvision: 300 }, { modifiers: [m] })).toEqual({ darkvision: 300 });
+    expect(effectiveSenses({ darkvision: 60 }, {})).toEqual({ darkvision: 60 });
+  });
+});

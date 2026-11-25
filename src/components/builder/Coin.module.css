@@ -1,0 +1,44 @@
+/* =============================================================================
+ * Coin.module.css: o disco de uma moeda
+ * =============================================================================
+ * CLASSES
+ *   .coin, .lg: o disco (16 px; 26 na janela).
+ *   .pp, .gp, .ep, .sp, .cp: o metal de cada uma.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - Cores fixas, fora dos temas: é o metal da moeda, o mesmo nos três.
+ * -------------------------------------------------------------------------- */
+
+.coin {
+  flex: none;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.35);
+}
+
+.lg {
+  width: 26px;
+  height: 26px;
+}
+
+.pp {
+  background: radial-gradient(circle at 35% 30%, #f2f6fa, #9fb2c4 70%);
+}
+
+.gp {
+  background: radial-gradient(circle at 35% 30%, #ffe28a, #c9922a 70%);
+}
+
+.ep {
+  background: radial-gradient(circle at 35% 30%, #dfeadf, #7f9b86 70%);
+}
+
+.sp {
+  background: radial-gradient(circle at 35% 30%, #eceff3, #8d959f 70%);
+}
+
+.cp {
+  background: radial-gradient(circle at 35% 30%, #e8a877, #9c5a2d 70%);
+}

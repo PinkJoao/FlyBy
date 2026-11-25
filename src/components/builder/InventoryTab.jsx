@@ -2,7 +2,8 @@
 // InventoryTab: a aba de inventário: navegar, equipar, atunar e guardar (Fase B1)
 // =============================================================================
 // O QUE FAZ
-//   Layout de gerenciador de inventário de VTT: moedas e carga no topo; busca e
+//   Layout de gerenciador de inventário de VTT: no topo, a faixa com o ouro, a carga e a
+//   sintonia (StatStrip, cada parte abre a sua janela, DDL-0321); busca e
 //   Shop numa linha (pedido do usuário); abaixo, Filtrar (o GRUPO de itens), Agrupar
 //   e Ordenar, três botões (ListControls, DDL-0314). Cada seção é um painel colapsável com linhas compactas (arte, tipo,
 //   propriedades, raridade) e o equipar à vista. Clicar abre o detalhe, que reúne
@@ -42,6 +43,12 @@
 //     celular, o campo de URL editável).
 // -----------------------------------------------------------------------------
 
+import { gpText } from '../../engine/currency';
+import AttunedWindow from './AttunedWindow';
+import CarriedWindow from './CarriedWindow';
+import CoinsWindow from './CoinsWindow';
+import Coin from './Coin';
+import StatStrip from '../common/StatStrip';
 import ListControls from '../common/ListControls';
 import SearchField from '../common/SearchField';
 import { useRef, useState } from 'react';
@@ -55,7 +62,6 @@ import { fileToPortrait } from '../common/imageFile';
 import { itemValue } from '../../engine/magicItemPrice';
 import itemEntity from '../../selector/entities/item';
 import { TUT } from '../../tutorial/anchors';
-import CurrencyCard from './CurrencyCard';
 import EquipmentShop from './EquipmentShop';
 import ItemSpells from './ItemSpells';
 import ItemPickerModal from './ItemPickerModal';
@@ -126,6 +132,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const [infoUid, setInfoUid] = useState(null);
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [picker, setPicker] = useState(null);
+  const [topWindow, setTopWindow] = useState(null);
   const imgFileRef = useRef(null);
 
   const entries = derived.inventory ?? [];
@@ -275,26 +282,60 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
 
   return (
     <div className={styles.tab}>
-      <div className={styles.header} data-tour={TUT.TAB_INV_TOP}>
-        <CurrencyCard currency={character.currency} onChange={onChangeCurrency} />
-        <div className={styles.statusCard}>
-          <div className={encumbrance.encumbered ? `${styles.carried} ${styles.carriedOver}` : styles.carried}>
-            <span className={styles.carriedText}>
-              {Math.round(encumbrance.totalWeight * 100) / 100} / {encumbrance.capacity} lb
-            </span>
-            <div className={styles.carriedBar} role="presentation">
-              <div
-                className={encumbrance.encumbered ? `${styles.carriedFill} ${styles.carriedFillOver}` : styles.carriedFill}
-                style={{ width: `${carriedPct}%` }}
-              />
-            </div>
-          </div>
-          <div className={styles.statusDivider} role="presentation" />
-          <span className={attunedCount > attunementMax ? `${styles.attuned} ${styles.attunedOver}` : styles.attuned}>
-            Attuned {attunedCount}/{attunementMax}
-          </span>
-        </div>
-      </div>
+      <StatStrip
+        dataTour={TUT.TAB_INV_TOP}
+        cells={[
+          {
+            key: 'gold',
+            icon: <Coin denom="gp" />,
+            value: gpText(character.currency),
+            label: 'Gold',
+            title: 'Your coins, as gold: see, change and convert them',
+            onClick: () => setTopWindow('coins'),
+          },
+          {
+            key: 'carried',
+            wide: true,
+            value: `${Math.round(encumbrance.totalWeight * 100) / 100} / ${encumbrance.capacity}`,
+            label: 'Carried, lb',
+            pct: carriedPct,
+            tone: encumbrance.encumbered ? 'danger' : undefined,
+            title: 'What you carry and what you can carry',
+            onClick: () => setTopWindow('carried'),
+          },
+          {
+            key: 'attuned',
+            value: `${attunedCount} / ${attunementMax}`,
+            label: 'Attuned',
+            tone: attunedCount > attunementMax ? 'danger' : undefined,
+            title: 'Your bonds with magic items',
+            onClick: () => setTopWindow('attuned'),
+          },
+        ]}
+      />
+      {topWindow === 'coins' && (
+        <CoinsWindow currency={character.currency} onChange={onChangeCurrency} onClose={() => setTopWindow(null)} />
+      )}
+      {topWindow === 'carried' && (
+        <CarriedWindow
+          encumbrance={encumbrance}
+          strength={derived.scores?.str ?? 10}
+          entries={entries}
+          db={db}
+          onInfo={(e) => setInfoUid(e.uid)}
+          onClose={() => setTopWindow(null)}
+        />
+      )}
+      {topWindow === 'attuned' && (
+        <AttunedWindow
+          entries={entries}
+          max={attunementMax}
+          db={db}
+          onToggle={toggleAttune}
+          onInfo={(e) => setInfoUid(e.uid)}
+          onClose={() => setTopWindow(null)}
+        />
+      )}
 
       <div className={styles.controls} data-tour={TUT.TAB_INV_CONTROLS}>
         <SearchField placeholder="Search inventory…" value={query} onChange={setQuery} />

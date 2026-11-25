@@ -256,8 +256,8 @@ const tabInventory = {
     },
     {
       anchor: TUT.TAB_INV_TOP,
-      title: 'Coins & load',
-      body: 'Your currency on the left; carried weight and attunement (max 3 items) on the right.',
+      title: 'Coins, load & attunement',
+      body: 'Your gold, what you carry and your bonds with magic items. Tap any of them: coins can be counted, spent and converted there.',
       placement: 'bottom',
     },
     {
@@ -284,8 +284,8 @@ const tabSpellbook = {
     },
     {
       anchor: TUT.TAB_SPELL_CARDS,
-      title: 'Slots & numbers',
-      body: 'Your spell slots (or pact slots), save DC and attack bonus, and how many cantrips and spells you can prepare.',
+      title: 'Your magic in numbers',
+      body: 'Save DC, attack bonus, spell slots and how many cantrips and spells you can have. Tap any number to learn what it means; the slots of each level show as gems in its group.',
       placement: 'bottom',
     },
     {

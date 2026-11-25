@@ -1,0 +1,273 @@
+/* =============================================================================
+ * StripWindows.module.css: as janelas da faixa do inventário e do grimório
+ * =============================================================================
+ * CLASSES
+ *   .body, .note, .heading, .form: o corpo, o texto, o título pequeno e os campos.
+ *   .total, .totalValue, .totalNote: o total das moedas; .modes, .denoms: os alternadores.
+ *   .rows, .row, .rowText, .rowName, .rowNote: uma linha (a moeda, o espaço, o uso).
+ *   .panel, .panelHead, .panelCount, .over: um bloco com título e conta.
+ *   .item, .itemHit, .thumb, .freeSlot: um item da lista e o vínculo livre.
+ *   .parts, .part, .partValue, .partLabel, .partResult: de que o número é feito.
+ *   .hero, .heroValue, .flavor: o número grande e a frase de abertura.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - O fundo da janela é --bg-soft: os blocos de dentro usam --bg.
+ * -------------------------------------------------------------------------- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.note {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.note > button {
+  padding-inline: 0;
+}
+
+.note b {
+  color: var(--text-h);
+}
+
+.note b.over {
+  color: var(--danger);
+}
+
+.heading {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.total {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.totalValue {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.totalNote {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.modes,
+.denoms {
+  align-self: center;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowName {
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-h);
+}
+
+.rowNote {
+  font-size: var(--fs-small);
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent-bg);
+  font-family: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.panelCount {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.panelCount.over {
+  color: var(--danger);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+}
+
+.item + .item {
+  border-top: 1px solid var(--border);
+}
+
+.itemHit {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.itemHit:hover .rowName {
+  color: var(--accent);
+}
+
+.thumb {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  font-size: var(--fs-lead);
+}
+
+.freeSlot {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-control);
+}
+
+.parts {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.part {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.part + .part {
+  border-left: 1px solid var(--border);
+}
+
+.partValue {
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.partLabel {
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partResult {
+  background: var(--accent-bg);
+}
+
+.partResult .partValue {
+  color: var(--accent);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.heroValue {
+  flex: none;
+  min-width: 52px;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.flavor {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text-h);
+}

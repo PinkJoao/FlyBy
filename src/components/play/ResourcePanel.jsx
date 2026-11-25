@@ -30,7 +30,7 @@ import { useDialogClose } from '../common/dialogContext';
 import SegmentedControl from '../common/SegmentedControl';
 import AmountStepper from './AmountStepper';
 import Button from '../common/Button';
-import { Pips } from './FeaturesTab';
+import Pips from '../common/Pips';
 import panel from './PlayPanels.module.css';
 import styles from './HpPanels.module.css';
 

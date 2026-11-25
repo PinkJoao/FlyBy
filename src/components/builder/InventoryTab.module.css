@@ -3,8 +3,6 @@
  * =============================================================================
  * CLASSES
  *   Cabeçalho
- *   .header, .statusCard, .carried*, .statusDivider, .attuned*: moedas e o card de
- *     carga e attunement; abaixo de 700px empilham.
  *   Controles
  *   .controls: busca e loja numa linha fixa; abaixo, Filtrar, Agrupar e Ordenar são o
  *     ListControls comum (o mesmo do grimório, DDL-0314).
@@ -41,92 +39,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-.header {
-  display: flex;
-  align-items: stretch;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.statusCard {
-  composes: card from '../common/Card.module.css';
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 10px 14px;
-  flex: none;
-}
-
-@media (max-width: 760px) {
-  .header {
-    flex-direction: column;
-  }
-  .header > * {
-    flex: none;
-  }
-  .statusCard {
-    justify-content: space-between;
-  }
-}
-
-.carried {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 96px;
-}
-
-.carriedText {
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  color: var(--text-h);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.carriedOver .carriedText {
-  color: var(--danger);
-}
-
-.carriedBar {
-  height: 5px;
-  border-radius: 4px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-
-.carriedFill {
-  height: 100%;
-  border-radius: 4px;
-  background: var(--accent);
-  opacity: 0.75;
-  transition: width 0.25s ease;
-}
-
-.carriedFillOver {
-  background: var(--danger);
-  opacity: 1;
-}
-
-.statusDivider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--border);
-}
-
-.attuned {
-  font-size: var(--fs-small);
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.attunedOver {
-  color: var(--danger);
 }
 
 .controls {

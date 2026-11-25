@@ -14,7 +14,6 @@
 // FUNÇÕES
 //   costLabel(activation): o rótulo curto de um custo de activity; os tipos são os de
 //     `activityActivationTypes` do dnd5e (o "shortRest" do Arcane Recovery saía cru, DDL-0219).
-//   Pips(props): o contador em bolinhas ou gemas (até 12) ou em número.
 //   showFeatureText(feature, onLog): o texto da feature num diálogo, com "Log to
 //     history".
 //   FeatureRow(props): uma linha; os botões dela (`buttons`) também vão no rodapé da prévia (`preview`), para
@@ -66,6 +65,7 @@
 //   - A sub-aba, o alternador e as seções recolhidas são só desta tela.
 // -----------------------------------------------------------------------------
 
+import Pips from '../common/Pips';
 import TabBar from '../common/TabBar';
 import SearchField from '../common/SearchField';
 import { useState } from 'react';
@@ -99,17 +99,6 @@ function costLabel(activation) {
   const base = COST_LABELS[activation?.type] ?? String(activation?.type ?? '').replace(/([a-z])([A-Z])/g, '$1 $2');
   if (['minute', 'hour'].includes(activation?.type)) return `${activation.value ?? 1} ${base}${(activation.value ?? 1) > 1 ? 's' : ''}`;
   return base;
-}
-
-/** O contador em bolinhas (até 12) ou em número; `shape="gem"` desenha gemas (os espaços de magia). */
-export function Pips({ left, max, shape }) {
-  if (max > 12) return <span className={play.count}>{left}/{max}</span>;
-  const base = shape === 'gem' ? `${play.pip} ${play.gem}` : play.pip;
-  return (
-    <span className={play.pips} aria-label={`${left} of ${max} left`}>
-      {Array.from({ length: max }, (_, i) => <span key={i} className={i < left ? `${base} ${play.pipOn}` : base} />)}
-    </span>
-  );
 }
 
 

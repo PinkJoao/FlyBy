@@ -7,13 +7,10 @@
  *
  * CLASSES
  *   Cabeçalho
- *   .header, .card, .cardLabel: os cards de slots, DC/ataque e contadores; CRESCEM
- *     para ocupar a linha no desktop e viram faixas rasas no mobile.
- *   .slots, .slot*: os espaços; .slotEmpty é o arcanum destravado e sem magia.
- *   .stats, .stat*: os números lado a lado, cada célula com o divisor à esquerda;
- *     .statOver é acima do limite, no vermelho da sobrecarga do inventário. Abaixo de 700 px
- *     a coluna não quebra (a quebra deixava o card crescer além da página, 337 px em 312 a
- *     360 px) e cada célula tem a largura do seu rótulo ("PREPARED" é o maior), DDL-0311.
+ *   O topo é a StatStrip comum (DDL-0321); .slotGem é a gema ao lado do número dos espaços.
+ *   .slots, .slot*: os espaços no cabeçalho do círculo, na aba Spells do jogo.
+ *   .groupSlots, .groupSlotsLabel, .emptyGroup: os espaços (gemas) no cabeçalho do grupo
+ *     de cada círculo, na ficha, e a linha do círculo com espaço e sem magia.
  *   .controls: busca e "Prepare spell"; o filtro por círculo, o agrupamento e a ordenação
  *     são o ListControls comum (o mesmo do inventário, DDL-0314).
  *   .prepareBtn: "Prepare spell" (Button), como o Shop; no limite (R11) não some, fica
@@ -38,31 +35,6 @@
   gap: var(--space-3);
 }
 
-.header {
-  display: flex;
-  align-items: stretch;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.card {
-  composes: card from '../common/Card.module.css';
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.cardLabel {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.55;
-}
-
 .slots {
   display: flex;
   flex-wrap: wrap;
@@ -79,8 +51,7 @@
   background: var(--bg);
 }
 
-.slotPact,
-.slotArcanum {
+.slotPact {
   border-color: var(--accent-border);
   background: var(--accent-bg);
 }
@@ -96,98 +67,50 @@
   opacity: 0.7;
 }
 
-.slotCount {
-  font-size: var(--fs-meta);
-  font-weight: 700;
-  color: var(--text-h);
-  font-variant-numeric: tabular-nums;
-}
-
-.slotPact .slotCount,
-.slotPact .slotLevel,
-.slotArcanum .slotCount,
-.slotArcanum .slotLevel {
+.slotPact .slotLevel {
   color: var(--accent);
   opacity: 1;
 }
 
-.stats {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-around;
-  gap: var(--space-1);
+.slotGem {
+  width: 9px;
+  height: 9px;
+  margin: 0 2px;
+  order: 2;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
-.statCell {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-1);
-  flex: 1 1 0;
-  min-width: 0;
-  justify-content: center;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
+.groupSlots {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  line-height: 1.2;
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 0 7px;
+  gap: 6px;
+  margin-left: auto;
 }
 
-.statValue {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-h);
-  font-variant-numeric: tabular-nums;
+.groupSlots ~ .groupSlots {
+  margin-left: var(--space-1);
 }
 
-.statOver {
-  color: var(--danger);
+.groupSlots ~ .panelChevron {
+  margin-left: var(--space-1);
 }
 
-.statLabel {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  opacity: 0.55;
+.groupSlotsLabel {
+  font-size: var(--fs-label);
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.statDivider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--border);
-}
-
-@media (max-width: 760px) {
-  .header {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    gap: var(--space-2);
-  }
-  .statCell {
-    flex: 1 1 auto;
-  }
-  .stat {
-    padding: 0 2px;
-  }
-  .statLabel {
-    letter-spacing: 0.2px;
-  }
-  .header > * {
-    flex: none;
-  }
-  .card {
-    padding: var(--space-2) var(--space-3);
-    gap: var(--space-1);
-  }
-  .statValue {
-    font-size: var(--fs-field);
-  }
+.emptyGroup {
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-meta);
+  line-height: 1.4;
+  color: var(--text-muted);
 }
 
 .controls {

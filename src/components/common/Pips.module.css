@@ -1,0 +1,47 @@
+/* =============================================================================
+ * Pips.module.css: o contador de um recurso em marcadores
+ * =============================================================================
+ * CLASSES
+ *   .pips, .pip, .pipOn, .count: em bolinhas (a cheia é o que sobra), ou em número.
+ *   .gem: o marcador em gema (losango) dos espaços de magia (DDL-0201).
+ * -------------------------------------------------------------------------- */
+
+.pips {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 120px;
+  justify-content: flex-end;
+}
+
+.pip {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+}
+
+.pipOn {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.gem {
+  width: 9px;
+  height: 9px;
+  margin: 1px 2px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.gem.pipOn {
+  box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.count {
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}

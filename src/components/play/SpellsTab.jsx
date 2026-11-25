@@ -29,7 +29,7 @@
 //   - Cada magia leva as etiquetas dos gastos com que pode ser lançada, na cor do
 //     gasto (spellCosts, a Tag no tom do gasto, DDL-0165, DDL-0199): o tempo dela e os das features
 //     (Quickened Spell, Mantle of Majesty...). A mesma magia pode ter duas.
-//   - Os espaços são MARCADORES (gemas, as `Pips` da aba Features com `shape="gem"`,
+//   - Os espaços são MARCADORES (gemas, as `Pips` comuns com `shape="gem"`,
 //     DDL-0201): a gema cheia é o que sobra; o pacto leva o rótulo e o tom accent.
 //   - Tocar nas gemas abre o ajuste à mão (DDL-0202, `onResource`). Por isso o cabeçalho
 //     do círculo é um div que recolhe ao toque, com o título como botão (teclado e
@@ -43,6 +43,9 @@
 //   - A origem e o círculo escolhidos e as seções recolhidas são só desta tela.
 // -----------------------------------------------------------------------------
 
+import { showSpellStat } from '../builder/spellStatDialog';
+import { spellNumbers } from '../../engine/spellStats';
+import StatStrip from '../common/StatStrip';
 import ListControls from '../common/ListControls';
 import TabBar from '../common/TabBar';
 import SearchField from '../common/SearchField';
@@ -61,7 +64,7 @@ import styles from '../builder/SpellbookTab.module.css';
 import Toggle from '../common/Toggle';
 import { TUT } from '../../tutorial/anchors';
 import play from './PlayTabs.module.css';
-import { Pips } from './FeaturesTab';
+import Pips from '../common/Pips';
 
 /** As magias cruas da origem derivada, pelo nome (com granted e castType). */
 function rawIndex(origin) {
@@ -127,31 +130,21 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
       else next.add(lv);
       return next;
     });
-  const stats = [
-    origin.saveDc != null ? { key: 'dc', label: 'Save DC', value: origin.saveDc } : null,
-    origin.attackBonus != null ? { key: 'atk', label: 'Attack', value: `${origin.attackBonus >= 0 ? '+' : ''}${origin.attackBonus}` } : null,
+  const source = (derived?.spellcasting?.origins ?? []).find((o) => o.key === origin.key);
+  const numbers = spellNumbers(source ? { ...source, saveDc: origin.saveDc, attackBonus: origin.attackBonus } : null, derived?.proficiencyBonus);
+  const signed = (n) => (n >= 0 ? `+${n}` : String(n));
+  const cell = (key, label, value) => {
+    const stat = numbers.find((n) => n.key === key);
+    return { key, label, value, title: stat ? `What ${label} means` : undefined, onClick: stat ? () => showSpellStat({ stat, origin: source, db }) : undefined };
+  };
+  const cells = [
+    origin.saveDc != null ? cell('dc', 'Save DC', origin.saveDc) : null,
+    origin.attackBonus != null ? cell('atk', 'Attack', signed(origin.attackBonus)) : null,
   ].filter(Boolean);
 
   return (
     <div className={styles.tab}>
-      {stats.length > 0 && (
-        <div className={styles.header}>
-          <div className={styles.card}>
-            <span className={styles.cardLabel}>{origin.label}</span>
-            <div className={styles.stats}>
-              {stats.map((s, i) => (
-                <span key={s.key} className={styles.statCell}>
-                  {i > 0 && <span className={styles.statDivider} role="presentation" />}
-                  <span className={styles.stat}>
-                    <span className={styles.statValue}>{s.value}</span>
-                    <span className={styles.statLabel}>{s.label}</span>
-                  </span>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {cells.length > 0 && <StatStrip cells={cells} />}
 
       {origins.length > 1 && (
         <TabBar

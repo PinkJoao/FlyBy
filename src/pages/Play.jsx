@@ -68,7 +68,7 @@
 //     attackFromInventory(attack): o "Attack" de uma arma na aba Inventory (DDL-0165).
 //     historySource(event), canReadHistory(event), readFromHistory(event) (no PlayInner): o que um card do
 //     histórico abre, se abre, e a descrição da magia ou da feature (DDL-0243, DDL-0245).
-//     ruleNamed(...names), historyPreview(event): desde o DDL-0251 TODO card abre algo: a magia ou a feature, o
+//     historyPreview(event): desde o DDL-0251 TODO card abre algo: a magia ou a feature, o
 //       item (pelo `uid` ou pela arma do ataque), a condição, a criatura da forma, a magia de um efeito e, fora
 //       da ficha, a regra do glossário do que aconteceu (Short Rest, Long Rest, Hit Point Dice, a perícia do
 //       teste...); sem regra, uma descrição do que foi gravado.
@@ -330,8 +330,7 @@ import { SKILL_LABEL } from '../components/builder/labels';
 import SelectorPanel from '../selector/SelectorPanel';
 import conditionEntity from '../selector/entities/condition';
 import itemEntity from '../selector/entities/item';
-import { glossaryIndexFor } from '../components/common/glossaryIndex';
-import { showRulePopup } from '../components/common/RulePopup';
+import { ruleOpener } from '../components/common/ruleNamed';
 import weaponEntity from '../selector/entities/weapon';
 import spellEntity from '../selector/entities/spell';
 import { showFeatureText } from '../components/play/featureText';
@@ -809,16 +808,6 @@ export function PlayInner({ character, derived, sideSlot, levelSlot, compactSlot
   };
 
   /** Uma regra do glossário pelo nome (a do XPHB primeiro), ou null. */
-  const ruleNamed = (...names) => {
-    const entries = glossaryIndexFor(db).entries;
-    for (const name of names) {
-      const hits = entries.filter((e) => e.name.toLowerCase() === String(name).toLowerCase());
-      const hit = hits.find((e) => e.source === 'XPHB') ?? hits[0];
-      if (hit) return hit;
-    }
-    return null;
-  };
-
   /** O que o card de um evento abre: a coisa da ficha, ou a regra do que aconteceu (DDL-0251). */
   const historyPreview = (event) => {
     const src = historySource(event);
@@ -855,9 +844,8 @@ export function PlayInner({ character, derived, sideSlot, levelSlot, compactSlot
       combat: p.dash ? ['Dash'] : p.readied != null ? ['Ready'] : p.moved != null || p.left != null ? ['Speed', 'Movement'] : ['Combat', 'Initiative'],
       attack: attack?.kind === 'unarmed' ? ['Unarmed Strike', 'Attack Roll'] : ['Attack Roll', 'Attack'],
     }[event.kind] ?? [];
-    const rule = ruleNamed(...names.filter(Boolean));
-    if (rule?.kind === 'rule' && rule.ruleEntry) return () => showRulePopup(rule.ruleEntry);
-    if (rule?.entity && rule.raw) return () => showDetailPopup({ entity: rule.entity, raw: rule.raw, db });
+    const openRule = ruleOpener(db, ...names.filter(Boolean));
+    if (openRule) return openRule;
     const lines = [...(added?.notes ?? []), ...(p.lines ?? []), 'Nothing on the character sheet goes with this entry; undo or redo it from the top of the history.'];
     return () => alert({ title: event.label, message: <div style={{ textAlign: 'left' }}>{lines.map((l) => <p key={l}>{l}</p>)}</div> });
   };

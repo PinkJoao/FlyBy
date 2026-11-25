@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   Espelha o InventoryTab de propósito, e a ordem da página segue a do resto do
-//   app: cards de estado no topo, sub-abas de ORIGEM (classe conjuradora, racial,
+//   app: no topo a faixa de números tocáveis (StatStrip: CD, ataque, espaços e os
+//   contadores, cada um explicado ao toque), sub-abas de ORIGEM (classe conjuradora, racial,
 //   talento e o balde de carga; ocultas com uma origem só), busca com "Prepare spell", Filtrar (o círculo),
 //   Agrupar e Ordenar (ListControls, DDL-0314), e a lista. Cada linha abre o DetailView da magia na moldura
 //   comum de preview (PreviewLayer, DDL-0296), com a origem na nota do rodapé.
@@ -32,6 +33,7 @@
 //     startReplace(entry), closePicker(), removeSpell(entry): o fluxo de troca.
 //     openPrepare(), undoSessionPick(name): o "Prepare spell" em modo múltiplo.
 //     inClassList(raw), excludeFromPicker(raw): os recortes do seletor.
+//   GroupSlots(props): os espaços de um círculo, em gemas, no cabeçalho do grupo.
 //   PreparedToggle(props): o radio de preparação (o mesmo átomo do EquipToggle).
 //   SpellThumb(props): arte do fluff, senão o glyph da escola.
 //   SpellRow(props): uma linha da lista. Exportada para a aba Spells do play mode
@@ -40,6 +42,10 @@
 //     dos gastos, DDL-0165), e não passa preparar nem trocar.
 //
 // DECISÕES E ARMADILHAS
+//   - Os espaços moram no cabeçalho do grupo de cada círculo (gemas, como no jogo) e na
+//     janela do Slots; agrupada por outra coisa, a lista não os mostra (os grupos não são
+//     círculos). O círculo com espaço e sem magia aparece vazio, com uma linha. Os usos
+//     das concedidas já são a etiqueta da linha de cada magia (DDL-0321).
 //   - Sem opção "None" no Group (DDL-0312, pedido do dono): a lista sempre tem seções. Com um círculo
 //     escolhido, "Level" sai (daria uma seção só) e o padrão é a escola (LEVEL_GROUP_OPTIONS).
 //   - A magia "Free" (o Savant do mago, `entry.free` de resolve.spellbookGrants) está no
@@ -107,6 +113,10 @@
 //     Heart Animal Speaker, DDL-0011).
 // -----------------------------------------------------------------------------
 
+import { showSpellSlots, showSpellStat } from './spellStatDialog';
+import { slotSummary, slotsAt, spellLimits, spellNumbers } from '../../engine/spellStats';
+import Pips from '../common/Pips';
+import StatStrip from '../common/StatStrip';
 import ListControls from '../common/ListControls';
 import TabBar from '../common/TabBar';
 import SearchField from '../common/SearchField';
@@ -172,19 +182,13 @@ const GROUP_BY_OPTIONS = [
 
 const LEVEL_GROUP_OPTIONS = GROUP_BY_OPTIONS.filter((o) => o.value !== 'level');
 
-const ABILITY_LABEL = {
-  str: 'Strength', dex: 'Dexterity', con: 'Constitution',
-  int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma',
-};
-
+const NUMBER_LABEL = { dc: 'Save DC', atk: 'Attack' };
+const LIMIT_LABEL = { cantrips: 'Cantrips', prepared: 'Prepared', known: 'Book', arcana: 'Arcanum' };
+const NO_SLOT_NOTE = 'Cast without expending a spell slot. See the feature text for how often.';
 const ORDINAL_SHORT = ['Cantrip', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
 
 function signed(n) {
   return n >= 0 ? `+${n}` : `${n}`;
-}
-
-function cap(s) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /** Todas as magias da origem, com a flag `granted` (sempre preparadas). */
@@ -364,7 +368,15 @@ export default function SpellbookTab({
     return a.raw.name.localeCompare(b.raw.name);
   });
 
-  const rows = groupRows(sorted, groupBy);
+  const byLevel = groupBy === 'level' && !isCargo;
+  const rows = groupRows(sorted, groupBy).map(([label, list]) => ({ label, list, level: byLevel ? list[0].raw.level : null }));
+  if (byLevel && category === 'all' && !q) {
+    const { levels: slotLevels, pact, arcana: secrets } = slotSummary(origin);
+    const open = new Set([...slotLevels.map((l) => l.level), ...secrets.map((a) => a.level), ...(pact ? [pact.level] : [])]);
+    for (const r of rows) open.delete(r.level);
+    for (const level of open) rows.push({ label: spellLevelLabel(level), list: [], level });
+    rows.sort((a, b) => a.level - b.level);
+  }
 
   const sectionKey = (label) => `${origin.key}|${category}|${groupBy}|${label}`;
   const toggleSection = (label) =>
@@ -378,7 +390,6 @@ export default function SpellbookTab({
 
   const cantripCount = origin.cantrips.length;
   const preparedCount = origin.prepared.length;
-  const knownCount = [...origin.prepared, ...(origin.unprepared ?? [])].filter((s) => !s.free).length;
   const cantripsFull = cantripCount >= origin.cantripLimit;
   const arcana = origin.arcana ?? [];
   const freeArcanumLevels = new Set(arcana.filter((a) => !a.spell).map((a) => a.level));
@@ -394,82 +405,34 @@ export default function SpellbookTab({
   const freeSlots = Math.max(0, origin.cantripLimit - cantripCount) + Math.max(0, origin.prepareLimit - preparedCount);
   const freeArcanumForPick = replIsArcanum ? new Set([...freeArcanumLevels, replRaw.level]) : freeArcanumLevels;
 
-  const uses = origin.uses ?? [];
-
-  const resourceChips = Object.entries(origin.slots ?? {}).map(([lvl, n]) => ({
-    key: `slot-${lvl}`,
-    label: ORDINAL_SHORT[Number(lvl)] ?? `${lvl}th`,
-    value: `×${n}`,
+  const about = (stat) => () => showSpellStat({ stat, origin, character, db });
+  const slots = slotSummary(origin);
+  const cells = isCargo ? [] : spellNumbers(origin, derived.proficiencyBonus).map((n) => ({
+    key: n.key,
+    value: n.key === 'atk' ? signed(n.value) : n.value,
+    label: NUMBER_LABEL[n.key],
+    title: `What ${NUMBER_LABEL[n.key]} means`,
+    onClick: about(n),
   }));
-  if (origin.pactSlots) {
-    resourceChips.push({
-      key: 'pact',
-      label: `Pact (${ORDINAL_SHORT[origin.pactSlots.level] ?? origin.pactSlots.level})`,
-      value: `×${origin.pactSlots.slots}`,
-      tone: 'pact',
+  if (!isCargo && (slots.total > 0 || slots.pact)) {
+    cells.push({
+      key: 'slots',
+      icon: <span className={styles.slotGem} aria-hidden="true" />,
+      value: slots.pact ? slots.pact.count : slots.total,
+      label: slots.pact ? `Pact, ${ORDINAL_SHORT[slots.pact.level]}` : 'Slots',
+      title: 'Your spell slots',
+      onClick: () => showSpellSlots({ origin, character, db }),
     });
   }
-  for (const a of arcana) {
-    resourceChips.push({
-      key: `arc-${a.level}`,
-      label: ORDINAL_SHORT[a.level],
-      value: '1/Long Rest',
-      tone: a.spell ? 'arcanum' : 'empty',
-      title: a.spell ? `Mystic Arcanum: ${a.spell.raw.name}` : 'Mystic Arcanum: no spell chosen yet',
-    });
-  }
-  for (const u of uses) {
-    resourceChips.push({
-      key: `use-${u.name}`,
-      label: u.name,
-      value: u.label,
-      title: u.note
-        ? `${u.name}: ${u.label} (${u.note})`
-        : u.label === 'No Spell Slot'
-          ? `${u.name}: cast without expending a spell slot. See the feature text for how often.`
-          : undefined,
-    });
-  }
-  const resourceLabel = Object.keys(origin.slots ?? {}).length || origin.pactSlots ? 'Spell Slots' : 'Uses';
-
-  const stats = [];
-  if (!isCargo) {
-    if (origin.ability) {
-      stats.push({ key: 'dc', value: origin.saveDc, label: 'Save DC' });
-      stats.push({ key: 'atk', value: signed(origin.attackBonus), label: 'Attack' });
-    }
-    if (origin.cantripLimit > 0 || cantripCount > 0) {
-      stats.push({
-        key: 'cantrips',
-        value: `${cantripCount}/${origin.cantripLimit}`,
-        label: 'Cantrips',
-        over: cantripCount > origin.cantripLimit,
-      });
-    }
-    if (origin.prepareLimit > 0 || preparedCount > 0) {
-      stats.push({
-        key: 'prepared',
-        value: `${preparedCount}/${origin.prepareLimit}`,
-        label: 'Prepared',
-        over: preparedCount > origin.prepareLimit,
-      });
-    }
-    if (origin.knownLimit != null) {
-      stats.push({
-        key: 'known',
-        value: `${knownCount}/${origin.knownLimit}`,
-        label: 'Known',
-        over: knownCount > origin.knownLimit,
-      });
-    }
-    if (arcana.length > 0) {
-      stats.push({
-        key: 'arcana',
-        value: `${arcana.length - freeArcanumLevels.size}/${arcana.length}`,
-        label: 'Arcanum',
-      });
-    }
-  }
+  const bars = isCargo ? [] : spellLimits(origin).map((l) => ({
+    key: l.key,
+    value: `${l.have}/${l.max}`,
+    label: LIMIT_LABEL[l.key],
+    pct: l.max ? (l.have / l.max) * 100 : 100,
+    tone: l.over ? 'danger' : l.missing ? 'warning' : undefined,
+    title: `What ${LIMIT_LABEL[l.key]} means`,
+    onClick: about(l),
+  }));
 
   const classEntry = origin.uid ? character.classes.find((c) => c.uid === origin.uid) : null;
   const ownedNames = new Set(all.map((s) => s.raw.name.toLowerCase()));
@@ -649,44 +612,7 @@ export default function SpellbookTab({
 
   return (
     <div className={styles.tab}>
-      <div className={styles.header} data-tour={TUT.TAB_SPELL_CARDS}>
-        {resourceChips.length > 0 && (
-          <div className={styles.card}>
-            <span className={styles.cardLabel}>{resourceLabel}</span>
-            <div className={styles.slots}>
-              {resourceChips.map((c) => (
-                <span
-                  key={c.key}
-                  className={c.tone ? `${styles.slot} ${styles[`slot${cap(c.tone)}`]}` : styles.slot}
-                  title={c.title}
-                >
-                  <span className={styles.slotLevel}>{c.label}</span>
-                  <span className={styles.slotCount}>{c.value}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {stats.length > 0 && (
-          <div className={styles.card}>
-            <span className={styles.cardLabel}>{ABILITY_LABEL[origin.ability] ?? 'Spells'}</span>
-            <div className={styles.stats}>
-              {stats.map((s, i) => (
-                <span key={s.key} className={styles.statCell}>
-                  {i > 0 && <span className={styles.statDivider} role="presentation" />}
-                  <span className={styles.stat}>
-                    <span className={s.over ? `${styles.statValue} ${styles.statOver}` : styles.statValue}>
-                      {s.value}
-                    </span>
-                    <span className={styles.statLabel}>{s.label}</span>
-                  </span>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      {cells.length + bars.length > 0 && <StatStrip dataTour={TUT.TAB_SPELL_CARDS} cells={cells} bars={bars} />}
 
       {origins.length > 1 && (
         <TabBar
@@ -748,7 +674,7 @@ export default function SpellbookTab({
       ) : sorted.length === 0 ? (
         <p className={styles.empty}>No spells match your search.</p>
       ) : (
-        rows.map(([label, list]) => {
+        rows.map(({ label, list, level }) => {
           const isCollapsed = label != null && collapsed.has(sectionKey(label));
           return (
             <section key={label ?? 'flat'} className={styles.panel}>
@@ -761,6 +687,7 @@ export default function SpellbookTab({
                 >
                   <span className={styles.panelTitle}>{label}</span>
                   <span className={styles.panelCount}>{list.length}</span>
+                  {level != null && slotsAt(origin, level).map((p) => <GroupSlots key={p.kind} pool={p} />)}
                   <span
                     className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
                     aria-hidden="true"
@@ -770,6 +697,13 @@ export default function SpellbookTab({
                 </button>
               )}
               <Collapse open={!isCollapsed}>
+                {list.length === 0 && (
+                  <p className={styles.emptyGroup}>
+                    {slotsAt(origin, level).some((p) => p.kind === 'arcanum')
+                      ? 'Your Mystic Arcanum of this level has no spell yet.'
+                      : 'No spell of this level yet. These slots can also cast a lower one, often stronger.'}
+                  </p>
+                )}
                 <ul className={styles.list}>
                   {list.map((entry, i) => {
                     const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
@@ -888,6 +822,17 @@ function PreparedToggle({ prepared, onClick, name }) {
   );
 }
 
+/** Os espaços de um círculo no cabeçalho do grupo, em gemas. */
+function GroupSlots({ pool }) {
+  return (
+    <span className={styles.groupSlots}>
+      {pool.kind === 'pact' && <span className={styles.groupSlotsLabel}>Pact {ORDINAL_SHORT[pool.level]}</span>}
+      {pool.kind === 'arcanum' && <span className={styles.groupSlotsLabel}>Arcanum</span>}
+      <Pips left={pool.count} max={pool.count} shape="gem" label={`${pool.count} ${pool.kind === 'pact' ? 'pact slots' : pool.kind === 'arcanum' ? 'use per Long Rest' : 'slots'}`} />
+    </span>
+  );
+}
+
 /** Thumbnail da magia: arte do fluff ou o glyph da escola. */
 function SpellThumb({ src, school, alt }) {
   const [broken, setBroken] = useState(false);
@@ -929,7 +874,7 @@ export function SpellRow({ entry, arcanum, thumb, onInfo, onReplace, onTogglePre
             {entry.free && <Tag tone="accent">Free</Tag>}
             {arcanum && <Tag tone="accent">Mystic Arcanum</Tag>}
             {arcanum && <Tag>1/Long Rest</Tag>}
-            {cast && <Tag>{cast}</Tag>}
+            {cast && <Tag title={entry.usesNote ?? (cast === 'No Spell Slot' ? NO_SLOT_NOTE : undefined)}>{cast}</Tag>}
             {isRitual(raw) && cast !== 'Ritual' && <Tag>Ritual</Tag>}
             {isConcentration(raw) && <Tag>Concentration</Tag>}
             {(costTags ?? []).map((t) => (

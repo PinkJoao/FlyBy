@@ -5,6 +5,8 @@
  *   .anchor: o âncora de altura zero, sticky no topo do rolador.
  *   .bar, .on: a barra (escondida acima da tela) e a barra à vista; é contêiner
  *     (`cbar`) para decidir se o retrato e os números cabem.
+ *   .full: a identidade saiu da tela: o retrato e os números aparecem (DDL-0331).
+ *   cbar-in (keyframes): a entrada presa à rolagem, pela linha do tempo `--flyby-top`.
  *   .start, .center, .end: as três partes (voltar com o retrato e os números,
  *     Build | Play, menu), na grade 1fr auto 1fr do topo da página.
  *   .who, .portrait: o retrato pequeno (volta ao topo).
@@ -17,6 +19,10 @@
  *     8 px com o histórico ao lado, que fica colado na página: com 24 a barra encostava nele, DDL-0325).
  *   - O retrato e os números só a partir de 560 px de barra: abaixo disso o
  *     alternador no centro não deixa espaço (o celular).
+ *   - A entrada vai pela linha do tempo `--flyby-top` (o view-timeline do topo da página,
+ *     declarado na pages/Character.module.css, `timeline-scope` no .shell): o range
+ *     `exit` é o topo cruzando a borda de cima, então a barra desce enquanto ele sobe,
+ *     sem vão (DDL-0331). Só com suporte e sem "reduzir movimento"; senão vale a .on.
  *   - O fundo é o --bg quase opaco com desfoque, como as barras do sistema: o fundo
  *     do tema (as estrelas, o pergaminho) ainda passa de leve por trás.
  * -------------------------------------------------------------------------- */
@@ -84,6 +90,38 @@
   }
   .stats {
     display: flex;
+  }
+}
+
+.who,
+.stats {
+  transition: opacity var(--dur-enter) var(--ease);
+}
+.bar:not(.full) .who,
+.bar:not(.full) .stats {
+  opacity: 0;
+  visibility: hidden;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .bar {
+      transition: none;
+      animation: cbar-in linear both;
+      animation-timeline: --flyby-top;
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes cbar-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
   }
 }
 

@@ -156,6 +156,7 @@
 
 .dock {
   position: sticky;
+  /* ATENÇÃO: 0, não 24: o sticky já desconta o padding-bottom de 24 px do .sideScroll (DDL-0331). */
   bottom: 0;
   z-index: 2;
   display: flex;

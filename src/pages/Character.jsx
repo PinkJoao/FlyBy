@@ -76,8 +76,9 @@
 //   - O GUIA aparece nos dois modos (DDL-0119): o jogador vê que falta algo em
 //     qualquer um. Ele edita a build, então abri-lo no jogo troca para a ficha e
 //     manda o pedido (`guideRequest`), que a ficha atende ao montar e devolve.
-//   - O topo compacto (CompactBar, DDL-0304 e DDL-0306) observa o bloco da identidade e
-//     repete o voltar, o Build | Play e o menu do topo; com espaço, também o retrato e os
+//   - O topo compacto (CompactBar, DDL-0304, DDL-0306, DDL-0331) entra enquanto o topo da
+//     página sai e repete o voltar, o Build | Play, o guia (sem a âncora do tutorial,
+//     `tour={false}`) e o menu; com a identidade fora e espaço, também o retrato e os
 //     números que cada modo põe no `compactSlot`, por portal. Celular e desktop.
 //   - A identidade e o lugar ao lado do nome (`levelSlot`, onde o nível ou os
 //     descansos entram por portal) ficam fora do conteúdo do modo: não remontam.
@@ -232,18 +233,18 @@ function morph(el, was, r) {
 }
 
 /** O botão do guia, enquanto faltar algo (ou mostrado de exemplo no tutorial). */
-function GuideButton({ character, db, derived, onOpen }) {
+function GuideButton({ character, db, derived, onOpen, tour = true }) {
   const tourAnchor = useTutorialStore((s) => (s.tourId ? s.steps[s.index]?.anchor ?? null : null));
   const pend = guidancePendencies(db, character, derived);
   const shown = guidanceActive(character) && pend.total > 0;
-  const demo = !shown && tourAnchor === TUT.SHEET_GUIDE;
+  const demo = tour && !shown && tourAnchor === TUT.SHEET_GUIDE;
   if (!shown && !demo) return null;
   return (
     <Button
       icon
       className={`${sheetPage.guideBtn} ${sheetPage.guideBtnAlert}`}
       onClick={shown ? onOpen : undefined}
-      data-tour={TUT.SHEET_GUIDE}
+      data-tour={tour ? TUT.SHEET_GUIDE : undefined}
       title={shown ? `${pend.total} choice${pend.total > 1 ? 's' : ''} left - open the guide` : 'The guide button (shown here for the tutorial)'}
     >
       <span aria-hidden="true"><Icon name="guide" /></span>
@@ -270,6 +271,7 @@ export default function Character() {
   const [sideSlot, setSideSlot] = useState(null);
   const [compactSlot, setCompactSlot] = useState(null);
   const [identityEl, setIdentityEl] = useState(null);
+  const [topEl, setTopEl] = useState(null);
   const pageRef = useRef(null);
   const sideRef = useRef(null);
   const snap = useRef(null);
@@ -316,13 +318,19 @@ export default function Character() {
       <div ref={pageRef} className={`${sheetPage.page} ${play ? styles.playPage : ''} motion-page`}>
         <CompactBar
           character={character}
-          watch={identityEl}
+          watch={topEl}
+          detail={identityEl}
           slotRef={setCompactSlot}
           back={<BackButton to="/" label="characters" />}
           center={<ModeSwitch mode={mode} onChange={switchMode} />}
-          end={<CharacterMenu character={character} db={db} derived={derived} save={save} mode={mode} tour={false} />}
+          end={
+            <>
+              <GuideButton character={character} db={db} derived={derived} onOpen={openGuide} tour={false} />
+              <CharacterMenu character={character} db={db} derived={derived} save={save} mode={mode} tour={false} />
+            </>
+          }
         />
-        <div className={`${sheetPage.topBar} ${styles.bar}`}>
+        <div ref={setTopEl} className={`${sheetPage.topBar} ${styles.bar}`}>
           <BackButton to="/" label="characters" />
           <ModeSwitch mode={mode} onChange={switchMode} dataTour={TUT.MODE_SWITCH} />
           <div className={`${sheetPage.topActions} ${styles.right}`}>

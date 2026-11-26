@@ -27,6 +27,9 @@ pdf-preview/
 testing/actors/
 # A volta do teste ao vivo no Foundry (scripts/foundry-live.js)
 testing/live-back/
+# Saídas dos testes de interface (Playwright, testing/ui)
+test-results/
+playwright-report/
 
 # Local reference source material (5e.tools / Foundry / Plutonium) — never committed or redistributed
 DnD Source Material/

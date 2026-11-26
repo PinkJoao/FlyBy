@@ -5,7 +5,8 @@
  *   .shell, .withSide, .side: a página e, no jogo, a coluna do histórico.
  *   .playPage: o espaço de baixo a mais no jogo (o aviso da última rolagem).
  *   .bar, .right: o topo em três partes (voltar, seletor, e à direita o guia e o
- *     menu).
+ *     menu); o .bar é a linha do tempo `--flyby-top` (view-timeline) por onde o topo
+ *     compacto entra, com `timeline-scope` no .shell (DDL-0331).
  *
  * DECISÕES E ARMADILHAS
  *   - A página é o .page da ficha (Builder.module.css), 760px centrados; tudo aqui
@@ -32,7 +33,12 @@
  *     uma classe só do Builder.module.css, sem depender da ordem dos arquivos.
  * -------------------------------------------------------------------------- */
 
+.shell {
+  timeline-scope: --flyby-top;
+}
+
 .shell .bar {
+  view-timeline: --flyby-top block;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -74,7 +80,8 @@
     top: 24px;
     margin-top: var(--space-5);
     padding-right: var(--space-5);
-    max-height: calc(100vh - 48px);
+    /* ATENÇÃO: sem folga embaixo: a lista do histórico vai até a base da tela (DDL-0331). */
+    max-height: calc(100vh - 24px);
     overflow-y: auto;
   }
 }

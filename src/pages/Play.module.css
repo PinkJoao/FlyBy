@@ -3,7 +3,11 @@
  * =============================================================================
  * CLASSES
  *   .sideContent, .sideScroll: o histórico dentro da coluna que a pages/Character
- *     põe ao lado; só a lista (e a barra do combate) rola, em .sideScroll.
+ *     põe ao lado; só a lista (e a barra do combate) rola, em .sideScroll. A lista vai
+ *     até a base da tela, e o topo dela esmaece ao rolar (DDL-0331).
+ *   play-history-fade (keyframes, com @property --hist-fade): o esmaecido do topo cresce
+ *     de 0 a 32 px nos primeiros 32 px rolados (`animation-timeline: scroll(self)`); sem
+ *     linha do tempo de rolagem (Firefox) a lista só não esmaece.
  *   .historyHead, .historyActions: o título do histórico com desfazer, refazer e limpar (o Button de
  *     ícone, buttonClass, DDL-0313).
  *   .restGroup, .restBtn: Short rest e Long rest no lugar do controle de nível.
@@ -143,7 +147,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 24px);
 }
 
 .sideScroll {
@@ -153,6 +157,28 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding-bottom: 24px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black var(--hist-fade));
+  mask-image: linear-gradient(to bottom, transparent, black var(--hist-fade));
+  animation: play-history-fade linear both;
+  animation-timeline: scroll(self);
+  animation-range: 0px 32px;
+}
+
+@property --hist-fade {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes play-history-fade {
+  from {
+    --hist-fade: 0px;
+  }
+
+  to {
+    --hist-fade: 32px;
+  }
 }
 
 .historyHead {

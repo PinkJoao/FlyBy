@@ -20,7 +20,8 @@
 //     passam por chooseBackground e clearBackground (originSetup.js), os mesmos do guia.
 //   - O texto do background pronto fica nele: o info do campo e o seletor o mostram. O
 //     campo de texto da aba é sempre a história do jogador (resposta B6).
-//   - O talento de um background pronto vem travado (o info fica); os do Ravenloft dão
+//   - O talento de um background pronto vem travado, com o cadeado e a dica (DDL-0330; o
+//     info fica); os do Ravenloft dão
 //     uma escolha entre o nomeado e os Dark Gifts (`only` na entity). A lista que o
 //     background fixa (o Magic Initiate) sai das sub-escolhas.
 //   - +1/+1/+1 num background pronto não tem escolha: vira uma linha de texto.
@@ -148,7 +149,7 @@ export function OriginFeatPicker({ character, db, onChangeOrigin, showInfo = tru
         placeholder="Choose an origin feat…"
         showInfo={showInfo}
         locked={setup.locked}
-        lockedNote="From your background"
+        lockedHint={`The ${backgroundOf(character, db)?.name ?? 'chosen'} background gives this feat. To pick another, switch to the Custom Background.`}
         initialFilterState={guided ? { prereq: { ok: 'include' }, ...setup.filters } : setup.filters}
         onSelect={setFeat}
         onClear={() => onChangeOrigin({ ...origin, originFeat: null })}

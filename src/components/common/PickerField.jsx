@@ -12,7 +12,11 @@
 //   PickerField(props): o campo. `autoOpen` abre uma vez ao montar ("adicionar
 //     multiclasse"), `onClose` avisa o cancelamento, `initialFilterState` vai para
 //     o painel. `locked` (o talento que um background pronto dá, DDL-0328) mostra o
-//     escolhido sem abrir nem limpar, com o `lockedNote` no lugar da fonte; o info fica.
+//     escolhido sem abrir nem limpar; o info fica.
+//
+// DECISÕES E ARMADILHAS
+//   - Travado, o X vira um cadeado (DDL-0330): o `lockedHint` é o título no hover e, num
+//     toque no cadeado ou no campo, abre num aviso, porque o celular não tem hover.
 // -----------------------------------------------------------------------------
 
 import Button from './Button';
@@ -22,6 +26,7 @@ import DetailView from './DetailView';
 import styles from './PickerField.module.css';
 import PreviewLayer from './PreviewLayer';
 import Icon from './Icon';
+import { alert } from './dialog';
 
 /**
  * O gatilho de um seletor, com limpar e info.
@@ -38,7 +43,7 @@ import Icon from './Icon';
  * @param {()=>void} [props.onClose]
  * @param {object} [props.initialFilterState]
  * @param {boolean} [props.locked]
- * @param {string} [props.lockedNote]
+ * @param {string} [props.lockedHint]
  */
 export default function PickerField({
   entity,
@@ -53,7 +58,7 @@ export default function PickerField({
   onClose,
   initialFilterState,
   locked = false,
-  lockedNote,
+  lockedHint,
 }) {
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState(false);
@@ -65,6 +70,8 @@ export default function PickerField({
       setOpen(true);
     }
   }, [autoOpen, current]);
+
+  const showLock = () => alert({ title: 'Fixed', message: lockedHint ?? 'This choice is fixed.' });
 
   const cancel = () => {
     setOpen(false);
@@ -80,17 +87,14 @@ export default function PickerField({
         <button
           type="button"
           className={locked ? `${styles.trigger} ${styles.locked}` : styles.trigger}
-          onClick={locked ? undefined : () => setOpen(true)}
+          onClick={locked ? showLock : () => setOpen(true)}
           aria-disabled={locked || undefined}
+          title={locked ? lockedHint : undefined}
         >
           {current ? (
             <>
               <span className={styles.name}>{current.label}</span>
-              {locked && lockedNote ? (
-                <span className={styles.source}>{lockedNote}</span>
-              ) : (
-                current.source && <span className={styles.source}>{current.source}</span>
-              )}
+              {current.source && <span className={styles.source}>{current.source}</span>}
             </>
           ) : (
             <span className={styles.ph}>{placeholder}</span>
@@ -99,6 +103,11 @@ export default function PickerField({
         {current && showInfo && (
           <Button icon className={styles.infoBtn} onClick={() => setInfo(true)} aria-label={`About ${current.label}`}>
             <Icon name="info" />
+          </Button>
+        )}
+        {current && locked && (
+          <Button icon className={styles.lockBtn} onClick={showLock} aria-label={lockedHint ?? 'Fixed'} title={lockedHint}>
+            <Icon name="lock" />
           </Button>
         )}
         {current && !locked && (

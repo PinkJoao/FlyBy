@@ -37,6 +37,7 @@ const TREE = 'https://api.github.com/repos/game-icons/icons/git/trees/master?rec
 const ICONS = {
   close: 'lucide:x',
   info: 'lucide:info',
+  lock: 'lucide:lock',
   chevron: 'lucide:chevron-down',
   chevronUp: 'lucide:chevron-up',
   chevronLeft: 'lucide:chevron-left',

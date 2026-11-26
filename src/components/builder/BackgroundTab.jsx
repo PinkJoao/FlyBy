@@ -27,6 +27,8 @@
 //     (DDL-0328). Filtro de Categoria com Origin pré-marcado.
 //   - O texto do campo da história é sempre do jogador; o do background pronto abre pelo
 //     info do campo de background (resposta B6 do dono).
+//   - O seletor de background vai sem título nem dica (DDL-0330): a barra de abas já diz
+//     "Background".
 //   - O título "Ability Score Boosts" é link para a regra do glossário (DDL-0032).
 // -----------------------------------------------------------------------------
 
@@ -38,15 +40,10 @@ import styles from './BackgroundTab.module.css';
 
 export default function BackgroundTab({ character, db, onChangeOrigin, onChangeIdentity }) {
   const boostsRule = namedRuleEntry(db, 'Ability Score and Modifier|XPHB');
-  const ready = !!character.origin?.background;
 
   return (
     <div className={styles.tab}>
       <section className={styles.section} data-tour={TUT.TAB_BG_PICK}>
-        <div className={styles.sectionHead}>
-          <h3 className={styles.sectionTitle}>Background</h3>
-          <span className={styles.sectionHint}>{ready ? 'A ready-made origin from the books.' : 'Build it piece by piece, or pick one from the books.'}</span>
-        </div>
         <BackgroundPicker character={character} db={db} onChangeOrigin={onChangeOrigin} />
       </section>
 

@@ -4,6 +4,7 @@
  * CLASSES
  *   .field, .trigger, .name, .source, .ph, .clearX: o campo.
  *   .infoBtn: o botão (i), a descrição do item selecionado.
+ *   .lockBtn: o cadeado do campo travado, no lugar do X (DDL-0330);
  *   .locked: o campo travado (o talento do background pronto): sem ponteiro, fundo
  *     transparente.
  *   .infoMuted: a descrição que falta; a descrição abre na moldura comum
@@ -77,4 +78,8 @@ button.infoBtn {
 button.clearX:hover:not(:disabled) {
   border-color: var(--danger);
   color: var(--danger);
+}
+
+button.lockBtn {
+  color: var(--text-muted);
 }

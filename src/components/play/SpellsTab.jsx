@@ -48,6 +48,7 @@ import { spellNumbers } from '../../engine/spellStats';
 import StatStrip from '../common/StatStrip';
 import ListControls from '../common/ListControls';
 import TabBar from '../common/TabBar';
+import TabPanel from '../common/TabPanel';
 import SearchField from '../common/SearchField';
 import { useState } from 'react';
 import { slotPoolsFor } from '../../engine/playCast';
@@ -144,8 +145,6 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
 
   return (
     <div className={styles.tab}>
-      {cells.length > 0 && <StatStrip cells={cells} />}
-
       {origins.length > 1 && (
         <TabBar
           variant="sub"
@@ -157,76 +156,80 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
         />
       )}
 
-      <div className={styles.controls}>
-        <SearchField placeholder="Search spells…" value={query} onChange={setQuery} />
-        <ListControls
-          filterOptions={[{ value: 'all', label: 'All spells' }, ...levels.map((lv) => ({ value: lv, label: spellLevelLabel(lv) }))]}
-          filter={category}
-          onFilter={setCategory}
-        />
-      </div>
+      <TabPanel active={origin.key} order={origins.map((o) => o.key)}>
+        {cells.length > 0 && <StatStrip cells={cells} />}
 
-      {sections.length === 0 && <p className={styles.empty}>{needle ? 'No spells match your search.' : 'No prepared spells here.'}</p>}
+        <div className={styles.controls}>
+          <SearchField placeholder="Search spells…" value={query} onChange={setQuery} />
+          <ListControls
+            filterOptions={[{ value: 'all', label: 'All spells' }, ...levels.map((lv) => ({ value: lv, label: spellLevelLabel(lv) }))]}
+            filter={category}
+            onFilter={setCategory}
+          />
+        </div>
 
-      {sections.map(([lv, list], i) => {
-        const pools = origin.kind === 'item' ? [] : slotPoolsFor(catalog, state, lv);
-        const isCollapsed = collapsed.has(lv);
-        return (
-          <section key={lv} className={styles.panel} data-tour={i === sections.findIndex(([l]) => l > 0) ? TUT.PLAY_SPELLS_SLOTS : undefined}>
-            <div className={styles.panelHead} onClick={() => toggle(lv)}>
-              <button type="button" className={play.headToggle} aria-expanded={!isCollapsed}>
-                <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
-              </button>
-              <span className={styles.panelCount}>{list.length}</span>
-              {pools.length > 0 && (
-                <span className={styles.slots}>
-                  {pools.map((p) => (
-                    <PoolChip key={p.key} pool={p} onResource={onResource} />
-                  ))}
+        {sections.length === 0 && <p className={styles.empty}>{needle ? 'No spells match your search.' : 'No prepared spells here.'}</p>}
+
+        {sections.map(([lv, list], i) => {
+          const pools = origin.kind === 'item' ? [] : slotPoolsFor(catalog, state, lv);
+          const isCollapsed = collapsed.has(lv);
+          return (
+            <section key={lv} className={styles.panel} data-tour={i === sections.findIndex(([l]) => l > 0) ? TUT.PLAY_SPELLS_SLOTS : undefined}>
+              <div className={styles.panelHead} onClick={() => toggle(lv)}>
+                <button type="button" className={play.headToggle} aria-expanded={!isCollapsed}>
+                  <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
+                </button>
+                <span className={styles.panelCount}>{list.length}</span>
+                {pools.length > 0 && (
+                  <span className={styles.slots}>
+                    {pools.map((p) => (
+                      <PoolChip key={p.key} pool={p} onResource={onResource} />
+                    ))}
+                  </span>
+                )}
+                <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
+                  <Icon name="chevron" />
                 </span>
-              )}
-              <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
-                <Icon name="chevron" />
-              </span>
-            </div>
-            <Collapse open={!isCollapsed}>
-              <ul className={styles.list}>
-                {list.map((s) => {
-                  const entry = { ...entryOf(s), prepared: s.prepared };
-                  const usesKey = s.uses ?? s.chargeKey ?? null;
-                  const uses = usesKey ? (catalog.resources ?? []).find((r) => r.key === usesKey) : null;
-                  return (
-                    <SpellRow
-                      key={s.key}
-                      entry={entry}
-                      arcanum={!!s.arcanum}
-                      thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
-                      onInfo={() => {
-                        const label = onUse && activeOf(s) ? 'Use' : 'Cast';
-                        const off = s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s));
-                        showDetailPopup({ entity: spellEntity, raw: entry.raw, db, actions: off ? [] : [{ label, value: 'cast', tone: 'primary' }] })
-                          .then((v) => v === 'cast' && (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s)));
-                      }}
-                      onCast={() => (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s))}
-                      castLabel={onUse && activeOf(s) ? 'Use' : 'Cast'}
-                      castDisabled={s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s))}
-                      usesLeft={uses ? `${remainingOf(state, uses.key, uses.max)}/${uses.max}` : null}
-                      costTags={spellCosts(s, catalog).map((c) => ({
-                        key: `${c.cost}|${c.source ?? ''}`,
-                        label: c.label,
-                        tone: c.cost,
-                        title: c.source ? `${c.label} with ${c.source}${c.spend ? ` (${c.spend.amount} ${c.spend.name})` : ''}` : `Cast as ${c.label}`,
-                      }))}
-                    />
-                  );
-                })}
-              </ul>
-            </Collapse>
-          </section>
-        );
-      })}
+              </div>
+              <Collapse open={!isCollapsed}>
+                <ul className={styles.list}>
+                  {list.map((s) => {
+                    const entry = { ...entryOf(s), prepared: s.prepared };
+                    const usesKey = s.uses ?? s.chargeKey ?? null;
+                    const uses = usesKey ? (catalog.resources ?? []).find((r) => r.key === usesKey) : null;
+                    return (
+                      <SpellRow
+                        key={s.key}
+                        entry={entry}
+                        arcanum={!!s.arcanum}
+                        thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
+                        onInfo={() => {
+                          const label = onUse && activeOf(s) ? 'Use' : 'Cast';
+                          const off = s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s));
+                          showDetailPopup({ entity: spellEntity, raw: entry.raw, db, actions: off ? [] : [{ label, value: 'cast', tone: 'primary' }] })
+                            .then((v) => v === 'cast' && (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s)));
+                        }}
+                        onCast={() => (onUse && activeOf(s) ? onUse(origin, s) : onCast(origin, s))}
+                        castLabel={onUse && activeOf(s) ? 'Use' : 'Cast'}
+                        castDisabled={s.prepared === false && !s.ritualOnly && !(onUse && activeOf(s))}
+                        usesLeft={uses ? `${remainingOf(state, uses.key, uses.max)}/${uses.max}` : null}
+                        costTags={spellCosts(s, catalog).map((c) => ({
+                          key: `${c.cost}|${c.source ?? ''}`,
+                          label: c.label,
+                          tone: c.cost,
+                          title: c.source ? `${c.label} with ${c.source}${c.spend ? ` (${c.spend.amount} ${c.spend.name})` : ''}` : `Cast as ${c.label}`,
+                        }))}
+                      />
+                    );
+                  })}
+                </ul>
+              </Collapse>
+            </section>
+          );
+        })}
 
-      <div data-tour={TUT.PLAY_SPELLS_TOGGLE}><Toggle className={play.toggle} checked={showAll} onChange={setShowAll} label="Show unprepared spells" /></div>
+        <div data-tour={TUT.PLAY_SPELLS_TOGGLE}><Toggle className={play.toggle} checked={showAll} onChange={setShowAll} label="Show unprepared spells" /></div>
+      </TabPanel>
     </div>
   );
 }

@@ -25,6 +25,7 @@
 // -----------------------------------------------------------------------------
 
 import TabBar from '../common/TabBar';
+import TabPanel from '../common/TabPanel';
 import { useState } from 'react';
 import { createClassEntry } from '../../schema/character';
 import { resolveClassObj, resolveSubclassObj, ownedFromDb } from '../../engine/resolve';
@@ -145,96 +146,98 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
         }
       />
 
-      <div className={styles.classCard} data-tour={TUT.TAB_CLASS_CARD}>
-        <div className={styles.classRow}>
-          <div className={styles.classPick}>
-            <span className={styles.rowHead}>
-              <Tag>{c.isOriginalClass ? 'Original' : 'Multiclass'}</Tag>
-            </span>
-            <PickerField
-              // ATENÇÃO: a key por slot dá a cada classe o PRÓPRIO PickerField; sem ela o autoOpen trava.
-              key={c.uid}
-              entity={classEntity}
-              db={db}
-              current={
-                c.classId ? { label: capitalize(c.classId), source: c.source, id: `${capitalize(c.classId)}|${c.source}` } : null
-              }
-              placeholder="Choose class…"
-              showInfo={false}
-              autoOpen={!c.classId && c.uid === autoOpenUid}
-              onSelect={(raw) => pickClass(idx, raw)}
-              onClear={() => (idx > 0 ? removeClass(idx) : clearClass(idx))}
-              onClose={() => {
-                if (!c.classId && idx > 0) removeClass(idx);
-              }}
-              exclude={(raw) => {
-                const id = raw.name.toLowerCase();
-                return id !== c.classId && takenClassIds.has(id);
-              }}
-            />
+      <TabPanel active={c.uid} order={classes.map((cl) => cl.uid)}>
+        <div className={styles.classCard} data-tour={TUT.TAB_CLASS_CARD}>
+          <div className={styles.classRow}>
+            <div className={styles.classPick}>
+              <span className={styles.rowHead}>
+                <Tag>{c.isOriginalClass ? 'Original' : 'Multiclass'}</Tag>
+              </span>
+              <PickerField
+                // ATENÇÃO: a key por slot dá a cada classe o PRÓPRIO PickerField; sem ela o autoOpen trava.
+                key={c.uid}
+                entity={classEntity}
+                db={db}
+                current={
+                  c.classId ? { label: capitalize(c.classId), source: c.source, id: `${capitalize(c.classId)}|${c.source}` } : null
+                }
+                placeholder="Choose class…"
+                showInfo={false}
+                autoOpen={!c.classId && c.uid === autoOpenUid}
+                onSelect={(raw) => pickClass(idx, raw)}
+                onClear={() => (idx > 0 ? removeClass(idx) : clearClass(idx))}
+                onClose={() => {
+                  if (!c.classId && idx > 0) removeClass(idx);
+                }}
+                exclude={(raw) => {
+                  const id = raw.name.toLowerCase();
+                  return id !== c.classId && takenClassIds.has(id);
+                }}
+              />
+            </div>
+            {c.classId && (
+              <div>
+                <span className={`${styles.rowHead} ${styles.rowHeadMid}`}>Level</span>
+                <Stepper
+                  value={c.level}
+                  min={1}
+                  max={maxForThis}
+                  maxDigits={2}
+                  onChange={(n) => setLevel(idx, n)}
+                  ariaLabel="Level"
+                  size="md"
+                />
+              </div>
+            )}
           </div>
-          {c.classId && (
+
+          {c.classId && c.level >= subclassLevel && (
             <div>
-              <span className={`${styles.rowHead} ${styles.rowHeadMid}`}>Level</span>
-              <Stepper
-                value={c.level}
-                min={1}
-                max={maxForThis}
-                maxDigits={2}
-                onChange={(n) => setLevel(idx, n)}
-                ariaLabel="Level"
-                size="md"
+              <span className={styles.subLabel}>{parsed?.subclassTitle || 'Subclass'}</span>
+              <PickerField
+                entity={makeSubclassEntity(c.classId, parsed?.subclassTitle || 'Subclass')}
+                db={db}
+                current={
+                  c.subclassId ? { label: c.subclassId, source: c.subclassSource, id: `${c.subclassId}|${c.subclassSource}` } : null
+                }
+                placeholder="Choose subclass…"
+                showInfo={false}
+                onSelect={(raw) => pickSubclass(idx, raw)}
+                onClear={() => clearSubclass(idx)}
+              />
+            </div>
+          )}
+
+          {wildShape && onWildShapeForms && (
+            <div className={styles.choices}>
+              <WildShapeForms db={db} forms={character.wildShapeForms ?? []} limits={wildShape} onChange={onWildShapeForms} />
+            </div>
+          )}
+
+          {choices.length > 0 && (
+            <div className={styles.choices}>
+              <ChoiceList
+                choices={choices}
+                bag={c.choices ?? {}}
+                onChange={(ch) => setClassChoices(idx, ch)}
+                db={db}
+                owned={owned}
+                character={character}
               />
             </div>
           )}
         </div>
 
-        {c.classId && c.level >= subclassLevel && (
-          <div>
-            <span className={styles.subLabel}>{parsed?.subclassTitle || 'Subclass'}</span>
-            <PickerField
-              entity={makeSubclassEntity(c.classId, parsed?.subclassTitle || 'Subclass')}
-              db={db}
-              current={
-                c.subclassId ? { label: c.subclassId, source: c.subclassSource, id: `${c.subclassId}|${c.subclassSource}` } : null
-              }
-              placeholder="Choose subclass…"
-              showInfo={false}
-              onSelect={(raw) => pickSubclass(idx, raw)}
-              onClear={() => clearSubclass(idx)}
-            />
-          </div>
+        {c.classId && classObj && (
+          <ClassProgression
+            db={db}
+            classId={c.classId}
+            classObj={classObj}
+            subclass={c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null}
+            level={c.level}
+          />
         )}
-
-        {wildShape && onWildShapeForms && (
-          <div className={styles.choices}>
-            <WildShapeForms db={db} forms={character.wildShapeForms ?? []} limits={wildShape} onChange={onWildShapeForms} />
-          </div>
-        )}
-
-        {choices.length > 0 && (
-          <div className={styles.choices}>
-            <ChoiceList
-              choices={choices}
-              bag={c.choices ?? {}}
-              onChange={(ch) => setClassChoices(idx, ch)}
-              db={db}
-              owned={owned}
-              character={character}
-            />
-          </div>
-        )}
-      </div>
-
-      {c.classId && classObj && (
-        <ClassProgression
-          db={db}
-          classId={c.classId}
-          classObj={classObj}
-          subclass={c.subclassId ? resolveSubclassObj(db, c.classId, c.subclassId, c.subclassSource) : null}
-          level={c.level}
-        />
-      )}
+      </TabPanel>
 
       <p className={styles.summary}>
         Total level: {total} / {MAX_TOTAL}

@@ -3,6 +3,8 @@
  * =============================================================================
  * CLASSES
  *   .strip: o card; .cells e .bars, as duas metades (empilhadas no celular).
+ *   .split, .piece: cada número no seu card (`split`); .wide cresce, o resto fica na
+ *     largura do conteúdo.
  *   .cell, .wide, .value, .label: um número com o rótulo (.wide dá mais largura).
  *   .limit, .limitRow, .limitValue: um contador com a barra.
  *   .bar, .fill: a barra fina; .warning e .danger, o tom dela.
@@ -172,9 +174,42 @@ button.limit:focus-visible {
   color: var(--danger);
 }
 
+.split {
+  display: flex;
+}
+
+.split > .cells {
+  gap: var(--space-2);
+}
+
+.cells > .piece {
+  flex: 0 0 auto;
+  min-width: 84px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.cells > .piece.wide {
+  flex: 1 1 0;
+}
+
+.cells > button.piece:hover {
+  background: linear-gradient(var(--accent-bg), var(--accent-bg)) var(--bg-soft);
+}
+
+.piece {
+  composes: card from './Card.module.css';
+}
+
 @media (max-width: 760px) {
   .strip {
     flex-direction: column;
+  }
+
+  .cells > .piece {
+    min-width: 72px;
+    padding-inline: var(--space-3);
   }
 
   .bars {

@@ -8,14 +8,19 @@
 //   no lugar dos cards de moedas, de espaços e de números (DDL-0320, DDL-0321).
 //
 // FUNÇÕES
-//   StatStrip(props): \`cells\` (os números) e \`bars\` (os contadores), listas de
-//     \`{ key, value, label, title, onClick, icon, pct, tone, wide }\`; \`dataTour\`.
+//   StatStrip(props): `cells` (os números) e `bars` (os contadores), listas de
+//     `{ key, value, label, title, onClick, icon, pct, tone, wide }`; `split` (cada
+//     número no seu card); `dataTour`.
 //   Bar(props): a barra fina.
 //
 // DECISÕES E ARMADILHAS
 //   - No celular são duas linhas (números em cima, barras embaixo); a partir de 761 px
-//     é uma só. Uma parte sem \`onClick\` é texto, não um botão morto.
-//   - Os tons são os da ficha: \`warning\` (falta escolher) e \`danger\` (passou do limite);
+//     é uma só. Uma parte sem `onClick` é texto, não um botão morto.
+//   - `split` (o inventário, DDL-0323): três cards em vez de um dividido em partes
+//     iguais. O número curto (Gold, Attuned) fica na largura do conteúdo e o `wide`
+//     (a barra de carga) leva o resto; dividido igual, o curto sobrava e a barra
+//     encolhia, sobretudo no desktop.
+//   - Os tons são os da ficha: `warning` (falta escolher) e `danger` (passou do limite);
 //     nunca escondem o número (DDL-0026).
 // -----------------------------------------------------------------------------
 
@@ -31,7 +36,7 @@ function Bar({ pct, tone }) {
 }
 
 /** A faixa de números tocáveis. */
-export default function StatStrip({ cells = [], bars = [], dataTour }) {
+export default function StatStrip({ cells = [], bars = [], split = false, dataTour }) {
   const part = (item, className, body) =>
     item.onClick ? (
       <button key={item.key} type="button" className={className} onClick={item.onClick} title={item.title}>{body}</button>
@@ -39,11 +44,11 @@ export default function StatStrip({ cells = [], bars = [], dataTour }) {
       <span key={item.key} className={className} title={item.title}>{body}</span>
     );
   return (
-    <div className={styles.strip} data-tour={dataTour}>
+    <div className={split ? styles.split : styles.strip} data-tour={dataTour}>
       {cells.length > 0 && (
         <div className={styles.cells}>
           {cells.map((c) =>
-            part(c, [styles.cell, c.wide ? styles.wide : null].filter(Boolean).join(' '), (
+            part(c, [styles.cell, c.wide ? styles.wide : null, split ? styles.piece : null].filter(Boolean).join(' '), (
               <>
                 <span className={c.tone ? `${styles.value} ${styles[`${c.tone}Text`]}` : styles.value}>
                   {c.icon}

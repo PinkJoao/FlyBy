@@ -67,6 +67,7 @@
 
 import Pips from '../common/Pips';
 import TabBar from '../common/TabBar';
+import TabPanel from '../common/TabPanel';
 import SearchField from '../common/SearchField';
 import { useState } from 'react';
 import { FEATURE_KINDS, featureCosts, isActiveFeature } from '../../engine/playFeatures';
@@ -231,67 +232,69 @@ export default function FeaturesTab({ catalog, state, onUse, onSpecial, onLog, o
         />
       )}
 
-      <div className={styles.controls} data-tour={TUT.PLAY_FEATURES_CONTROLS}>
-        <SearchField placeholder="Search features…" value={query} onChange={setQuery} />
-        <SegmentedControl
-          ariaLabel="Active or passive features"
-          value={mode}
-          options={[
-            { value: 'active', label: 'Active' },
-            { value: 'passive', label: 'Passive' },
-          ]}
-          onChange={setMode}
-        />
-      </div>
+      <TabPanel active={kind} order={['all', ...kinds.map((k) => k.id)]}>
+        <div className={styles.controls} data-tour={TUT.PLAY_FEATURES_CONTROLS}>
+          <SearchField placeholder="Search features…" value={query} onChange={setQuery} />
+          <SegmentedControl
+            ariaLabel="Active or passive features"
+            value={mode}
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'passive', label: 'Passive' },
+            ]}
+            onChange={setMode}
+          />
+        </div>
 
-      {orphans.length > 0 && mode === 'active' && kind === 'all' && !needle && (
-        <section className={styles.panel}>
-          <div className={styles.panelHead}>
-            <span className={styles.panelTitle}>Resources</span>
-          </div>
-          <ul className={styles.list}>
-            {orphans.map((p) => (
-              <FeatureRow key={p.key} feature={{ name: p.name, level: null, entries: [] }} action={null} pools={[p]} {...rowProps} />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {shown.length === 0 && (
-        <p className={styles.empty}>
-          {needle ? `No ${mode} features match your search.` : `No ${mode} features here.`}
-          {other > 0 && (
-            <>
-              {' '}
-              <Button variant="link" onClick={() => setMode(otherMode)}>
-                Show {other} {otherMode}
-              </Button>
-            </>
-          )}
-        </p>
-      )}
-
-      {sections.map(([label, list], i) => {
-        const isCollapsed = collapsed.has(label);
-        return (
-          <section key={label} className={styles.panel} data-tour={i === 0 ? TUT.PLAY_FEATURES_LIST : undefined}>
-            <button type="button" className={styles.panelHead} onClick={() => toggle(label)} aria-expanded={!isCollapsed}>
-              <span className={styles.panelTitle}>{label}</span>
-              <span className={styles.panelCount}>{list.length}</span>
-              <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
-                <Icon name="chevron" />
-              </span>
-            </button>
-            <Collapse open={!isCollapsed}>
-              <ul className={styles.list}>
-                {list.map((f) => (
-                  <FeatureRow key={f.key} feature={f} action={actions.get(f.actionKey)} pools={poolsOf(f)} {...rowProps} />
-                ))}
-              </ul>
-            </Collapse>
+        {orphans.length > 0 && mode === 'active' && kind === 'all' && !needle && (
+          <section className={styles.panel}>
+            <div className={styles.panelHead}>
+              <span className={styles.panelTitle}>Resources</span>
+            </div>
+            <ul className={styles.list}>
+              {orphans.map((p) => (
+                <FeatureRow key={p.key} feature={{ name: p.name, level: null, entries: [] }} action={null} pools={[p]} {...rowProps} />
+              ))}
+            </ul>
           </section>
-        );
-      })}
+        )}
+
+        {shown.length === 0 && (
+          <p className={styles.empty}>
+            {needle ? `No ${mode} features match your search.` : `No ${mode} features here.`}
+            {other > 0 && (
+              <>
+                {' '}
+                <Button variant="link" onClick={() => setMode(otherMode)}>
+                  Show {other} {otherMode}
+                </Button>
+              </>
+            )}
+          </p>
+        )}
+
+        {sections.map(([label, list], i) => {
+          const isCollapsed = collapsed.has(label);
+          return (
+            <section key={label} className={styles.panel} data-tour={i === 0 ? TUT.PLAY_FEATURES_LIST : undefined}>
+              <button type="button" className={styles.panelHead} onClick={() => toggle(label)} aria-expanded={!isCollapsed}>
+                <span className={styles.panelTitle}>{label}</span>
+                <span className={styles.panelCount}>{list.length}</span>
+                <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
+                  <Icon name="chevron" />
+                </span>
+              </button>
+              <Collapse open={!isCollapsed}>
+                <ul className={styles.list}>
+                  {list.map((f) => (
+                    <FeatureRow key={f.key} feature={f} action={actions.get(f.actionKey)} pools={poolsOf(f)} {...rowProps} />
+                  ))}
+                </ul>
+              </Collapse>
+            </section>
+          );
+        })}
+      </TabPanel>
     </div>
   );
 }

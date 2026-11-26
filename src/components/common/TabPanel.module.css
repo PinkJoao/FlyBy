@@ -1,0 +1,17 @@
+/* =============================================================================
+ * TabPanel.module.css: o conteúdo de uma sub-aba
+ * =============================================================================
+ * CLASSES
+ *   .panel: a coluna com o espaçamento do pai.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - `gap: inherit`: o painel entra no lugar dos filhos soltos da aba sem mudar o
+ *     espaço entre eles.
+ * -------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  min-width: 0;
+}

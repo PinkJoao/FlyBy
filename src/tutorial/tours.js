@@ -283,16 +283,16 @@ const tabSpellbook = {
       body: 'Your spells, grouped by where they come from. Only shown for spellcasters.',
     },
     {
-      anchor: TUT.TAB_SPELL_CARDS,
-      title: 'Your magic in numbers',
-      body: 'Save DC, attack bonus, spell slots and how many cantrips and spells you can have. Tap any number to learn what it means; the slots of each level show as gems in its group.',
-      placement: 'bottom',
-    },
-    {
       anchor: TUT.TAB_SPELL_ORIGINS,
       optional: true,
       title: 'By source',
       body: 'One tab per source: each caster class, plus racial and feat spells.',
+      placement: 'bottom',
+    },
+    {
+      anchor: TUT.TAB_SPELL_CARDS,
+      title: 'Your magic in numbers',
+      body: 'Save DC, attack bonus, spell slots and how many cantrips and spells you can have. Tap any number to learn what it means; the slots of each level show as gems in its group.',
       placement: 'bottom',
     },
     {

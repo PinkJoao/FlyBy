@@ -150,6 +150,7 @@ import Collapse from '../common/Collapse';
 import { NAME_SORT } from '../../sorting';
 import Button from '../common/Button';
 import PreviewLayer from '../common/PreviewLayer';
+import TabPanel from '../common/TabPanel';
 
 const ORIGIN_ICONS = { class: 'originClass', race: 'originSpecies', feat: 'originFeat', unassigned: 'itemAll' };
 
@@ -615,8 +616,6 @@ export default function SpellbookTab({
 
   return (
     <div className={styles.tab}>
-      {cells.length + bars.length > 0 && <StatStrip dataTour={TUT.TAB_SPELL_CARDS} cells={cells} bars={bars} />}
-
       {origins.length > 1 && (
         <TabBar
           variant="sub"
@@ -629,111 +628,115 @@ export default function SpellbookTab({
         />
       )}
 
-      {isCargo && (
-        <p className={styles.cargoNote}>
-          These spells came with an imported actor and no class on this sheet can cast them. They are
-          kept and exported back to Foundry, but they have no origin, so they count against no limit.
-          {assignTargets.length > 0
-            ? ' Assign one to a spellcasting class to make it a normal spell of that class.'
-            : ' Add a spellcasting class to be able to assign them.'}
-        </p>
-      )}
+      <TabPanel active={origin.key} order={origins.map((o) => o.key)}>
+        {cells.length + bars.length > 0 && <StatStrip dataTour={TUT.TAB_SPELL_CARDS} cells={cells} bars={bars} />}
 
-      <div className={styles.controls} data-tour={TUT.TAB_SPELL_CONTROLS}>
-        <SearchField placeholder="Search spells…" value={query} onChange={setQuery} />
-        {canPrepare && (
-          <Button
-            variant="primary"
-            onPage
-            className={styles.prepareBtn}
-            onClick={openPrepare}
-            disabled={prepareDisabled}
-            title={prepareDisabled ? 'Remove a spell to prepare another one.' : undefined}
-          >
-            <Icon name="plus" /> Prepare spell
-          </Button>
+        {isCargo && (
+          <p className={styles.cargoNote}>
+            These spells came with an imported actor and no class on this sheet can cast them. They are
+            kept and exported back to Foundry, but they have no origin, so they count against no limit.
+            {assignTargets.length > 0
+              ? ' Assign one to a spellcasting class to make it a normal spell of that class.'
+              : ' Add a spellcasting class to be able to assign them.'}
+          </p>
         )}
-      </div>
 
-      <ListControls
-        dataTour={TUT.TAB_SPELL_LIST}
-        filterOptions={[{ value: 'all', label: 'All spells' }, ...levels.map((lvl) => ({ value: lvl, label: spellLevelLabel(lvl) }))]}
-        filter={category}
-        onFilter={selectCategory}
-        groupOptions={category === 'all' ? GROUP_BY_OPTIONS : LEVEL_GROUP_OPTIONS}
-        groupBy={groupBy}
-        onGroup={setGroupBy}
-        sortOptions={SORT_OPTIONS}
-        sortBy={sortBy}
-        sortDir={sortDir}
-        onSort={(value, dir) => {
-          setSortBy(value);
-          setSortDir(dir);
-        }}
-      />
+        <div className={styles.controls} data-tour={TUT.TAB_SPELL_CONTROLS}>
+          <SearchField placeholder="Search spells…" value={query} onChange={setQuery} />
+          {canPrepare && (
+            <Button
+              variant="primary"
+              onPage
+              className={styles.prepareBtn}
+              onClick={openPrepare}
+              disabled={prepareDisabled}
+              title={prepareDisabled ? 'Remove a spell to prepare another one.' : undefined}
+            >
+              <Icon name="plus" /> Prepare spell
+            </Button>
+          )}
+        </div>
 
-      {all.length === 0 ? (
-        <p className={styles.empty}>No spells yet.</p>
-      ) : sorted.length === 0 ? (
-        <p className={styles.empty}>No spells match your search.</p>
-      ) : (
-        rows.map(({ label, list, level }) => {
-          const isCollapsed = label != null && collapsed.has(sectionKey(label));
-          return (
-            <section key={label ?? 'flat'} className={styles.panel}>
-              {label && (
-                <button
-                  type="button"
-                  className={styles.panelHead}
-                  onClick={() => toggleSection(label)}
-                  aria-expanded={!isCollapsed}
-                >
-                  <span className={styles.panelTitle}>{label}</span>
-                  <span className={styles.panelCount}>{list.length}</span>
-                  {level != null && slotsAt(origin, level, casting).map((p) => <GroupSlots key={p.kind} pool={p} short={bothSlots} />)}
-                  <span
-                    className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
-                    aria-hidden="true"
+        <ListControls
+          dataTour={TUT.TAB_SPELL_LIST}
+          filterOptions={[{ value: 'all', label: 'All spells' }, ...levels.map((lvl) => ({ value: lvl, label: spellLevelLabel(lvl) }))]}
+          filter={category}
+          onFilter={selectCategory}
+          groupOptions={category === 'all' ? GROUP_BY_OPTIONS : LEVEL_GROUP_OPTIONS}
+          groupBy={groupBy}
+          onGroup={setGroupBy}
+          sortOptions={SORT_OPTIONS}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={(value, dir) => {
+            setSortBy(value);
+            setSortDir(dir);
+          }}
+        />
+
+        {all.length === 0 ? (
+          <p className={styles.empty}>No spells yet.</p>
+        ) : sorted.length === 0 ? (
+          <p className={styles.empty}>No spells match your search.</p>
+        ) : (
+          rows.map(({ label, list, level }) => {
+            const isCollapsed = label != null && collapsed.has(sectionKey(label));
+            return (
+              <section key={label ?? 'flat'} className={styles.panel}>
+                {label && (
+                  <button
+                    type="button"
+                    className={styles.panelHead}
+                    onClick={() => toggleSection(label)}
+                    aria-expanded={!isCollapsed}
                   >
-                    <Icon name="chevron" />
-                  </span>
-                </button>
-              )}
-              <Collapse open={!isCollapsed}>
-                {list.length === 0 && (
-                  <p className={styles.emptyGroup}>
-                    {slotsAt(origin, level).some((p) => p.kind === 'arcanum')
-                      ? 'Your Mystic Arcanum of this level has no spell yet.'
-                      : level > origin.maxPrepareLevel
-                        ? 'You cannot prepare spells of this level here. These slots cast lower ones, often stronger.'
-                        : 'No spell of this level yet. These slots can also cast a lower one, often stronger.'}
-                  </p>
+                    <span className={styles.panelTitle}>{label}</span>
+                    <span className={styles.panelCount}>{list.length}</span>
+                    {level != null && slotsAt(origin, level, casting).map((p) => <GroupSlots key={p.kind} pool={p} short={bothSlots} />)}
+                    <span
+                      className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
+                      aria-hidden="true"
+                    >
+                      <Icon name="chevron" />
+                    </span>
+                  </button>
                 )}
-                <ul className={styles.list}>
-                  {list.map((entry, i) => {
-                    const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
-                    const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
-                    return (
-                      <SpellRow
-                        // ATENÇÃO: a key leva o índice porque a mesma magia pode repetir.
-                        key={`${origin.key}|${entry.cargoIndex ?? i}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
-                        entry={entry}
-                        arcanum={isArc}
-                        thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
-                        onInfo={() => setInfoKey(entry.raw.name)}
-                        onReplace={classEntry && !entry.granted && !entry.free ? () => startReplace(entry) : null}
-                        onTogglePrepared={canPrepareThis ? () => togglePrepared(entry) : null}
-                        onAssign={isCargo ? () => assignSpell(entry) : null}
-                        assignDisabled={isCargo && assignTargets.length === 0}
-                      />
-                    );
-                  })}
-                </ul>
-              </Collapse>
-            </section>
-          );
-        })
-      )}
+                <Collapse open={!isCollapsed}>
+                  {list.length === 0 && (
+                    <p className={styles.emptyGroup}>
+                      {slotsAt(origin, level).some((p) => p.kind === 'arcanum')
+                        ? 'Your Mystic Arcanum of this level has no spell yet.'
+                        : level > origin.maxPrepareLevel
+                          ? 'You cannot prepare spells of this level here. These slots cast lower ones, often stronger.'
+                          : 'No spell of this level yet. These slots can also cast a lower one, often stronger.'}
+                    </p>
+                  )}
+                  <ul className={styles.list}>
+                    {list.map((entry, i) => {
+                      const isArc = !entry.granted && (origin.arcanumLevels ?? []).includes(entry.raw.level);
+                      const canPrepareThis = !!classEntry && !entry.granted && !isArc && entry.raw.level > 0;
+                      return (
+                        <SpellRow
+                          // ATENÇÃO: a key leva o índice porque a mesma magia pode repetir.
+                          key={`${origin.key}|${entry.cargoIndex ?? i}|${entry.raw.name}|${entry.castMode ?? 'pick'}`}
+                          entry={entry}
+                          arcanum={isArc}
+                          thumb={imgUrl(spellEntity.fluff(entry.raw, db)?.images?.[0]?.href)}
+                          onInfo={() => setInfoKey(entry.raw.name)}
+                          onReplace={classEntry && !entry.granted && !entry.free ? () => startReplace(entry) : null}
+                          onTogglePrepared={canPrepareThis ? () => togglePrepared(entry) : null}
+                          onAssign={isCargo ? () => assignSpell(entry) : null}
+                          assignDisabled={isCargo && assignTargets.length === 0}
+                        />
+                      );
+                    })}
+                  </ul>
+                </Collapse>
+              </section>
+            );
+          })
+        )}
+      </TabPanel>
 
       {infoEntry && (
         <PreviewLayer

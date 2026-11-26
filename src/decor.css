@@ -35,12 +35,17 @@
  *     documento): a linha do tempo `--flyby-page` nasce lá e o `timeline-scope`
  *     no <html> a deixa visível ao fundo. Onde isso não existe (Firefox), o fundo
  *     só fica parado. Com "reduzir movimento" ele não se mexe.
+ *   - O deslize vai pela DISTÂNCIA rolada (animation-range em px: 400 px de fundo
+ *     a cada 8.000 px de página, depois para), nunca pela fração da página: com a
+ *     fração, a mesma rolagem dava outro deslize quando a página mudava de altura,
+ *     e o fundo pulava ao trocar de sub-aba (DDL-0323). A camada sobra 400 px
+ *     embaixo para cobrir o deslize.
  * -------------------------------------------------------------------------- */
 
 body::before {
   content: '';
   position: fixed;
-  inset: -25vh 0;
+  inset: -25vh 0 calc(-25vh - 400px);
   z-index: -1;
   pointer-events: none;
 }
@@ -86,12 +91,13 @@ body::before {
   body::before {
     animation: decor-drift linear both;
     animation-timeline: --flyby-page;
+    animation-range: 0px 8000px;
   }
 }
 
 @keyframes decor-drift {
   to {
-    transform: translateY(-18vh);
+    transform: translateY(-400px);
   }
 }
 

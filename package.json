@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "playwright test -c testing/ui/playwright.config.js",
+    "media": "playwright test -c testing/media/playwright.config.js",
     "pdf:preview": "vite-node scripts/render-pdf-preview.jsx && python scripts/pdf_to_png.py pdf-preview/sheet.pdf",
     "sweep": "vite-node scripts/sweep.js",
     "t2": "vite-node scripts/compare-premades.js",

@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/mobile.png" alt="FlyBy on a phone: the character list in the Dark theme, a character sheet in the Parchment theme and its spellbook in the Light theme" width="100%">
+  <img src="docs/images/mobile.png" alt="FlyBy on a phone: the character list in the Dark theme, a paladin's sheet in the Parchment theme and a druid's spellbook in the Light theme" width="100%">
 </p>
 
 ## What is FlyBy?
@@ -27,7 +27,7 @@ FlyBy is a character app for **Dungeons &amp; Dragons, 5th edition, 2024 rules**
 
 Tap **New Character**, choose **Guide me**, and FlyBy asks one question at a time: class, species, background, ability scores, gear and every choice they bring. Each option shows its full description before you pick it, and nothing is final. The same guide helps you when you level up.
 
-<p align="center"><img src="docs/images/wizard.gif" alt="The creation guide: choosing the Fighter class and the Dwarf species, with a preview of each" width="420"></p>
+<p align="center"><img src="docs/images/wizard.gif" alt="The creation guide on a phone: the welcome page, then browsing the classes in the carousel and choosing the Paladin" width="420"></p>
 
 ### Character builder
 
@@ -36,7 +36,7 @@ Every number on the sheet (hit points, armor class, saving throws, skills, spell
 <table>
   <tr>
     <td width="50%"><img src="docs/images/sheet.png" alt="Character sheet with the numbers worked out and the Class tab open"></td>
-    <td width="50%"><img src="docs/images/spellbook.png" alt="Spellbook with spell slots, counters and spells grouped by level"></td>
+    <td width="50%"><img src="docs/images/spellbook.png" alt="Spellbook with the save DC, attack, spell slots and counters on top, and the spells grouped by level"></td>
   </tr>
 </table>
 
@@ -44,9 +44,9 @@ Every number on the sheet (hit points, armor class, saving throws, skills, spell
 
 Switch a character from **Build** to **Play** and the sheet becomes the one you play with: roll every check, save, attack, damage and spell with a tap; take damage and heal; spend spell slots, hit dice and class resources; use your features and items; track conditions, concentration and effects such as Bless, which are added to the right rolls on their own; and take a short or long rest that gives back exactly what each feature says. Summons and Wild Shape forms get their own stat blocks, and a light combat mode counts rounds and your action, bonus action and reaction. Every roll and change goes into a history you can undo.
 
-<p align="center"><img src="docs/images/play.png" alt="The play mode on a phone: in combat with Bless and concentration active, the attack roll dialog with Bless and advantage, and the history of rolls" width="100%"></p>
+<p align="center"><img src="docs/images/play.png" alt="The play mode on a phone: in combat with Bless and concentration active, the attack roll dialog with Bless turned on, and the history with the attack and its damage" width="100%"></p>
 
-<p align="center"><img src="docs/images/desktop-play.png" alt="The play mode on a computer: hit points, conditions and effects on the left, the history of rolls in its own column on the right" width="100%"></p>
+<p align="center"><img src="docs/images/desktop-play.png" alt="The play mode on a computer: hit points, abilities, conditions and effects on the left, the history of rolls and the combat controls in their own column on the right" width="100%"></p>
 
 ### PDF export
 

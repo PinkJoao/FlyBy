@@ -34,6 +34,8 @@
 //   - Item NOMEADO de lista aceita `entries` ou `entry`; um bloco de OPÇÕES vira
 //     um card por opção (separa os Fighting Styles dos Blade Flourishes); ref não
 //     resolvida mostra ao menos o nome.
+//   - O nome de um bloco passa por `withStop` (engine/entryName): o que já termina em
+//     dois-pontos ("Ability Scores:", DDL-0329) não ganha outro ponto.
 //   - Cabeçalho de tabela: `colLabelRows` (várias linhas, células objeto) tem
 //     prioridade sobre `colLabels`; antes a "Travel Pace" saía sem cabeçalho.
 // -----------------------------------------------------------------------------
@@ -43,6 +45,7 @@ import { DataContext } from '../../data/dataContext';
 import { glossaryFor, lookupRule, lookupTable, parseTagContent, GLOSSARY_TAGS } from '../../engine/glossary';
 import { lookupEntityLink, isEntityTag, entityTagDisplay } from './entityLinks';
 import { imgUrl } from './media';
+import { withStop } from '../../engine/entryName';
 import { showImageViewer } from '../../store/imageViewerStore';
 import TableViewer from './TableViewer';
 import { showRulePopup } from './RulePopup';
@@ -250,7 +253,7 @@ function renderEntry(entry, key) {
     case 'section':
       return (
         <div key={key} className={styles.section}>
-          {entry.name && <span className={styles.entryName}>{entry.name}. </span>}
+          {entry.name && <span className={styles.entryName}>{withStop(entry.name)} </span>}
           {renderList(entry.entries, key)}
         </div>
       );
@@ -265,7 +268,7 @@ function renderEntry(entry, key) {
     case 'item':
       return (
         <div key={key} className={styles.section}>
-          {entry.name && <span className={styles.entryName}>{entry.name}. </span>}
+          {entry.name && <span className={styles.entryName}>{withStop(entry.name)} </span>}
           {entry.entry != null ? renderInline(String(entry.entry), key) : renderList(entry.entries, key)}
         </div>
       );
@@ -273,7 +276,7 @@ function renderEntry(entry, key) {
     case 'insetReadaloud':
       return (
         <div key={key} className={styles.inset}>
-          {entry.name && <span className={styles.entryName}>{entry.name}. </span>}
+          {entry.name && <span className={styles.entryName}>{withStop(entry.name)} </span>}
           {renderList(entry.entries, key)}
         </div>
       );
@@ -304,7 +307,7 @@ function renderEntry(entry, key) {
     case 'options':
       return (
         <div key={key} className={styles.section}>
-          {entry.name && <span className={styles.entryName}>{entry.name}. </span>}
+          {entry.name && <span className={styles.entryName}>{withStop(entry.name)} </span>}
           <div className={styles.optionCards}>
             {(entry.entries ?? []).map((opt, idx) => renderOptionCard(opt, `${key}-o-${idx}`))}
           </div>

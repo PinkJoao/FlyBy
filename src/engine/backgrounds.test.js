@@ -51,13 +51,13 @@ describe('backgrounds do SRD', () => {
       abilityBoosts: [{ ability: 'wis', amount: 1 }, { ability: 'int', amount: 1 }, { ability: 'con', amount: 1 }],
       originFeat: {
         id: 'Magic Initiate', source: 'XPHB', subtype: 'origin',
-        choices: { 'spellSet-0': { kind: 'spellSet', picks: ['Cleric Spells'] }, x: { kind: 'spell', picks: ['Guidance'] } },
+        choices: { 'spellSet-0': { kind: 'spellSet', picks: ['Cleric Spells'] }, x: { kind: 'spellAbility', picks: ['wis'] } },
       },
       choices: {},
     };
     const next = applyBackground(origin, sage(), db);
     expect(next.abilityBoosts).toHaveLength(3);
-    expect(next.originFeat.choices.x.picks).toEqual(['Guidance']);
+    expect(next.originFeat.choices.x.picks).toEqual(['wis']);
     expect(next.originFeat.choices['spellSet-0'].picks).toEqual(['Wizard Spells']);
   });
 
@@ -79,6 +79,23 @@ describe('backgrounds do SRD', () => {
     const origin = { originFeat: { id: 'Alert', source: 'XPHB', choices: {} }, choices: { skill: { kind: 'skill', picks: ['ath', 'acr'] } } };
     const next = applyBackground(origin, sage(), db);
     expect(backgroundSwitchLosses(origin, next)).toEqual(['the Alert feat', 'the skills']);
+  });
+
+  it('o mesmo talento com outra lista larga as magias e avisa', () => {
+    const acolyte = applyBackground({ choices: {} }, resolveBackground(db, { id: 'Acolyte', source: 'XPHB' }), db);
+    acolyte.originFeat.choices = {
+      ...acolyte.originFeat.choices,
+      'spellAbility-0': { kind: 'spellAbility', picks: ['wis'] },
+      'spell-0': { kind: 'spell', picks: ['Light|XPHB', 'Guidance|XPHB'] },
+    };
+    const next = applyBackground(acolyte, sage(), db);
+    expect(next.originFeat.choices['spellSet-0'].picks).toEqual(['Wizard Spells']);
+    expect(next.originFeat.choices['spell-0']).toBeUndefined();
+    expect(next.originFeat.choices['spellAbility-0'].picks).toEqual(['wis']);
+    expect(backgroundSwitchLosses(acolyte, next)).toEqual(['the Magic Initiate spells']);
+    const again = applyBackground(acolyte, resolveBackground(db, { id: 'Acolyte', source: 'XPHB' }), db);
+    expect(again.originFeat.choices['spell-0'].picks).toEqual(['Light|XPHB', 'Guidance|XPHB']);
+    expect(backgroundSwitchLosses(acolyte, again)).toEqual([]);
   });
 });
 

@@ -419,6 +419,7 @@ import {
 import { featureUses, featUses, proseUses, firstUses } from './foundryFeatureUses';
 import { featureActivities, srdFeatureMechanics, srdFeatMechanics, classWeaponGrants } from './foundryActivities';
 import { naturalArmorFor, naturalArmorChanges } from './naturalArmor';
+import { withStop } from './entryName';
 import { foundrySize, toolId, languageCode, textToHtml } from './foundryExport';
 import { effectiveSizeCodes, sizePick, speciesCatalog } from './speciesData';
 import { LEGACY_PROSE_SECTIONS } from './legacySubraces';
@@ -591,7 +592,7 @@ export function entriesToHtml(entries) {
     if (typeof e === 'string') out.push(`<p>${stripTags(e)}</p>`);
     else if (Array.isArray(e)) e.forEach(walk);
     else if (e && typeof e === 'object') {
-      if (e.name) out.push(`<p><strong>${e.name}.</strong></p>`);
+      if (e.name) out.push(`<p><strong>${withStop(e.name)}</strong></p>`);
       if (e.entries) walk(e.entries);
       if (e.items) walk(e.items);
     }

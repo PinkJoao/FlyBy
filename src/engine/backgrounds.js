@@ -29,6 +29,7 @@
 //   originChoicesFor(origin, db): as escolhas de proficiência que sobram.
 //   allowedBoostAbilities(origin, db): os atributos que os bônus aceitam.
 //   fitBoosts(boosts, allowed, classId): os bônus ajustados aos atributos aceitos.
+//   keptFeatChoices(choices, presetBag): o que o mesmo talento guarda na troca.
 //   applyBackground(origin, bg, db, opts): a origem com o background aplicado.
 //   toCustomOrigin(origin): a origem custom com tudo que o background deu.
 //   clearOrigin(origin, opts): o X do seletor: custom e os campos limpos.
@@ -42,6 +43,10 @@
 //     origem (ficha, export, PDF, jogo, o autoBuild) já lê os picks, e voltar ao custom
 //     mantém tudo como estava (resposta B4 do dono). A interface trava o que o
 //     background decide; `applyBackground` reescreve os picks a cada troca.
+//   - O mesmo talento em dois backgrounds (Acolyte e Sage: Magic Initiate) guarda as
+//     escolhas, menos as magias quando a lista muda (`keptFeatChoices`): as de clérigo
+//     ficavam sob a lista de mago sem aviso. O aviso diz "the Magic Initiate spells"
+//     (DDL-0329).
 //   - O feats do 5etools é uma lista de ALTERNATIVAS: `[{ "survivor|rhw": true },
 //     { anyFromCategory: { category: ["DG"] } }]` é "Survivor ou um Dark Gift". A
 //     chave "magic initiate; cleric|xphb" fixa a lista do talento (o `spellSet-0`).
@@ -204,6 +209,14 @@ export function fitBoosts(boosts, allowed, classId = null) {
   return recommendedBoosts(classId, mode, allowed) ?? [];
 }
 
+/** As escolhas do mesmo talento que sobrevivem à troca: as magias só com a mesma lista. */
+function keptFeatChoices(choices, presetBag) {
+  const out = { ...(choices ?? {}) };
+  const listChanged = Object.entries(presetBag).some(([id, e]) => (out[id]?.picks ?? []).join() !== (e.picks ?? []).join());
+  if (listChanged) for (const [id, e] of Object.entries(out)) if (e?.kind === 'spell') delete out[id];
+  return out;
+}
+
 /**
  * A origem com o background aplicado.
  * @param {object} origin
@@ -225,7 +238,7 @@ export function applyBackground(origin, bg, db, { classId = null } = {}) {
   let originFeat = null;
   if (feat.fixed) {
     const preset = presetFeatChoices(db, feat.fixed, feat.fixed.preset);
-    const kept = sameFeat(feat.fixed) ? prev.originFeat.choices ?? {} : {};
+    const kept = sameFeat(feat.fixed) ? keptFeatChoices(prev.originFeat.choices, preset.bag) : {};
     originFeat = { id: feat.fixed.id, source: feat.fixed.source, subtype: 'origin', choices: { ...kept, ...preset.bag } };
   } else if (prev.originFeat) {
     const raw = (db?.feats?.feat ?? []).find((f) => f.name === prev.originFeat.id && f.source === prev.originFeat.source);
@@ -263,6 +276,10 @@ export function backgroundSwitchLosses(origin, next) {
   const a = origin ?? {};
   if (a.originFeat && (!next.originFeat || next.originFeat.id !== a.originFeat.id || next.originFeat.source !== a.originFeat.source)) {
     if (Object.keys(a.originFeat.choices ?? {}).length > 0 || !a.background) out.push(`the ${a.originFeat.id} feat`);
+  } else if (a.originFeat) {
+    const lost = Object.entries(a.originFeat.choices ?? {})
+      .some(([id, e]) => e?.kind === 'spell' && e.picks?.length && !next.originFeat.choices?.[id]?.picks?.length);
+    if (lost) out.push(`the ${a.originFeat.id} spells`);
   }
   const picks = (bag, kind) => (bag?.[kind]?.picks ?? []).join(',');
   if (!a.background) {

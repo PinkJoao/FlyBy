@@ -13,7 +13,8 @@
 //   `testing/COVERAGE-T3.md` (UI, Export e Notes à mão sobrevivem).
 //   `npm run sweep:t3` (ou `-- --feats`, `--spells`, `--items`, `--backgrounds`, `--only=<texto>`).
 //   `--emit-actors` grava a ficha de cada unidade em `testing/actors/t3_*.json` e a
-//   lista `_t3.json`, para o lote ao vivo no Foundry (TESTING-PLAN §5.3). Os itens
+//   lista `_t3.json`, para o lote ao vivo no Foundry (TESTING-PLAN §5.3), também a dos
+//   backgrounds (`t3_background_*.json`, DDL-0329). Os itens
 //   vão 40 unidades por ficha (`t3_items_NNN.json`): uma ficha por item passaria
 //   de 700 MB em disco.
 //
@@ -261,6 +262,7 @@ function runBackground(db, row, species) {
   r.taken = built.character.origin?.background?.id === row.name;
   const ex = exportChecks(db, built.character, (actor) =>
     (actor.items ?? []).some((i) => i.type === 'background' && i.name === row.name && i.flags?.builder5e?.background?.source === row.source));
+  if (args['emit-actors'] && ex.actor) emitted.push(emitActor(ex.actor, 'background', row));
   delete ex.actor;
   r.export = ex;
   r.ms = Date.now() - t0;

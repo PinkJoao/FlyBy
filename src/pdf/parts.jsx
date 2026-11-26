@@ -34,6 +34,7 @@
 import { View, Text, Svg, Rect, Path, Circle, Defs, RadialGradient, Stop } from '@react-pdf/renderer';
 import { FONTS } from './theme';
 import { blocksText } from './entries';
+import { withStop } from '../engine/entryName';
 
 /** Runs { text, b, i } num Text. */
 export function Rich({ runs, style }) {
@@ -87,7 +88,7 @@ export function Blocks({ blocks, t, size = 9, justify = false, muted = false }) 
     if (b.type === 'p') {
       return (
         <Text key={i} style={para}>
-          {b.lead ? <Text style={{ fontWeight: 700, fontStyle: 'italic' }}>{b.lead}. </Text> : null}
+          {b.lead ? <Text style={{ fontWeight: 700, fontStyle: 'italic' }}>{withStop(b.lead)} </Text> : null}
           {b.runs.map((r, j) => (
             <Text key={j} style={{ fontWeight: r.b ? 700 : 400, fontStyle: r.i || muted ? 'italic' : 'normal' }}>{r.text}</Text>
           ))}

@@ -1,5 +1,5 @@
 // =============================================================================
-// sweep-t3: o Tier 0 da T3, talentos, magias e itens (TESTING-PLAN §5b)
+// sweep-t3: o Tier 0 da T3, talentos, magias, itens e backgrounds (TESTING-PLAN §5b)
 // =============================================================================
 // O QUE FAZ
 //   Para cada unidade da T3 (featMatrix, spellMatrix, itemMatrix), monta um
@@ -8,9 +8,10 @@
 //   inventário, equipado e sintonizado), e cobra: o personagem fecha sem pendência,
 //   a unidade está na derivação, o pré-requisito do talento passa, o ator exportado
 //   tem o item da unidade e é estruturalmente válido, e o round-trip pelo nosso
-//   import devolve as mesmas decisões. Grava `testing/report-t3.json` e
+//   import devolve as mesmas decisões. Os backgrounds prontos (DDL-0328) entram num
+//   guerreiro do nível 5 pelo `spec.background`. Grava `testing/report-t3.json` e
 //   `testing/COVERAGE-T3.md` (UI, Export e Notes à mão sobrevivem).
-//   `npm run sweep:t3` (ou `-- --feats`, `--spells`, `--items`, `--only=<texto>`).
+//   `npm run sweep:t3` (ou `-- --feats`, `--spells`, `--items`, `--backgrounds`, `--only=<texto>`).
 //   `--emit-actors` grava a ficha de cada unidade em `testing/actors/t3_*.json` e a
 //   lista `_t3.json`, para o lote ao vivo no Foundry (TESTING-PLAN §5.3). Os itens
 //   vão 40 unidades por ficha (`t3_items_NNN.json`): uma ficha por item passaria
@@ -21,7 +22,8 @@
 //   exportChecks(db, character, hasUnit): shape, presença da unidade e round-trip.
 //   flagged(actor, page, name, source): o ator tem o item com a marca de procedência?
 //   runFeat(db, row, species), runSpell(db, row, species), runItem(db, row,
-//     species): uma unidade.
+//     species), runBackground(db, row, species): uma unidade.
+//   backgroundMatrix(db): as linhas dos backgrounds prontos.
 //   verdict(r): o resumo de uma linha.
 //   splitCells(line), escapePipes(s), unescapePipes(s), parseManual(text),
 //     writeCoverage(results): o tracker COVERAGE-T3.md.
@@ -74,6 +76,7 @@ import { foundryToCharacter } from '../src/engine/foundryImport';
 import { loadFoundryMechanics } from '../src/engine/foundryMechanicsData';
 import { toolsHash } from '../src/engine/foundryInterop';
 import { makeId } from '../src/schema/character';
+import { readyBackgrounds } from '../src/engine/backgrounds';
 
 const ROOT = join(import.meta.dirname, '..');
 const OUT_DIR = join(ROOT, 'testing');
@@ -241,6 +244,29 @@ function flushItemBatch() {
   itemBatch = { base: itemBatch.base, units: [], items: [] };
 }
 
+/** As linhas dos backgrounds prontos. */
+function backgroundMatrix(db) {
+  return readyBackgrounds(db).map((b) => ({ id: `${b.name}|${b.source}`, name: b.name, source: b.source, kind: 'background' }));
+}
+
+function runBackground(db, row, species) {
+  const t0 = Date.now();
+  const crow = classRowFor(db, 'fighter');
+  const r = { id: row.id, kind: 'background', host: 'fighter 5' };
+  const built = autoBuild(db, {
+    id: row.id, classId: 'fighter', classSource: crow.classSource, subclassId: crow.subclassId,
+    subclassSource: crow.subclassSource, level: 5, ...species, seed: 7, background: { id: row.name, source: row.source },
+  });
+  r.build = { ok: built.ok, problems: built.problems.slice(0, 6), pendencies: built.pendencies?.total ?? 0 };
+  r.taken = built.character.origin?.background?.id === row.name;
+  const ex = exportChecks(db, built.character, (actor) =>
+    (actor.items ?? []).some((i) => i.type === 'background' && i.name === row.name && i.flags?.builder5e?.background?.source === row.source));
+  delete ex.actor;
+  r.export = ex;
+  r.ms = Date.now() - t0;
+  return r;
+}
+
 function verdict(r) {
   if (r.skip) return `skip: ${r.skip}`;
   const parts = [];
@@ -306,6 +332,10 @@ ${table(of('item'))}
 ## Variant templates (${of('variant').length})
 
 ${table(of('variant'))}
+
+## Backgrounds (${of('background').length})
+
+${table(of('background'))}
 `;
   writeFileSync(path, md);
 }
@@ -325,13 +355,14 @@ async function main() {
   await loadFoundryMechanics();
   mkdirSync(OUT_DIR, { recursive: true });
   const species = defaultSpecies(db);
-  const all = !args.feats && !args.spells && !args.items;
+  const all = !args.feats && !args.spells && !args.items && !args.backgrounds;
   const only = args.only ? String(args.only).toLowerCase() : null;
   const keep = (rows) => (only ? rows.filter((r) => r.id.toLowerCase().includes(only)) : rows);
   const jobs = [
     ...(all || args.feats ? keep(featMatrix(db)).map((row) => () => runFeat(db, row, species)) : []),
     ...(all || args.spells ? keep(spellMatrix(db)).map((row) => () => runSpell(db, row, species)) : []),
     ...(all || args.items ? keep(itemMatrix(db)).map((row) => () => runItem(db, row, species)) : []),
+    ...(all || args.backgrounds ? keep(backgroundMatrix(db)).map((row) => () => runBackground(db, row, species)) : []),
   ];
   console.log(`T3 sweep: ${jobs.length} units…`);
   const results = [];

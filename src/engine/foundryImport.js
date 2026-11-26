@@ -41,6 +41,10 @@
 //     explained): o sub-bag de um talento.
 //   featFixedBoosts(featItem), asiFeatSubBag(assignments, featRef): os aumentos.
 //   isRealFeat(item, db): é um talento escolhível de verdade?
+//   Background
+//   recognizeBackground(item, db): o background pronto que o item é: pela flag, ou pelo
+//     nome ou identificador com as duas perícias batendo (DDL-0328); null é custom.
+//   readyFromImport(origin, bg, db): a origem lida com o background aplicado.
 //   Espécie
 //   toolKeyToName(key, db), languageKeyToName(key, db): as chaves de trait de volta.
 //   findBaseRace(db, baseName, source), resolveLineageName(db, baseName, source,
@@ -153,6 +157,14 @@
 //     prefixo (TC-0056), e o destino pode ser um descritor `mixed`.
 //   - Um item de subtipo `race` é TRAÇO, nunca talento, mesmo com nome de talento
 //     (o "Tough" do Stensia, o "Lucky" do Kor; TC-0064).
+//   Background
+//   - Um background pronto (DDL-0328) é reconhecido pela flag `builder5e.background`; sem
+//     ela (as 16 premades do SRD), pelo nome ou pelo identificador de um background de 2024
+//     cujas duas perícias estão no Trait (a marca que ele deixa, §6.3). Os de nome próprio
+//     (Recluse, Musician...) e os de 2014 seguem custom. Reconhecido, a origem passa por
+//     `applyBackground`: as perícias e a ferramenta fixas viram os picks dele e a ferramenta
+//     de categoria vira a escolha. O Common que o Trait "Choose Languages" concede sai da
+//     lista (todo personagem o sabe; voltaria como um idioma a mais).
 //   Espécie
 //   - Casamento EXATO primeiro (raças base com parênteses, como "Human (Ixalan)",
 //     e as `_versions`; TC-0008), depois a heurística de separador. As reimpressões
@@ -225,6 +237,7 @@ import { classWeaponGrants } from './foundryActivities';
 import { classGrantChoices } from './classFeatureGrants';
 import { isBasicActionItem } from './foundryBasicActions';
 import { fromFoundryImage } from './foundryImage';
+import { applyBackground, backgroundFixedTool, backgroundSkills, readyBackgrounds, resolveBackground } from './backgrounds';
 
 const norm = (s) => (s ?? '').toString().trim().toLowerCase();
 
@@ -1229,6 +1242,9 @@ export function foundryToCharacter(rawActor, db, out = null) {
     }
   }
 
+  const readyBg = bgItem ? recognizeBackground(bgItem, db) : null;
+  if (readyBg) char.origin = readyFromImport(char.origin, readyBg, db);
+
   const classItems = items.filter((i) => i.type === 'class');
   const subclassItems = items.filter((i) => i.type === 'subclass');
   char.classes = classItems.map((ci) => {
@@ -1352,4 +1368,30 @@ export function foundryToCharacter(rawActor, db, out = null) {
   };
 
   return char;
+}
+
+/** O background pronto que o item é, ou null (custom). */
+function recognizeBackground(item, db) {
+  const flag = item.flags?.builder5e?.background;
+  if (flag) return resolveBackground(db, flag);
+  const keys = new Set(advList(item).filter((a) => a.type === 'Trait').flatMap((a) => [...(a.value?.chosen ?? []), ...(a.configuration?.grants ?? [])]));
+  const name = norm(item.name);
+  const ident = norm(item.system?.identifier);
+  return readyBackgrounds(db).find((b) => {
+    if (norm(b.name) !== name && slug(b.name) !== ident) return false;
+    const skills = backgroundSkills(b);
+    return skills.length > 0 && skills.every((s) => keys.has(`skills:${s}`));
+  }) ?? null;
+}
+
+/** A origem lida com o background pronto aplicado. */
+function readyFromImport(origin, bg, db) {
+  const fixedTool = norm(backgroundFixedTool(db, bg));
+  const bgSkills = backgroundSkills(bg);
+  const tools = (origin.toolProficiencies ?? []).filter((t) => norm(t) !== fixedTool);
+  const skills = (origin.skillProficiencies ?? []).filter((s) => !bgSkills.includes(s));
+  const languages = (origin.languages ?? []).filter((l) => norm(l) !== 'common');
+  const next = applyBackground({ ...origin, skillProficiencies: skills, toolProficiencies: [], languages }, bg, db);
+  if (!fixedTool && tools.length) return { ...next, choices: { ...next.choices, tool: { kind: 'tool', picks: [tools[0]] } }, toolProficiencies: tools.slice(1) };
+  return { ...next, toolProficiencies: tools };
 }

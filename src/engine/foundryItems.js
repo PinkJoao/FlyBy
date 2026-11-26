@@ -106,6 +106,8 @@
 //   Background
 //   buildOriginFeatItem(character, db): o talento de origem.
 //   buildBackgroundItem(character, originFeatItem, db): o item de background.
+//   buildReadyBackgroundItem(character, bg, originFeatItem, db): o de um background pronto,
+//     na forma do documento do SRD (DDL-0328).
 //
 //   Subclasse
 //   resolveSubclassFeatures(subclass, classId, db, range): features numa faixa; a que é só
@@ -276,8 +278,17 @@
 //     composto; optional features têm índice próprio no overlay.
 //
 //   Background
-//   - A história escrita na aba Background é a descrição do item (e a biografia
+//   - A história escrita na aba Background é a descrição do item custom (e a biografia
 //     do ator). A origem é custom, então nenhum texto oficial compete com ela.
+//   - O background PRONTO (DDL-0328) sai na forma do documento do `origins24` (o Sage do
+//     SRD e das premades): ASI com `points: 3`, `cap: 2` e `locked` com os outros três
+//     atributos, um Trait "Background Proficiencies" (as duas perícias e a ferramenta;
+//     a de categoria como escolha), o ItemGrant "Background Feat" e o Trait "Choose
+//     Languages" (Common mais dois). A descrição é o texto oficial (o fluff e as linhas do
+//     livro); a história do jogador fica só na biografia (resposta B6 do dono). O
+//     `compendiumSource` só nos quatro do SRD (§6.2: nada de quase-igual), a flag
+//     `builder5e.background` com o `{ id, source }` exato e a marca do Plutonium. O
+//     Plutonium não monta o ASI de 2024 (desiste do `choose.weighted`); o SRD é o modelo.
 //
 //   Subclasse
 //   - resolveSubclassFeatures pula a feature guarda-chuva (com o nome da própria
@@ -422,6 +433,7 @@ import {
 } from './compendiumUuids';
 import { srdItemMechanics, srdVariantEnchantment } from './foundryItemMechanics';
 import { interopFlags } from './foundryInterop';
+import { resolveBackground, backgroundAbilities, backgroundSkills, backgroundFixedTool, backgroundToolCategory } from './backgrounds';
 import { flatBonusAc } from './armorClass';
 import { grantedSpells } from './grantedSpells';
 import { curatedAdditionalSpells } from './grantedSpellUses';
@@ -1644,6 +1656,8 @@ export function languageTraitKey(db, name) {
 export function buildBackgroundItem(character, originFeatItem = null, db = null) {
   const origin = character?.origin;
   if (!origin) return null;
+  const ready = resolveBackground(db, origin.background);
+  if (ready) return buildReadyBackgroundItem(character, ready, originFeatItem, db);
   const advancement = [];
 
   const boosts = origin.abilityBoosts ?? [];
@@ -1695,6 +1709,91 @@ export function buildBackgroundItem(character, originFeatItem = null, db = null)
     effects: [],
     flags: {},
     _stats: itemStats(),
+  };
+}
+
+const TOOL_POOL = { AT: 'tool:art:*', INS: 'tool:music:*', GS: 'tool:game:*' };
+
+/**
+ * O item de um background pronto, na forma do documento do SRD.
+ * @param {import('../schema/character').Character} character
+ * @param {object} bg  o background (engine/backgrounds)
+ * @param {object} [originFeatItem]
+ * @param {object} [db]
+ * @returns {object}
+ */
+export function buildReadyBackgroundItem(character, bg, originFeatItem = null, db = null) {
+  const origin = character.origin;
+  const abilities = backgroundAbilities(bg);
+  const assignments = {};
+  for (const b of origin.abilityBoosts ?? []) {
+    if (ABILITIES.includes(b.ability)) assignments[b.ability] = (assignments[b.ability] ?? 0) + (b.amount ?? 0);
+  }
+  const advancement = [{
+    _id: randomFoundryId(),
+    type: 'AbilityScoreImprovement',
+    level: 0,
+    title: 'Background Ability Score Improvement',
+    configuration: { points: 3, cap: 2, fixed: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 }, locked: ABILITIES.filter((a) => !abilities.includes(a)) },
+    value: { type: 'asi', assignments },
+  }];
+
+  const fixedTool = backgroundFixedTool(db, bg);
+  const category = backgroundToolCategory(bg);
+  const grants = [
+    ...(fixedTool ? [toolTraitKey(db, fixedTool)] : []),
+    ...backgroundSkills(bg).map((s) => `skills:${s}`),
+  ];
+  const toolPick = category ? collectChoicePicks(origin.choices, 'tool')[0] : null;
+  advancement.push({
+    _id: randomFoundryId(),
+    type: 'Trait',
+    level: 0,
+    title: 'Background Proficiencies',
+    configuration: { mode: 'default', allowReplacements: false, grants, choices: category ? [{ count: 1, pool: [TOOL_POOL[category.category]] }] : [] },
+    value: { chosen: [...grants, ...(toolPick ? [toolTraitKey(db, toolPick)] : [])] },
+  });
+
+  if (originFeatItem) {
+    advancement.push({
+      _id: randomFoundryId(),
+      type: 'ItemGrant',
+      level: 0,
+      title: 'Background Feat',
+      configuration: { items: [{ uuid: `.${originFeatItem._id}`, optional: false }], optional: false, spell: null },
+      value: { added: { [originFeatItem._id]: `.${originFeatItem._id}` } },
+    });
+  }
+
+  const languages = [...new Set([...(origin.languages ?? []), ...collectChoicePicks(origin.choices, 'language')])]
+    .filter((l) => norm(l) !== 'common');
+  advancement.push({
+    _id: randomFoundryId(),
+    type: 'Trait',
+    level: 0,
+    title: 'Choose Languages',
+    configuration: { mode: 'default', allowReplacements: false, grants: ['languages:standard:common'], choices: [{ count: 2, pool: ['languages:standard:*'] }] },
+    value: { chosen: ['languages:standard:common', ...languages.map((l) => languageTraitKey(db, l))] },
+  });
+
+  const fluff = (db?.['fluff-backgrounds']?.backgroundFluff ?? []).find((f) => f.name === bg.name && f.source === bg.source);
+  const uuid = bg.srd52 ? originUuid(bg.name) : null;
+  return {
+    _id: randomFoundryId(),
+    name: bg.name,
+    type: 'background',
+    img: 'icons/svg/item-bag.svg',
+    system: {
+      identifier: slugify(bg.name),
+      advancement: keyById(advancement),
+      description: { value: entriesToHtml([...(fluff?.entries ?? []), ...(bg.entries ?? [])]), chat: '' },
+      source: sourceBlock(bg.source),
+      startingEquipment: [],
+      wealth: '50',
+    },
+    effects: [],
+    flags: { ...interopFlags('background', { name: bg.name, source: bg.source }), builder5e: { background: { id: bg.name, source: bg.source } } },
+    _stats: itemStats(uuid),
   };
 }
 

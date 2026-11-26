@@ -37,7 +37,8 @@
 // DECISÕES E ARMADILHAS
 //   DELIBERATE e EXPECTED
 //   - DELIBERATE é o que o comparador NÃO olha: o nome do background (só origens
-//     CUSTOM; a MECÂNICA dele é comparada), a identidade de documento (ids, `_stats`
+//     CUSTOM; a MECÂNICA dele é comparada; o do `origins24`, um background pronto desde o
+//     DDL-0328, é comparado no nome, no identificador e no `compendiumSource`), a identidade de documento (ids, `_stats`
 //     exceto `compendiumSource`, img, sort, ownership, folder, flags), a prosa, o
 //     estado de sessão (o export nasce "descansado") e senses/movement (derivados
 //     de Active Effects). O `container` saiu dessa lista em 2026-07-29 (DDL-0080).
@@ -541,6 +542,13 @@ function compareItems(P, A, out, db) {
     const an = [...(aByType[t]?.keys() ?? [])];
     if (t === 'background') {
       cmp(out, 'items.background', 'count', pn.length, an.length);
+      const pb = [...(pByType[t]?.values() ?? [])][0];
+      const ab = [...(aByType[t]?.values() ?? [])][0];
+      if (pb && ab && String(pb._stats?.compendiumSource ?? '').includes('origins24')) {
+        cmp(out, 'background.ready', 'name', pb.name, ab.name);
+        cmp(out, 'background.ready', 'identifier', pb.system?.identifier, ab.system?.identifier);
+        cmp(out, 'background.ready', 'compendiumSource', pb._stats?.compendiumSource, ab._stats?.compendiumSource ?? null);
+      }
       continue;
     }
     cmpSet(out, `items.${t}`, 'names', pn, an);

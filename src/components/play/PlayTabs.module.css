@@ -4,7 +4,7 @@
  * CLASSES
  *   .adjust: o contador tocável que abre o ajuste à mão (DDL-0202): pílula de borda fina,
  *     32px de altura como o Chip (alvo de toque).
- *   .slotBtn: o espaço do cabeçalho do círculo como botão; .headToggle: o título que recolhe.
+ *   .headToggle: o título que recolhe o círculo.
  *   .toggle: "Show unprepared spells".
  *
  * DECISÕES E ARMADILHAS
@@ -35,18 +35,6 @@
 .adjust:disabled {
   border-color: transparent;
   cursor: default;
-}
-
-.slotBtn {
-  appearance: none;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
-.slotBtn:hover:not(:disabled),
-.slotBtn:focus-visible {
-  border-color: var(--accent-border);
 }
 
 .headToggle {

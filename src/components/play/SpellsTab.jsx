@@ -12,7 +12,6 @@
 //
 // FUNÇÕES
 //   rawIndex(origin): as magias cruas da origem derivada, pelo nome.
-//   PoolChip(props): um espaço no cabeçalho do círculo, em gemas (o que sobra e o máximo).
 //   SpellsTab(props): a aba.
 //
 // DECISÕES E ARMADILHAS
@@ -30,7 +29,9 @@
 //     gasto (spellCosts, a Tag no tom do gasto, DDL-0165, DDL-0199): o tempo dela e os das features
 //     (Quickened Spell, Mantle of Majesty...). A mesma magia pode ter duas.
 //   - Os espaços são MARCADORES (gemas, as `Pips` comuns com `shape="gem"`,
-//     DDL-0201): a gema cheia é o que sobra; o pacto leva o rótulo e o tom accent.
+//     DDL-0201): a gema cheia é o que sobra. O desenho é o da ficha (`GroupSlots` da
+//     SpellbookTab, DDL-0339): gemas soltas, o pacto com o rótulo curto ao lado quando há
+//     os dois. O cabeçalho não conta as magias do círculo: o número era lido como espaços.
 //   - Tocar nas gemas abre o ajuste à mão (DDL-0202, `onResource`). Por isso o cabeçalho
 //     do círculo é um div que recolhe ao toque, com o título como botão (teclado e
 //     `aria-expanded`): um botão dentro de outro não vale. A gema para a propagação.
@@ -60,12 +61,11 @@ import { imgUrl } from '../common/media';
 import { showDetailPopup } from '../common/detailPopup';
 import Collapse from '../common/Collapse';
 import Icon from '../common/Icon';
-import { SpellRow } from '../builder/SpellbookTab';
+import { SpellRow, GroupSlots } from '../builder/SpellbookTab';
 import styles from '../builder/SpellbookTab.module.css';
 import Toggle from '../common/Toggle';
 import { TUT } from '../../tutorial/anchors';
 import play from './PlayTabs.module.css';
-import Pips from '../common/Pips';
 
 /** As magias cruas da origem derivada, pelo nome (com granted e castType). */
 function rawIndex(origin) {
@@ -73,27 +73,6 @@ function rawIndex(origin) {
   for (const s of [...(origin?.cantrips ?? []), ...(origin?.prepared ?? []), ...(origin?.unprepared ?? []), ...(origin?.arcanumSpells ?? [])]) if (s.raw) out.set(s.raw.name, { ...s, granted: false });
   for (const s of origin?.alwaysPrepared ?? []) if (s.raw) out.set(s.raw.name, s);
   return out;
-}
-
-/** Um espaço no cabeçalho do círculo: as gemas do que sobra; o pacto com o rótulo e o tom dele. */
-function PoolChip({ pool, onResource }) {
-  const pact = pool.kind === 'pact';
-  const cls = [styles.slot, play.slotBtn, pact && styles.slotPact, pool.left > 0 ? null : styles.slotEmpty].filter(Boolean).join(' ');
-  return (
-    <button
-      type="button"
-      className={cls}
-      disabled={!onResource}
-      onClick={(e) => {
-        e.stopPropagation();
-        onResource?.(pool);
-      }}
-      title={`${pool.label}: ${pool.left} of ${pool.max} left. Tap to change by hand`}
-    >
-      {pact && <span className={styles.slotLevel}>Pact {pool.level}</span>}
-      <Pips left={pool.left} max={pool.max} shape="gem" />
-    </button>
-  );
 }
 
 /**
@@ -179,14 +158,16 @@ export default function SpellsTab({ catalog, state, derived, db, onCast, onResou
                 <button type="button" className={play.headToggle} aria-expanded={!isCollapsed}>
                   <span className={styles.panelTitle}>{spellLevelLabel(lv)}</span>
                 </button>
-                <span className={styles.panelCount}>{list.length}</span>
-                {pools.length > 0 && (
-                  <span className={styles.slots}>
-                    {pools.map((p) => (
-                      <PoolChip key={p.key} pool={p} onResource={onResource} />
-                    ))}
-                  </span>
-                )}
+                {pools.map((p) => (
+                  <GroupSlots
+                    key={p.key}
+                    pool={{ kind: p.kind, level: p.level, count: p.max }}
+                    left={p.left}
+                    short={pools.length > 1}
+                    onClick={onResource ? () => onResource(p) : null}
+                    title={`${p.label}: ${p.left} of ${p.max} left. Tap to change by hand`}
+                  />
+                ))}
                 <span className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron} aria-hidden="true">
                   <Icon name="chevron" />
                 </span>

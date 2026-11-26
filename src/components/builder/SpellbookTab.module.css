@@ -8,9 +8,9 @@
  * CLASSES
  *   Cabeçalho
  *   O topo é a StatStrip comum (DDL-0321); .slotGem é a gema ao lado do número dos espaços.
- *   .slots, .slot*: os espaços no cabeçalho do círculo, na aba Spells do jogo.
  *   .groupSlots, .groupSlotsLabel, .emptyGroup: os espaços (gemas) no cabeçalho do grupo
- *     de cada círculo, na ficha, e a linha do círculo com espaço e sem magia.
+ *     de cada círculo, na ficha e no jogo (DDL-0339: um desenho só), e a linha do círculo
+ *     com espaço e sem magia. .groupSlotsTap: o mesmo como botão (o jogo, que ajusta à mão).
  *   .controls: busca e "Prepare spell"; o filtro por círculo, o agrupamento e a ordenação
  *     são o ListControls comum (o mesmo do inventário, DDL-0314).
  *   .prepareBtn: "Prepare spell" (Button), como o Shop; no limite (R11) não some, fica
@@ -33,47 +33,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-.slots {
-  display: flex;
-  flex: 1 1 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px 6px;
-}
-
-.slot {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 26px;
-  box-sizing: border-box;
-  padding: 2px 8px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: var(--bg);
-}
-
-.slotPact {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-}
-
-.slotEmpty {
-  border-style: dashed;
-  opacity: 0.6;
-}
-
-.slotLevel {
-  font-size: var(--fs-label);
-  font-weight: 600;
-  opacity: 0.7;
-}
-
-.slotPact .slotLevel {
-  color: var(--accent);
-  opacity: 1;
 }
 
 .slotGem {
@@ -100,6 +59,23 @@
 
 .groupSlots ~ .panelChevron {
   margin-left: var(--space-1);
+}
+
+.groupSlotsTap {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  padding: 2px 0;
+  margin-block: -2px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: none;
+  cursor: pointer;
+}
+
+.groupSlotsTap:hover,
+.groupSlotsTap:focus-visible {
+  background: var(--accent-bg);
 }
 
 .groupSlotsLabel {

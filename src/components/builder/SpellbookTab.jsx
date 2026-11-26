@@ -34,7 +34,8 @@
 //     openPrepare(), undoSessionPick(name): o "Prepare spell" em modo múltiplo.
 //     inClassList(raw), excludeFromPicker(raw): os recortes do seletor.
 //   GroupSlots(props): os espaços de um círculo, em gemas, no cabeçalho do grupo; com as
-//     duas espécies de espaço, o rótulo do pacto é curto (`short`).
+//     duas espécies de espaço, o rótulo do pacto é curto (`short`). Exportada para a aba
+//     Spells do jogo (DDL-0339): lá `left` diz o que sobra e `onClick` abre o ajuste à mão.
 //   PreparedToggle(props): o radio de preparação (o mesmo átomo do EquipToggle).
 //   SpellThumb(props): arte do fluff, senão o glyph da escola.
 //   SpellRow(props): uma linha da lista. Exportada para a aba Spells do play mode
@@ -691,7 +692,6 @@ export default function SpellbookTab({
                     aria-expanded={!isCollapsed}
                   >
                     <span className={styles.panelTitle}>{label}</span>
-                    <span className={styles.panelCount}>{list.length}</span>
                     {level != null && slotsAt(origin, level, casting).map((p) => <GroupSlots key={p.kind} pool={p} short={bothSlots} />)}
                     <span
                       className={isCollapsed ? `${styles.panelChevron} ${styles.panelChevronClosed}` : styles.panelChevron}
@@ -830,14 +830,29 @@ function PreparedToggle({ prepared, onClick, name }) {
   );
 }
 
-/** Os espaços de um círculo no cabeçalho do grupo, em gemas. */
-function GroupSlots({ pool, short }) {
-  return (
-    <span className={styles.groupSlots} title={pool.kind === 'pact' ? `Pact slots, cast at level ${pool.level}` : undefined}>
+/** Os espaços de um círculo no cabeçalho do grupo, em gemas; com `onClick`, um botão. */
+export function GroupSlots({ pool, short, left = pool.count, onClick = null, title }) {
+  const tip = title ?? (pool.kind === 'pact' ? `Pact slots, cast at level ${pool.level}` : undefined);
+  const body = (
+    <>
       {pool.kind === 'pact' && <span className={styles.groupSlotsLabel}>{short ? 'Pact' : `Pact ${ORDINAL_SHORT[pool.level]}`}</span>}
       {pool.kind === 'arcanum' && <span className={styles.groupSlotsLabel}>Arcanum</span>}
-      <Pips left={pool.count} max={pool.count} shape="gem" label={`${pool.count} ${pool.kind === 'pact' ? 'pact slots' : pool.kind === 'arcanum' ? 'use per Long Rest' : 'slots'}`} />
-    </span>
+      <Pips left={left} max={pool.count} shape="gem" label={left === pool.count ? `${pool.count} ${pool.kind === 'pact' ? 'pact slots' : pool.kind === 'arcanum' ? 'use per Long Rest' : 'slots'}` : undefined} />
+    </>
+  );
+  if (!onClick) return <span className={styles.groupSlots} title={tip}>{body}</span>;
+  return (
+    <button
+      type="button"
+      className={`${styles.groupSlots} ${styles.groupSlotsTap}`}
+      title={tip}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      {body}
+    </button>
   );
 }
 

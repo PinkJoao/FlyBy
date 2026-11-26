@@ -31,7 +31,7 @@ Tap **New Character**, choose **Guide me**, and FlyBy asks one question at a tim
 
 ### Character builder
 
-Every number on the sheet (hit points, armor class, saving throws, skills, spell slots) is worked out from your choices and recalculated the moment you change one. Species, background, class and multiclass, feats, spells and inventory each have their own tab, and every rule, spell or item mentioned anywhere opens its full text with a tap.
+Every number on the sheet (hit points, armor class, saving throws, skills, spell slots) is worked out from your choices and recalculated the moment you change one. Species, background (built piece by piece, or a ready-made one from the 2024 books), class and multiclass, feats, spells and inventory each have their own tab, and every rule, spell or item mentioned anywhere opens its full text with a tap.
 
 <table>
   <tr>
@@ -84,7 +84,7 @@ A source does not need every file: anything missing is left out (the **Game data
 
 | Where | Files |
 |---|---|
-| the folder itself | `races.json`, `fluff-races.json`, `backgrounds.json`, `feats.json`, `optionalfeatures.json`, `skills.json`, `languages.json`, `senses.json`, `items.json`, `items-base.json`, `fluff-items.json`, `magicvariants.json`, `variantrules.json`, `conditionsdiseases.json`, `actions.json`, `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json`, `foundry-items.json` |
+| the folder itself | `races.json`, `fluff-races.json`, `backgrounds.json`, `fluff-backgrounds.json`, `feats.json`, `optionalfeatures.json`, `skills.json`, `languages.json`, `senses.json`, `items.json`, `items-base.json`, `fluff-items.json`, `magicvariants.json`, `variantrules.json`, `conditionsdiseases.json`, `actions.json`, `foundry-feats.json`, `foundry-races.json`, `foundry-optionalfeatures.json`, `foundry-items.json` |
 | `class/` | `class-<name>.json` and `fluff-class-<name>.json` for each of the 13 classes (artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard), plus `foundry.json` |
 | `spells/` | `spells-<source>.json` for each spell source FlyBy knows, the matching `fluff-spells-<source>.json` where they exist, `sources.json` and `foundry.json` |
 | `bestiary/` | `index.json` and the files it lists (plus `objects.json` in the folder itself), read only when a summon, a form or a creature link needs them |

@@ -101,7 +101,7 @@ function Header({ h, t, showPortrait }) {
           {h.name || 'Unnamed Hero'}
         </Text>
         <Text style={{ ...body(t, 10.5), fontStyle: 'italic', marginTop: 1 }}>{h.classLine}</Text>
-        <Text style={{ ...body(t, 9), color: t.muted }}>{[h.species, h.alignment].filter(Boolean).join('  ·  ')}</Text>
+        <Text style={{ ...body(t, 9), color: t.muted }}>{[h.species, h.background, h.alignment].filter(Boolean).join('  ·  ')}</Text>
       </View>
       <View style={{ width: 52, height: 52, borderWidth: 1.2, borderColor: t.red, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: t.box }}>
         <Text style={{ fontFamily: FONTS.title, fontWeight: 700, fontSize: 18, color: t.ink }}>{h.level}</Text>

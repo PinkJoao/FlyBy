@@ -182,6 +182,14 @@ describe('buildSheetModel', () => {
     expect(m.abilities.find((a) => a.code === 'wis')).toMatchObject({ mod: '+4', save: '+7', saveProf: true });
     expect(m.combat.defenses.resist).toEqual(['necrotic']);
     expect(m.biography.details).toEqual([{ label: 'Age', value: '27' }]);
+    expect(m.header.background).toBe('');
+  });
+
+  it('o background pronto aparece no cabeçalho (DDL-0328)', () => {
+    const { c } = twoClassCharacter();
+    c.origin.background = { id: 'Sage', source: 'XPHB' };
+    const db = { ...miniDb(), backgrounds: { background: [{ name: 'Sage', source: 'XPHB', edition: 'one' }] } };
+    expect(buildSheetModel(c, baseDerived, db).header.background).toBe('Sage');
   });
 
   it('perícias em ordem alfabética; meia proficiência não marca o círculo', () => {

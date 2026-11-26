@@ -48,6 +48,8 @@
 //   evalUses e recoveryText são reexportados do engine/playCatalog.
 //
 // DECISÕES E ARMADILHAS
+//   - Um background pronto (DDL-0328) aparece no cabeçalho, ao lado da espécie, e na
+//     etiqueta do talento de origem ("Origin feat (Sage)"); o custom não tem nome a mostrar.
 //   - featureAnnotations lê os ids do bag (featopt@, optfeat@, feat@fs@,
 //     expertise@, feat@<nível>...) e anota a feature por nome e nível ("Weapon
 //     Mastery (Cleave, Graze)", "Ability Score Improvement (+2 Str)"); sem feature
@@ -103,6 +105,7 @@ import { durationLabel } from '../selector/entities/spell';
 import { toBlocks } from './entries';
 import { normalizePdfOptions } from './pdfOptions';
 import { creatureCards } from './creatureModel';
+import { backgroundOf } from '../engine/backgrounds';
 
 const ABILITY_NAME = {
   str: 'Strength', dex: 'Dexterity', con: 'Constitution',
@@ -432,7 +435,8 @@ function featGroup(character, db, opts) {
     found.push({ feat, note });
   };
   const of = character.origin?.originFeat;
-  if (of?.id) add(`${of.id}|${of.source}`, 'Origin feat');
+  const bgName = backgroundOf(character, db)?.name;
+  if (of?.id) add(`${of.id}|${of.source}`, bgName ? `Origin feat (${bgName})` : 'Origin feat');
   for (const entry of Object.values(character.species?.choices ?? {})) {
     if (entry?.kind === 'feat') (entry.picks ?? []).forEach((p) => add(p, 'Species'));
   }
@@ -727,6 +731,7 @@ export function buildSheetModel(character, derived, db, options, { bestiary = []
       name: character.meta?.name ?? '',
       classLine,
       species: speciesText,
+      background: backgroundOf(character, db)?.name ?? '',
       alignment: ALIGNMENT_NAME[id.alignment] ?? id.alignment ?? '',
       level: derived.level || '',
       portrait: typeof portrait === 'string' && /^data:image\/(png|jpe?g);/i.test(portrait) ? portrait : null,

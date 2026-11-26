@@ -27,7 +27,8 @@
     "check:comments": "node scripts/check-comments.js",
     "check:refactor": "node scripts/check-comment-refactor.js",
     "sweep:t3": "vite-node scripts/sweep-t3.js",
-    "oracle:srd": "vite-node scripts/srd-oracle.js"
+    "oracle:srd": "vite-node scripts/srd-oracle.js",
+    "art:picker": "node scripts/srd-art-picker.js"
   },
   "dependencies": {
     "@fontsource-variable/alegreya": "^5.3.0",

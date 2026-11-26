@@ -19,8 +19,6 @@
 //   Exporta classEntity.
 //
 // DECISÕES E ARMADILHAS
-//   - Sem arte no fluff (só o SRD embutido), a imagem vem dos retratos do Wesnoth que o dono
-//     cruzou com o SRD (`withSrdArt`, `selector/srdArt.js`, DDL-0335).
 //   - `sorts`: Hit Die, pelo tamanho do dado de vida.
 //   - `cardExtra` (DDL-0288): o dado de vida, as salvaguardas e a armadura entram no
 //     espaço livre do card, se couberem.
@@ -32,7 +30,6 @@
 import { CLASS_NAMES } from '../../data/config';
 import { resolveClassObj } from '../../engine/resolve';
 import { featureRefLevels, firstParagraph, levelLines } from '../teaser';
-import { withSrdArt, classArtKey } from '../srdArt';
 
 const ABILITY_LABEL = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
 const ABILITY_ABBR = { str: 'Str', dex: 'Dex', con: 'Con', int: 'Int', wis: 'Wis', cha: 'Cha' };
@@ -197,7 +194,7 @@ const classEntity = {
 
   fluff: (c, db) => {
     const images = classFluff(c, db)?.images;
-    return withSrdArt(classArtKey(c), images?.length ? { images } : null);
+    return images?.length ? { images } : null;
   },
 };
 

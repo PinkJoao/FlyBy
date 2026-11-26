@@ -4,8 +4,8 @@
 // O QUE FAZ
 //   Cobre a forma dos cards (DDL-0286, DDL-0288): os padrões, o orçamento de altura,
 //   as etiquetas numa lista só, a peça sem lugar; que toda entity declara a sua e que
-//   os cards do SRD cabem nela. E o carrossel sobre o pacote SRD embutido, sem arte
-//   oficial (só os retratos do Wesnoth, DDL-0335): toda classe, espécie e subclasse tem resumo e ícone.
+//   os cards do SRD cabem nela. E o carrossel sobre o pacote SRD embutido, que não tem
+//   arte nenhuma: toda classe, espécie e subclasse tem resumo e ícone.
 //
 // FUNÇÕES
 //   (nenhuma: suíte Vitest).
@@ -77,7 +77,7 @@ describe('cardShape', () => {
   });
 });
 
-describe('carrossel sobre o SRD embutido (sem arte oficial)', () => {
+describe('carrossel sobre o SRD embutido (sem arte)', () => {
   const subclass = makeSubclassEntity('wizard');
   const cases = [
     ['class', classEntity],
@@ -100,6 +100,6 @@ describe('carrossel sobre o SRD embutido (sem arte oficial)', () => {
     const lines = classEntity.teaser(fighter, bundle);
     expect(lines[0]).toMatch(/^\{@b Level 1:\} .*Second Wind/);
     expect(lines.some((l) => l.startsWith('{@b Level 3:}'))).toBe(true);
-    expect(classEntity.fluff(fighter, bundle).images[0].href.type).toBe('external');
+    expect(classEntity.fluff(fighter, bundle)).toBeNull();
   });
 });

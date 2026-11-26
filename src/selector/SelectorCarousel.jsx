@@ -75,7 +75,6 @@ function galleryOf(entity, raw, db) {
 function artShape(entity, raw, db) {
   const img = (entity.fluff?.(raw, db)?.images ?? []).find((i) => i.href);
   const ratio = img?.width && img?.height ? img.width / img.height : null;
-  if (img?.cutout) return { shape: 'cutout', ratio: null };
   if (!ratio) return { shape: 'mid', ratio: null };
   return { shape: ratio >= 1.5 ? 'wide' : ratio < 0.8 ? 'tall' : 'mid', ratio };
 }

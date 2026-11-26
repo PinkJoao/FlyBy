@@ -283,7 +283,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   return (
     <div className={styles.tab}>
       <StatStrip
-        split
+        fit
         dataTour={TUT.TAB_INV_TOP}
         cells={[
           {

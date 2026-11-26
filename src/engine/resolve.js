@@ -38,6 +38,7 @@
 //   optionalFeatureGrants(cls, db, ctx): as magias das invocações e demais
 //     optional features escolhidas na classe.
 //   increasedAbility(bag): o atributo que o próprio talento aumentou.
+//   inheritFromFeat(origins): o atributo herdado de outro talento (INHERIT_FROM).
 //   grantedOrigin(opts): uma origem racial ou de talento.
 //   deriveSpellcasting(character, db, derived): a conjuração inteira, por origem.
 //   spellRefName(ref), grantedNamesOf(additionalSpells, level, db, entity, opts):
@@ -123,6 +124,9 @@
 //     bag liga as escolhas de magia (TC-0011). grantedOrigin não chuta atributo
 //     enquanto a escolha não foi feita: sem ele, sem DC. `ability: 'inherit'` (Fey-Touched,
 //     Telekinetic...) é o atributo aumentado pelo talento, não um atributo (TC-0243).
+//     Menos em INHERIT_FROM: o texto do Magic Connoisseur e do Warlike Familiar manda
+//     usar o atributo de OUTRO talento (Magic Initiate, Familiar Friend), e o dado diz
+//     só `inherit`; sem esse talento na ficha, fica o aumentado (TC-0244).
 //   - reconcileClassSpells (pedido do usuário): (1) trocar ou remover a subclasse
 //     remove as sempre-preparadas da ANTIGA, senão a cópia manual que colapsou na
 //     concessão ressurgia duplicada (o bug do Paladin/Devotion); (2) no level-down,
@@ -448,6 +452,21 @@ function increasedAbility(bag) {
   return collectAbilityPicks(bag)[0]?.ability ?? null;
 }
 
+/** Talento cujo texto manda usar o atributo de conjuração de outro talento (o dado só diz `inherit`). */
+const INHERIT_FROM = {
+  'Magic Connoisseur': 'Magic Initiate',
+  'Warlike Familiar': 'Familiar Friend',
+};
+
+/** Copia para o seguidor de INHERIT_FROM o atributo (e a CD, o ataque) do talento que ele segue. */
+function inheritFromFeat(origins) {
+  for (const o of origins) {
+    const leader = o.kind === 'feat' && INHERIT_FROM[o.label] ? origins.find((l) => l.kind === 'feat' && l.label === INHERIT_FROM[o.label]) : null;
+    if (!leader?.ability) continue;
+    Object.assign(o, { ability: leader.ability, abilityMod: leader.abilityMod, saveDc: leader.saveDc, attackBonus: leader.attackBonus });
+  }
+}
+
 /** Uma origem racial ou de talento, ou null sem concessão no nível. */
 function grantedOrigin({ key, kind, label, entity, additionalSpells, level, db, profBonus, modifiers, chosenAbility, bag }) {
   const { spells, ability: fixedAbility, abilityChoices, pendingChoices } = resolveGranted(
@@ -692,6 +711,7 @@ export function deriveSpellcasting(character, db, { profBonus, modifiers, level 
     });
     if (origin) origins.push(origin);
   }
+  inheritFromFeat(origins);
 
   const casterLevel = leveledCasterLevel(leveledCasters);
   const slots = spellSlots(casterLevel);

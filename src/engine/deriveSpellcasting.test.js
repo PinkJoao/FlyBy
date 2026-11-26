@@ -324,6 +324,33 @@ describe("deriveSpellcasting - talento com ability: 'inherit' (TC-0243)", () => 
   });
 });
 
+describe('deriveSpellcasting - Magic Connoisseur usa o atributo do Magic Initiate (TC-0244)', () => {
+  const connoisseur = { name: 'Magic Connoisseur', source: 'AU', additionalSpells: [{ ability: 'inherit', innate: { _: { daily: { '1e': ['bless|xphb'] } } } }] };
+  const dbC = { ...dbG, feats: { feat: [magicInitiate, connoisseur] } };
+  const build = (withInitiate) => {
+    const ch = createCharacter();
+    if (withInitiate) ch.origin = { originFeat: { id: 'Magic Initiate', source: 'XPHB', choices: { 'spellAbility-0': { kind: 'spellAbility', picks: ['cha'] } } } };
+    ch.classes = [{
+      ...createClassEntry(true), classId: 'fighter', source: 'XPHB', level: 5,
+      choices: { 'feat-0': { kind: 'feat', picks: ['Magic Connoisseur|AU'], sub: { 'Magic Connoisseur|AU': { 'ability-0': { kind: 'ability', alt: 0, picks: [{ ability: 'int', amount: 1 }] } } } } },
+    }];
+    const mods = { ...ctxG.modifiers, int: 1, wis: 4 };
+    const { origins } = deriveSpellcasting(ch, dbC, { ...ctxG, modifiers: mods });
+    return origins.find((o) => o.label === 'Magic Connoisseur');
+  };
+
+  it('o atributo, a CD e o ataque do Magic Initiate, não o aumentado', () => {
+    const o = build(true);
+    expect(o.ability).toBe('wis');
+    expect(o.saveDc).toBe(8 + ctxG.profBonus + 4);
+    expect(o.attackBonus).toBe(ctxG.profBonus + 4);
+  });
+
+  it('sem o Magic Initiate na ficha, fica o atributo aumentado', () => {
+    expect(build(false).ability).toBe('int');
+  });
+});
+
 describe('deriveSpellcasting - nenhuma magia concedida, nenhuma origem', () => {
   it('Fighter sem espécie mágica nem talento', () => {
     const ch = createCharacter();

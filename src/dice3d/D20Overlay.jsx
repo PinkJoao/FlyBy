@@ -151,10 +151,10 @@ export default function D20Overlay({ show, onDone }) {
   return (
     <div className={`${styles.overlay} motion-page`} onClick={tap} role="presentation">
       <div className={`${styles.stage} ${mood}`}>
-        <div className={styles.dice}>
+        <div className={styles.dice} style={{ '--dice': show.dice.length }}>
           {show.dice.map((d, i) => (
             <span key={i} className={landed && !d.kept ? `${styles.die} ${styles.dropped}` : styles.die}>
-              <canvas ref={(el) => { refs.current[i] = el; }} className={show.dice.length > 1 ? `${styles.canvas} ${styles.canvasPair}` : styles.canvas} aria-hidden="true" />
+              <canvas ref={(el) => { refs.current[i] = el; }} className={show.dice.length > 1 ? `${styles.canvas} ${styles.canvasMulti}` : styles.canvas} aria-hidden="true" />
               {landed && d.kept && show.crit && <Sparks />}
               {landed && d.kept && show.fumble && (
                 <svg className={styles.crack} viewBox="0 0 100 100" aria-hidden="true">

@@ -8,7 +8,8 @@
  *
  * CLASSES
  *   .overlay, .stage: a camada e o palco central.
- *   .dice, .die, .canvas, .canvasPair, .dropped: os dados; o descartado esmaece.
+ *   .dice, .die, .canvas, .canvasMulti, .dropped: os dados; o descartado esmaece. Com
+ *     mais de um, cada um fica com a parte dele da largura (`--dice`, a quantidade).
  *   .result, .resultOn, .label, .total, .tag: o rótulo, o total e o selo.
  *   .crit, .fumble: o palco no crítico e na falha.
  *   .sparks, .spark: as faíscas do crítico.
@@ -20,6 +21,8 @@
  * DECISÕES E ARMADILHAS
  *   - Cores só por token (--warning é o ouro, --danger o vermelho), com color-mix
  *     para os tons (DDL-0097).
+ *   - Dois ou três d20 (vantagem, Elven Accuracy) dividem 92vw (DDL-0333): com a largura
+ *     fixa do par, os três somavam 141vw e o terceiro saía da tela no celular.
  *   - O "reduzir movimento" do sistema nem abre a camada (rollShow), então aqui não
  *     há regra própria para ele.
  * ----------------------------------------------------------------------------- */
@@ -63,9 +66,10 @@
   transition: filter 0.3s ease;
 }
 
-.canvasPair {
-  width: min(47vw, 250px);
-  height: min(47vw, 250px);
+.canvasMulti {
+  --each: min(calc((92vw - (var(--dice) - 1) * var(--space-1)) / var(--dice)), 250px);
+  width: var(--each);
+  height: var(--each);
 }
 
 .dropped {

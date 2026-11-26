@@ -183,8 +183,10 @@ export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
  */
 
 /**
- * A origem custom, no lugar do background pronto.
+ * A origem: custom, ou um background pronto (`background`, DDL-0328) que preenche os
+ * mesmos campos.
  * @typedef {Object} CustomOrigin
+ * @property {{ id: string, source: string }} [background]  ausente = custom
  * @property {AbilityBoost[]} abilityBoosts
  * @property {FeatChoice|null} originFeat
  * @property {Object} choices

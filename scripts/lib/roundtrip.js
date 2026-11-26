@@ -93,6 +93,7 @@ export function decisionSummary(c) {
         }
       : null,
     origin: {
+      background: c.origin?.background?.id ? `${c.origin.background.id}|${c.origin.background.source}`.toLowerCase() : null,
       boosts: (c.origin?.abilityBoosts ?? [])
         .filter((b) => b.ability)
         .map((b) => `${b.ability}+${b.amount}`)

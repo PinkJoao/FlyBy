@@ -8,9 +8,10 @@
 //
 // FUNÇÕES
 //   recommendedScores(classId): a recomendação de uma classe (cópia), ou null.
-//   recommendedBoosts(classId, mode): os bônus de antecedente recomendados para a classe
-//     (o +2 no atributo mais alto do array recomendado, o +1 no seguinte; ou +1 nos três
-//     mais altos), ou null sem classe (DDL-0308).
+//   recommendedBoosts(classId, mode, allowed): os bônus de antecedente recomendados para a
+//     classe (o +2 no atributo mais alto do array recomendado, o +1 no seguinte; ou +1 nos
+//     três mais altos), ou null sem classe (DDL-0308). Com `allowed` (os três atributos de
+//     um background pronto, DDL-0328) só entre eles, e sem classe na ordem deles.
 //   boostsEmpty(boosts): nenhum bônus tem atributo ainda?
 //   isDefaultScores(scores, abilities): ainda é o padrão intocado (tudo 10)?
 //   matchesAnyRecommendation(scores, abilities): bate EXATAMENTE com a
@@ -65,10 +66,11 @@ export function recommendedScores(classId) {
 }
 
 /** Os bônus de antecedente recomendados para a classe, ou null. */
-export function recommendedBoosts(classId, mode = '2-1') {
+export function recommendedBoosts(classId, mode = '2-1', allowed = null) {
   const rec = RECOMMENDED_SCORES[classId];
-  if (!rec) return null;
-  const order = Object.keys(rec).sort((a, b) => rec[b] - rec[a]);
+  if (!rec && !allowed) return null;
+  const ranked = rec ? Object.keys(rec).sort((a, b) => rec[b] - rec[a]) : [...allowed];
+  const order = allowed ? ranked.filter((a) => allowed.includes(a)) : ranked;
   return mode === '1-1-1'
     ? order.slice(0, 3).map((ability) => ({ ability, amount: 1 }))
     : [

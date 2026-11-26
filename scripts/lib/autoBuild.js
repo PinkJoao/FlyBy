@@ -33,6 +33,7 @@
 //     até o limite de cada origem de classe.
 //   multiclassOrder(db, classIds): os atributos que os requisitos de multiclasse pedem, na ordem.
 //   boostsFor(db, scores, order, classIds): os aumentos da origem que fazem todo requisito passar.
+//   latestFeatOf(db, categories): o primeiro talento de uma categoria (o Dark Gift).
 //   autoBuild(db, spec): o personagem completo de uma linha da matriz.
 //
 // DECISÕES E ARMADILHAS
@@ -60,6 +61,9 @@
 //   - Opção de classe: prefere a de pré-requisito cumprido; sem nenhuma, a sem pré-requisito, e só por último a que
 //     reprova. Um guerreiro com Eldritch Adept pegava o Eldritch Smite (bruxo 5) e o Foundry não avaliava a fórmula
 //     do espaço de pacto (DDL-0264).
+//   - `spec.background` ({ id, source }, DDL-0328) aplica o background pronto como a tela faz
+//     (`applyBackground`); com o talento à escolha (Dark Gift) pega a primeira opção nomeada, e as
+//     escolhas que sobram vêm de `originChoicesFor`.
 //   - `spec.preset(character)` (T3, TESTING-PLAN §5b) roda ANTES do laço: põe a
 //     unidade sob teste no lugar real (o talento no `feat@4`, a magia no grimório, o
 //     item no inventário) e o laço preenche o resto e as sub-escolhas dela.
@@ -94,7 +98,7 @@ import { speciesChoices } from '../../src/engine/speciesData';
 import { prereqContext, prereqStatus } from '../../src/engine/prereq';
 import { allSpells, classSpellList, spellChoosePredicate } from '../../src/engine/spells';
 import { buildClassChoices } from '../../src/components/builder/classChoices';
-import { ORIGIN_CHOICES } from '../../src/components/builder/originChoices';
+import { applyBackground, backgroundFeat, originChoicesFor, resolveBackground } from '../../src/engine/backgrounds';
 import { guidancePendencies } from '../../src/components/wizard/guidancePendencies';
 import { choicesComplete } from '../../src/components/wizard/createGuideContext';
 import { makeFeatEntity, hasFreeLegacyBonus } from '../../src/selector/entities/feat';
@@ -468,6 +472,11 @@ export function boostsFor(db, scores, order, classIds) {
  * @returns {{ character, derived, pendencies, problems: string[], ok: boolean,
  *   iterations: number }}
  */
+/** O primeiro talento de uma das categorias (o Dark Gift de um background do Ravenloft). */
+function latestFeatOf(db, categories) {
+  return (db?.feats?.feat ?? []).find((f) => categories.includes(f.category) && !f.reprintedAs?.length) ?? null;
+}
+
 export function autoBuild(db, spec) {
   const rng = mulberry32(spec.seed ?? 1);
   const c = createCharacter({ name: spec.name ?? 'Sweep Build', scoreMethod: 'standard-array' });
@@ -511,9 +520,24 @@ export function autoBuild(db, spec) {
     choices: {},
   };
 
+  const problems = [];
+  if (spec.background) {
+    const bg = resolveBackground(db, spec.background);
+    if (!bg) problems.push(`background not found: ${spec.background.id}|${spec.background.source}`);
+    else {
+      c.origin = applyBackground(c.origin, bg, db, { classId: classSpecs[0].classId });
+      const f = backgroundFeat(db, bg);
+      if (!c.origin.originFeat && f.options[0]) c.origin.originFeat = { id: f.options[0].id, source: f.options[0].source, subtype: 'origin', choices: {} };
+      if (!c.origin.originFeat) {
+        const dg = latestFeatOf(db, f.categories);
+        if (dg) c.origin.originFeat = { id: dg.name, source: dg.source, subtype: 'origin', choices: {} };
+        else problems.push(`no feat for background ${bg.name}`);
+      }
+    }
+  }
+
   if (spec.preset) spec.preset(c);
 
-  const problems = [];
   let iterations = 0;
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
@@ -554,7 +578,7 @@ export function autoBuild(db, spec) {
     }
 
     {
-      const r = fillBag(ORIGIN_CHOICES, c.origin.choices, { ...ctx, where: `${ctx.where} origin` });
+      const r = fillBag(originChoicesFor(c.origin, db), c.origin.choices, { ...ctx, where: `${ctx.where} origin` });
       if (r.changed) {
         c.origin = { ...c.origin, choices: r.bag };
         changed = true;

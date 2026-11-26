@@ -38,7 +38,7 @@ import { totalLevel } from '../../schema/character';
 import { requiresLineage, speciesChoices } from '../../engine/speciesData';
 import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
 import { buildClassChoices, isProficiencyChoice, isFeatureChoice } from '../builder/classChoices';
-import { ORIGIN_CHOICES } from '../builder/originChoices';
+import { originChoicesFor } from '../../engine/backgrounds';
 import { hasFreeLegacyBonus } from '../../selector/entities/feat';
 
 /** As sub-escolhas de um talento. */
@@ -155,7 +155,7 @@ export function createGuideContext(db, character) {
     hasFeatureChoices: featChoices.length > 0,
     proficienciesComplete:
       choicesComplete(profChoices, cls?.choices, db, level) &&
-      choicesComplete(ORIGIN_CHOICES, character?.origin?.choices, db, level),
+      choicesComplete(originChoicesFor(character?.origin, db), character?.origin?.choices, db, level),
     featuresComplete: choicesComplete(featChoices, cls?.choices, db, level),
     speciesComplete: speciesStepComplete(db, character),
     originFeatComplete: originFeatStepComplete(db, character),

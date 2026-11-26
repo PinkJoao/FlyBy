@@ -14,6 +14,8 @@
 //     subclasse e as features por nível.
 //
 // DECISÕES E ARMADILHAS
+//   - Sem arte no fluff (só o SRD embutido), a imagem vem dos retratos do Wesnoth que o dono
+//     cruzou com o SRD (`withSrdArt`, `selector/srdArt.js`, DDL-0335).
 //   - As subclasses da reedição cosmética da classe (`classSource` "WoW", cópias das
 //     do XPHB, DDL-0190) saem da lista: seriam duplicatas com o mesmo nome.
 //   - O id inclui classSource: a cópia "compat" (Armorer TCE na classe EFA) colide
@@ -31,6 +33,7 @@ import { resolveSubclassEntries, subclassFeatureList } from '../../engine/subcla
 import { firstParagraph, levelLines } from '../teaser';
 import { classIcon } from './class';
 import { reskinSources } from '../../engine/resolve';
+import { withSrdArt, subclassArtKey } from '../srdArt';
 
 const subclassIdOf = (s) => `${s.shortName ?? s.name}|${s.source}|${s.classSource ?? ''}`;
 
@@ -100,7 +103,7 @@ export function makeSubclassEntity(classId, title = 'Subclass') {
         list.find((f) => f.shortName === s.shortName && f.source === s.source) ??
         list.find((f) => f.shortName === s.shortName) ??
         null;
-      return match?.images?.length ? { images: match.images } : null;
+      return withSrdArt(subclassArtKey(s), match?.images?.length ? { images: match.images } : null);
     },
   };
 }

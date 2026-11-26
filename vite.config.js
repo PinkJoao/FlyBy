@@ -91,6 +91,6 @@ export default defineConfig({
     }),
   ],
   test: {
-    exclude: [...configDefaults.exclude, 'DnD Source Material/**', '.claude/**', 'testing/ui/**'],
+    exclude: [...configDefaults.exclude, 'DnD Source Material/**', '.claude/**', 'testing/ui/**', 'testing/media/**'],
   },
 })

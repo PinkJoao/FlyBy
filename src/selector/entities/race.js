@@ -19,6 +19,8 @@
 //   Exporta raceEntity.
 //
 // DECISÕES E ARMADILHAS
+//   - Sem arte no fluff (só o SRD embutido), a imagem vem dos retratos do Wesnoth que o dono
+//     cruzou com o SRD (`withSrdArt`, `selector/srdArt.js`, DDL-0335).
 //   - `sorts`: Speed, pela velocidade de caminhada.
 //   - Carrossel (DDL-0286): o resumo é o primeiro parágrafo da lore e os nomes dos
 //     traços; os campos que a meta já mostra (tamanho, deslocamento, tipo) e os de
@@ -54,6 +56,7 @@ import { isFoldedSpecies, lineageImagePath } from '../../engine/mergedLineages';
 import { lineageLabel } from '../../engine/speciesData';
 import { sourceName } from '../../engine/sourceNames';
 import { firstParagraph } from '../teaser';
+import { withSrdArt, speciesArtKey } from '../srdArt';
 
 const SIZE_LABEL = { T: 'Tiny', S: 'Small', M: 'Medium', L: 'Large', V: 'Varies' };
 
@@ -301,7 +304,7 @@ const raceEntity = {
       const img = findFluffImage(list, overridePath) ?? { type: 'image', href: { type: 'internal', path: overridePath } };
       return { ...(result ?? { name: race.name, source: race.source }), images: [img] };
     }
-    return result;
+    return withSrdArt(speciesArtKey(race), result);
   },
 };
 

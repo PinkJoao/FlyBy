@@ -120,7 +120,7 @@ const CREATE_CATALOG = [
     id: 'species',
     title: 'What are they?',
     subtitle: 'Species & lineage',
-    need: 'Choose a species',
+    need: (c) => (c?.species?.id ? 'Finish the species choices' : 'Choose a species'),
     when: () => true,
     status: (c, d, ctx) => (c?.species && (ctx?.speciesComplete ?? true) ? 'complete' : 'incomplete'),
   },

@@ -14,6 +14,7 @@
 //
 // FUNÇÕES
 //   titleCase(s), noun(kind, count), toOption(kind, raw): rótulos e opções.
+//   withArticle(word): a palavra com "a" ou "an" pela primeira letra ("an elven lineage", DDL-0340).
 //   parseProfField(field, kind, push, mapValue): skill, tool ou language.
 //   parseStlField(field, push): o campo combinado skillToolLanguageProficiencies.
 //   parseAbilityField(field, push): o ASI embutido de um talento.
@@ -111,6 +112,11 @@ export function titleCase(s) {
     .join(' ');
 }
 
+/** A palavra com "a" ou "an" pela primeira letra. */
+export function withArticle(word) {
+  return `${/^[aeiou]/i.test(String(word)) ? 'an' : 'a'} ${word}`;
+}
+
 function noun(kind, count) {
   const n = KIND_NOUN[kind] ?? kind;
   return count > 1 ? `${n}s` : n;
@@ -146,7 +152,7 @@ function parseProfField(field, kind, push, mapValue = (v) => v) {
       pushOnce({
         kind,
         count,
-        label: count > 1 ? `Choose ${count} ${noun(kind, count)}` : `Choose a ${noun(kind, 1)}`,
+        label: count > 1 ? `Choose ${count} ${noun(kind, count)}` : `Choose ${withArticle(noun(kind, 1))}`,
         pool: { type: 'list', options: (entry.choose.from ?? []).map((v) => toOption(kind, mapValue(v))) },
       });
     } else if (entry.any != null) {
@@ -164,7 +170,7 @@ function parseProfField(field, kind, push, mapValue = (v) => v) {
         pushOnce({
           kind,
           count: val,
-          label: val > 1 ? `Choose ${val} ${word}` : `Choose a ${word}`,
+          label: val > 1 ? `Choose ${val} ${word}` : `Choose ${withArticle(word)}`,
           pool: { type: 'any', of: kind, category: token.category },
         });
       }
@@ -202,7 +208,7 @@ function parseStlField(field, push) {
       push({
         kind: mixed ? 'mixed' : kinds[0],
         count,
-        label: count > 1 ? `Choose ${count} ${word}` : `Choose a ${word}`,
+        label: count > 1 ? `Choose ${count} ${word}` : `Choose ${withArticle(word)}`,
         pool: { type: 'any', of: mixed ? kinds : kinds[0] },
       });
     }

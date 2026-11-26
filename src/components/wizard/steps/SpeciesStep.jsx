@@ -31,6 +31,7 @@
 import { resolveRaceObj, ownedFromDb } from '../../../engine/resolve';
 import { totalLevel } from '../../../schema/character';
 import { raceLineages, lineageLabel, lineageSelectorLabel, speciesChoices } from '../../../engine/speciesData';
+import { withArticle } from '../../../engine/choices';
 import PickerField from '../../common/PickerField';
 import EntryContent from '../../common/EntryContent';
 import { lineageTrait, speciesChoiceGroups } from '../speciesChoiceGroups';
@@ -139,7 +140,7 @@ export default function SpeciesStep({ character, db, onChange }) {
             entity={makeLineageEntity(baseRace, db)}
             db={db}
             current={species?.lineage ? { label: lineageLabel(species.lineage), source: raceObj?.source ?? baseRace?.source, id: species.lineage } : null}
-            placeholder={`Choose a ${lineageSelectorLabel(baseRace).toLowerCase()}…`}
+            placeholder={`Choose ${withArticle(lineageSelectorLabel(baseRace).toLowerCase())}…`}
             showInfo={false}
             onSelect={(v) => setLineage(v.name)}
             onClear={() => setLineage(null)}

@@ -15,15 +15,24 @@
 //     item a escolher.
 //   kitItemGroup(db, ref): o item group que o uid referencia, ou null.
 //   kitChoosesComplete(option, picks): todos os itens a escolher foram escolhidos?
-//   parseStartingEquipment(db, classObj): as opções legíveis.
+//   parseOptionEntries(db, key, entries): uma opção (A, B...) legível.
+//   parseStartingEquipment(db, classObj, background): as opções legíveis; com um
+//     background pronto, o kit dele junto (DDL-0328).
 //   isGoldOnlyOption(option), optionGoldGp(option): a opção só de ouro.
 //   autoEquips(db, it): o item nasce equipado?
 //   startingKitInventory(option, db, picks): o inventário da opção.
-//   startingKitCurrency(option): 50 GP do background mais o ouro da opção.
+//   startingKitCurrency(option): o ouro do background (50 GP, ou o da opção A de um
+//     pronto) mais o ouro da opção.
 //
 // DECISÕES E ARMADILHAS
 //   - É equipamento OU ouro: a carteira final é o ouro do background (50 GP) mais
 //     o da opção.
+//   - Background pronto (DDL-0328, resposta B9 do dono): duas escolhas só, não duas etapas.
+//     Toda opção de itens da classe leva também os itens e o ouro da opção A do background
+//     (`bg: true` nos itens dele, `backgroundCp`); a opção só de ouro fica com os 50 GP (a B).
+//     O background escreve o item como texto solto ("lamp|xphb") e as chaves em minúsculas
+//     ou maiúsculas; "Artisan's Tools (same as above)" é escolha marcada `sameAsTool`, que
+//     o passo preenche com a ferramenta já escolhida.
 //   - `{equipmentType}` é um item A ESCOLHER de uma categoria (o instrumento do
 //     Bardo, TC-0024); antes era descartado. Uma ref a ITEM GROUP ("druidic
 //     focus|xphb") é "um destes", então vira escolha de pool FECHADO; sem isso o
@@ -130,42 +139,72 @@ export function kitChoosesComplete(option, picks) {
  * @param {object|null} classObj
  * @returns {Array<{ key:string, items:Array<{name,source,quantity}>, valueCp:number, special:string[], chooses:Array<{type,quantity}> }>}
  */
-export function parseStartingEquipment(db, classObj) {
-  const data = classObj?.startingEquipment?.defaultData?.[0];
-  if (!data || typeof data !== 'object') return [];
-  return Object.entries(data).map(([key, entries]) => {
-    const items = [];
-    let valueCp = 0;
-    const special = [];
-    const chooses = [];
-    for (const e of Array.isArray(entries) ? entries : []) {
-      if (e?.item) {
-        const group = kitItemGroup(db, e.item);
-        if (group) {
-          chooses.push({
-            type: 'itemGroup',
-            label: group.name,
-            allow: (group.items ?? []).map((uid) => {
-              const [n = '', s = ''] = String(uid).split('|');
-              const r = resolveRef(db, `${n}|${s}`);
-              return `${r.name}|${r.source}`.toLowerCase();
-            }),
-            quantity: e.quantity ?? 1,
-          });
-        } else {
-          const { name, source } = resolveRef(db, e.item);
-          items.push({ name, source, quantity: e.quantity ?? 1 });
-        }
-      } else if (typeof e?.value === 'number') {
-        valueCp += e.value;
-      } else if (e?.special) {
-        special.push(String(e.special));
-      } else if (e?.equipmentType) {
-        chooses.push({ type: String(e.equipmentType), quantity: e.quantity ?? 1 });
+/** Uma opção (A, B...) legível. */
+function parseOptionEntries(db, key, entries) {
+  const items = [];
+  let valueCp = 0;
+  const special = [];
+  const chooses = [];
+  for (const raw of Array.isArray(entries) ? entries : []) {
+    const e = typeof raw === 'string' ? { item: raw } : raw;
+    if (e?.item) {
+      const group = kitItemGroup(db, e.item);
+      if (group) {
+        chooses.push({
+          type: 'itemGroup',
+          label: group.name,
+          allow: (group.items ?? []).map((uid) => {
+            const [n = '', s = ''] = String(uid).split('|');
+            const r = resolveRef(db, `${n}|${s}`);
+            return `${r.name}|${r.source}`.toLowerCase();
+          }),
+          quantity: e.quantity ?? 1,
+        });
+      } else {
+        const { name, source } = resolveRef(db, e.item);
+        items.push({ name, source, quantity: e.quantity ?? 1 });
       }
+    } else if (typeof e?.value === 'number') {
+      valueCp += e.value;
+    } else if (e?.special) {
+      special.push(String(e.special));
+    } else if (e?.equipmentType) {
+      const same = /same as above/i.test(e.displayName ?? '');
+      chooses.push({ type: String(e.equipmentType), quantity: e.quantity ?? 1, ...(same ? { sameAsTool: true } : {}) });
     }
-    return { key, items, valueCp, special, chooses };
+  }
+  return { key: key.toUpperCase(), items, valueCp, special, chooses };
+}
+
+/**
+ * As opções de equipamento inicial, com o kit do background pronto junto.
+ * @param {object} db
+ * @param {object} classObj
+ * @param {object} [background]  o background pronto (engine/backgrounds), ou null
+ */
+export function parseStartingEquipment(db, classObj, background = null) {
+  const data = classObj?.startingEquipment?.defaultData?.[0];
+  const classOpts = data && typeof data === 'object' ? Object.entries(data).map(([key, entries]) => parseOptionEntries(db, key, entries)) : [];
+  const bgData = background?.startingEquipment?.[0];
+  if (!bgData || typeof bgData !== 'object') return classOpts;
+  const bgOpts = Object.entries(bgData).map(([key, entries]) => parseOptionEntries(db, key, entries));
+  const kit = bgOpts.find((o) => !isGoldOnlyOption(o));
+  const gold = bgOpts.find((o) => isGoldOnlyOption(o));
+  if (!kit) return classOpts;
+  const mark = (list) => list.map((x) => ({ ...x, bg: true }));
+  const withKit = (o) => ({
+    ...o,
+    items: [...o.items, ...mark(kit.items)],
+    chooses: [...(o.chooses ?? []), ...mark(kit.chooses)],
+    special: [...o.special, ...kit.special],
+    backgroundCp: kit.valueCp,
+    background: background.name,
   });
+  if (!classOpts.length) {
+    const empty = { key: 'A', items: [], valueCp: 0, special: [], chooses: [] };
+    return [withKit(empty), { key: 'B', items: [], valueCp: gold?.valueCp ?? 0, special: [], chooses: [], backgroundCp: 0, background: background.name }];
+  }
+  return classOpts.map((o) => (isGoldOnlyOption(o) ? { ...o, background: background.name } : withKit(o)));
 }
 
 /** A opção é só ouro? */
@@ -208,6 +247,7 @@ export function startingKitInventory(option, db = null, picks = null) {
 
 /** A carteira resultante: 50 GP mais o ouro da opção. */
 export function startingKitCurrency(option) {
-  const coins = coinsFromCopper(option.valueCp);
-  return { pp: 0, gp: BACKGROUND_STARTING_GOLD + coins.gp, ep: 0, sp: coins.sp, cp: coins.cp };
+  const bgCp = option.backgroundCp ?? BACKGROUND_STARTING_GOLD * 100;
+  const coins = coinsFromCopper(option.valueCp + bgCp);
+  return { pp: 0, gp: coins.gp, ep: 0, sp: coins.sp, cp: coins.cp };
 }

@@ -31,7 +31,8 @@
  *     .abilityRowArray e .arrayControl: o standard array é um alternador com os seis
  *     valores na MESMA linha do atributo, como o stepper do point buy; abaixo de 560 px
  *     ele desce para uma segunda linha da caixa (DDL-0307).
- *   .kit*: as opções de equipamento A/B/C.
+ *   .kit*: as opções de equipamento A/B/C; .kitFrom é o rótulo do kit do background pronto
+ *     (DDL-0328).
  *
  *   .chosenName, .traitText: o nome da espécie escolhida no alto da página das escolhas
  *     dela e o texto do traço que pede cada escolha (DDL-0289, DDL-0290).
@@ -598,6 +599,14 @@
 
 .kitGold strong {
   color: var(--text-h);
+}
+
+.kitFrom {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--fs-meta);
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .spellAddChip {

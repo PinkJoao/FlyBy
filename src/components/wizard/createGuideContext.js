@@ -121,7 +121,7 @@ export function kitStepComplete(db, character) {
   const cls = character?.classes?.[0];
   const classObj = cls?.classId ? resolveClassObj(db, cls.classId, cls.source) : null;
   const option = classObj
-    ? parseStartingEquipment(db, classObj).find((o) => o.key === kitKey)
+    ? parseStartingEquipment(db, classObj, backgroundOf(character, db)).find((o) => o.key === kitKey)
     : null;
   return kitChoosesComplete(option, character?.meta?.startingKitPicks);
 }

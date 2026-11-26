@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   Recortes reais: o Fighter XPHB (opções e ouro), o Bard XPHB (o instrumento a
-//   escolher do kit A) e o Druid XPHB ("druidic focus" é um item group).
+//   escolher do kit A) e o Druid XPHB ("druidic focus" é um item group); o kit de um
+//   background pronto junto com o da classe (DDL-0328).
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
@@ -206,5 +207,30 @@ describe('chooses de item group (Druidic Focus / Holy Symbol - sessão T1a Druid
     expect(kitChoosesComplete(a, { 0: ['Wooden Staff|XPHB'] })).toBe(true);
     const inv = startingKitInventory(a, dbWithGroup, { 0: ['Wooden Staff|XPHB'] });
     expect(inv.map((i) => i.itemId)).toEqual(['Chain Mail', 'Wooden Staff']);
+  });
+});
+
+describe('background pronto junto (DDL-0328)', () => {
+  const wanderer = {
+    name: 'Mist Wanderer',
+    startingEquipment: [{
+      a: [{ equipmentType: 'toolArtisan', displayName: "Artisan's Tools (same as above)" }, 'javelin|xphb', { value: 3000 }],
+      b: [{ value: 5000 }],
+    }],
+  };
+
+  it('a opção de itens leva o kit do background, a de ouro os 50 GP', () => {
+    const opts = parseStartingEquipment(db, fighter, wanderer);
+    expect(opts.map((o) => o.key)).toEqual(['A', 'C']);
+    const a = opts[0];
+    expect(a.items.filter((it) => it.bg).map((it) => it.name)).toEqual(['Javelin']);
+    expect(a.chooses).toEqual([{ type: 'toolArtisan', quantity: 1, sameAsTool: true, bg: true }]);
+    expect(startingKitCurrency(a).gp).toBe(4 + 30);
+    expect(startingKitCurrency(opts[1]).gp).toBe(155 + 50);
+  });
+
+  it('sem background, a carteira de sempre', () => {
+    const [a] = parseStartingEquipment(db, fighter);
+    expect(startingKitCurrency(a).gp).toBe(54);
   });
 });

@@ -7,16 +7,22 @@
 //   carteira vira 50 GP mais o ouro da opção. Reusa engine/startingEquipment.
 //   Kits com item a escolher (o instrumento do Bardo, TC-0024) ganham um seletor;
 //   os picks vivem em `meta.startingKitPicks`, e trocar de kit os descarta.
+//   Com um background pronto (DDL-0328), cada opção de itens leva também o kit dele, e a
+//   de ouro os 50 GP: duas escolhas, não duas etapas. A opção A vem marcada (resposta B9)
+//   e a ferramenta "same as above" vem com a que o jogador já escolheu.
 //
 // FUNÇÕES
 //   itemLabel(it): "Javelin x8".
+//   samePicks(db, option, character): os picks "same as above" já preenchidos.
 //   KitChoose(props): um item a escolher do kit.
 //   EquipmentStep(props): o passo.
 // -----------------------------------------------------------------------------
 
 import StepExplain from './StepExplain';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { resolveClassObj } from '../../../engine/resolve';
+import { backgroundOf } from '../../../engine/backgrounds';
+import { collectChoicePicks } from '../../../engine/choices';
 import {
   parseStartingEquipment,
   isGoldOnlyOption,
@@ -35,6 +41,19 @@ import styles from './steps.module.css';
 
 /** O rótulo de um item do kit. */
 const itemLabel = (it) => (it.quantity > 1 ? `${it.name} ×${it.quantity}` : it.name);
+
+/** Os picks "same as above" já preenchidos com a ferramenta escolhida na origem. */
+function samePicks(db, option, character) {
+  const tool = collectChoicePicks(character.origin?.choices, 'tool')[0];
+  if (!tool) return {};
+  const raw = itemEntity.list(db).find((r) => r.name.toLowerCase() === String(tool).toLowerCase());
+  if (!raw) return {};
+  const out = {};
+  (option.chooses ?? []).forEach((ch, i) => {
+    if (ch.sameAsTool) out[i] = [`${raw.name}|${raw.source}`];
+  });
+  return out;
+}
 
 /** Um item a escolher do kit. */
 function KitChoose({ choose, index, picks, db, onPicks }) {
@@ -86,18 +105,26 @@ function KitChoose({ choose, index, picks, db, onPicks }) {
 export default function EquipmentStep({ character, db, onChange }) {
   const cls = character.classes?.[0] ?? null;
   const classObj = cls?.classId ? resolveClassObj(db, cls.classId, cls.source) : null;
-  const options = classObj ? parseStartingEquipment(db, classObj) : [];
+  const bg = backgroundOf(character, db);
+  const options = classObj ? parseStartingEquipment(db, classObj, bg) : [];
   const selected = character.meta?.startingKit ?? null;
   const selectedOpt = options.find((o) => o.key === selected) ?? null;
   const kitPicks = character.meta?.startingKitPicks ?? {};
 
-  const selectKit = (opt) =>
+  const selectKit = (opt) => {
+    const picks = samePicks(db, opt, character);
     onChange({
       ...character,
-      inventory: startingKitInventory(opt, db),
+      inventory: startingKitInventory(opt, db, picks),
       currency: startingKitCurrency(opt),
-      meta: { ...character.meta, startingKit: opt.key, startingKitPicks: {} },
+      meta: { ...character.meta, startingKit: opt.key, startingKitPicks: picks },
     });
+  };
+  const first = bg && !selected ? options.find((o) => !isGoldOnlyOption(o)) : null;
+  useEffect(() => {
+    if (first) selectKit(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [first?.key]);
 
   const setPicks = (picks) =>
     onChange({
@@ -135,14 +162,17 @@ export default function EquipmentStep({ character, db, onChange }) {
                 {selected === opt.key && <span className={styles.kitChosen}>Chosen</span>}
               </div>
               {goldOnly ? (
-                <p className={styles.kitGold}>Take the gold instead: <strong>{gp} Gold Pieces</strong> to spend.</p>
+                <p className={styles.kitGold}>
+                  Take the gold instead: <strong>{gp} Gold Pieces</strong> to spend
+                  {opt.background ? <>, plus <strong>50 GP</strong> from {opt.background}</> : null}.
+                </p>
               ) : (
                 <>
                   <ul className={styles.kitItems}>
-                    {opt.items.map((it, i) => (
+                    {opt.items.filter((it) => !it.bg).map((it, i) => (
                       <li key={i}>{itemLabel(it)}</li>
                     ))}
-                    {(opt.chooses ?? []).map((ch, i) => (
+                    {(opt.chooses ?? []).filter((ch) => !ch.bg).map((ch, i) => (
                       <li key={`c${i}`}>{kitChooseLabel(ch)}</li>
                     ))}
                     {opt.special.map((sp, i) => (
@@ -150,6 +180,20 @@ export default function EquipmentStep({ character, db, onChange }) {
                     ))}
                   </ul>
                   {gp > 0 && <p className={styles.kitGold}>plus <strong>{gp} GP</strong></p>}
+                  {opt.background && (
+                    <>
+                      <p className={styles.kitFrom}>From {opt.background}</p>
+                      <ul className={styles.kitItems}>
+                        {opt.items.filter((it) => it.bg).map((it, i) => (
+                          <li key={`b${i}`}>{itemLabel(it)}</li>
+                        ))}
+                        {(opt.chooses ?? []).filter((ch) => ch.bg).map((ch, i) => (
+                          <li key={`bc${i}`}>{kitChooseLabel(ch)}</li>
+                        ))}
+                      </ul>
+                      {opt.backgroundCp > 0 && <p className={styles.kitGold}>plus <strong>{opt.backgroundCp / 100} GP</strong></p>}
+                    </>
+                  )}
                 </>
               )}
             </button>

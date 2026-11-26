@@ -199,6 +199,12 @@ const tabBackground = {
       body: 'Your origin: where the character came from, and the mechanical benefits it grants.',
     },
     {
+      anchor: TUT.TAB_BG_PICK,
+      title: 'Custom or ready-made',
+      body: 'Custom lets you choose every piece below. Pick a background from the books to fill them in at once; the X brings Custom back.',
+      placement: 'bottom',
+    },
+    {
       anchor: TUT.TAB_BG_BOOSTS,
       title: 'Ability boosts',
       body: 'In the 2024 rules your ability increases come from your background: +2 and +1, or +1 to three. Choose the abilities here.',
@@ -212,8 +218,8 @@ const tabBackground = {
     },
     {
       anchor: TUT.TAB_BG_PROFS,
-      title: 'Proficiencies & language',
-      body: 'Pick your background skills, a tool and a language here.',
+      title: 'Proficiencies & languages',
+      body: 'Pick your background skills, a tool and two languages here. A ready-made background already gives the skills and usually the tool.',
       placement: 'bottom',
     },
     {

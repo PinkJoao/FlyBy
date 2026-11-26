@@ -14,7 +14,8 @@
 //   - A lista é a do painel aberto sem busca: o catálogo da entity com o filtro
 //     pré-marcado dela (as variantes de cenário das espécies ficam fora) e a ordem
 //     padrão. O já escolhido entra mesmo que esse filtro o tire (escolhido pelo
-//     painel com o filtro desmarcado), senão o carrossel o perderia de vista.
+//     painel com o filtro desmarcado), senão o carrossel o perderia de vista. A entrada
+//     `pinned` (o Custom Background, DDL-0328) vem primeiro.
 //   - Com `onChoose` (o guia, DDL-0289) não há botão próprio: o botão principal do
 //     rodapé do guia vira "Choose X" enquanto o cartão do centro não é o escolhido
 //     (useGuidePrimary), e `onChoose` escolhe e avança. Um botão só, não um de
@@ -42,12 +43,15 @@ export default function InlineSelector({ entity, db, currentId = null, onSelect,
   const [panel, setPanel] = useState(false);
 
   const items = useMemo(() => {
-    const all = entity.list(db).map((r) => ({ id: entity.idOf(r), raw: r, ...entity.precompute(r) }));
+    const all = entity.list(db).map((r) => ({ id: entity.idOf(r), raw: r, ...entity.precompute(r, db) }));
     const kept = applyFilters(all, { query: '', filterState: entity.initialFilterState ?? {} }).filter(
       (it) => !exclude?.(it.raw),
     );
     const option = entity.naturalSort ?? NAME_SORT;
-    const sorted = sortList(kept, { option, dir: option.defaultDir ?? 'asc', rawOf: (it) => it.raw });
+    const ordered = sortList(kept, { option, dir: option.defaultDir ?? 'asc', rawOf: (it) => it.raw });
+    const sorted = entity.pinned
+      ? [...all.filter((it) => entity.pinned(it.raw)), ...ordered.filter((it) => !entity.pinned(it.raw))]
+      : ordered;
     if (currentId && !sorted.some((it) => it.id === currentId)) {
       const chosen = all.find((it) => it.id === currentId);
       if (chosen) return [chosen, ...sorted];

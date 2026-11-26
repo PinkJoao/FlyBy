@@ -72,6 +72,7 @@ describe('backgrounds do SRD', () => {
     expect(cleared.choices).toEqual({});
     expect(cleared.originFeat).toBeNull();
     expect(cleared.abilityBoosts).toHaveLength(2);
+    expect(clearOrigin(next).abilityBoosts).toEqual([{ ability: '', amount: 2 }, { ability: '', amount: 1 }]);
   });
 
   it('avisa o que a troca apaga na origem custom', () => {

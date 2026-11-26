@@ -41,6 +41,7 @@ export const TUT = {
   MODE_SWITCH: 'mode-switch',
 
   TAB_SPECIES_PICKER: 'tab-species-picker',
+  TAB_BG_PICK: 'tab-bg-pick',
   TAB_BG_BOOSTS: 'tab-bg-boosts',
   TAB_BG_FEAT: 'tab-bg-feat',
   TAB_BG_PROFS: 'tab-bg-profs',

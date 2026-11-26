@@ -5,10 +5,8 @@
  *   .tab, .section*, .titleLink: as seções; .titleLink é o título tappável que abre
  *     a regra no glossário (a cara do .sectionTitle com o sublinhado pontilhado dos
  *     links de regra, como o .labelLink do ChoiceList).
- *   .mode*, .boost*: os ability boosts; o .boostAmount (+2, +1) é só texto, bold e claro: com
- *     fundo e borda accent ele parecia um botão (DDL-0314).
- *   .featChoices: as sub-escolhas do talento de origem (Skilled, Crafter, Magic
- *     Initiate).
+ *   .modeRow: a linha do alternador dos bônus (as linhas e o talento estão em
+ *     OriginParts.module.css desde o DDL-0328).
  *   .story: o texto livre da origem contada em prosa.
  *
  * DECISÕES E ARMADILHAS
@@ -70,33 +68,9 @@
   margin-bottom: var(--space-1);
 }
 
-.boostRows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
 
-.boostRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
 
-.boostAmount {
-  flex: none;
-  min-width: 2.5ch;
-  font-size: var(--fs-lead);
-  font-weight: 700;
-  color: var(--text-h);
-  font-variant-numeric: tabular-nums;
-}
 
-.featChoices {
-  margin-top: var(--space-1);
-  margin-left: 14px;
-  padding-left: 14px;
-  border-left: 2px solid var(--src-origin);
-}
 
 .story {
   font: inherit;

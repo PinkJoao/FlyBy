@@ -126,7 +126,8 @@
 //     uma ordem própria, `naturalSort` (o glossário, regras primeiro). O padrão é
 //     o nome, de A a Z; o botão (SortButton) fica à direita do contador e só
 //     aparece com mais de uma opção. A ordenação é por cima do que os filtros e o
-//     `exclude` deixaram (src/sorting.js).
+//     `exclude` deixaram (src/sorting.js). Uma entrada `pinned` (o Custom Background,
+//     DDL-0328) vem antes de tudo, fora dos filtros e da ordem; a busca ainda vale.
 //   - O seletor com o botão List | Cards dispara o micro-tour `selector-view` quando nenhum
 //     outro está aberto (depois do `selector`, na mesma abertura ou na próxima; DDL-0288).
 //   - O tour do seletor (DDL-0069) dispara na 1a abertura de um seletor com preview
@@ -283,7 +284,7 @@ export default function SelectorPanel({
 
   const items = useMemo(() => {
     const raw = entity.list(db);
-    return raw.map((r) => ({ id: entity.idOf(r), raw: r, ...entity.precompute(r) }));
+    return raw.map((r) => ({ id: entity.idOf(r), raw: r, ...entity.precompute(r, db) }));
   }, [entity, db]);
 
 
@@ -341,8 +342,11 @@ export default function SelectorPanel({
 
   const results = useMemo(() => {
     const kept = exclude ? filtered.filter((it) => !exclude(it.raw)) : filtered;
-    return sortList(kept, { option: activeSort, dir: sort.dir, rawOf: (it) => it.raw });
-  }, [filtered, exclude, activeSort, sort.dir]);
+    const sorted = sortList(kept, { option: activeSort, dir: sort.dir, rawOf: (it) => it.raw });
+    if (!entity.pinned) return sorted;
+    const pinned = applyFilters(items, { query, filterState: {} }).filter((it) => entity.pinned(it.raw));
+    return [...pinned, ...sorted.filter((it) => !entity.pinned(it.raw))];
+  }, [filtered, exclude, activeSort, sort.dir, entity, items, query]);
 
   const savedView = useSettingsStore((s) => s.selectorView?.[entity?.type]);
   const setSelectorView = useSettingsStore((s) => s.setSelectorView);

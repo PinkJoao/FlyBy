@@ -23,8 +23,9 @@
 //   - Caminho novo no manifest: confira que ele existe no formato 5etools (o
 //     snapshot local serve). Desde o DDL-0091 um 404 não derruba mais o fetch
 //     inteiro, mas some calado em `missing` para todo usuário.
-//   - O que entra e por quê: backgrounds só pelas tabelas "Suggested
-//     Characteristics" do randomizador de biografia (fluff-backgrounds não entra);
+//   - O que entra e por quê: backgrounds pelas tabelas "Suggested Characteristics"
+//     do randomizador de biografia e pelos prontos de 2024 (DDL-0328), com o
+//     fluff-backgrounds (o parágrafo e a arte do carrossel);
 //     o glossário (condições, status, doenças, ações); as variantes genéricas de
 //     item mágico, que o engine expande sobre os itens base
 //     (engine/magicVariants.js); o overlay `foundry-*.json`, que é do 5etools e
@@ -61,6 +62,7 @@ export const GLOBAL_FILES = [
   'fluff-races.json',
   'variantrules.json',
   'backgrounds.json',
+  'fluff-backgrounds.json',
   'conditionsdiseases.json',
   'actions.json',
   'magicvariants.json',

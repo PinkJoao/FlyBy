@@ -12,6 +12,8 @@
 //
 // FUNÇÕES
 //   galleryOf(entity, raw, db): as artes do fluff da entrada.
+//   artShape(entity, raw, db): a forma da arte pela proporção do fluff ('wide', 'tall'
+//     ou 'mid') e a proporção.
 //   CarouselCard(props): um cartão.
 //   SelectorCarousel(props): o carrossel. `items` são os resultados do seletor
 //     ({ id, raw }), `index` e `onIndex` o controle, `currentId` o já escolhido,
@@ -28,6 +30,10 @@
 //     controles de dentro dele não recebem clique nem foco.
 //   - O deslocamento do trilho é CSS (--i e --peek em SelectorCarousel.module.css);
 //     o cartão vira horizontal (arte à esquerda) num container largo (desktop).
+//   - A forma do quadro da arte segue a PROPORÇÃO da primeira arte (`width` e `height` do
+//     fluff, DDL-0328): a faixa larga (os backgrounds, mediana 2,6 para 1) fica em cima com a
+//     altura dela, também no desktop; a alta (as classes, 0,78) ganha mais altura no celular
+//     e o corte pelo alto; o resto como antes. Sem tamanho no dado, 'mid'.
 //   - O texto vem só do dado (§6.4). Sem `teaser`, o cartão mostra o corpo inteiro.
 //   - "Read more" CONTINUA o resumo (DDL-0300): o resumo fica e o resto do texto abre
 //     embaixo dele, animado (Collapse), sem o parágrafo já lido e sem repetir o nome da
@@ -65,6 +71,14 @@ function galleryOf(entity, raw, db) {
     .map((i) => ({ src: imgUrl(i.href), credit: i.credit, alt: raw.name }));
 }
 
+/** A forma da arte pela proporção do fluff. */
+function artShape(entity, raw, db) {
+  const img = (entity.fluff?.(raw, db)?.images ?? []).find((i) => i.href);
+  const ratio = img?.width && img?.height ? img.width / img.height : null;
+  if (!ratio) return { shape: 'mid', ratio: null };
+  return { shape: ratio >= 1.5 ? 'wide' : ratio < 0.8 ? 'tall' : 'mid', ratio };
+}
+
 /** Um cartão do carrossel. */
 function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
   const [more, setMore] = useState(false);
@@ -73,9 +87,15 @@ function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
   const teaser = entity.teaser?.(raw, db) ?? null;
   const icon = entity.icon?.(raw) ?? 'info';
   const tab = active ? 0 : -1;
+  const art = gallery.length > 0 ? artShape(entity, raw, db) : { shape: 'mid', ratio: null };
 
   return (
-    <article className={active ? `${styles.card} ${styles.cardActive}` : styles.card} data-carousel-active={active ? '' : undefined}>
+    <article
+      className={active ? `${styles.card} ${styles.cardActive}` : styles.card}
+      data-carousel-active={active ? '' : undefined}
+      data-art={art.shape}
+      style={art.ratio ? { '--art-ratio': art.ratio.toFixed(3) } : undefined}
+    >
       <div className={styles.art}>
         {gallery.length > 0 ? (
           <button
@@ -85,7 +105,7 @@ function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
             onClick={() => showImageViewer(gallery, 0)}
             aria-label={`View ${raw.name} art`}
           >
-            <Thumb src={gallery[0].src} icon={icon} width={360} className={styles.thumb} alt="" />
+            <Thumb src={gallery[0].src} icon={icon} width={art.shape === 'wide' ? 900 : 360} className={styles.thumb} alt="" />
           </button>
         ) : (
           <Thumb icon={icon} width={360} className={`${styles.thumb} ${styles.thumbIcon}`} />

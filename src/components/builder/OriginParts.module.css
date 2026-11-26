@@ -1,0 +1,66 @@
+/* =============================================================================
+ * OriginParts.module.css: as peças da origem (aba Background e guia, DDL-0328)
+ * =============================================================================
+ * CLASSES
+ *   .boostRows, .boostRow, .boostAmount: as linhas de bônus; o .boostAmount (+2, +1) é
+ *     só texto, bold e claro (DDL-0314).
+ *   .fixedBoosts: o +1/+1/+1 de um background pronto, sem escolha.
+ *   .featChoices: as sub-escolhas do talento de origem.
+ *   .granted, .grantedLabel, .grantedChips: o que o background pronto concede.
+ *
+ * DECISÕES E ARMADILHAS
+ *   - As escolhas vão pelo ChoiceList e pelo Chip comum (DDL-0197): esta folha não tem
+ *     chip próprio.
+ * -------------------------------------------------------------------------- */
+
+.boostRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.boostRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.boostAmount {
+  flex: none;
+  min-width: 2.5ch;
+  font-size: var(--fs-lead);
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.fixedBoosts {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.featChoices {
+  margin-top: var(--space-1);
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--src-origin);
+}
+
+.granted {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.grantedLabel {
+  font-size: var(--fs-meta);
+  color: var(--text);
+}
+
+.grantedChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

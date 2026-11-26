@@ -15,12 +15,17 @@
  *     miniaturas (a fonte só sob um nome repetido, DDL-0301), em todo
  *     carrossel (DDL-0293).
  *   .foot: o rodapé (Select ou Choose).
+ *   [data-art="wide|tall|mid"] no .card: a forma do quadro da arte pela proporção dela
+ *     (--art-ratio), DDL-0328.
  *
  * DECISÕES E ARMADILHAS
  *   - O trilho anda em porcentagem da própria largura (a da janela): cada vaga tem
  *     100% menos as duas espiadas, e o deslocamento é --peek menos --i vagas.
  *   - Cartão horizontal em container largo (`@container`), não por media query: no
  *     guia o passo é estreito mesmo no desktop.
+ *   - A arte larga fica em cima com a altura da proporção (aspect-ratio com teto), também
+ *     no container largo; a alta ganha mais altura e corta pelo alto (o rosto costuma
+ *     estar em cima). Sem `data-art` vale o quadro de sempre.
  *   - A faixa de miniaturas esconde a barra, como toda faixa lateral (DDL-0131); a roda
  *     do mouse a rola de lado pelo `data-wheel-x`.
  *   - O cartão do centro rola por dentro (o corpo), a janela não: deslizar de lado e
@@ -104,6 +109,18 @@
   height: clamp(120px, 24svh, 220px);
   border-bottom: 1px solid var(--border);
 }
+.card[data-art='wide'] .art {
+  height: auto;
+  aspect-ratio: var(--art-ratio, 2.4);
+  max-height: clamp(100px, 26svh, 240px);
+}
+.card[data-art='tall'] .art {
+  height: clamp(150px, 32svh, 300px);
+}
+.card[data-art='tall'] .thumb img {
+  object-position: center 15%;
+}
+
 .artBtn {
   appearance: none;
   display: block;
@@ -278,6 +295,20 @@ button.more {
     height: auto;
     border-bottom: none;
     border-right: 1px solid var(--border);
+  }
+  .card[data-art='tall'] .art {
+    width: 32%;
+    height: auto;
+  }
+  .card[data-art='wide'] {
+    flex-direction: column;
+  }
+  .card[data-art='wide'] .art {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
   }
   .body {
     padding: 20px 22px;

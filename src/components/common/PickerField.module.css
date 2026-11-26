@@ -4,6 +4,8 @@
  * CLASSES
  *   .field, .trigger, .name, .source, .ph, .clearX: o campo.
  *   .infoBtn: o botão (i), a descrição do item selecionado.
+ *   .locked: o campo travado (o talento do background pronto): sem ponteiro, fundo
+ *     transparente.
  *   .infoMuted: a descrição que falta; a descrição abre na moldura comum
  *     (PreviewLayer, DDL-0296).
  *
@@ -53,6 +55,12 @@
   color: var(--text);
   font-size: var(--fs-body);
   flex: none;
+}
+
+.locked {
+  cursor: default;
+  background: transparent;
+  border-style: dashed;
 }
 
 .ph {

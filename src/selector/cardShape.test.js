@@ -28,6 +28,7 @@ import weaponEntity from './entities/weapon';
 import conditionEntity from './entities/condition';
 import creatureEntity from './entities/creature';
 import effectSourceEntity from './entities/effectSource';
+import backgroundEntity from './entities/background';
 import { makeSubclassEntity } from './entities/subclass';
 import { makeFeatEntity } from './entities/feat';
 
@@ -62,7 +63,7 @@ describe('cardShape', () => {
 
   const entities = [
     classEntity, raceEntity, itemEntity, spellEntity, skillEntity, toolEntity, languageEntity, weaponEntity,
-    conditionEntity, creatureEntity, effectSourceEntity, makeSubclassEntity('fighter'), makeFeatEntity(['O', 'G', 'FS', 'EB']),
+    conditionEntity, creatureEntity, effectSourceEntity, backgroundEntity, makeSubclassEntity('fighter'), makeFeatEntity(['O', 'G', 'FS', 'EB']),
   ];
 
   it('toda entity declara a forma, e os cards do SRD cabem nela', () => {

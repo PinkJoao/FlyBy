@@ -251,7 +251,8 @@ export function toCustomOrigin(origin) {
 
 /** O X do seletor: volta ao custom e limpa os campos. */
 export function clearOrigin(origin, { classId = null } = {}) {
-  const next = { ...(origin ?? {}), abilityBoosts: recommendedBoosts(classId, '2-1') ?? [], originFeat: null, choices: {} };
+  const boosts = recommendedBoosts(classId, '2-1') ?? [{ ability: '', amount: 2 }, { ability: '', amount: 1 }];
+  const next = { ...(origin ?? {}), abilityBoosts: boosts, originFeat: null, choices: {} };
   delete next.background;
   return next;
 }

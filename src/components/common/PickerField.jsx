@@ -11,7 +11,8 @@
 // FUNÇÕES
 //   PickerField(props): o campo. `autoOpen` abre uma vez ao montar ("adicionar
 //     multiclasse"), `onClose` avisa o cancelamento, `initialFilterState` vai para
-//     o painel.
+//     o painel. `locked` (o talento que um background pronto dá, DDL-0328) mostra o
+//     escolhido sem abrir nem limpar, com o `lockedNote` no lugar da fonte; o info fica.
 // -----------------------------------------------------------------------------
 
 import Button from './Button';
@@ -36,6 +37,8 @@ import Icon from './Icon';
  * @param {boolean} [props.autoOpen]
  * @param {()=>void} [props.onClose]
  * @param {object} [props.initialFilterState]
+ * @param {boolean} [props.locked]
+ * @param {string} [props.lockedNote]
  */
 export default function PickerField({
   entity,
@@ -49,6 +52,8 @@ export default function PickerField({
   autoOpen = false,
   onClose,
   initialFilterState,
+  locked = false,
+  lockedNote,
 }) {
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState(false);
@@ -72,11 +77,20 @@ export default function PickerField({
   return (
     <>
       <div className={styles.field}>
-        <button type="button" className={styles.trigger} onClick={() => setOpen(true)}>
+        <button
+          type="button"
+          className={locked ? `${styles.trigger} ${styles.locked}` : styles.trigger}
+          onClick={locked ? undefined : () => setOpen(true)}
+          aria-disabled={locked || undefined}
+        >
           {current ? (
             <>
               <span className={styles.name}>{current.label}</span>
-              {current.source && <span className={styles.source}>{current.source}</span>}
+              {locked && lockedNote ? (
+                <span className={styles.source}>{lockedNote}</span>
+              ) : (
+                current.source && <span className={styles.source}>{current.source}</span>
+              )}
             </>
           ) : (
             <span className={styles.ph}>{placeholder}</span>
@@ -87,7 +101,7 @@ export default function PickerField({
             <Icon name="info" />
           </Button>
         )}
-        {current && (
+        {current && !locked && (
           <Button icon className={styles.clearX} onClick={onClear} aria-label="Clear" title="Clear">
             <Icon name="close" />
           </Button>

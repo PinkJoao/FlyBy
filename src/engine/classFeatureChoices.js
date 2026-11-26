@@ -39,7 +39,8 @@
 //   - Os ids embutem o nível ('feat@4') para PODAR o bag quando o nível desce.
 //     Weapon Mastery tem id fixo: o count cresce, as escolhas persistem.
 //   - Slot de ASI admite talentos de Origem e Epic Boons, e o de Epic Boon admite
-//     G e O (RAW "or another feat of your choice", TC-0029). `category` é o
+//     G e O (RAW "or another feat of your choice", TC-0029); o Dragonmark e o Dark
+//     Gift entram onde entra um talento de origem (DDL-0172, DDL-0328). `category` é o
 //     PADRÃO (filtro pré-marcado e pool do autoBuild); `extraCategories` só
 //     aparecem quando o jogador tira o filtro, com os avisos de pré-requisito.
 //   - NAMED_FEATURE_GRANTS: grants de escolha em features de nome NÃO
@@ -292,7 +293,7 @@ export function classLevelChoices(parsed, classObj, level) {
           level: f.level,
           label: `Level ${f.level} - Feat`,
           feature: { name: f.name, level: f.level },
-          pool: { type: 'feat', category: ['G'], extraCategories: ['O', 'EB', 'D'] },
+          pool: { type: 'feat', category: ['G'], extraCategories: ['O', 'EB', 'D', 'DG'] },
         });
         break;
       case 'Epic Boon':
@@ -303,7 +304,7 @@ export function classLevelChoices(parsed, classObj, level) {
           level: f.level,
           label: `Level ${f.level} - Epic Boon`,
           feature: { name: f.name, level: f.level },
-          pool: { type: 'feat', category: ['EB'], extraCategories: ['G', 'O', 'D'] },
+          pool: { type: 'feat', category: ['EB'], extraCategories: ['G', 'O', 'D', 'DG'] },
         });
         break;
       case 'Fighting Style': {

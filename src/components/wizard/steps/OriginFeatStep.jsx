@@ -19,7 +19,7 @@ import { prereqContext } from '../../../engine/prereq';
 import PickerField from '../../common/PickerField';
 import DetailView from '../../common/DetailView';
 import ChoiceList from '../../builder/ChoiceList';
-import { makeFeatEntity } from '../../../selector/entities/feat';
+import { makeFeatEntity, ORIGIN_FEAT_CATEGORIES } from '../../../selector/entities/feat';
 import styles from './steps.module.css';
 
 export default function OriginFeatStep({ character, db, onChange }) {
@@ -27,7 +27,7 @@ export default function OriginFeatStep({ character, db, onChange }) {
   const originFeat = origin?.originFeat ?? null;
   const owned = ownedFromDb(character, db);
 
-  const featEntity = makeFeatEntity(['O', 'D'], 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
+  const featEntity = makeFeatEntity(ORIGIN_FEAT_CATEGORIES, 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
 
   const originFeatData = originFeat ? resolveFeat(db, `${originFeat.id}|${originFeat.source}`) : null;
   const featChoices = originFeatData

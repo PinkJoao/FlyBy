@@ -44,7 +44,7 @@ describe('guidancePendencies (todas as pendências obrigatórias)', () => {
     c.origin.choices = {
       skill: { kind: 'skill', picks: ['ath', 'acr'] },
       tool: { kind: 'tool', picks: ["Smith's Tools"] },
-      language: { kind: 'language', picks: ['Elvish'] },
+      language: { kind: 'language', picks: ['Elvish', 'Dwarvish'] },
     };
     expect(pend(c).basic).toBe(1);
 

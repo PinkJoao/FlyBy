@@ -8,7 +8,7 @@
 //       vem marcado quando ainda não há boosts.
 //     Talento de origem, com as sub-escolhas recursivas: origin.originFeat. Nível
 //       e bag alimentam as escolhas de magia do talento (o Magic Initiate, TC-0011).
-//     Proficiências e idioma (2 perícias, 1 ferramenta, 1 idioma, pelo
+//     Proficiências e idioma (2 perícias, 1 ferramenta, 2 idiomas, pelo
 //       ChoiceList): origin.choices.
 //     A HISTÓRIA, que fica aqui e não na Biography: justifica as escolhas de
 //       origem, e no Foundry vai para a descrição do item de background e para
@@ -38,7 +38,7 @@ import { prereqContext } from '../../engine/prereq';
 import { ABILITY_FULL, ABILITY_SHORT } from './labels';
 import PickerField from '../common/PickerField';
 import ChoiceList from './ChoiceList';
-import { makeFeatEntity } from '../../selector/entities/feat';
+import { makeFeatEntity, ORIGIN_FEAT_CATEGORIES } from '../../selector/entities/feat';
 import { ORIGIN_CHOICES } from './originChoices';
 import { namedRuleEntry } from './choiceRules';
 import { showRulePopup } from '../common/RulePopup';
@@ -60,7 +60,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
 
   const owned = ownedFromDb(character, db);
 
-  const originFeatEntity = makeFeatEntity(['O', 'D'], 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
+  const originFeatEntity = makeFeatEntity(ORIGIN_FEAT_CATEGORIES, 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
 
   const boostsRule = namedRuleEntry(db, 'Ability Score and Modifier|XPHB');
 
@@ -165,7 +165,7 @@ export default function BackgroundTab({ character, db, onChangeOrigin, onChangeI
 
       <section className={styles.section} data-tour={TUT.TAB_BG_PROFS}>
         <div className={styles.sectionHead}>
-          <h3 className={styles.sectionTitle}>Proficiencies &amp; Language</h3>
+          <h3 className={styles.sectionTitle}>Proficiencies &amp; Languages</h3>
         </div>
         <ChoiceList
           choices={ORIGIN_CHOICES}

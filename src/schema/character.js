@@ -39,7 +39,7 @@
 //     hidratação do export.
 //   - species.lineage: o nome da versão (`_versions`), ex. "Elf; Drow Lineage";
 //     ausente é a raça base.
-//   - origin.choices é um choice-bag (2 perícias, 1 ferramenta, 1 idioma); os
+//   - origin.choices é um choice-bag (2 perícias, 1 ferramenta, 2 idiomas); os
 //     arrays de proficiência ficam para legado e import.
 //   - ClassEntry.isOriginalClass vira `details.originalClass` no export.
 //     hitPoints guarda por nível o rolado ou "max"; vazio é o padrão (máximo no

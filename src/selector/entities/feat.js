@@ -13,7 +13,8 @@
 //   hasFreeLegacyBonus(feat): legacy sem bônus próprio (ganha +1 livre)?
 //   boostableAbilities(feat), boostText(feat): o bônus de atributo.
 //   makeFeatEntity(categories, title, ctx, only, opts): a fábrica.
-//   Exporta FEAT_CATEGORY_TITLE (títulos por categoria) e originFeatEntity.
+//   Exporta FEAT_CATEGORY_TITLE (títulos por categoria), ORIGIN_FEAT_CATEGORIES (o que
+//     o espaço do talento de origem aceita) e originFeatEntity.
 //
 // DECISÕES E ARMADILHAS
 //   - Adaptação DMG 2024 (como o Plutonium): talento LEGACY (sem categoria) conta
@@ -22,7 +23,10 @@
 //     aceitam mais de uma: a padrão vem pré-marcada pelo chamador, e as de fora
 //     ganham badge. O Dragonmark (D, EFA, DDL-0172) entra como categoria extra no
 //     talento de origem (o antecedente de herdeiro o dá no lugar do de origem) e
-//     nos espaços de talento livre ("unrestricted feat choice" do livro).
+//     nos espaços de talento livre ("unrestricted feat choice" do livro). O Dark
+//     Gift (DG, RHW, DDL-0328) segue a mesma regra: "whenever you would gain a feat
+//     from the Origin category, you can instead gain a Dark Gift feat"; o mais antigo
+//     (VRGR, sem categoria DG) não entra.
 //   - `only` restringe a nomes (o College of Swords só tem Dueling e Two-Weapon).
 //   - Sem pré-requisito conta como atendido.
 // -----------------------------------------------------------------------------
@@ -84,7 +88,10 @@ const CATEGORY_FILTER_OPTIONS = [
   { value: 'G', label: 'General' },
   { value: 'EB', label: 'Epic Boon' },
   { value: 'D', label: 'Dragonmark' },
+  { value: 'DG', label: 'Dark Gift' },
 ];
+
+export const ORIGIN_FEAT_CATEGORIES = ['O', 'D', 'DG'];
 
 /** As categorias normalizadas de um talento (null vira G). */
 function filterCategories(feat) {

@@ -16,11 +16,8 @@
 //   OriginChoices(props): as escolhas de proficiência que sobram.
 //
 // DECISÕES E ARMADILHAS
-//   - O seletor de background nunca fica vazio (resposta B4 do dono): o X volta ao Custom
-//     e limpa os campos (`clearOrigin`), com uma confirmação só quando há algo preenchido;
-//     escolher o Custom no seletor mantém tudo como está (`toCustomOrigin`).
-//   - Trocar para um background pronto confirma antes quando a troca apaga uma escolha da
-//     origem custom (`backgroundSwitchLosses`; §6.4: aviso com o motivo, nunca bloqueio).
+//   - O seletor de background nunca fica vazio (resposta B4 do dono); escolher e limpar
+//     passam por chooseBackground e clearBackground (originSetup.js), os mesmos do guia.
 //   - O texto do background pronto fica nele: o info do campo e o seletor o mostram. O
 //     campo de texto da aba é sempre a história do jogador (resposta B6).
 //   - O talento de um background pronto vem travado (o info fica); os do Ravenloft dão
@@ -31,17 +28,13 @@
 
 import { useEffect } from 'react';
 import { recommendedBoosts, boostsEmpty } from '../../engine/abilityMethods';
-import {
-  allowedBoostAbilities, applyBackground, backgroundFixedTool, backgroundOf, backgroundSkills,
-  backgroundSwitchLosses, clearOrigin, originChoicesFor, toCustomOrigin,
-} from '../../engine/backgrounds';
+import { allowedBoostAbilities, backgroundFixedTool, backgroundOf, backgroundSkills, originChoicesFor } from '../../engine/backgrounds';
 import { ownedFromDb } from '../../engine/resolve';
-import { boostMode, classIdOf, isBoostFixed, originFeatChoices, originFeatSetup } from './originSetup';
+import { boostMode, chooseBackground, classIdOf, clearBackground, isBoostFixed, originFeatChoices, originFeatSetup } from './originSetup';
 import SegmentedControl from '../common/SegmentedControl';
 import ChoiceChips from '../common/ChoiceChips';
 import PickerField from '../common/PickerField';
 import Chip from '../common/Chip';
-import { confirm } from '../common/dialog';
 import ChoiceList from './ChoiceList';
 import { ABILITY_FULL, ABILITY_SHORT, SKILL_LABEL } from './labels';
 import backgroundEntity, { backgroundIdOf } from '../../selector/entities/background';
@@ -54,36 +47,13 @@ export function BackgroundPicker({ character, db, onChangeOrigin, showInfo = tru
   const current = bg
     ? { label: bg.name, source: bg.source, id: backgroundIdOf(origin) }
     : { label: 'Custom Background', id: 'custom' };
-  const filled = !!origin.originFeat || Object.keys(origin.choices ?? {}).length > 0;
-
   const pick = async (raw) => {
-    if (raw.custom) {
-      onChangeOrigin(toCustomOrigin(origin));
-      return;
-    }
-    const next = applyBackground(origin, raw, db, { classId: classIdOf(character) });
-    const losses = backgroundSwitchLosses(origin, next);
-    if (losses.length) {
-      const ok = await confirm({
-        title: `Use ${raw.name}?`,
-        message: `${raw.name} sets its own feat, skills and tool, so ${losses.join(' and ')} you chose will be replaced.`,
-        confirmLabel: `Use ${raw.name}`,
-      });
-      if (!ok) return;
-    }
-    onChangeOrigin(next);
+    const next = await chooseBackground(character, db, raw);
+    if (next) onChangeOrigin(next);
   };
   const clear = async () => {
-    if (filled || bg) {
-      const ok = await confirm({
-        title: 'Clear the background?',
-        message: 'The background goes back to Custom and its feat, skills, tool and languages are cleared.',
-        confirmLabel: 'Clear',
-        danger: true,
-      });
-      if (!ok) return;
-    }
-    onChangeOrigin(clearOrigin(origin, { classId: classIdOf(character) }));
+    const next = await clearBackground(character);
+    if (next) onChangeOrigin(next);
   };
 
   return (

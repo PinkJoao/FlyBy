@@ -149,7 +149,7 @@ const backgroundEntity = {
   icon: (b) => (isCustomBackground(b) ? 'stepStory' : 'itemScroll'),
 
   teaser: (b, db) => {
-    if (isCustomBackground(b)) return b.entries;
+    if (isCustomBackground(b)) return null;
     const para = firstParagraph(bgFluff(b, db)?.entries);
     return para ? [para] : null;
   },

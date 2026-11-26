@@ -13,14 +13,25 @@
 //   originFeatSetup(character, db): a entity do talento, o filtro inicial, se está
 //     travado e os ids das sub-escolhas que o background já decide.
 //   originFeatChoices(character, db): as sub-escolhas do talento que o jogador faz.
+//   chooseBackground(character, db, raw): a origem com o background escolhido, ou null
+//     se o jogador cancelou o aviso.
+//   clearBackground(character): o X: a origem custom limpa, ou null se cancelou.
 //
 // DECISÕES E ARMADILHAS
+//   - O X volta ao Custom e limpa os campos (`clearOrigin`), com uma confirmação só quando
+//     há algo preenchido; escolher o Custom no seletor mantém tudo (`toCustomOrigin`).
+//     Trocar para um background pronto confirma quando apaga uma escolha da origem custom
+//     (`backgroundSwitchLosses`; §6.4: aviso com o motivo, nunca bloqueio).
 //   - Num arquivo sem componente, para o fast refresh (react-refresh) do OriginParts.
 //   - Os do Ravenloft dão o talento nomeado OU um Dark Gift: a entity recebe as duas
 //     categorias e `only` com os nomes.
 // -----------------------------------------------------------------------------
 
-import { allowedBoostAbilities, backgroundFeat, backgroundOf, presetFeatChoices } from '../../engine/backgrounds';
+import {
+  allowedBoostAbilities, applyBackground, backgroundFeat, backgroundOf, backgroundSwitchLosses, clearOrigin,
+  presetFeatChoices, toCustomOrigin,
+} from '../../engine/backgrounds';
+import { confirm } from '../common/dialog';
 import { parseChoices } from '../../engine/choices';
 import { resolveFeat } from '../../engine/resolve';
 import { prereqContext } from '../../engine/prereq';
@@ -76,4 +87,37 @@ export function originFeatChoices(character, db) {
   if (!raw) return [];
   const { presetIds } = originFeatSetup(character, db);
   return parseChoices(raw, { level: totalLevel(character), bag: originFeat.choices }).filter((c) => !presetIds.includes(c.id));
+}
+
+/** A origem com o background escolhido, ou null se o jogador cancelou o aviso. */
+export async function chooseBackground(character, db, raw) {
+  const origin = character.origin ?? {};
+  if (raw.custom) return toCustomOrigin(origin);
+  const next = applyBackground(origin, raw, db, { classId: classIdOf(character) });
+  const losses = backgroundSwitchLosses(origin, next);
+  if (losses.length) {
+    const ok = await confirm({
+      title: `Use ${raw.name}?`,
+      message: `${raw.name} sets its own feat, skills and tool, so ${losses.join(' and ')} you chose will be replaced.`,
+      confirmLabel: `Use ${raw.name}`,
+    });
+    if (!ok) return null;
+  }
+  return next;
+}
+
+/** O X: a origem custom limpa, ou null se o jogador cancelou. */
+export async function clearBackground(character) {
+  const origin = character.origin ?? {};
+  const filled = !!origin.originFeat || Object.keys(origin.choices ?? {}).length > 0;
+  if (filled || origin.background) {
+    const ok = await confirm({
+      title: 'Clear the background?',
+      message: 'The background goes back to Custom and its feat, skills, tool and languages are cleared.',
+      confirmLabel: 'Clear',
+      danger: true,
+    });
+    if (!ok) return null;
+  }
+  return clearOrigin(origin, { classId: classIdOf(character) });
 }

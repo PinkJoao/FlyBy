@@ -28,7 +28,7 @@ function withClass(level = 1, extra = {}) {
 describe('buildCreateSteps - quais passos aparecem', () => {
   it('personagem em branco: sem classe → sem features nem spells', () => {
     const ids = buildCreateSteps(createCharacter(), noCaster).map((s) => s.id);
-    expect(ids).toEqual(['intro', 'class', 'species', 'originFeat', 'proficiencies', 'abilities', 'boosts', 'equipment', 'story', 'alignment', 'identity']);
+    expect(ids).toEqual(['intro', 'class', 'species', 'background', 'originFeat', 'proficiencies', 'abilities', 'boosts', 'equipment', 'story', 'alignment', 'identity']);
     expect(ids).not.toContain('spells');
     expect(ids).not.toContain('features');
     expect(ids).not.toContain('featuresIntro');
@@ -36,7 +36,7 @@ describe('buildCreateSteps - quais passos aparecem', () => {
 
   it('a ordem do nível 1 é a combinada (cantrips antes de spells)', () => {
     const ids = buildCreateSteps(withClass(1), caster, { hasFeatureChoices: true }).map((s) => s.id);
-    expect(ids).toEqual(['intro', 'class', 'species', 'originFeat', 'proficiencies', 'abilities', 'boosts', 'equipment', 'story', 'alignment', 'identity', 'featuresIntro', 'features', 'cantrips', 'spells']);
+    expect(ids).toEqual(['intro', 'class', 'species', 'background', 'originFeat', 'proficiencies', 'abilities', 'boosts', 'equipment', 'story', 'alignment', 'identity', 'featuresIntro', 'features', 'cantrips', 'spells']);
   });
 
   it('conjurador ganha cantrips + magias; features só com classe E escolhas', () => {

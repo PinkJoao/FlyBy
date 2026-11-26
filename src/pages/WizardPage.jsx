@@ -32,6 +32,7 @@ import ClassStep from '../components/wizard/steps/ClassStep';
 import SubclassStep from '../components/wizard/steps/SubclassStep';
 import SpeciesStep from '../components/wizard/steps/SpeciesStep';
 import OriginFeatStep from '../components/wizard/steps/OriginFeatStep';
+import BackgroundStep from '../components/wizard/steps/BackgroundStep';
 import ProficienciesStep from '../components/wizard/steps/ProficienciesStep';
 import AbilitiesStep from '../components/wizard/steps/AbilitiesStep';
 import BoostsStep from '../components/wizard/steps/BoostsStep';
@@ -52,6 +53,7 @@ const STEP_SCREENS = {
   class: ClassStep,
   subclass: SubclassStep,
   species: SpeciesStep,
+  background: BackgroundStep,
   originFeat: OriginFeatStep,
   proficiencies: ProficienciesStep,
   abilities: AbilitiesStep,

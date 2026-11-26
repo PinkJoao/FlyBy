@@ -2,50 +2,28 @@
 // BoostsStep: o passo dos aumentos de atributo do background
 // =============================================================================
 // O QUE FAZ
-//   O background 2024 dá +2/+1 ou +1/+1/+1. Reusa o modelo da BackgroundTab e
+//   O background 2024 dá +2/+1 ou +1/+1/+1. Usa o BoostPicker da aba (OriginParts) e
 //   escreve `origin.abilityBoosts` (DDL-0013), com o +2/+1 preparado por padrão e o
-//   resultado ao vivo por habilidade.
+//   resultado ao vivo por habilidade. Com um background pronto, só os três atributos
+//   dele (DDL-0328).
 //
 // FUNÇÕES
-//   boostMode(boosts): o modo pelo array salvo.
 //   BoostsStep(props): o passo.
 // -----------------------------------------------------------------------------
 
-import { recommendedBoosts, boostsEmpty } from '../../../engine/abilityMethods';
-import SegmentedControl from '../../common/SegmentedControl';
 import StepExplain from './StepExplain';
-import ChoiceChips from '../../common/ChoiceChips';
-import { useEffect } from 'react';
 import { ABILITIES } from '../../../schema/character';
 import { formatBonus } from '../../../engine/math';
-import { ABILITY_FULL, ABILITY_SHORT } from '../../builder/labels';
+import { allowedBoostAbilities, backgroundOf } from '../../../engine/backgrounds';
+import { BoostPicker } from '../../builder/OriginParts';
+import { ABILITY_FULL } from '../../builder/labels';
 import styles from './steps.module.css';
 
-/** O modo de boost derivado do array salvo. */
-function boostMode(boosts) {
-  if (!boosts || boosts.length === 0) return '2-1';
-  return boosts.some((b) => b.amount === 2) ? '2-1' : '1-1-1';
-}
-
-export default function BoostsStep({ character, derived, onChange }) {
+export default function BoostsStep({ character, db, derived, onChange }) {
   const origin = character.origin;
   const boosts = origin.abilityBoosts ?? [];
-  const mode = boostMode(boosts);
-  const usedByBoost = new Set(boosts.map((b) => b.ability).filter(Boolean));
-
-  const classId = (character.classes ?? []).find((c) => c.classId)?.classId ?? null;
-  const setMode = (m) => {
-    const next = recommendedBoosts(classId, m) ?? (m === '2-1' ? [{ ability: '', amount: 2 }, { ability: '', amount: 1 }]
-      : [{ ability: '', amount: 1 }, { ability: '', amount: 1 }, { ability: '', amount: 1 }]);
-    onChange({ ...character, origin: { ...origin, abilityBoosts: next } });
-  };
-  const setBoostAbility = (i, ability) =>
-    onChange({ ...character, origin: { ...origin, abilityBoosts: boosts.map((b, x) => (x === i ? { ...b, ability } : b)) } });
-
-  useEffect(() => {
-    if (boosts.length === 0 || (classId && boostsEmpty(boosts))) setMode(boosts.length ? mode : '2-1');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const bg = backgroundOf(character, db);
+  const allowed = allowedBoostAbilities(origin, db);
 
   const boostFor = (a) => boosts.filter((b) => b.ability === a).reduce((s, b) => s + b.amount, 0);
 
@@ -58,31 +36,13 @@ export default function BoostsStep({ character, derived, onChange }) {
         <strong> +1 to three</strong> different abilities. Put them where your class needs them most.
       </StepExplain>
 
-      <SegmentedControl
-        block
-        ariaLabel="How the boosts split"
-        value={mode}
-        options={[
-          ['2-1', '+2 | +1'],
-          ['1-1-1', '+1 | +1 | +1'],
-        ]}
-        onChange={setMode}
-      />
+      {bg && (
+        <p className={styles.note}>
+          {bg.name} lets you raise {allowed.map((x) => ABILITY_FULL[x]).join(', ').replace(/, ([^,]*)$/, ' or $1')}.
+        </p>
+      )}
 
-      <div className={styles.boostRows}>
-        {boosts.map((b, i) => (
-          <div className={styles.boostRow} key={i}>
-            <span className={styles.boostAmount}>+{b.amount}</span>
-            <ChoiceChips
-              clearable={false}
-              ariaLabel={`Ability for +${b.amount}`}
-              value={b.ability}
-              onChange={(v) => setBoostAbility(i, v)}
-              options={ABILITIES.map((x) => ({ value: x, label: ABILITY_SHORT[x], title: ABILITY_FULL[x], disabled: usedByBoost.has(x) && x !== b.ability }))}
-            />
-          </div>
-        ))}
-      </div>
+      <BoostPicker character={character} db={db} onChangeOrigin={(o) => onChange({ ...character, origin: o })} />
 
       <div className={styles.field}>
         <span className={styles.fieldLabel}>Result</span>

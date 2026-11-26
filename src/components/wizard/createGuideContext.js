@@ -15,6 +15,8 @@
 //     a completude PROFUNDA de uma escolha e de uma lista.
 //   speciesStepComplete(db, character), kitStepComplete(db, character),
 //     originFeatStepComplete(db, character): os passos.
+//   originFeatStepShows(db, character): o passo do talento aparece? Com um background
+//     pronto que fixa o talento, só se sobrar sub-escolha (o Magic Initiate, DDL-0328).
 //   createGuideContext(db, character): as flags.
 //
 // DECISÕES E ARMADILHAS
@@ -38,7 +40,8 @@ import { totalLevel } from '../../schema/character';
 import { requiresLineage, speciesChoices } from '../../engine/speciesData';
 import { parseStartingEquipment, kitChoosesComplete } from '../../engine/startingEquipment';
 import { buildClassChoices, isProficiencyChoice, isFeatureChoice } from '../builder/classChoices';
-import { originChoicesFor } from '../../engine/backgrounds';
+import { backgroundFeat, backgroundOf, originChoicesFor } from '../../engine/backgrounds';
+import { originFeatChoices } from '../builder/originSetup';
 import { hasFreeLegacyBonus } from '../../selector/entities/feat';
 
 /** As sub-escolhas de um talento. */
@@ -124,6 +127,14 @@ export function kitStepComplete(db, character) {
 }
 
 /** O talento de origem está completo? */
+/** O passo do talento de origem aparece? Não com um background pronto que o fixa sem nada a escolher. */
+export function originFeatStepShows(db, character) {
+  const bg = backgroundOf(character, db);
+  if (!bg) return true;
+  if (!backgroundFeat(db, bg).fixed) return true;
+  return originFeatChoices(character, db).length > 0;
+}
+
 export function originFeatStepComplete(db, character) {
   const of = character?.origin?.originFeat;
   if (!of?.id) return false;
@@ -142,6 +153,7 @@ export function originFeatStepComplete(db, character) {
  *   featuresComplete: boolean,
  *   speciesComplete: boolean,
  *   originFeatComplete: boolean,
+ *   originFeatShows: boolean,
  *   kitComplete: boolean,
  *   }}
  */
@@ -159,6 +171,7 @@ export function createGuideContext(db, character) {
     featuresComplete: choicesComplete(featChoices, cls?.choices, db, level),
     speciesComplete: speciesStepComplete(db, character),
     originFeatComplete: originFeatStepComplete(db, character),
+    originFeatShows: originFeatStepShows(db, character),
     kitComplete: kitStepComplete(db, character),
   };
 }

@@ -37,9 +37,13 @@
 //     origens de CLASSE contam. Os passos de cantrips e de magias somem quando a
 //     classe não os tem (Ranger e Paladino sem cantrips).
 //   - O passo de subclasse só aparece para quem já passou do nível dela.
+//   - O background (DDL-0328) vem depois de classe, espécie e subclasse, com o Custom já
+//     escolhido (o passo está sempre completo). O do talento de origem some quando um
+//     background pronto fixa o talento e não sobra sub-escolha (`ctx.originFeatShows`).
+//   - `need` pode ser função da ficha (o texto do botão do talento: escolher ou terminar).
 //   - `icon` e `lead` (DDL-0313, da P7 do docs/UI-STUDY.md): o ícone e a frase curta no alto da 1a
 //     página do passo, acima do título e logo abaixo dele. Os passos com página de introdução própria
-//     (intro, class, species, subclass, featuresIntro) já abrem com ícone e texto, e não levam.
+//     (intro, class, species, subclass, background, featuresIntro) já abrem com ícone e texto, e não levam.
 //   - O guia leve de fixup e level-up precisa do db e mora em
 //     components/wizard/fixupSteps.js.
 // -----------------------------------------------------------------------------
@@ -81,6 +85,7 @@ export const SECTION_OF = {
   class: 'Class',
   subclass: 'Class',
   species: 'Species',
+  background: 'Background',
   originFeat: 'Background',
   proficiencies: 'Background',
   abilities: 'Abilities',
@@ -128,13 +133,20 @@ const CREATE_CATALOG = [
     status: (c) => (pendingSubclassClass(c) ? 'incomplete' : 'complete'),
   },
   {
+    id: 'background',
+    title: 'Where do they come from?',
+    subtitle: 'Background',
+    when: () => true,
+    status: () => 'complete',
+  },
+  {
     id: 'originFeat',
     title: 'A knack from their past',
     subtitle: 'Origin feat',
     icon: 'originFeat',
     lead: 'A talent they picked up before the adventure began.',
-    need: 'Choose an origin feat',
-    when: () => true,
+    need: (c) => (c?.origin?.originFeat ? 'Finish the feat choices' : 'Choose an origin feat'),
+    when: (c, d, ctx) => ctx?.originFeatShows ?? true,
     status: (c, d, ctx) =>
       (c?.origin?.originFeat && (ctx?.originFeatComplete ?? true) ? 'complete' : 'incomplete'),
   },
@@ -261,7 +273,7 @@ export function buildCreateSteps(character, derived, ctx = {}) {
     subtitle: s.subtitle,
     icon: s.icon,
     lead: s.lead,
-    need: s.need,
+    need: typeof s.need === 'function' ? s.need(character) : s.need,
     section: SECTION_OF[s.id] ?? null,
     status: (c, d) => s.status(c, d, ctx),
   }));

@@ -3,7 +3,8 @@
 // =============================================================================
 // O QUE FAZ
 //   Junta as escolhas de proficiência da CLASSE original (o bag da classe fatiado
-//   por isProficiencyChoice) e da ORIGEM (ORIGIN_CHOICES). Cada bloco escreve no
+//   por isProficiencyChoice) e da ORIGEM (as peças da aba, OriginParts: o que um
+//   background pronto concede e o que sobra, DDL-0328). Cada bloco escreve no
 //   próprio bag, com o ChoiceList; o dedup entre os dois vem de ownedFromDb.
 //
 // FUNÇÕES
@@ -14,18 +15,16 @@ import StepExplain from './StepExplain';
 import { ownedFromDb } from '../../../engine/resolve';
 import ChoiceList from '../../builder/ChoiceList';
 import { buildClassChoices, isProficiencyChoice } from '../../builder/classChoices';
-import { ORIGIN_CHOICES } from '../../builder/originChoices';
+import { OriginChoices, OriginGranted } from '../../builder/OriginParts';
 import styles from './steps.module.css';
 
 export default function ProficienciesStep({ character, db, onChange }) {
   const owned = ownedFromDb(character, db);
-  const origin = character.origin;
   const cls = character.classes?.[0] ?? null;
   const classChoices = cls?.classId ? buildClassChoices(db, cls, character).filter(isProficiencyChoice) : [];
 
   const setClassChoices = (choices) =>
     onChange({ ...character, classes: character.classes.map((c, i) => (i === 0 ? { ...c, choices } : c)) });
-  const setOriginChoices = (choices) => onChange({ ...character, origin: { ...origin, choices } });
 
   return (
     <div className={styles.step}>
@@ -51,14 +50,8 @@ export default function ProficienciesStep({ character, db, onChange }) {
 
       <div className={styles.field}>
         <span className={styles.fieldLabel}>From your background</span>
-        <ChoiceList
-          choices={ORIGIN_CHOICES}
-          bag={origin.choices ?? {}}
-          onChange={setOriginChoices}
-          db={db}
-          owned={owned}
-          character={character}
-        />
+        <OriginGranted character={character} db={db} />
+        <OriginChoices character={character} db={db} onChangeOrigin={(o) => onChange({ ...character, origin: o })} />
       </div>
 
       {!cls?.classId && <p className={styles.note}>Choose a class first to see its skill and tool choices.</p>}

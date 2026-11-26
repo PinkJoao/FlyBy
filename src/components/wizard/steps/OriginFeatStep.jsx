@@ -2,80 +2,58 @@
 // OriginFeatStep: o passo do talento de origem
 // =============================================================================
 // O QUE FAZ
-//   Escolhe `origin.originFeat` e as sub-escolhas, com os mesmos átomos da
-//   BackgroundTab (entity ciente do personagem, PickerField, ChoiceList). Nível e
-//   bag alimentam as escolhas de magia (TC-0011). O botão de info não aparece: a
-//   descrição já está embaixo.
+//   Escolhe `origin.originFeat` e as sub-escolhas com o OriginFeatPicker da aba
+//   (OriginParts). Nível e bag alimentam as escolhas de magia (TC-0011). O botão de
+//   info não aparece: a descrição já está embaixo. Com um background pronto que fixa o
+//   talento, só as sub-escolhas que sobram (o passo some sem nenhuma, DDL-0328).
 //
 // FUNÇÕES
 //   OriginFeatStep(props): o passo.
 // -----------------------------------------------------------------------------
 
 import StepExplain from './StepExplain';
-import { parseChoices } from '../../../engine/choices';
-import { resolveFeat, ownedFromDb } from '../../../engine/resolve';
-import { totalLevel } from '../../../schema/character';
-import { prereqContext } from '../../../engine/prereq';
-import PickerField from '../../common/PickerField';
+import { resolveFeat } from '../../../engine/resolve';
+import { backgroundOf } from '../../../engine/backgrounds';
 import DetailView from '../../common/DetailView';
-import ChoiceList from '../../builder/ChoiceList';
-import { makeFeatEntity, ORIGIN_FEAT_CATEGORIES } from '../../../selector/entities/feat';
+import { OriginFeatPicker } from '../../builder/OriginParts';
+import { originFeatSetup } from '../../builder/originSetup';
 import styles from './steps.module.css';
 
 export default function OriginFeatStep({ character, db, onChange }) {
-  const origin = character.origin;
-  const originFeat = origin?.originFeat ?? null;
-  const owned = ownedFromDb(character, db);
-
-  const featEntity = makeFeatEntity(ORIGIN_FEAT_CATEGORIES, 'Origin Feat', prereqContext(character, { db }), null, { categoryFilter: true });
-
-  const originFeatData = originFeat ? resolveFeat(db, `${originFeat.id}|${originFeat.source}`) : null;
-  const featChoices = originFeatData
-    ? parseChoices(originFeatData, { level: totalLevel(character), bag: originFeat?.choices })
-    : [];
-
-  const setOriginFeat = (raw) =>
-    onChange({ ...character, origin: { ...origin, originFeat: { id: raw.name, source: raw.source, subtype: 'origin', choices: {} } } });
-  const clearOriginFeat = () => onChange({ ...character, origin: { ...origin, originFeat: null } });
-  const setFeatChoices = (choices) =>
-    onChange({ ...character, origin: { ...origin, originFeat: { ...originFeat, choices } } });
+  const originFeat = character.origin?.originFeat ?? null;
+  const bg = backgroundOf(character, db);
+  const raw = originFeat ? resolveFeat(db, `${originFeat.id}|${originFeat.source}`) : null;
+  const { entity } = originFeatSetup(character, db);
 
   return (
     <div className={styles.step}>
       <StepExplain>
-        Your origin reflects the life you lived before becoming an adventurer. 
-        It grants an <strong>"Origin Feat"</strong>, a small but defining talent such as Alert, Skilled, or Tough. 
-        Some Origin Feats also include additional choices, such as selecting a skill, tool, or spell.
+        {bg ? (
+          <>
+            Your background, <strong>{bg.name}</strong>, grants its <strong>Origin Feat</strong>. Make the choices it
+            leaves to you below.
+          </>
+        ) : (
+          <>
+            Your origin reflects the life you lived before becoming an adventurer.
+            It grants an <strong>&quot;Origin Feat&quot;</strong>, a small but defining talent such as Alert, Skilled, or Tough.
+            Some Origin Feats also include additional choices, such as selecting a skill, tool, or spell.
+          </>
+        )}
       </StepExplain>
 
-      <PickerField
-        entity={featEntity}
+      <OriginFeatPicker
+        character={character}
         db={db}
-        current={originFeat ? { label: originFeat.id, source: originFeat.source, id: `${originFeat.id}|${originFeat.source}` } : null}
-        placeholder="Choose an origin feat…"
+        onChangeOrigin={(o) => onChange({ ...character, origin: o })}
         showInfo={false}
-        initialFilterState={{ prereq: { ok: 'include' }, category: { O: 'include' } }}
-        onSelect={setOriginFeat}
-        onClear={clearOriginFeat}
-        exclude={(raw) => {
-          const id = `${raw.name}|${raw.source}`;
-          if (raw.repeatable || (originFeat && id === `${originFeat.id}|${originFeat.source}`)) return false;
-          return owned.feats.has(id);
-        }}
+        guided
+        preview={raw && (
+          <div className={styles.preview}>
+            <DetailView entity={entity} raw={raw} db={db} hideHeader />
+          </div>
+        )}
       />
-
-      {originFeatData && (
-        <div className={styles.preview}>
-          <DetailView entity={featEntity} raw={originFeatData} db={db} hideHeader />
-        </div>
-      )}
-
-      {featChoices.length > 0 && (
-        <div className={styles.field}>
-          <span className={styles.fieldLabel}>Feat choices</span>
-          <ChoiceList choices={featChoices} bag={originFeat.choices} onChange={setFeatChoices} db={db} owned={owned} character={character} />
-        </div>
-      )}
     </div>
   );
 }

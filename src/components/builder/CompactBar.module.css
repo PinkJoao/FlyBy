@@ -17,6 +17,13 @@
  *     menos a borda que as duas dividem); mudar uma pede mudar a outra.
  *   - Borda a borda: as margens negativas são o respiro lateral da .page, `--bar-bleed` (24 px;
  *     8 px com o histórico ao lado, que fica colado na página: com 24 a barra encostava nele, DDL-0325).
+ *     O respiro de dentro é o MESMO transbordo, como o da barra de abas: assim os controles caem
+ *     no lugar exato dos do topo da página. Com 16 px fixos eles ficavam 8 px fora (para fora
+ *     sem o histórico, para dentro com ele; DDL-0338). Pelo mesmo motivo o .end tem o espaço do
+ *     .topActions (Builder.module.css): o guia e o menu no mesmo lugar dos de cima. E a grade é
+ *     a do topo (pages/Character.module.css .bar: o espaço --space-3 e a coluna da direita `1fr`,
+ *     que no celular alarga até caber o guia e o menu e empurra o centro); só a da esquerda é
+ *     `minmax(0, 1fr)`, para o retrato e os números, que só a barra tem, nunca moverem o centro.
  *   - O retrato e os números só a partir de 560 px de barra: abaixo disso o
  *     alternador no centro não deixa espaço (o celular).
  *   - A entrada vai pela linha do tempo `--flyby-top` (o view-timeline do topo da página,
@@ -43,10 +50,10 @@
   height: 52px;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto 1fr;
   align-items: center;
-  gap: 10px;
-  padding: 0 var(--space-4);
+  gap: var(--space-3);
+  padding: 0 var(--bar-bleed, 24px);
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -72,7 +79,9 @@
   gap: 10px;
 }
 .end {
+  min-width: auto;
   justify-content: flex-end;
+  gap: var(--space-2);
 }
 .center {
   display: flex;

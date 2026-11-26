@@ -22,6 +22,8 @@
 //   InlineEntry(props): uma string com tags, inline (cabeçalhos de tabela).
 //
 // DECISÕES E ARMADILHAS
+//   - A raiz leva `data-entries`: o texto dos livros (com travessões de verdade) fica de fora
+//     do lint de interface da U1 (testing/ui/lint.js, DDL-0332).
 //   - Link nunca é morto: fora do DataProvider ou sem match, o span inerte, com o
 //     display certo da gramática de pipes.
 //   - {@dc 15} vira "DC 15", {@hit 5} vira "+5". Tags sem alvo no db (quickref) ficam inertes.
@@ -423,7 +425,7 @@ function renderTable(entry, key) {
 
 export default function EntryContent({ entries }) {
   if (!entries?.length) return null;
-  return <div className={styles.content}>{renderList(entries, 'e')}</div>;
+  return <div className={styles.content} data-entries="">{renderList(entries, 'e')}</div>;
 }
 
 /** Render inline de uma string do 5etools. */

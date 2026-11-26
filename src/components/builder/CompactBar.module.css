@@ -13,7 +13,8 @@
  * DECISÕES E ARMADILHAS
  *   - Altura 52 px: as abas grudam em top: 51px (Builder.module.css .tabBar, a barra
  *     menos a borda que as duas dividem); mudar uma pede mudar a outra.
- *   - Borda a borda: as margens negativas são o respiro lateral da .page (24 px).
+ *   - Borda a borda: as margens negativas são o respiro lateral da .page, `--bar-bleed` (24 px;
+ *     8 px com o histórico ao lado, que fica colado na página: com 24 a barra encostava nele, DDL-0325).
  *   - O retrato e os números só a partir de 560 px de barra: abaixo disso o
  *     alternador no centro não deixa espaço (o celular).
  *   - O fundo é o --bg quase opaco com desfoque, como as barras do sistema: o fundo
@@ -31,8 +32,8 @@
   container: cbar / inline-size;
   position: absolute;
   top: 0;
-  left: -24px;
-  right: -24px;
+  left: calc(-1 * var(--bar-bleed, 24px));
+  right: calc(-1 * var(--bar-bleed, 24px));
   height: 52px;
   box-sizing: border-box;
   display: grid;

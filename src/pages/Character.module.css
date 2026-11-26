@@ -22,6 +22,9 @@
  *   - Na grade, a página PREENCHE a coluna (width 100%, margin 0): o .page da ficha
  *     tem margin auto, e numa grade a margem automática desliga o esticar; a página
  *     encolhia ao conteúdo (622px) e centrava dentro da coluna.
+ *   - Com a coluna do histórico, o topo compacto e a barra de abas transbordam só 8 px da página
+ *     (`--bar-bleed`, 24 px sem ela): a coluna fica colada na página, e com 24 px as duas barras chegavam
+ *     até a borda dela e quase encostavam no título e nos botões do histórico (DDL-0325).
  *   - O topo é uma grade 1fr auto 1fr: o seletor fica no centro de verdade mesmo
  *     com lados de larguras diferentes (o voltar à esquerda; guia e menu, ou só o
  *     menu, à direita).
@@ -51,6 +54,7 @@
 
 @media (min-width: 1140px) {
   .withSide {
+    --bar-bleed: 8px;
     display: grid;
     grid-template-columns: minmax(0, 760px) 360px;
     justify-content: center;

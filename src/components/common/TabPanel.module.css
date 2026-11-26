@@ -7,9 +7,12 @@
  * DECISÕES E ARMADILHAS
  *   - `gap: inherit`: o painel entra no lugar dos filhos soltos da aba sem mudar o
  *     espaço entre eles.
+ *   - `position: relative`: o `offsetTop` dos blocos fica relativo ao painel (o
+ *     TabPanel compara a altura de cada um antes e depois da troca).
  * -------------------------------------------------------------------------- */
 
 .panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: inherit;

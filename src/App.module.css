@@ -13,6 +13,9 @@
  *   - O espaço da barra de rolagem fica SEMPRE reservado (scrollbar-gutter): sem
  *     isso, uma página que passa a caber na tela (o modo jogo, mais curto que a
  *     ficha) perde a barra e todo o conteúdo anda alguns pixels para o lado.
+ *   - Até 760 px (o layout do celular) a barra de rolagem some (DDL-0343): numa janela estreita do desktop,
+ *     com mouse, a faixa reservada deixava um vão de 10 px à direita das barras presas, que no celular
+ *     encostam na borda da tela. A roda, o touchpad e o teclado seguem rolando; no celular nada muda.
  * -------------------------------------------------------------------------- */
 
 .app {
@@ -29,4 +32,14 @@
   overflow-x: hidden;
   scrollbar-gutter: stable;
   scroll-timeline: --flyby-page block;
+}
+
+@media (max-width: 760px) {
+  .main {
+    scrollbar-width: none;
+    scrollbar-gutter: auto;
+  }
+  .main::-webkit-scrollbar {
+    display: none;
+  }
 }

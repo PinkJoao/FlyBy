@@ -6,11 +6,14 @@
 //   os valores não-tier, DDL-0078), o filtro de categoria de armadura (Light,
 //   Medium, Heavy, Shield) e a ordenação padrão (naturalSort por raridade, com
 //   itens mundanos antes dos comuns e ordem alfabética dentro de cada raridade) e a
-//   miniatura (a arte própria, a do item base, nunca a do modelo da variante, DDL-0287).
+//   miniatura (a arte própria, a do item base, nunca a do modelo da variante, DDL-0287), e o texto do
+//   detalhe na ordem do 5e.tools (`itemRuleEntries`, `propertyLabel` pela meta; DDL-0346).
 // -----------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import itemEntity, { formatPrice, itemThumb } from './item';
+import itemEntity, { formatPrice, itemThumb, itemRuleEntries } from './item';
+import bundle from '../../data/srdBundle.json';
+import { prepareDb } from '../../engine/prepareDb';
 import { sortList } from '../../sorting';
 
 describe('formatPrice', () => {
@@ -198,5 +201,33 @@ describe('itemThumb', () => {
     const t = itemThumb(arrow, db);
     expect(t.src).toBeNull();
     expect(t.icon).toMatch(/^item/);
+  });
+});
+
+describe('o texto do detalhe (itemRuleEntries, DDL-0346)', () => {
+  const srd = prepareDb(bundle);
+  const find = (name) => itemEntity.list(srd).find((r) => r.name === name && r.source === 'XPHB');
+  const names = (r) => itemRuleEntries(r, srd).map((e) => (typeof e === 'string' ? e : e.name));
+
+  it('a arma à distância: Range (o tipo), as propriedades e a maestria, na ordem do 5e.tools', () => {
+    expect(names(find('Longbow'))).toEqual(['Range', 'Ammunition', 'Heavy', 'Two-Handed', 'Mastery: Slow']);
+  });
+
+  it('a propriedade na versão de 2024, não a de 2014', () => {
+    const heavy = itemRuleEntries(find('Longbow'), srd).find((e) => e.name === 'Heavy');
+    expect(JSON.stringify(heavy)).toMatch(/Strength score isn't at least 13/);
+  });
+
+  it('a armadura pesada: a Força em frase, sem o chip que parecia um atributo', () => {
+    const plate = find('Plate Armor');
+    expect(itemRuleEntries(plate, srd)).toContain('If the wearer has a Strength score lower than 15, their speed is reduced by 10 feet.');
+    expect(itemEntity.meta(plate, srd).some((m) => m.label === 'Strength')).toBe(false);
+  });
+
+  it('a linha de propriedades pelo template do dado, sem repetir o alcance', () => {
+    const meta = itemEntity.meta(find('Longbow'), srd);
+    expect(meta.find((m) => m.label === 'Properties').value).toBe('Ammunition (Range 150/600 ft.; Arrow), Heavy, Two-Handed');
+    expect(meta.some((m) => m.label === 'Range')).toBe(false);
+    expect(itemEntity.meta(find('Longsword'), srd).find((m) => m.label === 'Properties').value).toBe('Versatile (1d10)');
   });
 });

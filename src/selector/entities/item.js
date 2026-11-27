@@ -11,8 +11,16 @@
 //   cap(s), stripSrc(s): texto ("V|XPHB" vira "V").
 //   rarityLabel(raw), rarityRank(raw): o rótulo e a posição na escala de raridade
 //     (mundano antes de comum).
-//   findProperty(db, code), findMastery(db, code), propertyName(db, code): as
-//     propriedades e maestrias de arma, do db.
+//   uidOf(code): a abreviação (ou nome) e a fonte de um código "V|XPHB" ou { uid }, em minúsculas
+//     (sem fonte, PHB, como no 5e.tools).
+//   lookup(list, code, key): a definição pela abreviação e pela FONTE, senão a do PHB, senão qualquer.
+//   findProperty(db, code), findMastery(db, code), findType(db, code), propertyName(db, code): as
+//     propriedades, maestrias e tipos de item, do db.
+//   propertyLabel(db, code, raw, used): o rótulo da propriedade pelo `template` do dado, como o
+//     cabeçalho do 5e.tools ("Ammunition (Range 150/600 ft.; Arrow)", "Versatile (1d10)").
+//   withTemplate(entries, raw): as entradas com `{{item.x}}` trocado pelo valor do item.
+//   itemRuleEntries(raw, db): o texto do detalhe (as entradas do item e o que vale para ele).
+//   ARMOR_STEALTH, armorStrength(n), FOCUS_TEXT: as frases de armadura e de foco do 5e.tools.
 //   weaponDamage(raw): "1d8 Slashing (1d10 two-handed)".
 //   formatCopper(v), formatPrice(raw, db): o preço (derivado com "~").
 //   weightText(raw), typeLabel(raw): peso e tipo em texto simples.
@@ -20,13 +28,21 @@
 //   itemThumb(raw, db): a miniatura do item ({ src, icon, tint }): a arte própria,
 //     a do item base, senão o ícone do grupo.
 //   itemCardExtra(raw, db): as linhas extras do card (dano, propriedades, maestria,
-//     alcance; CA com a Força numa linha só, Furtividade; peso; sintonia), na ordem de importância.
+//     alcance; CA com a Força pedida numa linha só, Furtividade; peso; sintonia), na ordem de importância.
 //   Exporta ITEM_GROUP_ICONS (o ícone de cada grupo, o mesmo do inventário).
 //   Exporta itemEntity.
 //
 // DECISÕES E ARMADILHAS
-//   - A Força da armadura vai NA linha da CA ("AC 18 · Strength 15", DDL-0345): o card só mostra as
-//     linhas que cabem, e na armadura mágica a etiqueta de raridade empurrava a Força para fora.
+//   - A Força da armadura vai NA linha da CA ("AC 18 · Needs Str 15", DDL-0345): o card só mostra as
+//     linhas que cabem, e na armadura mágica a etiqueta de raridade empurrava a Força para fora. No
+//     detalhe ela é uma FRASE, não um chip (DDL-0346): "Strength Str 15" parecia um atributo da armadura.
+//   - O texto do detalhe segue o do 5e.tools (`Renderer.item.enhanceItem`, DDL-0346), na mesma ordem:
+//     as entradas do item, o texto do TIPO (o "Range" da arma à distância, as ferramentas), o de cada
+//     propriedade, as frases de armadura (Furtividade e a Força da pesada) e de foco de conjuração, a
+//     maestria, e as entradas extras do tipo (`itemTypeAdditionalEntries`). Propriedade, tipo e maestria
+//     se acham pela abreviação E pela fonte ("H|XPHB"): só pela abreviação, o PHB de 2014 vinha primeiro
+//     e o texto das propriedades saía desatualizado. As frases de armadura e de foco não estão no dado;
+//     são as do código do 5e.tools (MIT), na versão de 2024.
 //   - typeLabel põe o tipo no singular (Potions, Potion), mas nunca em "us" e "ss":
 //     a regra antiga cortava "Spellcasting Focus" em "Focu" (T1 da T3, DDL-0185).
 //   - `naturalSort` é Rarity (do mundano ao artefato, e alfabético dentro de cada
@@ -134,7 +150,7 @@ export function itemCardExtra(raw, db) {
     if (raw.range) out.push(`Range ${raw.range} ft`);
   } else if (info.group === 'armor') {
     const ac = raw.ac != null ? (info.armorSlot === 'shield' ? `AC +${raw.ac}` : `AC ${raw.ac}`) : null;
-    const str = raw.strength ? `Strength ${raw.strength}` : null;
+    const str = raw.strength ? `Needs Str ${raw.strength}` : null;
     if (ac || str) out.push([ac, str].filter(Boolean).join(' · '));
     if (raw.stealth) out.push('Stealth disadvantage');
   }
@@ -194,22 +210,109 @@ function rarityRank(raw) {
   return i === -1 ? null : i;
 }
 
+/** A abreviação (ou nome) e a fonte de um código, em minúsculas; sem fonte é PHB. */
+function uidOf(code) {
+  const [abbr, source] = String(code?.uid ?? code ?? '').split('|').map((s) => s.trim().toLowerCase());
+  return { abbr, source: source || 'phb' };
+}
+
+/** A definição pela abreviação e pela fonte, senão a do PHB, senão qualquer uma com a abreviação. */
+function lookup(list, code, key = 'abbreviation') {
+  const { abbr, source } = uidOf(code);
+  const same = (x) => String(x[key] ?? '').toLowerCase() === abbr;
+  const src = (x) => String(x.source ?? 'PHB').toLowerCase();
+  return list.find((x) => same(x) && src(x) === source) ?? list.find((x) => same(x) && src(x) === 'phb') ?? list.find(same) ?? null;
+}
+
 /** A definição de uma propriedade de arma no db. */
 function findProperty(db, code) {
-  const abbr = stripSrc(code);
-  return (db?.['items-base']?.itemProperty ?? []).find((p) => p.abbreviation === abbr) ?? null;
+  return lookup(db?.['items-base']?.itemProperty ?? [], code);
 }
 
 /** A definição de uma maestria no db. */
 function findMastery(db, code) {
-  const name = stripSrc(code);
-  return (db?.['items-base']?.itemMastery ?? []).find((m) => m.name === name) ?? null;
+  return lookup(db?.['items-base']?.itemMastery ?? [], code, 'name');
+}
+
+/** A definição de um tipo de item no db. */
+function findType(db, code) {
+  return lookup(db?.['items-base']?.itemType ?? [], code);
+}
+
+/** As entradas com `{{item.x}}` trocado pelo valor do item. */
+function withTemplate(entries, raw) {
+  const walk = (e) => {
+    if (typeof e === 'string') return e.replace(/{{item\.([\w.]+)}}/g, (_, path) => String(path.split('.').reduce((o, k) => o?.[k], raw) ?? ''));
+    if (Array.isArray(e)) return e.map(walk);
+    if (e && typeof e === 'object') return Object.fromEntries(Object.entries(e).map(([k, v]) => [k, walk(v)]));
+    return e;
+  };
+  return walk(entries ?? []);
+}
+
+const ARMOR_STEALTH = 'The wearer has {@variantrule Disadvantage|XPHB} on Dexterity ({@skill Stealth|XPHB}) checks.';
+const armorStrength = (n) => `If the wearer has a Strength score lower than ${n}, their speed is reduced by 10 feet.`;
+const FOCUS_TEXT = {
+  arcane: 'An Arcane Focus takes a specific form and is bejeweled or carved to channel arcane magic. A {@class Sorcerer|XPHB}, {@class Warlock|XPHB}, or {@class Wizard|XPHB} can use such an item as a {@variantrule Spellcasting Focus|XPHB}.',
+  druid: 'A Druidic Focus takes a specific form and is carved, tied with ribbon, or painted to channel primal magic. A {@class Druid|XPHB} or {@class Ranger|XPHB} can use such an object as a {@variantrule Spellcasting Focus|XPHB}.',
+  holy: 'A Holy Symbol takes a specific form and is bejeweled or painted to channel divine magic. A {@class Cleric|XPHB} or {@class Paladin|XPHB} can use a Holy Symbol as a {@variantrule Spellcasting Focus|XPHB}.',
+};
+
+/** O texto do detalhe: as entradas do item e o que vale para ele, na ordem do 5e.tools. */
+export function itemRuleEntries(raw, db) {
+  const out = [...(raw?.entries ?? [])];
+  const pushDef = (def) => {
+    const list = def?.entriesTemplate ? withTemplate(def.entriesTemplate, raw) : def?.entries;
+    if (list?.length) out.push(...list);
+  };
+  if (raw?.type) pushDef(findType(db, raw.type));
+  for (const code of raw?.property ?? []) pushDef(findProperty(db, code));
+  const abbr = raw?.type ? uidOf(raw.type).abbr : null;
+  if (['la', 'ma', 'ha'].includes(abbr)) {
+    if (raw.stealth) out.push(ARMOR_STEALTH);
+    if (abbr === 'ha' && raw.strength) out.push(armorStrength(raw.strength));
+  }
+  if (abbr === 'scf' && FOCUS_TEXT[raw.scfType]) out.push(FOCUS_TEXT[raw.scfType]);
+  for (const code of raw?.mastery ?? []) {
+    const def = findMastery(db, code);
+    const list = def?.entriesTemplate ? withTemplate(def.entriesTemplate, raw) : def?.entries;
+    if (list?.length) out.push({ type: 'entries', name: `Mastery: ${def.name}`, entries: list });
+  }
+  if (raw?.type) {
+    const { abbr: a, source } = uidOf(raw.type);
+    const extra = (db?.['items-base']?.itemTypeAdditionalEntries ?? []).find((x) => {
+      const t = uidOf(x.appliesTo);
+      return t.abbr === a && t.source === source;
+    });
+    if (extra?.entries?.length) out.push(...extra.entries);
+  }
+  return out;
 }
 
 /** O nome legível de uma propriedade. */
 function propertyName(db, code) {
   const def = findProperty(db, code);
-  return def?.entries?.[0]?.name ?? PROPERTY_NAMES[stripSrc(code)] ?? stripSrc(code);
+  return def?.name ?? def?.entries?.[0]?.name ?? PROPERTY_NAMES[stripSrc(code)] ?? stripSrc(code);
+}
+
+/** O rótulo da propriedade pelo `template` do dado ("Ammunition (Range 150/600 ft.; Arrow)"); marca o alcance usado. */
+function propertyLabel(db, code, raw, used = {}) {
+  const def = findProperty(db, code);
+  const name = propertyName(db, code);
+  const note = code?.note ? ` (${code.note})` : '';
+  if (!def?.template) return `${name}${note}`;
+  const ammo = raw?.ammoType ? String(raw.ammoType).split('|')[0].replace(/\b\w/g, (ch) => ch.toUpperCase()) : '';
+  const text = def.template
+    .replace(/{{prop_name}}/g, name)
+    .replace(/{{prop_name_lower}}/g, name.toLowerCase())
+    .replace(/{{item\.([\w.]+)}}/g, (_, path) => {
+      if (path === 'range') used.range = true;
+      if (path === 'ammoType') return ammo;
+      return String(raw?.[path] ?? '');
+    })
+    .replace(/\s*;\s*\)/g, ')')
+    .replace(/\s+/g, ' ');
+  return `${text}${note}`;
 }
 
 /** O dano da arma em texto. */
@@ -320,13 +423,14 @@ const itemEntity = {
       out.push({ label: 'Type', value: label });
       const dmg = weaponDamage(r);
       if (dmg) out.push({ label: 'Damage', value: dmg, highlight: true });
-      if (r.range) out.push({ label: 'Range', value: `${r.range} ft` });
-      if (r.property?.length) out.push({ label: 'Properties', value: r.property.map((p) => propertyName(db, p)).join(', ') });
+      const used = {};
+      const props = (r.property ?? []).map((p) => propertyLabel(db, p, r, used));
+      if (r.range && !used.range) out.push({ label: 'Range', value: `${r.range} ft` });
+      if (props.length) out.push({ label: 'Properties', value: props.join(', ') });
       if (r.mastery?.length) out.push({ label: 'Mastery', value: r.mastery.map((m) => stripSrc(m)).join(', ') });
     } else if (info.group === 'armor') {
       out.push({ label: 'Type', value: info.armorSlot === 'shield' ? 'Shield' : `${cap(info.armorSlot)} Armor` });
       if (r.ac != null) out.push({ label: 'Armor Class', value: info.armorSlot === 'shield' ? `+${r.ac}` : String(r.ac), highlight: true });
-      if (r.strength) out.push({ label: 'Strength', value: `Str ${r.strength}` });
       if (r.stealth) out.push({ label: 'Stealth', value: 'Disadvantage' });
     } else {
       out.push({ label: 'Type', value: info.groupLabel });
@@ -342,16 +446,7 @@ const itemEntity = {
   },
 
   entries: (r, db) => {
-    const out = [...(r.entries ?? [])];
-    for (const code of r.property ?? []) {
-      const def = findProperty(db, code);
-      const block = def?.entries?.[0];
-      if (block) out.push(block);
-    }
-    for (const code of r.mastery ?? []) {
-      const def = findMastery(db, code);
-      if (def?.entries) out.push({ type: 'entries', name: `Mastery: ${def.name}`, entries: def.entries });
-    }
+    const out = itemRuleEntries(r, db);
     return out.length ? out : undefined;
   },
 

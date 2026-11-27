@@ -17,7 +17,8 @@
  *   .tabBar: o espaço acima da barra de abas (a TabBar comum, DDL-0303); ela vai de
  *     borda a borda e gruda sob o topo compacto, no celular e no desktop (DDL-0306) (51 px: a barra de 52 menos
  *     a borda, que as duas dividem; DDL-0304). O transbordo é `--bar-bleed` (24 px; 8 com o
- *     histórico ao lado, Character.module.css, DDL-0325).
+ *     histórico ao lado, Character.module.css, DDL-0325). `--edge-fade` é esse transbordo: as pontas
+ *     da barra esmaecem nele (TabBar.module.css .stick, DDL-0342).
  *   .panel, .stack: o conteúdo da aba.
  * -------------------------------------------------------------------------- */
 
@@ -175,6 +176,7 @@ button.guideBtnAlert {
   --tabbar-top: 51px;
   margin-inline: calc(-1 * var(--bar-bleed, 24px));
   padding-inline: var(--bar-bleed, 24px);
+  --edge-fade: var(--bar-bleed, 24px);
 }
 
 .panel {

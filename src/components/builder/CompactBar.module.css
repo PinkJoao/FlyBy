@@ -32,6 +32,9 @@
  *     sem vão (DDL-0331). Só com suporte e sem "reduzir movimento"; senão vale a .on.
  *   - O fundo é o --bg quase opaco com desfoque, como as barras do sistema: o fundo
  *     do tema (as estrelas, o pergaminho) ainda passa de leve por trás.
+ *   - As pontas ESMAECEM (DDL-0342): uma máscara do transparente ao cheio na largura do transbordo
+ *     (`--bar-bleed`), onde não há controle nenhum; o fundo, o desfoque e a borda de baixo somem
+ *     juntos, e os botões ficam intactos. No desktop as pontas sólidas destacavam a barra.
  * -------------------------------------------------------------------------- */
 
 .anchor {
@@ -58,6 +61,8 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--bar-bleed, 24px), #000 calc(100% - var(--bar-bleed, 24px)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--bar-bleed, 24px), #000 calc(100% - var(--bar-bleed, 24px)), transparent);
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;

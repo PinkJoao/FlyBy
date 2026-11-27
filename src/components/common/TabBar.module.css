@@ -13,6 +13,11 @@
  *     abaixo; [data-docked] lhe dá a borda de cima; .mark é o marcador de altura zero (DDL-0311).
  *
  * DECISÕES E ARMADILHAS
+ *   - A .stick esmaece nas pontas (DDL-0342), como o topo compacto: uma máscara do transparente ao
+ *     cheio na largura de `--edge-fade`, que quem a põe de borda a borda define como o transbordo dela
+ *     (Builder.module.css .tabBar: `--bar-bleed`), onde não há aba; sem ele, 0 e nada muda. A borda de cima da barra presa ao pé é uma sombra
+ *     INTERNA: a máscara corta tudo fora da caixa, e a de fora sumia. Com o esmaecido de rolagem
+ *     ([data-fade], index.css, o celular com abas sobrando) vale o dele, mais específico.
  *   - O realce desliza com --dur-slide e --ease (os tokens de movimento, DDL-0303);
  *     o "reduzir movimento" global corta a transição.
  *   - Na `main` o realce é a barra de 3 px sobre a linha de baixo da faixa, como
@@ -122,13 +127,15 @@
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--edge-fade, 0px), #000 calc(100% - var(--edge-fade, 0px)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--edge-fade, 0px), #000 calc(100% - var(--edge-fade, 0px)), transparent);
 }
 
 .dock {
   bottom: 0;
 }
 .dock[data-docked='true'] {
-  box-shadow: 0 -1px 0 var(--border);
+  box-shadow: inset 0 1px 0 var(--border);
 }
 .mark {
   height: 0;

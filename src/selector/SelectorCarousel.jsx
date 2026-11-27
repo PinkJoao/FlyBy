@@ -21,6 +21,8 @@
 //     `onChoose(raw)` o que o toque ou o duplo clique no cartão do centro faz.
 //
 // DECISÕES E ARMADILHAS
+//   - Cada item da faixa leva `data-name` e `data-source` (o gancho dos testes de interface,
+//     testing/ui/guideDriver.js): o texto junta o nome e a fonte de um nome repetido.
 //   - Na faixa, um nome que se repete na lista ("Gnome" do PHB e do XPHB) leva a fonte
 //     embaixo (DDL-0301).
 //   - A faixa calcula as artes uma vez por lista (useMemo); as miniaturas são lazy, e a
@@ -268,6 +270,8 @@ export default function SelectorCarousel({ entity, db, items, currentId, index, 
             type="button"
             className={i === at ? `${styles.stripItem} ${styles.stripOn}` : styles.stripItem}
             data-active={i === at ? 'true' : undefined}
+            data-name={it.raw.name}
+            data-source={it.raw.source}
             onClick={() => go(i)}
           >
             <Thumb

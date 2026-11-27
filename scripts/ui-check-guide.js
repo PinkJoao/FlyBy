@@ -13,9 +13,11 @@
 //   npx vite-node scripts/ui-check-guide.js <arquivo.json> [--full]
 //
 // FUNÇÕES
-//   shapeOf(bag, prefix, out): a forma de um saco de escolhas ({ chave: "kind xN" }), com as
-//     sub-escolhas por pick.
+//   shapeOf(bag, prefix, out): a forma de um saco de escolhas ({ chave: "kind xN" }, ou "ability +N"
+//     para atributos), com as sub-escolhas por pick.
 //   characterShape(c): a forma de todas as escolhas do personagem.
+//   topPicks(db, character): as escolhas de CLASSE de cima que a tela fez, com o kind que o motor
+//     dá a cada uma (sem as sub-escolhas), para o `autoBuild` partir delas.
 //   spellLimits(derived): as origens de magia de classe com truques ou preparadas fora do limite.
 //   badNumbers(derived): os números da ficha que não são números finitos.
 //   check(character, db): os problemas.
@@ -24,8 +26,13 @@
 //   - A forma, não os valores: o guia escolhe a primeira opção e o `autoBuild` sorteia; o que
 //     tem de bater é QUAIS escolhas existem e quantos picks cada uma pede. Uma escolha que a
 //     tela não mostra (ou mostra a mais) aparece aqui como diferença de forma.
-//   - O `autoBuild` recebe o talento de origem que a tela escolheu: as sub-escolhas dependem
-//     dele.
+//   - O `autoBuild` recebe o talento de origem que a tela escolheu e as escolhas de classe de cima
+//     (`topPicks`, a U3 da amostra da régua: o talento do nível 4, as manobras): as sub-escolhas
+//     dependem delas, e o sorteio dele daria outra forma. O kind vem do motor (`buildClassChoices`),
+//     não da tela: um kind errado gravado pela tela aparece como diferença de forma.
+//   - Um aumento de atributo conta pelo TOTAL somado, não pelo número de picks: o Ability Score
+//     Improvement aceita "+2 em um" (a tela pega a primeira alternativa, um pick) ou "+1 em dois"
+//     (o sorteio do `autoBuild`, dois picks), e os dois dão +2.
 //   - As magias contam pelo LIMITE derivado, não contra o `autoBuild`: o número depende de uma
 //     escolha (a Primal Order Magician dá um truque a mais, e o `autoBuild` pode sortear Warden).
 //   - `--full` usa a cópia local do 5e.tools (`loadDb`), a mesma que o teste serve ao app
@@ -40,6 +47,7 @@ import { deriveFromDb } from '../src/engine/resolve.js';
 import { guidancePendencies } from '../src/components/wizard/guidancePendencies.js';
 import { createGuideContext } from '../src/components/wizard/createGuideContext.js';
 import { buildCreateSteps } from '../src/engine/wizardSteps.js';
+import { buildClassChoices } from '../src/components/builder/classChoices.js';
 import { autoBuild } from './lib/autoBuild.js';
 import { loadDb } from './lib/loadDb.js';
 
@@ -47,7 +55,9 @@ import { loadDb } from './lib/loadDb.js';
 function shapeOf(bag, prefix, out) {
   for (const [key, entry] of Object.entries(bag ?? {})) {
     if (!entry || typeof entry !== 'object') continue;
-    out[`${prefix}${key}`] = `${entry.kind ?? '?'} x${(entry.picks ?? []).length}`;
+    const picks = entry.picks ?? [];
+    const plus = entry.kind === 'ability' && picks.every((p) => typeof p?.amount === 'number');
+    out[`${prefix}${key}`] = plus ? `ability +${picks.reduce((n, p) => n + p.amount, 0)}` : `${entry.kind ?? '?'} x${picks.length}`;
     for (const [pick, sub] of Object.entries(entry.sub ?? {})) shapeOf(sub, `${prefix}${key}>${pick}>`, out);
   }
   return out;
@@ -61,6 +71,18 @@ function characterShape(c) {
   shapeOf(c.origin?.originFeat?.choices, 'originFeat.', out);
   (c.classes ?? []).forEach((cls, i) => shapeOf(cls.choices, `class${i}.`, out));
   return out;
+}
+
+/** As escolhas de classe de cima que a tela fez, com o kind do motor e sem as sub-escolhas. */
+function topPicks(db, character) {
+  return character.classes.map((cls) => {
+    const kinds = new Map(buildClassChoices(db, cls, character).map((ch) => [ch.id, ch.kind]));
+    return Object.fromEntries(
+      Object.entries(cls.choices ?? {})
+        .filter(([id, e]) => kinds.has(id) && e?.picks?.length)
+        .map(([id, e]) => [id, { kind: kinds.get(id), picks: [...e.picks] }]),
+    );
+  });
 }
 
 /** As origens de magia de classe fora do limite (a menos ou a mais). */
@@ -117,6 +139,10 @@ function check(character, db) {
     lineage: character.species?.lineage ?? null,
     level: cls.level,
     originFeat: character.origin?.originFeat ? { id: character.origin.originFeat.id, source: character.origin.originFeat.source } : undefined,
+    preset: (c) => {
+      const picks = topPicks(db, character);
+      c.classes.forEach((x, i) => (x.choices = picks[i] ?? {}));
+    },
   });
   if (!auto.ok) problems.push(`o autoBuild da mesma combinação não converge (${auto.pendencies.total})`);
   const ui = characterShape(character);

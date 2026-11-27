@@ -22,7 +22,6 @@
 //
 // FUNÇÕES
 //   originFeatOf(name): o talento de origem da especificação como { id, source }.
-//   withStartingKit(db, c, rng, problems): o kit inicial da classe, com as escolhas do SRD.
 //   ABILITY_ORDER: os atributos de cada classe, do mais alto ao mais baixo (registro).
 //   build(db, model, level): o personagem do modelo no nível, e os problemas do builder.
 //   probe(db, character, unit): o catálogo e as sondas de um personagem; devolve os
@@ -66,9 +65,7 @@ import { activityEvent, featureLogEvent } from '../src/engine/playUse.js';
 import { featureUseOf } from '../src/engine/playFeatureRolls.js';
 import { castWays, castEvent, spellAttackOf, spellHealEvent } from '../src/engine/playCast.js';
 import { shortRestEvent, longRestEvent } from '../src/engine/playRest.js';
-import { resolveClassObj } from '../src/engine/resolve.js';
-import { parseStartingEquipment, isGoldOnlyOption, kitChooseAllows, startingKitInventory, startingKitCurrency } from '../src/engine/startingEquipment.js';
-import itemEntity from '../src/selector/entities/item.js';
+import { withStartingKit } from './lib/startingKit.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
@@ -81,28 +78,6 @@ const finite = (n) => typeof n === 'number' && Number.isFinite(n);
 function originFeatOf(name) {
   const [id, source] = String(name ?? 'Alert').split('|');
   return { id, source: source || 'XPHB' };
-}
-
-/** O kit inicial da classe (a primeira opção que não é só ouro), com as escolhas do SRD. */
-function withStartingKit(db, c, rng, problems) {
-  const classObj = resolveClassObj(db, c.classes[0].classId, c.classes[0].source);
-  const option = parseStartingEquipment(db, classObj).find((o) => !isGoldOnlyOption(o));
-  if (!option) {
-    problems.push({ where: 'builder', message: 'no starting kit' });
-    return;
-  }
-  const items = itemEntity.list(db).filter((r) => r.srd52 || r.srd);
-  const picks = {};
-  (option.chooses ?? []).forEach((ch, i) => {
-    const allowed = items.filter((r) => kitChooseAllows(ch, r));
-    const chosen = [];
-    while (chosen.length < ch.quantity && allowed.length) chosen.push(allowed.splice(Math.floor(rng() * allowed.length), 1)[0]);
-    if (chosen.length < ch.quantity) problems.push({ where: 'builder', message: `kit: nothing to pick for ${ch.label ?? ch.type}` });
-    picks[i] = chosen.map((r) => `${r.name}|${r.source}`);
-  });
-  c.inventory = startingKitInventory(option, db, picks);
-  c.currency = startingKitCurrency(option);
-  c.meta = { ...c.meta, startingKit: option.key, startingKitPicks: picks };
 }
 
 /** Os atributos de cada classe, do mais alto ao mais baixo (o standard array nessa ordem). */

@@ -17,6 +17,8 @@
 //     passos informativos ficam fora da lista (o índice original é preservado).
 //
 // DECISÕES E ARMADILHAS
+//   - `data-guide` na raiz é o gancho dos testes de interface (testing/ui/guideDriver.js): o guia
+//     leve abre numa janela, e o teste precisa distinguir a janela do guia das que ele fecha.
 //   - Na CRIAÇÃO o Avançar NUNCA trava e há Revisão; no fixup e no level-up não há
 //     Revisão e um passo obrigatório vazio trava o Avançar.
 //   - Skip só em passos OPCIONAIS (biografia, nome, alinhamento), ANTES do botão principal,
@@ -180,7 +182,7 @@ export default function Wizard({
 
   return (
     <GuideContext.Provider value={guide}>
-    <div className={styles.wizard}>
+    <div className={styles.wizard} data-guide="">
       <header className={styles.head}>
         <div className={styles.progressWrap}>
           <span className={styles.title} title={title || undefined}>{onReview ? 'Review' : step?.subtitle ?? title}</span>

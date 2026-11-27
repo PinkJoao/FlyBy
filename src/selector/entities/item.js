@@ -20,11 +20,13 @@
 //   itemThumb(raw, db): a miniatura do item ({ src, icon, tint }): a arte própria,
 //     a do item base, senão o ícone do grupo.
 //   itemCardExtra(raw, db): as linhas extras do card (dano, propriedades, maestria,
-//     alcance; CA, Força, Furtividade; peso; sintonia), na ordem de importância.
+//     alcance; CA com a Força numa linha só, Furtividade; peso; sintonia), na ordem de importância.
 //   Exporta ITEM_GROUP_ICONS (o ícone de cada grupo, o mesmo do inventário).
 //   Exporta itemEntity.
 //
 // DECISÕES E ARMADILHAS
+//   - A Força da armadura vai NA linha da CA ("AC 18 · Strength 15", DDL-0345): o card só mostra as
+//     linhas que cabem, e na armadura mágica a etiqueta de raridade empurrava a Força para fora.
 //   - typeLabel põe o tipo no singular (Potions, Potion), mas nunca em "us" e "ss":
 //     a regra antiga cortava "Spellcasting Focus" em "Focu" (T1 da T3, DDL-0185).
 //   - `naturalSort` é Rarity (do mundano ao artefato, e alfabético dentro de cada
@@ -131,8 +133,9 @@ export function itemCardExtra(raw, db) {
     if (raw.mastery?.length) out.push(`Mastery: ${raw.mastery.map((m) => stripSrc(m)).join(', ')}`);
     if (raw.range) out.push(`Range ${raw.range} ft`);
   } else if (info.group === 'armor') {
-    if (raw.ac != null) out.push(info.armorSlot === 'shield' ? `AC +${raw.ac}` : `AC ${raw.ac}`);
-    if (raw.strength) out.push(`Strength ${raw.strength}`);
+    const ac = raw.ac != null ? (info.armorSlot === 'shield' ? `AC +${raw.ac}` : `AC ${raw.ac}`) : null;
+    const str = raw.strength ? `Strength ${raw.strength}` : null;
+    if (ac || str) out.push([ac, str].filter(Boolean).join(' · '));
     if (raw.stealth) out.push('Stealth disadvantage');
   }
   const weight = weightText(raw);

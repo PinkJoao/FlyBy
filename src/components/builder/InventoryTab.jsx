@@ -184,7 +184,7 @@ export default function InventoryTab({ character, db, derived, onChange, onChang
   const toggleEquip = (entry) => updateEntry(entry.uid, { equipped: !entry.equipped });
   const toggleAttune = async (entry) => {
     if (!entry.attuned) {
-      const reason = unmetAttunement(attunedCount, entry.raw, attunementMax);
+      const reason = unmetAttunement(attunedCount, entry.raw, attunementMax, { character, db, derived });
       if (reason) {
         const ok = await confirm({
           title: 'Attunement',

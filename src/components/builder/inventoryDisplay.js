@@ -9,7 +9,7 @@
 // FUNÇÕES
 //   cap(s), rarityRank(rarity), nameOf(entry): utilitários.
 //   metaParts(entry): as partes da linha de tipo (o grupo singularizado; sem objeto
-//     nem snapshot, sem meta).
+//     nem snapshot, sem meta); a armadura leva a Força que pede ("Str 15", DDL-0345).
 //   thumbOf(entry, db): a imagem custom, senão a arte que o item tem ou herda
 //     (itemThumb: a própria, a do modelo, a do base), senão null (o ícone do grupo).
 //   GROUP_ICONS: o ícone de cada grupo (ITEM_GROUP_ICONS da entity de item).
@@ -69,7 +69,8 @@ export function metaParts(entry) {
     return parts;
   }
   if (entry.raw && entry.group === 'armor' && entry.armorSlot) {
-    return [entry.armorSlot === 'shield' ? 'Shield' : `${cap(entry.armorSlot)} Armor`];
+    const kind = entry.armorSlot === 'shield' ? 'Shield' : `${cap(entry.armorSlot)} Armor`;
+    return entry.raw.strength ? [kind, `Str ${entry.raw.strength}`] : [kind];
   }
   if (!entry.raw && !entry.isCustom) return [];
   const label = entry.groupLabel?.replace(/ Items$/, ' Item').replace(/([a-rt-z])s$/, '$1');

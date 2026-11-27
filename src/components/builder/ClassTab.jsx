@@ -10,7 +10,7 @@
 //
 // FUNÇÕES
 //   capitalize(s): o rótulo da classe (o id é minúsculo, TC-0016).
-//   ClassTab(props): a aba.
+//   ClassTab(props): a aba; o x da classe original passa por removeOriginal (dentro dela).
 //
 // DECISÕES E ARMADILHAS
 //   - Multiclasse exige os atributos da classe nova e das que já tem: avisa e
@@ -18,6 +18,10 @@
 //     é multiclasse). Declinar num slot novo vazio o descarta.
 //   - REMOVER a classe (o x no slot original) zera tudo dela; só uma TROCA direta
 //     mantém o nível. Senão a próxima classe herdaria o que veio da excluída.
+//   - Num multiclasse, o x da ORIGINAL pergunta qual das outras vira a original (DDL-0345):
+//     a escolhida sobe para o primeiro lugar com `isOriginalClass` e guarda o que já tinha;
+//     as escolhas que mudam com isso (a perícia da original pede mais) aparecem como pendência
+//     no guia. "Leave empty" faz o de antes (esvazia o lugar); fechar a janela não remove.
 //   - O nível só muda aqui; a LIMPEZA do level-down é central, no
 //     Builder.setClasses. Trocar ou remover a subclasse descarta os picks `sub:`.
 //   - Cancelar o seletor de um slot multiclasse novo descarta a aba; o x da
@@ -40,7 +44,7 @@ import WildShapeForms from './WildShapeForms';
 import { wildShapeOf } from '../../engine/playForms';
 import classEntity from '../../selector/entities/class';
 import { makeSubclassEntity } from '../../selector/entities/subclass';
-import { confirm } from '../common/dialog';
+import { ask, confirm } from '../common/dialog';
 import { TUT } from '../../tutorial/anchors';
 import styles from './ClassTab.module.css';
 import Tag from '../common/Tag';
@@ -119,6 +123,32 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
     onChange(classes.filter((_, x) => x !== i));
     setActiveIdx(Math.max(0, i - 1));
   };
+  /** O x da classe original: com outras classes, pergunta qual vira a original; senão esvazia. */
+  const removeOriginal = async (i) => {
+    const others = classes.filter((x, n) => n !== i && x.classId);
+    if (!others.length) {
+      clearClass(i);
+      return;
+    }
+    const gone = capitalize(classes[i].classId);
+    const pick = await ask({
+      title: `Remove ${gone}`,
+      message: `${gone} is the original class: it gives the starting proficiencies and saving throws. Make another class the original?`,
+      actions: [
+        { label: 'Leave empty', value: 'empty' },
+        ...others.map((x) => ({ label: capitalize(x.classId), value: x.uid, tone: 'primary' })),
+      ],
+    });
+    if (pick == null) return;
+    if (pick === 'empty') {
+      clearClass(i);
+      return;
+    }
+    const promoted = classes.find((x) => x.uid === pick);
+    const rest = classes.filter((x, n) => n !== i && x.uid !== pick).map((x) => ({ ...x, isOriginalClass: false }));
+    onChange([{ ...promoted, isOriginalClass: true }, ...rest]);
+    setActiveIdx(0);
+  };
 
   const c = classes[idx];
   const classObj = c.classId ? resolveClassObj(db, c.classId, c.source) : null;
@@ -165,7 +195,7 @@ export default function ClassTab({ character, db, onChange, onWildShapeForms }) 
                 showInfo={false}
                 autoOpen={!c.classId && c.uid === autoOpenUid}
                 onSelect={(raw) => pickClass(idx, raw)}
-                onClear={() => (idx > 0 ? removeClass(idx) : clearClass(idx))}
+                onClear={() => (c.isOriginalClass || idx === 0 ? removeOriginal(idx) : removeClass(idx))}
                 onClose={() => {
                   if (!c.classId && idx > 0) removeClass(idx);
                 }}

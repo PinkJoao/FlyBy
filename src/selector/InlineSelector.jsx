@@ -20,6 +20,8 @@
 //     rodapé do guia vira "Choose X" enquanto o cartão do centro não é o escolhido
 //     (useGuidePrimary), e `onChoose` escolhe e avança. Um botão só, não um de
 //     escolher e outro de avançar.
+//   - O toque (celular) ou o duplo clique (mouse) no cartão do centro escolhe como o botão: no guia,
+//     o `onChoose` (escolhe e avança); fora dele, o `onSelect`. No já escolhido não faz nada.
 //   - Escolher pelo painel move o carrossel até a escolha (ajuste no render quando
 //     `currentId` muda).
 // -----------------------------------------------------------------------------
@@ -89,6 +91,7 @@ export default function InlineSelector({ entity, db, currentId = null, onSelect,
           currentId={currentId}
           index={at}
           onIndex={setIndex}
+          onChoose={(raw) => entity.idOf(raw) !== currentId && (onChoose ?? onSelect)(raw)}
           footer={onChoose ? null : (raw) =>
             entity.idOf(raw) === currentId ? (
               onClear ? (

@@ -114,7 +114,8 @@
 //     filtros (abre e fecha).
 //   - Desktop: duplo clique num card seleciona (o clique simples só fixa a
 //     prévia). Fora no celular (o toque abre o detalhe e o toque duplo é zoom) e
-//     na loja (`renderFooter`: não há um Select para imitar).
+//     na loja (`renderFooter`: não há um Select para imitar). No carrossel, o cartão do centro
+//     escolhe pelo duplo clique e, no celular, pelo toque (`onChoose`, SelectorCarousel).
 //   - Escolha MÚLTIPLA (`multi = { total, chosen: [{ key, label }], onRemove }`):
 //     o título ganha "(n of total)", o botão diz "Next" enquanto faltar mais de
 //     um, e a faixa "Chosen" mostra o que já foi escolhido, com desfazer. Quem
@@ -753,6 +754,7 @@ export default function SelectorPanel({
                 currentId={currentId}
                 index={carouselIndex}
                 onIndex={setCarouselIndex}
+                onChoose={choose}
                 footer={(raw) => (
                   <Button variant="primary" block onPage data-tour={TUT.SELECTOR_SELECT} onClick={() => choose(raw)}>
                     {selectLabel === 'Next' ? 'Next' : `Select ${raw.name}`}

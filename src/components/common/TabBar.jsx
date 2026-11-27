@@ -20,6 +20,7 @@
 //   useIndicator(navRef, active, deps): a posição e a largura do realce.
 //   useDocked(markRef, navRef, on): se a barra está presa ao pé da tela; publica a altura em --dock-h.
 //   scrollParent(el): o ancestral que rola, a raiz do IntersectionObserver.
+//   scrollToTabTop(nav): rola até a barra (com `stick`) ficar no ponto em que gruda, o topo da aba aberta.
 //
 // DECISÕES E ARMADILHAS
 //   - O realce é UM elemento posicionado pela aba ativa (offsetLeft e
@@ -42,10 +43,16 @@
 //     e um salto direto do fim para o topo (que nunca cruza a tela) ainda troca o estado. A raiz é o
 //     ANCESTRAL QUE ROLA (scrollParent): com a janela como raiz, o recorte do .main escondia o marcador
 //     acima e abaixo igualmente, e a margem não valia.
+//   - Tocar na aba JÁ ATIVA de uma barra com `stick` rola até o topo da aba (scrollToTabTop): para cima
+//     quando a página está abaixo, para baixo quando está acima, até a barra ficar no ponto em que gruda
+//     e o conteúdo começar logo abaixo dela. O lugar da barra no fluxo se mede com ela `static` por um
+//     instante (sem pintar): presa no alto ou no pé, o retângulo dela é o da tela, não o do fluxo. As
+//     barras sem `stick` (as sub-abas) não rolam: o ponto delas dependeria do que gruda em cima.
 // -----------------------------------------------------------------------------
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import useActiveInView from '../../hooks/useActiveInView';
+import { reducedMotion } from '../../motion';
 import Icon from './Icon';
 import styles from './TabBar.module.css';
 
@@ -79,6 +86,19 @@ function scrollParent(el) {
     if (/(auto|scroll)/.test(getComputedStyle(p).overflowY)) return p;
   }
   return null;
+}
+
+/** Rola até a barra (com `stick`) ficar no ponto em que gruda: o topo da aba aberta. */
+function scrollToTabTop(nav) {
+  const stickTop = parseFloat(getComputedStyle(nav).top) || 0;
+  const was = nav.style.position;
+  nav.style.position = 'static';
+  const flowTop = nav.getBoundingClientRect().top;
+  nav.style.position = was;
+  const root = scrollParent(nav);
+  const delta = flowTop - (root ? root.getBoundingClientRect().top : 0) - stickTop;
+  if (Math.abs(delta) < 1) return;
+  (root ?? window).scrollBy({ top: delta, behavior: reducedMotion() ? 'auto' : 'smooth' });
 }
 
 /** Se a barra (com `dock`) está presa ao pé da tela: o lugar dela, marcado por `markRef`, está abaixo. */
@@ -130,7 +150,7 @@ export default function TabBar({ items, active, onChange, variant = 'main', fill
             className={it.id === active ? `${styles.tab} ${styles.on}` : styles.tab}
             data-active={it.id === active ? 'true' : undefined}
             data-tour={it.tour}
-            onClick={() => onChange(it.id)}
+            onClick={() => (it.id === active ? stick && scrollToTabTop(navRef.current) : onChange(it.id))}
           >
             {it.icon && <Icon name={it.icon} className={styles.icon} />}
             {it.label}

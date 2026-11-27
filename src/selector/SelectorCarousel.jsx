@@ -17,7 +17,8 @@
 //   CarouselCard(props): um cartão.
 //   SelectorCarousel(props): o carrossel. `items` são os resultados do seletor
 //     ({ id, raw }), `index` e `onIndex` o controle, `currentId` o já escolhido,
-//     `footer(raw)` o que vai embaixo (o Select do painel, o Choose do guia).
+//     `footer(raw)` o que vai embaixo (o Select do painel, o Choose do guia),
+//     `onChoose(raw)` o que o toque ou o duplo clique no cartão do centro faz.
 //
 // DECISÕES E ARMADILHAS
 //   - Na faixa, um nome que se repete na lista ("Gnome" do PHB e do XPHB) leva a fonte
@@ -40,6 +41,13 @@
 //     entrada (DetailView `skip`); "Show less" fecha. Antes (DDL-0290) trocava o resumo
 //     pelo texto inteiro, que começava de novo.
 //   - O "Read more" fica logo abaixo do texto que ele estende, antes das chips (DDL-0293).
+//   - O cartão do centro ESCOLHE como o botão de baixo: o toque basta no celular, e com o mouse é o
+//     duplo clique, como na grade do SelectorPanel (os ouvintes do CarouselCard). O tipo do ponteiro vem do
+//     `pointerdown` (o `click` nem sempre o traz, e o `dblclick` nunca): um toque duplo não escolhe
+//     duas vezes, e o clique simples do mouse segue só lendo. Um toque que andou (o deslize para o
+//     vizinho, a rolagem do texto) não escolhe, e o que cai num controle de dentro (a arte, Read
+//     more, um link de regra, uma chip) faz só o dele. Quem chama decide o que escolher o já
+//     escolhido faz (o guia não faz nada).
 //   - O resumo vem ANTES das chips: no celular as chips da classe (sete) empurravam o
 //     texto para fora do cartão, e o texto é o que o novato precisa ler primeiro.
 // -----------------------------------------------------------------------------
@@ -62,6 +70,7 @@ import useActiveInView from '../hooks/useActiveInView';
 import styles from './SelectorCarousel.module.css';
 
 const WINDOW = 2;
+const CONTROL = 'button, a, input, select, textarea, label, summary, [role="button"], [role="link"], [role="tab"]';
 
 /** As artes do fluff da entrada, prontas para o ImageViewer. */
 function galleryOf(entity, raw, db) {
@@ -80,7 +89,7 @@ function artShape(entity, raw, db) {
 }
 
 /** Um cartão do carrossel. */
-function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
+function CarouselCard({ entity, db, raw, active, chosen, onPick, onChoose }) {
   const [more, setMore] = useState(false);
   const gallery = galleryOf(entity, raw, db);
   const meta = entity.meta?.(raw, db) ?? [];
@@ -88,6 +97,24 @@ function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
   const icon = entity.icon?.(raw) ?? 'info';
   const tab = active ? 0 : -1;
   const art = gallery.length > 0 ? artShape(entity, raw, db) : { shape: 'mid', ratio: null };
+  const down = useRef(null);
+  const onControl = (e) => !!e.target.closest?.(CONTROL);
+  const gesture = active && onChoose ? {
+    onPointerDown: (e) => {
+      down.current = { type: e.pointerType, x: e.clientX, y: e.clientY };
+    },
+    onClick: (e) => {
+      const d = down.current;
+      if (!d || d.type === 'mouse' || onControl(e)) return;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) return;
+      onChoose();
+    },
+    onDoubleClick: (e) => {
+      if (down.current?.type !== 'mouse' || onControl(e)) return;
+      window.getSelection?.()?.removeAllRanges();
+      onChoose();
+    },
+  } : {};
 
   return (
     <article
@@ -95,6 +122,7 @@ function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
       data-carousel-active={active ? '' : undefined}
       data-art={art.shape}
       style={art.ratio ? { '--art-ratio': art.ratio.toFixed(3) } : undefined}
+      {...gesture}
     >
       <div className={styles.art}>
         {gallery.length > 0 ? (
@@ -159,9 +187,10 @@ function CarouselCard({ entity, db, raw, active, chosen, onPick }) {
 /**
  * O carrossel de um seletor.
  * @param {{ entity: object, db: object, items: { id: string, raw: object }[], currentId?: string|null,
- *   index: number, onIndex: (i: number) => void, footer?: (raw: object) => any }} props
+ *   index: number, onIndex: (i: number) => void, footer?: (raw: object) => any,
+ *   onChoose?: (raw: object) => void }} props
  */
-export default function SelectorCarousel({ entity, db, items, currentId, index, onIndex, footer }) {
+export default function SelectorCarousel({ entity, db, items, currentId, index, onIndex, footer, onChoose }) {
   const count = items.length;
   const at = Math.max(0, Math.min(index, count - 1));
   const go = (i) => onIndex(Math.max(0, Math.min(count - 1, i)));
@@ -214,6 +243,7 @@ export default function SelectorCarousel({ entity, db, items, currentId, index, 
                   active={i === at}
                   chosen={it.id === currentId}
                   onPick={() => go(i)}
+                  onChoose={i === at && onChoose ? () => onChoose(it.raw) : null}
                 />
               )}
             </div>

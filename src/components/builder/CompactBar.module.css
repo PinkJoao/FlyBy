@@ -34,7 +34,8 @@
  *     do tema (as estrelas, o pergaminho) ainda passa de leve por trás.
  *   - As pontas ESMAECEM (DDL-0342): uma máscara do transparente ao cheio na largura do transbordo
  *     (`--bar-bleed`), onde não há controle nenhum; o fundo, o desfoque e a borda de baixo somem
- *     juntos, e os botões ficam intactos. No desktop as pontas sólidas destacavam a barra.
+ *     juntos, e os botões ficam intactos. No desktop as pontas sólidas destacavam a barra. Só a
+ *     partir de 761 px: no celular a barra encosta nas bordas da tela e não há o que esmaecer.
  * -------------------------------------------------------------------------- */
 
 .anchor {
@@ -61,14 +62,18 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--bar-bleed, 24px), #000 calc(100% - var(--bar-bleed, 24px)), transparent);
-  mask-image: linear-gradient(to right, transparent, #000 var(--bar-bleed, 24px), #000 calc(100% - var(--bar-bleed, 24px)), transparent);
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
   transition:
     transform var(--dur-enter) var(--ease),
     opacity var(--dur-enter) var(--ease);
+}
+@media (min-width: 761px) {
+  .bar {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--bar-bleed, 24px), #000 calc(100% - var(--bar-bleed, 24px)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--bar-bleed, 24px), #000 calc(100% - var(--bar-bleed, 24px)), transparent);
+  }
 }
 .on {
   transform: none;

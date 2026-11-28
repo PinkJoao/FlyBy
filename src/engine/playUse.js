@@ -36,6 +36,9 @@
 //     Divinity: Preserve Life", DDL-0219).
 //   specialRecovery(action): a regra curada de uma recuperação especial, ou null.
 //   slotRecoveryEvent(args): o Arcane Recovery e o Natural Recovery.
+//   slotRecoveryShort(catalog, state, action): os nomes do que falta para pagar a recuperação (o uso
+//     já gasto), para a tela perguntar antes e o evento marcar `short`.
+//   recoveryActivity(action, rule): a activity que a recuperação especial gasta.
 //   fontOfMagicEvent(args): criar um slot com pontos, ou converter um slot em pontos.
 //   adjustResourceEvent(args): gastar ou devolver à mão (com `state`, preso ao que há).
 //   setResourceEvent(args): o ResourcePanel: o que resta e o máximo que o jogador pôs.
@@ -311,7 +314,7 @@ export function specialRecovery(action, catalog) {
  */
 export function slotRecoveryEvent({ catalog, state, action, picks, now = new Date() }) {
   const rule = specialRecovery(action, catalog);
-  const activity = action.activities.find((a) => !rule.activity || a.name === rule.activity) ?? action.activities[0];
+  const activity = recoveryActivity(action, rule);
   const ops = resolveCosts(catalog, state, activity).map((c) => ({ op: 'spend', key: c.key, amount: c.amount }));
   const lines = [];
   let total = 0;
@@ -323,7 +326,17 @@ export function slotRecoveryEvent({ catalog, state, action, picks, now = new Dat
     total += count * Number(level);
   }
   const over = total > rule.budget || Object.keys(picks ?? {}).some((l) => Number(l) > rule.maxLevel && picks[l] > 0);
-  return makeEvent('use', { label: `${action.name}: recover slots`, ops, payload: { actionKey: action.key, lines, budget: rule.budget, total, over } }, now);
+  return makeEvent('use', { label: `${action.name}: recover slots`, ops, payload: { actionKey: action.key, lines, budget: rule.budget, total, over, short: slotRecoveryShort(catalog, state, action) } }, now);
+}
+
+/** A activity que a recuperação especial gasta. */
+const recoveryActivity = (action, rule) => action.activities.find((a) => !rule?.activity || a.name === rule.activity) ?? action.activities[0];
+
+/** Os nomes do que falta para pagar a recuperação. */
+export function slotRecoveryShort(catalog, state, action) {
+  const activity = recoveryActivity(action, specialRecovery(action, catalog));
+  if (!activity) return [];
+  return resolveCosts(catalog, state, activity).filter((c) => c.amount > 0 && left(catalog, state, c.key) < c.amount).map((c) => nameOf(catalog, c.key));
 }
 
 /**

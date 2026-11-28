@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { sequenceRng } from './dice';
 import { emptyPlayState, applyOp, hpView } from './playState';
 import {
-  left, slotKey, resolveCosts, activityEvent, featureModifierOps, apotheosisApplies, specialRecovery, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
+  left, slotKey, resolveCosts, activityEvent, featureModifierOps, apotheosisApplies, specialRecovery, slotRecoveryEvent, slotRecoveryShort, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, withResourceMax, featureLogEvent,
 } from './playUse';
 
 const seq = (...values) => sequenceRng(values, () => {
@@ -123,6 +123,14 @@ describe('recuperações especiais', () => {
     expect(run(s, e).spent).toEqual({ 'slot:1': 1, 'pool:arcane-recovery': 1 });
     expect(e.payload).toMatchObject({ total: 3, over: false });
     expect(slotRecoveryEvent({ catalog, state: s, action: arcane, picks: { 3: 1, 1: 1 } }).payload.over).toBe(true);
+  });
+
+  it('o uso já gasto: a tela pergunta antes e o evento marca o que faltou (U4)', () => {
+    const s = st({ spent: { 'slot:1': 1 } });
+    expect(slotRecoveryShort(catalog, s, arcane)).toEqual([]);
+    const spent = st({ spent: { 'slot:1': 1, 'pool:arcane-recovery': 1 } });
+    expect(slotRecoveryShort(catalog, spent, arcane)).toHaveLength(1);
+    expect(slotRecoveryEvent({ catalog, state: spent, action: arcane, picks: { 1: 1 } }).payload.short).toHaveLength(1);
   });
 
   it('Font of Magic: criar gasta pontos pela tabela; converter devolve o círculo em pontos', () => {

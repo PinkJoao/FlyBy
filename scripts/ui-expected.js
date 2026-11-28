@@ -19,6 +19,8 @@
 //   attackDetail(a, catalog, state): o acerto e o dano de um ataque, pelos números do motor.
 //   wornState(catalog), wornView(character, db): o estado gasto e o que a tela mostra nele.
 //   riderChecks(spec, character, db): os passos `rider` de um roteiro com o que o motor oferece.
+//   doInEngine(catalog, state, step): o estado depois de um passo `do` (usar uma feature, lançar).
+//   u4Case(character, db): o que a U4 precisa de um arquétipo (a ficha, os ataques e o estado gasto).
 //   lc(s): o texto em minúsculas.
 //
 // DECISÕES E ARMADILHAS
@@ -26,9 +28,13 @@
 //     motor (`fixedRollBonus`, `attackRollContext`), nunca da tela (o princípio do §3 do
 //     plano): a U2 prova o caminho do motor até a tela.
 //   - Estado descansado (`emptyPlayState`): é como a ficha abre num perfil novo.
-//   - Do roteiro só entram os `rider` ANTES do primeiro `do` (o estado descansado: o que vem
-//     depois pede usar algo na tela, que é a U4) e os de magia cujo dano sai no lançamento
-//     (`damage.later` fica fora: o Hunter's Mark rola depois, pelo modificador).
+//   - Do roteiro entram os `rider` de ataque e os de magia cujo dano sai no lançamento
+//     (`damage.later` fica fora: o Hunter's Mark rola depois, pelo modificador). Um `rider` depois de
+//     um `do` (a Rage, o Hunter's Mark) leva a lista `dos`, que o teste faz na tela antes, e o motor
+//     confere sobre o estado depois deles (`doInEngine`, os mesmos eventos do scripts/archetypes.js,
+//     sem o estado de arma, que nenhum desses passos usa).
+//   - `u4-archetypes.json` leva todas as fichas de arquétipo para a U4, com o estado gasto pela mesma
+//     regra dos modelos (`wornView`) sobre a cópia local do 5e.tools.
 //   - O arquivo é gerado a cada rodada e fica fora do git (`test-results/`), numa pasta que
 //     o Playwright não limpa (`ui-data`; a `ui` é a saída dele, apagada a cada rodada).
 // -----------------------------------------------------------------------------
@@ -39,13 +45,15 @@ import models from '../src/dev/playModels.json' with { type: 'json' };
 import { prepareDb } from '../src/engine/prepareDb.js';
 import { derivePlayCatalog } from '../src/engine/playCatalog.js';
 import { screenCatalog } from '../src/engine/playView.js';
-import { emptyPlayState, remainingOf, createPlayDoc } from '../src/engine/playState.js';
+import { emptyPlayState, remainingOf, createPlayDoc, applyEvent } from '../src/engine/playState.js';
+import { activityEvent, featureLogEvent } from '../src/engine/playUse.js';
+import { featureUseOf } from '../src/engine/playFeatureRolls.js';
 import { actionContext } from '../src/engine/playBasicActions.js';
-import { fixedRollBonus, attackRollContext, rollEffects, effectiveSpeed, effectiveSpeeds, conditionName, CONDITIONS } from '../src/engine/playEffects.js';
+import { fixedRollBonus, attackRollContext, rollEffects, effectiveSpeed, effectiveSpeeds, conditionName, CONDITIONS, makeModifier } from '../src/engine/playEffects.js';
 import { formatBonus } from '../src/engine/math.js';
 import { vitals } from '../src/engine/playHealth.js';
 import { hitDiceLeft } from '../src/engine/playRest.js';
-import { slotPoolsFor, spellAttackOf } from '../src/engine/playCast.js';
+import { slotPoolsFor, spellAttackOf, castWays, castEvent } from '../src/engine/playCast.js';
 import { spellLevelLabel } from '../src/engine/spells.js';
 import { loadDb, snapshotVersion } from './lib/loadDb.js';
 import { ARCHETYPES } from '../testing/archetypes/spec.js';
@@ -53,6 +61,7 @@ import archetypeSheets from '../testing/feature-audit/check-archetypes.json' wit
 
 const OUT = new URL('../test-results/ui-data/expected.json', import.meta.url);
 const ARCH_OUT = new URL('../test-results/ui-data/archetypes.json', import.meta.url);
+const U4_OUT = new URL('../test-results/ui-data/u4-archetypes.json', import.meta.url);
 const lc = (s) => String(s ?? '').toLowerCase();
 
 /** O acerto e o dano de um ataque, pelos números do motor. */
@@ -116,13 +125,43 @@ function expectedFor(character, db) {
   };
 }
 
-/** Os passos `rider` do estado descansado de um roteiro, com o que o motor oferece. */
+/** O estado depois de um passo `do`: usar uma feature ou lançar uma magia. */
+function doInEngine(catalog, state, step) {
+  if (step.do === 'use') {
+    const action = (catalog.actions ?? []).find((a) => lc(a.name) === lc(step.feature));
+    const feature = (catalog.featureList ?? []).find((f) => lc(f.name) === lc(step.feature));
+    if (action?.activities?.length) return applyEvent(state, activityEvent({ catalog, state, action, activity: action.activities[0], options: {} }));
+    if (!feature) return null;
+    const use = featureUseOf(feature, catalog);
+    return applyEvent(state, featureLogEvent({ catalog, state, feature, spend: use?.spend ?? null, amount: use?.spent ?? 1, modifier: use?.modifier ? makeModifier(use.modifier) : null, roll: use?.roll ?? null, apply: use?.apply ?? null }));
+  }
+  if (step.do === 'cast') {
+    const origin = (catalog.spells ?? []).find((o) => o.spells.some((x) => lc(x.name) === lc(step.spell)));
+    const spell = origin?.spells.find((x) => lc(x.name) === lc(step.spell));
+    const ways = spell ? castWays(catalog, state, spell) : [];
+    const way = ways.find((w) => w.level === step.level && /^slot:/.test(w.key ?? '')) ?? ways[0];
+    return way ? applyEvent(state, castEvent({ catalog, state, origin, spell, way })) : null;
+  }
+  return null;
+}
+
+/** Os passos `rider` de um roteiro, com o que o motor oferece (depois dos `do` que vêm antes). */
 function riderChecks(spec, character, db) {
-  const catalog = screenCatalog(derivePlayCatalog(character, db), emptyPlayState());
-  const state = emptyPlayState();
-  const firstDo = spec.steps.findIndex((s) => s.do);
+  const base = derivePlayCatalog(character, db);
+  let state = emptyPlayState();
+  let catalog = screenCatalog(base, state);
+  const dos = [];
   const out = [];
-  for (const step of spec.steps.slice(0, firstDo < 0 ? undefined : firstDo)) {
+  for (const step of spec.steps) {
+    if (step.do) {
+      if (step.do !== 'use' && step.do !== 'cast') break;
+      const next = doInEngine(catalog, state, step);
+      if (!next) break;
+      state = next;
+      catalog = screenCatalog(base, state);
+      dos.push(step.do === 'use' ? { do: 'use', feature: step.feature } : { do: 'cast', spell: step.spell, level: step.level });
+      continue;
+    }
     if (step.check !== 'rider') continue;
     let roll;
     let target;
@@ -141,9 +180,16 @@ function riderChecks(spec, character, db) {
     }
     const effects = rollEffects(state, catalog, roll);
     const hit = effects.find((x) => lc(x.label).includes(lc(step.label)) || lc(x.source).includes(lc(step.label)));
-    out.push({ ...target, roll: step.roll, label: step.label, absent: !!step.absent, engine: hit ? 'offered' : 'absent', offered: effects.map((e) => e.label) });
+    out.push({ ...target, roll: step.roll, label: step.label, absent: !!step.absent, engine: hit ? 'offered' : 'absent', offered: effects.map((e) => e.label), dos: [...dos] });
   }
   return out;
+}
+
+/** O que a U4 precisa de um arquétipo: a ficha, os ataques da ação Attack e o estado gasto. */
+function u4Case(character, db) {
+  const state = emptyPlayState();
+  const catalog = screenCatalog(derivePlayCatalog(character, db), state);
+  return { id: character.id, character, attacks: actionContext(catalog, state).attacks.map((a) => ({ name: a.name })), worn: { doc: wornView(character, db).doc } };
 }
 
 const db = prepareDb(bundle);
@@ -158,4 +204,5 @@ const arch = ARCHETYPES.filter((spec) => sheets.has(spec.id))
   .map((spec) => ({ id: spec.id, character: sheets.get(spec.id), checks: riderChecks(spec, sheets.get(spec.id), full) }))
   .filter((a) => a.checks.length);
 fs.writeFileSync(ARCH_OUT, JSON.stringify({ version: snapshotVersion(), archetypes: arch }, null, 1));
+fs.writeFileSync(U4_OUT, JSON.stringify(archetypeSheets.map((c) => u4Case(c, full)), null, 1));
 console.log(`[U2] ${arch.reduce((n, a) => n + a.checks.length, 0)} passos de extra em ${arch.length} arquétipos (5etools ${snapshotVersion()}) em test-results/ui-data/archetypes.json`);

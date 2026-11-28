@@ -284,7 +284,7 @@ import { pactChoices, pactEvent, hasPactOfTheBlade } from '../engine/playPact';
 import { weaponRuleOf, eligibleWeapons, weaponModifier, strikeAttack, strikeSecondary, strikeFromKey, masteryNote, armorBlessing, itemExtraEffects } from '../engine/playWeapons';
 import { screenCatalog } from '../engine/playView';
 import { resolveRefs } from '../engine/dice';
-import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies, activityLabel, slotRecoveryEvent, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
+import { activityEvent, activityRollData, featureModifierOps, apotheosisApplies, activityLabel, slotRecoveryEvent, slotRecoveryShort, fontOfMagicEvent, adjustResourceEvent, setResourceEvent, featureLogEvent, resolveCosts, left as leftOf } from '../engine/playUse';
 import { featureCosts } from '../engine/playFeatures';
 import { featureUseOf, riderSpendOps } from '../engine/playFeatureRolls';
 import { inspirationEvent, rerollOptions, rerollEvent, rerollDiceOptions, rerollDiceEvent, rerollableDice } from '../engine/playRerolls';
@@ -960,6 +960,7 @@ export function PlayInner({ character, derived, sideSlot, levelSlot, compactSlot
       if (r) record(fontOfMagicEvent({ catalog, state, action, mode: r.mode, level: r.level }));
       return;
     }
+    if (slotRecoveryShort(catalog, state, action).length && !(await confirm({ title: 'Not enough left', message: 'There is not enough left to pay for this. Use it anyway?', confirmLabel: 'Use anyway' }))) return;
     const r = await askSlotRecovery({ title: action.name, catalog, state, rule });
     if (r) record(slotRecoveryEvent({ catalog, state, action, picks: r.picks }));
   };

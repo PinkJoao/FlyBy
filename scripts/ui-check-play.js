@@ -37,6 +37,8 @@
 //     escolhido: o de recurso que caiu, senão o sem recurso. Um `pick` que não é forma de lançar é um
 //     gasto (a linha do CostPanel: o rótulo e a feature), e o recurso dele tem de cair, menos quando a
 //     tela perguntou e o padrão foi "Free" (a Arcane Apotheosis: uma metamagia por turno de graça).
+//   - O Transform do Wild Shape (o evento `form`) gasta um uso do pool "Wild Shape", a forma é uma das
+//     conhecidas da ficha e o estado fica nela (DDL-0348).
 //   - A activity que escala (`scalable`) aceita qualquer múltiplo do custo base: o padrão do
 //     painel é 1, mas o máximo muda com o recurso.
 //   - Um passo sem regra (Summon, Transform, Bond, Choose) só passa pelas conferências gerais.
@@ -112,6 +114,16 @@ function expectedSpend(step, events, before, catalog) {
     return { spend: out, spell, extra };
   }
   if (kind === 'feature') {
+    const shape = events.find((e) => e.kind === 'form');
+    if (shape) {
+      const known = (step.before.character?.wildShapeForms ?? []).map((f) => f.name);
+      const pool = (catalog.resources ?? []).find((x) => String(x.name).toLowerCase() === 'wild shape');
+      const extra = [];
+      if (step.action.pick && shape.payload?.form !== step.action.pick) extra.push(`pediu a forma "${step.action.pick}", gravou "${shape.payload?.form}"`);
+      if (!known.includes(shape.payload?.form)) extra.push(`a forma "${shape.payload?.form}" não é uma das conhecidas (${known.join(', ')})`);
+      if (currentPlayState(step.after.doc).form?.ref?.name !== shape.payload?.form) extra.push(`o estado não ficou na forma "${shape.payload?.form}"`);
+      return { spend: pool ? { [pool.key]: 1 } : {}, extra };
+    }
     const ev = events.find((e) => e.kind === 'use' && e.payload?.activityId);
     if (/^Spend one /.test(step.action.title)) return { one: true };
     const log = /^Log (.*) to the history$/.exec(step.action.title);

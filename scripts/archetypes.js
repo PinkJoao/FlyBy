@@ -23,6 +23,8 @@
 //   book(results): o livro em Markdown.
 //
 // DECISÕES E ARMADILHAS
+//   - O druida leva as formas conhecidas do Wild Shape (`withWildShapeForms`, o bestiário da cópia
+//     local, a fonte com que a U4 abre a ficha), sorteadas pela semente do roteiro (DDL-0348).
 //   - O número da tela é o do catálogo da tela mais os efeitos LIGADOS de número fixo (`fixedRollBonus`),
 //     como o rótulo "Damage (1d8 + 3)"; um efeito desligado (Brutal Strike) é um `rider`, com a fórmula
 //     resolvida (`resolveRefs`).
@@ -39,7 +41,8 @@ import fs from 'node:fs';
 import process from 'node:process';
 import { loadDb } from './lib/loadDb.js';
 import { autoBuild } from './lib/autoBuild.js';
-import { hashSeed } from './lib/rng.js';
+import { hashSeed, mulberry32 } from './lib/rng.js';
+import { withWildShapeForms, localBestiary } from './lib/wildShapeForms.js';
 import { ARCHETYPES } from '../testing/archetypes/spec.js';
 import { derivePlayCatalog } from '../src/engine/playCatalog.js';
 import { screenCatalog } from '../src/engine/playView.js';
@@ -131,6 +134,7 @@ function build(db, spec) {
   const c = built.character;
   c.id = spec.id;
   c.meta.name = spec.id.replace(/^arch-/, 'Arch ').replace(/-/g, ' ');
+  withWildShapeForms(db, c, localBestiary(), mulberry32(hashSeed(`${spec.id}:forms`)));
   c.inventory = (spec.inventory ?? []).map((name, i) => ({ uid: `${spec.id}-${i}`, itemId: name, source: 'XPHB', quantity: 1, equipped: true, attuned: false }));
   const lost = Object.entries(spec.picks ?? {}).filter(([id, picks]) => !picks.every((p) => c.classes[0].choices[id]?.picks?.includes(p))).map(([id]) => id);
   return { character: c, ok: built.ok, lost };

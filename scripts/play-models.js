@@ -31,6 +31,8 @@
 //   bookOf(rows, units): o texto do COVERAGE-PLAY.md.
 //
 // DECISÕES E ARMADILHAS
+//   - O druida leva as formas conhecidas do Wild Shape (`withWildShapeForms`, as feras do SRD embutido,
+//     sorteadas pela semente do modelo e do nível), como o jogador as escolhe na aba da classe (DDL-0348).
 //   - Os modelos do SRD sorteiam talento, opção de classe e magia só entre o que tem a marca
 //     srd52 ou srd (`spec.allow`); os da leva Legacy (DDL-0224) também no XPHB e no livro da
 //     própria subclasse (sorteando em tudo, o monge nascia com talentos de cenário), e nunca vão
@@ -66,6 +68,9 @@ import { featureUseOf } from '../src/engine/playFeatureRolls.js';
 import { castWays, castEvent, spellAttackOf, spellHealEvent } from '../src/engine/playCast.js';
 import { shortRestEvent, longRestEvent } from '../src/engine/playRest.js';
 import { withStartingKit } from './lib/startingKit.js';
+import { withWildShapeForms, srdBeasts } from './lib/wildShapeForms.js';
+
+const SRD_BEASTS = srdBeasts();
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
@@ -123,6 +128,7 @@ function build(db, model, level) {
   c.id = `model-${model.id}-${level}`;
   const problems = [];
   withStartingKit(db, c, mulberry32(hashSeed(model.id, 9)), problems);
+  withWildShapeForms(db, c, SRD_BEASTS, mulberry32(hashSeed(`${model.id}:forms`, level)));
   if (!built.ok) problems.push({ where: 'builder', message: `${built.pendencies.total} pendencies left` });
   for (const p of built.problems) problems.push({ where: 'builder', message: p.message ?? String(p) });
   for (const [lvl, id] of feats) {
